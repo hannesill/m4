@@ -8,7 +8,6 @@ import typer
 
 from m3 import __version__
 from m3.config import (
-    SUPPORTED_DATASETS,
     detect_available_local_datasets,
     get_active_dataset,
     get_dataset_config,
@@ -24,6 +23,7 @@ from m3.data_io import (
     init_duckdb_from_parquet,
     verify_table_rowcount,
 )
+from m3.datasets import DatasetRegistry
 
 app = typer.Typer(
     name="m3",
@@ -81,7 +81,7 @@ def dataset_init_cmd(
         typer.Argument(
             help=(
                 "Dataset to initialize (local). Default: 'mimic-iv-demo'. "
-                f"Supported: {', '.join(SUPPORTED_DATASETS.keys())}"
+                f"Supported: {', '.join([ds.name for ds in DatasetRegistry.list_all()])}"
             ),
             metavar="DATASET_NAME",
         ),
@@ -111,9 +111,8 @@ def dataset_init_cmd(
     - If neither exists: download (demo only), convert, then initialize
 
     Notes:
-    - Auto-download currently supports only 'mimic-iv-demo'. For 'mimic-iv-full',
-      place the official raw CSV.gz files under <project_root>/m3_data/raw_files/<dataset>/
-      with 'hosp/' and 'icu/' subdirectories, then re-run this command.
+    - Auto-download is based on the dataset definition URL.
+    - For datasets without a download URL (e.g. mimic-iv-full), you must provide the --src path or place files in the expected location.
     """
     logger.info(f"CLI 'init' called for dataset: '{dataset_name}'")
 
@@ -126,7 +125,7 @@ def dataset_init_cmd(
             err=True,
         )
         typer.secho(
-            f"Supported datasets are: {', '.join(SUPPORTED_DATASETS.keys())}",
+            f"Supported datasets are: {', '.join([ds.name for ds in DatasetRegistry.list_all()])}",
             fg=typer.colors.YELLOW,
             err=True,
         )
@@ -144,7 +143,6 @@ def dataset_init_cmd(
     csv_root = Path(src).resolve() if src else csv_root_default
 
     # Presence detection (check for any parquet or csv.gz files)
-    # NOTE: Checks need to be more robust as soon as we support the full dataset for download (don't just check for any file, but that no files are missing)
     parquet_present = any(pq_root.rglob("*.parquet"))
     raw_present = any(csv_root.rglob("*.csv.gz"))
 
@@ -152,14 +150,40 @@ def dataset_init_cmd(
     typer.echo(f"Raw root: {csv_root}  (present={raw_present})")
     typer.echo(f"Parquet root: {pq_root}  (present={parquet_present})")
 
-    # Step 1: Ensure raw dataset exists (download demo if missing; for full, inform and return)
+    # Step 1: Ensure raw dataset exists (download if missing, for requires_authentication datasets, inform and return)
     if not raw_present and not parquet_present:
-        if dataset_key == "mimic-iv-demo":
+        requires_auth = dataset_config.get("requires_authentication", False)
+
+        if requires_auth:
+            base_url = dataset_config.get("file_listing_url")
+
+            typer.secho(
+                f"❌ Files not found for credentialed dataset '{dataset_key}'.",
+                fg=typer.colors.RED,
+            )
+            typer.echo("To download this credentialed dataset:")
+            typer.echo(
+                f"1. Ensure you have signed the DUA at: {base_url or 'https://physionet.org'}"
+            )
+            typer.echo(
+                "2. Run this command (you will be asked for your PhysioNet password):"
+            )
+            typer.echo("")
+
+            # Wget command tailored to the user's path
+            wget_cmd = f"wget -r -N -c -np --user YOUR_USERNAME --ask-password {base_url} -P {csv_root}"
+            typer.secho(f"   {wget_cmd}", fg=typer.colors.CYAN)
+            typer.echo("")
+            typer.echo(f"3. Re-run 'm3 init {dataset_key}'")
+            return
+
+        listing_url = dataset_config.get("file_listing_url")
+        if listing_url:
             out_dir = csv_root_default
             out_dir.mkdir(parents=True, exist_ok=True)
 
             typer.echo(f"Downloading dataset: '{dataset_key}'")
-            typer.echo(f"Listing URL: {dataset_config.get('file_listing_url')}")
+            typer.echo(f"Listing URL: {listing_url}")
             typer.echo(f"Output directory: {out_dir}")
 
             ok = download_dataset(dataset_key, out_dir)
@@ -177,16 +201,16 @@ def dataset_init_cmd(
             raw_present = True
         else:
             typer.secho(
-                "Auto-download is only supported for 'mimic-iv-demo'.",
+                f"Auto-download is not available for '{dataset_key}'.",
                 fg=typer.colors.YELLOW,
             )
             typer.secho(
                 (
-                    "To initialize 'mimic-iv-full':\n"
-                    "1) Download the official MIMIC-IV dataset from PhysioNet (this requires a PhysioNet account with dataset access)\n"
-                    "2) Place the raw CSV.gz files under: {csv_root_default}\n"
-                    "   Ensure the structure includes 'hosp/' and 'icu/' subdirectories.\n"
-                    "3) Then re-run: m3 init mimic-iv-full"
+                    "To initialize this dataset:\n"
+                    "1) Download the raw data manually.\n"
+                    f"2) Place the raw CSV.gz files under: {csv_root_default}\n"
+                    "   (or use --src to point to their location)\n"
+                    f"3) Then re-run: m3 init {dataset_key}"
                 ),
                 fg=typer.colors.WHITE,
             )
@@ -207,7 +231,7 @@ def dataset_init_cmd(
             raise typer.Exit(code=1)
         typer.secho("✅ Conversion complete.", fg=typer.colors.GREEN)
 
-    # Step 2: Initialize DuckDB over Parquet
+    # Step 3: Initialize DuckDB over Parquet
     final_db_path = (
         Path(db_path_str).resolve()
         if db_path_str
@@ -287,10 +311,7 @@ def dataset_init_cmd(
             )
 
     # Set active dataset to match init target
-    if dataset_key == "mimic-iv-demo":
-        set_active_dataset("demo")
-    elif dataset_key == "mimic-iv-full":
-        set_active_dataset("full")
+    set_active_dataset(dataset_key)
 
 
 @app.command("use")
@@ -298,30 +319,59 @@ def use_cmd(
     target: Annotated[
         str,
         typer.Argument(
-            help="Select active dataset: demo | full | bigquery", metavar="TARGET"
+            help="Select active dataset: name (e.g., mimic-iv-full)", metavar="TARGET"
         ),
     ],
 ):
     """Set the active dataset selection for the project."""
     target = target.lower()
-    if target not in ("demo", "full", "bigquery"):
+
+    # 1. Check if dataset is registered
+    # We use detect_available_local_datasets just to get the list + status,
+    # but we could also just check DatasetRegistry directly.
+    availability = detect_available_local_datasets().get(target)
+
+    if not availability:
         typer.secho(
-            "Target must be one of: demo, full, bigquery", fg=typer.colors.RED, err=True
+            f"Dataset '{target}' not found or not registered.",
+            fg=typer.colors.RED,
+            err=True,
         )
+        # List available
+        supported = ", ".join([ds.name for ds in DatasetRegistry.list_all()])
+        typer.secho(f"Supported datasets: {supported}", fg=typer.colors.YELLOW)
         raise typer.Exit(code=1)
 
-    if target in ("demo", "full"):
-        availability = detect_available_local_datasets()[target]
-        if not availability["parquet_present"]:
-            typer.secho(
-                f"Parquet directory missing at {availability['parquet_root']}. Cannot activate '{target}'.",
-                fg=typer.colors.RED,
-                err=True,
-            )
-            raise typer.Exit(code=1)
-
+    # 2. Set it active immediately (don't block on files)
     set_active_dataset(target)
     typer.secho(f"Active dataset set to '{target}'.", fg=typer.colors.GREEN)
+
+    # 3. Warn if local files are missing (helpful info, not a blocker)
+    if not availability["parquet_present"]:
+        typer.secho(
+            f"⚠️  Note: Local Parquet files not found at {availability['parquet_root']}.",
+            fg=typer.colors.YELLOW,
+        )
+        typer.echo(
+            "   This is fine if you are using the BigQuery backend.\n"
+            "   If you intend to use DuckDB (local), run 'm3 init' first."
+        )
+    else:
+        typer.secho(
+            "  Local: Available",
+        )
+
+    # 4. Check BigQuery support
+    ds_def = DatasetRegistry.get(target)
+    if ds_def:
+        if not ds_def.bigquery_dataset_ids:
+            typer.secho(
+                "⚠️  Warning: This dataset is not configured for BigQuery.",
+                fg=typer.colors.YELLOW,
+            )
+            typer.echo("   If you are using the BigQuery backend, queries will fail.")
+        else:
+            typer.echo(f"  BigQuery: Available (Project: {ds_def.bigquery_project_id})")
 
 
 @app.command("status")
@@ -334,9 +384,11 @@ def status_cmd():
     )
 
     availability = detect_available_local_datasets()
+    if not availability:
+        typer.echo("No datasets detected.")
+        return
 
-    for label in ("demo", "full"):
-        info = availability[label]
+    for label, info in availability.items():
         typer.secho(f"\n=== {label.upper()} ===", fg=typer.colors.BRIGHT_BLUE)
 
         parquet_icon = "✅" if info["parquet_present"] else "❌"
@@ -354,9 +406,14 @@ def status_cmd():
             except Exception:
                 typer.echo("  parquet_size_gb: (skipped)")
 
+        # Show BigQuery status
+        ds_def = DatasetRegistry.get(label)
+        if ds_def:
+            bq_status = "✅" if ds_def.bigquery_dataset_ids else "❌"
+            typer.echo(f"  BigQuery Support: {bq_status}")
+
         # Try a quick rowcount on the verification table if db present
-        ds_name = "mimic-iv-demo" if label == "demo" else "mimic-iv-full"
-        cfg = get_dataset_config(ds_name)
+        cfg = get_dataset_config(label)
         if info["db_present"] and cfg:
             try:
                 count = verify_table_rowcount(
@@ -507,17 +564,10 @@ def config_cmd(
         if backend != "duckdb":
             cmd.extend(["--backend", backend])
 
-        # For duckdb, infer db_path from active dataset if not provided
-        if backend == "duckdb":
-            if db_path:
-                inferred_db_path = Path(db_path).resolve()
-            else:
-                active_dataset = get_active_dataset()
-                if not active_dataset:
-                    # default to demo if nothing is set
-                    inferred_db_path = get_default_database_path("mimic-iv-demo")
-                else:
-                    inferred_db_path = get_default_database_path(active_dataset)
+        # For duckdb, pass db_path only if explicitly provided.
+        # If omitted, the server will resolve it dynamically based on the active dataset.
+        if backend == "duckdb" and db_path:
+            inferred_db_path = Path(db_path).resolve()
             cmd.extend(["--db-path", str(inferred_db_path)])
 
         elif backend == "bigquery" and project_id:

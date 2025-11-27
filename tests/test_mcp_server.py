@@ -9,6 +9,9 @@ from unittest.mock import Mock, patch
 import pytest
 from fastmcp import Client
 
+# Define DatasetDefinition locally if imports fail (shouldn't happen in test env)
+from m3.datasets import DatasetDefinition
+
 # Mock the database path check during import to handle CI environments
 with patch("pathlib.Path.exists", return_value=True):
     with patch(
@@ -30,6 +33,14 @@ def _bigquery_available():
 
 class TestMCPServerSetup:
     """Test MCP server setup and configuration."""
+
+    @pytest.fixture(autouse=True)
+    def reset_bq_cache(self):
+        """Reset the BigQuery client cache before each test."""
+        import m3.mcp_server
+
+        if hasattr(m3.mcp_server, "_bq_client_cache"):
+            m3.mcp_server._bq_client_cache = {"client": None, "project_id": None}
 
     def test_server_instance_exists(self):
         """Test that the FastMCP server instance exists."""
@@ -62,24 +73,53 @@ class TestMCPServerSetup:
             with patch("m3.mcp_server.get_default_database_path") as mock_path:
                 mock_path.return_value = Path("/fake/path.duckdb")
                 with patch("pathlib.Path.exists", return_value=False):
-                    with pytest.raises(FileNotFoundError):
-                        _init_backend()
+                    _init_backend()
+                    # Verify that we didn't crash and that the path is set,
+                    # allowing the runtime check in _execute_duckdb_query to handle it gracefully.
+                    import m3.mcp_server
+
+                    # _db_path was removed, check behavior via internal getter or backend info
+                    assert m3.mcp_server._get_db_path() == str(
+                        Path("/fake/path.duckdb")
+                    )
+                    assert m3.mcp_server._backend == "duckdb"
 
     @pytest.mark.skipif(
         not _bigquery_available(), reason="BigQuery dependencies not available"
     )
     def test_backend_init_bigquery(self):
-        """Test BigQuery backend initialization."""
+        """Test BigQuery backend initialization and client creation."""
+        mock_ds = DatasetDefinition(
+            name="mock-ds",
+            bigquery_project_id="test-project",
+            bigquery_dataset_ids=["ds1"],
+            tags=["mimic"],
+        )
+
         with patch.dict(
             os.environ,
             {"M3_BACKEND": "bigquery", "M3_PROJECT_ID": "test-project"},
             clear=True,
         ):
-            with patch("google.cloud.bigquery.Client") as mock_client:
-                mock_client.return_value = Mock()
-                _init_backend()
-                # If no exception raised, initialization succeeded
-                mock_client.assert_called_once_with(project="test-project")
+            with patch("m3.mcp_server.DatasetRegistry.get", return_value=mock_ds):
+                with patch("google.cloud.bigquery.Client") as mock_client:
+                    mock_client.return_value = Mock()
+                    _init_backend()
+
+                    # _init_backend no longer creates the client eagerly
+                    mock_client.assert_not_called()
+
+                    # Call the internal getter to trigger creation
+                    import m3.mcp_server
+
+                    client, project_id = m3.mcp_server._get_bq_client()
+
+                    assert project_id == "test-project"
+                    mock_client.assert_called_once_with(project="test-project")
+
+                    # Second call should be cached (no new client init)
+                    m3.mcp_server._get_bq_client()
+                    mock_client.assert_called_once_with(project="test-project")
 
     def test_backend_init_invalid(self):
         """Test initialization with invalid backend."""
@@ -155,37 +195,46 @@ class TestMCPTools:
             clear=True,
         ):
             # Initialize backend
-            _init_backend()
+            # Mock DatasetRegistry to return a mimic dataset so tools work
+            mock_ds = DatasetDefinition(name="mimic-demo", tags=["mimic"])
+            with patch("m3.mcp_server.DatasetRegistry.get", return_value=mock_ds):
+                with patch(
+                    "m3.mcp_server.get_active_dataset", return_value="mimic-demo"
+                ):
+                    _init_backend()
 
-            # Test via FastMCP client
-            async with Client(mcp) as client:
-                # Test execute_mimic_query tool
-                result = await client.call_tool(
-                    "execute_mimic_query",
-                    {"sql_query": "SELECT COUNT(*) as count FROM icu_icustays"},
-                )
-                result_text = str(result)
-                assert "count" in result_text
-                assert "2" in result_text
+                    # Test via FastMCP client
+                    async with Client(mcp) as client:
+                        # Test execute_mimic_query tool
+                        result = await client.call_tool(
+                            "execute_mimic_query",
+                            {"sql_query": "SELECT COUNT(*) as count FROM icu_icustays"},
+                        )
+                        result_text = str(result)
+                        assert "count" in result_text
+                        assert "2" in result_text
 
-                # Test get_icu_stays tool
-                result = await client.call_tool(
-                    "get_icu_stays", {"patient_id": 10000032, "limit": 10}
-                )
-                result_text = str(result)
-                assert "10000032" in result_text
+                        # Test get_icu_stays tool
+                        result = await client.call_tool(
+                            "get_icu_stays", {"patient_id": 10000032, "limit": 10}
+                        )
+                        result_text = str(result)
+                        assert "10000032" in result_text
 
-                # Test get_lab_results tool
-                result = await client.call_tool(
-                    "get_lab_results", {"patient_id": 10000032, "limit": 20}
-                )
-                result_text = str(result)
-                assert "10000032" in result_text
+                        # Test get_lab_results tool
+                        result = await client.call_tool(
+                            "get_lab_results", {"patient_id": 10000032, "limit": 20}
+                        )
+                        result_text = str(result)
+                        assert "10000032" in result_text
 
-                # Test get_database_schema tool
-                result = await client.call_tool("get_database_schema", {})
-                result_text = str(result)
-                assert "icu_icustays" in result_text or "hosp_labevents" in result_text
+                        # Test get_database_schema tool
+                        result = await client.call_tool("get_database_schema", {})
+                        result_text = str(result)
+                        assert (
+                            "icu_icustays" in result_text
+                            or "hosp_labevents" in result_text
+                        )
 
     @pytest.mark.asyncio
     async def test_security_checks(self, test_db):
@@ -297,53 +346,74 @@ class TestMCPTools:
 class TestBigQueryIntegration:
     """Test BigQuery integration with mocks (no real API calls)."""
 
+    @pytest.fixture(autouse=True)
+    def reset_bq_cache(self):
+        """Reset the BigQuery client cache before each test."""
+        import m3.mcp_server
+
+        if hasattr(m3.mcp_server, "_bq_client_cache"):
+            m3.mcp_server._bq_client_cache = {"client": None, "project_id": None}
+
     @pytest.mark.skipif(
         not _bigquery_available(), reason="BigQuery dependencies not available"
     )
     @pytest.mark.asyncio
     async def test_bigquery_tools(self):
         """Test BigQuery tools functionality with mocks."""
+
+        # Mock Dataset definition for BigQuery
+        mock_ds = DatasetDefinition(
+            name="mimic-test",
+            bigquery_project_id="test-project",
+            bigquery_dataset_ids=["mimic_hosp", "mimic_icu"],
+            tags=["mimic"],
+        )
+
         with patch.dict(
             os.environ,
             {"M3_BACKEND": "bigquery", "M3_PROJECT_ID": "test-project"},
             clear=True,
         ):
-            with patch("google.cloud.bigquery.Client") as mock_client:
-                # Mock BigQuery client and query results
-                mock_job = Mock()
-                mock_df = Mock()
-                mock_df.empty = False
-                mock_df.to_string.return_value = "Mock BigQuery result"
-                mock_df.__len__ = Mock(return_value=5)
-                mock_job.to_dataframe.return_value = mock_df
+            with patch("m3.mcp_server.DatasetRegistry.get", return_value=mock_ds):
+                with patch(
+                    "m3.mcp_server.get_active_dataset", return_value="mimic-test"
+                ):
+                    with patch("google.cloud.bigquery.Client") as mock_client:
+                        # Mock BigQuery client and query results
+                        mock_job = Mock()
+                        mock_df = Mock()
+                        mock_df.empty = False
+                        mock_df.to_string.return_value = "Mock BigQuery result"
+                        mock_df.__len__ = Mock(return_value=5)
+                        mock_job.to_dataframe.return_value = mock_df
 
-                mock_client_instance = Mock()
-                mock_client_instance.query.return_value = mock_job
-                mock_client.return_value = mock_client_instance
+                        mock_client_instance = Mock()
+                        mock_client_instance.query.return_value = mock_job
+                        mock_client.return_value = mock_client_instance
 
-                _init_backend()
+                        _init_backend()
 
-                async with Client(mcp) as client:
-                    # Test execute_mimic_query tool
-                    result = await client.call_tool(
-                        "execute_mimic_query",
-                        {
-                            "sql_query": "SELECT COUNT(*) FROM `physionet-data.mimiciv_3_1_icu.icustays`"
-                        },
-                    )
-                    result_text = str(result)
-                    assert "Mock BigQuery result" in result_text
+                        async with Client(mcp) as client:
+                            # Test execute_mimic_query tool
+                            result = await client.call_tool(
+                                "execute_mimic_query",
+                                {
+                                    "sql_query": "SELECT COUNT(*) FROM `physionet-data.mimiciv_3_1_icu.icustays`"
+                                },
+                            )
+                            result_text = str(result)
+                            assert "Mock BigQuery result" in result_text
 
-                    # Test get_race_distribution tool
-                    result = await client.call_tool(
-                        "get_race_distribution", {"limit": 5}
-                    )
-                    result_text = str(result)
-                    assert "Mock BigQuery result" in result_text
+                            # Test get_race_distribution tool
+                            result = await client.call_tool(
+                                "get_race_distribution", {"limit": 5}
+                            )
+                            result_text = str(result)
+                            assert "Mock BigQuery result" in result_text
 
-                    # Verify BigQuery client was called
-                    mock_client.assert_called_once_with(project="test-project")
-                    assert mock_client_instance.query.called
+                            # Verify BigQuery client was called
+                            mock_client.assert_called_once_with(project="test-project")
+                            assert mock_client_instance.query.called
 
 
 class TestServerIntegration:

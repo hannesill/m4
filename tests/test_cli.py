@@ -162,13 +162,9 @@ def test_config_claude_infers_db_path_demo(
     result = runner.invoke(app, ["config", "claude"])
     assert result.exit_code == 0
 
-    # subprocess run should be called with inferred --db-path
+    # subprocess run should NOT be called with inferred --db-path (dynamic resolution)
     call_args = mock_subprocess.call_args[0][0]
-    assert "--db-path" in call_args
-    assert "/tmp/inferred-demo.duckdb" in call_args
-
-    # Should have asked for demo duckdb path
-    mock_get_default.assert_called()
+    assert "--db-path" not in call_args
 
 
 @patch("subprocess.run")
@@ -177,7 +173,7 @@ def test_config_claude_infers_db_path_demo(
 def test_config_claude_infers_db_path_full(
     mock_active, mock_get_default, mock_subprocess
 ):
-    mock_active.return_value = "full"
+    mock_active.return_value = "mimic-iv-full"
     mock_get_default.return_value = Path("/tmp/inferred-full.duckdb")
     mock_subprocess.return_value = MagicMock(returncode=0)
 
@@ -185,21 +181,20 @@ def test_config_claude_infers_db_path_full(
     assert result.exit_code == 0
 
     call_args = mock_subprocess.call_args[0][0]
-    assert "--db-path" in call_args
-    assert "/tmp/inferred-full.duckdb" in call_args
+    assert "--db-path" not in call_args
 
 
 @patch("m3.cli.set_active_dataset")
 @patch("m3.cli.detect_available_local_datasets")
 def test_use_full_happy_path(mock_detect, mock_set_active):
     mock_detect.return_value = {
-        "demo": {
+        "mimic-iv-demo": {
             "parquet_present": False,
             "db_present": False,
             "parquet_root": "/tmp/demo",
             "db_path": "/tmp/demo.duckdb",
         },
-        "full": {
+        "mimic-iv-full": {
             "parquet_present": True,
             "db_present": False,
             "parquet_root": "/tmp/full",
@@ -207,24 +202,24 @@ def test_use_full_happy_path(mock_detect, mock_set_active):
         },
     }
 
-    result = runner.invoke(app, ["use", "full"])
+    result = runner.invoke(app, ["use", "mimic-iv-full"])
     assert result.exit_code == 0
-    assert "Active dataset set to 'full'." in result.stdout
-    mock_set_active.assert_called_once_with("full")
+    assert "Active dataset set to 'mimic-iv-full'." in result.stdout
+    mock_set_active.assert_called_once_with("mimic-iv-full")
 
 
 @patch("m3.cli.compute_parquet_dir_size", return_value=123)
-@patch("m3.cli.get_active_dataset", return_value="full")
+@patch("m3.cli.get_active_dataset", return_value="mimic-iv-full")
 @patch("m3.cli.detect_available_local_datasets")
 def test_status_happy_path(mock_detect, mock_active, mock_size):
     mock_detect.return_value = {
-        "demo": {
+        "mimic-iv-demo": {
             "parquet_present": True,
             "db_present": False,
             "parquet_root": "/tmp/demo",
             "db_path": "/tmp/demo.duckdb",
         },
-        "full": {
+        "mimic-iv-full": {
             "parquet_present": True,
             "db_present": False,
             "parquet_root": "/tmp/full",
@@ -234,6 +229,6 @@ def test_status_happy_path(mock_detect, mock_active, mock_size):
 
     result = runner.invoke(app, ["status"])
     assert result.exit_code == 0
-    assert "Active dataset: full" in result.stdout
+    assert "Active dataset: mimic-iv-full" in result.stdout
     size_gb = 123 / (1024**3)
     assert f"parquet_size_gb: {size_gb:.4f} GB" in result.stdout
