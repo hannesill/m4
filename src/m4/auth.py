@@ -1,5 +1,5 @@
 """
-OAuth2 Authentication Module for M3 MCP Server
+OAuth2 Authentication Module for M4 MCP Server
 Provides secure authentication using OAuth2 with JWT tokens.
 """
 
@@ -15,7 +15,7 @@ import jwt
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from m3.config import logger
+from m4.config import logger
 
 
 class AuthenticationError(Exception):
@@ -34,45 +34,45 @@ class OAuth2Config:
     """OAuth2 configuration management."""
 
     def __init__(self):
-        self.enabled = os.getenv("M3_OAUTH2_ENABLED", "false").lower() == "true"
+        self.enabled = os.getenv("M4_OAUTH2_ENABLED", "false").lower() == "true"
 
         # OAuth2 Provider Configuration
-        self.issuer_url = os.getenv("M3_OAUTH2_ISSUER_URL", "")
-        self.client_id = os.getenv("M3_OAUTH2_CLIENT_ID", "")
-        self.client_secret = os.getenv("M3_OAUTH2_CLIENT_SECRET", "")
-        self.audience = os.getenv("M3_OAUTH2_AUDIENCE", "")
+        self.issuer_url = os.getenv("M4_OAUTH2_ISSUER_URL", "")
+        self.client_id = os.getenv("M4_OAUTH2_CLIENT_ID", "")
+        self.client_secret = os.getenv("M4_OAUTH2_CLIENT_SECRET", "")
+        self.audience = os.getenv("M4_OAUTH2_AUDIENCE", "")
 
         # Scopes required for access
         self.required_scopes = self._parse_scopes(
-            os.getenv("M3_OAUTH2_REQUIRED_SCOPES", "read:mimic-data")
+            os.getenv("M4_OAUTH2_REQUIRED_SCOPES", "read:mimic-data")
         )
 
         # Token validation settings
         self.validate_exp = (
-            os.getenv("M3_OAUTH2_VALIDATE_EXP", "true").lower() == "true"
+            os.getenv("M4_OAUTH2_VALIDATE_EXP", "true").lower() == "true"
         )
         self.validate_aud = (
-            os.getenv("M3_OAUTH2_VALIDATE_AUD", "true").lower() == "true"
+            os.getenv("M4_OAUTH2_VALIDATE_AUD", "true").lower() == "true"
         )
         self.validate_iss = (
-            os.getenv("M3_OAUTH2_VALIDATE_ISS", "true").lower() == "true"
+            os.getenv("M4_OAUTH2_VALIDATE_ISS", "true").lower() == "true"
         )
 
         # JWKS settings
-        self.jwks_url = os.getenv("M3_OAUTH2_JWKS_URL", "")
+        self.jwks_url = os.getenv("M4_OAUTH2_JWKS_URL", "")
         self.jwks_cache_ttl = int(
-            os.getenv("M3_OAUTH2_JWKS_CACHE_TTL", "3600")
+            os.getenv("M4_OAUTH2_JWKS_CACHE_TTL", "3600")
         )  # 1 hour
 
         # Rate limiting
         self.rate_limit_enabled = (
-            os.getenv("M3_OAUTH2_RATE_LIMIT_ENABLED", "true").lower() == "true"
+            os.getenv("M4_OAUTH2_RATE_LIMIT_ENABLED", "true").lower() == "true"
         )
         self.rate_limit_requests = int(
-            os.getenv("M3_OAUTH2_RATE_LIMIT_REQUESTS", "100")
+            os.getenv("M4_OAUTH2_RATE_LIMIT_REQUESTS", "100")
         )
         self.rate_limit_window = int(
-            os.getenv("M3_OAUTH2_RATE_LIMIT_WINDOW", "3600")
+            os.getenv("M4_OAUTH2_RATE_LIMIT_WINDOW", "3600")
         )  # 1 hour
 
         # Cache for JWKS and validation
@@ -90,10 +90,10 @@ class OAuth2Config:
     def _validate_config(self):
         """Validate OAuth2 configuration."""
         if not self.issuer_url:
-            raise ValueError("M3_OAUTH2_ISSUER_URL is required when OAuth2 is enabled")
+            raise ValueError("M4_OAUTH2_ISSUER_URL is required when OAuth2 is enabled")
 
         if not self.audience:
-            raise ValueError("M3_OAUTH2_AUDIENCE is required when OAuth2 is enabled")
+            raise ValueError("M4_OAUTH2_AUDIENCE is required when OAuth2 is enabled")
 
         if not self.jwks_url:
             # Auto-discover JWKS URL from issuer
@@ -313,7 +313,7 @@ def require_oauth2(func):
             return func(*args, **kwargs)
 
         # Extract token from environment (in real implementation, this would come from request headers)
-        token = os.getenv("M3_OAUTH2_TOKEN", "")
+        token = os.getenv("M4_OAUTH2_TOKEN", "")
         if not token:
             return "Error: Missing OAuth2 access token"
 
@@ -353,7 +353,7 @@ def is_oauth2_enabled() -> bool:
 
 def generate_test_token(
     issuer: str = "https://test-issuer.example.com",
-    audience: str = "m3-api",
+    audience: str = "m4-api",
     subject: str = "test-user",
     scopes: list[str] | None = None,
     expires_in: int = 3600,

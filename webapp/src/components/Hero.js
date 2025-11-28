@@ -4,7 +4,7 @@ const Hero = () => {
   const [isCopied, setIsCopied] = useState(false);
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText('pip install m3-mcp')
+    navigator.clipboard.writeText('pip install m4-mcp')
       .then(() => {
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
@@ -26,8 +26,8 @@ const Hero = () => {
       <div className="container">
         <div className="hero-content">
           <div className="hero-text">
-            <h1>Hello, Researchers!<br />Meet m3</h1>
-            <p className="subtitle">m3 is a powerful Model Context Protocol for seamless interaction with the MIMIC database</p>
+            <h1>Hello, Researchers!<br />Meet m4</h1>
+            <p className="subtitle">m4 is a powerful Model Context Protocol for seamless interaction with the MIMIC database</p>
             <p className="description">Free and open-source tool that enables researchers to query and analyze the world's largest publicly available healthcare database with ease</p>
             <div className="hero-cta-group">
               <button onClick={() => handleScroll('paper')} className="cta-button">
@@ -37,7 +37,7 @@ const Hero = () => {
                 <span role="img" aria-label={isCopied ? 'check mark' : 'laptop'}>
                   {isCopied ? '✅' : '💻'}
                 </span>
-                {isCopied ? 'Copied!' : 'pip install m3-mcp'}
+                {isCopied ? 'Copied!' : 'pip install m4-mcp'}
               </button>
             </div>
           </div>
@@ -52,12 +52,12 @@ const Hero = () => {
                         <div className="traffic-light yellow"></div>
                         <div className="traffic-light green"></div>
                       </div>
-                      <div className="app-title">m3 MIMIC Dashboard</div>
+                      <div className="app-title">m4 MIMIC Dashboard</div>
                     </div>
                     <div className="dashboard-image-container">
                       <img
-                        src="/m3/banner1.png"
-                        alt="m3 MIMIC Dashboard"
+                        src="/m4/banner1.png"
+                        alt="m4 MIMIC Dashboard"
                         className="dashboard-banner"
                       />
                     </div>

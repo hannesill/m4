@@ -4,7 +4,7 @@ const Header = () => {
   const [stars, setStars] = useState(3);
 
   useEffect(() => {
-    fetch('https://api.github.com/repos/rafiattrach/m3')
+    fetch('https://api.github.com/repos/rafiattrach/m4')
       .then(response => {
         if (!response.ok) {
           return;
@@ -51,7 +51,7 @@ const Header = () => {
               padding: 0
             }}
           >
-            <img src={process.env.PUBLIC_URL + '/m3_logo_transparent.png'} alt="M3" style={{ height: '100px', width: 'auto', marginTop: '15px' }} />
+            <img src={process.env.PUBLIC_URL + '/m4_logo_transparent.png'} alt="M4" style={{ height: '100px', width: 'auto', marginTop: '15px' }} />
           </button>
         </div>
         <ul className="nav-links">
@@ -61,7 +61,7 @@ const Header = () => {
         </ul>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <a
-            href="https://pypi.org/project/m3-mcp/"
+            href="https://pypi.org/project/m4-mcp/"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -76,14 +76,14 @@ const Header = () => {
           >
             <span className="star-count">
               <img
-                src="/m3/pypi_logo.svg"
+                src="/m4/pypi_logo.svg"
                 alt="PyPI"
                 style={{ height: '20px', verticalAlign: 'middle', marginRight: '8px' }}
               />
               PyPI
             </span>
           </a>
-          <a href="https://github.com/rafiattrach/m3" target="_blank" rel="noopener noreferrer" className="btn-github">
+          <a href="https://github.com/rafiattrach/m4" target="_blank" rel="noopener noreferrer" className="btn-github">
             <span className="star-count">{stars.toLocaleString()} ⭐</span> Star on GitHub
           </a>
 

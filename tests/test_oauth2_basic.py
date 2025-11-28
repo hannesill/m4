@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from m3.auth import (
+from m4.auth import (
     OAuth2Config,
     init_oauth2,
     is_oauth2_enabled,
@@ -27,31 +27,31 @@ class TestOAuth2BasicConfig:
     def test_oauth2_enabled_configuration(self):
         """Test OAuth2 enabled configuration."""
         env_vars = {
-            "M3_OAUTH2_ENABLED": "true",
-            "M3_OAUTH2_ISSUER_URL": "https://auth.example.com",
-            "M3_OAUTH2_AUDIENCE": "m3-api",
-            "M3_OAUTH2_REQUIRED_SCOPES": "read:mimic-data,write:mimic-data",
+            "M4_OAUTH2_ENABLED": "true",
+            "M4_OAUTH2_ISSUER_URL": "https://auth.example.com",
+            "M4_OAUTH2_AUDIENCE": "m4-api",
+            "M4_OAUTH2_REQUIRED_SCOPES": "read:mimic-data,write:mimic-data",
         }
 
         with patch.dict(os.environ, env_vars, clear=True):
             config = OAuth2Config()
             assert config.enabled
             assert config.issuer_url == "https://auth.example.com"
-            assert config.audience == "m3-api"
+            assert config.audience == "m4-api"
             assert config.required_scopes == {"read:mimic-data", "write:mimic-data"}
 
     def test_oauth2_invalid_configuration_raises_error(self):
         """Test that invalid OAuth2 configuration raises an error."""
-        with patch.dict(os.environ, {"M3_OAUTH2_ENABLED": "true"}, clear=True):
-            with pytest.raises(ValueError, match="M3_OAUTH2_ISSUER_URL is required"):
+        with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "true"}, clear=True):
+            with pytest.raises(ValueError, match="M4_OAUTH2_ISSUER_URL is required"):
                 OAuth2Config()
 
     def test_jwks_url_auto_discovery(self):
         """Test automatic JWKS URL discovery."""
         env_vars = {
-            "M3_OAUTH2_ENABLED": "true",
-            "M3_OAUTH2_ISSUER_URL": "https://auth.example.com",
-            "M3_OAUTH2_AUDIENCE": "m3-api",
+            "M4_OAUTH2_ENABLED": "true",
+            "M4_OAUTH2_ISSUER_URL": "https://auth.example.com",
+            "M4_OAUTH2_AUDIENCE": "m4-api",
         }
 
         with patch.dict(os.environ, env_vars, clear=True):
@@ -83,9 +83,9 @@ class TestOAuth2BasicIntegration:
     def test_init_oauth2_enabled(self):
         """Test OAuth2 initialization when enabled."""
         env_vars = {
-            "M3_OAUTH2_ENABLED": "true",
-            "M3_OAUTH2_ISSUER_URL": "https://auth.example.com",
-            "M3_OAUTH2_AUDIENCE": "m3-api",
+            "M4_OAUTH2_ENABLED": "true",
+            "M4_OAUTH2_ISSUER_URL": "https://auth.example.com",
+            "M4_OAUTH2_AUDIENCE": "m4-api",
         }
 
         with patch.dict(os.environ, env_vars, clear=True):
@@ -99,10 +99,10 @@ class TestOAuth2BasicDecorator:
     def setup_method(self):
         """Set up test fixtures."""
         # Reset global state
-        import m3.auth
+        import m4.auth
 
-        m3.auth._oauth2_config = None
-        m3.auth._oauth2_validator = None
+        m4.auth._oauth2_config = None
+        m4.auth._oauth2_validator = None
 
     def test_decorator_with_oauth2_disabled(self):
         """Test decorator behavior when OAuth2 is disabled."""
@@ -126,9 +126,9 @@ class TestOAuth2BasicDecorator:
             return "success"
 
         env_vars = {
-            "M3_OAUTH2_ENABLED": "true",
-            "M3_OAUTH2_ISSUER_URL": "https://auth.example.com",
-            "M3_OAUTH2_AUDIENCE": "m3-api",
+            "M4_OAUTH2_ENABLED": "true",
+            "M4_OAUTH2_ISSUER_URL": "https://auth.example.com",
+            "M4_OAUTH2_AUDIENCE": "m4-api",
         }
 
         with patch.dict(os.environ, env_vars, clear=True):
@@ -146,10 +146,10 @@ class TestOAuth2BasicDecorator:
             return "success"
 
         env_vars = {
-            "M3_OAUTH2_ENABLED": "true",
-            "M3_OAUTH2_ISSUER_URL": "https://auth.example.com",
-            "M3_OAUTH2_AUDIENCE": "m3-api",
-            "M3_OAUTH2_TOKEN": "invalid-token",
+            "M4_OAUTH2_ENABLED": "true",
+            "M4_OAUTH2_ISSUER_URL": "https://auth.example.com",
+            "M4_OAUTH2_AUDIENCE": "m4-api",
+            "M4_OAUTH2_TOKEN": "invalid-token",
         }
 
         with patch.dict(os.environ, env_vars, clear=True):
@@ -170,10 +170,10 @@ class TestOAuth2BasicDecorator:
         valid_jwt = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.signature"
 
         env_vars = {
-            "M3_OAUTH2_ENABLED": "true",
-            "M3_OAUTH2_ISSUER_URL": "https://auth.example.com",
-            "M3_OAUTH2_AUDIENCE": "m3-api",
-            "M3_OAUTH2_TOKEN": f"Bearer {valid_jwt}",
+            "M4_OAUTH2_ENABLED": "true",
+            "M4_OAUTH2_ISSUER_URL": "https://auth.example.com",
+            "M4_OAUTH2_AUDIENCE": "m4-api",
+            "M4_OAUTH2_TOKEN": f"Bearer {valid_jwt}",
         }
 
         with patch.dict(os.environ, env_vars, clear=True):
@@ -194,10 +194,10 @@ class TestOAuth2BasicDecorator:
         valid_jwt = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.signature"
 
         env_vars = {
-            "M3_OAUTH2_ENABLED": "true",
-            "M3_OAUTH2_ISSUER_URL": "https://auth.example.com",
-            "M3_OAUTH2_AUDIENCE": "m3-api",
-            "M3_OAUTH2_TOKEN": f"Bearer {valid_jwt}",
+            "M4_OAUTH2_ENABLED": "true",
+            "M4_OAUTH2_ISSUER_URL": "https://auth.example.com",
+            "M4_OAUTH2_AUDIENCE": "m4-api",
+            "M4_OAUTH2_TOKEN": f"Bearer {valid_jwt}",
         }
 
         with patch.dict(os.environ, env_vars, clear=True):

@@ -8,7 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from m3.mcp_client_configs.dynamic_mcp_config import MCPConfigGenerator
+from m4.mcp_client_configs.dynamic_mcp_config import MCPConfigGenerator
 
 
 class TestMCPConfigGenerator:
@@ -24,9 +24,9 @@ class TestMCPConfigGenerator:
         ):
             config = generator.generate_config()
 
-            assert config["mcpServers"]["m3"]["env"]["M3_BACKEND"] == "duckdb"
-            assert "M3_PROJECT_ID" not in config["mcpServers"]["m3"]["env"]
-            assert config["mcpServers"]["m3"]["args"] == ["-m", "m3.mcp_server"]
+            assert config["mcpServers"]["m4"]["env"]["M4_BACKEND"] == "duckdb"
+            assert "M4_PROJECT_ID" not in config["mcpServers"]["m4"]["env"]
+            assert config["mcpServers"]["m4"]["args"] == ["-m", "m4.mcp_server"]
 
     def test_generate_config_bigquery_with_project(self):
         """Test generating BigQuery config with project ID."""
@@ -40,10 +40,10 @@ class TestMCPConfigGenerator:
                 backend="bigquery", project_id="test-project"
             )
 
-            assert config["mcpServers"]["m3"]["env"]["M3_BACKEND"] == "bigquery"
-            assert config["mcpServers"]["m3"]["env"]["M3_PROJECT_ID"] == "test-project"
+            assert config["mcpServers"]["m4"]["env"]["M4_BACKEND"] == "bigquery"
+            assert config["mcpServers"]["m4"]["env"]["M4_PROJECT_ID"] == "test-project"
             assert (
-                config["mcpServers"]["m3"]["env"]["GOOGLE_CLOUD_PROJECT"]
+                config["mcpServers"]["m4"]["env"]["GOOGLE_CLOUD_PROJECT"]
                 == "test-project"
             )
 
@@ -59,9 +59,9 @@ class TestMCPConfigGenerator:
                 backend="duckdb", db_path="/custom/path/database.duckdb"
             )
 
-            assert config["mcpServers"]["m3"]["env"]["M3_BACKEND"] == "duckdb"
+            assert config["mcpServers"]["m4"]["env"]["M4_BACKEND"] == "duckdb"
             assert (
-                config["mcpServers"]["m3"]["env"]["M3_DB_PATH"]
+                config["mcpServers"]["m4"]["env"]["M4_DB_PATH"]
                 == "/custom/path/database.duckdb"
             )
 
@@ -73,10 +73,10 @@ class TestMCPConfigGenerator:
             patch.object(generator, "_validate_python_path", return_value=True),
             patch.object(generator, "_validate_directory", return_value=True),
         ):
-            config = generator.generate_config(server_name="custom-m3")
+            config = generator.generate_config(server_name="custom-m4")
 
-            assert "custom-m3" in config["mcpServers"]
-            assert "m3" not in config["mcpServers"]
+            assert "custom-m4" in config["mcpServers"]
+            assert "m4" not in config["mcpServers"]
 
     def test_generate_config_additional_env_vars(self):
         """Test generating config with additional environment variables."""
@@ -90,10 +90,10 @@ class TestMCPConfigGenerator:
                 additional_env={"DEBUG": "true", "LOG_LEVEL": "info"}
             )
 
-            env = config["mcpServers"]["m3"]["env"]
+            env = config["mcpServers"]["m4"]["env"]
             assert env["DEBUG"] == "true"
             assert env["LOG_LEVEL"] == "info"
-            assert env["M3_BACKEND"] == "duckdb"  # Default should still be there
+            assert env["M4_BACKEND"] == "duckdb"  # Default should still be there
 
     def test_validation_invalid_python_path(self):
         """Test that invalid Python path raises error."""

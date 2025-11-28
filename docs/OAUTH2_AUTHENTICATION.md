@@ -1,6 +1,6 @@
-# OAuth2 Authentication for M3
+# OAuth2 Authentication for M4
 
-This guide covers the technical details of OAuth2 authentication in M3. For basic setup, see the OAuth2 section in the main README.
+This guide covers the technical details of OAuth2 authentication in M4. For basic setup, see the OAuth2 section in the main README.
 
 ## Configuration Reference
 
@@ -8,19 +8,19 @@ This guide covers the technical details of OAuth2 authentication in M3. For basi
 
 ```bash
 # Core Configuration
-M3_OAUTH2_ENABLED=true
-M3_OAUTH2_ISSUER_URL=https://your-auth-provider.com
-M3_OAUTH2_AUDIENCE=m3-api
-M3_OAUTH2_REQUIRED_SCOPES=read:mimic-data
+M4_OAUTH2_ENABLED=true
+M4_OAUTH2_ISSUER_URL=https://your-auth-provider.com
+M4_OAUTH2_AUDIENCE=m4-api
+M4_OAUTH2_REQUIRED_SCOPES=read:mimic-data
 ```
 
 ### Optional Environment Variables
 
 ```bash
 # Advanced Configuration (all optional)
-M3_OAUTH2_JWKS_URL=https://your-auth-provider.com/.well-known/jwks.json  # Auto-discovered if not set
-M3_OAUTH2_RATE_LIMIT_REQUESTS=100    # Default: 100 requests per hour
-M3_OAUTH2_JWKS_CACHE_TTL=3600        # Default: 1 hour
+M4_OAUTH2_JWKS_URL=https://your-auth-provider.com/.well-known/jwks.json  # Auto-discovered if not set
+M4_OAUTH2_RATE_LIMIT_REQUESTS=100    # Default: 100 requests per hour
+M4_OAUTH2_JWKS_CACHE_TTL=3600        # Default: 1 hour
 ```
 
 ## Token Requirements
@@ -34,8 +34,8 @@ Your JWT token must include:
 2. **Claims**:
    ```json
    {
-     "iss": "https://your-auth-provider.com",    // Must match M3_OAUTH2_ISSUER_URL
-     "aud": "m3-api",                           // Must match M3_OAUTH2_AUDIENCE
+     "iss": "https://your-auth-provider.com",    // Must match M4_OAUTH2_ISSUER_URL
+     "aud": "m4-api",                           // Must match M4_OAUTH2_AUDIENCE
      "scope": "read:mimic-data",                // Must include all required scopes
      "exp": 1234567890                         // Must not be expired
    }
@@ -45,8 +45,8 @@ Your JWT token must include:
 
 ### Auth0
 ```bash
-M3_OAUTH2_ISSUER_URL=https://your-domain.auth0.com/
-M3_OAUTH2_AUDIENCE=https://api.your-domain.com
+M4_OAUTH2_ISSUER_URL=https://your-domain.auth0.com/
+M4_OAUTH2_AUDIENCE=https://api.your-domain.com
 ```
 
 ### Other Providers
@@ -60,7 +60,7 @@ Any OAuth2 provider supporting JWT tokens with RS256/ES256 signing will work. Ke
 ### Common Error Messages
 
 1. `Missing OAuth2 access token`
-   - Set `M3_OAUTH2_TOKEN` environment variable
+   - Set `M4_OAUTH2_TOKEN` environment variable
    - Include "Bearer " prefix (optional)
 
 2. `Invalid token signature`
@@ -75,7 +75,7 @@ Any OAuth2 provider supporting JWT tokens with RS256/ES256 signing will work. Ke
 ### Debug Mode
 
 ```bash
-export M3_OAUTH2_DEBUG=true  # Enables detailed logging
+export M4_OAUTH2_DEBUG=true  # Enables detailed logging
 ```
 
 ## Security Best Practices

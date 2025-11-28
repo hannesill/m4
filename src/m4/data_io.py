@@ -10,7 +10,7 @@ import requests
 import typer
 from bs4 import BeautifulSoup
 
-from m3.config import (
+from m4.config import (
     get_dataset_config,
     get_dataset_parquet_root,
     get_default_database_path,
@@ -235,9 +235,9 @@ def _csv_to_parquet_all(src_root: Path, parquet_root: Path) -> bool:
     - Streams via DuckDB COPY to keep memory low
     - Low concurrency to avoid parallel memory spikes
     - Tunable via env:
-        M3_CONVERT_MAX_WORKERS (default: 4)
-        M3_DUCKDB_MEM         (default: 3GB)
-        M3_DUCKDB_THREADS     (default: 2)
+        M4_CONVERT_MAX_WORKERS (default: 4)
+        M4_DUCKDB_MEM         (default: 3GB)
+        M4_DUCKDB_THREADS     (default: 2)
     """
     parquet_paths: list[Path] = []
     csv_files = list(src_root.rglob("*.csv.gz"))
@@ -260,8 +260,8 @@ def _csv_to_parquet_all(src_root: Path, parquet_root: Path) -> bool:
 
         con = duckdb.connect()
         try:
-            mem_limit = os.environ.get("M3_DUCKDB_MEM", "3GB")
-            threads = int(os.environ.get("M3_DUCKDB_THREADS", "2"))
+            mem_limit = os.environ.get("M4_DUCKDB_MEM", "3GB")
+            threads = int(os.environ.get("M4_DUCKDB_THREADS", "2"))
             con.execute(f"SET memory_limit='{mem_limit}'")
             con.execute(f"PRAGMA threads={threads}")
 
@@ -285,7 +285,7 @@ def _csv_to_parquet_all(src_root: Path, parquet_root: Path) -> bool:
             con.close()
 
     start_time = time.time()
-    max_workers = max(1, int(os.environ.get("M3_CONVERT_MAX_WORKERS", "4")))
+    max_workers = max(1, int(os.environ.get("M4_CONVERT_MAX_WORKERS", "4")))
 
     total_files = len(csv_files)
     completed = 0
@@ -349,7 +349,7 @@ def init_duckdb_from_parquet(dataset_name: str, db_target_path: Path) -> bool:
     Initialize or refresh a DuckDB for the dataset by creating views over Parquet.
 
     Parquet root must exist under:
-    <project_root>/m3_data/parquet/<dataset_name>/
+    <project_root>/m4_data/parquet/<dataset_name>/
     """
     dataset_config = get_dataset_config(dataset_name)
     if not dataset_config:
@@ -482,7 +482,7 @@ def ensure_duckdb_for_dataset(
     parquet_root = get_dataset_parquet_root(dataset_key)
     if not parquet_root or not parquet_root.exists():
         logger.error(
-            f"Parquet directory missing: {parquet_root}. Expected at <project_root>/m3_data/parquet/{dataset_key}/"
+            f"Parquet directory missing: {parquet_root}. Expected at <project_root>/m4_data/parquet/{dataset_key}/"
         )
         return False, db_path, parquet_root
     ok = _create_duckdb_with_views(db_path, parquet_root)

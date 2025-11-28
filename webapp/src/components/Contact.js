@@ -4,7 +4,7 @@ import emailjs from '@emailjs/browser';
 const Contact = () => {
   // EmailJS configuration with your actual credentials
   const EMAILJS_CONFIG = {
-    serviceId: 'm3_contact_service',
+    serviceId: 'm4_contact_service',
     templateId: 'template_sn5rm19',
     publicKey: 'aUrTfsE6oJtpIe1ac'
   };

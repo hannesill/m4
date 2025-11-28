@@ -11,6 +11,6 @@ dist/
 build/
 *.egg-info
 # Keep only the demo DB
-m3_data/**
-!m3_data/databases/
-!m3_data/databases/mimic_iv_demo.db
+m4_data/**
+!m4_data/databases/
+!m4_data/databases/mimic_iv_demo.db

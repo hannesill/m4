@@ -3,7 +3,7 @@ requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
 [project]
-name = "m3-mcp"
+name = "m4-mcp"
 dynamic = ["version"]
 description = "MIMIC-IV + MCP + Models: Local MIMIC-IV querying with LLMs via Model Context Protocol"
 requires-python = ">=3.10"
@@ -64,20 +64,20 @@ dev = [
 ]
 
 [project.scripts]
-m3 = "m3.cli:app"
-m3-mcp = "m3.mcp_server:main"  # Primary entry point for simplicity (enables `uvx m3-mcp`)
-m3-mcp-server = "m3.mcp_server:main"  # Kept for backwards compatibility
+m4 = "m4.cli:app"
+m4-mcp = "m4.mcp_server:main"  # Primary entry point for simplicity (enables `uvx m4-mcp`)
+m4-mcp-server = "m4.mcp_server:main"  # Kept for backwards compatibility
 
 [project.urls]
-Homepage = "https://github.com/rafiattrach/m3"
-Repository = "https://github.com/rafiattrach/m3"
-Documentation = "https://github.com/rafiattrach/m3#readme"
-Issues = "https://github.com/rafiattrach/m3/issues"
-Changelog = "https://github.com/rafiattrach/m3/releases"
+Homepage = "https://github.com/rafiattrach/m4"
+Repository = "https://github.com/rafiattrach/m4"
+Documentation = "https://github.com/rafiattrach/m4#readme"
+Issues = "https://github.com/rafiattrach/m4/issues"
+Changelog = "https://github.com/rafiattrach/m4/releases"
 
 [tool.pdm.version]
 source = "file"
-path = "src/m3/__init__.py"
+path = "src/m4/__init__.py"
 
 [tool.ruff]
 line-length = 88
@@ -102,7 +102,7 @@ ignore = [
 # Ruff's default formatter will be used.
 
 [tool.ruff.lint.isort]
-known-first-party = ["m3"]
+known-first-party = ["m4"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

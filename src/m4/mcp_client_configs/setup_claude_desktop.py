@@ -1,6 +1,6 @@
 """
-Setup script for M3 MCP Server with Claude Desktop.
-Automatically configures Claude Desktop to use the M3 MCP server.
+Setup script for M4 MCP Server with Claude Desktop.
+Automatically configures Claude Desktop to use the M4 MCP server.
 """
 
 import json
@@ -40,7 +40,7 @@ def get_claude_config_path():
 
 
 def get_current_directory():
-    """Get the current M3 project directory."""
+    """Get the current M4 project directory."""
     p = Path(__file__).resolve()
     while p != p.parent and not (p / "pyproject.toml").exists():
         p = p.parent
@@ -72,43 +72,43 @@ def create_mcp_config(
 
     config = {
         "mcpServers": {
-            "m3": {
+            "m4": {
                 "command": python_path,
-                "args": ["-m", "m3.mcp_server"],
+                "args": ["-m", "m4.mcp_server"],
                 "cwd": str(current_dir),
-                "env": {"PYTHONPATH": str(current_dir / "src"), "M3_BACKEND": backend},
+                "env": {"PYTHONPATH": str(current_dir / "src"), "M4_BACKEND": backend},
             }
         }
     }
 
     # Add backend-specific environment variables
     if backend == "duckdb" and db_path:
-        config["mcpServers"]["m3"]["env"]["M3_DB_PATH"] = db_path
+        config["mcpServers"]["m4"]["env"]["M4_DB_PATH"] = db_path
     elif backend == "bigquery" and project_id:
-        config["mcpServers"]["m3"]["env"]["M3_PROJECT_ID"] = project_id
-        config["mcpServers"]["m3"]["env"]["GOOGLE_CLOUD_PROJECT"] = project_id
+        config["mcpServers"]["m4"]["env"]["M4_PROJECT_ID"] = project_id
+        config["mcpServers"]["m4"]["env"]["GOOGLE_CLOUD_PROJECT"] = project_id
 
     # Add OAuth2 configuration if enabled
     if oauth2_enabled and oauth2_config:
-        config["mcpServers"]["m3"]["env"].update(
+        config["mcpServers"]["m4"]["env"].update(
             {
-                "M3_OAUTH2_ENABLED": "true",
-                "M3_OAUTH2_ISSUER_URL": oauth2_config.get("issuer_url", ""),
-                "M3_OAUTH2_AUDIENCE": oauth2_config.get("audience", ""),
-                "M3_OAUTH2_REQUIRED_SCOPES": oauth2_config.get(
+                "M4_OAUTH2_ENABLED": "true",
+                "M4_OAUTH2_ISSUER_URL": oauth2_config.get("issuer_url", ""),
+                "M4_OAUTH2_AUDIENCE": oauth2_config.get("audience", ""),
+                "M4_OAUTH2_REQUIRED_SCOPES": oauth2_config.get(
                     "required_scopes", "read:mimic-data"
                 ),
-                "M3_OAUTH2_JWKS_URL": oauth2_config.get("jwks_url", ""),
+                "M4_OAUTH2_JWKS_URL": oauth2_config.get("jwks_url", ""),
             }
         )
 
         # Optional OAuth2 settings
         if oauth2_config.get("client_id"):
-            config["mcpServers"]["m3"]["env"]["M3_OAUTH2_CLIENT_ID"] = oauth2_config[
+            config["mcpServers"]["m4"]["env"]["M4_OAUTH2_CLIENT_ID"] = oauth2_config[
                 "client_id"
             ]
         if oauth2_config.get("rate_limit_requests"):
-            config["mcpServers"]["m3"]["env"]["M3_OAUTH2_RATE_LIMIT_REQUESTS"] = str(
+            config["mcpServers"]["m4"]["env"]["M4_OAUTH2_RATE_LIMIT_REQUESTS"] = str(
                 oauth2_config["rate_limit_requests"]
             )
 
@@ -122,7 +122,7 @@ def setup_claude_desktop(
     oauth2_enabled=False,
     oauth2_config=None,
 ):
-    """Setup Claude Desktop with M3 MCP server."""
+    """Setup Claude Desktop with M4 MCP server."""
     try:
         claude_config_path = get_claude_config_path()
         print(f"Found Claude Desktop config at: {claude_config_path}")
@@ -164,7 +164,7 @@ def setup_claude_desktop(
 
         if backend == "duckdb":
             db_path_display = (
-                db_path or "default (m3_data/databases/mimic_iv_demo.duckdb)"
+                db_path or "default (m4_data/databases/mimic_iv_demo.duckdb)"
             )
             print(f"💾 Database: {db_path_display}")
         elif backend == "bigquery":
@@ -183,7 +183,7 @@ def setup_claude_desktop(
             print("   - OAuth2 authentication is now required for all API calls")
             print("   - Ensure you have a valid access token with the required scopes")
             print(
-                "   - Set M3_OAUTH2_TOKEN environment variable with your Bearer token"
+                "   - Set M4_OAUTH2_TOKEN environment variable with your Bearer token"
             )
         else:
             print("🔓 OAuth2 Authentication: Disabled")
@@ -202,7 +202,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Setup M3 MCP Server with Claude Desktop"
+        description="Setup M4 MCP Server with Claude Desktop"
     )
     parser.add_argument(
         "--backend",
@@ -222,7 +222,7 @@ def main():
     parser.add_argument(
         "--oauth2-issuer", help="OAuth2 issuer URL (e.g., https://auth.example.com)"
     )
-    parser.add_argument("--oauth2-audience", help="OAuth2 audience (e.g., m3-api)")
+    parser.add_argument("--oauth2-audience", help="OAuth2 audience (e.g., m4-api)")
     parser.add_argument(
         "--oauth2-scopes",
         default="read:mimic-data",
@@ -245,7 +245,7 @@ def main():
         print("❌ Error: --project-id is required when using --backend bigquery")
         exit(1)
 
-    print("🚀 Setting up M3 MCP Server with Claude Desktop...")
+    print("🚀 Setting up M4 MCP Server with Claude Desktop...")
     print(f"📊 Backend: {args.backend}")
 
     # Prepare OAuth2 configuration if enabled
@@ -272,7 +272,7 @@ def main():
     )
 
     if success:
-        print("\n🎉 Setup complete! You can now use M3 tools in Claude Desktop.")
+        print("\n🎉 Setup complete! You can now use M4 tools in Claude Desktop.")
         print(
             "\n💡 Try asking Claude: 'What tools do you have available for MIMIC-IV data?'"
         )

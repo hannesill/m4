@@ -3,10 +3,10 @@ import React, { useEffect, useRef, useMemo } from 'react';
 const Demos = () => {
   const videoContainersRef = useRef([]);
   const videos = useMemo(() => [
-    { url: 'm3_website_1.mp4', duration: '2:33 min' },
-    { url: 'm3_website_2.mp4', duration: '1:18 min' },
-    { url: 'm3_website_3.mp4', duration: '1:25 min' },
-    { url: 'm3_website_4.mp4', duration: '5:49 min' },
+    { url: 'm4_website_1.mp4', duration: '2:33 min' },
+    { url: 'm4_website_2.mp4', duration: '1:18 min' },
+    { url: 'm4_website_3.mp4', duration: '1:25 min' },
+    { url: 'm4_website_4.mp4', duration: '5:49 min' },
   ], []);
 
   useEffect(() => {
@@ -14,7 +14,7 @@ const Demos = () => {
       if (!container) return;
 
       const videoUrl = videoInfo.url;
-      const videoPath = `/m3/videos/${videoUrl}`;
+      const videoPath = `/m4/videos/${videoUrl}`;
       const video = document.createElement('video');
       video.controls = true;
       video.autoplay = true;
@@ -51,8 +51,8 @@ const Demos = () => {
     <section className="demo-section" id="demos">
       <div className="container">
         <div className="section-header fade-in">
-          <h2>See m3 in action</h2>
-          <p>Watch step-by-step tutorials to get started with m3 and MIMIC-IV medical data</p>
+          <h2>See m4 in action</h2>
+          <p>Watch step-by-step tutorials to get started with m4 and MIMIC-IV medical data</p>
         </div>
 
         <div className="demo-grid">
@@ -74,7 +74,7 @@ const Demos = () => {
             </div>
             <div className="demo-content">
               <h3>2. Installation Guide</h3>
-              <p>Two ways to install m3: pip install m3-mcp from PyPI or clone from GitHub. Choose the method that works best for your setup.</p>
+              <p>Two ways to install m4: pip install m4-mcp from PyPI or clone from GitHub. Choose the method that works best for your setup.</p>
             </div>
           </div>
 

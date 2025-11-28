@@ -6,8 +6,8 @@ from typing import Annotated
 
 import typer
 
-from m3 import __version__
-from m3.config import (
+from m4 import __version__
+from m4.config import (
     detect_available_local_datasets,
     get_active_dataset,
     get_dataset_config,
@@ -16,18 +16,18 @@ from m3.config import (
     logger,
     set_active_dataset,
 )
-from m3.data_io import (
+from m4.data_io import (
     compute_parquet_dir_size,
     convert_csv_to_parquet,
     download_dataset,
     init_duckdb_from_parquet,
     verify_table_rowcount,
 )
-from m3.datasets import DatasetRegistry
+from m4.datasets import DatasetRegistry
 
 app = typer.Typer(
-    name="m3",
-    help="M3 CLI: Initialize local clinical datasets like MIMIC-IV Demo.",
+    name="m4",
+    help="M4 CLI: Initialize local clinical datasets like MIMIC-IV Demo.",
     add_completion=False,
     rich_markup_mode="markdown",
 )
@@ -35,7 +35,7 @@ app = typer.Typer(
 
 def version_callback(value: bool):
     if value:
-        typer.echo(f"M3 CLI Version: {__version__}")
+        typer.echo(f"M4 CLI Version: {__version__}")
         raise typer.Exit()
 
 
@@ -54,23 +54,23 @@ def main_callback(
     verbose: Annotated[
         bool,
         typer.Option(
-            "--verbose", "-V", help="Enable DEBUG level logging for m3 components."
+            "--verbose", "-V", help="Enable DEBUG level logging for m4 components."
         ),
     ] = False,
 ):
     """
-    Main callback for the M3 CLI. Sets logging level.
+    Main callback for the M4 CLI. Sets logging level.
     """
-    m3_logger = logging.getLogger("m3")  # Get the logger from config.py
+    m4_logger = logging.getLogger("m4")  # Get the logger from config.py
     if verbose:
-        m3_logger.setLevel(logging.DEBUG)
-        for handler in m3_logger.handlers:  # Ensure handlers also respect the new level
+        m4_logger.setLevel(logging.DEBUG)
+        for handler in m4_logger.handlers:  # Ensure handlers also respect the new level
             handler.setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled via CLI flag.")
     else:
         # Default to INFO as set in config.py
-        m3_logger.setLevel(logging.INFO)
-        for handler in m3_logger.handlers:
+        m4_logger.setLevel(logging.INFO)
+        for handler in m4_logger.handlers:
             handler.setLevel(logging.INFO)
 
 
@@ -174,7 +174,7 @@ def dataset_init_cmd(
             wget_cmd = f"wget -r -N -c -np --user YOUR_USERNAME --ask-password {base_url} -P {csv_root}"
             typer.secho(f"   {wget_cmd}", fg=typer.colors.CYAN)
             typer.echo("")
-            typer.echo(f"3. Re-run 'm3 init {dataset_key}'")
+            typer.echo(f"3. Re-run 'm4 init {dataset_key}'")
             return
 
         listing_url = dataset_config.get("file_listing_url")
@@ -210,7 +210,7 @@ def dataset_init_cmd(
                     "1) Download the raw data manually.\n"
                     f"2) Place the raw CSV.gz files under: {csv_root_default}\n"
                     "   (or use --src to point to their location)\n"
-                    f"3) Then re-run: m3 init {dataset_key}"
+                    f"3) Then re-run: m4 init {dataset_key}"
                 ),
                 fg=typer.colors.WHITE,
             )
@@ -354,7 +354,7 @@ def use_cmd(
         )
         typer.echo(
             "   This is fine if you are using the BigQuery backend.\n"
-            "   If you intend to use DuckDB (local), run 'm3 init' first."
+            "   If you intend to use DuckDB (local), run 'm4 init' first."
         )
     else:
         typer.secho(
@@ -476,7 +476,7 @@ def config_cmd(
             "--server-name",
             help="Name for the MCP server",
         ),
-    ] = "m3",
+    ] = "m4",
     output: Annotated[
         str | None,
         typer.Option(
@@ -495,25 +495,25 @@ def config_cmd(
     ] = False,
 ):
     """
-    Configure M3 MCP server for various clients.
+    Configure M4 MCP server for various clients.
 
     Examples:
 
-    • m3 config                    # Interactive universal config generator
+    • m4 config                    # Interactive universal config generator
 
-    • m3 config claude             # Auto-configure Claude Desktop
+    • m4 config claude             # Auto-configure Claude Desktop
 
-    • m3 config --quick            # Quick universal config with defaults
+    • m4 config --quick            # Quick universal config with defaults
 
-    • m3 config claude --backend bigquery --project-id my-project
+    • m4 config claude --backend bigquery --project-id my-project
     """
     try:
-        from m3 import mcp_client_configs
+        from m4 import mcp_client_configs
 
         script_dir = Path(mcp_client_configs.__file__).parent
     except ImportError:
         typer.secho(
-            "❌ Error: Could not find m3.mcp_client_configs package",
+            "❌ Error: Could not find m4.mcp_client_configs package",
             fg=typer.colors.RED,
             err=True,
         )
@@ -615,7 +615,7 @@ def config_cmd(
         if backend != "duckdb":
             cmd.extend(["--backend", backend])
 
-        if server_name != "m3":
+        if server_name != "m4":
             cmd.extend(["--server-name", server_name])
 
         if python_path:
@@ -633,9 +633,9 @@ def config_cmd(
             cmd.extend(["--output", output])
 
         if quick:
-            typer.echo("🔧 Generating M3 MCP configuration...")
+            typer.echo("🔧 Generating M4 MCP configuration...")
         else:
-            typer.echo("🔧 Starting interactive M3 MCP configuration...")
+            typer.echo("🔧 Starting interactive M4 MCP configuration...")
 
         try:
             result = subprocess.run(cmd, check=True, capture_output=False)

@@ -6,13 +6,13 @@ const ArchitectureDiagram = () => {
       <div className="container">
         <div className="section-header fade-in">
           <h2>Architecture Overview</h2>
-          <p>How m3 Model Context Protocol connects AI models to MIMIC-IV healthcare data</p>
+          <p>How m4 Model Context Protocol connects AI models to MIMIC-IV healthcare data</p>
         </div>
 
         <div className="architecture-diagram fade-in">
           <img
-            src="/m3/m3_architecture.png"
-            alt="m3 Architecture Diagram"
+            src="/m4/m4_architecture.png"
+            alt="m4 Architecture Diagram"
             style={{
               width: '80%',
               maxWidth: '800px',

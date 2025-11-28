@@ -1,5 +1,5 @@
 """
-M3 MCP Server - MIMIC-IV + MCP + Models
+M4 MCP Server - MIMIC-IV + MCP + Models
 Provides MCP tools for querying MIMIC-IV data via DuckDB (local) or BigQuery.
 """
 
@@ -10,12 +10,12 @@ import duckdb
 import sqlparse
 from fastmcp import FastMCP
 
-from m3.auth import init_oauth2, require_oauth2
-from m3.config import get_active_dataset, get_default_database_path
-from m3.datasets import DatasetRegistry
+from m4.auth import init_oauth2, require_oauth2
+from m4.config import get_active_dataset, get_default_database_path
+from m4.datasets import DatasetRegistry
 
 # Create FastMCP server instance
-mcp = FastMCP("m3")
+mcp = FastMCP("m4")
 
 # Global variables for backend configuration
 _backend = None
@@ -44,7 +44,7 @@ def _get_active_dataset_def():
 def _get_db_path():
     """Get the current DuckDB path."""
     # 1. Env var overrides everything (static mode)
-    env_path = os.getenv("M3_DB_PATH")
+    env_path = os.getenv("M4_DB_PATH")
     if env_path:
         return env_path
 
@@ -68,7 +68,7 @@ def _get_bq_client():
 
     # Determine target project ID
     # Priority: Env Var > Dataset Config > Default
-    env_project = os.getenv("M3_PROJECT_ID")
+    env_project = os.getenv("M4_PROJECT_ID")
     ds_def = _get_active_dataset_def()
     ds_project = ds_def.bigquery_project_id if ds_def else None
 
@@ -206,7 +206,7 @@ def _init_backend():
     # Initialize OAuth2 authentication
     init_oauth2()
 
-    _backend = os.getenv("M3_BACKEND", "duckdb")
+    _backend = os.getenv("M4_BACKEND", "duckdb")
 
     if _backend not in ["duckdb", "bigquery"]:
         raise ValueError(
@@ -243,7 +243,7 @@ def _execute_duckdb_query(sql_query: str) -> str:
     """Execute DuckDB query - internal function."""
     db_path = _get_db_path()
     if not db_path or not Path(db_path).exists():
-        return "❌ Error: Database file not found. Please initialize a dataset using 'm3 init'."
+        return "❌ Error: Database file not found. Please initialize a dataset using 'm4 init'."
 
     try:
         conn = duckdb.connect(db_path)

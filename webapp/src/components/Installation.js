@@ -7,8 +7,8 @@ const Installation = () => {
     const loadVideo = (container) => {
       if (!container) return;
 
-      const videoUrl = 'm3_website_2.mp4';
-      const videoPath = `/m3/videos/${videoUrl}`;
+      const videoUrl = 'm4_website_2.mp4';
+      const videoPath = `/m4/videos/${videoUrl}`;
       const video = document.createElement('video');
       video.controls = true;
       video.autoplay = true;
@@ -45,7 +45,7 @@ const Installation = () => {
       <div className="container" style={{ padding: '60px 0' }}>
         <div className="section-header">
           <h2>Installation Guide</h2>
-          <p>Follow the steps below to get m3 up and running on your system.</p>
+          <p>Follow the steps below to get m4 up and running on your system.</p>
         </div>
         <div className="demo-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
           <div className="video-container" ref={videoContainerRef}>
@@ -54,7 +54,7 @@ const Installation = () => {
           </div>
           <div className="demo-content">
             <h3>Watch the Installation Walkthrough</h3>
-            <p>This video provides a step-by-step guide to installing the m3 protocol and connecting to the MIMIC database for the first time.</p>
+            <p>This video provides a step-by-step guide to installing the m4 protocol and connecting to the MIMIC database for the first time.</p>
           </div>
         </div>
       </div>
@@ -79,10 +79,10 @@ const Installation = () => {
             python -m venv .venv<br/>
             source .venv/bin/activate  <span className="comment"># Windows: .venv\Scripts\activate</span>
           </div>
-          <h4>Step 2: Install M3</h4>
+          <h4>Step 2: Install M4</h4>
           <div className="code-snippet">
-            <span className="comment"># Install M3</span><br/>
-            pip install m3-mcp
+            <span className="comment"># Install M4</span><br/>
+            pip install m4-mcp
           </div>
         </div>
 
@@ -91,8 +91,8 @@ const Installation = () => {
           <h4>Step 1: Clone and Navigate</h4>
           <div className="code-snippet">
             <span className="comment"># Clone the repository</span><br/>
-            git clone https://github.com/rafiattrach/m3.git<br/>
-            cd m3
+            git clone https://github.com/rafiattrach/m4.git<br/>
+            cd m4
           </div>
           <h4>Step 2: Create Virtual Environment</h4>
           <div className="code-snippet">
@@ -100,9 +100,9 @@ const Installation = () => {
             python -m venv .venv<br/>
             source .venv/bin/activate  <span className="comment"># Windows: .venv\Scripts\activate</span>
           </div>
-          <h4>Step 3: Install M3</h4>
+          <h4>Step 3: Install M4</h4>
           <div className="code-snippet">
-            <span className="comment"># Install M3</span><br/>
+            <span className="comment"># Install M4</span><br/>
             pip install .
           </div>
         </div>

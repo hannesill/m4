@@ -1,5 +1,5 @@
 """
-Dynamic MCP Configuration Generator for M3 Server.
+Dynamic MCP Configuration Generator for M4 Server.
 Generates MCP server configurations that can be copied and pasted into any MCP client.
 """
 
@@ -10,12 +10,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from m3.config import get_default_database_path
+from m4.config import get_default_database_path
 
 # Error messages
 _DATABASE_PATH_ERROR_MSG = (
     "Could not determine default database path for mimic-iv-demo.\n"
-    "Please run 'm3 init mimic-iv-demo' first."
+    "Please run 'm4 init mimic-iv-demo' first."
 )
 
 
@@ -51,14 +51,14 @@ class MCPConfigGenerator:
 
     def generate_config(
         self,
-        server_name: str = "m3",
+        server_name: str = "m4",
         python_path: str | None = None,
         working_directory: str | None = None,
         backend: str = "duckdb",
         db_path: str | None = None,
         project_id: str | None = None,
         additional_env: dict[str, str] | None = None,
-        module_name: str = "m3.mcp_server",
+        module_name: str = "m4.mcp_server",
         oauth2_enabled: bool = False,
         oauth2_config: dict[str, str] | None = None,
     ) -> dict[str, Any]:
@@ -79,38 +79,38 @@ class MCPConfigGenerator:
         # Build environment variables
         env = {
             "PYTHONPATH": str(Path(working_directory) / "src"),
-            "M3_BACKEND": backend,
+            "M4_BACKEND": backend,
         }
 
         # Add backend-specific environment variables
         if backend == "duckdb":
             if db_path:
-                env["M3_DB_PATH"] = db_path
+                env["M4_DB_PATH"] = db_path
             # If no db_path, we rely on dynamic resolution in the server
 
         elif backend == "bigquery" and project_id:
-            env["M3_PROJECT_ID"] = project_id
+            env["M4_PROJECT_ID"] = project_id
             env["GOOGLE_CLOUD_PROJECT"] = project_id
 
         # Add OAuth2 configuration if enabled
         if oauth2_enabled and oauth2_config:
             env.update(
                 {
-                    "M3_OAUTH2_ENABLED": "true",
-                    "M3_OAUTH2_ISSUER_URL": oauth2_config.get("issuer_url", ""),
-                    "M3_OAUTH2_AUDIENCE": oauth2_config.get("audience", ""),
-                    "M3_OAUTH2_REQUIRED_SCOPES": oauth2_config.get(
+                    "M4_OAUTH2_ENABLED": "true",
+                    "M4_OAUTH2_ISSUER_URL": oauth2_config.get("issuer_url", ""),
+                    "M4_OAUTH2_AUDIENCE": oauth2_config.get("audience", ""),
+                    "M4_OAUTH2_REQUIRED_SCOPES": oauth2_config.get(
                         "required_scopes", "read:mimic-data"
                     ),
-                    "M3_OAUTH2_JWKS_URL": oauth2_config.get("jwks_url", ""),
+                    "M4_OAUTH2_JWKS_URL": oauth2_config.get("jwks_url", ""),
                 }
             )
 
             # Optional OAuth2 settings
             if oauth2_config.get("client_id"):
-                env["M3_OAUTH2_CLIENT_ID"] = oauth2_config["client_id"]
+                env["M4_OAUTH2_CLIENT_ID"] = oauth2_config["client_id"]
             if oauth2_config.get("rate_limit_requests"):
-                env["M3_OAUTH2_RATE_LIMIT_REQUESTS"] = str(
+                env["M4_OAUTH2_RATE_LIMIT_REQUESTS"] = str(
                     oauth2_config["rate_limit_requests"]
                 )
 
@@ -134,14 +134,14 @@ class MCPConfigGenerator:
 
     def interactive_config(self) -> dict[str, Any]:
         """Interactive configuration builder."""
-        print("🔧 M3 MCP Server Configuration Generator")
+        print("🔧 M4 MCP Server Configuration Generator")
         print("=" * 50)
 
         # Server name
         print("\n🏷️  Server Configuration:")
         print("The server name is how your MCP client will identify this server.")
         server_name = (
-            input("Server name (press Enter for default 'm3'): ").strip() or "m3"
+            input("Server name (press Enter for default 'm4'): ").strip() or "m4"
         )
 
         # Python path
@@ -185,7 +185,7 @@ class MCPConfigGenerator:
             print(f"Default database path: {default_db_path}")
 
             print(
-                "\nLeaving database path empty allows switching datasets dynamically via 'm3 use'."
+                "\nLeaving database path empty allows switching datasets dynamically via 'm4 use'."
             )
             db_path = (
                 input(
@@ -223,7 +223,7 @@ class MCPConfigGenerator:
                 "OAuth2 Issuer URL (e.g., https://auth.example.com): "
             ).strip()
             oauth2_config["audience"] = input(
-                "OAuth2 Audience (e.g., m3-api): "
+                "OAuth2 Audience (e.g., m4-api): "
             ).strip()
             oauth2_config["required_scopes"] = (
                 input("Required Scopes [read:mimic-data]: ").strip()
@@ -266,7 +266,7 @@ class MCPConfigGenerator:
             db_path=db_path,
             project_id=project_id,
             additional_env=additional_env if additional_env else None,
-            module_name="m3.mcp_server",
+            module_name="m4.mcp_server",
             oauth2_enabled=oauth2_enabled,
             oauth2_config=oauth2_config,
         )
@@ -283,19 +283,19 @@ def print_config_info(config: dict[str, Any]):
     print(f"🏷️  Server name: {server_name}")
     print(f"🐍 Python path: {server_config['command']}")
     print(f"📁 Working directory: {server_config['cwd']}")
-    print(f"🔧 Backend: {server_config['env'].get('M3_BACKEND', 'unknown')}")
+    print(f"🔧 Backend: {server_config['env'].get('M4_BACKEND', 'unknown')}")
 
-    if "M3_DB_PATH" in server_config["env"]:
-        print(f"💾 Database path: {server_config['env']['M3_DB_PATH']}")
-    elif server_config["env"].get("M3_BACKEND") in ("duckdb",):
+    if "M4_DB_PATH" in server_config["env"]:
+        print(f"💾 Database path: {server_config['env']['M4_DB_PATH']}")
+    elif server_config["env"].get("M4_BACKEND") in ("duckdb",):
         # Show the default path when using DuckDB backend
         default_path = get_default_database_path("mimic-iv-demo")
         if default_path is None:
             raise ValueError(_DATABASE_PATH_ERROR_MSG)
         print(f"💾 Database path: {default_path}")
 
-    if "M3_PROJECT_ID" in server_config["env"]:
-        print(f"☁️  Project ID: {server_config['env']['M3_PROJECT_ID']}")
+    if "M4_PROJECT_ID" in server_config["env"]:
+        print(f"☁️  Project ID: {server_config['env']['M4_PROJECT_ID']}")
 
     # Show additional env vars
     additional_env = {
@@ -304,9 +304,9 @@ def print_config_info(config: dict[str, Any]):
         if k
         not in [
             "PYTHONPATH",
-            "M3_BACKEND",
-            "M3_DB_PATH",
-            "M3_PROJECT_ID",
+            "M4_BACKEND",
+            "M4_DB_PATH",
+            "M4_PROJECT_ID",
             "GOOGLE_CLOUD_PROJECT",
         ]
     }
@@ -321,7 +321,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Generate MCP server configuration for M3",
+        description="Generate MCP server configuration for M4",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -345,7 +345,7 @@ Examples:
         help="Generate configuration with defaults (non-interactive)",
     )
     parser.add_argument(
-        "--server-name", default="m3", help="Name for the MCP server (default: m3)"
+        "--server-name", default="m4", help="Name for the MCP server (default: m4)"
     )
     parser.add_argument("--python-path", help="Path to Python executable")
     parser.add_argument("--working-directory", help="Working directory for the server")
@@ -421,7 +421,7 @@ Examples:
                 db_path=args.db_path,
                 project_id=args.project_id,
                 additional_env=additional_env if additional_env else None,
-                module_name="m3.mcp_server",
+                module_name="m4.mcp_server",
             )
         else:
             # Interactive mode

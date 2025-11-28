@@ -34,7 +34,7 @@ const Citation = () => {
       <div className="container">
         <div className="section-header">
           <h2>Cite This Work</h2>
-          <p>If you use m3 in your research, please cite our paper :)</p>
+          <p>If you use m4 in your research, please cite our paper :)</p>
         </div>
 
         <div className="citation-grid">

@@ -7,7 +7,7 @@ const Explanation = () => {
       <div className="container">
         <div className="section-header fade-in">
           <h2>Powerful features in action</h2>
-          <p>See how m3 simplifies complex database interactions with intuitive interfaces</p>
+          <p>See how m4 simplifies complex database interactions with intuitive interfaces</p>
         </div>
 
         {/* Dashboard Overview */}
@@ -23,7 +23,7 @@ const Explanation = () => {
             </ul>
           </div>
           <div className="screenshot-container">
-            <img src="/m3/banner2.png" alt="Dashboard Overview" />
+            <img src="/m4/banner2.png" alt="Dashboard Overview" />
           </div>
         </div>
 
@@ -42,7 +42,7 @@ const Explanation = () => {
             </ul>
           </div>
           <div className="screenshot-container">
-            <img src="/m3/banner3.png" alt="Advanced Data Visualization" />
+            <img src="/m4/banner3.png" alt="Advanced Data Visualization" />
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
-# M3 Webapp README
+# M4 Webapp README
 
-This file provides instructions on how to run and build the M3 web application.
+This file provides instructions on how to run and build the M4 web application.
 
 ## Setup
 ```bash

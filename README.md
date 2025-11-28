@@ -62,7 +62,7 @@ Select **Option A** (Local) or **Option B** (Cloud).
 
 1.  **Create project directory:**
     ```bash
-    mkdir m3 && cd m3
+    mkdir m4 && cd m4
     ```
 
 2.  **Initialize Dataset:**
@@ -71,15 +71,15 @@ Select **Option A** (Local) or **Option B** (Cloud).
 
     **For Demo (Auto-download ~16MB):**
     ```bash
-    uv init && uv add m3-mcp
-    uv run m3 init mimic-iv-demo
+    uv init && uv add m4-mcp
+    uv run m4 init mimic-iv-demo
     ```
 
     **For Full Data (Requires Manual Download):**
-    *Download CSVs from [PhysioNet](https://physionet.org/content/mimiciv/3.1/) first and place them in `m3_data/raw_files`.*
+    *Download CSVs from [PhysioNet](https://physionet.org/content/mimiciv/3.1/) first and place them in `m4_data/raw_files`.*
     ```bash
-    uv init && uv add m3-mcp
-    uv run m3 init mimic-iv-full
+    uv init && uv add m4-mcp
+    uv run m4 init mimic-iv-full
     ```
     *This can take 5-15 minutes depending on your machine*
 
@@ -87,12 +87,12 @@ Select **Option A** (Local) or **Option B** (Cloud).
 
     **For Claude Desktop (Shortcut):**
     ```bash
-    uv run m3 config claude --quick
+    uv run m4 config claude --quick
     ```
 
     **For Other Clients (Cursor, LibreChat, etc.):**
     ```bash
-    uv run m3 config --quick
+    uv run m4 config --quick
     ```
     *This generates the configuration JSON you need to paste into your client's settings.*
 
@@ -106,7 +106,7 @@ Select **Option A** (Local) or **Option B** (Cloud).
 
 2.  **Configure Client:**
     ```bash
-    uv run m3 config --backend bigquery --project_id BIGQUERY_PROJECT_ID
+    uv run m4 config --backend bigquery --project_id BIGQUERY_PROJECT_ID
     ```
     *This also generates the configuration JSON you need to paste into your client's settings.*
 
@@ -126,13 +126,13 @@ Switch between available datasets instantly:
 
 ```bash
 # Switch to full dataset
-m3 use mimic-iv-full
+m4 use mimic-iv-full
 
 # Switch back to demo
-m3 use mimic-iv-demo
+m4 use mimic-iv-demo
 
 # Check status
-m3 status
+m4 status
 ```
 
 ---
@@ -156,7 +156,7 @@ M4 is designed to be modular. You can add support for any tabular dataset on Phy
 
 ### JSON Definition Method
 
-1.  Create a definition file: `m3_data/datasets/eicu.json`
+1.  Create a definition file: `m4_data/datasets/eicu.json`
     ```json
     {
       "name": "eicu",
@@ -173,7 +173,7 @@ M4 is designed to be modular. You can add support for any tabular dataset on Phy
 
 2.  Initialize it:
     ```bash
-    m3 init eicu --src /path/to/raw/csvs
+    m4 init eicu --src /path/to/raw/csvs
     ```
     *M4 will convert CSVs to Parquet and create DuckDB views automatically.*
 
@@ -192,8 +192,8 @@ M4 is designed to be modular. You can add support for any tabular dataset on Phy
 **DuckDB (Local):**
 ```bash
 git clone https://github.com/hannesill/m4.git && cd m4
-docker build -t m3:lite --target lite .
-docker run -d --name m3-server m3:lite tail -f /dev/null
+docker build -t m4:lite --target lite .
+docker run -d --name m4-server m4:lite tail -f /dev/null
 ```
 
 </td>
@@ -201,13 +201,13 @@ docker run -d --name m3-server m3:lite tail -f /dev/null
 
 **BigQuery:**
 ```bash
-git clone https://github.com/rafiattrach/m3.git && cd m3
-docker build -t m3:bigquery --target bigquery .
-docker run -d --name m3-server \
-  -e M3_BACKEND=bigquery \
-  -e M3_PROJECT_ID=your-project-id \
+git clone https://github.com/rafiattrach/m4.git && cd m4
+docker build -t m4:bigquery --target bigquery .
+docker run -d --name m4-server \
+  -e M4_BACKEND=bigquery \
+  -e M4_PROJECT_ID=your-project-id \
   -v $HOME/.config/gcloud:/root/.config/gcloud:ro \
-  m3:bigquery tail -f /dev/null
+  m4:bigquery tail -f /dev/null
 ```
 
 </td>
@@ -218,9 +218,9 @@ docker run -d --name m3-server \
 ```json
 {
   "mcpServers": {
-    "m3": {
+    "m4": {
       "command": "docker",
-      "args": ["exec", "-i", "m3-server", "python", "-m", "m3.mcp_server"]
+      "args": ["exec", "-i", "m4-server", "python", "-m", "m4.mcp_server"]
     }
   }
 }
@@ -229,8 +229,8 @@ docker run -d --name m3-server \
 ### pip Install
 
 ```bash
-pip install m3-mcp
-m3 config --quick
+pip install m4-mcp
+m4 config --quick
 ```
 
 ### Local Development
@@ -239,8 +239,8 @@ For contributors:
 
 1.  **Clone & Install (using `uv`):**
     ```bash
-    git clone https://github.com/rafiattrach/m3.git
-    cd m3
+    git clone https://github.com/rafiattrach/m4.git
+    cd m4
     uv venv
     uv sync
     ```
@@ -249,11 +249,11 @@ For contributors:
     ```json
     {
       "mcpServers": {
-        "m3": {
-          "command": "/absolute/path/to/m3/.venv/bin/python",
-          "args": ["-m", "m3.mcp_server"],
-          "cwd": "/absolute/path/to/m3",
-          "env": { "M3_BACKEND": "duckdb" }
+        "m4": {
+          "command": "/absolute/path/to/m4/.venv/bin/python",
+          "args": ["-m", "m4.mcp_server"],
+          "cwd": "/absolute/path/to/m4",
+          "env": { "M4_BACKEND": "duckdb" }
         }
       }
     }
@@ -265,15 +265,15 @@ For contributors:
 
 **Interactive Config Generator:**
 ```bash
-m3 config
+m4 config
 ```
 
 **OAuth2 Authentication:**
 For secure production deployments:
 ```bash
-m3 config claude --enable-oauth2 \
+m4 config claude --enable-oauth2 \
   --oauth2-issuer https://your-auth-provider.com \
-  --oauth2-audience m3-api
+  --oauth2-audience m4-api
 ```
 > See [`docs/OAUTH2_AUTHENTICATION.md`](docs/OAUTH2_AUTHENTICATION.md) for details.
 
@@ -305,7 +305,7 @@ m3 config claude --enable-oauth2 \
 
 ## Troubleshooting
 
-- **"Parquet not found"**: Rerun `m3 init <dataset_name>`.
+- **"Parquet not found"**: Rerun `m4 init <dataset_name>`.
 - **MCP client not starting**: Check logs (Claude Desktop: Help → View Logs).
 - **BigQuery Access Denied**: Run `gcloud auth application-default login` and verify project ID.
 
@@ -333,8 +333,8 @@ You can also use the "Cite this repository" button at the top of the GitHub page
 
 ## Related Projects
 
-M3 has been forked and adapted by the community:
-- [MCPStack-MIMIC](https://github.com/MCP-Pipeline/mcpstack-mimic) - Integrates M3 with other MCP servers (Jupyter, sklearn, etc.)
+M4 has been forked and adapted by the community:
+- [MCPStack-MIMIC](https://github.com/MCP-Pipeline/mcpstack-mimic) - Integrates M4 with other MCP servers (Jupyter, sklearn, etc.)
 
 ---
 

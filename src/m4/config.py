@@ -5,9 +5,9 @@ import os
 from pathlib import Path
 from typing import Any
 
-from m3.datasets import DatasetDefinition, DatasetRegistry
+from m4.datasets import DatasetDefinition, DatasetRegistry
 
-APP_NAME = "m3"
+APP_NAME = "m4"
 
 # Setup basic logging
 logging.basicConfig(
@@ -38,7 +38,7 @@ def _get_project_root() -> Path:
 
 
 _PROJECT_ROOT = _get_project_root()
-_PROJECT_DATA_DIR = _PROJECT_ROOT / "m3_data"
+_PROJECT_DATA_DIR = _PROJECT_ROOT / "m4_data"
 
 _DEFAULT_DATABASES_DIR = _PROJECT_DATA_DIR / "databases"
 _DEFAULT_PARQUET_DIR = _PROJECT_DATA_DIR / "parquet"
@@ -50,7 +50,7 @@ _CUSTOM_DATASETS_DIR = _PROJECT_DATA_DIR / "datasets"
 # Helper functions
 # --------------------------------------------------
 def _load_custom_datasets():
-    """Load custom dataset definitions from JSON files in m3_data/datasets/."""
+    """Load custom dataset definitions from JSON files in m4_data/datasets/."""
     if not _CUSTOM_DATASETS_DIR.exists():
         logger.warning(
             f"Custom datasets directory does not exist: {_CUSTOM_DATASETS_DIR}"
@@ -79,7 +79,7 @@ def get_dataset_config(dataset_name: str) -> dict | None:
 def get_default_database_path(dataset_name: str) -> Path | None:
     """
     Return the default local DuckDB path for a given dataset,
-    under <project_root>/m3_data/databases/.
+    under <project_root>/m4_data/databases/.
     """
     cfg = get_dataset_config(dataset_name)
     if not cfg:
@@ -99,7 +99,7 @@ def get_default_database_path(dataset_name: str) -> Path | None:
 def get_dataset_parquet_root(dataset_name: str) -> Path | None:
     """
     Return the Parquet root for a dataset under
-    <project_root>/m3_data/parquet/<dataset_name>/.
+    <project_root>/m4_data/parquet/<dataset_name>/.
     """
     cfg = get_dataset_config(dataset_name)
     if not cfg:
@@ -133,7 +133,7 @@ def _get_default_runtime_config() -> dict:
 
 
 def load_runtime_config() -> dict:
-    """Load runtime configuration from <project_root>/m3_data/config.json or use default"""
+    """Load runtime configuration from <project_root>/m4_data/config.json or use default"""
     _ensure_data_dirs()
     if _RUNTIME_CONFIG_PATH.exists():
         try:
@@ -191,7 +191,7 @@ def get_active_dataset() -> str | None:
     _load_custom_datasets()
 
     # Priority 1: Environment variable
-    env_dataset = os.getenv("M3_DATASET")
+    env_dataset = os.getenv("M4_DATASET")
     if env_dataset:
         return env_dataset
 

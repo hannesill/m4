@@ -1,18 +1,18 @@
-# M3 MCP Server - Installation Guide for AI Agents
+# M4 MCP Server - Installation Guide for AI Agents
 
-This guide helps AI agents like Cline install and configure the M3 MCP server.
+This guide helps AI agents like Cline install and configure the M4 MCP server.
 
 ## Installation Method
 
 Use `uvx` for zero-installation setup:
 
 ```bash
-uvx m3-mcp
+uvx m4-mcp
 ```
 
 ## Backend Configuration
 
-M3 supports two backends. Choose one:
+M4 supports two backends. Choose one:
 
 ### Option 1: SQLite (Demo Database - Recommended for Testing)
 
@@ -20,11 +20,11 @@ M3 supports two backends. Choose one:
 ```json
 {
   "mcpServers": {
-    "m3": {
+    "m4": {
       "command": "uvx",
-      "args": ["m3-mcp"],
+      "args": ["m4-mcp"],
       "env": {
-        "M3_BACKEND": "sqlite"
+        "M4_BACKEND": "sqlite"
       }
     }
   }
@@ -46,12 +46,12 @@ M3 supports two backends. Choose one:
 ```json
 {
   "mcpServers": {
-    "m3": {
+    "m4": {
       "command": "uvx",
-      "args": ["m3-mcp"],
+      "args": ["m4-mcp"],
       "env": {
-        "M3_BACKEND": "bigquery",
-        "M3_PROJECT_ID": "user-project-id"
+        "M4_BACKEND": "bigquery",
+        "M4_PROJECT_ID": "user-project-id"
       }
     }
   }
@@ -73,7 +73,7 @@ After configuration, test by asking:
 
 **If SQLite backend fails:**
 - The demo database downloads automatically on first query
-- No manual `m3 init` needed
+- No manual `m4 init` needed
 
 **If BigQuery backend fails:**
 - Verify GCP authentication: `gcloud auth list`
@@ -91,5 +91,5 @@ After configuration, test by asking:
 
 ## Additional Resources
 
-- Full documentation: https://github.com/rafiattrach/m3
-- Video tutorials: https://rafiattrach.github.io/m3/
+- Full documentation: https://github.com/rafiattrach/m4
+- Video tutorials: https://rafiattrach.github.io/m4/

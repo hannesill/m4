@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-import m3.cli as cli_module
-from m3.cli import app
+import m4.cli as cli_module
+from m4.cli import app
 
 runner = CliRunner()
 
@@ -22,13 +22,13 @@ def test_help_shows_app_name():
     # exit code 0 for successful help display
     assert result.exit_code == 0
     # help output contains the app name
-    assert "M3 CLI" in result.stdout
+    assert "M4 CLI" in result.stdout
 
 
 def test_version_option_exits_zero_and_shows_version():
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert "M3 CLI Version: 0.0.1" in result.stdout
+    assert "M4 CLI Version: 0.0.1" in result.stdout
 
 
 def test_unknown_command_reports_error():
@@ -44,10 +44,10 @@ def test_unknown_command_reports_error():
     )
 
 
-@patch("m3.cli.init_duckdb_from_parquet")
-@patch("m3.cli.verify_table_rowcount")
+@patch("m4.cli.init_duckdb_from_parquet")
+@patch("m4.cli.verify_table_rowcount")
 def test_init_command_duckdb_custom_path(mock_rowcount, mock_init):
-    """Test that m3 init --db-path uses custom database path override and DuckDB flow."""
+    """Test that m4 init --db-path uses custom database path override and DuckDB flow."""
     mock_init.return_value = True
     mock_rowcount.return_value = 100
 
@@ -55,9 +55,9 @@ def test_init_command_duckdb_custom_path(mock_rowcount, mock_init):
         custom_db_path = Path(temp_dir) / "custom_mimic.duckdb"
         resolved_custom_db_path = custom_db_path.resolve()
         # Also ensure a deterministic parquet path exists for the dataset discovery.
-        with patch("m3.cli.get_dataset_parquet_root") as mock_parquet_root:
+        with patch("m4.cli.get_dataset_parquet_root") as mock_parquet_root:
             repo_root = Path(__file__).resolve().parents[1]
-            mock_parquet_root.return_value = repo_root / "m3_data/parquet/mimic-iv-demo"
+            mock_parquet_root.return_value = repo_root / "m4_data/parquet/mimic-iv-demo"
             with patch.object(Path, "exists", return_value=True):
                 result = runner.invoke(
                     app, ["init", "mimic-iv-demo", "--db-path", str(custom_db_path)]
@@ -129,7 +129,7 @@ def test_config_universal_quick_mode(mock_subprocess):
 
     result = runner.invoke(app, ["config", "--quick"])
     assert result.exit_code == 0
-    assert "Generating M3 MCP configuration" in result.stdout
+    assert "Generating M4 MCP configuration" in result.stdout
 
     mock_subprocess.assert_called_once()
     call_args = mock_subprocess.call_args[0][0]
@@ -150,8 +150,8 @@ def test_config_script_failure(mock_subprocess):
 
 
 @patch("subprocess.run")
-@patch("m3.cli.get_default_database_path")
-@patch("m3.cli.get_active_dataset")
+@patch("m4.cli.get_default_database_path")
+@patch("m4.cli.get_active_dataset")
 def test_config_claude_infers_db_path_demo(
     mock_active, mock_get_default, mock_subprocess
 ):
@@ -168,8 +168,8 @@ def test_config_claude_infers_db_path_demo(
 
 
 @patch("subprocess.run")
-@patch("m3.cli.get_default_database_path")
-@patch("m3.cli.get_active_dataset")
+@patch("m4.cli.get_default_database_path")
+@patch("m4.cli.get_active_dataset")
 def test_config_claude_infers_db_path_full(
     mock_active, mock_get_default, mock_subprocess
 ):
@@ -184,8 +184,8 @@ def test_config_claude_infers_db_path_full(
     assert "--db-path" not in call_args
 
 
-@patch("m3.cli.set_active_dataset")
-@patch("m3.cli.detect_available_local_datasets")
+@patch("m4.cli.set_active_dataset")
+@patch("m4.cli.detect_available_local_datasets")
 def test_use_full_happy_path(mock_detect, mock_set_active):
     mock_detect.return_value = {
         "mimic-iv-demo": {
@@ -208,9 +208,9 @@ def test_use_full_happy_path(mock_detect, mock_set_active):
     mock_set_active.assert_called_once_with("mimic-iv-full")
 
 
-@patch("m3.cli.compute_parquet_dir_size", return_value=123)
-@patch("m3.cli.get_active_dataset", return_value="mimic-iv-full")
-@patch("m3.cli.detect_available_local_datasets")
+@patch("m4.cli.compute_parquet_dir_size", return_value=123)
+@patch("m4.cli.get_active_dataset", return_value="mimic-iv-full")
+@patch("m4.cli.detect_available_local_datasets")
 def test_status_happy_path(mock_detect, mock_active, mock_size):
     mock_detect.return_value = {
         "mimic-iv-demo": {
