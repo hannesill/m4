@@ -14,7 +14,7 @@ uvx m4-mcp
 
 M4 supports two backends. Choose one:
 
-### Option 1: SQLite (Demo Database - Recommended for Testing)
+### Option 1: DuckDB (Demo Database - Recommended for Testing)
 
 **MCP Configuration:**
 ```json
@@ -24,7 +24,7 @@ M4 supports two backends. Choose one:
       "command": "uvx",
       "args": ["m4-mcp"],
       "env": {
-        "M4_BACKEND": "sqlite"
+        "M4_BACKEND": "duckdb"
       }
     }
   }

@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/m3-mcp
+      url: https://pypi.org/p/m4-mcp
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
       contents: read
@@ -35,10 +35,10 @@ jobs:
 
     - name: Update version in __init__.py
       run: |
-        # Update version in src/m3/__init__.py to match the git tag
-        sed -i "s/__version__ = \".*\"/__version__ = \"${{ steps.get_version.outputs.version }}\"/" src/m3/__init__.py
-        echo "Updated src/m3/__init__.py version to ${{ steps.get_version.outputs.version }}"
-        grep "__version__" src/m3/__init__.py
+        # Update version in src/m4/__init__.py to match the git tag
+        sed -i "s/__version__ = \".*\"/__version__ = \"${{ steps.get_version.outputs.version }}\"/" src/m4/__init__.py
+        echo "Updated src/m4/__init__.py version to ${{ steps.get_version.outputs.version }}"
+        grep "__version__" src/m4/__init__.py
 
     - name: Sync dependencies including dev
       run: uv sync --all-groups
