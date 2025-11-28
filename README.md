@@ -1,26 +1,22 @@
-# M3: Medical Datasets ↔ MCP ↔ Models 🏥🤖
-
-<div align="center">
-  <img src="webapp/public/m3_logo_transparent.png" alt="M3 Logo" width="300"/>
-</div>
+# M4: Many Medical Datasets ↔ MCP ↔ Models 🏥🤖
 
 > **Query tabular PhysioNet medical data using natural language through MCP clients**
 
 <a href="https://www.python.org/downloads/"><img alt="Python" src="https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white"></a>
 <a href="https://modelcontextprotocol.io/"><img alt="MCP" src="https://img.shields.io/badge/MCP-Compatible-green?logo=ai&logoColor=white"></a>
-<a href="https://github.com/rafiattrach/m3/actions/workflows/tests.yaml"><img alt="Tests" src="https://github.com/rafiattrach/m3/actions/workflows/tests.yaml/badge.svg"></a>
-<a href="https://github.com/rafiattrach/m3/actions/workflows/pre-commit.yaml"><img alt="Code Quality" src="https://github.com/rafiattrach/m3/actions/workflows/pre-commit.yaml/badge.svg"></a>
-<a href="https://github.com/rafiattrach/m3/pulls"><img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
+<a href="https://github.com/hannesill/m4/actions/workflows/tests.yaml"><img alt="Tests" src="https://github.com/hannesill/m4/actions/workflows/tests.yaml/badge.svg"></a>
+<a href="https://github.com/hannesill/m4/actions/workflows/pre-commit.yaml"><img alt="Code Quality" src="https://github.com/hannesill/m4/actions/workflows/pre-commit.yaml/badge.svg"></a>
+<a href="https://github.com/hannesill/m4/pulls"><img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
 
 Transform medical data analysis with AI! Ask questions about MIMIC-IV and other PhysioNet datasets in plain English and get instant insights. Choose between local data (free) or full cloud dataset (BigQuery).
 
 ## 💡 How It Works
 
-M3 acts as a bridge between your **AI Client** (like Claude Desktop, Cursor, or LibreChat) and your medical data.
+M4 acts as a bridge between your **AI Client** (like Claude Desktop, Cursor, or LibreChat) and your medical data.
 
 1.  **You** ask a question in your chat interface: *"How many patients in the ICU have high blood pressure?"*
-2.  **M3** securely translates this into a database query.
-3.  **M3** runs the query on your local or cloud data.
+2.  **M4** securely translates this into a database query.
+3.  **M4** runs the query on your local or cloud data.
 4.  **The LLM** explains the results to you in plain English.
 
 *No SQL knowledge required.*
@@ -37,10 +33,8 @@ M3 acts as a bridge between your **AI Client** (like Claude Desktop, Cursor, or 
 
 ## 🚀 Quick Start
 
-> **New to this?** 📺 [Watch our 5-minute setup video](https://rafiattrach.github.io/m3/) to see it in action.
-
 ### Prerequisites
-You need an **MCP-compatible Client** to use M3. Popular options include:
+You need an **MCP-compatible Client** to use M4. Popular options include:
 - [Claude for Desktop](https://claude.ai/download)
 - [Cursor](https://cursor.com)
 - [LibreChat](https://www.librechat.ai/)
@@ -158,7 +152,7 @@ m3 status
 
 ## ➕ Adding Custom Datasets
 
-M3 is designed to be modular. You can add support for any tabular dataset on PhysioNet easily. Let's take eICU as an example:
+M4 is designed to be modular. You can add support for any tabular dataset on PhysioNet easily. Let's take eICU as an example:
 
 ### JSON Definition Method
 
@@ -181,7 +175,7 @@ M3 is designed to be modular. You can add support for any tabular dataset on Phy
     ```bash
     m3 init eicu --src /path/to/raw/csvs
     ```
-    *M3 will convert CSVs to Parquet and create DuckDB views automatically.*
+    *M4 will convert CSVs to Parquet and create DuckDB views automatically.*
 
 ---
 
@@ -197,7 +191,7 @@ M3 is designed to be modular. You can add support for any tabular dataset on Phy
 
 **DuckDB (Local):**
 ```bash
-git clone https://github.com/rafiattrach/m3.git && cd m3
+git clone https://github.com/hannesill/m4.git && cd m4
 docker build -t m3:lite --target lite .
 docker run -d --name m3-server m3:lite tail -f /dev/null
 ```
