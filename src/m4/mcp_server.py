@@ -11,7 +11,12 @@ import sqlparse
 from fastmcp import FastMCP
 
 from m4.auth import init_oauth2, require_oauth2
-from m4.config import get_active_dataset, get_default_database_path
+from m4.config import (
+    detect_available_local_datasets,
+    get_active_dataset,
+    get_default_database_path,
+    set_active_dataset,
+)
 from m4.datasets import DatasetRegistry
 
 # Create FastMCP server instance
@@ -392,6 +397,84 @@ def _execute_query_internal(sql_query: str) -> str:
 # ==========================================
 # These are the tools exposed via MCP protocol.
 # They should NEVER call other MCP tools - only internal functions.
+
+
+@mcp.tool()
+def list_datasets() -> str:
+    """List all available datasets and their status.
+
+    Returns:
+        A formatted string listing available datasets, indicating which one is active,
+        and showing availability of local database and BigQuery support.
+    """
+    active = get_active_dataset() or "(unset)"
+    availability = detect_available_local_datasets()
+
+    if not availability:
+        return "No datasets detected."
+
+    output = [f"Active dataset: {active}\n"]
+    output.append(
+        f"Backend: {'local (DuckDB)' if _backend == 'duckdb' else 'cloud (BigQuery)'}\n"
+    )
+
+    for label, info in availability.items():
+        is_active = " (Active)" if label == active else ""
+        output.append(f"=== {label.upper()}{is_active} ===")
+
+        parquet_icon = "✅" if info["parquet_present"] else "❌"
+        db_icon = "✅" if info["db_present"] else "❌"
+
+        output.append(f"  Local Parquet: {parquet_icon}")
+        output.append(f"  Local Database: {db_icon}")
+
+        # BigQuery status
+        ds_def = DatasetRegistry.get(label)
+        if ds_def:
+            bq_status = "✅" if ds_def.bigquery_dataset_ids else "❌"
+            output.append(f"  BigQuery Support: {bq_status}")
+        output.append("")
+
+    return "\n".join(output)
+
+
+@mcp.tool()
+def set_dataset(dataset_name: str) -> str:
+    """Switch the active dataset.
+
+    Args:
+        dataset_name: The name of the dataset to switch to (e.g., 'mimic-iv-demo', 'mimic-iv-full').
+
+    Returns:
+        Confirmation message or error if dataset not found.
+    """
+    dataset_name = dataset_name.lower()
+    availability = detect_available_local_datasets()
+
+    if dataset_name not in availability:
+        supported = ", ".join(availability.keys())
+        return (
+            f"❌ Error: Dataset '{dataset_name}' not found. "
+            f"Supported datasets: {supported}"
+        )
+
+    set_active_dataset(dataset_name)
+
+    # Get details about the new dataset to provide context
+    info = availability[dataset_name]
+    status_msg = f"✅ Active dataset switched to '{dataset_name}'."
+
+    if not info["db_present"] and _backend == "duckdb":
+        status_msg += (
+            "\n⚠️ Note: Local database not found. "
+            "You may need to run initialization if using DuckDB."
+        )
+
+    ds_def = DatasetRegistry.get(dataset_name)
+    if ds_def and not ds_def.bigquery_dataset_ids and _backend == "bigquery":
+        status_msg += "\n⚠️ Warning: This dataset is not configured for BigQuery."
+
+    return status_msg
 
 
 @mcp.tool()
