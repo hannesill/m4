@@ -17,7 +17,7 @@ from m4.config import (
     get_default_database_path,
     set_active_dataset,
 )
-from m4.datasets import DatasetRegistry
+from m4.core.datasets import DatasetRegistry
 
 # Create FastMCP server instance
 mcp = FastMCP("m4")
