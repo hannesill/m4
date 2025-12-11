@@ -7,8 +7,8 @@ the active dataset.
 
 from dataclasses import dataclass
 
-from m4.core.datasets import DatasetDefinition
-from m4.core.tools.base import Tool, ToolInput, ToolOutput
+from m4.core.datasets import Capability, DatasetDefinition, Modality
+from m4.core.tools.base import ToolInput, ToolOutput
 
 
 @dataclass
@@ -38,9 +38,9 @@ class ListDatasetsTool:
     output_model = ToolOutput
 
     # Management tools have no capability requirements
-    required_modalities = set()
-    required_capabilities = set()
-    supported_datasets = None  # Always available
+    required_modalities: frozenset[Modality] = frozenset()
+    required_capabilities: frozenset[Capability] = frozenset()
+    supported_datasets: frozenset[str] | None = None  # Always available
 
     def invoke(
         self, dataset: DatasetDefinition, params: ListDatasetsInput
@@ -69,9 +69,9 @@ class SetDatasetTool:
     output_model = ToolOutput
 
     # Management tools have no capability requirements
-    required_modalities = set()
-    required_capabilities = set()
-    supported_datasets = None  # Always available
+    required_modalities: frozenset[Modality] = frozenset()
+    required_capabilities: frozenset[Capability] = frozenset()
+    supported_datasets: frozenset[str] | None = None  # Always available
 
     def invoke(self, dataset: DatasetDefinition, params: SetDatasetInput) -> ToolOutput:
         """Execute the tool."""

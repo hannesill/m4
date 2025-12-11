@@ -9,15 +9,15 @@ The core is intentionally MCP-agnostic to enable testing and reuse.
 """
 
 from m4.core.datasets import (
-    Modality,
     Capability,
     DatasetDefinition,
     DatasetRegistry,
+    Modality,
 )
 
 __all__ = [
-    "Modality",
     "Capability",
     "DatasetDefinition",
     "DatasetRegistry",
+    "Modality",
 ]

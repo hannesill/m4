@@ -6,7 +6,6 @@ Tests cover:
 - Tool compatibility checking
 """
 
-import pytest
 from dataclasses import dataclass
 
 from m4.core.datasets import (
@@ -60,8 +59,8 @@ class TestToolProtocol:
             description = "A mock tool for testing"
             input_model = ToolInput
             output_model = ToolOutput
-            required_modalities = {Modality.TABULAR}
-            required_capabilities = {Capability.ICU_STAYS}
+            required_modalities = frozenset({Modality.TABULAR})
+            required_capabilities = frozenset({Capability.ICU_STAYS})
             supported_datasets = None
 
             def invoke(self, dataset, params):
@@ -91,8 +90,8 @@ class TestToolProtocol:
             description = "A mock tool"
             input_model = ToolInput
             output_model = ToolOutput
-            required_modalities = {Modality.TABULAR}
-            required_capabilities = {Capability.ICU_STAYS}
+            required_modalities = frozenset({Modality.TABULAR})
+            required_capabilities = frozenset({Capability.ICU_STAYS})
             supported_datasets = None
 
             def invoke(self, dataset, params):
@@ -128,8 +127,8 @@ class TestToolProtocol:
             description = "A notes tool"
             input_model = ToolInput
             output_model = ToolOutput
-            required_modalities = {Modality.NOTES}
-            required_capabilities = {Capability.CLINICAL_NOTES}
+            required_modalities = frozenset({Modality.NOTES})
+            required_capabilities = frozenset({Capability.CLINICAL_NOTES})
             supported_datasets = None
 
             def invoke(self, dataset, params):
@@ -166,8 +165,8 @@ class TestToolProtocol:
             description = "An ICU tool"
             input_model = ToolInput
             output_model = ToolOutput
-            required_modalities = {Modality.TABULAR}
-            required_capabilities = {Capability.ICU_STAYS}
+            required_modalities = frozenset({Modality.TABULAR})
+            required_capabilities = frozenset({Capability.ICU_STAYS})
             supported_datasets = None
 
             def invoke(self, dataset, params):
@@ -204,9 +203,9 @@ class TestToolProtocol:
             description = "MIMIC-only tool"
             input_model = ToolInput
             output_model = ToolOutput
-            required_modalities = {Modality.TABULAR}
-            required_capabilities = {Capability.ICU_STAYS}
-            supported_datasets = {"mimic-iv-demo", "mimic-iv-full"}
+            required_modalities = frozenset({Modality.TABULAR})
+            required_capabilities = frozenset({Capability.ICU_STAYS})
+            supported_datasets = frozenset({"mimic-iv-demo", "mimic-iv-full"})
 
             def invoke(self, dataset, params):
                 return ToolOutput(result="mock")
@@ -253,8 +252,8 @@ class TestToolProtocol:
             description = "A query tool"
             input_model = CustomInput
             output_model = ToolOutput
-            required_modalities = {Modality.TABULAR}
-            required_capabilities = {Capability.COHORT_QUERY}
+            required_modalities = frozenset({Modality.TABULAR})
+            required_capabilities = frozenset({Capability.COHORT_QUERY})
             supported_datasets = None
 
             def invoke(self, dataset, params):

@@ -14,8 +14,8 @@ class MockTabularTool:
     description = "Mock tabular tool"
     input_model = ToolInput
     output_model = ToolOutput
-    required_modalities = {Modality.TABULAR}
-    required_capabilities = {Capability.COHORT_QUERY}
+    required_modalities = frozenset({Modality.TABULAR})
+    required_capabilities = frozenset({Capability.COHORT_QUERY})
     supported_datasets = None
 
     def invoke(self, dataset: DatasetDefinition, params: ToolInput) -> ToolOutput:
@@ -38,8 +38,8 @@ class MockNotesTool:
     description = "Mock notes tool"
     input_model = ToolInput
     output_model = ToolOutput
-    required_modalities = {Modality.NOTES}
-    required_capabilities = {Capability.CLINICAL_NOTES}
+    required_modalities = frozenset({Modality.NOTES})
+    required_capabilities = frozenset({Capability.CLINICAL_NOTES})
     supported_datasets = None
 
     def invoke(self, dataset: DatasetDefinition, params: ToolInput) -> ToolOutput:
@@ -62,9 +62,9 @@ class MockMIMICOnlyTool:
     description = "Mock MIMIC-only tool"
     input_model = ToolInput
     output_model = ToolOutput
-    required_modalities = {Modality.TABULAR}
-    required_capabilities = {Capability.ICU_STAYS}
-    supported_datasets = {"mimic-iv-full", "mimic-iv-demo"}
+    required_modalities = frozenset({Modality.TABULAR})
+    required_capabilities = frozenset({Capability.ICU_STAYS})
+    supported_datasets = frozenset({"mimic-iv-full", "mimic-iv-demo"})
 
     def invoke(self, dataset: DatasetDefinition, params: ToolInput) -> ToolOutput:
         return ToolOutput(result="mimic data")
@@ -304,3 +304,160 @@ class TestIntegration:
         assert hasattr(tool, "description")
         assert hasattr(tool, "invoke")
         assert hasattr(tool, "is_compatible")
+
+
+class TestInitTools:
+    """Tests for init_tools function and real tool registration."""
+
+    def test_init_tools_registers_all_tools(self):
+        """Test that init_tools registers all expected tools."""
+        from m4.core.tools import init_tools, reset_tools
+
+        # Ensure clean state
+        reset_tools()
+
+        # Initialize tools
+        init_tools()
+
+        # Verify all tools are registered
+        all_tools = ToolRegistry.list_all()
+        tool_names = {t.name for t in all_tools}
+
+        # Management tools
+        assert "list_datasets" in tool_names
+        assert "set_dataset" in tool_names
+
+        # Tabular tools
+        assert "get_database_schema" in tool_names
+        assert "get_table_info" in tool_names
+        assert "execute_mimic_query" in tool_names
+        assert "get_icu_stays" in tool_names
+        assert "get_lab_results" in tool_names
+        assert "get_race_distribution" in tool_names
+
+        # Total: 8 tools
+        assert len(all_tools) == 8
+
+        # Cleanup
+        reset_tools()
+
+    def test_init_tools_is_idempotent(self):
+        """Test that calling init_tools multiple times is safe."""
+        from m4.core.tools import init_tools, reset_tools
+
+        reset_tools()
+
+        # Call multiple times
+        init_tools()
+        init_tools()
+        init_tools()
+
+        # Should still have exactly 8 tools
+        all_tools = ToolRegistry.list_all()
+        assert len(all_tools) == 8
+
+        reset_tools()
+
+    def test_reset_tools_clears_everything(self):
+        """Test that reset_tools clears all registered tools."""
+        from m4.core.tools import init_tools, reset_tools
+
+        init_tools()
+        assert len(ToolRegistry.list_all()) == 8
+
+        reset_tools()
+        assert len(ToolRegistry.list_all()) == 0
+
+        # Can reinitialize after reset
+        init_tools()
+        assert len(ToolRegistry.list_all()) == 8
+
+        reset_tools()
+
+    def test_real_tools_conform_to_protocol(self):
+        """Test that all real tool classes conform to the Tool protocol."""
+        from m4.core.tools import (
+            ExecuteQueryTool,
+            GetDatabaseSchemaTool,
+            GetICUStaysTool,
+            GetLabResultsTool,
+            GetRaceDistributionTool,
+            GetTableInfoTool,
+            ListDatasetsTool,
+            SetDatasetTool,
+        )
+
+        tool_classes = [
+            GetDatabaseSchemaTool,
+            GetTableInfoTool,
+            ExecuteQueryTool,
+            GetICUStaysTool,
+            GetLabResultsTool,
+            GetRaceDistributionTool,
+            ListDatasetsTool,
+            SetDatasetTool,
+        ]
+
+        for tool_class in tool_classes:
+            tool = tool_class()
+            assert isinstance(tool, Tool), f"{tool_class.__name__} is not a Tool"
+            assert hasattr(tool, "name")
+            assert hasattr(tool, "description")
+            assert hasattr(tool, "input_model")
+            assert hasattr(tool, "output_model")
+            assert hasattr(tool, "required_modalities")
+            assert hasattr(tool, "required_capabilities")
+            assert hasattr(tool, "invoke")
+            assert hasattr(tool, "is_compatible")
+
+    def test_selector_with_real_tools(self):
+        """Test ToolSelector with the actual registered tools."""
+        from m4.core.tools import init_tools, reset_tools
+
+        reset_tools()
+        init_tools()
+
+        selector = ToolSelector()
+
+        # Test with demo dataset (TABULAR only, no NOTES)
+        demo_tools = selector.tools_for_dataset("mimic-iv-demo")
+        demo_names = {t.name for t in demo_tools}
+
+        # Management tools should always be available
+        assert "list_datasets" in demo_names
+        assert "set_dataset" in demo_names
+
+        # Tabular tools should be available for demo
+        assert "get_database_schema" in demo_names
+        assert "get_table_info" in demo_names
+        assert "execute_mimic_query" in demo_names
+        assert "get_icu_stays" in demo_names
+        assert "get_lab_results" in demo_names
+        assert "get_race_distribution" in demo_names
+
+        # Test with full dataset (TABULAR + NOTES)
+        full_tools = selector.tools_for_dataset("mimic-iv-full")
+        full_names = {t.name for t in full_tools}
+
+        # Should have all tools available for full dataset
+        assert len(full_names) >= len(demo_names)
+
+        reset_tools()
+
+    def test_management_tools_always_compatible(self):
+        """Test that management tools work with any dataset."""
+        from m4.core.tools import ListDatasetsTool, SetDatasetTool
+
+        list_tool = ListDatasetsTool()
+        set_tool = SetDatasetTool()
+
+        # Create a minimal dataset
+        minimal_ds = DatasetDefinition(
+            name="minimal",
+            modalities=set(),  # No modalities
+            capabilities=set(),  # No capabilities
+        )
+
+        # Management tools should be compatible with any dataset
+        assert list_tool.is_compatible(minimal_ds)
+        assert set_tool.is_compatible(minimal_ds)

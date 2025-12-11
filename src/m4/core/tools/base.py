@@ -5,8 +5,9 @@ Tools declare their required capabilities and are automatically filtered based
 on the active dataset's capabilities.
 """
 
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
-from typing import Any, Protocol, Set, Type, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from m4.core.datasets import Capability, DatasetDefinition, Modality
 
@@ -67,8 +68,8 @@ class Tool(Protocol):
             description = "Get ICU stay information"
             input_model = ICUStaysInput
             output_model = ToolOutput
-            required_modalities = {Modality.TABULAR}
-            required_capabilities = {Capability.ICU_STAYS}
+            required_modalities = frozenset({Modality.TABULAR})
+            required_capabilities = frozenset({Capability.ICU_STAYS})
             supported_datasets = None
 
             def invoke(self, dataset, params):
@@ -85,13 +86,13 @@ class Tool(Protocol):
     description: str
 
     # Input/output specifications
-    input_model: Type[ToolInput]
-    output_model: Type[ToolOutput]
+    input_model: type[ToolInput]
+    output_model: type[ToolOutput]
 
     # Compatibility constraints
-    required_modalities: Set[Modality]
-    required_capabilities: Set[Capability]
-    supported_datasets: Set[str] | None  # None = all compatible datasets
+    required_modalities: AbstractSet[Modality]
+    required_capabilities: AbstractSet[Capability]
+    supported_datasets: AbstractSet[str] | None  # None = all compatible datasets
 
     def invoke(self, dataset: DatasetDefinition, params: ToolInput) -> ToolOutput:
         """Execute the tool with given parameters on the specified dataset.

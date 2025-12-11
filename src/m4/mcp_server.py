@@ -925,9 +925,7 @@ def _get_icu_stays_internal(patient_id: int | None = None, limit: int = 10) -> s
     return get_icu_stays(patient_id, limit)
 
 
-def _get_lab_results_internal(
-    patient_id: int | None = None, limit: int = 20
-) -> str:
+def _get_lab_results_internal(patient_id: int | None = None, limit: int = 20) -> str:
     """Internal wrapper for get_lab_results tool."""
     return get_lab_results(patient_id, None, limit)
 

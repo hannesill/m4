@@ -9,7 +9,7 @@ This module provides:
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import ClassVar, Set
+from typing import ClassVar
 
 
 class Modality(Enum):
@@ -70,8 +70,8 @@ class DatasetDefinition:
     requires_authentication: bool = False
 
     # NEW: Semantic capability declarations
-    modalities: Set[Modality] = field(default_factory=set)
-    capabilities: Set[Capability] = field(default_factory=set)
+    modalities: set[Modality] = field(default_factory=set)
+    capabilities: set[Capability] = field(default_factory=set)
 
     # NEW: Table name mappings (dataset-specific)
     table_mappings: dict[str, str] = field(default_factory=dict)

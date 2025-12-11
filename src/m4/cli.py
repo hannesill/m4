@@ -16,6 +16,7 @@ from m4.config import (
     logger,
     set_active_dataset,
 )
+from m4.core.datasets import DatasetRegistry
 from m4.data_io import (
     compute_parquet_dir_size,
     convert_csv_to_parquet,
@@ -23,7 +24,6 @@ from m4.data_io import (
     init_duckdb_from_parquet,
     verify_table_rowcount,
 )
-from m4.core.datasets import DatasetRegistry
 
 app = typer.Typer(
     name="m4",

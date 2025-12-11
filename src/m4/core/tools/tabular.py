@@ -7,7 +7,7 @@ such as ICU stays, lab results, and demographic statistics.
 from dataclasses import dataclass
 
 from m4.core.datasets import Capability, DatasetDefinition, Modality
-from m4.core.tools.base import Tool, ToolInput, ToolOutput
+from m4.core.tools.base import ToolInput, ToolOutput
 
 
 # Input/Output models for specific tools
@@ -53,7 +53,7 @@ class GetLabResultsInput(ToolInput):
 class GetRaceDistributionInput(ToolInput):
     """Input for get_race_distribution tool."""
 
-    pass  # No parameters needed
+    limit: int = 10
 
 
 # Tool implementations
@@ -71,9 +71,11 @@ class GetDatabaseSchemaTool:
     output_model = ToolOutput
 
     # Compatibility constraints
-    required_modalities = {Modality.TABULAR}
-    required_capabilities = {Capability.SCHEMA_INTROSPECTION}
-    supported_datasets = None  # Works with any tabular dataset
+    required_modalities: frozenset[Modality] = frozenset({Modality.TABULAR})
+    required_capabilities: frozenset[Capability] = frozenset(
+        {Capability.SCHEMA_INTROSPECTION}
+    )
+    supported_datasets: frozenset[str] | None = None  # Works with any tabular dataset
 
     def invoke(
         self, dataset: DatasetDefinition, params: GetDatabaseSchemaInput
@@ -119,9 +121,11 @@ class GetTableInfoTool:
     input_model = GetTableInfoInput
     output_model = ToolOutput
 
-    required_modalities = {Modality.TABULAR}
-    required_capabilities = {Capability.SCHEMA_INTROSPECTION}
-    supported_datasets = None
+    required_modalities: frozenset[Modality] = frozenset({Modality.TABULAR})
+    required_capabilities: frozenset[Capability] = frozenset(
+        {Capability.SCHEMA_INTROSPECTION}
+    )
+    supported_datasets: frozenset[str] | None = None
 
     def invoke(
         self, dataset: DatasetDefinition, params: GetTableInfoInput
@@ -157,11 +161,13 @@ class ExecuteQueryTool:
     input_model = ExecuteQueryInput
     output_model = ToolOutput
 
-    required_modalities = {Modality.TABULAR}
-    required_capabilities = {Capability.COHORT_QUERY}
-    supported_datasets = None
+    required_modalities: frozenset[Modality] = frozenset({Modality.TABULAR})
+    required_capabilities: frozenset[Capability] = frozenset({Capability.COHORT_QUERY})
+    supported_datasets: frozenset[str] | None = None
 
-    def invoke(self, dataset: DatasetDefinition, params: ExecuteQueryInput) -> ToolOutput:
+    def invoke(
+        self, dataset: DatasetDefinition, params: ExecuteQueryInput
+    ) -> ToolOutput:
         """Execute the tool."""
         from m4 import mcp_server
 
@@ -191,11 +197,13 @@ class GetICUStaysTool:
     input_model = GetICUStaysInput
     output_model = ToolOutput
 
-    required_modalities = {Modality.TABULAR}
-    required_capabilities = {Capability.ICU_STAYS}
-    supported_datasets = None
+    required_modalities: frozenset[Modality] = frozenset({Modality.TABULAR})
+    required_capabilities: frozenset[Capability] = frozenset({Capability.ICU_STAYS})
+    supported_datasets: frozenset[str] | None = None
 
-    def invoke(self, dataset: DatasetDefinition, params: GetICUStaysInput) -> ToolOutput:
+    def invoke(
+        self, dataset: DatasetDefinition, params: GetICUStaysInput
+    ) -> ToolOutput:
         """Execute the tool."""
         from m4 import mcp_server
 
@@ -224,9 +232,9 @@ class GetLabResultsTool:
     input_model = GetLabResultsInput
     output_model = ToolOutput
 
-    required_modalities = {Modality.TABULAR}
-    required_capabilities = {Capability.LAB_RESULTS}
-    supported_datasets = None
+    required_modalities: frozenset[Modality] = frozenset({Modality.TABULAR})
+    required_capabilities: frozenset[Capability] = frozenset({Capability.LAB_RESULTS})
+    supported_datasets: frozenset[str] | None = None
 
     def invoke(
         self, dataset: DatasetDefinition, params: GetLabResultsInput
@@ -260,9 +268,11 @@ class GetRaceDistributionTool:
     input_model = GetRaceDistributionInput
     output_model = ToolOutput
 
-    required_modalities = {Modality.TABULAR}
-    required_capabilities = {Capability.DEMOGRAPHIC_STATS}
-    supported_datasets = None
+    required_modalities: frozenset[Modality] = frozenset({Modality.TABULAR})
+    required_capabilities: frozenset[Capability] = frozenset(
+        {Capability.DEMOGRAPHIC_STATS}
+    )
+    supported_datasets: frozenset[str] | None = None
 
     def invoke(
         self, dataset: DatasetDefinition, params: GetRaceDistributionInput
@@ -270,7 +280,7 @@ class GetRaceDistributionTool:
         """Execute the tool."""
         from m4 import mcp_server
 
-        result = mcp_server._get_race_distribution_internal()
+        result = mcp_server._get_race_distribution_internal(params.limit)
         return ToolOutput(result=result)
 
     def is_compatible(self, dataset: DatasetDefinition) -> bool:

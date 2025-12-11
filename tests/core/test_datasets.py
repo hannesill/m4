@@ -7,8 +7,6 @@ Tests cover:
 - DatasetRegistry with enhanced datasets
 """
 
-import pytest
-
 from m4.core.datasets import (
     Capability,
     DatasetDefinition,
@@ -207,5 +205,3 @@ class TestDatasetRegistry:
         names = [ds.name for ds in all_datasets]
         assert "mimic-iv-demo" in names
         assert "mimic-iv-full" in names
-
-
