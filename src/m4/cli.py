@@ -23,7 +23,7 @@ from m4.data_io import (
     init_duckdb_from_parquet,
     verify_table_rowcount,
 )
-from m4.datasets import DatasetRegistry
+from m4.core.datasets import DatasetRegistry
 
 app = typer.Typer(
     name="m4",

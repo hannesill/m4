@@ -10,7 +10,7 @@ import pytest
 from fastmcp import Client
 
 # Define DatasetDefinition locally if imports fail (shouldn't happen in test env)
-from m4.datasets import DatasetDefinition
+from m4.core.datasets import DatasetDefinition
 
 # Mock the database path check during import to handle CI environments
 with patch("pathlib.Path.exists", return_value=True):

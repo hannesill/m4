@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from m4.datasets import DatasetDefinition, DatasetRegistry
+from m4.core.datasets import DatasetDefinition, DatasetRegistry
 
 APP_NAME = "m4"
 
