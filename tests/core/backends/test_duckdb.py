@@ -1,0 +1,273 @@
+"""Tests for m4.core.backends.duckdb module.
+
+Tests cover:
+- DuckDBBackend initialization
+- Database path resolution
+- Query execution (mocked)
+- Table listing
+- Error handling
+"""
+
+import os
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+from m4.core.backends.base import ConnectionError, TableNotFoundError
+from m4.core.backends.duckdb import DuckDBBackend
+from m4.core.datasets import Capability, DatasetDefinition, Modality
+
+
+@pytest.fixture
+def test_dataset():
+    """Create a test dataset definition."""
+    return DatasetDefinition(
+        name="test-dataset",
+        modalities={Modality.TABULAR},
+        capabilities={Capability.ICU_STAYS, Capability.LAB_RESULTS},
+        default_duckdb_filename="test_dataset.duckdb",
+    )
+
+
+@pytest.fixture
+def temp_db(test_dataset):
+    """Create a temporary DuckDB database for testing."""
+    import duckdb
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = Path(tmpdir) / "test.duckdb"
+
+        # Create a minimal test database
+        conn = duckdb.connect(str(db_path))
+        conn.execute(
+            """
+            CREATE TABLE patients (
+                subject_id INTEGER PRIMARY KEY,
+                gender VARCHAR,
+                anchor_age INTEGER
+            )
+        """
+        )
+        conn.execute(
+            """
+            INSERT INTO patients VALUES
+            (1, 'M', 65),
+            (2, 'F', 42),
+            (3, 'M', 55)
+        """
+        )
+        conn.close()
+
+        yield db_path
+
+
+class TestDuckDBBackendInit:
+    """Test DuckDBBackend initialization."""
+
+    def test_default_init(self):
+        """Test default initialization."""
+        backend = DuckDBBackend()
+
+        assert backend.name == "duckdb"
+        assert backend._db_path_override is None
+
+    def test_init_with_path_override(self, temp_db):
+        """Test initialization with path override."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        assert backend._db_path_override == temp_db
+
+
+class TestDuckDBPathResolution:
+    """Test database path resolution."""
+
+    def test_path_override_takes_priority(self, test_dataset, temp_db):
+        """Test that path override takes highest priority."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+        path = backend._get_db_path(test_dataset)
+
+        assert path == temp_db
+
+    def test_env_var_takes_second_priority(self, test_dataset, temp_db):
+        """Test that M4_DB_PATH env var takes second priority."""
+        with patch.dict(os.environ, {"M4_DB_PATH": str(temp_db)}):
+            backend = DuckDBBackend()  # No override
+            path = backend._get_db_path(test_dataset)
+
+            assert path == temp_db
+
+    def test_dataset_config_used_as_fallback(self, test_dataset):
+        """Test that dataset config is used when no override."""
+        with patch.dict(os.environ, {}, clear=True):
+            # Remove M4_DB_PATH if set
+            env_backup = os.environ.pop("M4_DB_PATH", None)
+            try:
+                backend = DuckDBBackend()
+
+                with patch(
+                    "m4.core.backends.duckdb.get_default_database_path"
+                ) as mock_get_path:
+                    mock_get_path.return_value = Path("/mock/path/test.duckdb")
+                    path = backend._get_db_path(test_dataset)
+
+                    assert path == Path("/mock/path/test.duckdb")
+                    mock_get_path.assert_called_once_with(test_dataset.name)
+            finally:
+                if env_backup:
+                    os.environ["M4_DB_PATH"] = env_backup
+
+
+class TestDuckDBQueryExecution:
+    """Test query execution."""
+
+    def test_successful_query(self, test_dataset, temp_db):
+        """Test executing a successful query."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        result = backend.execute_query("SELECT * FROM patients", test_dataset)
+
+        assert result.success is True
+        assert result.error is None
+        assert result.row_count == 3
+        assert "subject_id" in result.data
+        assert "gender" in result.data
+
+    def test_query_with_limit(self, test_dataset, temp_db):
+        """Test query with LIMIT clause."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        result = backend.execute_query("SELECT * FROM patients LIMIT 1", test_dataset)
+
+        assert result.success is True
+        assert result.row_count == 1
+
+    def test_empty_result(self, test_dataset, temp_db):
+        """Test query returning no results."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        result = backend.execute_query(
+            "SELECT * FROM patients WHERE subject_id = 999", test_dataset
+        )
+
+        assert result.success is True
+        assert result.data == "No results found"
+        assert result.row_count == 0
+
+    def test_table_not_found(self, test_dataset, temp_db):
+        """Test query against non-existent table."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        result = backend.execute_query(
+            "SELECT * FROM nonexistent_table", test_dataset
+        )
+
+        assert result.success is False
+        assert result.error is not None
+
+    def test_connection_error_missing_db(self, test_dataset):
+        """Test connection error when database file doesn't exist."""
+        backend = DuckDBBackend(db_path_override=Path("/nonexistent/path/db.duckdb"))
+
+        with pytest.raises(ConnectionError) as exc_info:
+            backend.execute_query("SELECT 1", test_dataset)
+
+        assert "not found" in str(exc_info.value).lower()
+        assert exc_info.value.backend == "duckdb"
+
+
+class TestDuckDBTableOperations:
+    """Test table listing and info operations."""
+
+    def test_get_table_list(self, test_dataset, temp_db):
+        """Test listing tables."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        tables = backend.get_table_list(test_dataset)
+
+        assert "patients" in tables
+
+    def test_get_table_info(self, test_dataset, temp_db):
+        """Test getting table schema info."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        result = backend.get_table_info("patients", test_dataset)
+
+        assert result.success is True
+        # PRAGMA table_info returns column metadata
+        assert "subject_id" in result.data or "name" in result.data
+
+    def test_get_table_info_not_found(self, test_dataset, temp_db):
+        """Test getting info for non-existent table."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        # Should raise or return error
+        with pytest.raises(TableNotFoundError):
+            backend.get_table_info("nonexistent_table", test_dataset)
+
+    def test_get_sample_data(self, test_dataset, temp_db):
+        """Test getting sample data from table."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        result = backend.get_sample_data("patients", test_dataset, limit=2)
+
+        assert result.success is True
+        # Should return at most 2 rows
+        assert result.row_count <= 2
+
+
+class TestDuckDBBackendInfo:
+    """Test backend info generation."""
+
+    def test_backend_info(self, test_dataset, temp_db):
+        """Test getting backend info."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        info = backend.get_backend_info(test_dataset)
+
+        assert "DuckDB" in info
+        assert test_dataset.name in info
+        assert str(temp_db) in info
+
+    def test_backend_info_missing_db(self, test_dataset):
+        """Test backend info when database path can't be determined."""
+        backend = DuckDBBackend()
+
+        with patch(
+            "m4.core.backends.duckdb.get_default_database_path"
+        ) as mock_get_path:
+            mock_get_path.return_value = None
+
+            info = backend.get_backend_info(test_dataset)
+
+            assert "DuckDB" in info
+            assert "unknown" in info
+
+
+class TestDuckDBResultTruncation:
+    """Test result truncation for large result sets."""
+
+    def test_large_result_truncated(self, test_dataset):
+        """Test that large results are truncated."""
+        import duckdb
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "large_test.duckdb"
+
+            # Create a database with many rows
+            conn = duckdb.connect(str(db_path))
+            conn.execute("CREATE TABLE big_table (id INTEGER, value VARCHAR)")
+
+            # Insert 100 rows
+            for i in range(100):
+                conn.execute(f"INSERT INTO big_table VALUES ({i}, 'value_{i}')")
+            conn.close()
+
+            backend = DuckDBBackend(db_path_override=db_path)
+            result = backend.execute_query("SELECT * FROM big_table", test_dataset)
+
+            assert result.success is True
+            assert result.row_count == 100
+            assert result.truncated is True
+            assert "showing first 50" in result.data.lower()
