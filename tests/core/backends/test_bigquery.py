@@ -129,9 +129,7 @@ class TestBigQueryClientCaching:
                 mock_bq.Client.return_value = mock_client
 
                 with patch.dict("sys.modules", {"google.cloud": MagicMock()}):
-                    with patch.dict(
-                        "sys.modules", {"google.cloud.bigquery": mock_bq}
-                    ):
+                    with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
                         # Manually set up cache to simulate behavior
                         backend._client_cache = {
                             "client": mock_client,

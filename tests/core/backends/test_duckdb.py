@@ -159,9 +159,7 @@ class TestDuckDBQueryExecution:
         """Test query against non-existent table."""
         backend = DuckDBBackend(db_path_override=temp_db)
 
-        result = backend.execute_query(
-            "SELECT * FROM nonexistent_table", test_dataset
-        )
+        result = backend.execute_query("SELECT * FROM nonexistent_table", test_dataset)
 
         assert result.success is False
         assert result.error is not None

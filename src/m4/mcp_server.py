@@ -18,9 +18,14 @@ from m4.config import (
     set_active_dataset,
 )
 from m4.core.datasets import DatasetRegistry
+from m4.core.tools import ToolRegistry, ToolSelector, init_tools
 
 # Create FastMCP server instance
 mcp = FastMCP("m4")
+
+# Initialize capability-based tool system (Phase 4)
+init_tools()
+_tool_selector = ToolSelector()
 
 # Global variables for backend configuration
 _backend = None
@@ -234,6 +239,65 @@ def _get_backend_info() -> str:
         # Resolve project ID dynamically for display
         _, project_id = _get_bq_client()
         return f"🔧 **Current Backend:** BigQuery (cloud database)\n📦 **Active Dataset:** {ds_name}\n☁️ **Project ID:** {project_id}\n"
+
+
+def _check_tool_compatibility(tool_name: str) -> tuple[bool, str]:
+    """Check if a tool is compatible with the current dataset.
+
+    Uses the ToolSelector to perform capability-based filtering.
+    This replaces manual tag-based checks like `if "mimic" not in ds_def.tags`.
+
+    Args:
+        tool_name: Name of the tool to check
+
+    Returns:
+        Tuple of (is_compatible, error_message).
+        If compatible, error_message is empty.
+        If not compatible, error_message explains why and suggests alternatives.
+    """
+    ds_def = _get_active_dataset_def()
+    if not ds_def:
+        return (
+            False,
+            "❌ **Error:** No active dataset. Use `list_datasets()` to see available datasets.",
+        )
+
+    tool = ToolRegistry.get(tool_name)
+    if not tool:
+        return True, ""  # Unknown tool - let it proceed (backward compat)
+
+    if not _tool_selector.is_tool_available(tool_name, ds_def):
+        # Build helpful error message based on missing capabilities
+        missing_modalities = tool.required_modalities - ds_def.modalities
+        missing_capabilities = tool.required_capabilities - ds_def.capabilities
+
+        msg_parts = [
+            f"❌ **Error:** Tool `{tool_name}` is not available for dataset '{ds_def.name}'."
+        ]
+
+        if missing_modalities:
+            modality_names = ", ".join(m.name for m in missing_modalities)
+            msg_parts.append(f"\n📋 **Missing data types:** {modality_names}")
+
+        if missing_capabilities:
+            cap_names = ", ".join(c.name for c in missing_capabilities)
+            msg_parts.append(f"\n⚙️ **Missing capabilities:** {cap_names}")
+
+        # Suggest compatible tools
+        compatible_tools = _tool_selector.tools_for_dataset(ds_def)
+        if compatible_tools:
+            tool_names = ", ".join(f"`{t.name}`" for t in compatible_tools[:5])
+            msg_parts.append(
+                f"\n\n💡 **Available tools for this dataset:** {tool_names}"
+            )
+
+        msg_parts.append(
+            "\n\n🔄 Use `list_datasets()` to see other datasets that may support this operation."
+        )
+
+        return False, "".join(msg_parts)
+
+    return True, ""
 
 
 # ==========================================
@@ -703,11 +767,12 @@ def get_icu_stays(patient_id: int | None = None, limit: int = 10) -> str:
     Returns:
         ICU stay data as formatted text or guidance if table not found
     """
-    # Check dataset compatibility
-    ds_def = _get_active_dataset_def()
-    if ds_def and "mimic" not in ds_def.tags:
-        return f"❌ **Error:** This tool is optimized for MIMIC datasets. The current dataset '{ds_def.name}' does not appear to be a MIMIC dataset."
+    # Capability-based compatibility check (Phase 4)
+    is_compatible, error_msg = _check_tool_compatibility("get_icu_stays")
+    if not is_compatible:
+        return error_msg
 
+    ds_def = _get_active_dataset_def()
     # Security validation
     if not _validate_limit(limit):
         return "Error: Invalid limit. Must be a positive integer between 1 and 10000."
@@ -773,11 +838,12 @@ def get_lab_results(
     Returns:
         Lab results as formatted text or guidance if table not found
     """
-    # Check dataset compatibility
-    ds_def = _get_active_dataset_def()
-    if ds_def and "mimic" not in ds_def.tags:
-        return f"❌ **Error:** This tool is optimized for MIMIC datasets. The current dataset '{ds_def.name}' does not appear to be a MIMIC dataset."
+    # Capability-based compatibility check (Phase 4)
+    is_compatible, error_msg = _check_tool_compatibility("get_lab_results")
+    if not is_compatible:
+        return error_msg
 
+    ds_def = _get_active_dataset_def()
     # Security validation
     if not _validate_limit(limit):
         return "Error: Invalid limit. Must be a positive integer between 1 and 10000."
@@ -848,11 +914,12 @@ def get_race_distribution(limit: int = 10) -> str:
     Returns:
         Race distribution as formatted text or guidance if table not found
     """
-    # Check dataset compatibility
-    ds_def = _get_active_dataset_def()
-    if ds_def and "mimic" not in ds_def.tags:
-        return f"❌ **Error:** This tool is optimized for MIMIC datasets. The current dataset '{ds_def.name}' does not appear to be a MIMIC dataset."
+    # Capability-based compatibility check (Phase 4)
+    is_compatible, error_msg = _check_tool_compatibility("get_race_distribution")
+    if not is_compatible:
+        return error_msg
 
+    ds_def = _get_active_dataset_def()
     # Security validation
     if not _validate_limit(limit):
         return "Error: Invalid limit. Must be a positive integer between 1 and 10000."

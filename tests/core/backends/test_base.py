@@ -6,7 +6,6 @@ Tests cover:
 - Backend protocol interface
 """
 
-
 from m4.core.backends.base import (
     Backend,
     BackendError,

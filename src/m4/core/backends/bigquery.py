@@ -173,7 +173,9 @@ class BigQueryBackend:
             error_msg = str(e).lower()
 
             # Provide specific error types
-            if "not found" in error_msg and ("table" in error_msg or "dataset" in error_msg):
+            if "not found" in error_msg and (
+                "table" in error_msg or "dataset" in error_msg
+            ):
                 return QueryResult(
                     data="",
                     error=f"Table or dataset not found: {e}",
@@ -344,7 +346,11 @@ class BigQueryBackend:
             Formatted string with backend details
         """
         project_id = self._get_project_id(dataset)
-        dataset_ids = ", ".join(dataset.bigquery_dataset_ids) if dataset.bigquery_dataset_ids else "none configured"
+        dataset_ids = (
+            ", ".join(dataset.bigquery_dataset_ids)
+            if dataset.bigquery_dataset_ids
+            else "none configured"
+        )
 
         return (
             f"**Current Backend:** BigQuery (cloud database)\n"

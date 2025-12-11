@@ -50,9 +50,7 @@ class DuckDBBackend:
                             If provided, this path is used for all queries
                             regardless of the dataset parameter.
         """
-        self._db_path_override = (
-            Path(db_path_override) if db_path_override else None
-        )
+        self._db_path_override = Path(db_path_override) if db_path_override else None
 
     @property
     def name(self) -> str:
@@ -167,7 +165,9 @@ class DuckDBBackend:
             error_msg = str(e).lower()
 
             # Provide specific error types
-            if "no such table" in error_msg or ("table" in error_msg and "not found" in error_msg):
+            if "no such table" in error_msg or (
+                "table" in error_msg and "not found" in error_msg
+            ):
                 # Try to extract table name from error
                 return QueryResult(
                     data="",

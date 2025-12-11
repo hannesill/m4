@@ -64,8 +64,7 @@ def get_backend(backend_type: str | None = None) -> Backend:
         backend = BigQueryBackend()
     else:
         raise ValueError(
-            f"Unsupported backend: {backend_type}. "
-            f"Supported backends: duckdb, bigquery"
+            f"Unsupported backend: {backend_type}. Supported backends: duckdb, bigquery"
         )
 
     _backend_cache[backend_type] = backend
