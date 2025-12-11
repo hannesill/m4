@@ -895,6 +895,48 @@ This ensures compatibility across different MIMIC-IV setups."""
     return result
 
 
+# Internal wrapper functions for capability-based tools (Phase 2)
+# These delegate to the existing MCP tool functions, enabling the new
+# tool classes to reuse existing logic without duplication.
+
+
+def _list_datasets_internal() -> str:
+    """Internal wrapper for list_datasets tool."""
+    return list_datasets()
+
+
+def _set_dataset_internal(dataset_name: str) -> str:
+    """Internal wrapper for set_dataset tool."""
+    return set_dataset(dataset_name)
+
+
+def _get_database_schema_internal() -> str:
+    """Internal wrapper for get_database_schema tool."""
+    return get_database_schema()
+
+
+def _get_table_info_internal(table_name: str, show_sample: bool = True) -> str:
+    """Internal wrapper for get_table_info tool."""
+    return get_table_info(table_name, show_sample)
+
+
+def _get_icu_stays_internal(patient_id: int | None = None, limit: int = 10) -> str:
+    """Internal wrapper for get_icu_stays tool."""
+    return get_icu_stays(patient_id, limit)
+
+
+def _get_lab_results_internal(
+    patient_id: int | None = None, limit: int = 20
+) -> str:
+    """Internal wrapper for get_lab_results tool."""
+    return get_lab_results(patient_id, None, limit)
+
+
+def _get_race_distribution_internal(limit: int = 10) -> str:
+    """Internal wrapper for get_race_distribution tool."""
+    return get_race_distribution(limit)
+
+
 def main():
     """Main entry point for MCP server."""
     # Run the FastMCP server
