@@ -3,13 +3,17 @@
 This package provides the tool abstraction layer for M4:
 - Tool protocol: Interface for all M4 tools
 - ToolInput/ToolOutput: Base classes for tool parameters
-- ToolRegistry: Registry for managing tools (Phase 2)
+- ToolRegistry: Registry for managing tools
+- ToolSelector: Intelligent tool filtering based on capabilities
 """
 
 from m4.core.tools.base import Tool, ToolInput, ToolOutput
+from m4.core.tools.registry import ToolRegistry, ToolSelector
 
 __all__ = [
     "Tool",
     "ToolInput",
     "ToolOutput",
+    "ToolRegistry",
+    "ToolSelector",
 ]
