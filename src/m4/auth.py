@@ -107,9 +107,30 @@ class OAuth2Config:
 class OAuth2Validator:
     """OAuth2 token validator."""
 
+    # Maximum number of users to track in rate limit cache (LRU eviction)
+    MAX_RATE_LIMIT_CACHE_SIZE = 10000
+
     def __init__(self, config: OAuth2Config):
         self.config = config
         self.http_client = httpx.Client(timeout=30.0)
+        self._jwks_cache: dict[str, Any] = {}
+
+    def close(self) -> None:
+        """Close the HTTP client and release resources."""
+        if self.http_client:
+            self.http_client.close()
+
+    def __del__(self) -> None:
+        """Destructor to ensure HTTP client is closed."""
+        self.close()
+
+    def __enter__(self) -> "OAuth2Validator":
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        """Context manager exit."""
+        self.close()
 
     async def validate_token(self, token: str) -> dict[str, Any]:
         """
@@ -265,14 +286,25 @@ class OAuth2Validator:
         if missing_scopes:
             raise TokenValidationError(f"Missing required scopes: {missing_scopes}")
 
-    def _check_rate_limit(self, payload: dict[str, Any]):
-        """Check rate limits for the user."""
+    def _check_rate_limit(self, payload: dict[str, Any]) -> None:
+        """Check rate limits for the user.
+
+        Includes periodic cleanup of all expired entries and LRU eviction
+        when cache exceeds MAX_RATE_LIMIT_CACHE_SIZE to prevent memory leaks.
+        """
         user_id = payload.get("sub", "unknown")
         current_time = time.time()
         window_start = current_time - self.config.rate_limit_window
 
-        # Clean old entries
-        user_requests = self.config._rate_limit_cache.get(user_id, [])
+        # Periodic cleanup: every 100 requests, clean all expired entries
+        # This prevents memory leaks from users who never return
+        cache = self.config._rate_limit_cache
+        total_entries = sum(len(v) for v in cache.values())
+        if total_entries > 0 and total_entries % 100 == 0:
+            self._cleanup_expired_rate_limits(window_start)
+
+        # Clean old entries for this specific user
+        user_requests = cache.get(user_id, [])
         user_requests = [
             req_time for req_time in user_requests if req_time > window_start
         ]
@@ -283,7 +315,56 @@ class OAuth2Validator:
 
         # Add current request
         user_requests.append(current_time)
-        self.config._rate_limit_cache[user_id] = user_requests
+        cache[user_id] = user_requests
+
+        # LRU eviction: if cache is too large, remove oldest entries
+        if len(cache) > self.MAX_RATE_LIMIT_CACHE_SIZE:
+            self._evict_oldest_rate_limit_entries()
+
+    def _cleanup_expired_rate_limits(self, window_start: float) -> None:
+        """Remove all expired entries from the rate limit cache.
+
+        This prevents memory leaks from users who make requests once
+        and never return.
+
+        Args:
+            window_start: Timestamp before which entries are considered expired
+        """
+        cache = self.config._rate_limit_cache
+        users_to_remove = []
+
+        for user_id, requests in cache.items():
+            # Filter to only valid requests
+            valid_requests = [t for t in requests if t > window_start]
+            if valid_requests:
+                cache[user_id] = valid_requests
+            else:
+                users_to_remove.append(user_id)
+
+        # Remove users with no valid requests
+        for user_id in users_to_remove:
+            del cache[user_id]
+
+    def _evict_oldest_rate_limit_entries(self) -> None:
+        """Evict oldest entries when cache exceeds maximum size.
+
+        Uses LRU-like eviction based on the most recent request time
+        for each user.
+        """
+        cache = self.config._rate_limit_cache
+        if len(cache) <= self.MAX_RATE_LIMIT_CACHE_SIZE:
+            return
+
+        # Sort users by their most recent request time (oldest first)
+        users_by_recency = sorted(
+            cache.keys(),
+            key=lambda uid: max(cache[uid]) if cache[uid] else 0,
+        )
+
+        # Remove oldest 10% of entries
+        num_to_remove = max(1, len(cache) // 10)
+        for user_id in users_by_recency[:num_to_remove]:
+            del cache[user_id]
 
 
 # Global instances

@@ -8,6 +8,8 @@ This package provides the tool abstraction layer for M4:
 - init_tools(): Initialize and register all available tools
 """
 
+import threading
+
 from m4.core.tools.base import Tool, ToolInput, ToolOutput
 from m4.core.tools.management import (
     ListDatasetsTool,
@@ -25,7 +27,8 @@ from m4.core.tools.tabular import (
     GetTableInfoTool,
 )
 
-# Track initialization state
+# Track initialization state with thread safety
+_tools_lock = threading.Lock()
 _tools_initialized = False
 
 
@@ -33,7 +36,8 @@ def init_tools() -> None:
     """Initialize and register all available tools.
 
     This function registers all tool classes with the ToolRegistry.
-    It is idempotent - calling it multiple times has no additional effect.
+    It is idempotent and thread-safe - calling it multiple times or
+    from multiple threads has no additional effect.
 
     This should be called during application startup, before the MCP
     server begins accepting requests.
@@ -44,35 +48,38 @@ def init_tools() -> None:
     """
     global _tools_initialized
 
-    # Check if already initialized AND tools are registered
-    # (handles case where registry was reset but flag is still True)
-    if _tools_initialized and ToolRegistry.list_all():
-        return
+    with _tools_lock:
+        # Check if already initialized AND tools are registered
+        # (handles case where registry was reset but flag is still True)
+        if _tools_initialized and ToolRegistry.list_all():
+            return
 
-    # Register management tools (always available)
-    ToolRegistry.register(ListDatasetsTool())
-    ToolRegistry.register(SetDatasetTool())
+        # Register management tools (always available)
+        ToolRegistry.register(ListDatasetsTool())
+        ToolRegistry.register(SetDatasetTool())
 
-    # Register tabular data tools
-    ToolRegistry.register(GetDatabaseSchemaTool())
-    ToolRegistry.register(GetTableInfoTool())
-    ToolRegistry.register(ExecuteQueryTool())
-    ToolRegistry.register(GetICUStaysTool())
-    ToolRegistry.register(GetLabResultsTool())
-    ToolRegistry.register(GetRaceDistributionTool())
+        # Register tabular data tools
+        ToolRegistry.register(GetDatabaseSchemaTool())
+        ToolRegistry.register(GetTableInfoTool())
+        ToolRegistry.register(ExecuteQueryTool())
+        ToolRegistry.register(GetICUStaysTool())
+        ToolRegistry.register(GetLabResultsTool())
+        ToolRegistry.register(GetRaceDistributionTool())
 
-    _tools_initialized = True
+        _tools_initialized = True
 
 
 def reset_tools() -> None:
     """Reset the tool registry and initialization state.
 
     This is primarily useful for testing to ensure a clean state
-    between test runs.
+    between test runs. Thread-safe.
     """
     global _tools_initialized
-    ToolRegistry.reset()
-    _tools_initialized = False
+
+    with _tools_lock:
+        ToolRegistry.reset()
+        _tools_initialized = False
 
 
 __all__ = [

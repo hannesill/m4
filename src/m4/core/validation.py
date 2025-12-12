@@ -139,23 +139,24 @@ def is_safe_query(sql_query: str) -> tuple[bool, str]:
                 if f" {keyword} " in f" {sql_upper} ":
                     return False, f"Write operation not allowed: {keyword}"
 
-            # Block common injection patterns
-            injection_patterns = [
-                ("1=1", "Classic injection pattern"),
-                ("OR 1=1", "Boolean injection pattern"),
-                ("AND 1=1", "Boolean injection pattern"),
-                ("OR '1'='1'", "String injection pattern"),
-                ("AND '1'='1'", "String injection pattern"),
-                ("WAITFOR", "Time-based injection"),
-                ("SLEEP(", "Time-based injection"),
-                ("BENCHMARK(", "Time-based injection"),
-                ("LOAD_FILE(", "File access injection"),
-                ("INTO OUTFILE", "File write injection"),
-                ("INTO DUMPFILE", "File write injection"),
+            # Block common injection patterns using regex for flexible matching
+            # Use \s* to handle variations with spaces (e.g., "1 = 1" vs "1=1")
+            injection_regex_patterns = [
+                (r"\b\d+\s*=\s*\d+\b", "Classic injection pattern (tautology)"),
+                (r"\bOR\s+\d+\s*=\s*\d+", "Boolean injection pattern"),
+                (r"\bAND\s+\d+\s*=\s*\d+", "Boolean injection pattern"),
+                (r"\bOR\s+['\"].*['\"]\s*=\s*['\"]", "String injection pattern"),
+                (r"\bAND\s+['\"].*['\"]\s*=\s*['\"]", "String injection pattern"),
+                (r"\bWAITFOR\b", "Time-based injection"),
+                (r"\bSLEEP\s*\(", "Time-based injection"),
+                (r"\bBENCHMARK\s*\(", "Time-based injection"),
+                (r"\bLOAD_FILE\s*\(", "File access injection"),
+                (r"\bINTO\s+OUTFILE\b", "File write injection"),
+                (r"\bINTO\s+DUMPFILE\b", "File write injection"),
             ]
 
-            for pattern, description in injection_patterns:
-                if pattern in sql_upper:
+            for pattern, description in injection_regex_patterns:
+                if re.search(pattern, sql_upper, re.IGNORECASE):
                     return False, f"Injection pattern detected: {description}"
 
             # Block suspicious identifiers not found in medical databases
