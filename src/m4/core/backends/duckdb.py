@@ -259,7 +259,7 @@ class DuckDBBackend:
         # Sanitize limit
         limit = max(1, min(limit, 100))
 
-        query = f"SELECT * FROM '{table_name}' LIMIT {limit}"
+        query = f'SELECT * FROM "{table_name}" LIMIT {limit}'
         return self.execute_query(query, dataset)
 
     def get_backend_info(self, dataset: DatasetDefinition) -> str:

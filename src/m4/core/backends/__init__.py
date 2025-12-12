@@ -8,6 +8,7 @@ This package provides the backend abstraction layer for M4:
 """
 
 import os
+import threading
 
 from m4.core.backends.base import (
     Backend,
@@ -20,7 +21,8 @@ from m4.core.backends.base import (
 from m4.core.backends.bigquery import BigQueryBackend
 from m4.core.backends.duckdb import DuckDBBackend
 
-# Cache for backend instances
+# Cache for backend instances with thread safety
+_backend_lock = threading.Lock()
 _backend_cache: dict[str, Backend] = {}
 
 
@@ -28,7 +30,7 @@ def get_backend(backend_type: str | None = None) -> Backend:
     """Get a backend instance based on type.
 
     This factory function returns the appropriate backend implementation
-    based on the requested type. Backends are cached for reuse.
+    based on the requested type. Backends are cached for reuse. Thread-safe.
 
     Args:
         backend_type: Type of backend ('duckdb' or 'bigquery').
@@ -53,30 +55,33 @@ def get_backend(backend_type: str | None = None) -> Backend:
 
     backend_type = backend_type.lower()
 
-    # Check cache
-    if backend_type in _backend_cache:
-        return _backend_cache[backend_type]
+    with _backend_lock:
+        # Check cache
+        if backend_type in _backend_cache:
+            return _backend_cache[backend_type]
 
-    # Create new backend
-    if backend_type == "duckdb":
-        backend = DuckDBBackend()
-    elif backend_type == "bigquery":
-        backend = BigQueryBackend()
-    else:
-        raise ValueError(
-            f"Unsupported backend: {backend_type}. Supported backends: duckdb, bigquery"
-        )
+        # Create new backend
+        if backend_type == "duckdb":
+            backend = DuckDBBackend()
+        elif backend_type == "bigquery":
+            backend = BigQueryBackend()
+        else:
+            raise ValueError(
+                f"Unsupported backend: {backend_type}. "
+                "Supported backends: duckdb, bigquery"
+            )
 
-    _backend_cache[backend_type] = backend
-    return backend
+        _backend_cache[backend_type] = backend
+        return backend
 
 
 def reset_backend_cache() -> None:
     """Clear the backend cache.
 
-    Useful for testing or when backend configuration changes.
+    Useful for testing or when backend configuration changes. Thread-safe.
     """
-    _backend_cache.clear()
+    with _backend_lock:
+        _backend_cache.clear()
 
 
 __all__ = [
