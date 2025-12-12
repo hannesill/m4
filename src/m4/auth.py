@@ -8,7 +8,6 @@ import time
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Any
-from urllib.parse import urljoin
 
 import httpx
 import jwt
@@ -97,9 +96,8 @@ class OAuth2Config:
 
         if not self.jwks_url:
             # Auto-discover JWKS URL from issuer
-            self.jwks_url = urljoin(
-                self.issuer_url.rstrip("/"), "/.well-known/jwks.json"
-            )
+            # Note: Using f-string instead of urljoin to preserve path components
+            self.jwks_url = f"{self.issuer_url.rstrip('/')}/.well-known/jwks.json"
 
         logger.info(f"OAuth2 authentication enabled with issuer: {self.issuer_url}")
 
@@ -132,7 +130,7 @@ class OAuth2Validator:
         """Context manager exit."""
         self.close()
 
-    async def validate_token(self, token: str) -> dict[str, Any]:
+    def validate_token(self, token: str) -> dict[str, Any]:
         """
         Validate an OAuth2 access token.
 
@@ -147,7 +145,7 @@ class OAuth2Validator:
         """
         try:
             # Get JWKS for token validation
-            jwks = await self._get_jwks()
+            jwks = self._get_jwks()
 
             # Decode token header to get key ID
             unverified_header = jwt.get_unverified_header(token)
@@ -198,7 +196,7 @@ class OAuth2Validator:
         except Exception as e:
             raise TokenValidationError(f"Token validation failed: {e}")
 
-    async def _get_jwks(self) -> dict[str, Any]:
+    def _get_jwks(self) -> dict[str, Any]:
         """Get JWKS (JSON Web Key Set) from the OAuth2 provider."""
         current_time = time.time()
 
@@ -411,26 +409,8 @@ def require_oauth2(func):
             if not token or len(token.split(".")) != 3:
                 return "Error: Invalid token format"
 
-            # Actually validate the token using the OAuth2 validator
-            import asyncio
-
-            try:
-                # Run the async validation synchronously
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # If we're already in an async context, create a new thread
-                    import concurrent.futures
-
-                    with concurrent.futures.ThreadPoolExecutor() as executor:
-                        future = executor.submit(
-                            asyncio.run, _oauth2_validator.validate_token(token)
-                        )
-                        future.result(timeout=30)
-                else:
-                    loop.run_until_complete(_oauth2_validator.validate_token(token))
-            except RuntimeError:
-                # No event loop exists, create one
-                asyncio.run(_oauth2_validator.validate_token(token))
+            # Validate the token using the OAuth2 validator (synchronous)
+            _oauth2_validator.validate_token(token)
 
             return func(*args, **kwargs)
 

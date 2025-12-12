@@ -81,6 +81,12 @@ _CUSTOM_DATASETS_DIR = _PROJECT_DATA_DIR / "datasets"
 # --------------------------------------------------
 # Helper functions
 # --------------------------------------------------
+
+# Maximum file size for custom dataset JSON files (1MB)
+# Prevents memory exhaustion from malicious/oversized files
+MAX_DATASET_FILE_SIZE = 1024 * 1024
+
+
 def _load_custom_datasets():
     """Load custom dataset definitions from JSON files in m4_data/datasets/."""
     if not _CUSTOM_DATASETS_DIR.exists():
@@ -91,6 +97,14 @@ def _load_custom_datasets():
 
     for f in _CUSTOM_DATASETS_DIR.glob("*.json"):
         try:
+            # Check file size to prevent DoS via large files
+            if f.stat().st_size > MAX_DATASET_FILE_SIZE:
+                logger.warning(
+                    f"Dataset file too large (>{MAX_DATASET_FILE_SIZE} bytes), "
+                    f"skipping: {f}"
+                )
+                continue
+
             data = json.loads(f.read_text())
             # Basic validation/loading
             ds = DatasetDefinition(**data)

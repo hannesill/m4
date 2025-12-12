@@ -68,6 +68,59 @@ def validate_limit(limit: int, max_limit: int = 1000) -> bool:
     return isinstance(limit, int) and 0 < limit <= max_limit
 
 
+def validate_lab_item(lab_item: str | None) -> tuple[bool, str | None, bool]:
+    """Validate and sanitize lab_item parameter for safe SQL queries.
+
+    Lab items can be either:
+    - An integer itemid (e.g., "50912" for creatinine)
+    - A text label pattern (e.g., "glucose" to search for glucose-related tests)
+
+    The function sanitizes string input to prevent SQL injection while
+    preserving useful search functionality.
+
+    Args:
+        lab_item: The lab item to search for (itemid or label pattern)
+
+    Returns:
+        Tuple of (is_valid, sanitized_value, is_numeric)
+        - is_valid: True if lab_item is None or valid
+        - sanitized_value: The sanitized lab_item for use in queries
+        - is_numeric: True if the lab_item is a numeric itemid
+    """
+    if lab_item is None:
+        return True, None, False
+
+    if not isinstance(lab_item, str):
+        return False, None, False
+
+    lab_item = lab_item.strip()
+    if not lab_item:
+        return True, None, False
+
+    # Check if it's a numeric itemid
+    try:
+        itemid = int(lab_item)
+        return True, str(itemid), True
+    except ValueError:
+        pass
+
+    # Sanitize string for safe LIKE query
+    # Allow only alphanumeric, spaces, hyphens, and common punctuation
+    # This prevents SQL injection while allowing reasonable lab test searches
+    if not re.match(r"^[a-zA-Z0-9\s\-_,.'()]+$", lab_item):
+        return False, None, False
+
+    # Limit length to prevent abuse
+    if len(lab_item) > 100:
+        return False, None, False
+
+    # Escape SQL LIKE special characters (% and _) to treat them as literals
+    # Then wrap with % for substring matching
+    sanitized = lab_item.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+    return True, sanitized, False
+
+
 def is_safe_query(sql_query: str) -> tuple[bool, str]:
     """Validate SQL query for injection attacks and dangerous operations.
 
