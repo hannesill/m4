@@ -14,6 +14,7 @@ from m4.core.tools.base import ToolInput, ToolOutput
 from m4.core.validation import (
     format_error_with_guidance,
     is_safe_query,
+    validate_lab_item,
     validate_limit,
     validate_patient_id,
     validate_table_name,
@@ -56,6 +57,7 @@ class GetLabResultsInput(ToolInput):
     """Input for get_lab_results tool."""
 
     patient_id: int | None = None
+    lab_item: str | None = None
     limit: int = 20
 
 
@@ -351,6 +353,13 @@ class GetLabResultsTool:
         if not valid_pid:
             return ToolOutput(result="Error: Invalid patient_id. Must be an integer.")
 
+        # Validate lab_item to prevent SQL injection
+        valid_lab, sanitized_lab, is_numeric = validate_lab_item(params.lab_item)
+        if not valid_lab:
+            return ToolOutput(
+                result="Error: Invalid lab_item. Must be alphanumeric characters only."
+            )
+
         backend = get_backend()
 
         # Use table_mappings for table name resolution
@@ -362,12 +371,24 @@ class GetLabResultsTool:
                 result=f"Error: Invalid table name '{table_name}' in dataset configuration."
             )
 
-        # Build query with validated/sanitized values
+        # Build WHERE conditions
+        conditions = []
         if sanitized_pid is not None:
-            query = (
-                f"SELECT * FROM {table_name} "
-                f"WHERE subject_id = {sanitized_pid} LIMIT {params.limit}"
-            )
+            conditions.append(f"subject_id = {sanitized_pid}")
+
+        if sanitized_lab is not None:
+            if is_numeric:
+                # Filter by itemid (exact match)
+                conditions.append(f"itemid = {sanitized_lab}")
+            else:
+                # Filter by label (case-insensitive substring match)
+                # Use LOWER() for case-insensitive matching
+                conditions.append(f"LOWER(label) LIKE LOWER('%{sanitized_lab}%')")
+
+        # Build query
+        if conditions:
+            where_clause = " AND ".join(conditions)
+            query = f"SELECT * FROM {table_name} WHERE {where_clause} LIMIT {params.limit}"
         else:
             query = f"SELECT * FROM {table_name} LIMIT {params.limit}"
 

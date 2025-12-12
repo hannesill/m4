@@ -360,7 +360,8 @@ def get_lab_results(
 
     Args:
         patient_id: Specific patient ID to query (optional).
-        lab_item: Lab item to search for (optional, not currently used).
+        lab_item: Lab item to filter by - either numeric itemid (e.g., "50912")
+            or text pattern to search in labels (e.g., "glucose").
         limit: Maximum number of records (default: 20).
 
     Returns:
@@ -374,10 +375,8 @@ def get_lab_results(
         return error_msg
 
     tool = ToolRegistry.get("get_lab_results")
-    # Note: lab_item parameter is kept for API compatibility but not used
-    _ = lab_item  # Explicitly mark as intentionally unused
     return tool.invoke(
-        dataset, GetLabResultsInput(patient_id=patient_id, limit=limit)
+        dataset, GetLabResultsInput(patient_id=patient_id, lab_item=lab_item, limit=limit)
     ).result
 
 
