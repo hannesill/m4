@@ -231,8 +231,12 @@ def detect_available_local_datasets() -> dict[str, dict[str, Any]]:
     return results
 
 
-def get_active_dataset() -> str | None:
-    """Get the active dataset name."""
+def get_active_dataset() -> str:
+    """Get the active dataset name.
+
+    Raises:
+        ValueError: If no dataset is configured and none can be auto-detected.
+    """
     # Ensure custom datasets are loaded so they can be found in the registry
     _load_custom_datasets()
 
@@ -245,15 +249,9 @@ def get_active_dataset() -> str | None:
     cfg = load_runtime_config()
     active = cfg.get("active_dataset")
 
-    # Priority 3: Auto-detect default: prefer demo, then full
+    # Else, raise an error that no active dataset is configured.
     if not active:
-        availability = detect_available_local_datasets()
-        if availability.get("mimic-iv-demo", {}).get("parquet_present"):
-            active = "mimic-iv-demo"
-        elif availability.get("mimic-iv-full", {}).get("parquet_present"):
-            active = "mimic-iv-full"
-        else:
-            active = None
+        raise ValueError("No active dataset configured. Please rerun 'm4 init' to configure a dataset.")
 
     return active
 
