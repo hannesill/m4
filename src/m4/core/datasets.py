@@ -16,9 +16,6 @@ class Modality(Enum):
     """Data types a dataset can contain."""
 
     TABULAR = auto()  # Structured tables (labs, demographics, vitals)
-    NOTES = auto()  # Clinical free-text notes
-    IMAGING = auto()  # Medical images (X-rays, CT, MRI)
-    WAVEFORM = auto()  # Time-series (ECG, EEG, blood pressure)
 
 
 class Capability(Enum):
@@ -32,14 +29,6 @@ class Capability(Enum):
     ICU_STAYS = auto()  # ICU admission data
     LAB_RESULTS = auto()  # Laboratory test results
     DEMOGRAPHIC_STATS = auto()  # Patient demographics
-    MEDICATIONS = auto()  # Prescription data
-    PROCEDURES = auto()  # Medical procedures
-    DIAGNOSES = auto()  # ICD codes
-
-    # Future capabilities
-    CLINICAL_NOTES = auto()  # Free-text note search/analysis
-    IMAGE_RETRIEVAL = auto()  # Fetch medical images
-    WAVEFORM_QUERY = auto()  # Time-series data access
 
 
 @dataclass
@@ -173,7 +162,7 @@ class DatasetRegistry:
             bigquery_project_id="physionet-data",
             bigquery_dataset_ids=["mimiciv_3_1_hosp", "mimiciv_3_1_icu"],
             requires_authentication=True,
-            modalities=frozenset({Modality.TABULAR, Modality.NOTES}),
+            modalities=frozenset({Modality.TABULAR}),
             capabilities=frozenset(
                 {
                     Capability.COHORT_QUERY,
@@ -181,10 +170,6 @@ class DatasetRegistry:
                     Capability.ICU_STAYS,
                     Capability.LAB_RESULTS,
                     Capability.DEMOGRAPHIC_STATS,
-                    Capability.MEDICATIONS,
-                    Capability.PROCEDURES,
-                    Capability.DIAGNOSES,
-                    Capability.CLINICAL_NOTES,
                 }
             ),
             table_mappings={
