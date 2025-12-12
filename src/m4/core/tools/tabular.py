@@ -15,6 +15,8 @@ from m4.core.validation import (
     format_error_with_guidance,
     is_safe_query,
     validate_limit,
+    validate_patient_id,
+    validate_table_name,
 )
 
 
@@ -260,14 +262,28 @@ class GetICUStaysTool:
                 result="Error: Invalid limit. Must be between 1 and 1000."
             )
 
+        # Validate patient_id to prevent SQL injection
+        valid_pid, sanitized_pid = validate_patient_id(params.patient_id)
+        if not valid_pid:
+            return ToolOutput(result="Error: Invalid patient_id. Must be an integer.")
+
         backend = get_backend()
 
         # Use table_mappings for table name resolution
         table_name = dataset.table_mappings.get("icustays", "icustays")
 
-        # Build query
-        if params.patient_id:
-            query = f"SELECT * FROM {table_name} WHERE subject_id = {params.patient_id}"
+        # Validate table name to prevent SQL injection
+        if not validate_table_name(table_name):
+            return ToolOutput(
+                result=f"Error: Invalid table name '{table_name}' in dataset configuration."
+            )
+
+        # Build query with validated/sanitized values
+        if sanitized_pid is not None:
+            query = (
+                f"SELECT * FROM {table_name} "
+                f"WHERE subject_id = {sanitized_pid} LIMIT {params.limit}"
+            )
         else:
             query = f"SELECT * FROM {table_name} LIMIT {params.limit}"
 
@@ -330,16 +346,27 @@ class GetLabResultsTool:
                 result="Error: Invalid limit. Must be between 1 and 1000."
             )
 
+        # Validate patient_id to prevent SQL injection
+        valid_pid, sanitized_pid = validate_patient_id(params.patient_id)
+        if not valid_pid:
+            return ToolOutput(result="Error: Invalid patient_id. Must be an integer.")
+
         backend = get_backend()
 
         # Use table_mappings for table name resolution
         table_name = dataset.table_mappings.get("labevents", "labevents")
 
-        # Build query
-        if params.patient_id:
+        # Validate table name to prevent SQL injection
+        if not validate_table_name(table_name):
+            return ToolOutput(
+                result=f"Error: Invalid table name '{table_name}' in dataset configuration."
+            )
+
+        # Build query with validated/sanitized values
+        if sanitized_pid is not None:
             query = (
                 f"SELECT * FROM {table_name} "
-                f"WHERE subject_id = {params.patient_id} LIMIT {params.limit}"
+                f"WHERE subject_id = {sanitized_pid} LIMIT {params.limit}"
             )
         else:
             query = f"SELECT * FROM {table_name} LIMIT {params.limit}"
@@ -410,6 +437,12 @@ class GetRaceDistributionTool:
 
         # Use table_mappings for table name resolution
         table_name = dataset.table_mappings.get("admissions", "admissions")
+
+        # Validate table name to prevent SQL injection
+        if not validate_table_name(table_name):
+            return ToolOutput(
+                result=f"Error: Invalid table name '{table_name}' in dataset configuration."
+            )
 
         # Build query
         query = (

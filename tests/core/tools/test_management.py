@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from m4.core.datasets import Capability, DatasetDefinition, Modality
+from m4.core.datasets import DatasetDefinition, Modality
 from m4.core.tools.management import (
     ListDatasetsInput,
     ListDatasetsTool,
@@ -241,9 +241,7 @@ class TestSetDatasetTool:
                 assert "mimic-iv-demo" in result.result
                 assert "mimic-iv-full" in result.result
 
-    def test_invoke_warns_missing_db_for_duckdb(
-        self, mock_availability, dummy_dataset
-    ):
+    def test_invoke_warns_missing_db_for_duckdb(self, mock_availability, dummy_dataset):
         """Test warning when database file is missing for DuckDB backend."""
         # Modify availability: parquet present but db missing
         availability = {
@@ -303,7 +301,7 @@ class TestSetDatasetTool:
 
                     tool = SetDatasetTool()
                     params = SetDatasetInput(dataset_name="MIMIC-IV-DEMO")
-                    result = tool.invoke(dummy_dataset, params)
+                    tool.invoke(dummy_dataset, params)
 
                     # Should normalize to lowercase
                     mock_set.assert_called_once_with("mimic-iv-demo")
@@ -343,7 +341,10 @@ class TestManagementToolProtocol:
         tool = ListDatasetsTool()
 
         assert tool.name == "list_datasets"
-        assert "available" in tool.description.lower() or "list" in tool.description.lower()
+        assert (
+            "available" in tool.description.lower()
+            or "list" in tool.description.lower()
+        )
         assert tool.input_model == ListDatasetsInput
         assert isinstance(tool.required_modalities, frozenset)
         assert isinstance(tool.required_capabilities, frozenset)

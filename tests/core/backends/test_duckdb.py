@@ -306,7 +306,9 @@ class TestDuckDBEdgeCases:
             assert result.success is True
             assert result.row_count == 3
             # NULL values should be represented in output
-            assert "None" in result.data or "NaN" in result.data or "<NA>" in result.data
+            assert (
+                "None" in result.data or "NaN" in result.data or "<NA>" in result.data
+            )
 
     def test_execute_query_with_unicode(self, test_dataset):
         """Test handling of unicode characters."""
@@ -316,9 +318,7 @@ class TestDuckDBEdgeCases:
             db_path = Path(tmpdir) / "unicode.duckdb"
             conn = duckdb.connect(str(db_path))
             conn.execute("CREATE TABLE unicode_test (name VARCHAR)")
-            conn.execute(
-                "INSERT INTO unicode_test VALUES ('Test'), (''), ('Emoji')"
-            )
+            conn.execute("INSERT INTO unicode_test VALUES ('Test'), (''), ('Emoji')")
             conn.close()
 
             backend = DuckDBBackend(db_path_override=db_path)

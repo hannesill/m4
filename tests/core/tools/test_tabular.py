@@ -7,11 +7,8 @@ Tests cover:
 - Error handling for invalid inputs
 """
 
-import tempfile
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import duckdb
 import pytest
 
 from m4.core.backends.base import QueryResult
@@ -67,7 +64,11 @@ class TestGetDatabaseSchemaTool:
 
     def test_invoke_returns_table_list(self, mock_dataset, mock_backend):
         """Test that invoke returns formatted table list."""
-        mock_backend.get_table_list.return_value = ["patients", "admissions", "icustays"]
+        mock_backend.get_table_list.return_value = [
+            "patients",
+            "admissions",
+            "icustays",
+        ]
 
         with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
             tool = GetDatabaseSchemaTool()
@@ -201,9 +202,7 @@ class TestExecuteQueryTool:
         """Test that SQL injection patterns are blocked."""
         with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
             tool = ExecuteQueryTool()
-            params = ExecuteQueryInput(
-                sql_query="SELECT * FROM patients WHERE 1=1"
-            )
+            params = ExecuteQueryInput(sql_query="SELECT * FROM patients WHERE 1=1")
             result = tool.invoke(mock_dataset, params)
 
             assert "Security Error" in result.result
@@ -312,9 +311,7 @@ class TestGetICUStaysTool:
         )
 
         mock_backend = MagicMock()
-        mock_backend.execute_query.return_value = QueryResult(
-            data="test", row_count=1
-        )
+        mock_backend.execute_query.return_value = QueryResult(data="test", row_count=1)
 
         with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
             tool = GetICUStaysTool()
@@ -469,3 +466,173 @@ class TestToolProtocolConformance:
 
         for tool in tools:
             assert Modality.TABULAR in tool.required_modalities
+
+
+class TestSQLInjectionPatientIdFix:
+    """Tests for Phase 1 Security Fix 1.2: SQL Injection via patient_id.
+
+    These tests verify that patient_id parameters are properly validated
+    to prevent SQL injection attacks.
+    """
+
+    def test_icu_stays_rejects_invalid_patient_id(self, mock_dataset, mock_backend):
+        """Test GetICUStaysTool rejects non-integer patient_id."""
+        with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
+            tool = GetICUStaysTool()
+            # Simulate a string patient_id that can't be converted to int
+            params = GetICUStaysInput()
+            # We need to bypass dataclass validation by testing with malicious input
+            # In practice, the input model enforces int | None, but we test the validation
+            params.patient_id = "1 OR 1=1"  # type: ignore
+            result = tool.invoke(mock_dataset, params)
+
+            assert "Invalid patient_id" in result.result
+            mock_backend.execute_query.assert_not_called()
+
+    def test_icu_stays_valid_patient_id_passes(self, mock_dataset, mock_backend):
+        """Test GetICUStaysTool passes valid integer patient_id."""
+        mock_backend.execute_query.return_value = QueryResult(
+            data="stay_id|subject_id\n1|100",
+            row_count=1,
+        )
+
+        with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
+            tool = GetICUStaysTool()
+            params = GetICUStaysInput(patient_id=100, limit=10)
+            tool.invoke(mock_dataset, params)
+
+            # Verify the query was executed with sanitized patient_id
+            call_args = mock_backend.execute_query.call_args[0][0]
+            assert "subject_id = 100" in call_args
+
+    def test_lab_results_rejects_invalid_patient_id(self, mock_dataset, mock_backend):
+        """Test GetLabResultsTool rejects non-integer patient_id."""
+        with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
+            tool = GetLabResultsTool()
+            params = GetLabResultsInput()
+            params.patient_id = "1; DROP TABLE patients"  # type: ignore
+            result = tool.invoke(mock_dataset, params)
+
+            assert "Invalid patient_id" in result.result
+            mock_backend.execute_query.assert_not_called()
+
+    def test_lab_results_valid_patient_id_passes(self, mock_dataset, mock_backend):
+        """Test GetLabResultsTool passes valid integer patient_id."""
+        mock_backend.execute_query.return_value = QueryResult(
+            data="itemid|value\n50912|100",
+            row_count=1,
+        )
+
+        with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
+            tool = GetLabResultsTool()
+            params = GetLabResultsInput(patient_id=12345, limit=20)
+            tool.invoke(mock_dataset, params)
+
+            call_args = mock_backend.execute_query.call_args[0][0]
+            assert "subject_id = 12345" in call_args
+
+
+class TestSQLInjectionTableNameFix:
+    """Tests for Phase 1 Security Fix 1.3: SQL Injection via Table Mappings.
+
+    These tests verify that table names from dataset configuration are
+    properly validated to prevent SQL injection attacks.
+    """
+
+    def test_icu_stays_rejects_malicious_table_name(self, mock_backend):
+        """Test GetICUStaysTool rejects malicious table name from mapping."""
+        malicious_dataset = DatasetDefinition(
+            name="malicious-dataset",
+            modalities={Modality.TABULAR},
+            capabilities={Capability.ICU_STAYS},
+            table_mappings={
+                "icustays": "icustays; DROP TABLE patients; --",  # SQL injection attempt
+            },
+        )
+
+        with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
+            tool = GetICUStaysTool()
+            params = GetICUStaysInput(limit=10)
+            result = tool.invoke(malicious_dataset, params)
+
+            assert "Invalid table name" in result.result
+            mock_backend.execute_query.assert_not_called()
+
+    def test_lab_results_rejects_malicious_table_name(self, mock_backend):
+        """Test GetLabResultsTool rejects malicious table name from mapping."""
+        malicious_dataset = DatasetDefinition(
+            name="malicious-dataset",
+            modalities={Modality.TABULAR},
+            capabilities={Capability.LAB_RESULTS},
+            table_mappings={
+                "labevents": "labevents UNION SELECT * FROM passwords",  # SQL injection
+            },
+        )
+
+        with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
+            tool = GetLabResultsTool()
+            params = GetLabResultsInput(limit=20)
+            result = tool.invoke(malicious_dataset, params)
+
+            assert "Invalid table name" in result.result
+            mock_backend.execute_query.assert_not_called()
+
+    def test_race_distribution_rejects_malicious_table_name(self, mock_backend):
+        """Test GetRaceDistributionTool rejects malicious table name."""
+        malicious_dataset = DatasetDefinition(
+            name="malicious-dataset",
+            modalities={Modality.TABULAR},
+            capabilities={Capability.DEMOGRAPHIC_STATS},
+            table_mappings={
+                "admissions": "admissions/**/WHERE 1=1--",  # SQL injection with comment
+            },
+        )
+
+        with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
+            tool = GetRaceDistributionTool()
+            params = GetRaceDistributionInput(limit=10)
+            result = tool.invoke(malicious_dataset, params)
+
+            assert "Invalid table name" in result.result
+            mock_backend.execute_query.assert_not_called()
+
+    def test_valid_table_mapping_passes(self, mock_dataset, mock_backend):
+        """Test that valid table mappings pass validation."""
+        mock_backend.execute_query.return_value = QueryResult(
+            data="stay_id|subject_id\n1|100",
+            row_count=1,
+        )
+
+        with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
+            tool = GetICUStaysTool()
+            params = GetICUStaysInput(limit=10)
+            tool.invoke(mock_dataset, params)
+
+            # Should use the valid mapped table name
+            call_args = mock_backend.execute_query.call_args[0][0]
+            assert "icu_icustays" in call_args
+            mock_backend.execute_query.assert_called_once()
+
+    def test_table_name_with_underscores_passes(self, mock_backend):
+        """Test that table names with underscores are valid."""
+        valid_dataset = DatasetDefinition(
+            name="valid-dataset",
+            modalities={Modality.TABULAR},
+            capabilities={Capability.ICU_STAYS},
+            table_mappings={
+                "icustays": "hosp_icu_stays_2024",  # Valid with underscores and numbers
+            },
+        )
+
+        mock_backend.execute_query.return_value = QueryResult(
+            data="stay_id|subject_id\n1|100",
+            row_count=1,
+        )
+
+        with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
+            tool = GetICUStaysTool()
+            params = GetICUStaysInput(limit=10)
+            tool.invoke(valid_dataset, params)
+
+            call_args = mock_backend.execute_query.call_args[0][0]
+            assert "hosp_icu_stays_2024" in call_args

@@ -312,6 +312,10 @@ def require_oauth2(func):
             # If OAuth2 is disabled, allow access
             return func(*args, **kwargs)
 
+        if not _oauth2_validator:
+            logger.error("OAuth2 is enabled but validator is not initialized")
+            return "Error: Authentication system not properly configured"
+
         # Extract token from environment (in real implementation, this would come from request headers)
         token = os.getenv("M4_OAUTH2_TOKEN", "")
         if not token:
@@ -322,18 +326,36 @@ def require_oauth2(func):
             token = token[7:]
 
         try:
-            # For synchronous compatibility, we'll do a simple validation
-            # In a real async environment, this would be await _oauth2_validator.validate_token(token)
-
             # Basic token structure check (JWT has 3 parts separated by dots)
             if not token or len(token.split(".")) != 3:
                 return "Error: Invalid token format"
 
-            # In production, you would validate the token here
-            # For now, we'll do a basic check and assume the token is valid if OAuth2 is properly configured
+            # Actually validate the token using the OAuth2 validator
+            import asyncio
+
+            try:
+                # Run the async validation synchronously
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If we're already in an async context, create a new thread
+                    import concurrent.futures
+
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(
+                            asyncio.run, _oauth2_validator.validate_token(token)
+                        )
+                        future.result(timeout=30)
+                else:
+                    loop.run_until_complete(_oauth2_validator.validate_token(token))
+            except RuntimeError:
+                # No event loop exists, create one
+                asyncio.run(_oauth2_validator.validate_token(token))
 
             return func(*args, **kwargs)
 
+        except TokenValidationError as e:
+            logger.warning(f"OAuth2 token validation failed: {e}")
+            return f"Error: {e}"
         except Exception as e:
             logger.error(f"OAuth2 authentication error: {e}")
             return "Error: Authentication system error"

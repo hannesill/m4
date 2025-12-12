@@ -159,14 +159,18 @@ class TestOAuth2BasicDecorator:
             result = test_function()
             assert "Invalid token format" in result
 
-    def test_decorator_with_valid_jwt_format(self):
-        """Test decorator behavior with valid JWT format."""
+    def test_decorator_with_valid_jwt_format_but_invalid_signature(self):
+        """Test decorator behavior with valid JWT format but unverifiable signature.
+
+        Phase 1 Security Fix 1.1: The decorator now actually validates tokens.
+        A JWT with valid format but invalid/unverifiable signature should be rejected.
+        """
 
         @require_oauth2
         def test_function():
             return "success"
 
-        # Valid JWT format (header.payload.signature)
+        # Valid JWT format (header.payload.signature) but can't be verified
         valid_jwt = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.signature"
 
         env_vars = {
@@ -179,12 +183,12 @@ class TestOAuth2BasicDecorator:
         with patch.dict(os.environ, env_vars, clear=True):
             init_oauth2()
 
-            # Should work with valid JWT format
+            # Should fail because token can't be validated (no JWKS available)
             result = test_function()
-            assert result == "success"
+            assert "Error" in result
 
     def test_decorator_with_bearer_prefix_removal(self):
-        """Test that Bearer prefix is correctly removed."""
+        """Test that Bearer prefix is correctly removed before validation."""
 
         @require_oauth2
         def test_function():
@@ -203,6 +207,73 @@ class TestOAuth2BasicDecorator:
         with patch.dict(os.environ, env_vars, clear=True):
             init_oauth2()
 
-            # Should work even with Bearer prefix
+            # Token validation will fail (no JWKS), but Bearer prefix should be removed
             result = test_function()
-            assert result == "success"
+            # Verify the error is about validation, not about token format
+            assert "Error" in result
+            # Should not be "Invalid token format" since Bearer was stripped
+            assert "Invalid token format" not in result
+
+
+class TestOAuth2SecurityFix:
+    """Tests for Phase 1 Security Fix 1.1: OAuth2 Authentication Bypass.
+
+    These tests verify that the decorator now actually validates tokens
+    instead of just checking JWT format.
+    """
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        import m4.auth
+
+        m4.auth._oauth2_config = None
+        m4.auth._oauth2_validator = None
+
+    def test_fake_token_is_rejected(self):
+        """Test that fake tokens like 'fake.fake.fake' are rejected.
+
+        Before the fix, any string with 3 dots would pass authentication.
+        """
+
+        @require_oauth2
+        def test_function():
+            return "success"
+
+        env_vars = {
+            "M4_OAUTH2_ENABLED": "true",
+            "M4_OAUTH2_ISSUER_URL": "https://auth.example.com",
+            "M4_OAUTH2_AUDIENCE": "m4-api",
+            "M4_OAUTH2_TOKEN": "fake.fake.fake",  # This used to bypass auth!
+        }
+
+        with patch.dict(os.environ, env_vars, clear=True):
+            init_oauth2()
+
+            result = test_function()
+            # Should be rejected now that we actually validate
+            assert "Error" in result
+            assert result != "success"
+
+    def test_validation_actually_called(self):
+        """Test that token validation is actually performed."""
+
+        @require_oauth2
+        def test_function():
+            return "success"
+
+        # A properly formatted but invalid JWT
+        fake_jwt = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.invalidsig"
+
+        env_vars = {
+            "M4_OAUTH2_ENABLED": "true",
+            "M4_OAUTH2_ISSUER_URL": "https://auth.example.com",
+            "M4_OAUTH2_AUDIENCE": "m4-api",
+            "M4_OAUTH2_TOKEN": fake_jwt,
+        }
+
+        with patch.dict(os.environ, env_vars, clear=True):
+            init_oauth2()
+
+            result = test_function()
+            # Should fail validation (can't fetch JWKS, invalid signature, etc.)
+            assert "Error" in result

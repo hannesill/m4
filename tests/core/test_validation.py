@@ -1,11 +1,11 @@
 """Tests for SQL validation and parameter sanitization."""
 
-import pytest
-
 from m4.core.validation import (
     format_error_with_guidance,
     is_safe_query,
     validate_limit,
+    validate_patient_id,
+    validate_table_name,
 )
 
 
@@ -55,9 +55,7 @@ class TestIsSafeQuery:
 
     def test_select_with_where(self):
         """SELECT with WHERE clause should be safe."""
-        is_safe, msg = is_safe_query(
-            "SELECT * FROM patients WHERE subject_id = 12345"
-        )
+        is_safe, msg = is_safe_query("SELECT * FROM patients WHERE subject_id = 12345")
         assert is_safe is True
 
     def test_select_with_join(self):
@@ -194,9 +192,7 @@ class TestIsSafeQueryAdvancedInjection:
     def test_hex_encoded_attack(self):
         """Test hex-encoded injection patterns."""
         # Hex encoding of 'DROP' is 0x44524F50
-        is_safe, msg = is_safe_query(
-            "SELECT * FROM patients WHERE name = 0x44524F50"
-        )
+        is_safe, msg = is_safe_query("SELECT * FROM patients WHERE name = 0x44524F50")
         # This is valid SQL, just selecting by hex value
         assert is_safe is True
 
@@ -218,9 +214,7 @@ class TestIsSafeQueryAdvancedInjection:
 
     def test_file_operations_load_file(self):
         """Test LOAD_FILE() injection for reading server files."""
-        is_safe, msg = is_safe_query(
-            "SELECT LOAD_FILE('/etc/passwd') FROM patients"
-        )
+        is_safe, msg = is_safe_query("SELECT LOAD_FILE('/etc/passwd') FROM patients")
         assert is_safe is False
         assert "File access" in msg
 
@@ -258,9 +252,7 @@ class TestIsSafeQueryAdvancedInjection:
 
     def test_boolean_blind_injection_and(self):
         """Test boolean-based blind injection with AND."""
-        is_safe, msg = is_safe_query(
-            "SELECT * FROM patients WHERE id = 1 AND 1=1"
-        )
+        is_safe, msg = is_safe_query("SELECT * FROM patients WHERE id = 1 AND 1=1")
         assert is_safe is False
         assert "injection" in msg.lower()
 
@@ -355,3 +347,163 @@ class TestFormatErrorWithGuidance:
         """Generic errors should still provide guidance."""
         result = format_error_with_guidance("Unknown error occurred")
         assert "get_database_schema()" in result
+
+
+class TestValidateTableName:
+    """Tests for validate_table_name function - Phase 1 Security Fix 1.3.
+
+    These tests verify that table name validation prevents SQL injection
+    attacks through malicious dataset configuration.
+    """
+
+    def test_valid_simple_names(self):
+        """Valid simple table names should pass."""
+        assert validate_table_name("patients") is True
+        assert validate_table_name("icustays") is True
+        assert validate_table_name("labevents") is True
+        assert validate_table_name("admissions") is True
+
+    def test_valid_names_with_underscores(self):
+        """Table names with underscores should pass."""
+        assert validate_table_name("icu_icustays") is True
+        assert validate_table_name("hosp_labevents") is True
+        assert validate_table_name("hosp_admissions") is True
+        assert validate_table_name("_private_table") is True
+
+    def test_valid_names_with_numbers(self):
+        """Table names with numbers should pass."""
+        assert validate_table_name("patients2") is True
+        assert validate_table_name("table_v2") is True
+        assert validate_table_name("data_2024") is True
+
+    def test_valid_mixed_case(self):
+        """Mixed case table names should pass."""
+        assert validate_table_name("Patients") is True
+        assert validate_table_name("ICUStays") is True
+        assert validate_table_name("LabEvents") is True
+
+    def test_invalid_empty_name(self):
+        """Empty table names should fail."""
+        assert validate_table_name("") is False
+
+    def test_invalid_starts_with_number(self):
+        """Table names starting with numbers should fail."""
+        assert validate_table_name("1patients") is False
+        assert validate_table_name("123table") is False
+
+    def test_invalid_sql_injection_semicolon(self):
+        """SQL injection with semicolons should be blocked."""
+        assert validate_table_name("icustays; DROP TABLE patients; --") is False
+        assert validate_table_name("table;DELETE FROM users") is False
+
+    def test_invalid_sql_injection_union(self):
+        """SQL injection with UNION should be blocked."""
+        assert validate_table_name("icustays UNION SELECT * FROM passwords") is False
+        assert validate_table_name("table UNION ALL SELECT 1,2,3") is False
+
+    def test_invalid_sql_injection_comment(self):
+        """SQL injection with comments should be blocked."""
+        assert validate_table_name("icustays--") is False
+        assert validate_table_name("table/*comment*/") is False
+
+    def test_invalid_special_characters(self):
+        """Table names with special characters should fail."""
+        assert validate_table_name("table-name") is False
+        assert validate_table_name("table.name") is False
+        assert validate_table_name("table name") is False
+        assert validate_table_name("table'name") is False
+        assert validate_table_name('table"name') is False
+        assert validate_table_name("table=name") is False
+        assert validate_table_name("table(name)") is False
+
+
+class TestValidatePatientId:
+    """Tests for validate_patient_id function - Phase 1 Security Fix 1.2.
+
+    These tests verify that patient_id validation prevents SQL injection
+    attacks through malicious patient_id parameters.
+    """
+
+    def test_valid_none(self):
+        """None should be valid (no filter)."""
+        is_valid, sanitized = validate_patient_id(None)
+        assert is_valid is True
+        assert sanitized is None
+
+    def test_valid_positive_integer(self):
+        """Positive integers should be valid."""
+        is_valid, sanitized = validate_patient_id(12345)
+        assert is_valid is True
+        assert sanitized == 12345
+
+    def test_valid_zero(self):
+        """Zero should be valid."""
+        is_valid, sanitized = validate_patient_id(0)
+        assert is_valid is True
+        assert sanitized == 0
+
+    def test_valid_negative_integer(self):
+        """Negative integers should be valid (cast to int)."""
+        is_valid, sanitized = validate_patient_id(-1)
+        assert is_valid is True
+        assert sanitized == -1
+
+    def test_valid_large_integer(self):
+        """Large integers should be valid."""
+        is_valid, sanitized = validate_patient_id(9999999999)
+        assert is_valid is True
+        assert sanitized == 9999999999
+
+    def test_valid_string_integer(self):
+        """String integers should be converted to int."""
+        is_valid, sanitized = validate_patient_id("12345")  # type: ignore
+        assert is_valid is True
+        assert sanitized == 12345
+
+    def test_valid_float_integer(self):
+        """Float that represents integer should be converted."""
+        is_valid, sanitized = validate_patient_id(12345.0)  # type: ignore
+        assert is_valid is True
+        assert sanitized == 12345
+
+    def test_invalid_string_injection(self):
+        """SQL injection strings should be blocked."""
+        is_valid, sanitized = validate_patient_id("1 OR 1=1")  # type: ignore
+        assert is_valid is False
+        assert sanitized is None
+
+    def test_invalid_string_drop(self):
+        """SQL injection with DROP should be blocked."""
+        is_valid, sanitized = validate_patient_id("1; DROP TABLE patients")  # type: ignore
+        assert is_valid is False
+        assert sanitized is None
+
+    def test_invalid_string_union(self):
+        """SQL injection with UNION should be blocked."""
+        is_valid, sanitized = validate_patient_id("1 UNION SELECT * FROM users")  # type: ignore
+        assert is_valid is False
+        assert sanitized is None
+
+    def test_invalid_non_numeric_string(self):
+        """Non-numeric strings should be blocked."""
+        is_valid, sanitized = validate_patient_id("abc")  # type: ignore
+        assert is_valid is False
+        assert sanitized is None
+
+    def test_invalid_empty_string(self):
+        """Empty strings should be blocked."""
+        is_valid, sanitized = validate_patient_id("")  # type: ignore
+        assert is_valid is False
+        assert sanitized is None
+
+    def test_invalid_list(self):
+        """Lists should be blocked."""
+        is_valid, sanitized = validate_patient_id([1, 2, 3])  # type: ignore
+        assert is_valid is False
+        assert sanitized is None
+
+    def test_invalid_dict(self):
+        """Dictionaries should be blocked."""
+        is_valid, sanitized = validate_patient_id({"id": 1})  # type: ignore
+        assert is_valid is False
+        assert sanitized is None

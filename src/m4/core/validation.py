@@ -5,7 +5,54 @@ and sanitizing user input before execution. These are used by tool
 classes to prevent SQL injection and other attacks.
 """
 
+import re
+
 import sqlparse
+
+
+def validate_table_name(name: str) -> bool:
+    """Validate table name to prevent SQL injection.
+
+    Table names must start with a letter or underscore, followed by
+    alphanumeric characters or underscores only. This prevents SQL
+    injection through malicious table names like:
+    - "icustays; DROP TABLE patients; --"
+    - "icustays UNION SELECT * FROM passwords"
+
+    Args:
+        name: The table name to validate
+
+    Returns:
+        True if the table name is safe, False otherwise
+    """
+    if not name:
+        return False
+    return bool(re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", name))
+
+
+def validate_patient_id(patient_id: int | None) -> tuple[bool, int | None]:
+    """Validate and sanitize patient_id to prevent SQL injection.
+
+    This function ensures the patient_id is a valid integer, preventing
+    injection attacks through string-like objects or malformed values.
+
+    Args:
+        patient_id: The patient ID to validate (can be int or None)
+
+    Returns:
+        Tuple of (is_valid, sanitized_value)
+        - is_valid: True if patient_id is None or a valid integer
+        - sanitized_value: The patient_id cast to int, or None
+    """
+    if patient_id is None:
+        return True, None
+
+    try:
+        # Explicitly cast to int to prevent injection via string-like objects
+        sanitized = int(patient_id)
+        return True, sanitized
+    except (ValueError, TypeError):
+        return False, None
 
 
 def validate_limit(limit: int, max_limit: int = 1000) -> bool:
@@ -158,12 +205,8 @@ def format_error_with_guidance(
     suggestions = []
 
     if "no such table" in error_lower or "table not found" in error_lower:
-        suggestions.append(
-            "Use `get_database_schema()` to see exact table names"
-        )
-        suggestions.append(
-            "Check if the table name matches exactly (case-sensitive)"
-        )
+        suggestions.append("Use `get_database_schema()` to see exact table names")
+        suggestions.append("Check if the table name matches exactly (case-sensitive)")
 
     if "no such column" in error_lower or "column not found" in error_lower:
         suggestions.append(
@@ -179,9 +222,7 @@ def format_error_with_guidance(
 
     if not suggestions:
         suggestions.append("Use `get_database_schema()` to see available tables")
-        suggestions.append(
-            "Use `get_table_info('table_name')` to understand the data"
-        )
+        suggestions.append("Use `get_table_info('table_name')` to understand the data")
 
     suggestion_text = "\n".join(f"  - {s}" for s in suggestions)
 
