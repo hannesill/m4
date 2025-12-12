@@ -84,7 +84,7 @@ After configuration, test by asking:
 
 - `get_database_schema` - List available tables
 - `get_table_info` - Get column info and sample data
-- `execute_mimic_query` - Execute SQL queries
+- `execute_query` - Execute SQL queries
 - `get_icu_stays` - ICU stay information
 - `get_lab_results` - Laboratory test results
 - `get_race_distribution` - Patient demographics

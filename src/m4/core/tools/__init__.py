@@ -44,7 +44,9 @@ def init_tools() -> None:
     """
     global _tools_initialized
 
-    if _tools_initialized:
+    # Check if already initialized AND tools are registered
+    # (handles case where registry was reset but flag is still True)
+    if _tools_initialized and ToolRegistry.list_all():
         return
 
     # Register management tools (always available)
