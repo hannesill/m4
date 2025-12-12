@@ -269,3 +269,203 @@ class TestDuckDBResultTruncation:
             assert result.row_count == 100
             assert result.truncated is True
             assert "showing first 50" in result.data.lower()
+
+
+class TestDuckDBEdgeCases:
+    """Test edge cases and boundary conditions for DuckDB backend."""
+
+    def test_execute_query_with_null_values(self, test_dataset):
+        """Test handling of NULL values in results."""
+        import duckdb
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "nulls.duckdb"
+            conn = duckdb.connect(str(db_path))
+            conn.execute(
+                """
+                CREATE TABLE with_nulls (
+                    id INTEGER,
+                    name VARCHAR,
+                    value FLOAT
+                )
+            """
+            )
+            conn.execute(
+                """
+                INSERT INTO with_nulls VALUES
+                (1, 'test', NULL),
+                (2, NULL, 3.14),
+                (NULL, 'another', 2.71)
+            """
+            )
+            conn.close()
+
+            backend = DuckDBBackend(db_path_override=db_path)
+            result = backend.execute_query("SELECT * FROM with_nulls", test_dataset)
+
+            assert result.success is True
+            assert result.row_count == 3
+            # NULL values should be represented in output
+            assert "None" in result.data or "NaN" in result.data or "<NA>" in result.data
+
+    def test_execute_query_with_unicode(self, test_dataset):
+        """Test handling of unicode characters."""
+        import duckdb
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "unicode.duckdb"
+            conn = duckdb.connect(str(db_path))
+            conn.execute("CREATE TABLE unicode_test (name VARCHAR)")
+            conn.execute(
+                "INSERT INTO unicode_test VALUES ('Test'), (''), ('Emoji')"
+            )
+            conn.close()
+
+            backend = DuckDBBackend(db_path_override=db_path)
+            result = backend.execute_query("SELECT * FROM unicode_test", test_dataset)
+
+            assert result.success is True
+            assert result.row_count == 3
+
+    def test_execute_query_with_very_long_string(self, test_dataset):
+        """Test handling of very long string values."""
+        import duckdb
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "longstring.duckdb"
+            conn = duckdb.connect(str(db_path))
+            conn.execute("CREATE TABLE long_strings (content VARCHAR)")
+
+            long_string = "A" * 10000  # 10KB string
+            conn.execute(f"INSERT INTO long_strings VALUES ('{long_string}')")
+            conn.close()
+
+            backend = DuckDBBackend(db_path_override=db_path)
+            result = backend.execute_query(
+                "SELECT LENGTH(content) as len FROM long_strings", test_dataset
+            )
+
+            assert result.success is True
+            assert "10000" in result.data
+
+    def test_execute_query_with_special_column_names(self, test_dataset):
+        """Test handling of column names with special characters."""
+        import duckdb
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "special.duckdb"
+            conn = duckdb.connect(str(db_path))
+            conn.execute(
+                """
+                CREATE TABLE special_cols (
+                    "column with spaces" INTEGER,
+                    "column-with-dashes" INTEGER,
+                    normal_column INTEGER
+                )
+            """
+            )
+            conn.execute(
+                """
+                INSERT INTO special_cols VALUES (1, 2, 3)
+            """
+            )
+            conn.close()
+
+            backend = DuckDBBackend(db_path_override=db_path)
+            result = backend.execute_query("SELECT * FROM special_cols", test_dataset)
+
+            assert result.success is True
+            assert result.row_count == 1
+
+    def test_get_sample_data_limit_sanitization(self, test_dataset, temp_db):
+        """Test that limit is properly sanitized for sample data."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        # Test negative limit (should be clamped to 1)
+        result = backend.get_sample_data("patients", test_dataset, limit=-5)
+        assert result.row_count <= 1
+
+        # Test excessive limit (should be clamped to 100)
+        result = backend.get_sample_data("patients", test_dataset, limit=1000)
+        assert result.row_count <= 100
+
+    def test_get_table_list_empty_database(self, test_dataset):
+        """Test get_table_list on database with no tables.
+
+        Note: The implementation returns ['No results found'] when there
+        are no tables, rather than an empty list. This is intentional
+        for user-friendly messaging.
+        """
+        import duckdb
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "empty.duckdb"
+            conn = duckdb.connect(str(db_path))
+            conn.close()
+
+            backend = DuckDBBackend(db_path_override=db_path)
+            tables = backend.get_table_list(test_dataset)
+
+            # Implementation returns message rather than empty list
+            assert tables == ["No results found"] or tables == []
+
+    def test_concurrent_read_operations(self, test_dataset, temp_db):
+        """Test that concurrent read operations work correctly."""
+        import concurrent.futures
+
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        def execute_query():
+            return backend.execute_query("SELECT * FROM patients", test_dataset)
+
+        # Run 5 concurrent queries
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(execute_query) for _ in range(5)]
+            results = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+        # All should succeed
+        for result in results:
+            assert result.success is True
+            assert result.row_count == 3
+
+    def test_query_with_aggregate_functions(self, test_dataset, temp_db):
+        """Test queries with aggregate functions."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        result = backend.execute_query(
+            "SELECT COUNT(*) as cnt, AVG(anchor_age) as avg_age FROM patients",
+            test_dataset,
+        )
+
+        assert result.success is True
+        assert "cnt" in result.data or "count" in result.data.lower()
+
+    def test_query_with_window_functions(self, test_dataset, temp_db):
+        """Test queries with window functions."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        result = backend.execute_query(
+            """
+            SELECT
+                subject_id,
+                gender,
+                ROW_NUMBER() OVER (ORDER BY subject_id) as row_num
+            FROM patients
+            """,
+            test_dataset,
+        )
+
+        assert result.success is True
+        assert "row_num" in result.data
+
+    def test_query_syntax_error(self, test_dataset, temp_db):
+        """Test handling of SQL syntax errors."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        result = backend.execute_query(
+            "SELCT * FROM patients",  # Typo in SELECT
+            test_dataset,
+        )
+
+        assert result.success is False
+        assert result.error is not None
