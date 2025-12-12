@@ -8,7 +8,60 @@ the actual database implementations (DuckDB, BigQuery, etc.).
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
+from m4.config import logger
 from m4.core.datasets import DatasetDefinition
+
+
+def sanitize_error_message(error: Exception, backend_name: str = "unknown") -> str:
+    """Sanitize error message to avoid exposing internal paths or structure.
+
+    This function logs the full error internally for debugging while
+    returning a user-friendly message that doesn't leak sensitive details
+    like internal file paths, database structure, or system information.
+
+    Args:
+        error: The exception that occurred
+        backend_name: Name of the backend for logging context
+
+    Returns:
+        A sanitized error message safe to return to users
+    """
+    error_str = str(error).lower()
+
+    # Log full error for debugging (including stack trace if needed)
+    logger.debug(f"[{backend_name}] Query execution error: {error}")
+
+    # Return specific but safe messages for common errors
+    if "no such table" in error_str or (
+        "table" in error_str and "not found" in error_str
+    ):
+        return "Table not found. Use get_database_schema() to see available tables."
+
+    if (
+        "no such column" in error_str
+        or "unknown column" in error_str
+        or ("column" in error_str and "not found" in error_str)
+    ):
+        return "Column not found. Use get_table_info('table_name') to see available columns."
+
+    if "syntax error" in error_str or "parse error" in error_str:
+        return "SQL syntax error. Please check your query syntax."
+
+    if (
+        "permission" in error_str
+        or "access denied" in error_str
+        or "unauthorized" in error_str
+    ):
+        return "Permission denied. Check your access credentials."
+
+    if "timeout" in error_str or "timed out" in error_str:
+        return "Query timed out. Try a simpler query or add LIMIT clause."
+
+    if "connection" in error_str or "network" in error_str:
+        return "Connection error. Please check your network and try again."
+
+    # Generic fallback - don't expose internal details
+    return "Query execution failed. Please check your query and try again."
 
 
 @dataclass

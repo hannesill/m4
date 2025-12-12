@@ -11,6 +11,7 @@ from m4.core.backends.base import (
     ConnectionError,
     QueryResult,
     TableNotFoundError,
+    sanitize_error_message,
 )
 from m4.core.datasets import DatasetDefinition
 
@@ -170,20 +171,10 @@ class BigQueryBackend:
         except ConnectionError:
             raise
         except Exception as e:
-            error_msg = str(e).lower()
-
-            # Provide specific error types
-            if "not found" in error_msg and (
-                "table" in error_msg or "dataset" in error_msg
-            ):
-                return QueryResult(
-                    data="",
-                    error=f"Table or dataset not found: {e}",
-                )
-
+            # Use sanitized error message to avoid exposing internal details
             return QueryResult(
                 data="",
-                error=str(e),
+                error=sanitize_error_message(e, self.name),
             )
 
     def get_table_list(self, dataset: DatasetDefinition) -> list[str]:

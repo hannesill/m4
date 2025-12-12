@@ -44,15 +44,24 @@ class Capability(Enum):
 
 @dataclass
 class DatasetDefinition:
-    """Enhanced dataset definition with semantic capabilities.
+    """Dataset definition with semantic capabilities.
 
-    This class extends the original DatasetDefinition with:
-    - Explicit modality declarations (what kind of data exists)
-    - Capability declarations (what operations can be performed)
-    - Table name mappings (logical -> physical table names)
+    Attributes:
+        name: Unique identifier for the dataset
+        description: Human-readable description
+        version: Dataset version string
+        file_listing_url: URL for downloading dataset files
+        subdirectories_to_scan: Directories to scan for data files
+        default_duckdb_filename: Default filename for local DuckDB database
+        primary_verification_table: Table to check for dataset verification
+        bigquery_project_id: Google Cloud project ID for BigQuery access
+        bigquery_dataset_ids: BigQuery dataset IDs containing the tables
+        requires_authentication: Whether dataset requires auth (e.g., credentialed access)
+        modalities: Immutable set of data modalities (TABULAR, NOTES, etc.)
+        capabilities: Immutable set of supported operations
+        table_mappings: Logical to physical table name mappings
     """
 
-    # Original fields (unchanged)
     name: str
     description: str = ""
     version: str = "1.0"
@@ -60,59 +69,25 @@ class DatasetDefinition:
     subdirectories_to_scan: list[str] = field(default_factory=list)
     default_duckdb_filename: str | None = None
     primary_verification_table: str | None = None
-    tags: list[str] = field(default_factory=list)  # Keep for backward compat
 
-    # BigQuery Configuration (unchanged)
+    # BigQuery Configuration
     bigquery_project_id: str | None = "physionet-data"
     bigquery_dataset_ids: list[str] = field(default_factory=list)
 
-    # Authentication (unchanged)
+    # Authentication
     requires_authentication: bool = False
 
-    # NEW: Semantic capability declarations
-    modalities: set[Modality] = field(default_factory=set)
-    capabilities: set[Capability] = field(default_factory=set)
+    # Semantic capability declarations (immutable)
+    modalities: frozenset[Modality] = field(default_factory=frozenset)
+    capabilities: frozenset[Capability] = field(default_factory=frozenset)
 
-    # NEW: Table name mappings (dataset-specific)
+    # Table name mappings (dataset-specific)
     table_mappings: dict[str, str] = field(default_factory=dict)
-    """Maps logical table names to physical table names.
-
-    Example for DuckDB:
-        {"icustays": "icu_icustays", "labevents": "hosp_labevents"}
-
-    Example for BigQuery (backend will add project/dataset prefix):
-        {"icustays": "icustays", "labevents": "labevents"}
-    """
 
     def __post_init__(self):
-        """Initialize computed fields and handle backward compatibility."""
+        """Initialize computed fields."""
         if not self.default_duckdb_filename:
             self.default_duckdb_filename = f"{self.name.replace('-', '_')}.duckdb"
-
-        # Auto-populate capabilities from tags for backward compatibility
-        if not self.capabilities and "mimic" in self.tags:
-            self._auto_populate_mimic_capabilities()
-
-    def _auto_populate_mimic_capabilities(self):
-        """Backward compatibility: infer capabilities from MIMIC tags."""
-        self.modalities.add(Modality.TABULAR)
-        self.capabilities.update(
-            {
-                Capability.COHORT_QUERY,
-                Capability.SCHEMA_INTROSPECTION,
-                Capability.ICU_STAYS,
-                Capability.LAB_RESULTS,
-                Capability.DEMOGRAPHIC_STATS,
-                Capability.MEDICATIONS,
-                Capability.PROCEDURES,
-                Capability.DIAGNOSES,
-            }
-        )
-
-        # MIMIC-IV 3.1+ has notes
-        if "full" in self.tags or "notes" in self.tags:
-            self.modalities.add(Modality.NOTES)
-            self.capabilities.add(Capability.CLINICAL_NOTES)
 
 
 class DatasetRegistry:
@@ -162,26 +137,25 @@ class DatasetRegistry:
 
     @classmethod
     def _register_builtins(cls):
-        """Register built-in datasets with enhanced capabilities."""
+        """Register built-in datasets."""
         mimic_iv_demo = DatasetDefinition(
             name="mimic-iv-demo",
             description="MIMIC-IV Clinical Database Demo",
             file_listing_url="https://physionet.org/files/mimic-iv-demo/2.2/",
             subdirectories_to_scan=["hosp", "icu"],
             primary_verification_table="hosp_admissions",
-            tags=["mimic", "clinical", "demo"],
             bigquery_project_id=None,
             bigquery_dataset_ids=[],
-            # NEW: Explicit capabilities
-            modalities={Modality.TABULAR},
-            capabilities={
-                Capability.COHORT_QUERY,
-                Capability.SCHEMA_INTROSPECTION,
-                Capability.ICU_STAYS,
-                Capability.LAB_RESULTS,
-                Capability.DEMOGRAPHIC_STATS,
-            },
-            # NEW: Table mappings for DuckDB
+            modalities=frozenset({Modality.TABULAR}),
+            capabilities=frozenset(
+                {
+                    Capability.COHORT_QUERY,
+                    Capability.SCHEMA_INTROSPECTION,
+                    Capability.ICU_STAYS,
+                    Capability.LAB_RESULTS,
+                    Capability.DEMOGRAPHIC_STATS,
+                }
+            ),
             table_mappings={
                 "icustays": "icu_icustays",
                 "labevents": "hosp_labevents",
@@ -196,27 +170,24 @@ class DatasetRegistry:
             file_listing_url="https://physionet.org/files/mimiciv/3.1/",
             subdirectories_to_scan=["hosp", "icu"],
             primary_verification_table="hosp_admissions",
-            tags=["mimic", "clinical", "full"],
             bigquery_project_id="physionet-data",
             bigquery_dataset_ids=["mimiciv_3_1_hosp", "mimiciv_3_1_icu"],
             requires_authentication=True,
-            # NEW: Explicit capabilities
-            modalities={Modality.TABULAR, Modality.NOTES},
-            capabilities={
-                Capability.COHORT_QUERY,
-                Capability.SCHEMA_INTROSPECTION,
-                Capability.ICU_STAYS,
-                Capability.LAB_RESULTS,
-                Capability.DEMOGRAPHIC_STATS,
-                Capability.MEDICATIONS,
-                Capability.PROCEDURES,
-                Capability.DIAGNOSES,
-                Capability.CLINICAL_NOTES,
-            },
-            # NEW: Table mappings (backend-agnostic logical names)
+            modalities=frozenset({Modality.TABULAR, Modality.NOTES}),
+            capabilities=frozenset(
+                {
+                    Capability.COHORT_QUERY,
+                    Capability.SCHEMA_INTROSPECTION,
+                    Capability.ICU_STAYS,
+                    Capability.LAB_RESULTS,
+                    Capability.DEMOGRAPHIC_STATS,
+                    Capability.MEDICATIONS,
+                    Capability.PROCEDURES,
+                    Capability.DIAGNOSES,
+                    Capability.CLINICAL_NOTES,
+                }
+            ),
             table_mappings={
-                # DuckDB uses these directly
-                # BigQuery will prefix with dataset IDs via backend
                 "icustays": "icustays",
                 "labevents": "labevents",
                 "admissions": "admissions",

@@ -11,11 +11,10 @@ import duckdb
 
 from m4.config import get_default_database_path
 from m4.core.backends.base import (
-    BackendError,
     ConnectionError,
-    QueryExecutionError,
     QueryResult,
     TableNotFoundError,
+    sanitize_error_message,
 )
 from m4.core.datasets import DatasetDefinition
 
@@ -162,21 +161,10 @@ class DuckDBBackend:
         except ConnectionError:
             raise
         except Exception as e:
-            error_msg = str(e).lower()
-
-            # Provide specific error types
-            if "no such table" in error_msg or (
-                "table" in error_msg and "not found" in error_msg
-            ):
-                # Try to extract table name from error
-                return QueryResult(
-                    data="",
-                    error=f"Table not found: {e}",
-                )
-
+            # Use sanitized error message to avoid exposing internal details
             return QueryResult(
                 data="",
-                error=str(e),
+                error=sanitize_error_message(e, self.name),
             )
 
     def get_table_list(self, dataset: DatasetDefinition) -> list[str]:
@@ -219,28 +207,41 @@ class DuckDBBackend:
 
         Returns:
             QueryResult with column information
+
+        Raises:
+            TableNotFoundError: If the table does not exist
         """
         # Use PRAGMA table_info for DuckDB
+        # Execute directly to catch CatalogException before error sanitization
         query = f"PRAGMA table_info('{table_name}')"
 
         try:
-            result = self.execute_query(query, dataset)
+            conn = self._connect(dataset)
+            try:
+                df = conn.execute(query).df()
 
-            if result.error:
-                # Check if it's a table not found error
-                error_lower = result.error.lower()
-                if "not found" in error_lower or "does not exist" in error_lower:
+                if df.empty:
                     raise TableNotFoundError(table_name, backend=self.name)
-                raise QueryExecutionError(result.error, query, backend=self.name)
 
-            return result
+                row_count = len(df)
+                data = df.to_string(index=False)
 
-        except BackendError:
+                return QueryResult(data=data, row_count=row_count)
+            finally:
+                conn.close()
+
+        except TableNotFoundError:
+            raise
+        except ConnectionError:
             raise
         except Exception as e:
+            error_str = str(e).lower()
+            # Check for table not found patterns in the raw error
+            if "does not exist" in error_str or "not found" in error_str:
+                raise TableNotFoundError(table_name, backend=self.name)
             return QueryResult(
                 data="",
-                error=f"Failed to get table info: {e}",
+                error=sanitize_error_message(e, self.name),
             )
 
     def get_sample_data(
