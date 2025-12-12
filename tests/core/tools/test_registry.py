@@ -330,7 +330,7 @@ class TestInitTools:
         # Tabular tools
         assert "get_database_schema" in tool_names
         assert "get_table_info" in tool_names
-        assert "execute_mimic_query" in tool_names
+        assert "execute_query" in tool_names
         assert "get_icu_stays" in tool_names
         assert "get_lab_results" in tool_names
         assert "get_race_distribution" in tool_names
@@ -430,7 +430,7 @@ class TestInitTools:
         # Tabular tools should be available for demo
         assert "get_database_schema" in demo_names
         assert "get_table_info" in demo_names
-        assert "execute_mimic_query" in demo_names
+        assert "execute_query" in demo_names
         assert "get_icu_stays" in demo_names
         assert "get_lab_results" in demo_names
         assert "get_race_distribution" in demo_names

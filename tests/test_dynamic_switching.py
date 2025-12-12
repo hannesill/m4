@@ -1,9 +1,17 @@
+"""Tests for dynamic dataset switching functionality.
+
+This module tests that dataset switching works correctly through the
+config system and is properly reflected in the backends.
+"""
+
 import m4.config as config_mod
-import m4.mcp_server as server
-from m4.config import set_active_dataset
+from m4.config import get_active_dataset, set_active_dataset
+from m4.core.datasets import DatasetRegistry
+from m4.mcp_server import _get_active_dataset_def
 
 
 def test_dynamic_dataset_switching(tmp_path, monkeypatch):
+    """Test that dataset switching works correctly."""
     # Setup mock data dir
     data_dir = tmp_path / "m4_data"
     data_dir.mkdir()
@@ -21,7 +29,6 @@ def test_dynamic_dataset_switching(tmp_path, monkeypatch):
     (data_dir / "datasets").mkdir()
 
     # 1. Start with no active dataset
-    # Verify server defaults to mimic-iv-demo (or falls back)
     monkeypatch.setenv("M4_BACKEND", "duckdb")
     monkeypatch.delenv("M4_DB_PATH", raising=False)
 
@@ -29,40 +36,33 @@ def test_dynamic_dataset_switching(tmp_path, monkeypatch):
     if (data_dir / "config.json").exists():
         (data_dir / "config.json").unlink()
 
-    # Check default fallback
-    ds_def = server._get_active_dataset_def()
+    # Check default fallback to demo dataset
+    ds_def = _get_active_dataset_def()
     assert ds_def.name == "mimic-iv-demo"
 
-    db_path = server._get_db_path()
-    # Should point to demo db in our temp dir
-    # Note: get_default_database_path uses the patched _DEFAULT_DATABASES_DIR
-    assert "mimic_iv_demo.duckdb" in str(db_path)
-
     # 2. Set active dataset to something else (simulating 'm4 use')
-    # We can use 'mimic-iv-full' as it is registered
     set_active_dataset("mimic-iv-full")
 
     # Verify config file was written
     assert (data_dir / "config.json").exists()
 
-    # Verify server picks it up
-    ds_def = server._get_active_dataset_def()
+    # Verify _get_active_dataset_def picks it up
+    ds_def = _get_active_dataset_def()
     assert ds_def.name == "mimic-iv-full"
 
-    db_path = server._get_db_path()
-    assert "mimic_iv_full.duckdb" in str(db_path)
+    # Verify get_active_dataset reflects the change
+    assert get_active_dataset() == "mimic-iv-full"
 
-    # 3. Simulate environment variable override (static mode)
-    monkeypatch.setenv("M4_DB_PATH", "/custom/path/to/db.duckdb")
+    # 3. Verify dataset definition has correct properties
+    full_ds = DatasetRegistry.get("mimic-iv-full")
+    assert full_ds is not None
+    assert full_ds.requires_authentication is True
 
-    db_path = server._get_db_path()
-    assert db_path == "/custom/path/to/db.duckdb"
+    demo_ds = DatasetRegistry.get("mimic-iv-demo")
+    assert demo_ds is not None
+    assert demo_ds.requires_authentication is False
 
-    # Active dataset def should still track the config/env
-    ds_def = server._get_active_dataset_def()
-    assert ds_def.name == "mimic-iv-full"
-
-    # 4. Unset env var, should go back to dynamic
-    monkeypatch.delenv("M4_DB_PATH")
-    db_path = server._get_db_path()
-    assert "mimic_iv_full.duckdb" in str(db_path)
+    # 4. Switch back to demo
+    set_active_dataset("mimic-iv-demo")
+    ds_def = _get_active_dataset_def()
+    assert ds_def.name == "mimic-iv-demo"

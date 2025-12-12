@@ -1,13 +1,21 @@
+"""Tests for dataset management MCP tools."""
+
 from unittest.mock import Mock, patch
 
 import pytest
 from fastmcp import Client
 
+from m4.core.tools import init_tools
 from m4.mcp_server import mcp
 
 
 class TestMCPDatasetTools:
     """Test MCP dataset management tools."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Ensure tools are initialized before each test."""
+        init_tools()
 
     @pytest.mark.asyncio
     async def test_list_datasets(self):
@@ -27,15 +35,16 @@ class TestMCPDatasetTools:
             },
         }
 
-        # We need to mock DatasetRegistry.get as well since list_datasets calls it
+        # Patch at the location where it's imported (m4.core.tools.management)
         with patch(
-            "m4.mcp_server.detect_available_local_datasets",
+            "m4.core.tools.management.detect_available_local_datasets",
             return_value=mock_availability,
         ):
             with patch(
-                "m4.mcp_server.get_active_dataset", return_value="mimic-iv-demo"
+                "m4.core.tools.management.get_active_dataset",
+                return_value="mimic-iv-demo",
             ):
-                with patch("m4.mcp_server.DatasetRegistry.get") as mock_get:
+                with patch("m4.core.tools.management.DatasetRegistry.get") as mock_get:
                     # Mock ds_def
                     mock_ds = Mock()
                     mock_ds.bigquery_dataset_ids = []
@@ -48,10 +57,6 @@ class TestMCPDatasetTools:
                         assert "Active dataset: mimic-iv-demo" in result_text
                         assert "=== MIMIC-IV-DEMO (Active) ===" in result_text
                         assert "=== MIMIC-IV-FULL ===" in result_text
-                        # Check icons (logic is in the tool, verify output)
-                        # The test setup has demo as present, full as absent
-                        # But note: we can't easily assert exactly which check mark belongs to which unless we parse better
-                        # But we can check that both exist in output
                         assert "Local Database: ✅" in result_text
                         assert "Local Database: ❌" in result_text
 
@@ -63,11 +68,11 @@ class TestMCPDatasetTools:
         }
 
         with patch(
-            "m4.mcp_server.detect_available_local_datasets",
+            "m4.core.tools.management.detect_available_local_datasets",
             return_value=mock_availability,
         ):
-            with patch("m4.mcp_server.set_active_dataset") as mock_set:
-                with patch("m4.mcp_server.DatasetRegistry.get"):
+            with patch("m4.core.tools.management.set_active_dataset") as mock_set:
+                with patch("m4.core.tools.management.DatasetRegistry.get"):
                     async with Client(mcp) as client:
                         result = await client.call_tool(
                             "set_dataset", {"dataset_name": "mimic-iv-demo"}
@@ -85,10 +90,10 @@ class TestMCPDatasetTools:
         mock_availability = {"mimic-iv-demo": {}}
 
         with patch(
-            "m4.mcp_server.detect_available_local_datasets",
+            "m4.core.tools.management.detect_available_local_datasets",
             return_value=mock_availability,
         ):
-            with patch("m4.mcp_server.set_active_dataset") as mock_set:
+            with patch("m4.core.tools.management.set_active_dataset") as mock_set:
                 async with Client(mcp) as client:
                     result = await client.call_tool(
                         "set_dataset", {"dataset_name": "invalid-ds"}

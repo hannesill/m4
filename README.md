@@ -294,7 +294,7 @@ m4 config claude --enable-oauth2 \
 
 - **get_database_schema**: List all available tables
 - **get_table_info**: Get column info and sample data
-- **execute_mimic_query**: Execute SQL SELECT queries
+- **execute_query**: Execute SQL SELECT queries
 - **get_icu_stays**: ICU stay info & length of stay
 - **get_lab_results**: Laboratory test results
 - **get_race_distribution**: Patient race statistics
