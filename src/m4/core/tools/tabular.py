@@ -388,7 +388,9 @@ class GetLabResultsTool:
         # Build query
         if conditions:
             where_clause = " AND ".join(conditions)
-            query = f"SELECT * FROM {table_name} WHERE {where_clause} LIMIT {params.limit}"
+            query = (
+                f"SELECT * FROM {table_name} WHERE {where_clause} LIMIT {params.limit}"
+            )
         else:
             query = f"SELECT * FROM {table_name} LIMIT {params.limit}"
 

@@ -2,8 +2,7 @@
 
 Tests cover:
 - Modality and Capability enums
-- Enhanced DatasetDefinition with capabilities
-- Backward compatibility auto-population
+- DatasetDefinition with capabilities
 - DatasetRegistry with enhanced datasets
 """
 
@@ -46,14 +45,14 @@ class TestEnums:
 
 
 class TestDatasetDefinition:
-    """Test enhanced DatasetDefinition."""
+    """Test DatasetDefinition."""
 
     def test_dataset_definition_with_capabilities(self):
         """Test creating dataset with explicit capabilities."""
         ds = DatasetDefinition(
             name="test-dataset",
-            modalities={Modality.TABULAR},
-            capabilities={Capability.ICU_STAYS, Capability.LAB_RESULTS},
+            modalities=frozenset({Modality.TABULAR}),
+            capabilities=frozenset({Capability.ICU_STAYS, Capability.LAB_RESULTS}),
             table_mappings={"icustays": "icu_icustays"},
         )
 
@@ -75,47 +74,21 @@ class TestDatasetDefinition:
         )
         assert ds.default_duckdb_filename == "custom.duckdb"
 
-    def test_backward_compatibility_auto_populate_mimic(self):
-        """Test that MIMIC tags auto-populate capabilities."""
-        ds = DatasetDefinition(
-            name="test-mimic",
-            tags=["mimic", "clinical"],
-        )
-
-        # Should auto-populate modalities
-        assert Modality.TABULAR in ds.modalities
-
-        # Should auto-populate common capabilities
-        assert Capability.ICU_STAYS in ds.capabilities
-        assert Capability.LAB_RESULTS in ds.capabilities
-        assert Capability.DEMOGRAPHIC_STATS in ds.capabilities
-        assert Capability.COHORT_QUERY in ds.capabilities
-
-    def test_backward_compatibility_auto_populate_mimic_full(self):
-        """Test that MIMIC full tags include notes capability."""
-        ds = DatasetDefinition(
-            name="test-mimic-full",
-            tags=["mimic", "clinical", "full"],
-        )
-
-        # Should include notes modality
-        assert Modality.NOTES in ds.modalities
-
-        # Should include notes capability
-        assert Capability.CLINICAL_NOTES in ds.capabilities
-
-    def test_explicit_capabilities_override_auto_populate(self):
-        """Test that explicit capabilities are not overridden."""
+    def test_modalities_are_immutable(self):
+        """Test that modalities are immutable frozensets."""
         ds = DatasetDefinition(
             name="test-dataset",
-            tags=["mimic"],  # Would trigger auto-populate
-            capabilities={Capability.ICU_STAYS},  # But we set explicit
+            modalities=frozenset({Modality.TABULAR}),
         )
+        assert isinstance(ds.modalities, frozenset)
 
-        # Should only have explicitly set capability
-        assert Capability.ICU_STAYS in ds.capabilities
-        # Should NOT have auto-populated capabilities
-        assert len(ds.capabilities) == 1
+    def test_capabilities_are_immutable(self):
+        """Test that capabilities are immutable frozensets."""
+        ds = DatasetDefinition(
+            name="test-dataset",
+            capabilities=frozenset({Capability.ICU_STAYS}),
+        )
+        assert isinstance(ds.capabilities, frozenset)
 
 
 class TestDatasetRegistry:
@@ -177,8 +150,8 @@ class TestDatasetRegistry:
         """Test registering a custom dataset."""
         custom_ds = DatasetDefinition(
             name="custom-dataset",
-            modalities={Modality.TABULAR},
-            capabilities={Capability.LAB_RESULTS},
+            modalities=frozenset({Modality.TABULAR}),
+            capabilities=frozenset({Capability.LAB_RESULTS}),
         )
 
         DatasetRegistry.register(custom_ds)

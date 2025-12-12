@@ -213,24 +213,25 @@ def is_safe_query(sql_query: str) -> tuple[bool, str]:
                     return False, f"Injection pattern detected: {description}"
 
             # Block suspicious identifiers not found in medical databases
+            # Use word boundary matching to avoid false positives on legitimate
+            # column names like "PRIMARY_KEY", "FOREIGN_KEY", "SESSION_ID" etc.
             suspicious_names = [
                 "PASSWORD",
                 "ADMIN",
-                "USER",
                 "LOGIN",
                 "AUTH",
                 "TOKEN",
                 "CREDENTIAL",
                 "SECRET",
-                "KEY",
                 "HASH",
                 "SALT",
-                "SESSION",
                 "COOKIE",
             ]
 
             for name in suspicious_names:
-                if name in sql_upper:
+                # Use word boundary regex to match standalone words only
+                # This allows "PRIMARY_KEY" but blocks standalone "PASSWORD"
+                if re.search(rf"\b{name}\b", sql_upper):
                     return (
                         False,
                         f"Suspicious identifier detected: {name} (not medical data)",

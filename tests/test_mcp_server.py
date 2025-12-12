@@ -105,14 +105,15 @@ class TestMCPTools:
         # Create a mock dataset with all capabilities
         mock_ds = DatasetDefinition(
             name="mimic-demo",
-            tags=["mimic"],
-            modalities={Modality.TABULAR},
-            capabilities={
-                Capability.COHORT_QUERY,
-                Capability.SCHEMA_INTROSPECTION,
-                Capability.ICU_STAYS,
-                Capability.LAB_RESULTS,
-            },
+            modalities=frozenset({Modality.TABULAR}),
+            capabilities=frozenset(
+                {
+                    Capability.COHORT_QUERY,
+                    Capability.SCHEMA_INTROSPECTION,
+                    Capability.ICU_STAYS,
+                    Capability.LAB_RESULTS,
+                }
+            ),
             table_mappings={
                 "icustays": "icu_icustays",
                 "labevents": "hosp_labevents",
@@ -219,9 +220,8 @@ class TestMCPTools:
 
         mock_ds = DatasetDefinition(
             name="mimic-demo",
-            tags=["mimic"],
-            modalities={Modality.TABULAR},
-            capabilities={Capability.COHORT_QUERY},
+            modalities=frozenset({Modality.TABULAR}),
+            capabilities=frozenset({Capability.COHORT_QUERY}),
         )
 
         with patch.dict(
@@ -263,9 +263,8 @@ class TestMCPTools:
 
         mock_ds = DatasetDefinition(
             name="mimic-demo",
-            tags=["mimic"],
-            modalities={Modality.TABULAR},
-            capabilities={Capability.COHORT_QUERY},
+            modalities=frozenset({Modality.TABULAR}),
+            capabilities=frozenset({Capability.COHORT_QUERY}),
         )
 
         with patch.dict(
@@ -351,12 +350,13 @@ class TestBigQueryIntegration:
             name="mimic-test",
             bigquery_project_id="test-project",
             bigquery_dataset_ids=["mimic_hosp", "mimic_icu"],
-            tags=["mimic"],
-            modalities={Modality.TABULAR},
-            capabilities={
-                Capability.COHORT_QUERY,
-                Capability.DEMOGRAPHIC_STATS,
-            },
+            modalities=frozenset({Modality.TABULAR}),
+            capabilities=frozenset(
+                {
+                    Capability.COHORT_QUERY,
+                    Capability.DEMOGRAPHIC_STATS,
+                }
+            ),
             table_mappings={
                 "admissions": "admissions",
             },

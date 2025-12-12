@@ -376,7 +376,8 @@ def get_lab_results(
 
     tool = ToolRegistry.get("get_lab_results")
     return tool.invoke(
-        dataset, GetLabResultsInput(patient_id=patient_id, lab_item=lab_item, limit=limit)
+        dataset,
+        GetLabResultsInput(patient_id=patient_id, lab_item=lab_item, limit=limit),
     ).result
 
 

@@ -5,7 +5,6 @@ Provides secure authentication using OAuth2 with JWT tokens.
 
 import os
 import time
-from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Any
 
@@ -432,44 +431,3 @@ def get_oauth2_config() -> OAuth2Config | None:
 def is_oauth2_enabled() -> bool:
     """Check if OAuth2 authentication is enabled."""
     return _oauth2_config is not None and _oauth2_config.enabled
-
-
-def generate_test_token(
-    issuer: str = "https://test-issuer.example.com",
-    audience: str = "m4-api",
-    subject: str = "test-user",
-    scopes: list[str] | None = None,
-    expires_in: int = 3600,
-) -> str:
-    """
-    Generate a test JWT token for development/testing.
-
-    WARNING: This should only be used for testing!
-    """
-    if scopes is None:
-        scopes = ["read:mimic-data"]
-
-    now = datetime.now(timezone.utc)
-    claims = {
-        "iss": issuer,
-        "aud": audience,
-        "sub": subject,
-        "iat": int(now.timestamp()),
-        "exp": int((now + timedelta(seconds=expires_in)).timestamp()),
-        "scope": " ".join(scopes),
-        "email": f"{subject}@example.com",
-    }
-
-    # Generate a test key (DO NOT use in production)
-    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-
-    private_pem = private_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption(),
-    )
-
-    # Sign the token
-    token = jwt.encode(claims, private_pem, algorithm="RS256")
-
-    return token

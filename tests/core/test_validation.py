@@ -132,10 +132,20 @@ class TestIsSafeQuery:
         assert is_safe is False
         assert "Suspicious" in msg
 
-    def test_suspicious_admin(self):
-        """Queries with ADMIN should be blocked."""
-        is_safe, msg = is_safe_query("SELECT * FROM admin_users")
+    def test_suspicious_admin_standalone(self):
+        """Queries with standalone ADMIN keyword should be blocked."""
+        # Standalone ADMIN is blocked (word boundary match)
+        is_safe, msg = is_safe_query("SELECT * FROM ADMIN")
         assert is_safe is False
+
+    def test_admin_in_compound_name_allowed(self):
+        """Queries with ADMIN as part of compound name are allowed.
+
+        Word boundary matching allows 'admin_users' but blocks standalone 'ADMIN'.
+        This prevents false positives on legitimate medical database columns.
+        """
+        is_safe, msg = is_safe_query("SELECT * FROM admin_users")
+        assert is_safe is True  # admin_users is a valid table name
 
     def test_case_insensitive_blocking(self):
         """Injection patterns should be case-insensitive."""
@@ -181,13 +191,25 @@ class TestIsSafeQueryAdvancedInjection:
         # The query parser allows this as it's a valid SELECT
         assert is_safe is True  # Schema introspection is allowed
 
-    def test_nested_subquery_injection(self):
-        """Test injection via nested subqueries."""
+    def test_nested_subquery_with_compound_names(self):
+        """Test that compound column names are allowed in subqueries.
+
+        Word boundary matching allows 'admin_users' and 'user_id' since
+        they are compound names, not standalone suspicious keywords.
+        """
         is_safe, msg = is_safe_query(
             "SELECT * FROM patients WHERE id IN (SELECT user_id FROM admin_users)"
         )
+        # Compound names like admin_users and user_id are allowed
+        assert is_safe is True
+
+    def test_nested_subquery_with_suspicious_standalone(self):
+        """Test injection via nested subqueries with suspicious standalone keywords."""
+        is_safe, msg = is_safe_query(
+            "SELECT * FROM patients WHERE id IN (SELECT id FROM PASSWORD)"
+        )
         assert is_safe is False
-        assert "Suspicious" in msg or "ADMIN" in msg
+        assert "Suspicious" in msg or "PASSWORD" in msg
 
     def test_hex_encoded_attack(self):
         """Test hex-encoded injection patterns."""
@@ -256,18 +278,34 @@ class TestIsSafeQueryAdvancedInjection:
         assert is_safe is False
         assert "injection" in msg.lower()
 
-    def test_credential_column_variations(self):
-        """Test various credential-related column names."""
-        suspicious_columns = [
-            "SELECT secret_key FROM config",
-            "SELECT auth_token FROM sessions",
-            "SELECT login_hash FROM accounts",
-            "SELECT user_credential FROM keys",
-            "SELECT session_cookie FROM tokens",
+    def test_compound_credential_names_allowed(self):
+        """Test that compound credential-related names are allowed.
+
+        Word boundary matching allows compound names like 'secret_key',
+        'auth_token', etc. while blocking standalone suspicious keywords.
+        This reduces false positives on legitimate database schemas.
+        """
+        allowed_columns = [
+            "SELECT secret_key FROM config",  # secret_key is compound
+            "SELECT auth_token FROM sessions",  # auth_token is compound
+            "SELECT login_hash FROM accounts",  # login_hash is compound
+            "SELECT session_cookie FROM tokens",  # session_cookie is compound
         ]
-        for query in suspicious_columns:
+        for query in allowed_columns:
             is_safe, msg = is_safe_query(query)
-            assert is_safe is False, f"Query should be blocked: {query}"
+            assert is_safe is True, f"Compound name query should be allowed: {query}"
+
+    def test_standalone_credential_names_blocked(self):
+        """Test that standalone credential keywords are blocked."""
+        blocked_queries = [
+            "SELECT PASSWORD FROM users",  # PASSWORD standalone
+            "SELECT * FROM CREDENTIAL",  # CREDENTIAL standalone
+            "SELECT * FROM SECRET",  # SECRET standalone
+            "SELECT AUTH FROM tokens",  # AUTH standalone
+        ]
+        for query in blocked_queries:
+            is_safe, msg = is_safe_query(query)
+            assert is_safe is False, f"Standalone keyword should be blocked: {query}"
 
     def test_case_variations_bypass(self):
         """Test case variations to bypass keyword detection.
