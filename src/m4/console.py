@@ -252,7 +252,9 @@ def print_init_complete(dataset_name: str, db_path: str, parquet_root: str) -> N
         f"[muted]Parquet:[/muted]   [path]{parquet_root}[/path]\n\n"
         f"[dim]Run [command]m4 status[/command] to verify, or start querying with your MCP client.[/dim]"
     )
-    console.print(Panel(panel_content, title="[bold blue]M4[/bold blue]", padding=(1, 2)))
+    console.print(
+        Panel(panel_content, title="[bold blue]M4[/bold blue]", padding=(1, 2))
+    )
 
 
 def print_error_panel(title: str, message: str, hint: str | None = None) -> None:
