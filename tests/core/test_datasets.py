@@ -95,9 +95,9 @@ class TestDatasetRegistry:
         assert mimic_demo is not None
         assert mimic_demo.name == "mimic-iv-demo"
 
-        mimic_full = DatasetRegistry.get("mimic-iv-full")
-        assert mimic_full is not None
-        assert mimic_full.name == "mimic-iv-full"
+        mimic_iv = DatasetRegistry.get("mimic-iv")
+        assert mimic_iv is not None
+        assert mimic_iv.name == "mimic-iv"
 
     def test_mimic_demo_capabilities(self):
         """Test that MIMIC demo has expected capabilities."""
@@ -115,15 +115,15 @@ class TestDatasetRegistry:
     def test_mimic_full_capabilities(self):
         """Test that MIMIC full has extended capabilities."""
         DatasetRegistry.reset()
-        mimic_full = DatasetRegistry.get("mimic-iv-full")
+        mimic_iv = DatasetRegistry.get("mimic-iv")
 
-        assert Modality.TABULAR in mimic_full.modalities
+        assert Modality.TABULAR in mimic_iv.modalities
         # NOTES modality is planned for future versions
 
         # Should have core tabular capabilities
-        assert Capability.ICU_STAYS in mimic_full.capabilities
-        assert Capability.LAB_RESULTS in mimic_full.capabilities
-        assert Capability.DEMOGRAPHIC_STATS in mimic_full.capabilities
+        assert Capability.ICU_STAYS in mimic_iv.capabilities
+        assert Capability.LAB_RESULTS in mimic_iv.capabilities
+        assert Capability.DEMOGRAPHIC_STATS in mimic_iv.capabilities
         # MEDICATIONS, PROCEDURES, DIAGNOSES capabilities are planned for future versions
         # CLINICAL_NOTES capability is planned for future versions
 
@@ -165,7 +165,8 @@ class TestDatasetRegistry:
         DatasetRegistry.reset()
         all_datasets = DatasetRegistry.list_all()
 
-        assert len(all_datasets) >= 2  # At least mimic-demo and mimic-full
+        assert len(all_datasets) >= 3  # At least mimic-demo, mimic-iv, and eicu
         names = [ds.name for ds in all_datasets]
         assert "mimic-iv-demo" in names
-        assert "mimic-iv-full" in names
+        assert "mimic-iv" in names
+        assert "eicu" in names

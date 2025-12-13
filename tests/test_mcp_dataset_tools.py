@@ -27,7 +27,7 @@ class TestMCPDatasetTools:
                 "parquet_root": "/tmp/demo_parquet",
                 "db_path": "/tmp/demo.duckdb",
             },
-            "mimic-iv-full": {
+            "mimic-iv": {
                 "parquet_present": False,
                 "db_present": False,
                 "parquet_root": "/tmp/full_parquet",
@@ -56,7 +56,7 @@ class TestMCPDatasetTools:
 
                         assert "Active dataset: mimic-iv-demo" in result_text
                         assert "=== MIMIC-IV-DEMO (Active) ===" in result_text
-                        assert "=== MIMIC-IV-FULL ===" in result_text
+                        assert "=== MIMIC-IV ===" in result_text
                         assert "Local Database: ✅" in result_text
                         assert "Local Database: ❌" in result_text
 

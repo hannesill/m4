@@ -216,7 +216,7 @@ class TestToolProtocol:
             output_model = ToolOutput
             required_modalities = frozenset({Modality.TABULAR})
             required_capabilities = frozenset({Capability.ICU_STAYS})
-            supported_datasets = frozenset({"mimic-iv-demo", "mimic-iv-full"})
+            supported_datasets = frozenset({"mimic-iv-demo", "mimic-iv"})
 
             def invoke(self, dataset, params):
                 return ToolOutput(result="mock")

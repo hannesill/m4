@@ -78,7 +78,6 @@ Desktop.ini
 .ruff_cache/
 
 # Datasets and other large files
-data/
 m4_data/
 
 notes/

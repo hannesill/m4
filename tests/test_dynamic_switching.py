@@ -45,20 +45,20 @@ def test_dynamic_dataset_switching(tmp_path, monkeypatch):
         ds_def = _get_active_dataset_def()
 
     # 2. Set active dataset to something else (simulating 'm4 use')
-    set_active_dataset("mimic-iv-full")
+    set_active_dataset("mimic-iv")
 
     # Verify config file was written
     assert (data_dir / "config.json").exists()
 
     # Verify _get_active_dataset_def picks it up
     ds_def = _get_active_dataset_def()
-    assert ds_def.name == "mimic-iv-full"
+    assert ds_def.name == "mimic-iv"
 
     # Verify get_active_dataset reflects the change
-    assert get_active_dataset() == "mimic-iv-full"
+    assert get_active_dataset() == "mimic-iv"
 
     # 3. Verify dataset definition has correct properties
-    full_ds = DatasetRegistry.get("mimic-iv-full")
+    full_ds = DatasetRegistry.get("mimic-iv")
     assert full_ds is not None
     assert full_ds.requires_authentication is True
 

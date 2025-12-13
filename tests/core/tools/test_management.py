@@ -27,7 +27,7 @@ def mock_availability():
             "parquet_present": True,
             "db_present": True,
         },
-        "mimic-iv-full": {
+        "mimic-iv": {
             "parquet_present": False,
             "db_present": False,
         },
@@ -68,7 +68,7 @@ class TestListDatasetsTool:
                     result = tool.invoke(dummy_dataset, ListDatasetsInput())
 
                     assert "mimic-iv-demo" in result.result.lower()
-                    assert "mimic-iv-full" in result.result.lower()
+                    assert "mimic-iv" in result.result.lower()
                     assert "Active dataset: mimic-iv-demo" in result.result
 
     def test_invoke_shows_parquet_status(self, mock_availability, dummy_dataset):
@@ -239,7 +239,7 @@ class TestSetDatasetTool:
                 result = tool.invoke(dummy_dataset, params)
 
                 assert "mimic-iv-demo" in result.result
-                assert "mimic-iv-full" in result.result
+                assert "mimic-iv" in result.result
 
     def test_invoke_warns_missing_db_for_duckdb(self, mock_availability, dummy_dataset):
         """Test warning when database file is missing for DuckDB backend."""

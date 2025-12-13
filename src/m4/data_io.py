@@ -317,18 +317,18 @@ def _csv_to_parquet_all(src_root: Path, parquet_root: Path) -> bool:
     total_files = len(csv_files)
     completed = 0
 
+    logger.info(
+        f"Converting {total_files} CSV files to Parquet using {max_workers} workers..."
+    )
+
     console.print()
     with create_task_progress() as progress:
         task = progress.add_task(
-            f"Converting {total_files} CSV files...", total=total_files
+            f"Converting CSV files ({max_workers} workers)...", total=total_files
         )
 
         with ThreadPoolExecutor(max_workers=max_workers) as ex:
             futures = {ex.submit(_convert_one, f): f for f in csv_files}
-
-            logger.info(
-                f"Converting {total_files} CSV files to Parquet using {max_workers} workers..."
-            )
 
             for fut in as_completed(futures):
                 try:
@@ -337,7 +337,7 @@ def _csv_to_parquet_all(src_root: Path, parquet_root: Path) -> bool:
                         parquet_paths.append(result_path)
                         completed += 1
                         progress.update(
-                            task, advance=1, description=f"Converted {filename}"
+                            task, advance=1, description=f"Converted {filename} ({max_workers} workers)"
                         )
                         logger.debug(f"Converted: {filename}")
                 except Exception as e:

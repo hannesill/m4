@@ -153,9 +153,9 @@ class DatasetRegistry:
             },
         )
 
-        mimic_iv_full = DatasetDefinition(
-            name="mimic-iv-full",
-            description="MIMIC-IV Clinical Database (Full)",
+        mimic_iv = DatasetDefinition(
+            name="mimic-iv",
+            description="MIMIC-IV Clinical Database",
             file_listing_url="https://physionet.org/files/mimiciv/3.1/",
             subdirectories_to_scan=["hosp", "icu"],
             primary_verification_table="hosp_admissions",
@@ -180,8 +180,36 @@ class DatasetRegistry:
             },
         )
 
+        eicu = DatasetDefinition(
+            name="eicu",
+            description="eICU Collaborative Research Database",
+            file_listing_url="https://physionet.org/files/eicu-crd/2.0/",
+            subdirectories_to_scan=[],
+            primary_verification_table="patient",
+            bigquery_project_id="physionet-data",
+            bigquery_dataset_ids=["eicu_crd"],
+            requires_authentication=True,
+            modalities=frozenset({Modality.TABULAR}),
+            capabilities=frozenset(
+                {
+                    Capability.COHORT_QUERY,
+                    Capability.SCHEMA_INTROSPECTION,
+                    Capability.ICU_STAYS,
+                    Capability.LAB_RESULTS,
+                    Capability.DEMOGRAPHIC_STATS,
+                }
+            ),
+            table_mappings={
+                "icustays": "patient",
+                "labevents": "lab",
+                "admissions": "patient",
+                "patients": "patient",
+            },
+        )
+
         cls.register(mimic_iv_demo)
-        cls.register(mimic_iv_full)
+        cls.register(mimic_iv)
+        cls.register(eicu)
 
 
 # Initialize registry

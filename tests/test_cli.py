@@ -174,7 +174,7 @@ def test_config_claude_infers_db_path_demo(
 def test_config_claude_infers_db_path_full(
     mock_active, mock_get_default, mock_subprocess
 ):
-    mock_active.return_value = "mimic-iv-full"
+    mock_active.return_value = "mimic-iv"
     mock_get_default.return_value = Path("/tmp/inferred-full.duckdb")
     mock_subprocess.return_value = MagicMock(returncode=0)
 
@@ -195,7 +195,7 @@ def test_use_full_happy_path(mock_detect, mock_set_active):
             "parquet_root": "/tmp/demo",
             "db_path": "/tmp/demo.duckdb",
         },
-        "mimic-iv-full": {
+        "mimic-iv": {
             "parquet_present": True,
             "db_present": False,
             "parquet_root": "/tmp/full",
@@ -203,15 +203,15 @@ def test_use_full_happy_path(mock_detect, mock_set_active):
         },
     }
 
-    result = runner.invoke(app, ["use", "mimic-iv-full"])
+    result = runner.invoke(app, ["use", "mimic-iv"])
     assert result.exit_code == 0
     # Updated format without trailing period
-    assert "Active dataset set to 'mimic-iv-full'" in result.stdout
-    mock_set_active.assert_called_once_with("mimic-iv-full")
+    assert "Active dataset set to 'mimic-iv'" in result.stdout
+    mock_set_active.assert_called_once_with("mimic-iv")
 
 
 @patch("m4.cli.compute_parquet_dir_size", return_value=123)
-@patch("m4.cli.get_active_dataset", return_value="mimic-iv-full")
+@patch("m4.cli.get_active_dataset", return_value="mimic-iv")
 @patch("m4.cli.detect_available_local_datasets")
 def test_status_happy_path(mock_detect, mock_active, mock_size):
     mock_detect.return_value = {
@@ -221,7 +221,7 @@ def test_status_happy_path(mock_detect, mock_active, mock_size):
             "parquet_root": "/tmp/demo",
             "db_path": "/tmp/demo.duckdb",
         },
-        "mimic-iv-full": {
+        "mimic-iv": {
             "parquet_present": True,
             "db_present": False,
             "parquet_root": "/tmp/full",
@@ -232,6 +232,6 @@ def test_status_happy_path(mock_detect, mock_active, mock_size):
     result = runner.invoke(app, ["status"])
     assert result.exit_code == 0
     assert "Active dataset:" in result.stdout
-    assert "mimic-iv-full" in result.stdout
+    assert "mimic-iv" in result.stdout
     # Updated Rich format: "Parquet size:  X.XX GB"
     assert "Parquet size:" in result.stdout

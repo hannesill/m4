@@ -64,7 +64,7 @@ class MockMIMICOnlyTool:
     output_model = ToolOutput
     required_modalities = frozenset({Modality.TABULAR})
     required_capabilities = frozenset({Capability.ICU_STAYS})
-    supported_datasets = frozenset({"mimic-iv-full", "mimic-iv-demo"})
+    supported_datasets = frozenset({"mimic-iv", "mimic-iv-demo"})
 
     def invoke(self, dataset: DatasetDefinition, params: ToolInput) -> ToolOutput:
         return ToolOutput(result="mimic data")
@@ -167,7 +167,7 @@ class TestToolSelector:
         ToolRegistry.register(MockLabResultsTool())
 
         selector = ToolSelector()
-        mimic_full = DatasetRegistry.get("mimic-iv-full")
+        mimic_full = DatasetRegistry.get("mimic-iv")
 
         compatible = selector.tools_for_dataset(mimic_full)
 
@@ -208,7 +208,7 @@ class TestToolSelector:
         selector = ToolSelector()
 
         # Use string instead of DatasetDefinition
-        compatible = selector.tools_for_dataset("mimic-iv-full")
+        compatible = selector.tools_for_dataset("mimic-iv")
 
         assert len(compatible) == 2
         tool_names = {tool.name for tool in compatible}
@@ -238,8 +238,8 @@ class TestToolSelector:
         assert selector.is_tool_available("mock_mimic_only", "mimic-iv-demo")
 
         # Both available for full (both support TABULAR and MIMIC datasets)
-        assert selector.is_tool_available("mock_tabular", "mimic-iv-full")
-        assert selector.is_tool_available("mock_mimic_only", "mimic-iv-full")
+        assert selector.is_tool_available("mock_tabular", "mimic-iv")
+        assert selector.is_tool_available("mock_mimic_only", "mimic-iv")
 
     def test_is_tool_available_with_dataset_definition(self):
         """Test is_tool_available with DatasetDefinition object."""
@@ -290,7 +290,7 @@ class TestIntegration:
         assert "mock_lab_results" in demo_names  # Has LAB_RESULTS capability
 
         # Test with full (TABULAR, has all capabilities)
-        full_tools = selector.tools_for_dataset("mimic-iv-full")
+        full_tools = selector.tools_for_dataset("mimic-iv")
         full_names = {t.name for t in full_tools}
         assert "mock_tabular" in full_names
         assert "mock_mimic_only" in full_names
@@ -438,7 +438,7 @@ class TestInitTools:
         assert "get_race_distribution" in demo_names
 
         # Test with full dataset (TABULAR + NOTES)
-        full_tools = selector.tools_for_dataset("mimic-iv-full")
+        full_tools = selector.tools_for_dataset("mimic-iv")
         full_names = {t.name for t in full_tools}
 
         # Should have all tools available for full dataset
