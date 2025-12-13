@@ -251,7 +251,9 @@ def get_active_dataset() -> str:
 
     # Else, raise an error that no active dataset is configured.
     if not active:
-        raise ValueError("No active dataset configured. Please rerun 'm4 init' to configure a dataset.")
+        raise ValueError(
+            "No active dataset configured. Please rerun 'm4 init' to configure a dataset."
+        )
 
     return active
 
