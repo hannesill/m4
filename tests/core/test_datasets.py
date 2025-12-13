@@ -20,9 +20,8 @@ class TestEnums:
     def test_modality_enum_values(self):
         """Test that all expected modalities are defined."""
         assert Modality.TABULAR
-        assert Modality.NOTES
-        assert Modality.IMAGING
-        assert Modality.WAVEFORM
+        # Currently only TABULAR is defined
+        # NOTES, IMAGING, WAVEFORM are planned for future versions
 
     def test_capability_enum_values(self):
         """Test that all expected capabilities are defined."""
@@ -34,14 +33,8 @@ class TestEnums:
         assert Capability.ICU_STAYS
         assert Capability.LAB_RESULTS
         assert Capability.DEMOGRAPHIC_STATS
-        assert Capability.MEDICATIONS
-        assert Capability.PROCEDURES
-        assert Capability.DIAGNOSES
-
-        # Future capabilities
-        assert Capability.CLINICAL_NOTES
-        assert Capability.IMAGE_RETRIEVAL
-        assert Capability.WAVEFORM_QUERY
+        # Future capabilities (MEDICATIONS, PROCEDURES, DIAGNOSES, CLINICAL_NOTES,
+        # IMAGE_RETRIEVAL, WAVEFORM_QUERY) are planned for future versions
 
 
 class TestDatasetDefinition:
@@ -116,9 +109,8 @@ class TestDatasetRegistry:
         assert Capability.LAB_RESULTS in mimic_demo.capabilities
         assert Capability.DEMOGRAPHIC_STATS in mimic_demo.capabilities
 
-        # Demo should NOT have notes
-        assert Modality.NOTES not in mimic_demo.modalities
-        assert Capability.CLINICAL_NOTES not in mimic_demo.capabilities
+        # Demo has only tabular capabilities, not multi-modal
+        # NOTES modality is planned for future versions
 
     def test_mimic_full_capabilities(self):
         """Test that MIMIC full has extended capabilities."""
@@ -126,15 +118,14 @@ class TestDatasetRegistry:
         mimic_full = DatasetRegistry.get("mimic-iv-full")
 
         assert Modality.TABULAR in mimic_full.modalities
-        assert Modality.NOTES in mimic_full.modalities
+        # NOTES modality is planned for future versions
 
-        # Should have all tabular capabilities
+        # Should have core tabular capabilities
         assert Capability.ICU_STAYS in mimic_full.capabilities
         assert Capability.LAB_RESULTS in mimic_full.capabilities
-        assert Capability.MEDICATIONS in mimic_full.capabilities
-
-        # Should have notes capability
-        assert Capability.CLINICAL_NOTES in mimic_full.capabilities
+        assert Capability.DEMOGRAPHIC_STATS in mimic_full.capabilities
+        # MEDICATIONS, PROCEDURES, DIAGNOSES capabilities are planned for future versions
+        # CLINICAL_NOTES capability is planned for future versions
 
     def test_mimic_demo_table_mappings(self):
         """Test that MIMIC demo has table mappings."""
