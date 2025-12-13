@@ -36,9 +36,13 @@ def test_dynamic_dataset_switching(tmp_path, monkeypatch):
     if (data_dir / "config.json").exists():
         (data_dir / "config.json").unlink()
 
-    # Check default fallback to demo dataset
-    ds_def = _get_active_dataset_def()
-    assert ds_def.name == "mimic-iv-demo"
+    # With no active dataset configured, get_active_dataset raises ValueError
+    # _get_active_dataset_def will fail when it calls get_active_dataset()
+    # So we expect this to raise ValueError
+    import pytest
+
+    with pytest.raises(ValueError):
+        ds_def = _get_active_dataset_def()
 
     # 2. Set active dataset to something else (simulating 'm4 use')
     set_active_dataset("mimic-iv-full")
