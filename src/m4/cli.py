@@ -6,7 +6,6 @@ from typing import Annotated
 
 import typer
 
-from m4 import __version__
 from m4.config import (
     detect_available_local_datasets,
     get_active_dataset,
@@ -15,6 +14,21 @@ from m4.config import (
     get_default_database_path,
     logger,
     set_active_dataset,
+)
+from m4.console import (
+    console,
+    error,
+    info,
+    print_banner,
+    print_command,
+    print_dataset_status,
+    print_error_panel,
+    print_init_complete,
+    print_key_value,
+    print_logo,
+    print_step,
+    success,
+    warning,
 )
 from m4.core.datasets import DatasetRegistry
 from m4.data_io import (
@@ -35,7 +49,7 @@ app = typer.Typer(
 
 def version_callback(value: bool):
     if value:
-        typer.echo(f"M4 CLI Version: {__version__}")
+        print_logo(show_tagline=True, show_version=True)
         raise typer.Exit()
 
 
@@ -127,15 +141,11 @@ def dataset_init_cmd(
     dataset_key = dataset_name.lower()
     dataset_config = get_dataset_config(dataset_key)
     if not dataset_config:
-        typer.secho(
-            f"Error: Dataset '{dataset_name}' is not supported or not configured.",
-            fg=typer.colors.RED,
-            err=True,
-        )
-        typer.secho(
-            f"Supported datasets are: {', '.join([ds.name for ds in DatasetRegistry.list_all()])}",
-            fg=typer.colors.YELLOW,
-            err=True,
+        supported = ", ".join([ds.name for ds in DatasetRegistry.list_all()])
+        print_error_panel(
+            "Dataset Not Found",
+            f"Dataset '{dataset_name}' is not supported or not configured.",
+            hint=f"Supported datasets: {supported}",
         )
         raise typer.Exit(code=1)
 
@@ -148,11 +158,12 @@ def dataset_init_cmd(
     # If we found m4_data in a parent directory, ask user what to do
     if found_root != cwd:
         existing_data_dir = found_root / "m4_data"
-        typer.echo(f"\n⚠️  Found existing m4_data at: {existing_data_dir}")
-        typer.echo(f"Current directory: {cwd}")
-        typer.echo("\nOptions:")
-        typer.echo(f"  1. Use existing location ({existing_data_dir})")
-        typer.echo(f"  2. Create new m4_data in current directory ({cwd / 'm4_data'})")
+        console.print()
+        warning(f"Found existing m4_data at: {existing_data_dir}")
+        print_key_value("Current directory", cwd)
+        console.print()
+        console.print("  [bold]1.[/bold] Use existing location")
+        console.print("  [bold]2.[/bold] Create new m4_data in current directory")
 
         choice = typer.prompt(
             "\nWhich location would you like to use?", type=str, default="1"
@@ -163,16 +174,14 @@ def dataset_init_cmd(
             import os
 
             os.environ["M4_DATA_DIR"] = str(cwd / "m4_data")
-            typer.echo(f"✅ Will create new m4_data in {cwd / 'm4_data'}\n")
+            success(f"Will create new m4_data in {cwd / 'm4_data'}")
         else:
-            typer.echo(f"✅ Will use existing m4_data at {existing_data_dir}\n")
+            success(f"Will use existing m4_data at {existing_data_dir}")
 
     # Resolve roots (now respects the choice made above)
     pq_root = get_dataset_parquet_root(dataset_key)
     if pq_root is None:
-        typer.secho(
-            "Could not determine dataset directories.", fg=typer.colors.RED, err=True
-        )
+        error("Could not determine dataset directories.")
         raise typer.Exit(code=1)
 
     csv_root_default = pq_root.parent.parent / "raw_files" / dataset_key
@@ -182,9 +191,16 @@ def dataset_init_cmd(
     parquet_present = any(pq_root.rglob("*.parquet"))
     raw_present = any(csv_root.rglob("*.csv.gz"))
 
-    typer.echo(f"Detected dataset: '{dataset_key}'")
-    typer.echo(f"Raw root: {csv_root}  (present={raw_present})")
-    typer.echo(f"Parquet root: {pq_root}  (present={parquet_present})")
+    console.print()
+    print_banner(f"Initializing {dataset_key}", "Checking existing files...")
+    print_key_value(
+        "Raw CSV root",
+        f"{csv_root} [{'[success]found[/]' if raw_present else '[muted]missing[/]'}]",
+    )
+    print_key_value(
+        "Parquet root",
+        f"{pq_root} [{'[success]found[/]' if parquet_present else '[muted]missing[/]'}]",
+    )
 
     # Step 1: Ensure raw dataset exists (download if missing, for requires_authentication datasets, inform and return)
     if not raw_present and not parquet_present:
@@ -193,24 +209,25 @@ def dataset_init_cmd(
         if requires_auth:
             base_url = dataset_config.get("file_listing_url")
 
-            typer.secho(
-                f"❌ Files not found for credentialed dataset '{dataset_key}'.",
-                fg=typer.colors.RED,
+            console.print()
+            error(f"Files not found for credentialed dataset '{dataset_key}'")
+            console.print()
+            console.print("[bold]To download this credentialed dataset:[/bold]")
+            console.print(
+                f"  [bold]1.[/bold] Sign the DUA at: [link]{base_url or 'https://physionet.org'}[/link]"
             )
-            typer.echo("To download this credentialed dataset:")
-            typer.echo(
-                f"1. Ensure you have signed the DUA at: {base_url or 'https://physionet.org'}"
+            console.print(
+                "  [bold]2.[/bold] Run this command (you'll be prompted for your PhysioNet password):"
             )
-            typer.echo(
-                "2. Run this command (you will be asked for your PhysioNet password):"
-            )
-            typer.echo("")
+            console.print()
 
             # Wget command tailored to the user's path
             wget_cmd = f"wget -r -N -c -np --user YOUR_USERNAME --ask-password {base_url} -P {csv_root}"
-            typer.secho(f"   {wget_cmd}", fg=typer.colors.CYAN)
-            typer.echo("")
-            typer.echo(f"3. Re-run 'm4 init {dataset_key}'")
+            print_command(wget_cmd)
+            console.print()
+            console.print(
+                f"  [bold]3.[/bold] Re-run: [command]m4 init {dataset_key}[/command]"
+            )
             return
 
         listing_url = dataset_config.get("file_listing_url")
@@ -218,54 +235,46 @@ def dataset_init_cmd(
             out_dir = csv_root_default
             out_dir.mkdir(parents=True, exist_ok=True)
 
-            typer.echo(f"Downloading dataset: '{dataset_key}'")
-            typer.echo(f"Listing URL: {listing_url}")
-            typer.echo(f"Output directory: {out_dir}")
+            console.print()
+            print_step(1, 3, f"Downloading dataset '{dataset_key}'")
+            print_key_value("Source", listing_url)
+            print_key_value("Destination", out_dir)
 
             ok = download_dataset(dataset_key, out_dir)
             if not ok:
-                typer.secho(
-                    "Download failed. Please check logs for details.",
-                    fg=typer.colors.RED,
-                    err=True,
-                )
+                error("Download failed. Please check logs for details.")
                 raise typer.Exit(code=1)
-            typer.secho("✅ Download complete.", fg=typer.colors.GREEN)
+            success("Download complete")
 
             # Point csv_root to the downloaded location
             csv_root = out_dir
             raw_present = True
         else:
-            typer.secho(
-                f"Auto-download is not available for '{dataset_key}'.",
-                fg=typer.colors.YELLOW,
+            console.print()
+            warning(f"Auto-download is not available for '{dataset_key}'")
+            console.print()
+            console.print("[bold]To initialize this dataset:[/bold]")
+            console.print("  [bold]1.[/bold] Download the raw data manually")
+            console.print(
+                f"  [bold]2.[/bold] Place the raw CSV.gz files under: [path]{csv_root_default}[/path]"
             )
-            typer.secho(
-                (
-                    "To initialize this dataset:\n"
-                    "1) Download the raw data manually.\n"
-                    f"2) Place the raw CSV.gz files under: {csv_root_default}\n"
-                    "   (or use --src to point to their location)\n"
-                    f"3) Then re-run: m4 init {dataset_key}"
-                ),
-                fg=typer.colors.WHITE,
+            console.print("       (or use --src to point to their location)")
+            console.print(
+                f"  [bold]3.[/bold] Re-run: [command]m4 init {dataset_key}[/command]"
             )
             return
 
     # Step 2: Ensure Parquet exists (convert if missing)
     if not parquet_present:
-        typer.echo(f"Converting dataset: '{dataset_key}'")
-        typer.echo(f"CSV root: {csv_root}")
-        typer.echo(f"Parquet destination: {pq_root}")
+        console.print()
+        print_step(2, 3, "Converting CSV to Parquet")
+        print_key_value("Source", csv_root)
+        print_key_value("Destination", pq_root)
         ok = convert_csv_to_parquet(dataset_key, csv_root, pq_root)
         if not ok:
-            typer.secho(
-                "Conversion failed. Please check logs for details.",
-                fg=typer.colors.RED,
-                err=True,
-            )
+            error("Conversion failed. Please check logs for details.")
             raise typer.Exit(code=1)
-        typer.secho("✅ Conversion complete.", fg=typer.colors.GREEN)
+        success("Conversion complete")
 
     # Step 3: Initialize DuckDB over Parquet
     final_db_path = (
@@ -274,43 +283,31 @@ def dataset_init_cmd(
         else get_default_database_path(dataset_key)
     )
     if not final_db_path:
-        typer.secho(
-            f"Critical Error: Could not determine database path for '{dataset_name}'.",
-            fg=typer.colors.RED,
-            err=True,
-        )
+        error(f"Could not determine database path for '{dataset_name}'")
         raise typer.Exit(code=1)
 
     final_db_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Handle force flag - delete existing database if requested
     if force and final_db_path.exists():
-        typer.echo(f"⚠️  Deleting existing database at {final_db_path}")
+        warning(f"Deleting existing database at {final_db_path}")
         final_db_path.unlink()
 
-    typer.echo(f"Initializing dataset: '{dataset_name}'")
-    typer.echo(f"DuckDB path: {final_db_path}")
-    typer.echo(f"Parquet root: {pq_root}")
+    console.print()
+    print_step(3, 3, "Creating DuckDB views")
+    print_key_value("Database", final_db_path)
+    print_key_value("Parquet root", pq_root)
 
     if not pq_root or not pq_root.exists():
-        typer.secho(
-            f"Parquet directory not found at {pq_root}.",
-            fg=typer.colors.RED,
-            err=True,
-        )
+        error(f"Parquet directory not found at {pq_root}")
         raise typer.Exit(code=1)
 
     init_successful = init_duckdb_from_parquet(
         dataset_name=dataset_key, db_target_path=final_db_path
     )
     if not init_successful:
-        typer.secho(
-            (
-                f"Dataset '{dataset_name}' initialization FAILED. "
-                "Please check logs for details."
-            ),
-            fg=typer.colors.RED,
-            err=True,
+        error(
+            f"Dataset '{dataset_name}' initialization FAILED. Please check logs for details."
         )
         raise typer.Exit(code=1)
 
@@ -324,33 +321,19 @@ def dataset_init_cmd(
         logger.warning(
             f"No 'primary_verification_table' configured for '{dataset_name}'. Skipping DB query test."
         )
-        typer.secho(
-            (
-                f"Dataset '{dataset_name}' initialized to {final_db_path}. "
-                f"Parquet at {pq_root}."
-            ),
-            fg=typer.colors.GREEN,
-        )
+        print_init_complete(dataset_name, str(final_db_path), str(pq_root))
     else:
         try:
             record_count = verify_table_rowcount(final_db_path, verification_table_name)
-            typer.secho(
-                f"Database verification successful: Found {record_count} records in table '{verification_table_name}'.",
-                fg=typer.colors.GREEN,
+            success(
+                f"Verified: {record_count:,} records in '{verification_table_name}'"
             )
-            typer.secho(
-                f"Dataset '{dataset_name}' ready at {final_db_path}. Parquet at {pq_root}.",
-                fg=typer.colors.BRIGHT_GREEN,
-            )
+            print_init_complete(dataset_name, str(final_db_path), str(pq_root))
         except Exception as e:
             logger.error(
                 f"Unexpected error during database verification: {e}", exc_info=True
             )
-            typer.secho(
-                f"An unexpected error occurred during database verification: {e}",
-                fg=typer.colors.RED,
-                err=True,
-            )
+            error(f"Verification failed: {e}")
 
     # Set active dataset to match init target
     set_active_dataset(dataset_key)
@@ -369,109 +352,108 @@ def use_cmd(
     target = target.lower()
 
     # 1. Check if dataset is registered
-    # We use detect_available_local_datasets just to get the list + status,
-    # but we could also just check DatasetRegistry directly.
     availability = detect_available_local_datasets().get(target)
 
     if not availability:
-        typer.secho(
-            f"Dataset '{target}' not found or not registered.",
-            fg=typer.colors.RED,
-            err=True,
-        )
-        # List available
         supported = ", ".join([ds.name for ds in DatasetRegistry.list_all()])
-        typer.secho(f"Supported datasets: {supported}", fg=typer.colors.YELLOW)
+        print_error_panel(
+            "Dataset Not Found",
+            f"Dataset '{target}' not found or not registered.",
+            hint=f"Supported datasets: {supported}",
+        )
         raise typer.Exit(code=1)
 
     # 2. Set it active immediately (don't block on files)
     set_active_dataset(target)
-    typer.secho(f"Active dataset set to '{target}'.", fg=typer.colors.GREEN)
+    success(f"Active dataset set to '{target}'")
 
     # 3. Warn if local files are missing (helpful info, not a blocker)
     if not availability["parquet_present"]:
-        typer.secho(
-            f"⚠️  Note: Local Parquet files not found at {availability['parquet_root']}.",
-            fg=typer.colors.YELLOW,
+        warning(f"Local Parquet files not found at {availability['parquet_root']}")
+        console.print(
+            "  [muted]This is fine if you are using the BigQuery backend.[/muted]"
         )
-        typer.echo(
-            "   This is fine if you are using the BigQuery backend.\n"
-            "   If you intend to use DuckDB (local), run 'm4 init' first."
+        console.print(
+            "  [muted]For DuckDB (local), run:[/muted] [command]m4 init[/command]"
         )
     else:
-        typer.secho(
-            "  Local: Available",
-        )
+        info("Local: Available", prefix="status")
 
     # 4. Check BigQuery support
     ds_def = DatasetRegistry.get(target)
     if ds_def:
         if not ds_def.bigquery_dataset_ids:
-            typer.secho(
-                "⚠️  Warning: This dataset is not configured for BigQuery.",
-                fg=typer.colors.YELLOW,
+            warning("This dataset is not configured for BigQuery")
+            console.print(
+                "  [muted]If you're using the BigQuery backend, queries will fail.[/muted]"
             )
-            typer.echo("   If you are using the BigQuery backend, queries will fail.")
         else:
-            typer.echo(f"  BigQuery: Available (Project: {ds_def.bigquery_project_id})")
+            info(
+                f"BigQuery: Available (Project: {ds_def.bigquery_project_id})",
+                prefix="status",
+            )
 
 
 @app.command("status")
 def status_cmd():
     """Show active dataset, local DB path, Parquet presence, quick counts and sizes."""
+    print_logo(show_tagline=False, show_version=True)
+    console.print()
+
     active = get_active_dataset() or "(unset)"
-    typer.secho(
-        f"Active dataset: {active}",
-        fg=typer.colors.BRIGHT_GREEN if active != "(unset)" else typer.colors.YELLOW,
-    )
+    if active != "(unset)":
+        console.print(f"[bold]Active dataset:[/bold] [success]{active}[/success]")
+    else:
+        console.print(f"[bold]Active dataset:[/bold] [warning]{active}[/warning]")
 
     availability = detect_available_local_datasets()
     if not availability:
-        typer.echo("No datasets detected.")
+        console.print("\n[muted]No datasets detected.[/muted]")
         return
 
-    for label, info in availability.items():
-        typer.secho(f"\n=== {label.upper()} ===", fg=typer.colors.BRIGHT_BLUE)
+    for label, ds_info in availability.items():
+        is_active = label == active
 
-        parquet_icon = "✅" if info["parquet_present"] else "❌"
-        db_icon = "✅" if info["db_present"] else "❌"
-
-        typer.echo(f"  parquet_present: {parquet_icon}  db_present: {db_icon}")
-        typer.echo(f"  parquet_root: {info['parquet_root']}")
-        typer.echo(f"  db_path: {info['db_path']}")
-
-        if info["parquet_present"]:
+        # Get size if parquet present
+        parquet_size_gb = None
+        if ds_info["parquet_present"]:
             try:
-                size_bytes = compute_parquet_dir_size(Path(info["parquet_root"]))
-                size_gb = float(size_bytes) / (1024**3)
-                typer.echo(f"  parquet_size_gb: {size_gb:.4f} GB")
+                size_bytes = compute_parquet_dir_size(Path(ds_info["parquet_root"]))
+                parquet_size_gb = float(size_bytes) / (1024**3)
             except Exception:
-                typer.echo("  parquet_size_gb: (skipped)")
+                pass
 
-        # Show BigQuery status
+        # Get BigQuery status
         ds_def = DatasetRegistry.get(label)
-        if ds_def:
-            bq_status = "✅" if ds_def.bigquery_dataset_ids else "❌"
-            typer.echo(f"  BigQuery Support: {bq_status}")
+        bigquery_available = bool(ds_def and ds_def.bigquery_dataset_ids)
 
-        # Try a quick rowcount on the verification table if db present
+        # Get row count if possible
+        row_count = None
         cfg = get_dataset_config(label)
-        if info["db_present"] and cfg:
+        if ds_info["db_present"] and cfg:
             try:
-                count = verify_table_rowcount(
-                    Path(info["db_path"]), cfg["primary_verification_table"]
+                row_count = verify_table_rowcount(
+                    Path(ds_info["db_path"]), cfg["primary_verification_table"]
                 )
-                typer.echo(f"  {cfg['primary_verification_table']}_rowcount: {count:,}")
             except Exception as e:
-                typer.echo("  rowcount: (skipped)")
                 # Show hint if it looks like a path mismatch
                 if "No files found" in str(e) or "no such file" in str(e).lower():
-                    typer.echo(
-                        "  ⚠️  Database views may point to wrong parquet location"
+                    warning("Database views may point to wrong parquet location")
+                    console.print(
+                        f"  [muted]Try:[/muted] [command]m4 init {label} --force[/command]"
                     )
-                    typer.echo(
-                        f"  💡 Try: m4 init {label} --force (to recreate database)"
-                    )
+
+        print_dataset_status(
+            name=label,
+            parquet_present=ds_info["parquet_present"],
+            db_present=ds_info["db_present"],
+            parquet_root=str(ds_info["parquet_root"]),
+            db_path=str(ds_info["db_path"]),
+            parquet_size_gb=parquet_size_gb,
+            bigquery_available=bigquery_available,
+            row_count=row_count,
+            is_active=is_active,
+        )
 
 
 @app.command("config")
@@ -562,37 +544,21 @@ def config_cmd(
 
         script_dir = Path(mcp_client_configs.__file__).parent
     except ImportError:
-        typer.secho(
-            "❌ Error: Could not find m4.mcp_client_configs package",
-            fg=typer.colors.RED,
-            err=True,
-        )
+        error("Could not find m4.mcp_client_configs package")
         raise typer.Exit(code=1)
 
     # Validate backend-specific arguments
     # duckdb: db_path allowed, project_id not allowed
     if backend == "duckdb" and project_id:
-        typer.secho(
-            "❌ Error: --project-id can only be used with --backend bigquery",
-            fg=typer.colors.RED,
-            err=True,
-        )
+        error("--project-id can only be used with --backend bigquery")
         raise typer.Exit(code=1)
 
     # bigquery: requires project_id, db_path not allowed
     if backend == "bigquery" and db_path:
-        typer.secho(
-            "❌ Error: --db-path can only be used with --backend duckdb",
-            fg=typer.colors.RED,
-            err=True,
-        )
+        error("--db-path can only be used with --backend duckdb")
         raise typer.Exit(code=1)
     if backend == "bigquery" and not project_id:
-        typer.secho(
-            "❌ Error: --project-id is required when using --backend bigquery",
-            fg=typer.colors.RED,
-            err=True,
-        )
+        error("--project-id is required when using --backend bigquery")
         raise typer.Exit(code=1)
 
     if client == "claude":
@@ -600,11 +566,7 @@ def config_cmd(
         script_path = script_dir / "setup_claude_desktop.py"
 
         if not script_path.exists():
-            typer.secho(
-                f"Error: Claude Desktop setup script not found at {script_path}",
-                fg=typer.colors.RED,
-                err=True,
-            )
+            error(f"Claude Desktop setup script not found at {script_path}")
             raise typer.Exit(code=1)
 
         # Build command arguments with smart defaults inferred from runtime config
@@ -626,22 +588,12 @@ def config_cmd(
         try:
             result = subprocess.run(cmd, check=True, capture_output=False)
             if result.returncode == 0:
-                typer.secho(
-                    "✅ Claude Desktop configuration completed!", fg=typer.colors.GREEN
-                )
+                success("Claude Desktop configuration completed!")
         except subprocess.CalledProcessError as e:
-            typer.secho(
-                f"❌ Claude Desktop setup failed with exit code {e.returncode}",
-                fg=typer.colors.RED,
-                err=True,
-            )
+            error(f"Claude Desktop setup failed with exit code {e.returncode}")
             raise typer.Exit(code=e.returncode)
         except FileNotFoundError:
-            typer.secho(
-                "❌ Python interpreter not found. Please ensure Python is installed.",
-                fg=typer.colors.RED,
-                err=True,
-            )
+            error("Python interpreter not found. Please ensure Python is installed.")
             raise typer.Exit(code=1)
 
     else:
@@ -649,11 +601,7 @@ def config_cmd(
         script_path = script_dir / "dynamic_mcp_config.py"
 
         if not script_path.exists():
-            typer.secho(
-                f"Error: Dynamic config script not found at {script_path}",
-                fg=typer.colors.RED,
-                err=True,
-            )
+            error(f"Dynamic config script not found at {script_path}")
             raise typer.Exit(code=1)
 
         # Build command arguments
@@ -683,29 +631,19 @@ def config_cmd(
             cmd.extend(["--output", output])
 
         if quick:
-            typer.echo("🔧 Generating M4 MCP configuration...")
+            info("Generating M4 MCP configuration...")
         else:
-            typer.echo("🔧 Starting interactive M4 MCP configuration...")
+            info("Starting interactive M4 MCP configuration...")
 
         try:
             result = subprocess.run(cmd, check=True, capture_output=False)
             if result.returncode == 0 and quick:
-                typer.secho(
-                    "✅ Configuration generated successfully!", fg=typer.colors.GREEN
-                )
+                success("Configuration generated successfully!")
         except subprocess.CalledProcessError as e:
-            typer.secho(
-                f"❌ Configuration generation failed with exit code {e.returncode}",
-                fg=typer.colors.RED,
-                err=True,
-            )
+            error(f"Configuration generation failed with exit code {e.returncode}")
             raise typer.Exit(code=e.returncode)
         except FileNotFoundError:
-            typer.secho(
-                "❌ Python interpreter not found. Please ensure Python is installed.",
-                fg=typer.colors.RED,
-                err=True,
-            )
+            error("Python interpreter not found. Please ensure Python is installed.")
             raise typer.Exit(code=1)
 
 

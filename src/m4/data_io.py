@@ -1,13 +1,11 @@
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
 import duckdb
 import requests
-import typer
 from bs4 import BeautifulSoup
 
 from m4.config import (
@@ -15,6 +13,13 @@ from m4.config import (
     get_dataset_parquet_root,
     get_default_database_path,
     logger,
+)
+from m4.console import (
+    console,
+    create_download_progress,
+    create_task_progress,
+    info,
+    success,
 )
 
 ########################################################
@@ -28,7 +33,11 @@ COMMON_USER_AGENT = (
 
 
 def _download_single_file(
-    url: str, target_filepath: Path, session: requests.Session
+    url: str,
+    target_filepath: Path,
+    session: requests.Session,
+    progress=None,
+    task_id=None,
 ) -> bool:
     """Downloads a single file with progress tracking."""
     logger.debug(f"Attempting to download {url} to {target_filepath}...")
@@ -39,16 +48,18 @@ def _download_single_file(
         file_display_name = target_filepath.name
 
         target_filepath.parent.mkdir(parents=True, exist_ok=True)
-        with (
-            open(target_filepath, "wb") as f,
-            typer.progressbar(
-                length=total_size, label=f"Downloading {file_display_name}"
-            ) as progress,
-        ):
-            for chunk in response.iter_content(chunk_size=8192):  # Standard chunk size
+
+        # Update task description and total if progress bar is provided
+        if progress and task_id is not None:
+            progress.update(task_id, total=total_size, description=file_display_name)
+
+        with open(target_filepath, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
                 if chunk:
                     f.write(chunk)
-                    progress.update(len(chunk))
+                    if progress and task_id is not None:
+                        progress.update(task_id, advance=len(chunk))
+
         logger.info(f"Successfully downloaded: {file_display_name}")
         return True
     except requests.exceptions.HTTPError as e:
@@ -175,20 +186,36 @@ def _download_dataset_files(
     unique_files_to_process = sorted(
         list(set(all_files_to_process)), key=lambda x: x[1]
     )
-    logger.info(
-        f"Found {len(unique_files_to_process)} unique '.csv.gz' files to download "
-        f"for {dataset_name}."
-    )
+
+    total_files = len(unique_files_to_process)
+    info(f"Found {total_files} files to download")
 
     downloaded_count = 0
-    for file_url, target_filepath in unique_files_to_process:
-        if not _download_single_file(file_url, target_filepath, session):
-            logger.error(
-                f"Critical download failed for '{target_filepath.name}'. "
-                "Aborting dataset download."
+    with create_download_progress() as progress:
+        # Create overall progress task
+        overall_task = progress.add_task(
+            f"[cyan]Overall ({downloaded_count}/{total_files})", total=total_files
+        )
+        # Create file download task
+        file_task = progress.add_task("Starting...", total=0)
+
+        for file_url, target_filepath in unique_files_to_process:
+            if not _download_single_file(
+                file_url, target_filepath, session, progress, file_task
+            ):
+                logger.error(
+                    f"Critical download failed for '{target_filepath.name}'. "
+                    "Aborting dataset download."
+                )
+                return False  # Stop if any single download fails
+            downloaded_count += 1
+            progress.update(
+                overall_task,
+                advance=1,
+                description=f"[cyan]Overall ({downloaded_count}/{total_files})",
             )
-            return False  # Stop if any single download fails
-        downloaded_count += 1
+            # Reset file task for next file
+            progress.reset(file_task)
 
     # Success only if all identified files were downloaded
     return downloaded_count == len(unique_files_to_process)
@@ -251,8 +278,8 @@ def _csv_to_parquet_all(src_root: Path, parquet_root: Path) -> bool:
     except Exception:
         pass
 
-    def _convert_one(csv_gz: Path) -> tuple[Path | None, float]:
-        """Convert one CSV file and return the output path and time taken."""
+    def _convert_one(csv_gz: Path) -> tuple[Path | None, float, str]:
+        """Convert one CSV file and return the output path, time taken, and filename."""
         start = time.time()
         rel = csv_gz.relative_to(src_root)
         out = parquet_root / rel.with_suffix("").with_suffix(".parquet")
@@ -280,7 +307,7 @@ def _csv_to_parquet_all(src_root: Path, parquet_root: Path) -> bool:
             """
             con.execute(sql)
             elapsed = time.time() - start
-            return out, elapsed
+            return out, elapsed, csv_gz.name
         finally:
             con.close()
 
@@ -290,37 +317,37 @@ def _csv_to_parquet_all(src_root: Path, parquet_root: Path) -> bool:
     total_files = len(csv_files)
     completed = 0
 
-    with ThreadPoolExecutor(max_workers=max_workers) as ex:
-        futures = {ex.submit(_convert_one, f): f for f in csv_files}
-
-        logger.info(
-            f"Converting {total_files} CSV files to Parquet using {max_workers} workers..."
+    console.print()
+    with create_task_progress() as progress:
+        task = progress.add_task(
+            f"Converting {total_files} CSV files...", total=total_files
         )
 
-        for fut in as_completed(futures):
-            try:
-                result_path, _ = fut.result()
-                if result_path is not None:
-                    parquet_paths.append(result_path)
-                    completed += 1
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            futures = {ex.submit(_convert_one, f): f for f in csv_files}
 
-                    elapsed = time.time() - start_time
-                    logger.info(
-                        f"Progress: {completed}/{total_files} files "
-                        f"({100 * completed / total_files:.1f}%) - "
-                        f"Elapsed: {timedelta(seconds=int(elapsed))!s}"
-                    )
-            except Exception as e:
-                csv_file = futures[fut]
-                logger.error(f"Parquet conversion failed for {csv_file}: {e}")
-                ex.shutdown(cancel_futures=True)
-                return False
+            logger.info(
+                f"Converting {total_files} CSV files to Parquet using {max_workers} workers..."
+            )
+
+            for fut in as_completed(futures):
+                try:
+                    result_path, _, filename = fut.result()
+                    if result_path is not None:
+                        parquet_paths.append(result_path)
+                        completed += 1
+                        progress.update(
+                            task, advance=1, description=f"Converted {filename}"
+                        )
+                        logger.debug(f"Converted: {filename}")
+                except Exception as e:
+                    csv_file = futures[fut]
+                    logger.error(f"Parquet conversion failed for {csv_file}: {e}")
+                    ex.shutdown(cancel_futures=True)
+                    return False
 
     elapsed_time = time.time() - start_time
-    logger.info(
-        f"\u2713 Converted {len(parquet_paths)} files to Parquet under {parquet_root} "
-        f"in {timedelta(seconds=int(elapsed_time))!s}"
-    )
+    success(f"Converted {len(parquet_paths)} files in {elapsed_time:.1f}s")
     return True
 
 
@@ -397,50 +424,47 @@ def _create_duckdb_with_views(db_path: Path, parquet_root: Path) -> bool:
         start_time = time.time()
         created = 0
 
-        for idx, pq in enumerate(parquet_files, 1):
-            # Get relative path from parquet_root
-            rel = pq.relative_to(parquet_root)
-
-            # Build view name from directory structure + filename
-            # e.g., hosp/admissions.parquet -> hosp_admissions
-            parts = [*list(rel.parent.parts), rel.stem]  # stem removes .parquet
-
-            # Clean and join parts
-            view_name = "_".join(
-                p.lower().replace("-", "_").replace(".", "_") for p in parts if p != "."
+        console.print()
+        with create_task_progress() as progress:
+            task = progress.add_task(
+                f"Creating {len(parquet_files)} views...", total=len(parquet_files)
             )
 
-            # Create view pointing to the specific parquet file
-            sql = f"""
-                CREATE OR REPLACE VIEW {view_name} AS
-                SELECT * FROM read_parquet('{pq.as_posix()}');
-            """
+            for idx, pq in enumerate(parquet_files, 1):
+                # Get relative path from parquet_root
+                rel = pq.relative_to(parquet_root)
 
-            try:
-                con.execute(sql)
-                created += 1
+                # Build view name from directory structure + filename
+                # e.g., hosp/admissions.parquet -> hosp_admissions
+                parts = [*list(rel.parent.parts), rel.stem]  # stem removes .parquet
 
-                # Progress logging
-                if idx % 5 == 0 or idx == len(parquet_files):
-                    elapsed = time.time() - start_time
-                    avg_time = elapsed / idx
-                    eta_seconds = avg_time * (len(parquet_files) - idx)
-                    logger.info(
-                        f"Progress: {idx}/{len(parquet_files)} views "
-                        f"({100 * idx / len(parquet_files):.1f}%) - "
-                        f"Last: {view_name} - "
-                        f"ETA: {timedelta(seconds=int(eta_seconds))!s}"
+                # Clean and join parts
+                view_name = "_".join(
+                    p.lower().replace("-", "_").replace(".", "_")
+                    for p in parts
+                    if p != "."
+                )
+
+                # Create view pointing to the specific parquet file
+                sql = f"""
+                    CREATE OR REPLACE VIEW {view_name} AS
+                    SELECT * FROM read_parquet('{pq.as_posix()}');
+                """
+
+                try:
+                    con.execute(sql)
+                    created += 1
+                    progress.update(
+                        task, advance=1, description=f"Created view: {view_name}"
                     )
-            except Exception as e:
-                logger.error(f"Failed to create view {view_name} from {pq}: {e}")
-                raise
+                    logger.debug(f"Created view: {view_name}")
+                except Exception as e:
+                    logger.error(f"Failed to create view {view_name} from {pq}: {e}")
+                    raise
 
         con.commit()
         elapsed_time = time.time() - start_time
-        logger.info(
-            f"✓ Created {created} views in {db_path} in "
-            f"{timedelta(seconds=int(elapsed_time))!s}"
-        )
+        success(f"Created {created} views in {elapsed_time:.1f}s")
 
         # List all created views for verification
         views_result = con.execute(

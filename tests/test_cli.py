@@ -6,7 +6,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-import m4.cli as cli_module
 from m4.cli import app
 
 runner = CliRunner()
@@ -14,7 +13,8 @@ runner = CliRunner()
 
 @pytest.fixture(autouse=True)
 def inject_version(monkeypatch):
-    monkeypatch.setattr(cli_module, "__version__", "0.0.1")
+    # Patch __version__ in the console module where print_logo imports it
+    monkeypatch.setattr("m4.__version__", "0.0.1")
 
 
 def test_help_shows_app_name():
@@ -28,7 +28,8 @@ def test_help_shows_app_name():
 def test_version_option_exits_zero_and_shows_version():
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert "M4 CLI Version: 0.0.1" in result.stdout
+    # Now displays logo with version
+    assert "v0.0.1" in result.stdout
 
 
 def test_unknown_command_reports_error():
@@ -64,11 +65,11 @@ def test_init_command_duckdb_custom_path(mock_rowcount, mock_init):
                 )
 
         assert result.exit_code == 0
-        assert (
-            str(custom_db_path) in result.stdout
-            or str(resolved_custom_db_path) in result.stdout
-        )
-        assert "DuckDB path:" in result.stdout
+        # With Rich panels, paths may be split across lines, check for parts of filename
+        # The filename "custom_mimic.duckdb" may be wrapped as "custom_mimi" + "c.duckdb"
+        assert "custom_mimi" in result.stdout and ".duckdb" in result.stdout
+        # Now uses "Database:" instead of "DuckDB path:"
+        assert "Database:" in result.stdout
 
         # initializer should be called with the resolved path
         mock_init.assert_called_once_with(
@@ -204,7 +205,8 @@ def test_use_full_happy_path(mock_detect, mock_set_active):
 
     result = runner.invoke(app, ["use", "mimic-iv-full"])
     assert result.exit_code == 0
-    assert "Active dataset set to 'mimic-iv-full'." in result.stdout
+    # Updated format without trailing period
+    assert "Active dataset set to 'mimic-iv-full'" in result.stdout
     mock_set_active.assert_called_once_with("mimic-iv-full")
 
 
@@ -229,6 +231,7 @@ def test_status_happy_path(mock_detect, mock_active, mock_size):
 
     result = runner.invoke(app, ["status"])
     assert result.exit_code == 0
-    assert "Active dataset: mimic-iv-full" in result.stdout
-    size_gb = 123 / (1024**3)
-    assert f"parquet_size_gb: {size_gb:.4f} GB" in result.stdout
+    assert "Active dataset:" in result.stdout
+    assert "mimic-iv-full" in result.stdout
+    # Updated Rich format: "Parquet size:  X.XX GB"
+    assert "Parquet size:" in result.stdout
