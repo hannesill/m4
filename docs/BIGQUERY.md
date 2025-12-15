@@ -1,0 +1,84 @@
+# BigQuery Setup
+
+Use Google Cloud BigQuery to access full clinical datasets without downloading files locally.
+
+## Prerequisites
+
+1. **Google Cloud account** with BigQuery access
+2. **PhysioNet credentialed access** for MIMIC-IV or eICU ([apply here](https://physionet.org/))
+3. **gcloud CLI** installed ([installation guide](https://cloud.google.com/sdk/docs/install))
+
+## Setup
+
+### 1. Authenticate with Google Cloud
+
+```bash
+gcloud auth application-default login
+```
+
+This opens a browser to complete authentication.
+
+### 2. Configure M4 for BigQuery
+
+**Claude Desktop:**
+```bash
+uv run m4 config claude --backend bigquery --project-id YOUR_PROJECT_ID
+```
+
+**Other clients:**
+```bash
+uv run m4 config --backend bigquery --project-id YOUR_PROJECT_ID
+```
+
+Replace `YOUR_PROJECT_ID` with your Google Cloud project ID.
+
+### 3. Set the dataset
+
+```bash
+m4 use mimic-iv    # or eicu
+```
+
+### 4. Restart your MCP client
+
+The AI client will now query BigQuery directly.
+
+## BigQuery Dataset IDs
+
+M4 uses these PhysioNet BigQuery datasets:
+
+| Dataset | BigQuery Project | Dataset IDs |
+|---------|-----------------|-------------|
+| mimic-iv | `physionet-data` | `mimiciv_3_1_hosp`, `mimiciv_3_1_icu` |
+| eicu | `physionet-data` | `eicu_crd` |
+
+## Environment Variables
+
+You can also configure BigQuery via environment variables:
+
+```bash
+export M4_BACKEND=bigquery
+export M4_PROJECT_ID=your-project-id
+```
+
+## Cost Considerations
+
+BigQuery charges based on data scanned. Tips to minimize costs:
+
+- Use `LIMIT` clauses in queries
+- Query specific columns instead of `SELECT *`
+- The convenience tools (`get_icu_stays`, `get_lab_results`) include reasonable limits
+
+## Troubleshooting
+
+**"Access Denied" error:**
+- Ensure you've completed PhysioNet credentialing for the dataset
+- Verify your Google account is linked to PhysioNet
+- Re-run `gcloud auth application-default login`
+
+**"Project not found" error:**
+- Check the project ID is correct
+- Ensure BigQuery API is enabled in your project
+
+**Slow queries:**
+- BigQuery has network latency; consider local DuckDB for development
+- Use smaller `LIMIT` values while exploring
