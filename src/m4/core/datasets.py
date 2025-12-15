@@ -7,9 +7,21 @@ This module provides:
 - DatasetRegistry: Registry for managing dataset definitions
 """
 
+import json
+import logging
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import ClassVar
+from pathlib import Path
+from typing import TYPE_CHECKING, ClassVar
+
+if TYPE_CHECKING:
+    pass
+
+logger = logging.getLogger(__name__)
+
+# Maximum file size for custom dataset JSON files (1MB)
+# Prevents memory exhaustion from malicious/oversized files
+MAX_DATASET_FILE_SIZE = 1024 * 1024
 
 
 class Modality(Enum):
@@ -119,10 +131,70 @@ class DatasetRegistry:
         return list(cls._registry.values())
 
     @classmethod
+    def get_active(cls) -> DatasetDefinition:
+        """Get the currently active dataset definition.
+
+        This method retrieves the active dataset from config and returns
+        its definition. Raises an error if no active dataset is configured.
+
+        Returns:
+            DatasetDefinition for the active dataset
+
+        Raises:
+            ValueError: If no active dataset is configured or dataset not found
+        """
+        # Import here to avoid circular dependency
+        from m4.config import get_active_dataset
+
+        active_ds_name = get_active_dataset()
+        if not active_ds_name:
+            raise ValueError(
+                "No active dataset configured. "
+                "Use `set_dataset('dataset-name')` to select a dataset."
+            )
+
+        ds_def = cls.get(active_ds_name)
+        if not ds_def:
+            raise ValueError(
+                f"Active dataset '{active_ds_name}' not found in registry. "
+                f"Available datasets: {', '.join(d.name for d in cls.list_all())}"
+            )
+
+        return ds_def
+
+    @classmethod
     def reset(cls):
         """Clear registry and re-register built-in datasets."""
         cls._registry.clear()
         cls._register_builtins()
+
+    @classmethod
+    def load_custom_datasets(cls, custom_dir: Path) -> None:
+        """Load custom dataset definitions from JSON files.
+
+        Args:
+            custom_dir: Directory containing custom dataset JSON files
+        """
+        if not custom_dir.exists():
+            logger.debug(f"Custom datasets directory does not exist: {custom_dir}")
+            return
+
+        for f in custom_dir.glob("*.json"):
+            try:
+                # Check file size to prevent DoS via large files
+                if f.stat().st_size > MAX_DATASET_FILE_SIZE:
+                    logger.warning(
+                        f"Dataset file too large (>{MAX_DATASET_FILE_SIZE} bytes), "
+                        f"skipping: {f}"
+                    )
+                    continue
+
+                data = json.loads(f.read_text())
+                ds = DatasetDefinition(**data)
+                cls.register(ds)
+                logger.debug(f"Loaded custom dataset: {ds.name}")
+            except Exception as e:
+                logger.warning(f"Failed to load custom dataset from {f}: {e}")
 
     @classmethod
     def _register_builtins(cls):

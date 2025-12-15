@@ -9,7 +9,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from m4.config import (
-    get_dataset_config,
     get_dataset_parquet_root,
     get_default_database_path,
     logger,
@@ -21,6 +20,7 @@ from m4.console import (
     info,
     success,
 )
+from m4.core.datasets import DatasetRegistry
 
 ########################################################
 # Download functionality
@@ -227,20 +227,20 @@ def download_dataset(dataset_name: str, output_root: Path) -> bool:
     - Currently intended for 'mimic-iv-demo' (public demo); extendable for others.
     - Downloads into output_root preserving subdirectory structure (e.g., hosp/, icu/).
     """
-    cfg = get_dataset_config(dataset_name)
-    if not cfg:
+    ds = DatasetRegistry.get(dataset_name.lower())
+    if not ds:
         logger.error(f"Unsupported dataset: {dataset_name}")
         return False
 
     # Prevent accidental scraping of credentialed datasets
-    if cfg.get("requires_authentication"):
+    if ds.requires_authentication:
         logger.error(
             f"Dataset '{dataset_name}' requires authentication and cannot be auto-downloaded. "
             "Please download files manually."
         )
         return False
 
-    if not cfg.get("file_listing_url"):
+    if not ds.file_listing_url:
         logger.error(
             f"Dataset '{dataset_name}' does not have a configured listing URL. "
             "This version only supports public demo download."
@@ -248,7 +248,13 @@ def download_dataset(dataset_name: str, output_root: Path) -> bool:
         return False
 
     output_root.mkdir(parents=True, exist_ok=True)
-    return _download_dataset_files(dataset_name, cfg, output_root)
+
+    # Build config dict for _download_dataset_files (kept for minimal changes)
+    dataset_config = {
+        "file_listing_url": ds.file_listing_url,
+        "subdirectories_to_scan": ds.subdirectories_to_scan,
+    }
+    return _download_dataset_files(dataset_name, dataset_config, output_root)
 
 
 ########################################################
@@ -337,7 +343,9 @@ def _csv_to_parquet_all(src_root: Path, parquet_root: Path) -> bool:
                         parquet_paths.append(result_path)
                         completed += 1
                         progress.update(
-                            task, advance=1, description=f"Converted {filename} ({max_workers} workers)"
+                            task,
+                            advance=1,
+                            description=f"Converted {filename} ({max_workers} workers)",
                         )
                         logger.debug(f"Converted: {filename}")
                 except Exception as e:
@@ -378,8 +386,8 @@ def init_duckdb_from_parquet(dataset_name: str, db_target_path: Path) -> bool:
     Parquet root must exist under:
     <project_root>/m4_data/parquet/<dataset_name>/
     """
-    dataset_config = get_dataset_config(dataset_name)
-    if not dataset_config:
+    ds = DatasetRegistry.get(dataset_name.lower())
+    if not ds:
         logger.error(f"Configuration for dataset '{dataset_name}' not found.")
         return False
 

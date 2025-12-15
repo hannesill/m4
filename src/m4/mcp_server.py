@@ -16,13 +16,10 @@ Tool Surface:
     capability checking before tool invocation.
 """
 
-import logging
-
 from fastmcp import FastMCP
 
 from m4.auth import init_oauth2, require_oauth2
-from m4.config import get_active_dataset
-from m4.core.datasets import DatasetDefinition, DatasetRegistry
+from m4.core.datasets import DatasetRegistry
 from m4.core.tools import ToolRegistry, ToolSelector, init_tools
 from m4.core.tools.management import ListDatasetsInput, SetDatasetInput
 from m4.core.tools.tabular import (
@@ -33,8 +30,6 @@ from m4.core.tools.tabular import (
     GetRaceDistributionInput,
     GetTableInfoInput,
 )
-
-logger = logging.getLogger(__name__)
 
 # Create FastMCP server instance
 mcp = FastMCP("m4")
@@ -61,148 +56,6 @@ _MCP_TOOL_NAMES = frozenset(
 )
 
 
-def _get_active_dataset_def():
-    """Get the currently active dataset definition.
-
-    Returns:
-        DatasetDefinition for the active dataset, or mimic-iv-demo as fallback.
-    """
-    active_ds_name = get_active_dataset()
-    if active_ds_name:
-        ds_def = DatasetRegistry.get(active_ds_name)
-        if ds_def:
-            return ds_def
-
-    # Fallback to demo dataset
-    return DatasetRegistry.get("mimic-iv-demo")
-
-
-def _check_tool_compatibility(
-    tool_name: str, dataset_def: DatasetDefinition
-) -> tuple[bool, str]:
-    """Check if a tool is compatible with the given dataset.
-
-    Uses ToolSelector and tool metadata to perform proactive capability checking.
-    This ensures users get helpful error messages before any backend execution
-    is attempted.
-
-    Args:
-        tool_name: Name of the tool to check
-        dataset_def: The dataset to check against
-
-    Returns:
-        Tuple of (is_compatible, error_message).
-        If compatible, error_message is empty string.
-        If not compatible, error_message contains user-facing guidance.
-    """
-    tool = ToolRegistry.get(tool_name)
-    if not tool:
-        logger.debug("Tool '%s' not found in registry", tool_name)
-        return False, f"❌ **Error:** Unknown tool `{tool_name}`."
-
-    # Use ToolSelector for capability-based check
-    if _tool_selector.is_tool_available(tool_name, dataset_def):
-        logger.debug(
-            "Tool '%s' is compatible with dataset '%s'", tool_name, dataset_def.name
-        )
-        return True, ""
-
-    # Build detailed incompatibility message
-    logger.debug(
-        "Tool '%s' is NOT compatible with dataset '%s'. "
-        "Required modalities: %s, capabilities: %s. "
-        "Dataset has modalities: %s, capabilities: %s",
-        tool_name,
-        dataset_def.name,
-        tool.required_modalities,
-        tool.required_capabilities,
-        dataset_def.modalities,
-        dataset_def.capabilities,
-    )
-
-    # Format modalities and capabilities for display
-    required_modalities = sorted(m.name for m in tool.required_modalities)
-    required_capabilities = sorted(c.name for c in tool.required_capabilities)
-    available_modalities = sorted(m.name for m in dataset_def.modalities)
-    available_capabilities = sorted(c.name for c in dataset_def.capabilities)
-
-    # Find what's missing
-    missing_modalities = set(required_modalities) - set(available_modalities)
-    missing_capabilities = set(required_capabilities) - set(available_capabilities)
-
-    error_parts = [
-        f"❌ **Error:** Tool `{tool_name}` is not available for dataset "
-        f"'{dataset_def.name}'.",
-        "",
-    ]
-
-    if missing_modalities:
-        error_parts.append(
-            f"📦 **Missing modalities:** {', '.join(sorted(missing_modalities))}"
-        )
-    if missing_capabilities:
-        error_parts.append(
-            f"⚙️ **Missing capabilities:** {', '.join(sorted(missing_capabilities))}"
-        )
-
-    error_parts.extend(
-        [
-            "",
-            "🔧 **Tool requires:**",
-            f"   Modalities: {', '.join(required_modalities) or '(none)'}",
-            f"   Capabilities: {', '.join(required_capabilities) or '(none)'}",
-            "",
-            f"📋 **Dataset '{dataset_def.name}' provides:**",
-            f"   Modalities: {', '.join(available_modalities) or '(none)'}",
-            f"   Capabilities: {', '.join(available_capabilities) or '(none)'}",
-            "",
-            "💡 **Suggestions:**",
-            "   - Use `list_datasets()` to see all available datasets",
-            "   - Use `set_dataset('dataset-name')` to switch datasets",
-        ]
-    )
-
-    return False, "\n".join(error_parts)
-
-
-def _get_supported_tools_snapshot(dataset_def: DatasetDefinition) -> str:
-    """Generate a snapshot of supported tools for a dataset.
-
-    Returns a formatted string listing the dataset's modalities, capabilities,
-    and which MCP-exposed tools are available.
-
-    Args:
-        dataset_def: The dataset to generate snapshot for
-
-    Returns:
-        Formatted snapshot string
-    """
-    # Get compatible tools filtered to MCP-exposed ones
-    compatible_tools = _tool_selector.tools_for_dataset(dataset_def)
-    mcp_compatible = sorted(
-        t.name for t in compatible_tools if t.name in _MCP_TOOL_NAMES
-    )
-
-    # Format modalities and capabilities
-    modalities = sorted(m.name for m in dataset_def.modalities)
-    capabilities = sorted(c.name for c in dataset_def.capabilities)
-
-    snapshot_parts = [
-        "",
-        "─" * 40,
-        f"✅ **Active dataset:** {dataset_def.name}",
-        f"🧩 **Modalities:** {', '.join(modalities) or '(none)'}",
-        f"⚙️ **Capabilities:** {', '.join(capabilities) or '(none)'}",
-    ]
-
-    if mcp_compatible:
-        snapshot_parts.append(f"🛠️ **Supported tools:** {', '.join(mcp_compatible)}")
-    else:
-        snapshot_parts.append("⚠️ **No data tools available for this dataset.**")
-
-    return "\n".join(snapshot_parts)
-
-
 # ==========================================
 # MCP TOOLS - Thin adapters to tool classes
 # ==========================================
@@ -217,7 +70,7 @@ def list_datasets() -> str:
         and showing availability of local database and BigQuery support.
     """
     tool = ToolRegistry.get("list_datasets")
-    dataset = _get_active_dataset_def()
+    dataset = DatasetRegistry.get_active()
     return tool.invoke(dataset, ListDatasetsInput()).result
 
 
@@ -235,12 +88,14 @@ def set_dataset(dataset_name: str) -> str:
     target_dataset_def = DatasetRegistry.get(dataset_name.lower())
 
     tool = ToolRegistry.get("set_dataset")
-    dataset = _get_active_dataset_def()
+    dataset = DatasetRegistry.get_active()
     result = tool.invoke(dataset, SetDatasetInput(dataset_name=dataset_name)).result
 
     # Append supported tools snapshot if dataset is valid
     if target_dataset_def is not None:
-        result += _get_supported_tools_snapshot(target_dataset_def)
+        result += _tool_selector.get_supported_tools_snapshot(
+            target_dataset_def, _MCP_TOOL_NAMES
+        )
 
     return result
 
@@ -255,12 +110,12 @@ def get_database_schema() -> str:
     Returns:
         List of all available tables in the database with current backend info.
     """
-    dataset = _get_active_dataset_def()
+    dataset = DatasetRegistry.get_active()
 
     # Proactive capability check
-    is_compatible, error_msg = _check_tool_compatibility("get_database_schema", dataset)
-    if not is_compatible:
-        return error_msg
+    result = _tool_selector.check_compatibility("get_database_schema", dataset)
+    if not result.compatible:
+        return result.error_message
 
     tool = ToolRegistry.get("get_database_schema")
     return tool.invoke(dataset, GetDatabaseSchemaInput()).result
@@ -280,12 +135,12 @@ def get_table_info(table_name: str, show_sample: bool = True) -> str:
     Returns:
         Table structure with column names, types, and sample data.
     """
-    dataset = _get_active_dataset_def()
+    dataset = DatasetRegistry.get_active()
 
     # Proactive capability check
-    is_compatible, error_msg = _check_tool_compatibility("get_table_info", dataset)
-    if not is_compatible:
-        return error_msg
+    result = _tool_selector.check_compatibility("get_table_info", dataset)
+    if not result.compatible:
+        return result.error_message
 
     tool = ToolRegistry.get("get_table_info")
     return tool.invoke(
@@ -309,12 +164,12 @@ def execute_query(sql_query: str) -> str:
     Returns:
         Query results or helpful error messages.
     """
-    dataset = _get_active_dataset_def()
+    dataset = DatasetRegistry.get_active()
 
     # Proactive capability check
-    is_compatible, error_msg = _check_tool_compatibility("execute_query", dataset)
-    if not is_compatible:
-        return error_msg
+    result = _tool_selector.check_compatibility("execute_query", dataset)
+    if not result.compatible:
+        return result.error_message
 
     tool = ToolRegistry.get("execute_query")
     return tool.invoke(dataset, ExecuteQueryInput(sql_query=sql_query)).result
@@ -335,12 +190,12 @@ def get_icu_stays(patient_id: int | None = None, limit: int = 10) -> str:
     Returns:
         ICU stay data or guidance if table not found.
     """
-    dataset = _get_active_dataset_def()
+    dataset = DatasetRegistry.get_active()
 
     # Proactive capability check
-    is_compatible, error_msg = _check_tool_compatibility("get_icu_stays", dataset)
-    if not is_compatible:
-        return error_msg
+    result = _tool_selector.check_compatibility("get_icu_stays", dataset)
+    if not result.compatible:
+        return result.error_message
 
     tool = ToolRegistry.get("get_icu_stays")
     return tool.invoke(
@@ -367,12 +222,12 @@ def get_lab_results(
     Returns:
         Lab results or guidance if table not found.
     """
-    dataset = _get_active_dataset_def()
+    dataset = DatasetRegistry.get_active()
 
     # Proactive capability check
-    is_compatible, error_msg = _check_tool_compatibility("get_lab_results", dataset)
-    if not is_compatible:
-        return error_msg
+    result = _tool_selector.check_compatibility("get_lab_results", dataset)
+    if not result.compatible:
+        return result.error_message
 
     tool = ToolRegistry.get("get_lab_results")
     return tool.invoke(
@@ -395,14 +250,12 @@ def get_race_distribution(limit: int = 10) -> str:
     Returns:
         Race distribution or guidance if table not found.
     """
-    dataset = _get_active_dataset_def()
+    dataset = DatasetRegistry.get_active()
 
     # Proactive capability check
-    is_compatible, error_msg = _check_tool_compatibility(
-        "get_race_distribution", dataset
-    )
-    if not is_compatible:
-        return error_msg
+    result = _tool_selector.check_compatibility("get_race_distribution", dataset)
+    if not result.compatible:
+        return result.error_message
 
     tool = ToolRegistry.get("get_race_distribution")
     return tool.invoke(dataset, GetRaceDistributionInput(limit=limit)).result

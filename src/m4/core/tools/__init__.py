@@ -15,7 +15,7 @@ from m4.core.tools.management import (
     ListDatasetsTool,
     SetDatasetTool,
 )
-from m4.core.tools.registry import ToolRegistry, ToolSelector
+from m4.core.tools.registry import CompatibilityResult, ToolRegistry, ToolSelector
 
 # Import tool classes for registration
 from m4.core.tools.tabular import (
@@ -83,6 +83,7 @@ def reset_tools() -> None:
 
 
 __all__ = [
+    "CompatibilityResult",
     "ExecuteQueryTool",
     "GetDatabaseSchemaTool",
     "GetICUStaysTool",

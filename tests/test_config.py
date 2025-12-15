@@ -1,20 +1,22 @@
 from pathlib import Path
 
 from m4.config import (
-    get_dataset_config,
     get_dataset_parquet_root,
     get_default_database_path,
 )
+from m4.core.datasets import DatasetRegistry
 
 
-def test_get_dataset_config_known():
-    cfg = get_dataset_config("mimic-iv-demo")
-    assert isinstance(cfg, dict)
-    assert cfg.get("default_duckdb_filename") == "mimic_iv_demo.duckdb"
+def test_get_dataset_known():
+    """Test that a known dataset can be retrieved from the registry."""
+    ds = DatasetRegistry.get("mimic-iv-demo")
+    assert ds is not None
+    assert ds.default_duckdb_filename == "mimic_iv_demo.duckdb"
 
 
-def test_get_dataset_config_unknown():
-    assert get_dataset_config("not-a-dataset") is None
+def test_get_dataset_unknown():
+    """Test that an unknown dataset returns None."""
+    assert DatasetRegistry.get("not-a-dataset") is None
 
 
 def test_default_paths(tmp_path, monkeypatch):

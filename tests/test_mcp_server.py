@@ -129,51 +129,48 @@ class TestMCPTools:
             },
             clear=True,
         ):
-            with patch("m4.mcp_server.DatasetRegistry.get", return_value=mock_ds):
-                with patch(
-                    "m4.mcp_server.get_active_dataset", return_value="mimic-demo"
-                ):
-                    with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
-                        from m4.core.backends.duckdb import DuckDBBackend
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
+            ):
+                with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
+                    from m4.core.backends.duckdb import DuckDBBackend
 
-                        # Use real DuckDB backend with test database
-                        mock_get_backend.return_value = DuckDBBackend(
-                            db_path_override=test_db
+                    # Use real DuckDB backend with test database
+                    mock_get_backend.return_value = DuckDBBackend(
+                        db_path_override=test_db
+                    )
+
+                    async with Client(mcp) as client:
+                        # Test execute_query tool
+                        result = await client.call_tool(
+                            "execute_query",
+                            {"sql_query": "SELECT COUNT(*) as count FROM icu_icustays"},
                         )
+                        result_text = str(result)
+                        assert "count" in result_text
+                        assert "2" in result_text
 
-                        async with Client(mcp) as client:
-                            # Test execute_query tool
-                            result = await client.call_tool(
-                                "execute_query",
-                                {
-                                    "sql_query": "SELECT COUNT(*) as count FROM icu_icustays"
-                                },
-                            )
-                            result_text = str(result)
-                            assert "count" in result_text
-                            assert "2" in result_text
+                        # Test get_icu_stays tool
+                        result = await client.call_tool(
+                            "get_icu_stays", {"patient_id": 10000032, "limit": 10}
+                        )
+                        result_text = str(result)
+                        assert "10000032" in result_text
 
-                            # Test get_icu_stays tool
-                            result = await client.call_tool(
-                                "get_icu_stays", {"patient_id": 10000032, "limit": 10}
-                            )
-                            result_text = str(result)
-                            assert "10000032" in result_text
+                        # Test get_lab_results tool
+                        result = await client.call_tool(
+                            "get_lab_results", {"patient_id": 10000032, "limit": 20}
+                        )
+                        result_text = str(result)
+                        assert "10000032" in result_text
 
-                            # Test get_lab_results tool
-                            result = await client.call_tool(
-                                "get_lab_results", {"patient_id": 10000032, "limit": 20}
-                            )
-                            result_text = str(result)
-                            assert "10000032" in result_text
-
-                            # Test get_database_schema tool
-                            result = await client.call_tool("get_database_schema", {})
-                            result_text = str(result)
-                            assert (
-                                "icu_icustays" in result_text
-                                or "hosp_labevents" in result_text
-                            )
+                        # Test get_database_schema tool
+                        result = await client.call_tool("get_database_schema", {})
+                        result_text = str(result)
+                        assert (
+                            "icu_icustays" in result_text
+                            or "hosp_labevents" in result_text
+                        )
 
     @pytest.mark.asyncio
     async def test_security_checks(self, test_db):
@@ -233,24 +230,23 @@ class TestMCPTools:
             },
             clear=True,
         ):
-            with patch("m4.mcp_server.DatasetRegistry.get", return_value=mock_ds):
-                with patch(
-                    "m4.mcp_server.get_active_dataset", return_value="mimic-demo"
-                ):
-                    with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
-                        mock_get_backend.return_value = DuckDBBackend(
-                            db_path_override=test_db
-                        )
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
+            ):
+                with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
+                    mock_get_backend.return_value = DuckDBBackend(
+                        db_path_override=test_db
+                    )
 
-                        async with Client(mcp) as client:
-                            result = await client.call_tool(
-                                "execute_query",
-                                {"sql_query": "INVALID SQL QUERY"},
-                            )
-                            result_text = str(result)
-                            # Security validation happens first, and this is valid
-                            # SQL structure but will fail execution
-                            assert "Error" in result_text or "error" in result_text
+                    async with Client(mcp) as client:
+                        result = await client.call_tool(
+                            "execute_query",
+                            {"sql_query": "INVALID SQL QUERY"},
+                        )
+                        result_text = str(result)
+                        # Security validation happens first, and this is valid
+                        # SQL structure but will fail execution
+                        assert "Error" in result_text or "error" in result_text
 
     @pytest.mark.asyncio
     async def test_empty_results(self, test_db):
@@ -276,24 +272,23 @@ class TestMCPTools:
             },
             clear=True,
         ):
-            with patch("m4.mcp_server.DatasetRegistry.get", return_value=mock_ds):
-                with patch(
-                    "m4.mcp_server.get_active_dataset", return_value="mimic-demo"
-                ):
-                    with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
-                        mock_get_backend.return_value = DuckDBBackend(
-                            db_path_override=test_db
-                        )
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
+            ):
+                with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
+                    mock_get_backend.return_value = DuckDBBackend(
+                        db_path_override=test_db
+                    )
 
-                        async with Client(mcp) as client:
-                            result = await client.call_tool(
-                                "execute_query",
-                                {
-                                    "sql_query": "SELECT * FROM icu_icustays WHERE subject_id = 999999"
-                                },
-                            )
-                            result_text = str(result)
-                            assert "No results found" in result_text
+                    async with Client(mcp) as client:
+                        result = await client.call_tool(
+                            "execute_query",
+                            {
+                                "sql_query": "SELECT * FROM icu_icustays WHERE subject_id = 999999"
+                            },
+                        )
+                        result_text = str(result)
+                        assert "No results found" in result_text
 
     @pytest.mark.asyncio
     async def test_oauth2_authentication_required(self, test_db):
@@ -371,42 +366,41 @@ class TestBigQueryIntegration:
             },
             clear=True,
         ):
-            with patch("m4.mcp_server.DatasetRegistry.get", return_value=mock_ds):
-                with patch(
-                    "m4.mcp_server.get_active_dataset", return_value="mimic-test"
-                ):
-                    with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
-                        # Mock the backend
-                        mock_backend = Mock()
-                        mock_backend.name = "bigquery"
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
+            ):
+                with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
+                    # Mock the backend
+                    mock_backend = Mock()
+                    mock_backend.name = "bigquery"
 
-                        from m4.core.backends.base import QueryResult
+                    from m4.core.backends.base import QueryResult
 
-                        mock_backend.execute_query.return_value = QueryResult(
-                            data="Mock BigQuery result", row_count=5
+                    mock_backend.execute_query.return_value = QueryResult(
+                        data="Mock BigQuery result", row_count=5
+                    )
+                    mock_backend.get_backend_info.return_value = (
+                        "Backend: BigQuery (test-project)"
+                    )
+                    mock_get_backend.return_value = mock_backend
+
+                    async with Client(mcp) as client:
+                        # Test execute_query tool
+                        result = await client.call_tool(
+                            "execute_query",
+                            {
+                                "sql_query": "SELECT COUNT(*) FROM `physionet-data.mimiciv_3_1_icu.icustays`"
+                            },
                         )
-                        mock_backend.get_backend_info.return_value = (
-                            "Backend: BigQuery (test-project)"
+                        result_text = str(result)
+                        assert "Mock BigQuery result" in result_text
+
+                        # Test get_race_distribution tool
+                        result = await client.call_tool(
+                            "get_race_distribution", {"limit": 5}
                         )
-                        mock_get_backend.return_value = mock_backend
-
-                        async with Client(mcp) as client:
-                            # Test execute_query tool
-                            result = await client.call_tool(
-                                "execute_query",
-                                {
-                                    "sql_query": "SELECT COUNT(*) FROM `physionet-data.mimiciv_3_1_icu.icustays`"
-                                },
-                            )
-                            result_text = str(result)
-                            assert "Mock BigQuery result" in result_text
-
-                            # Test get_race_distribution tool
-                            result = await client.call_tool(
-                                "get_race_distribution", {"limit": 5}
-                            )
-                            result_text = str(result)
-                            assert "Mock BigQuery result" in result_text
+                        result_text = str(result)
+                        assert "Mock BigQuery result" in result_text
 
 
 class TestServerIntegration:
@@ -458,31 +452,28 @@ class TestCapabilityChecking:
             {"M4_OAUTH2_ENABLED": "false"},
             clear=True,
         ):
-            with patch("m4.mcp_server.DatasetRegistry.get", return_value=limited_ds):
-                with patch(
-                    "m4.mcp_server.get_active_dataset", return_value="limited-dataset"
-                ):
-                    # Mock backend that should NOT be called
-                    with patch("m4.core.tools.tabular.get_backend") as mock_backend:
-                        async with Client(mcp) as client:
-                            # Call get_icu_stays which requires ICU_STAYS capability
-                            result = await client.call_tool(
-                                "get_icu_stays", {"limit": 10}
-                            )
-                            result_text = str(result)
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active", return_value=limited_ds
+            ):
+                # Mock backend that should NOT be called
+                with patch("m4.core.tools.tabular.get_backend") as mock_backend:
+                    async with Client(mcp) as client:
+                        # Call get_icu_stays which requires ICU_STAYS capability
+                        result = await client.call_tool("get_icu_stays", {"limit": 10})
+                        result_text = str(result)
 
-                            # Verify proactive error message
-                            assert "Error" in result_text
-                            assert "get_icu_stays" in result_text
-                            assert "limited-dataset" in result_text
-                            assert "ICU_STAYS" in result_text
+                        # Verify proactive error message
+                        assert "Error" in result_text
+                        assert "get_icu_stays" in result_text
+                        assert "limited-dataset" in result_text
+                        assert "ICU_STAYS" in result_text
 
-                            # Verify suggestions are included
-                            assert "list_datasets" in result_text
-                            assert "set_dataset" in result_text
+                        # Verify suggestions are included
+                        assert "list_datasets" in result_text
+                        assert "set_dataset" in result_text
 
-                            # Verify backend was NOT called (no execution attempted)
-                            mock_backend.assert_not_called()
+                        # Verify backend was NOT called (no execution attempted)
+                        mock_backend.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_compatible_tool_executes_successfully(self, tmp_path):
@@ -518,26 +509,23 @@ class TestCapabilityChecking:
             {"M4_OAUTH2_ENABLED": "false"},
             clear=True,
         ):
-            with patch("m4.mcp_server.DatasetRegistry.get", return_value=capable_ds):
-                with patch(
-                    "m4.mcp_server.get_active_dataset", return_value="capable-dataset"
-                ):
-                    with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
-                        mock_get_backend.return_value = DuckDBBackend(
-                            db_path_override=str(db_path)
-                        )
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active", return_value=capable_ds
+            ):
+                with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
+                    mock_get_backend.return_value = DuckDBBackend(
+                        db_path_override=str(db_path)
+                    )
 
-                        async with Client(mcp) as client:
-                            result = await client.call_tool(
-                                "get_icu_stays", {"limit": 10}
-                            )
-                            result_text = str(result)
+                    async with Client(mcp) as client:
+                        result = await client.call_tool("get_icu_stays", {"limit": 10})
+                        result_text = str(result)
 
-                            # Verify data was returned (backend was called)
-                            assert "subject_id" in result_text or "1" in result_text
+                        # Verify data was returned (backend was called)
+                        assert "subject_id" in result_text or "1" in result_text
 
-                            # Verify NO error message
-                            assert "not available" not in result_text.lower()
+                        # Verify NO error message
+                        assert "not available" not in result_text.lower()
 
     @pytest.mark.asyncio
     async def test_set_dataset_returns_supported_tools_snapshot(self):
@@ -595,8 +583,16 @@ class TestCapabilityChecking:
     async def test_set_dataset_invalid_returns_error_without_snapshot(self):
         """Test that set_dataset with invalid dataset returns error without snapshot."""
         from m4.core.backends import reset_backend_cache
+        from m4.core.datasets import Capability, Modality
 
         reset_backend_cache()
+
+        # Create a valid mock dataset for get_active
+        mock_active_ds = DatasetDefinition(
+            name="mimic-iv-demo",
+            modalities={Modality.TABULAR},
+            capabilities={Capability.COHORT_QUERY},
+        )
 
         with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
             with patch(
@@ -606,20 +602,24 @@ class TestCapabilityChecking:
                 },
             ):
                 with patch(
-                    "m4.mcp_server.DatasetRegistry.get", return_value=None
-                ):  # Unknown dataset
-                    async with Client(mcp) as client:
-                        result = await client.call_tool(
-                            "set_dataset", {"dataset_name": "nonexistent-dataset"}
-                        )
-                        result_text = str(result)
+                    "m4.mcp_server.DatasetRegistry.get_active",
+                    return_value=mock_active_ds,
+                ):
+                    with patch(
+                        "m4.mcp_server.DatasetRegistry.get", return_value=None
+                    ):  # Unknown dataset for snapshot lookup
+                        async with Client(mcp) as client:
+                            result = await client.call_tool(
+                                "set_dataset", {"dataset_name": "nonexistent-dataset"}
+                            )
+                            result_text = str(result)
 
-                        # Should have error
-                        assert "not found" in result_text.lower()
+                            # Should have error
+                            assert "not found" in result_text.lower()
 
-                        # Should NOT have snapshot (no Active dataset line from snapshot)
-                        # Note: Error message might include "dataset" but not the snapshot format
-                        assert "Modalities:" not in result_text
+                            # Should NOT have snapshot (no Active dataset line from snapshot)
+                            # Note: Error message might include "dataset" but not the snapshot format
+                            assert "Modalities:" not in result_text
 
     @pytest.mark.asyncio
     async def test_multiple_tools_incompatibility(self):
@@ -637,27 +637,26 @@ class TestCapabilityChecking:
         )
 
         with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
-            with patch("m4.mcp_server.DatasetRegistry.get", return_value=basic_ds):
-                with patch(
-                    "m4.mcp_server.get_active_dataset", return_value="basic-dataset"
-                ):
-                    async with Client(mcp) as client:
-                        # Test get_lab_results (requires LAB_RESULTS capability)
-                        result = await client.call_tool(
-                            "get_lab_results", {"limit": 10}
-                        )
-                        assert "LAB_RESULTS" in str(result)
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active", return_value=basic_ds
+            ):
+                async with Client(mcp) as client:
+                    # Test get_lab_results (requires LAB_RESULTS capability)
+                    result = await client.call_tool("get_lab_results", {"limit": 10})
+                    assert "LAB_RESULTS" in str(result)
 
-                        # Test get_race_distribution (requires DEMOGRAPHIC_STATS)
-                        result = await client.call_tool(
-                            "get_race_distribution", {"limit": 10}
-                        )
-                        assert "DEMOGRAPHIC_STATS" in str(result)
+                    # Test get_race_distribution (requires DEMOGRAPHIC_STATS)
+                    result = await client.call_tool(
+                        "get_race_distribution", {"limit": 10}
+                    )
+                    assert "DEMOGRAPHIC_STATS" in str(result)
 
     def test_check_tool_compatibility_helper(self):
-        """Test the _check_tool_compatibility helper function directly."""
+        """Test the ToolSelector.check_compatibility method directly."""
         from m4.core.datasets import Capability, Modality
-        from m4.mcp_server import _check_tool_compatibility
+        from m4.core.tools import ToolSelector
+
+        selector = ToolSelector()
 
         # Dataset with limited capabilities
         limited_ds = DatasetDefinition(
@@ -680,26 +679,28 @@ class TestCapabilityChecking:
         )
 
         # Test compatible tool
-        is_compatible, error = _check_tool_compatibility("execute_query", full_ds)
-        assert is_compatible is True
-        assert error == ""
+        result = selector.check_compatibility("execute_query", full_ds)
+        assert result.compatible is True
+        assert result.error_message == ""
 
         # Test incompatible tool
-        is_compatible, error = _check_tool_compatibility("get_icu_stays", limited_ds)
-        assert is_compatible is False
-        assert "ICU_STAYS" in error
-        assert "limited" in error
-        assert "list_datasets" in error
+        result = selector.check_compatibility("get_icu_stays", limited_ds)
+        assert result.compatible is False
+        assert "ICU_STAYS" in result.error_message
+        assert "limited" in result.error_message
+        assert "list_datasets" in result.error_message
 
         # Test unknown tool
-        is_compatible, error = _check_tool_compatibility("nonexistent_tool", full_ds)
-        assert is_compatible is False
-        assert "Unknown tool" in error
+        result = selector.check_compatibility("nonexistent_tool", full_ds)
+        assert result.compatible is False
+        assert "Unknown tool" in result.error_message
 
     def test_supported_tools_snapshot_helper(self):
-        """Test the _get_supported_tools_snapshot helper function."""
+        """Test the ToolSelector.get_supported_tools_snapshot method."""
         from m4.core.datasets import Capability, Modality
-        from m4.mcp_server import _get_supported_tools_snapshot
+        from m4.core.tools import ToolSelector
+
+        selector = ToolSelector()
 
         # Dataset with all capabilities
         full_ds = DatasetDefinition(
@@ -714,7 +715,7 @@ class TestCapabilityChecking:
             },
         )
 
-        snapshot = _get_supported_tools_snapshot(full_ds)
+        snapshot = selector.get_supported_tools_snapshot(full_ds)
 
         # Verify structure
         assert "Active dataset" in snapshot
@@ -732,7 +733,9 @@ class TestCapabilityChecking:
     def test_supported_tools_snapshot_empty_capabilities(self):
         """Test snapshot for dataset with no data capabilities."""
         from m4.core.datasets import Modality
-        from m4.mcp_server import _get_supported_tools_snapshot
+        from m4.core.tools import ToolSelector
+
+        selector = ToolSelector()
 
         # Dataset with no capabilities
         empty_ds = DatasetDefinition(
@@ -741,7 +744,7 @@ class TestCapabilityChecking:
             capabilities=set(),  # No capabilities
         )
 
-        snapshot = _get_supported_tools_snapshot(empty_ds)
+        snapshot = selector.get_supported_tools_snapshot(empty_ds)
 
         # Should show warning about no tools
         assert "No data tools available" in snapshot or "list_datasets" in snapshot

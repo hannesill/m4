@@ -4,10 +4,11 @@ This module tests that dataset switching works correctly through the
 config system and is properly reflected in the backends.
 """
 
+import pytest
+
 import m4.config as config_mod
 from m4.config import get_active_dataset, set_active_dataset
 from m4.core.datasets import DatasetRegistry
-from m4.mcp_server import _get_active_dataset_def
 
 
 def test_dynamic_dataset_switching(tmp_path, monkeypatch):
@@ -36,13 +37,9 @@ def test_dynamic_dataset_switching(tmp_path, monkeypatch):
     if (data_dir / "config.json").exists():
         (data_dir / "config.json").unlink()
 
-    # With no active dataset configured, get_active_dataset raises ValueError
-    # _get_active_dataset_def will fail when it calls get_active_dataset()
-    # So we expect this to raise ValueError
-    import pytest
-
+    # With no active dataset configured, DatasetRegistry.get_active() raises ValueError
     with pytest.raises(ValueError):
-        ds_def = _get_active_dataset_def()
+        DatasetRegistry.get_active()
 
     # 2. Set active dataset to something else (simulating 'm4 use')
     set_active_dataset("mimic-iv")
@@ -50,8 +47,8 @@ def test_dynamic_dataset_switching(tmp_path, monkeypatch):
     # Verify config file was written
     assert (data_dir / "config.json").exists()
 
-    # Verify _get_active_dataset_def picks it up
-    ds_def = _get_active_dataset_def()
+    # Verify DatasetRegistry.get_active() picks it up
+    ds_def = DatasetRegistry.get_active()
     assert ds_def.name == "mimic-iv"
 
     # Verify get_active_dataset reflects the change
@@ -68,5 +65,5 @@ def test_dynamic_dataset_switching(tmp_path, monkeypatch):
 
     # 4. Switch back to demo
     set_active_dataset("mimic-iv-demo")
-    ds_def = _get_active_dataset_def()
+    ds_def = DatasetRegistry.get_active()
     assert ds_def.name == "mimic-iv-demo"

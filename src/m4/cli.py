@@ -9,7 +9,6 @@ import typer
 from m4.config import (
     detect_available_local_datasets,
     get_active_dataset,
-    get_dataset_config,
     get_dataset_parquet_root,
     get_default_database_path,
     logger,
@@ -139,9 +138,9 @@ def dataset_init_cmd(
     logger.info(f"CLI 'init' called for dataset: '{dataset_name}'")
 
     dataset_key = dataset_name.lower()
-    dataset_config = get_dataset_config(dataset_key)
-    if not dataset_config:
-        supported = ", ".join([ds.name for ds in DatasetRegistry.list_all()])
+    ds = DatasetRegistry.get(dataset_key)
+    if not ds:
+        supported = ", ".join([d.name for d in DatasetRegistry.list_all()])
         print_error_panel(
             "Dataset Not Found",
             f"Dataset '{dataset_name}' is not supported or not configured.",
@@ -204,10 +203,10 @@ def dataset_init_cmd(
 
     # Step 1: Ensure raw dataset exists (download if missing, for requires_authentication datasets, inform and return)
     if not raw_present and not parquet_present:
-        requires_auth = dataset_config.get("requires_authentication", False)
+        requires_auth = ds.requires_authentication
 
         if requires_auth:
-            base_url = dataset_config.get("file_listing_url")
+            base_url = ds.file_listing_url
 
             console.print()
             error(f"Files not found for credentialed dataset '{dataset_key}'")
@@ -230,7 +229,7 @@ def dataset_init_cmd(
             )
             return
 
-        listing_url = dataset_config.get("file_listing_url")
+        listing_url = ds.file_listing_url
         if listing_url:
             out_dir = csv_root_default
             out_dir.mkdir(parents=True, exist_ok=True)
@@ -316,7 +315,7 @@ def dataset_init_cmd(
         "Verifying database integrity..."
     )
 
-    verification_table_name = dataset_config.get("primary_verification_table")
+    verification_table_name = ds.primary_verification_table
     if not verification_table_name:
         logger.warning(
             f"No 'primary_verification_table' configured for '{dataset_name}'. Skipping DB query test."
@@ -423,17 +422,16 @@ def status_cmd():
             except Exception:
                 pass
 
-        # Get BigQuery status
+        # Get dataset definition for BigQuery status and verification
         ds_def = DatasetRegistry.get(label)
         bigquery_available = bool(ds_def and ds_def.bigquery_dataset_ids)
 
         # Get row count if possible
         row_count = None
-        cfg = get_dataset_config(label)
-        if ds_info["db_present"] and cfg:
+        if ds_info["db_present"] and ds_def and ds_def.primary_verification_table:
             try:
                 row_count = verify_table_rowcount(
-                    Path(ds_info["db_path"]), cfg["primary_verification_table"]
+                    Path(ds_info["db_path"]), ds_def.primary_verification_table
                 )
             except Exception as e:
                 # Show hint if it looks like a path mismatch

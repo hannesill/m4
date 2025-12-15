@@ -1,11 +1,10 @@
-import dataclasses
 import json
 import logging
 import os
 from pathlib import Path
 from typing import Any
 
-from m4.core.datasets import DatasetDefinition, DatasetRegistry
+from m4.core.datasets import DatasetRegistry
 
 APP_NAME = "m4"
 
@@ -82,44 +81,10 @@ _CUSTOM_DATASETS_DIR = _PROJECT_DATA_DIR / "datasets"
 # Helper functions
 # --------------------------------------------------
 
-# Maximum file size for custom dataset JSON files (1MB)
-# Prevents memory exhaustion from malicious/oversized files
-MAX_DATASET_FILE_SIZE = 1024 * 1024
 
-
-def _load_custom_datasets():
-    """Load custom dataset definitions from JSON files in m4_data/datasets/."""
-    if not _CUSTOM_DATASETS_DIR.exists():
-        logger.warning(
-            f"Custom datasets directory does not exist: {_CUSTOM_DATASETS_DIR}"
-        )
-        return
-
-    for f in _CUSTOM_DATASETS_DIR.glob("*.json"):
-        try:
-            # Check file size to prevent DoS via large files
-            if f.stat().st_size > MAX_DATASET_FILE_SIZE:
-                logger.warning(
-                    f"Dataset file too large (>{MAX_DATASET_FILE_SIZE} bytes), "
-                    f"skipping: {f}"
-                )
-                continue
-
-            data = json.loads(f.read_text())
-            # Basic validation/loading
-            ds = DatasetDefinition(**data)
-            DatasetRegistry.register(ds)
-        except Exception as e:
-            logger.warning(f"Failed to load custom dataset from {f}: {e}")
-
-
-def get_dataset_config(dataset_name: str) -> dict | None:
-    """Retrieve the configuration for a given dataset (case-insensitive)."""
-    # Ensure custom datasets are loaded
-    _load_custom_datasets()
-
-    ds = DatasetRegistry.get(dataset_name.lower())
-    return dataclasses.asdict(ds) if ds else None
+def _ensure_custom_datasets_loaded():
+    """Ensure custom datasets are loaded from the custom datasets directory."""
+    DatasetRegistry.load_custom_datasets(_CUSTOM_DATASETS_DIR)
 
 
 def get_default_database_path(dataset_name: str) -> Path | None:
@@ -127,19 +92,19 @@ def get_default_database_path(dataset_name: str) -> Path | None:
     Return the default local DuckDB path for a given dataset,
     under <project_root>/m4_data/databases/.
     """
-    cfg = get_dataset_config(dataset_name)
-    if not cfg:
+    _ensure_custom_datasets_loaded()
+    ds = DatasetRegistry.get(dataset_name.lower())
+    if not ds:
         logger.warning(
             f"Unknown dataset, cannot determine default DB path: {dataset_name}"
         )
         return None
 
     _DEFAULT_DATABASES_DIR.mkdir(parents=True, exist_ok=True)
-    db_fname = cfg.get("default_duckdb_filename")
-    if not db_fname:
+    if not ds.default_duckdb_filename:
         logger.warning(f"Missing default DuckDB filename for dataset: {dataset_name}")
         return None
-    return _DEFAULT_DATABASES_DIR / db_fname
+    return _DEFAULT_DATABASES_DIR / ds.default_duckdb_filename
 
 
 def get_dataset_parquet_root(dataset_name: str) -> Path | None:
@@ -147,8 +112,9 @@ def get_dataset_parquet_root(dataset_name: str) -> Path | None:
     Return the Parquet root for a dataset under
     <project_root>/m4_data/parquet/<dataset_name>/.
     """
-    cfg = get_dataset_config(dataset_name)
-    if not cfg:
+    _ensure_custom_datasets_loaded()
+    ds = DatasetRegistry.get(dataset_name.lower())
+    if not ds:
         logger.warning(
             f"Unknown dataset, cannot determine Parquet root: {dataset_name}"
         )
@@ -201,7 +167,7 @@ def _has_parquet_files(path: Path | None) -> bool:
 
 def detect_available_local_datasets() -> dict[str, dict[str, Any]]:
     """Return presence flags for all registered datasets."""
-    _load_custom_datasets()
+    _ensure_custom_datasets_loaded()
     cfg = load_runtime_config()
 
     results = {}
@@ -238,7 +204,7 @@ def get_active_dataset() -> str:
         ValueError: If no dataset is configured and none can be auto-detected.
     """
     # Ensure custom datasets are loaded so they can be found in the registry
-    _load_custom_datasets()
+    _ensure_custom_datasets_loaded()
 
     # Priority 1: Environment variable
     env_dataset = os.getenv("M4_DATASET")
@@ -259,17 +225,19 @@ def get_active_dataset() -> str:
 
 
 def set_active_dataset(choice: str) -> None:
-    # Allow registered names
+    """Set the active dataset.
+
+    Args:
+        choice: Dataset name to set as active
+
+    Raises:
+        ValueError: If the dataset is not registered
+    """
+    _ensure_custom_datasets_loaded()
     valid_names = {ds.name for ds in DatasetRegistry.list_all()}
 
     if choice not in valid_names:
-        # It might be a new custom dataset not yet loaded in this process?
-        # We'll allow it if it's in the registry now.
-        _load_custom_datasets()
-        if not DatasetRegistry.get(choice):
-            raise ValueError(
-                f"active_dataset must be a registered dataset. Got: {choice}"
-            )
+        raise ValueError(f"active_dataset must be a registered dataset. Got: {choice}")
 
     cfg = load_runtime_config()
     cfg["active_dataset"] = choice
