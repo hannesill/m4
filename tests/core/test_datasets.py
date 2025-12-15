@@ -4,7 +4,12 @@ Tests cover:
 - Modality and Capability enums
 - DatasetDefinition with capabilities
 - DatasetRegistry with enhanced datasets
+- JSON loading with modalities and capabilities
 """
+
+import json
+import tempfile
+from pathlib import Path
 
 from m4.core.datasets import (
     Capability,
@@ -170,3 +175,114 @@ class TestDatasetRegistry:
         assert "mimic-iv-demo" in names
         assert "mimic-iv" in names
         assert "eicu" in names
+
+
+class TestJSONLoading:
+    """Test JSON loading with modalities and capabilities."""
+
+    def test_json_loading_with_modalities_and_capabilities(self):
+        """Test loading dataset with explicit modalities and capabilities."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            json_data = {
+                "name": "test-json-dataset",
+                "description": "Test dataset from JSON",
+                "modalities": ["TABULAR"],
+                "capabilities": ["COHORT_QUERY", "ICU_STAYS", "LAB_RESULTS"],
+            }
+            json_path = Path(tmpdir) / "test.json"
+            json_path.write_text(json.dumps(json_data))
+
+            DatasetRegistry.reset()
+            DatasetRegistry.load_custom_datasets(Path(tmpdir))
+
+            ds = DatasetRegistry.get("test-json-dataset")
+            assert ds is not None
+            assert Modality.TABULAR in ds.modalities
+            assert Capability.COHORT_QUERY in ds.capabilities
+            assert Capability.ICU_STAYS in ds.capabilities
+            assert Capability.LAB_RESULTS in ds.capabilities
+
+    def test_json_loading_defaults_when_not_specified(self):
+        """Test that default modalities/capabilities are applied when not in JSON."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            json_data = {
+                "name": "test-minimal-dataset",
+                "description": "Minimal dataset without modalities/capabilities",
+            }
+            json_path = Path(tmpdir) / "minimal.json"
+            json_path.write_text(json.dumps(json_data))
+
+            DatasetRegistry.reset()
+            DatasetRegistry.load_custom_datasets(Path(tmpdir))
+
+            ds = DatasetRegistry.get("test-minimal-dataset")
+            assert ds is not None
+            # Default modality: TABULAR
+            assert Modality.TABULAR in ds.modalities
+            # Default capabilities: COHORT_QUERY, SCHEMA_INTROSPECTION
+            assert Capability.COHORT_QUERY in ds.capabilities
+            assert Capability.SCHEMA_INTROSPECTION in ds.capabilities
+
+    def test_json_loading_invalid_modality(self):
+        """Test that invalid modality names are handled gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            json_data = {
+                "name": "test-invalid-modality",
+                "modalities": ["INVALID_MODALITY"],
+            }
+            json_path = Path(tmpdir) / "invalid.json"
+            json_path.write_text(json.dumps(json_data))
+
+            DatasetRegistry.reset()
+            DatasetRegistry.load_custom_datasets(Path(tmpdir))
+
+            # Should not be registered due to invalid modality
+            ds = DatasetRegistry.get("test-invalid-modality")
+            assert ds is None
+
+    def test_json_loading_invalid_capability(self):
+        """Test that invalid capability names are handled gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            json_data = {
+                "name": "test-invalid-capability",
+                "modalities": ["TABULAR"],
+                "capabilities": ["INVALID_CAPABILITY"],
+            }
+            json_path = Path(tmpdir) / "invalid.json"
+            json_path.write_text(json.dumps(json_data))
+
+            DatasetRegistry.reset()
+            DatasetRegistry.load_custom_datasets(Path(tmpdir))
+
+            # Should not be registered due to invalid capability
+            ds = DatasetRegistry.get("test-invalid-capability")
+            assert ds is None
+
+    def test_json_loading_all_capabilities(self):
+        """Test loading dataset with all available capabilities."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            json_data = {
+                "name": "test-full-capabilities",
+                "modalities": ["TABULAR"],
+                "capabilities": [
+                    "COHORT_QUERY",
+                    "SCHEMA_INTROSPECTION",
+                    "ICU_STAYS",
+                    "LAB_RESULTS",
+                    "DEMOGRAPHIC_STATS",
+                ],
+            }
+            json_path = Path(tmpdir) / "full.json"
+            json_path.write_text(json.dumps(json_data))
+
+            DatasetRegistry.reset()
+            DatasetRegistry.load_custom_datasets(Path(tmpdir))
+
+            ds = DatasetRegistry.get("test-full-capabilities")
+            assert ds is not None
+            assert len(ds.capabilities) == 5
+            assert Capability.COHORT_QUERY in ds.capabilities
+            assert Capability.SCHEMA_INTROSPECTION in ds.capabilities
+            assert Capability.ICU_STAYS in ds.capabilities
+            assert Capability.LAB_RESULTS in ds.capabilities
+            assert Capability.DEMOGRAPHIC_STATS in ds.capabilities

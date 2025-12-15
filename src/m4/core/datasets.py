@@ -172,6 +172,13 @@ class DatasetRegistry:
     def load_custom_datasets(cls, custom_dir: Path) -> None:
         """Load custom dataset definitions from JSON files.
 
+        JSON files can specify modalities and capabilities as string arrays:
+            "modalities": ["TABULAR"],
+            "capabilities": ["COHORT_QUERY", "SCHEMA_INTROSPECTION"]
+
+        If not specified, sensible defaults are applied (TABULAR modality with
+        COHORT_QUERY and SCHEMA_INTROSPECTION capabilities).
+
         Args:
             custom_dir: Directory containing custom dataset JSON files
         """
@@ -190,9 +197,34 @@ class DatasetRegistry:
                     continue
 
                 data = json.loads(f.read_text())
+
+                # Convert string arrays to enum frozensets
+                if "modalities" in data:
+                    data["modalities"] = frozenset(
+                        Modality[m] for m in data["modalities"]
+                    )
+                else:
+                    # Default: TABULAR modality for basic functionality
+                    data["modalities"] = frozenset({Modality.TABULAR})
+
+                if "capabilities" in data:
+                    data["capabilities"] = frozenset(
+                        Capability[c] for c in data["capabilities"]
+                    )
+                else:
+                    # Default: basic query capabilities
+                    data["capabilities"] = frozenset(
+                        {Capability.COHORT_QUERY, Capability.SCHEMA_INTROSPECTION}
+                    )
+
                 ds = DatasetDefinition(**data)
                 cls.register(ds)
                 logger.debug(f"Loaded custom dataset: {ds.name}")
+            except KeyError as e:
+                logger.warning(
+                    f"Failed to load custom dataset from {f}: "
+                    f"Invalid modality or capability name: {e}"
+                )
             except Exception as e:
                 logger.warning(f"Failed to load custom dataset from {f}: {e}")
 
