@@ -1,60 +1,27 @@
-# M4 (Beta): Many Medical Datasets ↔ MCP ↔ Models 🏥🤖
-
-
+# M4: Medical Data for LLMs
 
 <p align="center">
-  <img src="webapp/public/m4_logo_transparent.png" alt="M4 Logo" width="200"/>
+  <img src="webapp/public/m4_logo_transparent.png" alt="M4 Logo" width="180"/>
 </p>
 
-**Query tabular PhysioNet medical data using natural language through MCP clients**
+<p align="center">
+  <strong>Query clinical databases with natural language through Claude, Cursor, or any MCP client</strong>
+</p>
+
+<p align="center">
+  <a href="https://www.python.org/downloads/"><img alt="Python" src="https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white"></a>
+  <a href="https://modelcontextprotocol.io/"><img alt="MCP" src="https://img.shields.io/badge/MCP-Compatible-green?logo=ai&logoColor=white"></a>
+  <a href="https://github.com/hannesill/m4/actions/workflows/tests.yaml"><img alt="Tests" src="https://github.com/hannesill/m4/actions/workflows/tests.yaml/badge.svg"></a>
+</p>
+
+M4 provides infrastructure for AI-assisted clinical research. It uses a capability-based architecture that enables the same natural language interface to query MIMIC-IV, eICU, and custom datasets without per-dataset engineering. Future versions will expand to clinical notes, waveforms, and imaging.
 
 
+## Quickstart (3 steps)
 
-<a href="https://www.python.org/downloads/"><img alt="Python" src="https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white"></a>
-<a href="https://modelcontextprotocol.io/"><img alt="MCP" src="https://img.shields.io/badge/MCP-Compatible-green?logo=ai&logoColor=white"></a>
-<a href="https://github.com/hannesill/m4/actions/workflows/tests.yaml"><img alt="Tests" src="https://github.com/hannesill/m4/actions/workflows/tests.yaml/badge.svg"></a>
-<a href="https://github.com/hannesill/m4/actions/workflows/pre-commit.yaml"><img alt="Code Quality" src="https://github.com/hannesill/m4/actions/workflows/pre-commit.yaml/badge.svg"></a>
-<a href="https://github.com/hannesill/m4/pulls"><img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
+### 1. Install uv
 
-Transform medical data analysis with AI! Ask questions about MIMIC-IV and other PhysioNet datasets in plain English and get instant insights. Choose between local data (free) or full cloud dataset (BigQuery).
-
-> **🫶 M4 is built upon M3.** \
-> Please acknowledge the original authors and [cite](#contributing--citation) their work.
-
-## 💡 How It Works
-
-M4 acts as a bridge between your **AI Client** (like Claude Desktop, Cursor, or LibreChat) and your medical data.
-
-1.  **You** ask a question in your chat interface: *"How many patients in the ICU have high blood pressure?"*
-2.  **M4** securely translates this into a database query.
-3.  **M4** runs the query on your local or cloud data.
-4.  **The LLM** explains the results to you in plain English.
-
-*No SQL knowledge required.*
-
-## Features
-
-- 🔍 **Natural Language Queries**: Ask questions about your medical data in plain English
-- 🏠 **Modular Datasets**: Support for any tabular PhysioNet dataset (MIMIC-IV, etc.)
-- 📂 **Local DuckDB + Parquet**: Fast local queries using Parquet files with DuckDB views
-- ☁️ **BigQuery Support**: Access full MIMIC-IV dataset on Google Cloud
-- 🔒 **Enterprise Security**: OAuth2 authentication with JWT tokens and rate limiting
-- 🛡️ **SQL Injection Protection**: Read-only queries with comprehensive validation
-- 🧩 **Extensible Architecture**: Easily add new custom datasets via configuration or CLI
-
-## 🚀 Quick Start
-
-### Prerequisites
-You need an **MCP-compatible Client** to use M4. Popular options include:
-- [Claude for Desktop](https://claude.ai/download)
-- [Cursor](https://cursor.com)
-- [LibreChat](https://www.librechat.ai/)
-
-### 1. Install `uv` (Required)
-
-We use `uvx` to run the MCP server efficiently.
-
-**macOS and Linux:**
+**macOS/Linux:**
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
@@ -64,275 +31,133 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-### 2. Choose Your Data Source
-
-Select **Option A** (Local) or **Option B** (Cloud).
-
-#### Option A: Local Dataset (Free & Fast)
-*Best for development, testing, and offline use.*
-
-1.  **Create project directory:**
-    ```bash
-    mkdir m4 && cd m4
-    ```
-
-2.  **Initialize Dataset:**
-
-    We will use MIMIC-IV as an example.
-
-    **For Demo (Auto-download ~16MB):**
-    ```bash
-    uv init && uv add m4-mcp
-    uv run m4 init mimic-iv-demo
-    ```
-
-    **For Full Data (Requires Manual Download):**
-    *Download CSVs from [PhysioNet](https://physionet.org/content/mimiciv/3.1/) first and place them in `m4_data/raw_files`.*
-    ```bash
-    uv init && uv add m4-mcp
-    uv run m4 init mimic-iv-full
-    ```
-    *This can take 5-15 minutes depending on your machine*
-
-3.  **Configure Your Client:**
-
-    **For Claude Desktop (Shortcut):**
-    ```bash
-    uv run m4 config claude --quick
-    ```
-
-    **For Other Clients (Cursor, LibreChat, etc.):**
-    ```bash
-    uv run m4 config --quick
-    ```
-    *This generates the configuration JSON you need to paste into your client's settings.*
-
-#### Option B: BigQuery (Full Cloud Dataset)
-*Best for researchers with Google Cloud access.*
-
-1.  **Authenticate with Google:**
-    ```bash
-    gcloud auth application-default login
-    ```
-
-2.  **Configure Client:**
-    ```bash
-    uv run m4 config --backend bigquery --project_id BIGQUERY_PROJECT_ID
-    ```
-    *This also generates the configuration JSON you need to paste into your client's settings.*
-
-
-
-### 3. Start Asking Questions!
-Restart your MCP client and try:
-- "What tools do you have for MIMIC-IV data?"
-- "Show me patient demographics from the ICU"
-- "What is the race distribution in admissions?"
-
----
-
-## 🔄 Managing Datasets
-
-Switch between available datasets instantly:
+### 2. Initialize M4
 
 ```bash
-# Switch to full dataset
-m4 use mimic-iv-full
-
-# Switch back to demo
-m4 use mimic-iv-demo
-
-# Check status
-m4 status
+mkdir my-research && cd my-research
+uv init && uv add m4-mcp
+uv run m4 init mimic-iv-demo
 ```
 
----
+This downloads the free MIMIC-IV demo dataset (~16MB) and sets up a local DuckDB database.
 
-## Backend Comparison
+### 3. Connect your AI client
 
-| Feature | DuckDB (Demo) | DuckDB (Full) | BigQuery (Full) |
-|---------|---------------|---------------|-----------------|
-| **Cost** | Free | Free | BigQuery usage fees |
-| **Setup** | Zero config | Manual Download | GCP credentials required |
-| **Credentials** | Not required | PhysioNet | PhysioNet |
-| **Data Size** | 100 patients | 365k patients | 365k patients |
-| **Speed** | Fast (local) | Fast (local) | Network latency |
-| **Use Case** | Learning | Research (local) | Research, production |
-
----
-
-## ➕ Adding Custom Datasets
-
-M4 is designed to be modular. You can add support for any tabular dataset on PhysioNet easily. Let's take eICU as an example:
-
-### JSON Definition Method
-
-1.  Create a definition file: `m4_data/datasets/eicu.json`
-    ```json
-    {
-      "name": "eicu",
-      "description": "eICU Collaborative Research Database",
-      "file_listing_url": "https://physionet.org/files/eicu-crd/2.0/",
-      "subdirectories_to_scan": [],
-      "primary_verification_table": "eicu_crd_patient",
-      "tags": ["clinical", "eicu"],
-      "requires_authentication": true,
-      "bigquery_project_id": "physionet-data",
-      "bigquery_dataset_ids": ["eicu_crd"]
-    }
-    ```
-
-2.  Initialize it:
-    ```bash
-    m4 init eicu --src /path/to/raw/csvs
-    ```
-    *M4 will convert CSVs to Parquet and create DuckDB views automatically.*
-
----
-
-## Alternative Installation Methods
-
-> Already have Docker or prefer pip?
-
-### 🐳 Docker
-
-<table>
-<tr>
-<td width="50%">
-
-**DuckDB (Local):**
+**Claude Desktop:**
 ```bash
-git clone https://github.com/hannesill/m4.git && cd m4
-docker build -t m4:lite --target lite .
-docker run -d --name m4-server m4:lite tail -f /dev/null
+uv run m4 config claude --quick
 ```
 
-</td>
-<td width="50%">
-
-**BigQuery:**
+**Other clients (Cursor, LibreChat, etc.):**
 ```bash
-git clone https://github.com/rafiattrach/m4.git && cd m4
-docker build -t m4:bigquery --target bigquery .
-docker run -d --name m4-server \
-  -e M4_BACKEND=bigquery \
-  -e M4_PROJECT_ID=your-project-id \
-  -v $HOME/.config/gcloud:/root/.config/gcloud:ro \
-  m4:bigquery tail -f /dev/null
+uv run m4 config --quick
 ```
 
-</td>
-</tr>
-</table>
+Copy the generated JSON into your client's MCP settings, restart, and start asking questions!
 
-**MCP config (same for both):**
-```json
-{
-  "mcpServers": {
-    "m4": {
-      "command": "docker",
-      "args": ["exec", "-i", "m4-server", "python", "-m", "m4.mcp_server"]
-    }
-  }
-}
-```
+<details>
+<summary>Different setup options</summary>
 
-### pip Install
+* If you don't want to use uv, you can just run pip install m4-mcp
 
+* If you want to use Docker, look at <a href="docs/DEVELOPMENT.md">docs/DEVELOPMENT.md</a>
+</details>
+
+
+## Example Questions
+
+Once connected, try asking:
+
+- *"What tables are available in the database?"*
+- *"Show me the race distribution in hospital admissions"*
+- *"Find all ICU stays longer than 7 days"*
+- *"What are the most common lab tests?"*
+
+
+## Supported Datasets
+
+| Dataset | Size | Access | Local | BigQuery |
+|---------|------|--------|-------|----------|
+| **mimic-iv-demo** | 100 patients | Free | Yes | No |
+| **mimic-iv** | 365k patients | [PhysioNet credentialed](https://physionet.org/content/mimiciv/) | Yes | Yes |
+| **eicu** | 200k+ patients | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes |
+
+Switch datasets anytime:
 ```bash
-pip install m4-mcp
-m4 config --quick
+m4 use mimic-iv     # Switch to full MIMIC-IV
+m4 status           # See all available datasets
 ```
 
-### Local Development
+<details>
+<summary><strong>Setting up MIMIC-IV or eICU (credentialed datasets)</strong></summary>
 
-For contributors:
+1. **Get PhysioNet credentials:** Complete the [credentialing process](https://physionet.org/settings/credentialing/) and sign the data use agreement for the dataset.
 
-1.  **Clone & Install (using `uv`):**
-    ```bash
-    git clone https://github.com/rafiattrach/m4.git
-    cd m4
-    uv venv
-    uv sync
-    ```
+2. **Download the data:**
+   ```bash
+   # For MIMIC-IV
+   wget -r -N -c -np --user YOUR_USERNAME --ask-password \
+     https://physionet.org/files/mimiciv/3.1/ \
+     -P m4_data/raw_files/mimic-iv
 
-2.  **MCP Config:**
-    ```json
-    {
-      "mcpServers": {
-        "m4": {
-          "command": "/absolute/path/to/m4/.venv/bin/python",
-          "args": ["-m", "m4.mcp_server"],
-          "cwd": "/absolute/path/to/m4",
-          "env": { "M4_BACKEND": "duckdb" }
-        }
-      }
-    }
-    ```
+   # For eICU
+   wget -r -N -c -np --user YOUR_USERNAME --ask-password \
+     https://physionet.org/files/eicu-crd/2.0/ \
+     -P m4_data/raw_files/eicu
+   ```
+   Put the downloaded data in a `m4_data` directory that ideally is located within the project directory. Name the directory for the dataset `mimic-iv`/`eicu`.
 
----
+3. **Initialize:**
+   ```bash
+   m4 init mimic-iv   # or: m4 init eicu
+   ```
 
-## 🔧 Advanced Configuration
+This converts the CSV files to Parquet format and creates a local DuckDB database.
+</details>
 
-**Interactive Config Generator:**
-```bash
-m4 config
-```
 
-**OAuth2 Authentication:**
-For secure production deployments:
-```bash
-m4 config claude --enable-oauth2 \
-  --oauth2-issuer https://your-auth-provider.com \
-  --oauth2-audience m4-api
-```
-> See [`docs/OAUTH2_AUTHENTICATION.md`](docs/OAUTH2_AUTHENTICATION.md) for details.
+## Available Tools
 
----
+M4 exposes these tools to your AI client:
 
-## 🛠️ Available MCP Tools
+| Tool | Description |
+|------|-------------|
+| `get_database_schema` | List all available tables |
+| `get_table_info` | Get column details and sample data |
+| `execute_query` | Run SQL SELECT queries |
+| `get_icu_stays` | Retrieve ICU admission data |
+| `get_lab_results` | Query laboratory results |
+| `get_race_distribution` | Patient demographics by race |
 
-- **get_database_schema**: List all available tables
-- **get_table_info**: Get column info and sample data
-- **execute_query**: Execute SQL SELECT queries
-- **get_icu_stays**: ICU stay info & length of stay
-- **get_lab_results**: Laboratory test results
-- **get_race_distribution**: Patient race statistics
 
-## Example Prompts
+## More Documentation
 
-**Demographics:**
-- *What is the race distribution in MIMIC-IV admissions?*
-- *Show me patient demographics for ICU stays*
-
-**Clinical Data:**
-- *Find lab results for patient X*
-- *What lab tests are most commonly ordered?*
-
-**Exploration:**
-- *What tables are available in the database?*
-
----
+| Guide | Description |
+|-------|-------------|
+| [BigQuery Setup](docs/BIGQUERY.md) | Use Google Cloud for full datasets |
+| [Custom Datasets](docs/CUSTOM_DATASETS.md) | Add your own PhysioNet datasets |
+| [Development](docs/DEVELOPMENT.md) | Contributing, testing, architecture |
+| [OAuth2 Authentication](docs/OAUTH2_AUTHENTICATION.md) | Enterprise security setup |
 
 ## Troubleshooting
 
-- **"Parquet not found"**: Rerun `m4 init <dataset_name>`.
-- **MCP client not starting**: Check logs (Claude Desktop: Help → View Logs).
-- **BigQuery Access Denied**: Run `gcloud auth application-default login` and verify project ID.
+**"Parquet not found" error:**
+```bash
+m4 init mimic-iv-demo --force
+```
 
----
+**MCP client won't connect:**
+Check client logs (Claude Desktop: Help → View Logs) and ensure the config JSON is valid.
 
-## Contributing & Citation
+**Need to reconfigure:**
+```bash
+m4 config claude --quick   # Regenerate Claude Desktop config
+m4 config --quick          # Regenerate generic config
+```
 
-### For Developers
-We welcome contributions!
-1.  **Setup:** Follow the "Local Development" steps above.
-2.  **Test:** Run `uv run pre-commit --all-files` to ensure everything is working and linted.
-3.  **Submit:** Open a Pull Request with your changes.
+## Citation
 
-**Citation:**
-
-M4 is built upon M3. Please cite the original work:
+M4 builds on the M3 project. Please cite:
 
 ```bibtex
 @article{attrach2025conversational,
@@ -343,15 +168,9 @@ M4 is built upon M3. Please cite the original work:
 }
 ```
 
-
-## Related Projects
-M4 is a fork from M3 to add features that are not possible to include in the M3 repo because of it needing to stay in sync with the M3 paper.
-
-M3 has been forked and adapted by the community. Over time, we would love to see them being adapted to M4. Here are the projects:
-- [MCPStack-MIMIC](https://github.com/MCP-Pipeline/mcpstack-mimic) - Integrates M3 with other MCP servers (Jupyter, sklearn, etc.)
-
 ---
 
-*Built with ❤️ for the medical AI community*
-
-**Need help?** Open an issue on GitHub or check our troubleshooting guide above.
+<p align="center">
+  <a href="https://github.com/hannesill/m4/issues">Report an Issue</a> ·
+  <a href="docs/DEVELOPMENT.md">Contribute</a>
+</p>
