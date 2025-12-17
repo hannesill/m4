@@ -1,11 +1,11 @@
-# M4: Medical Data for LLMs
+# M4: A Toolbox for LLMs on Clinical Data
 
 <p align="center">
   <img src="webapp/public/m4_logo_transparent.png" alt="M4 Logo" width="180"/>
 </p>
 
 <p align="center">
-  <strong>Query clinical databases with natural language through Claude, Cursor, or any MCP client</strong>
+  <strong>Query clinical datasets with natural language through Claude, Cursor, or any MCP client</strong>
 </p>
 
 <p align="center">
@@ -14,7 +14,12 @@
   <a href="https://github.com/hannesill/m4/actions/workflows/tests.yaml"><img alt="Tests" src="https://github.com/hannesill/m4/actions/workflows/tests.yaml/badge.svg"></a>
 </p>
 
-M4 provides infrastructure for AI-assisted clinical research. It uses a modality-based architecture that enables the same natural language interface to query MIMIC-IV, eICU, and custom datasets without per-dataset engineering. Currently supports tabular data and clinical notes, with waveforms and imaging planned for future versions.
+M4 is an infrastructure layer for multimodal EHR data that provides LLM agents with a unified toolbox for querying clinical datasets.
+It supports tabular data and clinical notes, dynamically selecting tools by modality to query MIMIC-IV, eICU, and custom datasets through a single natural-language interface.
+
+[Usage example](https://claude.ai/share/93f26832-f298-4d1d-96e3-5608d7f0d7ad)
+
+> M4 is a fork of the [M3](https://github.com/rafiattrach/m3) project and would not be possible without it 🫶 Please [cite](#citation) their work when using M4!
 
 
 ## Quickstart (3 steps)
@@ -89,6 +94,8 @@ Once connected, try asking:
 | **mimic-iv-note** | Notes | 331k notes | [PhysioNet credentialed](https://physionet.org/content/mimic-iv-note/) | Yes | Yes |
 | **eicu** | Tabular | 200k+ patients | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes |
 
+These datasets are supported out of the box. However, it is possible to add any other custom dataset by following [these instructions](docs/CUSTOM_DATASETS.md).
+
 Switch datasets anytime:
 ```bash
 m4 use mimic-iv     # Switch to full MIMIC-IV
@@ -158,6 +165,27 @@ M4 exposes these tools to your AI client. Tools are filtered based on the active
 | [Custom Datasets](docs/CUSTOM_DATASETS.md) | Add your own PhysioNet datasets |
 | [Development](docs/DEVELOPMENT.md) | Contributing, testing, architecture |
 | [OAuth2 Authentication](docs/OAUTH2_AUTHENTICATION.md) | Enterprise security setup |
+
+## Roadmap
+
+M4 is designed as a growing toolbox for LLM agents working with EHR data. Planned and ongoing directions include:
+
+- **More Tools**
+  - Implement tools for current modalities (e.g. statistical reports, RAG)
+  - Add tools for new modalities (images, waveforms)
+
+- **Better context handling**
+  - Concise, dataset-aware context for LLM agents
+
+- **Dataset expansion**
+  - Out-of-the-box support for additional PhysioNet datasets
+  - Improved support for institutional/custom EHR schemas
+
+- **Evaluation & reproducibility**
+  - Session export and replay
+  - Evaluation with the latest LLMs and smaller expert models
+
+The roadmap reflects current development goals and may evolve as the project matures.
 
 ## Troubleshooting
 
