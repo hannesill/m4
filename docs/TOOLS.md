@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-M4 exposes these tools to AI clients via the Model Context Protocol.
+M4 exposes these tools to AI clients via the Model Context Protocol. Tools are filtered based on the active dataset's modality.
 
 ## Dataset Management
 
@@ -12,9 +12,10 @@ List all available datasets and their status.
 **Example response:**
 ```
 Available datasets:
-- mimic-iv-demo (active) - MIMIC-IV Clinical Database Demo
-- mimic-iv - MIMIC-IV Clinical Database
-- eicu - eICU Collaborative Research Database
+- mimic-iv-demo (active) - MIMIC-IV Clinical Database Demo [TABULAR]
+- mimic-iv - MIMIC-IV Clinical Database [TABULAR]
+- mimic-iv-note - MIMIC-IV Clinical Notes [NOTES]
+- eicu - eICU Collaborative Research Database [TABULAR]
 ```
 
 ### `set_dataset`
@@ -25,12 +26,14 @@ Switch the active dataset.
 
 **Example:**
 ```
-set_dataset("mimic-iv")
+set_dataset("mimic-iv-note")
 ```
 
 ---
 
-## Schema Exploration
+## Tabular Data Tools
+
+These tools are available for datasets with the `TABULAR` modality (mimic-iv, mimic-iv-demo, eicu).
 
 ### `get_database_schema`
 List all tables in the current dataset.
@@ -47,10 +50,6 @@ Get detailed information about a specific table.
 - `sample_rows` (int, optional): Number of sample rows to return (default: 5)
 
 **Returns:** Column names, types, and sample data
-
----
-
-## Query Execution
 
 ### `execute_query`
 Execute a read-only SQL SELECT query.
@@ -74,77 +73,123 @@ LIMIT 10
 
 ---
 
-## Clinical Data Tools
+## Clinical Notes Tools
 
-### `get_icu_stays`
-Retrieve ICU admission data including length of stay.
+These tools are available for datasets with the `NOTES` modality (mimic-iv-note). They are designed to prevent context overflow by returning snippets and metadata instead of full text by default.
 
-**Parameters:**
-- `patient_id` (int, optional): Filter by specific patient
-- `limit` (int, optional): Maximum results (default: 10)
-
-**Returns:** ICU stay records with admission time, discharge time, and duration
-
-**Required capabilities:** `ICU_STAYS`
-
-### `get_lab_results`
-Query laboratory test results.
+### `search_notes`
+Full-text search across clinical notes. Returns snippets around matches.
 
 **Parameters:**
-- `patient_id` (int, optional): Filter by specific patient
-- `item_id` (int, optional): Filter by specific lab test
-- `limit` (int, optional): Maximum results (default: 50)
+- `query` (string, required): Search term
+- `note_type` (string, optional): Filter by type - `"discharge"`, `"radiology"`, or `"all"` (default: `"all"`)
+- `limit` (int, optional): Maximum results (default: 5)
+- `snippet_length` (int, optional): Characters around match (default: 300)
 
-**Returns:** Lab results with test names, values, units, and timestamps
+**Returns:** Note IDs, subject IDs, and text snippets around matches
 
-**Required capabilities:** `LAB_RESULTS`
+**Example:**
+```
+search_notes("diabetes", note_type="discharge", limit=10)
+```
 
-### `get_race_distribution`
-Get patient demographics by race/ethnicity.
+**Tip:** Use `get_note(note_id)` to retrieve the full text of a specific note.
 
-**Parameters:** None
+### `get_note`
+Retrieve the full text of a single clinical note by ID.
 
-**Returns:** Count and percentage breakdown by race category
+**Parameters:**
+- `note_id` (string, required): The note identifier (e.g., `"10000032-DS-1"`)
+- `max_length` (int, optional): Truncate output to this length
 
-**Required capabilities:** `DEMOGRAPHIC_STATS`
+**Returns:** Full note text (or truncated if `max_length` specified)
+
+**Warning:** Clinical notes can be very long (10,000+ characters). Consider using `search_notes()` first to find relevant notes, then retrieve specific ones.
+
+**Example:**
+```
+get_note("10000032-DS-1")
+get_note("10000032-DS-1", max_length=5000)  # Truncate to 5000 chars
+```
+
+### `list_patient_notes`
+List available notes for a patient. Returns metadata only (IDs, types, lengths) - not full text.
+
+**Parameters:**
+- `subject_id` (int, required): Patient identifier
+- `note_type` (string, optional): Filter by type - `"discharge"`, `"radiology"`, or `"all"` (default: `"all"`)
+- `limit` (int, optional): Maximum results (default: 20)
+
+**Returns:** Note IDs, types, lengths, and 100-character previews
+
+**Example:**
+```
+list_patient_notes(10000032)
+list_patient_notes(10000032, note_type="discharge")
+```
+
+**Tip:** Use this to discover what notes exist before retrieving them with `get_note()`.
 
 ---
 
-## Capability-Based Availability
+## Modality-Based Tool Availability
 
-Tools declare required capabilities that a dataset must provide:
+Tools declare required modalities. Only datasets with matching modalities expose the tool:
 
-- **Data presence capabilities**: `HAS_TABULAR_DATA`, `HAS_CLINICAL_NOTES` (future)
-- **Query capabilities**: `ICU_STAYS`, `LAB_RESULTS`, `COHORT_QUERY`, etc.
+| Tool | Required Modality | mimic-iv-demo | mimic-iv | mimic-iv-note | eicu |
+|------|-------------------|---------------|----------|---------------|------|
+| `get_database_schema` | TABULAR | Yes | Yes | No | Yes |
+| `get_table_info` | TABULAR | Yes | Yes | No | Yes |
+| `execute_query` | TABULAR | Yes | Yes | No | Yes |
+| `search_notes` | NOTES | No | No | Yes | No |
+| `get_note` | NOTES | No | No | Yes | No |
+| `list_patient_notes` | NOTES | No | No | Yes | No |
+| `list_datasets` | (always) | Yes | Yes | Yes | Yes |
+| `set_dataset` | (always) | Yes | Yes | Yes | Yes |
 
-Tools are automatically enabled or disabled based on the active dataset's capabilities:
+---
 
-| Tool | Required Capability | mimic-iv-demo | mimic-iv | eicu |
-|------|---------------------|---------------|----------|------|
-| `get_icu_stays` | `ICU_STAYS` | Yes | Yes | Yes |
-| `get_lab_results` | `LAB_RESULTS` | Yes | Yes | Yes |
-| `get_race_distribution` | `DEMOGRAPHIC_STATS` | Yes | Yes | Yes |
-| `execute_query` | `COHORT_QUERY` | Yes | Yes | Yes |
-| `get_database_schema` | `SCHEMA_INTROSPECTION` | Yes | Yes | Yes |
+## Working with Related Datasets
 
-When a tool is unavailable for the current dataset, it returns a helpful error message explaining which capabilities are missing and suggests alternatives.
+MIMIC-IV and MIMIC-IV-Note are separate datasets that can be linked via `subject_id`:
+
+```
+# 1. Find patients of interest in MIMIC-IV (tabular)
+set_dataset("mimic-iv")
+execute_query("SELECT subject_id FROM hosp_patients WHERE anchor_age > 80 LIMIT 5")
+
+# 2. Switch to notes and explore their clinical narratives
+set_dataset("mimic-iv-note")
+list_patient_notes(10000032)
+search_notes("heart failure", note_type="discharge")
+get_note("10000032-DS-1")
+```
 
 ---
 
 ## Error Handling
 
-Tools return structured error messages:
+When a tool is unavailable for the current dataset, it returns a helpful error:
 
 ```
-Error: Tool `get_icu_stays` is not available for dataset 'limited-dataset'.
+Error: Tool `search_notes` is not available for dataset 'mimic-iv'.
 
-Missing capabilities: ICU_STAYS
-
-Tool requires: HAS_TABULAR_DATA, ICU_STAYS
-
-Dataset 'limited-dataset' provides: HAS_TABULAR_DATA, COHORT_QUERY
+This tool requires the NOTES modality, but 'mimic-iv' only has: TABULAR
 
 Suggestions:
    - Use `list_datasets()` to see all available datasets
-   - Use `set_dataset('dataset-name')` to switch datasets
+   - Use `set_dataset('mimic-iv-note')` to switch to a notes dataset
 ```
+
+---
+
+## Note Types
+
+Clinical notes in MIMIC-IV-Note come in two types:
+
+| Type | Description | Typical Length |
+|------|-------------|----------------|
+| `discharge` | Discharge summaries - comprehensive narratives of hospital stays | 5,000-15,000 chars |
+| `radiology` | Radiology reports - findings from imaging studies | 500-2,000 chars |
+
+Use the `note_type` parameter to filter searches and listings.

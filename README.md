@@ -14,7 +14,7 @@
   <a href="https://github.com/hannesill/m4/actions/workflows/tests.yaml"><img alt="Tests" src="https://github.com/hannesill/m4/actions/workflows/tests.yaml/badge.svg"></a>
 </p>
 
-M4 provides infrastructure for AI-assisted clinical research. It uses a capability-based architecture that enables the same natural language interface to query MIMIC-IV, eICU, and custom datasets without per-dataset engineering. Future versions will expand to clinical notes, waveforms, and imaging.
+M4 provides infrastructure for AI-assisted clinical research. It uses a modality-based architecture that enables the same natural language interface to query MIMIC-IV, eICU, and custom datasets without per-dataset engineering. Currently supports tabular data and clinical notes, with waveforms and imaging planned for future versions.
 
 
 ## Quickstart (3 steps)
@@ -68,19 +68,26 @@ Copy the generated JSON into your client's MCP settings, restart, and start aski
 
 Once connected, try asking:
 
+**Tabular data (mimic-iv, eicu):**
 - *"What tables are available in the database?"*
 - *"Show me the race distribution in hospital admissions"*
 - *"Find all ICU stays longer than 7 days"*
 - *"What are the most common lab tests?"*
 
+**Clinical notes (mimic-iv-note):**
+- *"Search for notes mentioning diabetes"*
+- *"List all notes for patient 10000032"*
+- *"Get the full discharge summary for this patient"*
+
 
 ## Supported Datasets
 
-| Dataset | Size | Access | Local | BigQuery |
-|---------|------|--------|-------|----------|
-| **mimic-iv-demo** | 100 patients | Free | Yes | No |
-| **mimic-iv** | 365k patients | [PhysioNet credentialed](https://physionet.org/content/mimiciv/) | Yes | Yes |
-| **eicu** | 200k+ patients | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes |
+| Dataset | Modality | Size | Access | Local | BigQuery |
+|---------|----------|------|--------|-------|----------|
+| **mimic-iv-demo** | Tabular | 100 patients | Free | Yes | No |
+| **mimic-iv** | Tabular | 365k patients | [PhysioNet credentialed](https://physionet.org/content/mimiciv/) | Yes | Yes |
+| **mimic-iv-note** | Notes | 331k notes | [PhysioNet credentialed](https://physionet.org/content/mimic-iv-note/) | Yes | Yes |
+| **eicu** | Tabular | 200k+ patients | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes |
 
 Switch datasets anytime:
 ```bash
@@ -118,22 +125,34 @@ This converts the CSV files to Parquet format and creates a local DuckDB databas
 
 ## Available Tools
 
-M4 exposes these tools to your AI client:
+M4 exposes these tools to your AI client. Tools are filtered based on the active dataset's modality.
 
+**Dataset Management:**
+| Tool | Description |
+|------|-------------|
+| `list_datasets` | List available datasets and their status |
+| `set_dataset` | Switch the active dataset |
+
+**Tabular Data Tools** (mimic-iv, mimic-iv-demo, eicu):
 | Tool | Description |
 |------|-------------|
 | `get_database_schema` | List all available tables |
 | `get_table_info` | Get column details and sample data |
 | `execute_query` | Run SQL SELECT queries |
-| `get_icu_stays` | Retrieve ICU admission data |
-| `get_lab_results` | Query laboratory results |
-| `get_race_distribution` | Patient demographics by race |
+
+**Clinical Notes Tools** (mimic-iv-note):
+| Tool | Description |
+|------|-------------|
+| `search_notes` | Full-text search with snippets |
+| `get_note` | Retrieve a single note by ID |
+| `list_patient_notes` | List notes for a patient (metadata only) |
 
 
 ## More Documentation
 
 | Guide | Description |
 |-------|-------------|
+| [Tools Reference](docs/TOOLS.md) | Detailed tool documentation |
 | [BigQuery Setup](docs/BIGQUERY.md) | Use Google Cloud for full datasets |
 | [Custom Datasets](docs/CUSTOM_DATASETS.md) | Add your own PhysioNet datasets |
 | [Development](docs/DEVELOPMENT.md) | Contributing, testing, architecture |

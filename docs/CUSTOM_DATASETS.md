@@ -1,6 +1,6 @@
 # Adding Custom Datasets
 
-M4 supports any tabular PhysioNet dataset. This guide shows how to add your own.
+M4 supports any PhysioNet dataset. This guide shows how to add your own.
 
 ## Quick Start: JSON Definition
 
@@ -17,7 +17,7 @@ Create a JSON file in `m4_data/datasets/`:
   "requires_authentication": true,
   "bigquery_project_id": "physionet-data",
   "bigquery_dataset_ids": ["mimiciv_ed"],
-  "capabilities": ["HAS_TABULAR_DATA", "COHORT_QUERY", "SCHEMA_INTROSPECTION"]
+  "modalities": ["TABULAR"]
 }
 ```
 
@@ -38,21 +38,16 @@ m4 init mimic-iv-ed --src /path/to/your/csv/files
 | `requires_authentication` | No | `true` if PhysioNet credentialing required |
 | `bigquery_project_id` | No | GCP project for BigQuery access |
 | `bigquery_dataset_ids` | No | BigQuery dataset IDs |
-| `capabilities` | No | Supported operations (see below). Defaults to basic query capabilities |
+| `modalities` | No | Data types in this dataset (see below). Defaults to `["TABULAR"]` |
 
-### Available Capabilities
+### Available Modalities
 
-| Capability | Description |
-|------------|-------------|
-| `HAS_TABULAR_DATA` | Dataset contains structured tabular data |
-| `HAS_CLINICAL_NOTES` | Dataset contains clinical notes/discharge summaries |
-| `COHORT_QUERY` | Build patient cohorts with SQL |
-| `SCHEMA_INTROSPECTION` | List tables and columns |
-| `ICU_STAYS` | ICU admission data |
-| `LAB_RESULTS` | Laboratory test results |
-| `DEMOGRAPHIC_STATS` | Patient demographics |
+| Modality | Description | Available Tools |
+|----------|-------------|-----------------|
+| `TABULAR` | Structured tables (labs, demographics, vitals, etc.) | `get_database_schema`, `get_table_info`, `execute_query` |
+| `NOTES` | Clinical notes and discharge summaries | `search_notes`, `get_note`, `list_patient_notes` |
 
-Tools are only exposed if the dataset declares the required capabilities. If not specified, defaults to `HAS_TABULAR_DATA`, `COHORT_QUERY`, and `SCHEMA_INTROSPECTION`.
+Tools are filtered based on the dataset's declared modalities. If not specified, defaults to `["TABULAR"]`.
 
 ## Initialization Process
 

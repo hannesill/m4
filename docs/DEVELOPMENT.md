@@ -70,8 +70,8 @@ MCP Layer (mcp_server.py)
 
 Core Layer (src/m4/core/)
     │
-    ├── datasets.py    - Dataset definitions, modalities, capabilities
-    ├── tools/         - Tool implementations (tabular, management)
+    ├── datasets.py    - Dataset definitions and modalities
+    ├── tools/         - Tool implementations (tabular, notes, management)
     └── backends/      - Database backends (DuckDB, BigQuery)
 
 Infrastructure Layer
@@ -81,16 +81,16 @@ Infrastructure Layer
     └── config.py      - Configuration management
 ```
 
-### Capability-Based Tool System
+### Modality-Based Tool System
 
-Tools declare their requirements using modalities and capabilities:
+Tools declare required modalities to specify which data types they need:
 
 ```python
 class ExecuteQueryTool:
-    required_capabilities = frozenset({Capability.HAS_TABULAR_DATA, Capability.COHORT_QUERY})
+    required_modalities = frozenset({Modality.TABULAR})
 ```
 
-The `ToolSelector` automatically filters tools based on what the active dataset supports. If a dataset lacks a required capability, the tool returns a helpful error message instead of failing silently.
+The `ToolSelector` automatically filters tools based on the active dataset's modalities. If a dataset lacks a required modality, the tool returns a helpful error message instead of failing silently.
 
 ### Backend Abstraction
 
@@ -114,7 +114,7 @@ M4 uses a **protocol-based design** (structural typing). Tools don't inherit fro
 
 ```python
 from dataclasses import dataclass
-from m4.core.datasets import Capability, DatasetDefinition, Modality
+from m4.core.datasets import DatasetDefinition, Modality
 from m4.core.tools.base import ToolInput, ToolOutput
 
 # Define input parameters
@@ -132,11 +132,8 @@ class MyNewTool:
     input_model = MyNewToolInput
     output_model = ToolOutput
 
-    # Capability constraints (use frozenset!)
+    # Modality constraints (use frozenset!)
     required_modalities: frozenset[Modality] = frozenset({Modality.TABULAR})
-    required_capabilities: frozenset[Capability] = frozenset(
-        {Capability.SCHEMA_INTROSPECTION}
-    )
     supported_datasets: frozenset[str] | None = None  # None = all compatible
 
     def invoke(
@@ -151,8 +148,6 @@ class MyNewTool:
         if self.supported_datasets and dataset.name not in self.supported_datasets:
             return False
         if not self.required_modalities.issubset(dataset.modalities):
-            return False
-        if not self.required_capabilities.issubset(dataset.capabilities):
             return False
         return True
 ```
