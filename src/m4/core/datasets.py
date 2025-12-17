@@ -1,9 +1,8 @@
-"""Enhanced dataset definitions with semantic capabilities.
+"""Dataset definitions with modality-based filtering.
 
 This module provides:
-- Modality enum: High-level data types (TABULAR, NOTES, IMAGING, WAVEFORM)
-- Capability enum: Specific operations that can be performed
-- DatasetDefinition: Enhanced dataset metadata with capabilities
+- Modality enum: Data types available in a dataset (TABULAR, NOTES, etc.)
+- DatasetDefinition: Dataset metadata with modalities
 - DatasetRegistry: Registry for managing dataset definitions
 """
 
@@ -25,27 +24,24 @@ MAX_DATASET_FILE_SIZE = 1024 * 1024
 
 
 class Modality(Enum):
-    """Data types a dataset can contain."""
+    """Data modalities available in a dataset.
 
-    TABULAR = auto()  # Structured tables (labs, demographics, vitals)
+    Modalities describe what kinds of data a dataset contains. Tools declare
+    which modalities they require, and only datasets with those modalities
+    will have the tool available.
 
+    This is intentionally high-level. Fine-grained data discovery (which tables
+    exist, what columns they have) is handled by schema introspection tools
+    and the LLM's ability to write adaptive SQL.
+    """
 
-class Capability(Enum):
-    """Specific operations that can be performed on a dataset."""
-
-    # Core query capabilities
-    COHORT_QUERY = auto()  # Build patient cohorts with SQL
-    SCHEMA_INTROSPECTION = auto()  # List tables/columns
-
-    # Tabular data capabilities
-    ICU_STAYS = auto()  # ICU admission data
-    LAB_RESULTS = auto()  # Laboratory test results
-    DEMOGRAPHIC_STATS = auto()  # Patient demographics
+    TABULAR = auto()  # Structured tables (labs, demographics, vitals, etc.)
+    NOTES = auto()  # Clinical notes and discharge summaries
 
 
 @dataclass
 class DatasetDefinition:
-    """Dataset definition with semantic capabilities.
+    """Dataset definition with modality declarations.
 
     Attributes:
         name: Unique identifier for the dataset
@@ -59,7 +55,6 @@ class DatasetDefinition:
         bigquery_dataset_ids: BigQuery dataset IDs containing the tables
         requires_authentication: Whether dataset requires auth (e.g., credentialed access)
         modalities: Immutable set of data modalities (TABULAR, NOTES, etc.)
-        capabilities: Immutable set of supported operations
         table_mappings: Logical to physical table name mappings
     """
 
@@ -78,9 +73,8 @@ class DatasetDefinition:
     # Authentication
     requires_authentication: bool = False
 
-    # Semantic capability declarations (immutable)
+    # Modality declarations (immutable)
     modalities: frozenset[Modality] = field(default_factory=frozenset)
-    capabilities: frozenset[Capability] = field(default_factory=frozenset)
 
     # Table name mappings (dataset-specific)
     table_mappings: dict[str, str] = field(default_factory=dict)
@@ -172,12 +166,10 @@ class DatasetRegistry:
     def load_custom_datasets(cls, custom_dir: Path) -> None:
         """Load custom dataset definitions from JSON files.
 
-        JSON files can specify modalities and capabilities as string arrays:
-            "modalities": ["TABULAR"],
-            "capabilities": ["COHORT_QUERY", "SCHEMA_INTROSPECTION"]
+        JSON files can specify modalities as string arrays:
+            "modalities": ["TABULAR", "NOTES"]
 
-        If not specified, sensible defaults are applied (TABULAR modality with
-        COHORT_QUERY and SCHEMA_INTROSPECTION capabilities).
+        If not specified, defaults to TABULAR modality.
 
         Args:
             custom_dir: Directory containing custom dataset JSON files
@@ -204,18 +196,8 @@ class DatasetRegistry:
                         Modality[m] for m in data["modalities"]
                     )
                 else:
-                    # Default: TABULAR modality for basic functionality
+                    # Default: tabular data
                     data["modalities"] = frozenset({Modality.TABULAR})
-
-                if "capabilities" in data:
-                    data["capabilities"] = frozenset(
-                        Capability[c] for c in data["capabilities"]
-                    )
-                else:
-                    # Default: basic query capabilities
-                    data["capabilities"] = frozenset(
-                        {Capability.COHORT_QUERY, Capability.SCHEMA_INTROSPECTION}
-                    )
 
                 ds = DatasetDefinition(**data)
                 cls.register(ds)
@@ -223,7 +205,7 @@ class DatasetRegistry:
             except KeyError as e:
                 logger.warning(
                     f"Failed to load custom dataset from {f}: "
-                    f"Invalid modality or capability name: {e}"
+                    f"Invalid modality name: {e}"
                 )
             except Exception as e:
                 logger.warning(f"Failed to load custom dataset from {f}: {e}")
@@ -240,15 +222,6 @@ class DatasetRegistry:
             bigquery_project_id=None,
             bigquery_dataset_ids=[],
             modalities=frozenset({Modality.TABULAR}),
-            capabilities=frozenset(
-                {
-                    Capability.COHORT_QUERY,
-                    Capability.SCHEMA_INTROSPECTION,
-                    Capability.ICU_STAYS,
-                    Capability.LAB_RESULTS,
-                    Capability.DEMOGRAPHIC_STATS,
-                }
-            ),
             table_mappings={
                 "icustays": "icu_icustays",
                 "labevents": "hosp_labevents",
@@ -267,15 +240,6 @@ class DatasetRegistry:
             bigquery_dataset_ids=["mimiciv_3_1_hosp", "mimiciv_3_1_icu"],
             requires_authentication=True,
             modalities=frozenset({Modality.TABULAR}),
-            capabilities=frozenset(
-                {
-                    Capability.COHORT_QUERY,
-                    Capability.SCHEMA_INTROSPECTION,
-                    Capability.ICU_STAYS,
-                    Capability.LAB_RESULTS,
-                    Capability.DEMOGRAPHIC_STATS,
-                }
-            ),
             table_mappings={
                 "icustays": "icustays",
                 "labevents": "labevents",
@@ -294,15 +258,6 @@ class DatasetRegistry:
             bigquery_dataset_ids=["eicu_crd"],
             requires_authentication=True,
             modalities=frozenset({Modality.TABULAR}),
-            capabilities=frozenset(
-                {
-                    Capability.COHORT_QUERY,
-                    Capability.SCHEMA_INTROSPECTION,
-                    Capability.ICU_STAYS,
-                    Capability.LAB_RESULTS,
-                    Capability.DEMOGRAPHIC_STATS,
-                }
-            ),
             table_mappings={
                 "icustays": "patient",
                 "labevents": "lab",

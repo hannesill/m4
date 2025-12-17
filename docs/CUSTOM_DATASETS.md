@@ -17,8 +17,7 @@ Create a JSON file in `m4_data/datasets/`:
   "requires_authentication": true,
   "bigquery_project_id": "physionet-data",
   "bigquery_dataset_ids": ["mimiciv_ed"],
-  "modalities": ["TABULAR"],
-  "capabilities": ["COHORT_QUERY", "SCHEMA_INTROSPECTION"]
+  "capabilities": ["HAS_TABULAR_DATA", "COHORT_QUERY", "SCHEMA_INTROSPECTION"]
 }
 ```
 
@@ -39,20 +38,21 @@ m4 init mimic-iv-ed --src /path/to/your/csv/files
 | `requires_authentication` | No | `true` if PhysioNet credentialing required |
 | `bigquery_project_id` | No | GCP project for BigQuery access |
 | `bigquery_dataset_ids` | No | BigQuery dataset IDs |
-| `modalities` | No | Data types: `["TABULAR"]`. Defaults to `["TABULAR"]` if not specified |
 | `capabilities` | No | Supported operations (see below). Defaults to basic query capabilities |
 
 ### Available Capabilities
 
 | Capability | Description |
 |------------|-------------|
+| `HAS_TABULAR_DATA` | Dataset contains structured tabular data |
+| `HAS_CLINICAL_NOTES` | Dataset contains clinical notes/discharge summaries |
 | `COHORT_QUERY` | Build patient cohorts with SQL |
 | `SCHEMA_INTROSPECTION` | List tables and columns |
 | `ICU_STAYS` | ICU admission data |
 | `LAB_RESULTS` | Laboratory test results |
 | `DEMOGRAPHIC_STATS` | Patient demographics |
 
-Tools are only exposed if the dataset declares the required capabilities. If not specified, defaults to `COHORT_QUERY` and `SCHEMA_INTROSPECTION`.
+Tools are only exposed if the dataset declares the required capabilities. If not specified, defaults to `HAS_TABULAR_DATA`, `COHORT_QUERY`, and `SCHEMA_INTROSPECTION`.
 
 ## Initialization Process
 
@@ -115,14 +115,14 @@ For datasets requiring PhysioNet credentials (most full datasets):
 For more control, register datasets in Python:
 
 ```python
-from m4.core.datasets import DatasetDefinition, DatasetRegistry, Modality, Capability
+from m4.core.datasets import DatasetDefinition, DatasetRegistry, Capability
 
 my_dataset = DatasetDefinition(
     name="my-custom-dataset",
     description="My custom clinical dataset",
     primary_verification_table="patients",
-    modalities=frozenset({Modality.TABULAR}),
     capabilities=frozenset({
+        Capability.HAS_TABULAR_DATA,
         Capability.COHORT_QUERY,
         Capability.SCHEMA_INTROSPECTION,
         Capability.LAB_RESULTS,

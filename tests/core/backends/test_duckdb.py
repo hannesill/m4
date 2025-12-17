@@ -17,7 +17,7 @@ import pytest
 
 from m4.core.backends.base import ConnectionError, TableNotFoundError
 from m4.core.backends.duckdb import DuckDBBackend
-from m4.core.datasets import Capability, DatasetDefinition, Modality
+from m4.core.datasets import DatasetDefinition, Modality
 
 
 @pytest.fixture
@@ -26,7 +26,6 @@ def test_dataset():
     return DatasetDefinition(
         name="test-dataset",
         modalities={Modality.TABULAR},
-        capabilities={Capability.ICU_STAYS, Capability.LAB_RESULTS},
         default_duckdb_filename="test_dataset.duckdb",
     )
 

@@ -15,7 +15,7 @@ from m4.config import (
     get_active_dataset,
     set_active_dataset,
 )
-from m4.core.datasets import Capability, DatasetDefinition, DatasetRegistry, Modality
+from m4.core.datasets import DatasetDefinition, DatasetRegistry, Modality
 from m4.core.tools.base import ToolInput, ToolOutput
 
 
@@ -45,9 +45,8 @@ class ListDatasetsTool:
     input_model = ListDatasetsInput
     output_model = ToolOutput
 
-    # Management tools have no capability requirements
+    # Management tools have no modality requirements - always available
     required_modalities: frozenset[Modality] = frozenset()
-    required_capabilities: frozenset[Capability] = frozenset()
     supported_datasets: frozenset[str] | None = None  # Always available
 
     def invoke(
@@ -102,9 +101,8 @@ class SetDatasetTool:
     input_model = SetDatasetInput
     output_model = ToolOutput
 
-    # Management tools have no capability requirements
+    # Management tools have no modality requirements - always available
     required_modalities: frozenset[Modality] = frozenset()
-    required_capabilities: frozenset[Capability] = frozenset()
     supported_datasets: frozenset[str] | None = None  # Always available
 
     def invoke(self, dataset: DatasetDefinition, params: SetDatasetInput) -> ToolOutput:

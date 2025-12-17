@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from m4.core.datasets import DatasetDefinition, Modality
+from m4.core.datasets import DatasetDefinition
 from m4.core.tools.management import (
     ListDatasetsInput,
     ListDatasetsTool,
@@ -39,8 +39,7 @@ def dummy_dataset():
     """Create a dummy dataset for passing to invoke (not actually used)."""
     return DatasetDefinition(
         name="dummy",
-        modalities={Modality.TABULAR},
-        capabilities=set(),
+        modalities=set(),
     )
 
 
@@ -175,17 +174,15 @@ class TestListDatasetsTool:
         empty_ds = DatasetDefinition(
             name="empty",
             modalities=set(),
-            capabilities=set(),
         )
 
         tool = ListDatasetsTool()
         assert tool.is_compatible(empty_ds) is True
 
-    def test_required_capabilities_empty(self):
-        """Test that management tool has no required capabilities."""
+    def test_required_modalities_empty(self):
+        """Test that management tool has no required modalities."""
         tool = ListDatasetsTool()
         assert tool.required_modalities == frozenset()
-        assert tool.required_capabilities == frozenset()
 
 
 class TestSetDatasetTool:
@@ -311,7 +308,6 @@ class TestSetDatasetTool:
         empty_ds = DatasetDefinition(
             name="empty",
             modalities=set(),
-            capabilities=set(),
         )
 
         tool = SetDatasetTool()
@@ -347,7 +343,6 @@ class TestManagementToolProtocol:
         )
         assert tool.input_model == ListDatasetsInput
         assert isinstance(tool.required_modalities, frozenset)
-        assert isinstance(tool.required_capabilities, frozenset)
         assert tool.supported_datasets is None  # Always available
 
     def test_set_dataset_has_required_attributes(self):
@@ -358,5 +353,4 @@ class TestManagementToolProtocol:
         assert "switch" in tool.description.lower() or "set" in tool.description.lower()
         assert tool.input_model == SetDatasetInput
         assert isinstance(tool.required_modalities, frozenset)
-        assert isinstance(tool.required_capabilities, frozenset)
         assert tool.supported_datasets is None  # Always available

@@ -1,15 +1,15 @@
 """Base tool protocol and input/output models.
 
 This module defines the core Tool protocol that all M4 tools must implement.
-Tools declare their required capabilities and are automatically filtered based
-on the active dataset's capabilities.
+Tools declare their required modalities and are automatically filtered based
+on the active dataset's modalities.
 """
 
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
-from m4.core.datasets import Capability, DatasetDefinition, Modality
+from m4.core.datasets import DatasetDefinition, Modality
 
 
 @dataclass
@@ -58,18 +58,16 @@ class Tool(Protocol):
         description: Human-readable description (shown to LLMs)
         input_model: Class for parsing input parameters
         output_model: Class for formatting output
-        required_modalities: Data types required (e.g., TABULAR, NOTES)
-        required_capabilities: Operations required (e.g., ICU_STAYS)
+        required_modalities: Modalities required (e.g., TABULAR, NOTES)
         supported_datasets: Optional set of dataset names (None = all compatible)
 
     Example:
-        class ICUStaysTool:
-            name = "get_icu_stays"
-            description = "Get ICU stay information"
-            input_model = ICUStaysInput
+        class ExecuteQueryTool:
+            name = "execute_query"
+            description = "Execute SQL queries"
+            input_model = ExecuteQueryInput
             output_model = ToolOutput
             required_modalities = frozenset({Modality.TABULAR})
-            required_capabilities = frozenset({Capability.ICU_STAYS})
             supported_datasets = None
 
             def invoke(self, dataset, params):
@@ -91,7 +89,6 @@ class Tool(Protocol):
 
     # Compatibility constraints
     required_modalities: AbstractSet[Modality]
-    required_capabilities: AbstractSet[Capability]
     supported_datasets: AbstractSet[str] | None  # None = all compatible datasets
 
     def invoke(self, dataset: DatasetDefinition, params: ToolInput) -> ToolOutput:
@@ -113,10 +110,9 @@ class Tool(Protocol):
     def is_compatible(self, dataset: DatasetDefinition) -> bool:
         """Check if this tool is compatible with the given dataset.
 
-        This method performs three checks:
+        This method performs two checks:
         1. If supported_datasets is set, check if dataset.name is in the set
         2. Check if dataset has all required modalities
-        3. Check if dataset has all required capabilities
 
         Args:
             dataset: The dataset to check compatibility with
@@ -125,8 +121,8 @@ class Tool(Protocol):
             True if the tool can operate on this dataset, False otherwise
 
         Example:
-            tool = ICUStaysTool()
-            mimic = DatasetRegistry.get("mimic-iv-full")
+            tool = ExecuteQueryTool()
+            mimic = DatasetRegistry.get("mimic-iv")
             if tool.is_compatible(mimic):
                 output = tool.invoke(mimic, params)
         """
@@ -137,10 +133,6 @@ class Tool(Protocol):
 
         # Check modality requirements
         if not self.required_modalities.issubset(dataset.modalities):
-            return False
-
-        # Check capability requirements
-        if not self.required_capabilities.issubset(dataset.capabilities):
             return False
 
         return True

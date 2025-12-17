@@ -15,7 +15,7 @@ import pytest
 
 from m4.core.backends.base import ConnectionError
 from m4.core.backends.bigquery import BigQueryBackend
-from m4.core.datasets import Capability, DatasetDefinition, Modality
+from m4.core.datasets import DatasetDefinition, Modality
 
 
 @pytest.fixture
@@ -24,7 +24,6 @@ def test_dataset():
     return DatasetDefinition(
         name="test-bq-dataset",
         modalities={Modality.TABULAR},
-        capabilities={Capability.ICU_STAYS, Capability.LAB_RESULTS},
         bigquery_project_id="test-project",
         bigquery_dataset_ids=["test_dataset_1", "test_dataset_2"],
     )

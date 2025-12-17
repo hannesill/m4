@@ -21,9 +21,6 @@ from m4.core.tools.registry import CompatibilityResult, ToolRegistry, ToolSelect
 from m4.core.tools.tabular import (
     ExecuteQueryTool,
     GetDatabaseSchemaTool,
-    GetICUStaysTool,
-    GetLabResultsTool,
-    GetRaceDistributionTool,
     GetTableInfoTool,
 )
 
@@ -62,9 +59,6 @@ def init_tools() -> None:
         ToolRegistry.register(GetDatabaseSchemaTool())
         ToolRegistry.register(GetTableInfoTool())
         ToolRegistry.register(ExecuteQueryTool())
-        ToolRegistry.register(GetICUStaysTool())
-        ToolRegistry.register(GetLabResultsTool())
-        ToolRegistry.register(GetRaceDistributionTool())
 
         _tools_initialized = True
 
@@ -86,9 +80,6 @@ __all__ = [
     "CompatibilityResult",
     "ExecuteQueryTool",
     "GetDatabaseSchemaTool",
-    "GetICUStaysTool",
-    "GetLabResultsTool",
-    "GetRaceDistributionTool",
     "GetTableInfoTool",
     "ListDatasetsTool",
     "SetDatasetTool",

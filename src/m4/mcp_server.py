@@ -25,9 +25,6 @@ from m4.core.tools.management import ListDatasetsInput, SetDatasetInput
 from m4.core.tools.tabular import (
     ExecuteQueryInput,
     GetDatabaseSchemaInput,
-    GetICUStaysInput,
-    GetLabResultsInput,
-    GetRaceDistributionInput,
     GetTableInfoInput,
 )
 
@@ -49,9 +46,6 @@ _MCP_TOOL_NAMES = frozenset(
         "get_database_schema",
         "get_table_info",
         "execute_query",
-        "get_icu_stays",
-        "get_lab_results",
-        "get_race_distribution",
     }
 )
 
@@ -173,92 +167,6 @@ def execute_query(sql_query: str) -> str:
 
     tool = ToolRegistry.get("execute_query")
     return tool.invoke(dataset, ExecuteQueryInput(sql_query=sql_query)).result
-
-
-@mcp.tool()
-@require_oauth2
-def get_icu_stays(patient_id: int | None = None, limit: int = 10) -> str:
-    """🏥 Get ICU stay information and length of stay data.
-
-    **Note:** Convenience function. For reliable queries, use the
-    get_database_schema() → get_table_info() → execute_query() workflow.
-
-    Args:
-        patient_id: Specific patient ID to query (optional).
-        limit: Maximum number of records (default: 10).
-
-    Returns:
-        ICU stay data or guidance if table not found.
-    """
-    dataset = DatasetRegistry.get_active()
-
-    # Proactive capability check
-    result = _tool_selector.check_compatibility("get_icu_stays", dataset)
-    if not result.compatible:
-        return result.error_message
-
-    tool = ToolRegistry.get("get_icu_stays")
-    return tool.invoke(
-        dataset, GetICUStaysInput(patient_id=patient_id, limit=limit)
-    ).result
-
-
-@mcp.tool()
-@require_oauth2
-def get_lab_results(
-    patient_id: int | None = None, lab_item: str | None = None, limit: int = 20
-) -> str:
-    """🧪 Get laboratory test results quickly.
-
-    **Note:** Convenience function. For reliable queries, use the
-    get_database_schema() → get_table_info() → execute_query() workflow.
-
-    Args:
-        patient_id: Specific patient ID to query (optional).
-        lab_item: Lab item to filter by - either numeric itemid (e.g., "50912")
-            or text pattern to search in labels (e.g., "glucose").
-        limit: Maximum number of records (default: 20).
-
-    Returns:
-        Lab results or guidance if table not found.
-    """
-    dataset = DatasetRegistry.get_active()
-
-    # Proactive capability check
-    result = _tool_selector.check_compatibility("get_lab_results", dataset)
-    if not result.compatible:
-        return result.error_message
-
-    tool = ToolRegistry.get("get_lab_results")
-    return tool.invoke(
-        dataset,
-        GetLabResultsInput(patient_id=patient_id, lab_item=lab_item, limit=limit),
-    ).result
-
-
-@mcp.tool()
-@require_oauth2
-def get_race_distribution(limit: int = 10) -> str:
-    """📊 Get race distribution from hospital admissions.
-
-    **Note:** Convenience function. For reliable queries, use the
-    get_database_schema() → get_table_info() → execute_query() workflow.
-
-    Args:
-        limit: Maximum number of race categories (default: 10).
-
-    Returns:
-        Race distribution or guidance if table not found.
-    """
-    dataset = DatasetRegistry.get_active()
-
-    # Proactive capability check
-    result = _tool_selector.check_compatibility("get_race_distribution", dataset)
-    if not result.compatible:
-        return result.error_message
-
-    tool = ToolRegistry.get("get_race_distribution")
-    return tool.invoke(dataset, GetRaceDistributionInput(limit=limit)).result
 
 
 def main():

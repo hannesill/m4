@@ -2,20 +2,19 @@
 
 import pytest
 
-from m4.core.datasets import Capability, DatasetDefinition, DatasetRegistry, Modality
+from m4.core.datasets import DatasetDefinition, DatasetRegistry, Modality
 from m4.core.tools import Tool, ToolInput, ToolOutput, ToolRegistry, ToolSelector
 
 
 # Mock tool classes for testing
 class MockTabularTool:
-    """Mock tool requiring only tabular data."""
+    """Mock tool requiring TABULAR modality."""
 
     name = "mock_tabular"
     description = "Mock tabular tool"
     input_model = ToolInput
     output_model = ToolOutput
     required_modalities = frozenset({Modality.TABULAR})
-    required_capabilities = frozenset({Capability.COHORT_QUERY})
     supported_datasets = None
 
     def invoke(self, dataset: DatasetDefinition, params: ToolInput) -> ToolOutput:
@@ -26,31 +25,26 @@ class MockTabularTool:
             return False
         if not self.required_modalities.issubset(dataset.modalities):
             return False
-        if not self.required_capabilities.issubset(dataset.capabilities):
-            return False
         return True
 
 
-class MockLabResultsTool:
-    """Mock tool requiring lab results capability."""
+class MockNotesTool:
+    """Mock tool requiring NOTES modality."""
 
-    name = "mock_lab_results"
-    description = "Mock lab results tool"
+    name = "mock_notes"
+    description = "Mock notes tool"
     input_model = ToolInput
     output_model = ToolOutput
-    required_modalities = frozenset({Modality.TABULAR})
-    required_capabilities = frozenset({Capability.LAB_RESULTS})
+    required_modalities = frozenset({Modality.NOTES})
     supported_datasets = None
 
     def invoke(self, dataset: DatasetDefinition, params: ToolInput) -> ToolOutput:
-        return ToolOutput(result="lab results data")
+        return ToolOutput(result="notes data")
 
     def is_compatible(self, dataset: DatasetDefinition) -> bool:
         if self.supported_datasets and dataset.name not in self.supported_datasets:
             return False
         if not self.required_modalities.issubset(dataset.modalities):
-            return False
-        if not self.required_capabilities.issubset(dataset.capabilities):
             return False
         return True
 
@@ -63,7 +57,6 @@ class MockMIMICOnlyTool:
     input_model = ToolInput
     output_model = ToolOutput
     required_modalities = frozenset({Modality.TABULAR})
-    required_capabilities = frozenset({Capability.ICU_STAYS})
     supported_datasets = frozenset({"mimic-iv", "mimic-iv-demo"})
 
     def invoke(self, dataset: DatasetDefinition, params: ToolInput) -> ToolOutput:
@@ -73,8 +66,6 @@ class MockMIMICOnlyTool:
         if self.supported_datasets and dataset.name not in self.supported_datasets:
             return False
         if not self.required_modalities.issubset(dataset.modalities):
-            return False
-        if not self.required_capabilities.issubset(dataset.capabilities):
             return False
         return True
 
@@ -116,7 +107,7 @@ class TestToolRegistry:
     def test_list_all_tools(self):
         """Test listing all registered tools."""
         tool1 = MockTabularTool()
-        tool2 = MockLabResultsTool()
+        tool2 = MockNotesTool()
 
         ToolRegistry.register(tool1)
         ToolRegistry.register(tool2)
@@ -134,7 +125,7 @@ class TestToolRegistry:
     def test_reset_clears_registry(self):
         """Test that reset clears all registered tools."""
         ToolRegistry.register(MockTabularTool())
-        ToolRegistry.register(MockLabResultsTool())
+        ToolRegistry.register(MockNotesTool())
 
         assert len(ToolRegistry.list_all()) == 2
 
@@ -161,21 +152,20 @@ class TestToolSelector:
         assert "mock_tabular" in tool_names
         assert "mock_mimic_only" in tool_names
 
-    def test_selector_with_different_capabilities(self):
-        """Test selector filters by required capabilities."""
+    def test_selector_filters_by_modality(self):
+        """Test selector filters by required modalities."""
         ToolRegistry.register(MockTabularTool())
-        ToolRegistry.register(MockLabResultsTool())
+        ToolRegistry.register(MockNotesTool())
 
         selector = ToolSelector()
-        mimic_full = DatasetRegistry.get("mimic-iv")
+        mimic = DatasetRegistry.get("mimic-iv")
 
-        compatible = selector.tools_for_dataset(mimic_full)
+        compatible = selector.tools_for_dataset(mimic)
 
-        # mimic-full has both COHORT_QUERY and LAB_RESULTS capabilities
-        assert len(compatible) == 2
+        # mimic-iv has TABULAR but not NOTES modality
         tool_names = {tool.name for tool in compatible}
         assert "mock_tabular" in tool_names
-        assert "mock_lab_results" in tool_names
+        assert "mock_notes" not in tool_names
 
     def test_selector_filters_by_dataset_name(self):
         """Test that selector respects supported_datasets restrictions."""
@@ -188,32 +178,30 @@ class TestToolSelector:
         compatible = selector.tools_for_dataset(mimic)
         assert len(compatible) == 1
 
-        # Create a non-MIMIC dataset with same capabilities
+        # Create a non-MIMIC dataset with same modalities
         eicu = DatasetDefinition(
             name="eicu",
             description="eICU database",
             modalities={Modality.TABULAR},
-            capabilities={Capability.ICU_STAYS, Capability.COHORT_QUERY},
         )
 
-        # Should NOT work with non-MIMIC datasets (even with capabilities)
+        # Should NOT work with non-MIMIC datasets (even with modalities)
         compatible = selector.tools_for_dataset(eicu)
         assert len(compatible) == 0
 
     def test_selector_by_dataset_name_string(self):
         """Test selector using dataset name as string."""
         ToolRegistry.register(MockTabularTool())
-        ToolRegistry.register(MockLabResultsTool())
+        ToolRegistry.register(MockNotesTool())
 
         selector = ToolSelector()
 
         # Use string instead of DatasetDefinition
         compatible = selector.tools_for_dataset("mimic-iv")
 
-        assert len(compatible) == 2
+        # Only tabular tool should match (mimic-iv has TABULAR modality)
         tool_names = {tool.name for tool in compatible}
         assert "mock_tabular" in tool_names
-        assert "mock_lab_results" in tool_names
 
     def test_selector_unknown_dataset_returns_empty(self):
         """Test selector with unknown dataset name."""
@@ -231,13 +219,13 @@ class TestToolSelector:
 
         selector = ToolSelector()
 
-        # Tabular tool available for demo (has TABULAR)
+        # Tabular tool available for demo (has TABULAR modality)
         assert selector.is_tool_available("mock_tabular", "mimic-iv-demo")
 
         # MIMIC-only tool is available for demo (it's a MIMIC dataset)
         assert selector.is_tool_available("mock_mimic_only", "mimic-iv-demo")
 
-        # Both available for full (both support TABULAR and MIMIC datasets)
+        # Both available for full
         assert selector.is_tool_available("mock_tabular", "mimic-iv")
         assert selector.is_tool_available("mock_mimic_only", "mimic-iv")
 
@@ -277,24 +265,23 @@ class TestIntegration:
         """Test complex scenario with multiple tools and datasets."""
         # Register tools
         ToolRegistry.register(MockTabularTool())
-        ToolRegistry.register(MockLabResultsTool())
+        ToolRegistry.register(MockNotesTool())
         ToolRegistry.register(MockMIMICOnlyTool())
 
         selector = ToolSelector()
 
-        # Test with demo (TABULAR only, has LAB_RESULTS capability)
+        # Test with demo (has TABULAR modality)
         demo_tools = selector.tools_for_dataset("mimic-iv-demo")
         demo_names = {t.name for t in demo_tools}
         assert "mock_tabular" in demo_names
         assert "mock_mimic_only" in demo_names
-        assert "mock_lab_results" in demo_names  # Has LAB_RESULTS capability
+        # mock_notes not in demo_names (mimic doesn't have NOTES modality)
 
-        # Test with full (TABULAR, has all capabilities)
+        # Test with full (has TABULAR modality)
         full_tools = selector.tools_for_dataset("mimic-iv")
         full_names = {t.name for t in full_tools}
         assert "mock_tabular" in full_names
         assert "mock_mimic_only" in full_names
-        assert "mock_lab_results" in full_names  # Has LAB_RESULTS capability
 
     def test_tool_protocol_conformance(self):
         """Test that tools conform to the Tool protocol."""
@@ -333,12 +320,9 @@ class TestInitTools:
         assert "get_database_schema" in tool_names
         assert "get_table_info" in tool_names
         assert "execute_query" in tool_names
-        assert "get_icu_stays" in tool_names
-        assert "get_lab_results" in tool_names
-        assert "get_race_distribution" in tool_names
 
-        # Total: 8 tools
-        assert len(all_tools) == 8
+        # Total: 5 tools
+        assert len(all_tools) == 5
 
         # Cleanup
         reset_tools()
@@ -354,9 +338,9 @@ class TestInitTools:
         init_tools()
         init_tools()
 
-        # Should still have exactly 8 tools
+        # Should still have exactly 5 tools
         all_tools = ToolRegistry.list_all()
-        assert len(all_tools) == 8
+        assert len(all_tools) == 5
 
         reset_tools()
 
@@ -365,14 +349,14 @@ class TestInitTools:
         from m4.core.tools import init_tools, reset_tools
 
         init_tools()
-        assert len(ToolRegistry.list_all()) == 8
+        assert len(ToolRegistry.list_all()) == 5
 
         reset_tools()
         assert len(ToolRegistry.list_all()) == 0
 
         # Can reinitialize after reset
         init_tools()
-        assert len(ToolRegistry.list_all()) == 8
+        assert len(ToolRegistry.list_all()) == 5
 
         reset_tools()
 
@@ -381,9 +365,6 @@ class TestInitTools:
         from m4.core.tools import (
             ExecuteQueryTool,
             GetDatabaseSchemaTool,
-            GetICUStaysTool,
-            GetLabResultsTool,
-            GetRaceDistributionTool,
             GetTableInfoTool,
             ListDatasetsTool,
             SetDatasetTool,
@@ -393,9 +374,6 @@ class TestInitTools:
             GetDatabaseSchemaTool,
             GetTableInfoTool,
             ExecuteQueryTool,
-            GetICUStaysTool,
-            GetLabResultsTool,
-            GetRaceDistributionTool,
             ListDatasetsTool,
             SetDatasetTool,
         ]
@@ -408,7 +386,6 @@ class TestInitTools:
             assert hasattr(tool, "input_model")
             assert hasattr(tool, "output_model")
             assert hasattr(tool, "required_modalities")
-            assert hasattr(tool, "required_capabilities")
             assert hasattr(tool, "invoke")
             assert hasattr(tool, "is_compatible")
 
@@ -421,7 +398,7 @@ class TestInitTools:
 
         selector = ToolSelector()
 
-        # Test with demo dataset (TABULAR only, no NOTES)
+        # Test with demo dataset (has TABULAR modality)
         demo_tools = selector.tools_for_dataset("mimic-iv-demo")
         demo_names = {t.name for t in demo_tools}
 
@@ -433,11 +410,8 @@ class TestInitTools:
         assert "get_database_schema" in demo_names
         assert "get_table_info" in demo_names
         assert "execute_query" in demo_names
-        assert "get_icu_stays" in demo_names
-        assert "get_lab_results" in demo_names
-        assert "get_race_distribution" in demo_names
 
-        # Test with full dataset (TABULAR + NOTES)
+        # Test with full dataset (has TABULAR modality)
         full_tools = selector.tools_for_dataset("mimic-iv")
         full_names = {t.name for t in full_tools}
 
@@ -457,7 +431,6 @@ class TestInitTools:
         minimal_ds = DatasetDefinition(
             name="minimal",
             modalities=set(),  # No modalities
-            capabilities=set(),  # No capabilities
         )
 
         # Management tools should be compatible with any dataset

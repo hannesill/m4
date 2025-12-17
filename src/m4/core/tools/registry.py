@@ -1,8 +1,8 @@
-"""Tool registry and selector for capability-based tool filtering.
+"""Tool registry and selector for modality-based tool filtering.
 
 This module provides:
 - ToolRegistry: Central registry for all available tools
-- ToolSelector: Intelligent tool filtering based on dataset capabilities
+- ToolSelector: Intelligent tool filtering based on dataset modalities
 - CompatibilityResult: Result object for tool compatibility checks
 """
 
@@ -25,7 +25,6 @@ class CompatibilityResult:
         tool_name: Name of the tool that was checked
         dataset_name: Name of the dataset checked against
         missing_modalities: Set of modality names the dataset is missing
-        missing_capabilities: Set of capability names the dataset is missing
         error_message: Formatted error message if not compatible (empty if compatible)
     """
 
@@ -33,7 +32,6 @@ class CompatibilityResult:
     tool_name: str
     dataset_name: str
     missing_modalities: set[str] = field(default_factory=set)
-    missing_capabilities: set[str] = field(default_factory=set)
     error_message: str = ""
 
 
@@ -42,12 +40,12 @@ class ToolRegistry:
 
     This class maintains a global registry of all tools that can be
     exposed via the MCP server. Tools are filtered dynamically based
-    on the active dataset's capabilities.
+    on the active dataset's modalities.
 
     Example:
         # Register tools
-        ToolRegistry.register(GetICUStaysTool())
-        ToolRegistry.register(SearchClinicalNotesTool())
+        ToolRegistry.register(ExecuteQueryTool())
+        ToolRegistry.register(GetDatabaseSchemaTool())
 
         # List all registered tools
         all_tools = ToolRegistry.list_all()
@@ -103,11 +101,11 @@ class ToolRegistry:
 
 
 class ToolSelector:
-    """Intelligent tool selection based on dataset capabilities.
+    """Intelligent tool selection based on dataset modalities.
 
     This class provides the core filtering logic that determines which
     tools should be exposed to the LLM based on the active dataset's
-    declared capabilities.
+    declared modalities.
 
     Example:
         selector = ToolSelector()
@@ -118,10 +116,9 @@ class ToolSelector:
     def tools_for_dataset(self, dataset: DatasetDefinition | str) -> list[Tool]:
         """Get all tools compatible with a given dataset.
 
-        This method performs three-level filtering:
+        This method performs two-level filtering:
         1. Explicit dataset restrictions (if tool.supported_datasets is set)
         2. Modality requirements (dataset must have all required modalities)
-        3. Capability requirements (dataset must have all required capabilities)
 
         Args:
             dataset: DatasetDefinition instance or dataset name string
@@ -186,7 +183,7 @@ class ToolSelector:
     ) -> CompatibilityResult:
         """Check tool compatibility and return detailed result.
 
-        Performs proactive capability checking before tool invocation.
+        Performs proactive modality checking before tool invocation.
         Returns a result object with compatibility status and formatted
         error message for user-facing output.
 
@@ -204,7 +201,7 @@ class ToolSelector:
                 compatible=False,
                 tool_name=tool_name,
                 dataset_name=dataset.name,
-                error_message=f"❌ **Error:** Unknown tool `{tool_name}`.",
+                error_message=f"**Error:** Unknown tool `{tool_name}`.",
             )
 
         # Use existing compatibility check
@@ -221,35 +218,26 @@ class ToolSelector:
         # Build detailed incompatibility info
         logger.debug(
             "Tool '%s' is NOT compatible with dataset '%s'. "
-            "Required modalities: %s, capabilities: %s. "
-            "Dataset has modalities: %s, capabilities: %s",
+            "Required modalities: %s. Dataset has modalities: %s",
             tool_name,
             dataset.name,
             tool.required_modalities,
-            tool.required_capabilities,
             dataset.modalities,
-            dataset.capabilities,
         )
 
         # Calculate what's missing
         required_modalities = {m.name for m in tool.required_modalities}
-        required_capabilities = {c.name for c in tool.required_capabilities}
         available_modalities = {m.name for m in dataset.modalities}
-        available_capabilities = {c.name for c in dataset.capabilities}
 
         missing_modalities = required_modalities - available_modalities
-        missing_capabilities = required_capabilities - available_capabilities
 
         # Build formatted error message
         error_message = self._format_incompatibility_error(
             tool_name=tool_name,
             dataset_name=dataset.name,
             required_modalities=sorted(required_modalities),
-            required_capabilities=sorted(required_capabilities),
             available_modalities=sorted(available_modalities),
-            available_capabilities=sorted(available_capabilities),
             missing_modalities=missing_modalities,
-            missing_capabilities=missing_capabilities,
         )
 
         return CompatibilityResult(
@@ -257,7 +245,6 @@ class ToolSelector:
             tool_name=tool_name,
             dataset_name=dataset.name,
             missing_modalities=missing_modalities,
-            missing_capabilities=missing_capabilities,
             error_message=error_message,
         )
 
@@ -266,40 +253,31 @@ class ToolSelector:
         tool_name: str,
         dataset_name: str,
         required_modalities: list[str],
-        required_capabilities: list[str],
         available_modalities: list[str],
-        available_capabilities: list[str],
         missing_modalities: set[str],
-        missing_capabilities: set[str],
     ) -> str:
         """Format a user-friendly incompatibility error message."""
         error_parts = [
-            f"❌ **Error:** Tool `{tool_name}` is not available for dataset "
+            f"**Error:** Tool `{tool_name}` is not available for dataset "
             f"'{dataset_name}'.",
             "",
         ]
 
         if missing_modalities:
             error_parts.append(
-                f"📦 **Missing modalities:** {', '.join(sorted(missing_modalities))}"
-            )
-        if missing_capabilities:
-            error_parts.append(
-                f"⚙️ **Missing capabilities:** {', '.join(sorted(missing_capabilities))}"
+                f"**Missing modalities:** {', '.join(sorted(missing_modalities))}"
             )
 
         error_parts.extend(
             [
                 "",
-                "🔧 **Tool requires:**",
+                "**Tool requires:**",
                 f"   Modalities: {', '.join(required_modalities) or '(none)'}",
-                f"   Capabilities: {', '.join(required_capabilities) or '(none)'}",
                 "",
-                f"📋 **Dataset '{dataset_name}' provides:**",
+                f"**Dataset '{dataset_name}' provides:**",
                 f"   Modalities: {', '.join(available_modalities) or '(none)'}",
-                f"   Capabilities: {', '.join(available_capabilities) or '(none)'}",
                 "",
-                "💡 **Suggestions:**",
+                "**Suggestions:**",
                 "   - Use `list_datasets()` to see all available datasets",
                 "   - Use `set_dataset('dataset-name')` to switch datasets",
             ]
@@ -314,8 +292,8 @@ class ToolSelector:
     ) -> str:
         """Generate a snapshot of supported tools for a dataset.
 
-        Returns a formatted string listing the dataset's modalities,
-        capabilities, and which tools are available.
+        Returns a formatted string listing the dataset's modalities
+        and which tools are available.
 
         Args:
             dataset: The dataset to generate snapshot for
@@ -336,21 +314,19 @@ class ToolSelector:
         else:
             tool_names = sorted(t.name for t in compatible_tools)
 
-        # Format modalities and capabilities
+        # Format modalities
         modalities = sorted(m.name for m in dataset.modalities)
-        capabilities = sorted(c.name for c in dataset.capabilities)
 
         snapshot_parts = [
             "",
             "─" * 40,
-            f"✅ **Active dataset:** {dataset.name}",
-            f"🧩 **Modalities:** {', '.join(modalities) or '(none)'}",
-            f"⚙️ **Capabilities:** {', '.join(capabilities) or '(none)'}",
+            f"**Active dataset:** {dataset.name}",
+            f"**Modalities:** {', '.join(modalities) or '(none)'}",
         ]
 
         if tool_names:
-            snapshot_parts.append(f"🛠️ **Supported tools:** {', '.join(tool_names)}")
+            snapshot_parts.append(f"**Supported tools:** {', '.join(tool_names)}")
         else:
-            snapshot_parts.append("⚠️ **No data tools available for this dataset.**")
+            snapshot_parts.append("**No data tools available for this dataset.**")
 
         return "\n".join(snapshot_parts)

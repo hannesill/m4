@@ -112,10 +112,10 @@ Get patient demographics by race/ethnicity.
 
 ## Capability-Based Availability
 
-Tools declare two types of requirements:
+Tools declare required capabilities that a dataset must provide:
 
-- **Modalities**: High-level data types (currently `TABULAR`, with `NOTES`, `IMAGING`, `WAVEFORM` planned for future versions)
-- **Capabilities**: Specific operations like `ICU_STAYS`, `LAB_RESULTS`, etc.
+- **Data presence capabilities**: `HAS_TABULAR_DATA`, `HAS_CLINICAL_NOTES` (future)
+- **Query capabilities**: `ICU_STAYS`, `LAB_RESULTS`, `COHORT_QUERY`, etc.
 
 Tools are automatically enabled or disabled based on the active dataset's capabilities:
 
@@ -140,13 +140,9 @@ Error: Tool `get_icu_stays` is not available for dataset 'limited-dataset'.
 
 Missing capabilities: ICU_STAYS
 
-Tool requires:
-   Modalities: TABULAR
-   Capabilities: ICU_STAYS
+Tool requires: HAS_TABULAR_DATA, ICU_STAYS
 
-Dataset 'limited-dataset' provides:
-   Modalities: TABULAR
-   Capabilities: COHORT_QUERY
+Dataset 'limited-dataset' provides: HAS_TABULAR_DATA, COHORT_QUERY
 
 Suggestions:
    - Use `list_datasets()` to see all available datasets

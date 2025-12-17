@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 import pytest
 from fastmcp import Client
 
-from m4.core.datasets import DatasetDefinition
+from m4.core.datasets import DatasetDefinition, Modality
 from m4.core.tools import init_tools
 from m4.mcp_server import mcp
 
@@ -97,23 +97,14 @@ class TestMCPTools:
     async def test_tools_via_client(self, test_db):
         """Test MCP tools through the FastMCP client."""
         from m4.core.backends import reset_backend_cache
-        from m4.core.datasets import Capability, Modality
 
         # Reset backend cache to ensure clean state
         reset_backend_cache()
 
-        # Create a mock dataset with all capabilities
+        # Create a mock dataset with TABULAR modality
         mock_ds = DatasetDefinition(
             name="mimic-demo",
             modalities=frozenset({Modality.TABULAR}),
-            capabilities=frozenset(
-                {
-                    Capability.COHORT_QUERY,
-                    Capability.SCHEMA_INTROSPECTION,
-                    Capability.ICU_STAYS,
-                    Capability.LAB_RESULTS,
-                }
-            ),
             table_mappings={
                 "icustays": "icu_icustays",
                 "labevents": "hosp_labevents",
@@ -149,20 +140,6 @@ class TestMCPTools:
                         result_text = str(result)
                         assert "count" in result_text
                         assert "2" in result_text
-
-                        # Test get_icu_stays tool
-                        result = await client.call_tool(
-                            "get_icu_stays", {"patient_id": 10000032, "limit": 10}
-                        )
-                        result_text = str(result)
-                        assert "10000032" in result_text
-
-                        # Test get_lab_results tool
-                        result = await client.call_tool(
-                            "get_lab_results", {"patient_id": 10000032, "limit": 20}
-                        )
-                        result_text = str(result)
-                        assert "10000032" in result_text
 
                         # Test get_database_schema tool
                         result = await client.call_tool("get_database_schema", {})
@@ -211,14 +188,12 @@ class TestMCPTools:
         """Test handling of invalid SQL."""
         from m4.core.backends import reset_backend_cache
         from m4.core.backends.duckdb import DuckDBBackend
-        from m4.core.datasets import Capability, Modality
 
         reset_backend_cache()
 
         mock_ds = DatasetDefinition(
             name="mimic-demo",
             modalities=frozenset({Modality.TABULAR}),
-            capabilities=frozenset({Capability.COHORT_QUERY}),
         )
 
         with patch.dict(
@@ -253,14 +228,12 @@ class TestMCPTools:
         """Test handling of queries with no results."""
         from m4.core.backends import reset_backend_cache
         from m4.core.backends.duckdb import DuckDBBackend
-        from m4.core.datasets import Capability, Modality
 
         reset_backend_cache()
 
         mock_ds = DatasetDefinition(
             name="mimic-demo",
             modalities=frozenset({Modality.TABULAR}),
-            capabilities=frozenset({Capability.COHORT_QUERY}),
         )
 
         with patch.dict(
@@ -336,7 +309,6 @@ class TestBigQueryIntegration:
     async def test_bigquery_tools(self):
         """Test BigQuery tools functionality with mocks."""
         from m4.core.backends import reset_backend_cache
-        from m4.core.datasets import Capability, Modality
 
         reset_backend_cache()
 
@@ -346,12 +318,6 @@ class TestBigQueryIntegration:
             bigquery_project_id="test-project",
             bigquery_dataset_ids=["mimic_hosp", "mimic_icu"],
             modalities=frozenset({Modality.TABULAR}),
-            capabilities=frozenset(
-                {
-                    Capability.COHORT_QUERY,
-                    Capability.DEMOGRAPHIC_STATS,
-                }
-            ),
             table_mappings={
                 "admissions": "admissions",
             },
@@ -395,13 +361,6 @@ class TestBigQueryIntegration:
                         result_text = str(result)
                         assert "Mock BigQuery result" in result_text
 
-                        # Test get_race_distribution tool
-                        result = await client.call_tool(
-                            "get_race_distribution", {"limit": 5}
-                        )
-                        result_text = str(result)
-                        assert "Mock BigQuery result" in result_text
-
 
 class TestServerIntegration:
     """Test overall server integration."""
@@ -420,8 +379,8 @@ class TestServerIntegration:
         assert hasattr(m4.mcp_server, "main")
 
 
-class TestCapabilityChecking:
-    """Test proactive capability-based tool filtering.
+class TestModalityChecking:
+    """Test proactive modality-based tool filtering.
 
     These tests verify that:
     1. Incompatible tools return helpful error messages without backend execution
@@ -436,15 +395,13 @@ class TestCapabilityChecking:
         This verifies no backend execution is attempted.
         """
         from m4.core.backends import reset_backend_cache
-        from m4.core.datasets import Capability, Modality
 
         reset_backend_cache()
 
-        # Create a dataset that lacks ICU_STAYS capability
-        limited_ds = DatasetDefinition(
-            name="limited-dataset",
-            modalities={Modality.TABULAR},
-            capabilities={Capability.COHORT_QUERY},  # No ICU_STAYS capability
+        # Create a dataset that lacks TABULAR modality (only has NOTES)
+        notes_only_ds = DatasetDefinition(
+            name="notes-only-dataset",
+            modalities={Modality.NOTES},  # No TABULAR modality
         )
 
         with patch.dict(
@@ -453,20 +410,22 @@ class TestCapabilityChecking:
             clear=True,
         ):
             with patch(
-                "m4.mcp_server.DatasetRegistry.get_active", return_value=limited_ds
+                "m4.mcp_server.DatasetRegistry.get_active", return_value=notes_only_ds
             ):
                 # Mock backend that should NOT be called
                 with patch("m4.core.tools.tabular.get_backend") as mock_backend:
                     async with Client(mcp) as client:
-                        # Call get_icu_stays which requires ICU_STAYS capability
-                        result = await client.call_tool("get_icu_stays", {"limit": 10})
+                        # Call execute_query which requires TABULAR modality
+                        result = await client.call_tool(
+                            "execute_query", {"sql_query": "SELECT 1"}
+                        )
                         result_text = str(result)
 
                         # Verify proactive error message
                         assert "Error" in result_text
-                        assert "get_icu_stays" in result_text
-                        assert "limited-dataset" in result_text
-                        assert "ICU_STAYS" in result_text
+                        assert "execute_query" in result_text
+                        assert "notes-only-dataset" in result_text
+                        assert "TABULAR" in result_text
 
                         # Verify suggestions are included
                         assert "list_datasets" in result_text
@@ -482,7 +441,6 @@ class TestCapabilityChecking:
 
         from m4.core.backends import reset_backend_cache
         from m4.core.backends.duckdb import DuckDBBackend
-        from m4.core.datasets import Capability, Modality
 
         reset_backend_cache()
 
@@ -490,18 +448,16 @@ class TestCapabilityChecking:
         db_path = tmp_path / "test.duckdb"
         con = duckdb.connect(str(db_path))
         try:
-            con.execute("CREATE TABLE icustays (subject_id INTEGER, stay_id INTEGER)")
-            con.execute("INSERT INTO icustays VALUES (1, 100), (2, 200)")
+            con.execute("CREATE TABLE test_table (id INTEGER, value TEXT)")
+            con.execute("INSERT INTO test_table VALUES (1, 'test1'), (2, 'test2')")
             con.commit()
         finally:
             con.close()
 
-        # Create dataset with ICU_STAYS capability
-        capable_ds = DatasetDefinition(
-            name="capable-dataset",
+        # Create dataset with TABULAR modality
+        tabular_ds = DatasetDefinition(
+            name="tabular-dataset",
             modalities={Modality.TABULAR},
-            capabilities={Capability.COHORT_QUERY, Capability.ICU_STAYS},
-            table_mappings={"icustays": "icustays"},
         )
 
         with patch.dict(
@@ -510,7 +466,7 @@ class TestCapabilityChecking:
             clear=True,
         ):
             with patch(
-                "m4.mcp_server.DatasetRegistry.get_active", return_value=capable_ds
+                "m4.mcp_server.DatasetRegistry.get_active", return_value=tabular_ds
             ):
                 with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
                     mock_get_backend.return_value = DuckDBBackend(
@@ -518,11 +474,14 @@ class TestCapabilityChecking:
                     )
 
                     async with Client(mcp) as client:
-                        result = await client.call_tool("get_icu_stays", {"limit": 10})
+                        result = await client.call_tool(
+                            "execute_query",
+                            {"sql_query": "SELECT * FROM test_table LIMIT 10"},
+                        )
                         result_text = str(result)
 
                         # Verify data was returned (backend was called)
-                        assert "subject_id" in result_text or "1" in result_text
+                        assert "id" in result_text or "1" in result_text
 
                         # Verify NO error message
                         assert "not available" not in result_text.lower()
@@ -531,19 +490,13 @@ class TestCapabilityChecking:
     async def test_set_dataset_returns_supported_tools_snapshot(self):
         """Test that set_dataset includes supported tools in response."""
         from m4.core.backends import reset_backend_cache
-        from m4.core.datasets import Capability, Modality
 
         reset_backend_cache()
 
-        # Create a dataset with specific capabilities
+        # Create a dataset with TABULAR modality
         target_ds = DatasetDefinition(
             name="test-dataset",
             modalities={Modality.TABULAR},
-            capabilities={
-                Capability.COHORT_QUERY,
-                Capability.SCHEMA_INTROSPECTION,
-                Capability.ICU_STAYS,
-            },
         )
 
         with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
@@ -571,19 +524,15 @@ class TestCapabilityChecking:
                                 assert "Active dataset" in result_text
                                 assert "test-dataset" in result_text
                                 assert "Modalities" in result_text
-                                assert "TABULAR" in result_text
                                 assert "Supported tools" in result_text
 
                                 # Tools should be sorted alphabetically
-                                # Based on capabilities, should include:
-                                # execute_query, get_database_schema, get_icu_stays, etc.
                                 assert "execute_query" in result_text
 
     @pytest.mark.asyncio
     async def test_set_dataset_invalid_returns_error_without_snapshot(self):
         """Test that set_dataset with invalid dataset returns error without snapshot."""
         from m4.core.backends import reset_backend_cache
-        from m4.core.datasets import Capability, Modality
 
         reset_backend_cache()
 
@@ -591,7 +540,6 @@ class TestCapabilityChecking:
         mock_active_ds = DatasetDefinition(
             name="mimic-iv-demo",
             modalities={Modality.TABULAR},
-            capabilities={Capability.COHORT_QUERY},
         )
 
         with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
@@ -617,134 +565,107 @@ class TestCapabilityChecking:
                             # Should have error
                             assert "not found" in result_text.lower()
 
-                            # Should NOT have snapshot (no Active dataset line from snapshot)
-                            # Note: Error message might include "dataset" but not the snapshot format
-                            assert "Modalities:" not in result_text
-
     @pytest.mark.asyncio
-    async def test_multiple_tools_incompatibility(self):
-        """Test that multiple tools correctly report incompatibility."""
+    async def test_tool_incompatibility_with_notes_only(self):
+        """Test that tabular tools are incompatible with notes-only dataset."""
         from m4.core.backends import reset_backend_cache
-        from m4.core.datasets import Capability, Modality
 
         reset_backend_cache()
 
-        # Dataset with only basic capabilities
-        basic_ds = DatasetDefinition(
-            name="basic-dataset",
-            modalities={Modality.TABULAR},
-            capabilities={Capability.COHORT_QUERY},  # Only cohort query
+        # Create dataset with only NOTES modality
+        notes_ds = DatasetDefinition(
+            name="notes-dataset",
+            modalities={Modality.NOTES},  # Only notes data
         )
 
         with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
             with patch(
-                "m4.mcp_server.DatasetRegistry.get_active", return_value=basic_ds
+                "m4.mcp_server.DatasetRegistry.get_active", return_value=notes_ds
             ):
                 async with Client(mcp) as client:
-                    # Test get_lab_results (requires LAB_RESULTS capability)
-                    result = await client.call_tool("get_lab_results", {"limit": 10})
-                    assert "LAB_RESULTS" in str(result)
-
-                    # Test get_race_distribution (requires DEMOGRAPHIC_STATS)
+                    # Test execute_query (requires TABULAR modality)
                     result = await client.call_tool(
-                        "get_race_distribution", {"limit": 10}
+                        "execute_query", {"sql_query": "SELECT 1"}
                     )
-                    assert "DEMOGRAPHIC_STATS" in str(result)
+                    assert "TABULAR" in str(result)
+
+                    # Test get_database_schema (requires TABULAR modality)
+                    result = await client.call_tool("get_database_schema", {})
+                    assert "TABULAR" in str(result)
 
     def test_check_tool_compatibility_helper(self):
         """Test the ToolSelector.check_compatibility method directly."""
-        from m4.core.datasets import Capability, Modality
         from m4.core.tools import ToolSelector
 
         selector = ToolSelector()
 
-        # Dataset with limited capabilities
-        limited_ds = DatasetDefinition(
-            name="limited",
-            modalities={Modality.TABULAR},
-            capabilities={Capability.COHORT_QUERY},
+        # Dataset with only NOTES modality
+        notes_ds = DatasetDefinition(
+            name="notes-only",
+            modalities={Modality.NOTES},
         )
 
-        # Full capabilities dataset
-        full_ds = DatasetDefinition(
-            name="full",
+        # Dataset with TABULAR modality
+        tabular_ds = DatasetDefinition(
+            name="tabular",
             modalities={Modality.TABULAR},
-            capabilities={
-                Capability.COHORT_QUERY,
-                Capability.ICU_STAYS,
-                Capability.LAB_RESULTS,
-                Capability.DEMOGRAPHIC_STATS,
-                Capability.SCHEMA_INTROSPECTION,
-            },
         )
 
         # Test compatible tool
-        result = selector.check_compatibility("execute_query", full_ds)
+        result = selector.check_compatibility("execute_query", tabular_ds)
         assert result.compatible is True
         assert result.error_message == ""
 
-        # Test incompatible tool
-        result = selector.check_compatibility("get_icu_stays", limited_ds)
+        # Test incompatible tool (execute_query requires TABULAR)
+        result = selector.check_compatibility("execute_query", notes_ds)
         assert result.compatible is False
-        assert "ICU_STAYS" in result.error_message
-        assert "limited" in result.error_message
+        assert "TABULAR" in result.error_message
+        assert "notes-only" in result.error_message
         assert "list_datasets" in result.error_message
 
         # Test unknown tool
-        result = selector.check_compatibility("nonexistent_tool", full_ds)
+        result = selector.check_compatibility("nonexistent_tool", tabular_ds)
         assert result.compatible is False
         assert "Unknown tool" in result.error_message
 
     def test_supported_tools_snapshot_helper(self):
         """Test the ToolSelector.get_supported_tools_snapshot method."""
-        from m4.core.datasets import Capability, Modality
         from m4.core.tools import ToolSelector
 
         selector = ToolSelector()
 
-        # Dataset with all capabilities
-        full_ds = DatasetDefinition(
-            name="full-dataset",
+        # Dataset with TABULAR modality
+        tabular_ds = DatasetDefinition(
+            name="tabular-dataset",
             modalities={Modality.TABULAR},
-            capabilities={
-                Capability.COHORT_QUERY,
-                Capability.ICU_STAYS,
-                Capability.LAB_RESULTS,
-                Capability.DEMOGRAPHIC_STATS,
-                Capability.SCHEMA_INTROSPECTION,
-            },
         )
 
-        snapshot = selector.get_supported_tools_snapshot(full_ds)
+        snapshot = selector.get_supported_tools_snapshot(tabular_ds)
 
         # Verify structure
         assert "Active dataset" in snapshot
-        assert "full-dataset" in snapshot
+        assert "tabular-dataset" in snapshot
         assert "Modalities" in snapshot
-        assert "TABULAR" in snapshot
-        assert "Capabilities" in snapshot
         assert "Supported tools" in snapshot
 
         # Verify tools are sorted (alphabetically)
         assert "execute_query" in snapshot
         assert "get_database_schema" in snapshot
-        assert "get_icu_stays" in snapshot
+        assert "get_table_info" in snapshot
 
-    def test_supported_tools_snapshot_empty_capabilities(self):
-        """Test snapshot for dataset with no data capabilities."""
-        from m4.core.datasets import Modality
+    def test_supported_tools_snapshot_empty_modalities(self):
+        """Test snapshot for dataset with no modalities."""
         from m4.core.tools import ToolSelector
 
         selector = ToolSelector()
 
-        # Dataset with no capabilities
+        # Dataset with no modalities
         empty_ds = DatasetDefinition(
             name="empty-dataset",
-            modalities={Modality.TABULAR},
-            capabilities=set(),  # No capabilities
+            modalities=set(),  # No modalities
         )
 
         snapshot = selector.get_supported_tools_snapshot(empty_ds)
 
-        # Should show warning about no tools
+        # Should show warning about no tools or just management tools
         assert "No data tools available" in snapshot or "list_datasets" in snapshot

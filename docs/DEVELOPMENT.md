@@ -86,9 +86,8 @@ Infrastructure Layer
 Tools declare their requirements using modalities and capabilities:
 
 ```python
-class GetLabResultsTool:
-    required_modalities = frozenset({Modality.TABULAR})
-    required_capabilities = frozenset({Capability.LAB_RESULTS})
+class ExecuteQueryTool:
+    required_capabilities = frozenset({Capability.HAS_TABULAR_DATA, Capability.COHORT_QUERY})
 ```
 
 The `ToolSelector` automatically filters tools based on what the active dataset supports. If a dataset lacks a required capability, the tool returns a helpful error message instead of failing silently.

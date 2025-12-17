@@ -9,7 +9,6 @@ Tests cover:
 from dataclasses import dataclass
 
 from m4.core.datasets import (
-    Capability,
     DatasetDefinition,
     Modality,
 )
@@ -60,7 +59,6 @@ class TestToolProtocol:
             input_model = ToolInput
             output_model = ToolOutput
             required_modalities = frozenset({Modality.TABULAR})
-            required_capabilities = frozenset({Capability.ICU_STAYS})
             supported_datasets = None
 
             def invoke(self, dataset, params):
@@ -74,8 +72,6 @@ class TestToolProtocol:
                     return False
                 if not self.required_modalities.issubset(dataset.modalities):
                     return False
-                if not self.required_capabilities.issubset(dataset.capabilities):
-                    return False
                 return True
 
         # Should be recognized as a Tool
@@ -83,7 +79,7 @@ class TestToolProtocol:
         assert isinstance(tool, Tool)
 
     def test_tool_is_compatible_with_matching_dataset(self):
-        """Test that tool is compatible with dataset that has required capabilities."""
+        """Test that tool is compatible with dataset that has required modalities."""
 
         class MockTool:
             name = "mock_tool"
@@ -91,7 +87,6 @@ class TestToolProtocol:
             input_model = ToolInput
             output_model = ToolOutput
             required_modalities = frozenset({Modality.TABULAR})
-            required_capabilities = frozenset({Capability.ICU_STAYS})
             supported_datasets = None
 
             def invoke(self, dataset, params):
@@ -104,8 +99,6 @@ class TestToolProtocol:
                 ):
                     return False
                 if not self.required_modalities.issubset(dataset.modalities):
-                    return False
-                if not self.required_capabilities.issubset(dataset.capabilities):
                     return False
                 return True
 
@@ -113,33 +106,20 @@ class TestToolProtocol:
 
         compatible_ds = DatasetDefinition(
             name="test-compatible",
-            modalities={Modality.TABULAR},
-            capabilities={Capability.ICU_STAYS, Capability.LAB_RESULTS},
+            modalities={Modality.TABULAR, Modality.NOTES},
         )
 
         assert tool.is_compatible(compatible_ds) is True
 
     def test_tool_not_compatible_with_missing_modality(self):
-        """Test that tool is not compatible when dataset lacks required modality.
+        """Test that tool is not compatible when dataset lacks required modality."""
 
-        Note: This test simulates a tool requiring a future modality (NOTES)
-        that is not yet in the Modality enum. The tool will be incompatible
-        with any current dataset because no dataset has the NOTES modality yet.
-        """
-
-        # Create a mock modality set to simulate a future modality requirement
-        # In reality, we can't create Modality.NOTES since it doesn't exist yet
-        # So we'll test incompatibility by requiring a capability from a future modality
         class MockTool:
-            name = "future_tool"
-            description = "A tool for future modalities"
+            name = "notes_tool"
+            description = "A notes tool"
             input_model = ToolInput
             output_model = ToolOutput
-            required_modalities = frozenset({Modality.TABULAR})
-            # Require a capability that only TABULAR datasets with specific features would have
-            required_capabilities = frozenset(
-                {Capability.ICU_STAYS, Capability.LAB_RESULTS}
-            )
+            required_modalities = frozenset({Modality.NOTES})
             supported_datasets = None
 
             def invoke(self, dataset, params):
@@ -153,55 +133,14 @@ class TestToolProtocol:
                     return False
                 if not self.required_modalities.issubset(dataset.modalities):
                     return False
-                if not self.required_capabilities.issubset(dataset.capabilities):
-                    return False
                 return True
 
         tool = MockTool()
 
-        # Dataset with only ICU_STAYS, missing LAB_RESULTS
+        # Dataset without NOTES modality
         incompatible_ds = DatasetDefinition(
-            name="test-limited",
+            name="test-no-notes",
             modalities={Modality.TABULAR},
-            capabilities={Capability.ICU_STAYS},  # Missing LAB_RESULTS
-        )
-
-        assert tool.is_compatible(incompatible_ds) is False
-
-    def test_tool_not_compatible_with_missing_capability(self):
-        """Test that tool is not compatible when dataset lacks required capability."""
-
-        class MockTool:
-            name = "icu_tool"
-            description = "An ICU tool"
-            input_model = ToolInput
-            output_model = ToolOutput
-            required_modalities = frozenset({Modality.TABULAR})
-            required_capabilities = frozenset({Capability.ICU_STAYS})
-            supported_datasets = None
-
-            def invoke(self, dataset, params):
-                return ToolOutput(result="mock")
-
-            def is_compatible(self, dataset):
-                if (
-                    self.supported_datasets
-                    and dataset.name not in self.supported_datasets
-                ):
-                    return False
-                if not self.required_modalities.issubset(dataset.modalities):
-                    return False
-                if not self.required_capabilities.issubset(dataset.capabilities):
-                    return False
-                return True
-
-        tool = MockTool()
-
-        # Dataset without ICU_STAYS capability
-        incompatible_ds = DatasetDefinition(
-            name="test-no-icu",
-            modalities={Modality.TABULAR},
-            capabilities={Capability.LAB_RESULTS},  # No ICU_STAYS
         )
 
         assert tool.is_compatible(incompatible_ds) is False
@@ -215,7 +154,6 @@ class TestToolProtocol:
             input_model = ToolInput
             output_model = ToolOutput
             required_modalities = frozenset({Modality.TABULAR})
-            required_capabilities = frozenset({Capability.ICU_STAYS})
             supported_datasets = frozenset({"mimic-iv-demo", "mimic-iv"})
 
             def invoke(self, dataset, params):
@@ -229,8 +167,6 @@ class TestToolProtocol:
                     return False
                 if not self.required_modalities.issubset(dataset.modalities):
                     return False
-                if not self.required_capabilities.issubset(dataset.capabilities):
-                    return False
                 return True
 
         tool = MockTool()
@@ -239,15 +175,13 @@ class TestToolProtocol:
         mimic_ds = DatasetDefinition(
             name="mimic-iv-demo",
             modalities={Modality.TABULAR},
-            capabilities={Capability.ICU_STAYS},
         )
         assert tool.is_compatible(mimic_ds) is True
 
-        # Dataset with capabilities but not in supported list
+        # Dataset with modalities but not in supported list
         eicu_ds = DatasetDefinition(
             name="eicu",
             modalities={Modality.TABULAR},
-            capabilities={Capability.ICU_STAYS},
         )
         assert tool.is_compatible(eicu_ds) is False
 
@@ -264,7 +198,6 @@ class TestToolProtocol:
             input_model = CustomInput
             output_model = ToolOutput
             required_modalities = frozenset({Modality.TABULAR})
-            required_capabilities = frozenset({Capability.COHORT_QUERY})
             supported_datasets = None
 
             def invoke(self, dataset, params):
@@ -278,7 +211,6 @@ class TestToolProtocol:
         dataset = DatasetDefinition(
             name="test-dataset",
             modalities={Modality.TABULAR},
-            capabilities={Capability.COHORT_QUERY},
         )
         params = CustomInput(query="SELECT * FROM patients")
 
