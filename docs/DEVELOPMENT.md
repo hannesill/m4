@@ -19,7 +19,35 @@ uv sync
 uv run m4 init mimic-iv-demo
 ```
 
-## Commands
+## CLI Commands
+
+### Dataset Management
+
+```bash
+# Initialize a dataset (downloads demo data if needed)
+uv run m4 init mimic-iv-demo
+
+# Switch active dataset
+uv run m4 use mimic-iv
+
+# Show active dataset status (detailed view)
+uv run m4 status
+
+# List all datasets (compact table)
+uv run m4 status --all
+```
+
+### MCP Client Configuration
+
+```bash
+# Auto-configure Claude Desktop
+uv run m4 config claude
+
+# Generate config for other clients
+uv run m4 config --quick
+```
+
+### Development Commands
 
 ```bash
 # Run all tests
