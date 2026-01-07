@@ -69,6 +69,54 @@ Copy the generated JSON into your client's MCP settings, restart, and start aski
 </details>
 
 
+## Code Execution
+
+For complex analysis that goes beyond simple queries, M4 provides a Python API that returns native DataFrames instead of formatted strings. This transforms M4 from a query tool into a complete clinical data analysis environment.
+
+```python
+from m4 import set_dataset, execute_query, get_schema
+
+set_dataset("mimic-iv")
+
+# Get schema as a dict
+schema = get_schema()
+print(schema['tables'])  # ['admissions', 'diagnoses_icd', ...]
+
+# Query returns a pandas DataFrame
+df = execute_query("""
+    SELECT diagnosis, COUNT(*) as n
+    FROM diagnoses_icd
+    GROUP BY diagnosis
+    ORDER BY n DESC
+    LIMIT 10
+""")
+
+# Use full pandas power: filter, join, compute statistics
+df[df['n'] > 100].plot(kind='bar')
+```
+
+The API uses the same tools as the MCP server, so behavior is consistent. But instead of parsing text, you get DataFrames you can immediately analyze, visualize, or feed into downstream pipelines.
+
+**When to use code execution:**
+- Multi-step analyses where each query informs the next
+- Large result sets (thousands of rows) that shouldn't flood your context
+- Statistical computations, survival analysis, cohort characterization
+- Building reproducible analysis notebooks
+
+See [Code Execution Guide](docs/CODE_EXECUTION.md) for the full API reference.
+
+
+## Claude Skills
+
+M4 ships with Claude Code skills that teach Claude how to use the Python API effectively. Skills are contextual prompts that activate when relevant—when you ask Claude about clinical data analysis, it automatically knows how to use M4's API.
+
+```bash
+m4 config claude --skills  # Install during setup
+```
+
+See [Skills Guide](docs/SKILLS.md) for details on the available skills and how to create custom ones.
+
+
 ## Example Questions
 
 Once connected, try asking:
@@ -160,8 +208,10 @@ M4 exposes these tools to your AI client. Tools are filtered based on the active
 
 | Guide | Description |
 |-------|-------------|
-| [Tools Reference](docs/TOOLS.md) | Detailed tool documentation |
-| [BigQuery Setup](docs/BIGQUERY.md) | Use Google Cloud for full datasets |
+| [Code Execution](docs/CODE_EXECUTION.md) | Python API for programmatic access |
+| [Skills](docs/SKILLS.md) | Claude Code skills for contextual assistance |
+| [Tools Reference](docs/TOOLS.md) | MCP tool documentation |
+| [BigQuery Setup](docs/BIGQUERY.md) | Google Cloud for full datasets |
 | [Custom Datasets](docs/CUSTOM_DATASETS.md) | Add your own PhysioNet datasets |
 | [Development](docs/DEVELOPMENT.md) | Contributing, testing, architecture |
 | [OAuth2 Authentication](docs/OAUTH2_AUTHENTICATION.md) | Enterprise security setup |
