@@ -51,6 +51,8 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0", # Additional JWT support with crypto
     "httpx>=0.24.0", # Modern HTTP client for OAuth2 token validation
     "duckdb>=1.4.1",
+    "matplotlib>=3.10.8",
+    "lifelines>=0.30.0",
 ]
 
 [dependency-groups]
@@ -78,6 +80,9 @@ Changelog = "https://github.com/rafiattrach/m4/releases"
 [tool.pdm.version]
 source = "file"
 path = "src/m4/__init__.py"
+
+[tool.pdm.build]
+includes = ["src/m4/", "src/m4/skills/**/*.md"]
 
 [tool.ruff]
 line-length = 88
