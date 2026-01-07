@@ -580,6 +580,13 @@ def config_cmd(
             help="Use quick mode with provided arguments (non-interactive)",
         ),
     ] = False,
+    skills: Annotated[
+        bool,
+        typer.Option(
+            "--skills",
+            help="Install Claude Code skills to .claude/skills/ (only with 'claude' client)",
+        ),
+    ] = False,
 ):
     """
     Configure M4 MCP server for various clients.
@@ -651,7 +658,24 @@ def config_cmd(
             error("Python interpreter not found. Please ensure Python is installed.")
             raise typer.Exit(code=1)
 
+        # Install skills if requested
+        if skills:
+            from m4.skills import install_skills
+
+            try:
+                installed = install_skills()
+                for skill_path in installed:
+                    success(f"Installed skill: {skill_path.name} → {skill_path}")
+            except Exception as e:
+                warning(f"Skills installation failed: {e}")
+
     else:
+        # Skills flag only works with claude client
+        if skills:
+            warning("--skills flag is only supported with 'claude' client")
+            console.print(
+                "  [muted]Use:[/muted] [command]m4 config claude --skills[/command]"
+            )
         # Run the dynamic config generator
         script_path = script_dir / "dynamic_mcp_config.py"
 
