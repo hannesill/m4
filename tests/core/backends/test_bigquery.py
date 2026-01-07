@@ -169,7 +169,8 @@ class TestBigQueryQueryExecution:
 
                 assert result.success is True
                 assert result.row_count == 3
-                assert "id" in result.data
+                assert result.dataframe is not None
+                assert "id" in result.dataframe.columns
 
     def test_empty_result(self, test_dataset, mock_bigquery):
         """Test query returning empty results."""
@@ -193,7 +194,8 @@ class TestBigQueryQueryExecution:
                 result = backend.execute_query("SELECT * FROM empty", test_dataset)
 
                 assert result.success is True
-                assert result.data == "No results found"
+                assert result.dataframe is not None
+                assert result.dataframe.empty
                 assert result.row_count == 0
 
 
@@ -243,7 +245,8 @@ class TestBigQueryTableOperations:
                 )
 
                 assert result.success is True
-                assert "column_name" in result.data or "id" in result.data
+                assert result.dataframe is not None
+                assert "column_name" in result.dataframe.columns
 
     def test_get_table_info_invalid_qualified_name(self, test_dataset):
         """Test error handling for invalid qualified name."""

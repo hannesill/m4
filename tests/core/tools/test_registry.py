@@ -395,7 +395,7 @@ class TestInitTools:
             assert hasattr(tool, "name")
             assert hasattr(tool, "description")
             assert hasattr(tool, "input_model")
-            assert hasattr(tool, "output_model")
+            # output_model removed - tools now return native types
             assert hasattr(tool, "required_modalities")
             assert hasattr(tool, "invoke")
             assert hasattr(tool, "is_compatible")

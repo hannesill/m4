@@ -3,13 +3,13 @@
 Tests cover the public API functions exposed at the package level
 for use in code execution environments like Claude Code.
 
-The API now delegates to tool classes in m4.core.tools, so tests
-mock at the backend level (m4.core.backends.get_backend) which is
-where the tools access data.
+The API now returns native Python types (dict, DataFrame) instead
+of formatted strings. Tools raise exceptions for errors.
 """
 
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
 import pytest
 
 from m4 import (
@@ -28,6 +28,7 @@ from m4 import (
     set_dataset,
 )
 from m4.core.datasets import DatasetDefinition, DatasetRegistry, Modality
+from m4.core.exceptions import SecurityError
 from m4.core.tools import init_tools
 
 # Patch at the point of use in tool modules, not where defined
@@ -140,7 +141,7 @@ class TestTabularDataAPI:
     @patch(TABULAR_BACKEND_PATCH)
     @patch("m4.api.DatasetRegistry.get_active")
     def test_get_schema(self, mock_get_active, mock_get_backend, mock_tabular_dataset):
-        """Test get_schema returns table list."""
+        """Test get_schema returns dict with tables."""
         mock_get_active.return_value = mock_tabular_dataset
         mock_backend = MagicMock()
         mock_backend.get_table_list.return_value = ["patients", "admissions"]
@@ -149,8 +150,10 @@ class TestTabularDataAPI:
 
         result = get_schema()
 
-        assert "patients" in result
-        assert "admissions" in result
+        # Result is now a dict with 'tables' key
+        assert isinstance(result, dict)
+        assert "patients" in result["tables"]
+        assert "admissions" in result["tables"]
         mock_backend.get_table_list.assert_called_once()
 
     @patch(TABULAR_BACKEND_PATCH)
@@ -167,70 +170,77 @@ class TestTabularDataAPI:
 
         result = get_schema()
 
-        assert "No tables found" in result
+        assert result["tables"] == []
 
     @patch(TABULAR_BACKEND_PATCH)
     @patch("m4.api.DatasetRegistry.get_active")
     def test_get_table_info(
         self, mock_get_active, mock_get_backend, mock_tabular_dataset
     ):
-        """Test get_table_info returns schema information."""
+        """Test get_table_info returns dict with schema DataFrame."""
         mock_get_active.return_value = mock_tabular_dataset
         mock_backend = MagicMock()
+        schema_df = pd.DataFrame({"name": ["subject_id"], "type": ["INTEGER"]})
+        sample_df = pd.DataFrame({"subject_id": [1], "gender": ["M"]})
+
         mock_result = MagicMock()
         mock_result.success = True
-        mock_result.data = "subject_id | INTEGER"
+        mock_result.dataframe = schema_df
         mock_backend.get_table_info.return_value = mock_result
-        mock_backend.get_sample_data.return_value = MagicMock(
-            success=True, data="1 | M"
-        )
+
+        mock_sample_result = MagicMock()
+        mock_sample_result.success = True
+        mock_sample_result.dataframe = sample_df
+        mock_backend.get_sample_data.return_value = mock_sample_result
         mock_backend.get_backend_info.return_value = "Backend: DuckDB"
         mock_get_backend.return_value = mock_backend
 
         result = get_table_info("patients")
 
-        assert "patients" in result
-        assert "subject_id" in result
-        assert "Sample Data" in result
+        # Result is now a dict
+        assert isinstance(result, dict)
+        assert result["table_name"] == "patients"
+        assert isinstance(result["schema"], pd.DataFrame)
+        assert isinstance(result["sample"], pd.DataFrame)
 
     @patch(TABULAR_BACKEND_PATCH)
     @patch("m4.api.DatasetRegistry.get_active")
     def test_execute_query_success(
         self, mock_get_active, mock_get_backend, mock_tabular_dataset
     ):
-        """Test execute_query with valid SQL."""
+        """Test execute_query returns DataFrame."""
         mock_get_active.return_value = mock_tabular_dataset
         mock_backend = MagicMock()
+        result_df = pd.DataFrame({"count": [100]})
         mock_result = MagicMock()
         mock_result.success = True
-        mock_result.data = "count\n100"
+        mock_result.dataframe = result_df
         mock_backend.execute_query.return_value = mock_result
         mock_get_backend.return_value = mock_backend
 
         result = execute_query("SELECT COUNT(*) FROM patients")
 
-        assert "100" in result
+        assert isinstance(result, pd.DataFrame)
+        assert result["count"].iloc[0] == 100
 
     @patch(TABULAR_BACKEND_PATCH)
     @patch("m4.api.DatasetRegistry.get_active")
     def test_execute_query_unsafe_raises_error(
         self, mock_get_active, mock_get_backend, mock_tabular_dataset
     ):
-        """Test execute_query rejects unsafe SQL."""
+        """Test execute_query raises SecurityError for unsafe SQL."""
         mock_get_active.return_value = mock_tabular_dataset
-        with pytest.raises(QueryError) as exc_info:
+        with pytest.raises(SecurityError):
             execute_query("DROP TABLE patients")
-        # The tool returns "**Security Error:**" but API converts to exception message
-        assert "SELECT" in str(exc_info.value) or "Only" in str(exc_info.value)
 
     @patch(TABULAR_BACKEND_PATCH)
     @patch("m4.api.DatasetRegistry.get_active")
     def test_execute_query_injection_blocked(
         self, mock_get_active, mock_get_backend, mock_tabular_dataset
     ):
-        """Test execute_query blocks SQL injection."""
+        """Test execute_query raises SecurityError for SQL injection."""
         mock_get_active.return_value = mock_tabular_dataset
-        with pytest.raises(QueryError):
+        with pytest.raises(SecurityError):
             execute_query("SELECT * FROM patients WHERE 1=1")
 
 
@@ -270,71 +280,82 @@ class TestClinicalNotesAPI:
     def test_search_notes_success(
         self, mock_get_active, mock_get_backend, mock_notes_dataset
     ):
-        """Test search_notes with valid notes dataset."""
+        """Test search_notes returns dict with results."""
         mock_get_active.return_value = mock_notes_dataset
         mock_backend = MagicMock()
+        result_df = pd.DataFrame({"note_id": ["123"], "snippet": ["found pneumonia"]})
         mock_result = MagicMock()
         mock_result.success = True
-        mock_result.data = "note_id | snippet\n123 | found pneumonia"
+        mock_result.dataframe = result_df
         mock_backend.execute_query.return_value = mock_result
         mock_backend.get_backend_info.return_value = "Backend: DuckDB"
         mock_get_backend.return_value = mock_backend
 
         result = search_notes("pneumonia", limit=3)
 
-        assert "pneumonia" in result
+        # Result is now a dict with query and results
+        assert isinstance(result, dict)
+        assert result["query"] == "pneumonia"
+        assert "results" in result
 
     @patch(NOTES_BACKEND_PATCH)
     @patch("m4.api.DatasetRegistry.get_active")
     def test_search_notes_invalid_type(
         self, mock_get_active, mock_get_backend, mock_notes_dataset
     ):
-        """Test search_notes with invalid note type."""
+        """Test search_notes raises QueryError for invalid note type."""
         mock_get_active.return_value = mock_notes_dataset
         mock_backend = MagicMock()
         mock_backend.get_backend_info.return_value = "Backend: DuckDB"
         mock_get_backend.return_value = mock_backend
 
-        result = search_notes("test", note_type="invalid")
-        assert "Error" in result
+        with pytest.raises(QueryError):
+            search_notes("test", note_type="invalid")
 
     @patch(NOTES_BACKEND_PATCH)
     @patch("m4.api.DatasetRegistry.get_active")
     def test_get_note_not_found(
         self, mock_get_active, mock_get_backend, mock_notes_dataset
     ):
-        """Test get_note with non-existent note."""
+        """Test get_note raises QueryError for non-existent note."""
         mock_get_active.return_value = mock_notes_dataset
         mock_backend = MagicMock()
         mock_result = MagicMock()
         mock_result.success = True
-        mock_result.data = ""  # Empty result
+        mock_result.dataframe = pd.DataFrame()  # Empty DataFrame
         mock_backend.execute_query.return_value = mock_result
         mock_backend.get_backend_info.return_value = "Backend: DuckDB"
         mock_get_backend.return_value = mock_backend
 
-        result = get_note("nonexistent")
+        with pytest.raises(QueryError) as exc_info:
+            get_note("nonexistent")
 
-        assert "not found" in result.lower()
+        assert "not found" in str(exc_info.value).lower()
 
     @patch(NOTES_BACKEND_PATCH)
     @patch("m4.api.DatasetRegistry.get_active")
     def test_list_patient_notes_success(
         self, mock_get_active, mock_get_backend, mock_notes_dataset
     ):
-        """Test list_patient_notes with valid patient."""
+        """Test list_patient_notes returns dict with notes metadata."""
         mock_get_active.return_value = mock_notes_dataset
         mock_backend = MagicMock()
+        result_df = pd.DataFrame(
+            {"note_id": ["123"], "note_type": ["discharge"], "note_length": [5000]}
+        )
         mock_result = MagicMock()
         mock_result.success = True
-        mock_result.data = "note_id | note_type | note_length\n123 | discharge | 5000"
+        mock_result.dataframe = result_df
         mock_backend.execute_query.return_value = mock_result
         mock_backend.get_backend_info.return_value = "Backend: DuckDB"
         mock_get_backend.return_value = mock_backend
 
         result = list_patient_notes(12345)
 
-        assert "12345" in result
+        # Result is now a dict with subject_id and notes
+        assert isinstance(result, dict)
+        assert result["subject_id"] == 12345
+        assert "notes" in result
 
 
 class TestExceptionHierarchy:

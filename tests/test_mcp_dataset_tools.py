@@ -48,6 +48,7 @@ class TestMCPDatasetTools:
                     # Mock ds_def
                     mock_ds = Mock()
                     mock_ds.bigquery_dataset_ids = []
+                    mock_ds.modalities = frozenset()
                     mock_get.return_value = mock_ds
 
                     async with Client(mcp) as client:
@@ -100,5 +101,7 @@ class TestMCPDatasetTools:
                     )
                     result_text = str(result)
 
-                    assert "Error: Dataset 'invalid-ds' not found" in result_text
+                    assert "**Error:**" in result_text
+                    assert "invalid-ds" in result_text
+                    assert "not found" in result_text
                     mock_set.assert_not_called()

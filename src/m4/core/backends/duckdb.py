@@ -129,7 +129,7 @@ class DuckDBBackend:
             dataset: The dataset definition
 
         Returns:
-            QueryResult with query output or error
+            QueryResult with query output as native DataFrame
         """
         try:
             conn = self._connect(dataset)
@@ -137,21 +137,18 @@ class DuckDBBackend:
                 df = conn.execute(sql).df()
 
                 if df.empty:
-                    return QueryResult(data="No results found", row_count=0)
+                    import pandas as pd
+
+                    return QueryResult(
+                        dataframe=pd.DataFrame(),
+                        row_count=0,
+                    )
 
                 row_count = len(df)
                 truncated = row_count > 50
 
-                if truncated:
-                    data = (
-                        df.head(50).to_string(index=False)
-                        + f"\n... ({row_count} total rows, showing first 50)"
-                    )
-                else:
-                    data = df.to_string(index=False)
-
                 return QueryResult(
-                    data=data,
+                    dataframe=df,
                     row_count=row_count,
                     truncated=truncated,
                 )
@@ -163,7 +160,7 @@ class DuckDBBackend:
         except Exception as e:
             # Use sanitized error message to avoid exposing internal details
             return QueryResult(
-                data="",
+                dataframe=None,
                 error=sanitize_error_message(e, self.name),
             )
 
@@ -184,17 +181,11 @@ class DuckDBBackend:
         """
         result = self.execute_query(query, dataset)
 
-        if result.error:
+        if result.error or result.dataframe is None or result.dataframe.empty:
             return []
 
-        # Parse table names from the result
-        tables = []
-        for line in result.data.strip().split("\n"):
-            line = line.strip()
-            if line and line != "table_name":
-                tables.append(line)
-
-        return tables
+        # Extract table names from DataFrame
+        return result.dataframe["table_name"].tolist()
 
     def get_table_info(
         self, table_name: str, dataset: DatasetDefinition
@@ -206,7 +197,7 @@ class DuckDBBackend:
             dataset: The dataset definition
 
         Returns:
-            QueryResult with column information
+            QueryResult with column information as DataFrame
 
         Raises:
             TableNotFoundError: If the table does not exist
@@ -223,10 +214,7 @@ class DuckDBBackend:
                 if df.empty:
                     raise TableNotFoundError(table_name, backend=self.name)
 
-                row_count = len(df)
-                data = df.to_string(index=False)
-
-                return QueryResult(data=data, row_count=row_count)
+                return QueryResult(dataframe=df, row_count=len(df))
             finally:
                 conn.close()
 
@@ -240,7 +228,7 @@ class DuckDBBackend:
             if "does not exist" in error_str or "not found" in error_str:
                 raise TableNotFoundError(table_name, backend=self.name)
             return QueryResult(
-                data="",
+                dataframe=None,
                 error=sanitize_error_message(e, self.name),
             )
 

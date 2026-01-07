@@ -137,9 +137,10 @@ class BigQueryBackend:
             dataset: The dataset definition
 
         Returns:
-            QueryResult with query output or error
+            QueryResult with query output as native DataFrame
         """
         try:
+            import pandas as pd
             from google.cloud import bigquery as bq
 
             client, _ = self._get_client(dataset)
@@ -149,21 +150,13 @@ class BigQueryBackend:
             df = query_job.to_dataframe()
 
             if df.empty:
-                return QueryResult(data="No results found", row_count=0)
+                return QueryResult(dataframe=pd.DataFrame(), row_count=0)
 
             row_count = len(df)
             truncated = row_count > 50
 
-            if truncated:
-                data = (
-                    df.head(50).to_string(index=False)
-                    + f"\n... ({row_count} total rows, showing first 50)"
-                )
-            else:
-                data = df.to_string(index=False)
-
             return QueryResult(
-                data=data,
+                dataframe=df,
                 row_count=row_count,
                 truncated=truncated,
             )
@@ -173,7 +166,7 @@ class BigQueryBackend:
         except Exception as e:
             # Use sanitized error message to avoid exposing internal details
             return QueryResult(
-                data="",
+                dataframe=None,
                 error=sanitize_error_message(e, self.name),
             )
 
@@ -201,14 +194,11 @@ class BigQueryBackend:
             """
             result = self.execute_query(query, dataset)
 
-            if result.error:
+            if result.error or result.dataframe is None:
                 continue
 
-            # Parse table names from the result
-            for line in result.data.strip().split("\n"):
-                line = line.strip()
-                if line and line != "table_name":
-                    tables.append(line)
+            # Extract table names from DataFrame
+            tables.extend(result.dataframe["table_name"].tolist())
 
         return sorted(tables)
 
@@ -222,7 +212,7 @@ class BigQueryBackend:
             dataset: The dataset definition
 
         Returns:
-            QueryResult with column information
+            QueryResult with column information as DataFrame
         """
         # Handle both simple and qualified table names
         is_qualified = "." in table_name
@@ -234,7 +224,7 @@ class BigQueryBackend:
 
             if len(parts) != 3:
                 return QueryResult(
-                    data="",
+                    dataframe=None,
                     error=(
                         f"Invalid qualified table name: {table_name}. "
                         "Expected format: project.dataset.table"
@@ -253,14 +243,14 @@ class BigQueryBackend:
             """
 
             result = self.execute_query(query, dataset)
-            if result.error or "No results found" in result.data:
+            if result.error or result.dataframe is None or result.dataframe.empty:
                 raise TableNotFoundError(table_name, backend=self.name)
             return result
 
         # Simple table name - search in configured datasets
         if not dataset.bigquery_dataset_ids:
             return QueryResult(
-                data="",
+                dataframe=None,
                 error="No BigQuery datasets configured for this dataset",
             )
 
@@ -275,7 +265,11 @@ class BigQueryBackend:
             """
 
             result = self.execute_query(query, dataset)
-            if not result.error and "No results found" not in result.data:
+            if (
+                not result.error
+                and result.dataframe is not None
+                and not result.dataframe.empty
+            ):
                 return result
 
         raise TableNotFoundError(table_name, backend=self.name)
@@ -291,7 +285,7 @@ class BigQueryBackend:
             limit: Maximum number of rows to return
 
         Returns:
-            QueryResult with sample data
+            QueryResult with sample data as DataFrame
         """
         # Sanitize limit
         limit = max(1, min(limit, 100))
@@ -308,7 +302,7 @@ class BigQueryBackend:
         # Simple name - find in configured datasets
         if not dataset.bigquery_dataset_ids:
             return QueryResult(
-                data="",
+                dataframe=None,
                 error="No BigQuery datasets configured for this dataset",
             )
 
@@ -323,7 +317,7 @@ class BigQueryBackend:
                 return result
 
         return QueryResult(
-            data="",
+            dataframe=None,
             error=f"Table '{table_name}' not found in any configured dataset",
         )
 

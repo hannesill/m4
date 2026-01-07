@@ -6,6 +6,8 @@ Tests cover:
 - Backend protocol interface
 """
 
+import pandas as pd
+
 from m4.core.backends.base import (
     Backend,
     BackendError,
@@ -21,9 +23,11 @@ class TestQueryResult:
 
     def test_success_result(self):
         """Test creating a successful query result."""
-        result = QueryResult(data="test data", row_count=10)
+        df = pd.DataFrame({"col": [1, 2, 3]})
+        result = QueryResult(dataframe=df, row_count=10)
 
-        assert result.data == "test data"
+        assert result.dataframe is not None
+        assert len(result.dataframe) == 3
         assert result.row_count == 10
         assert result.truncated is False
         assert result.error is None
@@ -31,21 +35,22 @@ class TestQueryResult:
 
     def test_truncated_result(self):
         """Test creating a truncated query result."""
-        result = QueryResult(data="test data", row_count=100, truncated=True)
+        df = pd.DataFrame({"col": range(100)})
+        result = QueryResult(dataframe=df, row_count=100, truncated=True)
 
         assert result.truncated is True
         assert result.success is True
 
     def test_error_result(self):
         """Test creating an error query result."""
-        result = QueryResult(data="", error="Query failed")
+        result = QueryResult(dataframe=None, error="Query failed")
 
         assert result.error == "Query failed"
         assert result.success is False
 
     def test_empty_result(self):
         """Test creating an empty query result."""
-        result = QueryResult(data="No results found", row_count=0)
+        result = QueryResult(dataframe=pd.DataFrame(), row_count=0)
 
         assert result.row_count == 0
         assert result.success is True
@@ -107,16 +112,16 @@ class TestBackendProtocol:
             name = "mock"
 
             def execute_query(self, sql, dataset):
-                return QueryResult(data="test")
+                return QueryResult(dataframe=pd.DataFrame())
 
             def get_table_list(self, dataset):
                 return []
 
             def get_table_info(self, table_name, dataset):
-                return QueryResult(data="")
+                return QueryResult(dataframe=pd.DataFrame())
 
             def get_sample_data(self, table_name, dataset, limit=3):
-                return QueryResult(data="")
+                return QueryResult(dataframe=pd.DataFrame())
 
             def get_backend_info(self, dataset):
                 return "Mock backend"

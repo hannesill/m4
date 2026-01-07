@@ -3,14 +3,19 @@
 Tests cover:
 - Tool invoke methods directly
 - Error handling for invalid inputs
+
+Note: Tools now return native types (dict, DataFrame) instead of ToolOutput.
+      Tools raise exceptions for errors instead of returning error messages.
 """
 
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
 import pytest
 
 from m4.core.backends.base import QueryResult
 from m4.core.datasets import DatasetDefinition, Modality
+from m4.core.exceptions import QueryError, SecurityError
 from m4.core.tools.tabular import (
     ExecuteQueryInput,
     ExecuteQueryTool,
@@ -43,7 +48,7 @@ class TestGetDatabaseSchemaTool:
     """Test GetDatabaseSchemaTool functionality."""
 
     def test_invoke_returns_table_list(self, mock_dataset, mock_backend):
-        """Test that invoke returns formatted table list."""
+        """Test that invoke returns dict with tables."""
         mock_backend.get_table_list.return_value = [
             "patients",
             "admissions",
@@ -54,10 +59,9 @@ class TestGetDatabaseSchemaTool:
             tool = GetDatabaseSchemaTool()
             result = tool.invoke(mock_dataset, GetDatabaseSchemaInput())
 
-            assert "patients" in result.result
-            assert "admissions" in result.result
-            assert "icustays" in result.result
-            assert "Mock backend info" in result.result
+            # Result is now a dict
+            assert result["tables"] == ["patients", "admissions", "icustays"]
+            assert result["backend_info"] == "Mock backend info"
 
     def test_invoke_handles_empty_table_list(self, mock_dataset, mock_backend):
         """Test handling when no tables are found."""
@@ -67,7 +71,7 @@ class TestGetDatabaseSchemaTool:
             tool = GetDatabaseSchemaTool()
             result = tool.invoke(mock_dataset, GetDatabaseSchemaInput())
 
-            assert "No tables found" in result.result
+            assert result["tables"] == []
 
     def test_invoke_handles_backend_error(self, mock_dataset, mock_backend):
         """Test error handling when backend raises exception."""
@@ -75,10 +79,12 @@ class TestGetDatabaseSchemaTool:
 
         with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
             tool = GetDatabaseSchemaTool()
-            result = tool.invoke(mock_dataset, GetDatabaseSchemaInput())
 
-            assert "Error" in result.result
-            assert "Connection failed" in result.result
+            # Backend exceptions propagate through
+            with pytest.raises(Exception) as exc_info:
+                tool.invoke(mock_dataset, GetDatabaseSchemaInput())
+
+            assert "Connection failed" in str(exc_info.value)
 
     def test_is_compatible_with_tabular_dataset(self, mock_dataset):
         """Test compatibility check with tabular dataset."""
@@ -99,13 +105,22 @@ class TestGetTableInfoTool:
     """Test GetTableInfoTool functionality."""
 
     def test_invoke_returns_schema_and_sample(self, mock_dataset, mock_backend):
-        """Test that invoke returns both schema and sample data."""
+        """Test that invoke returns both schema and sample DataFrames."""
+        schema_df = pd.DataFrame(
+            {
+                "cid": [0, 1],
+                "name": ["subject_id", "gender"],
+                "type": ["INTEGER", "VARCHAR"],
+            }
+        )
+        sample_df = pd.DataFrame({"subject_id": [1, 2], "gender": ["M", "F"]})
+
         mock_backend.get_table_info.return_value = QueryResult(
-            data="cid|name|type\n0|subject_id|INTEGER\n1|gender|VARCHAR",
+            dataframe=schema_df,
             row_count=2,
         )
         mock_backend.get_sample_data.return_value = QueryResult(
-            data="subject_id|gender\n1|M\n2|F",
+            dataframe=sample_df,
             row_count=2,
         )
 
@@ -114,14 +129,17 @@ class TestGetTableInfoTool:
             params = GetTableInfoInput(table_name="patients", show_sample=True)
             result = tool.invoke(mock_dataset, params)
 
-            assert "patients" in result.result
-            assert "subject_id" in result.result
-            assert "Sample Data" in result.result
+            assert result["table_name"] == "patients"
+            assert isinstance(result["schema"], pd.DataFrame)
+            assert isinstance(result["sample"], pd.DataFrame)
 
     def test_invoke_without_sample(self, mock_dataset, mock_backend):
         """Test invoke with show_sample=False."""
+        schema_df = pd.DataFrame(
+            {"cid": [0], "name": ["subject_id"], "type": ["INTEGER"]}
+        )
         mock_backend.get_table_info.return_value = QueryResult(
-            data="cid|name|type\n0|subject_id|INTEGER",
+            dataframe=schema_df,
             row_count=1,
         )
 
@@ -130,23 +148,25 @@ class TestGetTableInfoTool:
             params = GetTableInfoInput(table_name="patients", show_sample=False)
             result = tool.invoke(mock_dataset, params)
 
-            assert "patients" in result.result
-            assert "Sample Data" not in result.result
+            assert result["table_name"] == "patients"
+            assert result["sample"] is None
             mock_backend.get_sample_data.assert_not_called()
 
     def test_invoke_handles_schema_error(self, mock_dataset, mock_backend):
         """Test error handling when schema lookup fails."""
         mock_backend.get_table_info.return_value = QueryResult(
-            data="",
+            dataframe=None,
             error="Table not found",
         )
 
         with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
             tool = GetTableInfoTool()
             params = GetTableInfoInput(table_name="nonexistent")
-            result = tool.invoke(mock_dataset, params)
 
-            assert "Table not found" in result.result
+            with pytest.raises(QueryError) as exc_info:
+                tool.invoke(mock_dataset, params)
+
+            assert "Table not found" in str(exc_info.value)
 
 
 class TestExecuteQueryTool:
@@ -154,8 +174,9 @@ class TestExecuteQueryTool:
 
     def test_invoke_executes_safe_query(self, mock_dataset, mock_backend):
         """Test executing a safe SELECT query."""
+        result_df = pd.DataFrame({"subject_id": [1, 2], "gender": ["M", "F"]})
         mock_backend.execute_query.return_value = QueryResult(
-            data="subject_id|gender\n1|M\n2|F",
+            dataframe=result_df,
             row_count=2,
         )
 
@@ -164,43 +185,47 @@ class TestExecuteQueryTool:
             params = ExecuteQueryInput(sql_query="SELECT * FROM patients LIMIT 10")
             result = tool.invoke(mock_dataset, params)
 
-            assert "subject_id" in result.result
+            assert isinstance(result, pd.DataFrame)
+            assert "subject_id" in result.columns
             mock_backend.execute_query.assert_called_once()
 
     def test_invoke_blocks_unsafe_query(self, mock_dataset, mock_backend):
-        """Test that unsafe queries are blocked before reaching backend."""
+        """Test that unsafe queries raise SecurityError."""
         with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
             tool = ExecuteQueryTool()
             params = ExecuteQueryInput(sql_query="DROP TABLE patients")
-            result = tool.invoke(mock_dataset, params)
 
-            assert "Security Error" in result.result
+            with pytest.raises(SecurityError):
+                tool.invoke(mock_dataset, params)
+
             mock_backend.execute_query.assert_not_called()
 
     def test_invoke_blocks_injection_pattern(self, mock_dataset, mock_backend):
-        """Test that SQL injection patterns are blocked."""
+        """Test that SQL injection patterns raise SecurityError."""
         with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
             tool = ExecuteQueryTool()
             params = ExecuteQueryInput(sql_query="SELECT * FROM patients WHERE 1=1")
-            result = tool.invoke(mock_dataset, params)
 
-            assert "Security Error" in result.result
+            with pytest.raises(SecurityError):
+                tool.invoke(mock_dataset, params)
+
             mock_backend.execute_query.assert_not_called()
 
     def test_invoke_handles_query_error(self, mock_dataset, mock_backend):
         """Test handling of query execution errors."""
         mock_backend.execute_query.return_value = QueryResult(
-            data="",
+            dataframe=None,
             error="Column not found: age",
         )
 
         with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
             tool = ExecuteQueryTool()
             params = ExecuteQueryInput(sql_query="SELECT age FROM patients")
-            result = tool.invoke(mock_dataset, params)
 
-            assert "Error" in result.result
-            assert "get_table_info" in result.result  # Guidance provided
+            with pytest.raises(QueryError) as exc_info:
+                tool.invoke(mock_dataset, params)
+
+            assert "Column not found" in str(exc_info.value)
 
 
 class TestToolInputModels:
@@ -234,7 +259,6 @@ class TestToolProtocolConformance:
             assert hasattr(tool, "name")
             assert hasattr(tool, "description")
             assert hasattr(tool, "input_model")
-            assert hasattr(tool, "output_model")
             assert hasattr(tool, "required_modalities")
             assert hasattr(tool, "supported_datasets")
 

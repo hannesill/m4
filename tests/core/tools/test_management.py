@@ -4,6 +4,8 @@ Tests cover:
 - Tool invoke methods directly
 - Edge cases and error conditions
 - Backend warning messages
+
+Note: Tools now return native types (dict) instead of ToolOutput.
 """
 
 from unittest.mock import patch
@@ -11,6 +13,7 @@ from unittest.mock import patch
 import pytest
 
 from m4.core.datasets import DatasetDefinition
+from m4.core.exceptions import DatasetError
 from m4.core.tools.management import (
     ListDatasetsInput,
     ListDatasetsTool,
@@ -47,7 +50,7 @@ class TestListDatasetsTool:
     """Test ListDatasetsTool functionality."""
 
     def test_invoke_lists_available_datasets(self, mock_availability, dummy_dataset):
-        """Test that invoke returns formatted dataset list."""
+        """Test that invoke returns dict with dataset info."""
         with patch(
             "m4.core.tools.management.detect_available_local_datasets",
             return_value=mock_availability,
@@ -66,12 +69,13 @@ class TestListDatasetsTool:
                     tool = ListDatasetsTool()
                     result = tool.invoke(dummy_dataset, ListDatasetsInput())
 
-                    assert "mimic-iv-demo" in result.result.lower()
-                    assert "mimic-iv" in result.result.lower()
-                    assert "Active dataset: mimic-iv-demo" in result.result
+                    # Result is now a dict
+                    assert "mimic-iv-demo" in result["datasets"]
+                    assert "mimic-iv" in result["datasets"]
+                    assert result["active_dataset"] == "mimic-iv-demo"
 
     def test_invoke_shows_parquet_status(self, mock_availability, dummy_dataset):
-        """Test that parquet availability is shown."""
+        """Test that parquet availability is included."""
         with patch(
             "m4.core.tools.management.detect_available_local_datasets",
             return_value=mock_availability,
@@ -89,10 +93,13 @@ class TestListDatasetsTool:
                     result = tool.invoke(dummy_dataset, ListDatasetsInput())
 
                     # Demo has parquet, full does not
-                    assert "Local Parquet:" in result.result
+                    assert (
+                        result["datasets"]["mimic-iv-demo"]["parquet_present"] is True
+                    )
+                    assert result["datasets"]["mimic-iv"]["parquet_present"] is False
 
     def test_invoke_shows_database_status(self, mock_availability, dummy_dataset):
-        """Test that database availability is shown."""
+        """Test that database availability is included."""
         with patch(
             "m4.core.tools.management.detect_available_local_datasets",
             return_value=mock_availability,
@@ -109,10 +116,11 @@ class TestListDatasetsTool:
                     tool = ListDatasetsTool()
                     result = tool.invoke(dummy_dataset, ListDatasetsInput())
 
-                    assert "Local Database:" in result.result
+                    assert result["datasets"]["mimic-iv-demo"]["db_present"] is True
+                    assert result["datasets"]["mimic-iv"]["db_present"] is False
 
     def test_invoke_shows_bigquery_status(self, mock_availability, dummy_dataset):
-        """Test that BigQuery support status is shown."""
+        """Test that BigQuery support status is included."""
         with patch(
             "m4.core.tools.management.detect_available_local_datasets",
             return_value=mock_availability,
@@ -131,7 +139,8 @@ class TestListDatasetsTool:
                     tool = ListDatasetsTool()
                     result = tool.invoke(dummy_dataset, ListDatasetsInput())
 
-                    assert "BigQuery Support:" in result.result
+                    # Should include bigquery_support field
+                    assert "bigquery_support" in result["datasets"]["mimic-iv-demo"]
 
     def test_invoke_handles_no_datasets(self, dummy_dataset):
         """Test handling when no datasets are available."""
@@ -146,10 +155,10 @@ class TestListDatasetsTool:
                 tool = ListDatasetsTool()
                 result = tool.invoke(dummy_dataset, ListDatasetsInput())
 
-                assert "No datasets detected" in result.result
+                assert result["datasets"] == {}
 
     def test_invoke_shows_backend_type(self, mock_availability, dummy_dataset):
-        """Test that backend type is shown."""
+        """Test that backend type is included."""
         with patch(
             "m4.core.tools.management.detect_available_local_datasets",
             return_value=mock_availability,
@@ -166,7 +175,7 @@ class TestListDatasetsTool:
                         tool = ListDatasetsTool()
                         result = tool.invoke(dummy_dataset, ListDatasetsInput())
 
-                        assert "Backend:" in result.result
+                        assert result["backend"] == "duckdb"
 
     def test_is_compatible_always_true(self):
         """Test that management tools are always compatible."""
@@ -205,10 +214,10 @@ class TestSetDatasetTool:
                     result = tool.invoke(dummy_dataset, params)
 
                     mock_set.assert_called_once_with("mimic-iv-demo")
-                    assert "switched to 'mimic-iv-demo'" in result.result
+                    assert result["dataset_name"] == "mimic-iv-demo"
 
     def test_invoke_rejects_unknown_dataset(self, mock_availability, dummy_dataset):
-        """Test rejection of unknown dataset."""
+        """Test rejection of unknown dataset raises DatasetError."""
         with patch(
             "m4.core.tools.management.detect_available_local_datasets",
             return_value=mock_availability,
@@ -216,11 +225,12 @@ class TestSetDatasetTool:
             with patch("m4.core.tools.management.set_active_dataset") as mock_set:
                 tool = SetDatasetTool()
                 params = SetDatasetInput(dataset_name="unknown-dataset")
-                result = tool.invoke(dummy_dataset, params)
+
+                with pytest.raises(DatasetError) as exc_info:
+                    tool.invoke(dummy_dataset, params)
 
                 mock_set.assert_not_called()
-                assert "Error" in result.result
-                assert "not found" in result.result
+                assert "not found" in str(exc_info.value)
 
     def test_invoke_shows_supported_datasets_on_error(
         self, mock_availability, dummy_dataset
@@ -233,10 +243,12 @@ class TestSetDatasetTool:
             with patch("m4.core.tools.management.set_active_dataset"):
                 tool = SetDatasetTool()
                 params = SetDatasetInput(dataset_name="nonexistent")
-                result = tool.invoke(dummy_dataset, params)
 
-                assert "mimic-iv-demo" in result.result
-                assert "mimic-iv" in result.result
+                with pytest.raises(DatasetError) as exc_info:
+                    tool.invoke(dummy_dataset, params)
+
+                assert "mimic-iv-demo" in str(exc_info.value)
+                assert "mimic-iv" in str(exc_info.value)
 
     def test_invoke_warns_missing_db_for_duckdb(self, mock_availability, dummy_dataset):
         """Test warning when database file is missing for DuckDB backend."""
@@ -262,8 +274,7 @@ class TestSetDatasetTool:
                         params = SetDatasetInput(dataset_name="mimic-iv-demo")
                         result = tool.invoke(dummy_dataset, params)
 
-                        assert "Local database not found" in result.result
-                        assert "initialization" in result.result.lower()
+                        assert "Local database not found" in result["warnings"][0]
 
     def test_invoke_warns_no_bigquery_config(self, mock_availability, dummy_dataset):
         """Test warning when dataset lacks BigQuery config but using BigQuery backend."""
@@ -282,7 +293,7 @@ class TestSetDatasetTool:
                         params = SetDatasetInput(dataset_name="mimic-iv-demo")
                         result = tool.invoke(dummy_dataset, params)
 
-                        assert "not configured for BigQuery" in result.result
+                        assert "not configured for BigQuery" in result["warnings"][0]
 
     def test_invoke_case_insensitive(self, mock_availability, dummy_dataset):
         """Test that dataset name lookup is case-insensitive."""

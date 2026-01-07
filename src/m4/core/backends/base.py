@@ -8,8 +8,28 @@ the actual database implementations (DuckDB, BigQuery, etc.).
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
+import pandas as pd
+
 from m4.config import logger
 from m4.core.datasets import DatasetDefinition
+
+# Re-export exceptions from the central exceptions module for backwards compatibility
+from m4.core.exceptions import (
+    BackendError,
+    ConnectionError,
+    QueryExecutionError,
+    TableNotFoundError,
+)
+
+__all__ = [
+    "Backend",
+    "BackendError",
+    "ConnectionError",
+    "QueryExecutionError",
+    "QueryResult",
+    "TableNotFoundError",
+    "sanitize_error_message",
+]
 
 
 def sanitize_error_message(error: Exception, backend_name: str = "unknown") -> str:
@@ -69,13 +89,13 @@ class QueryResult:
     """Result of a query execution.
 
     Attributes:
-        data: The query result as a formatted string
+        dataframe: The query result as a pandas DataFrame
         row_count: Total number of rows returned
         truncated: Whether the result was truncated
         error: Error message if the query failed, None otherwise
     """
 
-    data: str
+    dataframe: pd.DataFrame | None = None
     row_count: int = 0
     truncated: bool = False
     error: str | None = None
@@ -180,45 +200,3 @@ class Backend(Protocol):
     def name(self) -> str:
         """Get the backend name (e.g., 'duckdb', 'bigquery')."""
         ...
-
-
-class BackendError(Exception):
-    """Base exception for backend errors.
-
-    Attributes:
-        message: Human-readable error description
-        backend: Name of the backend that raised the error
-        recoverable: Whether the error might be resolved by retrying
-    """
-
-    def __init__(
-        self, message: str, backend: str = "unknown", recoverable: bool = False
-    ):
-        self.message = message
-        self.backend = backend
-        self.recoverable = recoverable
-        super().__init__(message)
-
-
-class ConnectionError(BackendError):
-    """Raised when the backend cannot connect to the database."""
-
-    def __init__(self, message: str, backend: str = "unknown"):
-        super().__init__(message, backend, recoverable=True)
-
-
-class TableNotFoundError(BackendError):
-    """Raised when a requested table does not exist."""
-
-    def __init__(self, table_name: str, backend: str = "unknown"):
-        message = f"Table '{table_name}' not found"
-        super().__init__(message, backend, recoverable=False)
-        self.table_name = table_name
-
-
-class QueryExecutionError(BackendError):
-    """Raised when a query fails to execute."""
-
-    def __init__(self, message: str, sql: str, backend: str = "unknown"):
-        super().__init__(message, backend, recoverable=False)
-        self.sql = sql

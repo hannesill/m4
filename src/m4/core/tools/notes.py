@@ -7,14 +7,22 @@ Tools:
 - search_notes: Full-text search with result snippets
 - get_note: Retrieve a single note by ID
 - list_patient_notes: List available notes for a patient (metadata only)
+
+Architecture Note:
+    Tools return native Python types. The MCP server serializes these
+    for the protocol; the Python API receives them directly.
 """
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
+
+import pandas as pd
 
 from m4.core.backends import get_backend
 from m4.core.datasets import DatasetDefinition, Modality
-from m4.core.tools.base import ToolInput, ToolOutput
+from m4.core.exceptions import QueryError
+from m4.core.tools.base import ToolInput
 
 
 class NoteType(str, Enum):
@@ -59,6 +67,9 @@ class SearchNotesTool:
 
     Returns snippets around matches to prevent context overflow.
     Use get_note() to retrieve full text of specific notes.
+
+    Returns:
+        dict with search results by table, each containing a DataFrame
     """
 
     name = "search_notes"
@@ -67,28 +78,37 @@ class SearchNotesTool:
         "Use get_note() to retrieve full content of a specific note."
     )
     input_model = SearchNotesInput
-    output_model = ToolOutput
 
     required_modalities: frozenset[Modality] = frozenset({Modality.NOTES})
     supported_datasets: frozenset[str] | None = None
 
     def invoke(
         self, dataset: DatasetDefinition, params: SearchNotesInput
-    ) -> ToolOutput:
-        """Search notes and return snippets around matches."""
+    ) -> dict[str, Any]:
+        """Search notes and return snippets around matches.
+
+        Returns:
+            dict with:
+                - backend_info: str - Backend description
+                - query: str - Search term used
+                - snippet_length: int - Snippet length
+                - results: dict[str, pd.DataFrame] - Results by table type
+
+        Raises:
+            QueryError: If note_type is invalid
+        """
         backend = get_backend()
-        backend_info = backend.get_backend_info(dataset)
 
         # Determine which tables to search
         tables_to_search = self._get_tables_for_type(params.note_type)
 
         if not tables_to_search:
-            return ToolOutput(
-                result=f"{backend_info}\n**Error:** Invalid note_type '{params.note_type}'. "
-                f"Use 'discharge', 'radiology', or 'all'."
+            raise QueryError(
+                f"Invalid note_type '{params.note_type}'. "
+                "Use 'discharge', 'radiology', or 'all'."
             )
 
-        results = []
+        results: dict[str, pd.DataFrame] = {}
         search_term = params.query.replace("'", "''")  # Escape single quotes
 
         for table in tables_to_search:
@@ -113,27 +133,16 @@ class SearchNotesTool:
                 LIMIT {params.limit}
             """
 
-            try:
-                result = backend.execute_query(sql, dataset)
-                if result.success and result.data:
-                    results.append(f"\n**{table.upper()}:**\n{result.data}")
-            except Exception as e:
-                results.append(f"\n**{table.upper()}:** Error - {e}")
+            result = backend.execute_query(sql, dataset)
+            if result.success and result.dataframe is not None:
+                results[table] = result.dataframe
 
-        if not results:
-            return ToolOutput(
-                result=f"{backend_info}\n**No matches found** for '{params.query}' "
-                f"in {', '.join(tables_to_search)}."
-            )
-
-        output = (
-            f"{backend_info}\n"
-            f"**Search:** '{params.query}' (showing snippets of ~{params.snippet_length} chars)\n"
-            f"{''.join(results)}\n\n"
-            f"**Tip:** Use `get_note(note_id)` to retrieve full text of a specific note."
-        )
-
-        return ToolOutput(result=output)
+        return {
+            "backend_info": backend.get_backend_info(dataset),
+            "query": params.query,
+            "snippet_length": params.snippet_length,
+            "results": results,
+        }
 
     def _get_tables_for_type(self, note_type: str) -> list[str]:
         """Get table names for a note type."""
@@ -159,6 +168,9 @@ class GetNoteTool:
     """Tool for retrieving a single clinical note by ID.
 
     Returns the full note text. Use with caution as notes can be long.
+
+    Returns:
+        dict with note metadata and full text
     """
 
     name = "get_note"
@@ -168,15 +180,28 @@ class GetNoteTool:
         "to find relevant notes."
     )
     input_model = GetNoteInput
-    output_model = ToolOutput
 
     required_modalities: frozenset[Modality] = frozenset({Modality.NOTES})
     supported_datasets: frozenset[str] | None = None
 
-    def invoke(self, dataset: DatasetDefinition, params: GetNoteInput) -> ToolOutput:
-        """Retrieve a single note by ID."""
+    def invoke(
+        self, dataset: DatasetDefinition, params: GetNoteInput
+    ) -> dict[str, Any]:
+        """Retrieve a single note by ID.
+
+        Returns:
+            dict with:
+                - backend_info: str - Backend description
+                - note_id: str - Note identifier
+                - subject_id: int - Patient ID
+                - text: str - Full note text (possibly truncated)
+                - note_length: int - Original note length
+                - truncated: bool - Whether text was truncated
+
+        Raises:
+            QueryError: If note not found
+        """
         backend = get_backend()
-        backend_info = backend.get_backend_info(dataset)
 
         # Note IDs contain the note type (e.g., "10000032_DS-1" for discharge)
         note_id = params.note_id.replace("'", "''")
@@ -194,24 +219,35 @@ class GetNoteTool:
                 LIMIT 1
             """
 
-            try:
-                result = backend.execute_query(sql, dataset)
-                if result.success and result.data and "note_id" in result.data.lower():
-                    # Found the note
-                    # Optionally truncate if max_length specified
-                    if params.max_length and len(result.data) > params.max_length:
-                        truncated_result = result.data[: params.max_length]
-                        return ToolOutput(
-                            result=f"{backend_info}\n**Note (truncated to {params.max_length} chars):**\n{truncated_result}\n\n[...truncated...]"
-                        )
-                    return ToolOutput(result=f"{backend_info}\n{result.data}")
-            except Exception:
-                continue
+            result = backend.execute_query(sql, dataset)
+            if (
+                result.success
+                and result.dataframe is not None
+                and not result.dataframe.empty
+            ):
+                row = result.dataframe.iloc[0]
+                text = str(row["text"])
+                note_length = int(row["note_length"])
+                truncated = False
 
-        return ToolOutput(
-            result=f"{backend_info}\n**Error:** Note '{params.note_id}' not found. "
-            f"Use `list_patient_notes(subject_id)` or `search_notes(query)` "
-            f"to find valid note IDs."
+                # Optionally truncate if max_length specified
+                if params.max_length and len(text) > params.max_length:
+                    text = text[: params.max_length]
+                    truncated = True
+
+                return {
+                    "backend_info": backend.get_backend_info(dataset),
+                    "note_id": str(row["note_id"]),
+                    "subject_id": int(row["subject_id"]),
+                    "text": text,
+                    "note_length": note_length,
+                    "truncated": truncated,
+                }
+
+        raise QueryError(
+            f"Note '{params.note_id}' not found. "
+            "Use list_patient_notes(subject_id) or search_notes(query) "
+            "to find valid note IDs."
         )
 
     def is_compatible(self, dataset: DatasetDefinition) -> bool:
@@ -228,6 +264,9 @@ class ListPatientNotesTool:
 
     Returns metadata only (note IDs, types, lengths) - not full text.
     Use this to discover what notes exist before retrieving them.
+
+    Returns:
+        dict with notes metadata by table type
     """
 
     name = "list_patient_notes"
@@ -237,27 +276,35 @@ class ListPatientNotesTool:
         "Use get_note(note_id) to retrieve specific notes."
     )
     input_model = ListPatientNotesInput
-    output_model = ToolOutput
 
     required_modalities: frozenset[Modality] = frozenset({Modality.NOTES})
     supported_datasets: frozenset[str] | None = None
 
     def invoke(
         self, dataset: DatasetDefinition, params: ListPatientNotesInput
-    ) -> ToolOutput:
-        """List notes for a patient without returning full text."""
+    ) -> dict[str, Any]:
+        """List notes for a patient without returning full text.
+
+        Returns:
+            dict with:
+                - backend_info: str - Backend description
+                - subject_id: int - Patient ID
+                - notes: dict[str, pd.DataFrame] - Notes metadata by table type
+
+        Raises:
+            QueryError: If note_type is invalid
+        """
         backend = get_backend()
-        backend_info = backend.get_backend_info(dataset)
 
         tables_to_query = self._get_tables_for_type(params.note_type)
 
         if not tables_to_query:
-            return ToolOutput(
-                result=f"{backend_info}\n**Error:** Invalid note_type '{params.note_type}'. "
-                f"Use 'discharge', 'radiology', or 'all'."
+            raise QueryError(
+                f"Invalid note_type '{params.note_type}'. "
+                "Use 'discharge', 'radiology', or 'all'."
             )
 
-        results = []
+        notes: dict[str, pd.DataFrame] = {}
 
         for table in tables_to_query:
             # Query for metadata only - explicitly exclude full text
@@ -273,27 +320,15 @@ class ListPatientNotesTool:
                 LIMIT {params.limit}
             """
 
-            try:
-                result = backend.execute_query(sql, dataset)
-                if result.success and result.data:
-                    results.append(f"\n**{table.upper()} NOTES:**\n{result.data}")
-            except Exception as e:
-                results.append(f"\n**{table.upper()}:** Error - {e}")
+            result = backend.execute_query(sql, dataset)
+            if result.success and result.dataframe is not None:
+                notes[table] = result.dataframe
 
-        if not results or all("no rows" in r.lower() for r in results):
-            return ToolOutput(
-                result=f"{backend_info}\n**No notes found** for subject_id {params.subject_id}.\n\n"
-                f"**Tip:** Verify the subject_id exists in the related MIMIC-IV dataset."
-            )
-
-        output = (
-            f"{backend_info}\n"
-            f"**Notes for subject_id {params.subject_id}:**\n"
-            f"{''.join(results)}\n\n"
-            f"**Tip:** Use `get_note(note_id)` to retrieve full text of a specific note."
-        )
-
-        return ToolOutput(result=output)
+        return {
+            "backend_info": backend.get_backend_info(dataset),
+            "subject_id": params.subject_id,
+            "notes": notes,
+        }
 
     def _get_tables_for_type(self, note_type: str) -> list[str]:
         """Get table names for a note type."""

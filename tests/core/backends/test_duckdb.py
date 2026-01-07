@@ -130,8 +130,9 @@ class TestDuckDBQueryExecution:
         assert result.success is True
         assert result.error is None
         assert result.row_count == 3
-        assert "subject_id" in result.data
-        assert "gender" in result.data
+        assert result.dataframe is not None
+        assert "subject_id" in result.dataframe.columns
+        assert "gender" in result.dataframe.columns
 
     def test_query_with_limit(self, test_dataset, temp_db):
         """Test query with LIMIT clause."""
@@ -151,7 +152,8 @@ class TestDuckDBQueryExecution:
         )
 
         assert result.success is True
-        assert result.data == "No results found"
+        assert result.dataframe is not None
+        assert result.dataframe.empty
         assert result.row_count == 0
 
     def test_table_not_found(self, test_dataset, temp_db):
@@ -192,8 +194,9 @@ class TestDuckDBTableOperations:
         result = backend.get_table_info("patients", test_dataset)
 
         assert result.success is True
-        # PRAGMA table_info returns column metadata
-        assert "subject_id" in result.data or "name" in result.data
+        assert result.dataframe is not None
+        # PRAGMA table_info returns column metadata with 'name' column
+        assert "name" in result.dataframe.columns
 
     def test_get_table_info_not_found(self, test_dataset, temp_db):
         """Test getting info for non-existent table."""
@@ -267,7 +270,9 @@ class TestDuckDBResultTruncation:
             assert result.success is True
             assert result.row_count == 100
             assert result.truncated is True
-            assert "showing first 50" in result.data.lower()
+            # DataFrame contains all rows; truncation is handled at serialization
+            assert result.dataframe is not None
+            assert len(result.dataframe) == 100
 
 
 class TestDuckDBEdgeCases:
@@ -304,10 +309,9 @@ class TestDuckDBEdgeCases:
 
             assert result.success is True
             assert result.row_count == 3
-            # NULL values should be represented in output
-            assert (
-                "None" in result.data or "NaN" in result.data or "<NA>" in result.data
-            )
+            assert result.dataframe is not None
+            # Check that DataFrame has NULL values
+            assert result.dataframe.isnull().any().any()
 
     def test_execute_query_with_unicode(self, test_dataset):
         """Test handling of unicode characters."""
@@ -345,7 +349,8 @@ class TestDuckDBEdgeCases:
             )
 
             assert result.success is True
-            assert "10000" in result.data
+            assert result.dataframe is not None
+            assert result.dataframe["len"].iloc[0] == 10000
 
     def test_execute_query_with_special_column_names(self, test_dataset):
         """Test handling of column names with special characters."""
@@ -389,12 +394,7 @@ class TestDuckDBEdgeCases:
         assert result.row_count <= 100
 
     def test_get_table_list_empty_database(self, test_dataset):
-        """Test get_table_list on database with no tables.
-
-        Note: The implementation returns ['No results found'] when there
-        are no tables, rather than an empty list. This is intentional
-        for user-friendly messaging.
-        """
+        """Test get_table_list on database with no tables."""
         import duckdb
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -405,8 +405,8 @@ class TestDuckDBEdgeCases:
             backend = DuckDBBackend(db_path_override=db_path)
             tables = backend.get_table_list(test_dataset)
 
-            # Implementation returns message rather than empty list
-            assert tables == ["No results found"] or tables == []
+            # Empty database returns empty list
+            assert tables == []
 
     def test_concurrent_read_operations(self, test_dataset, temp_db):
         """Test that concurrent read operations work correctly."""
@@ -437,7 +437,8 @@ class TestDuckDBEdgeCases:
         )
 
         assert result.success is True
-        assert "cnt" in result.data or "count" in result.data.lower()
+        assert result.dataframe is not None
+        assert "cnt" in result.dataframe.columns
 
     def test_query_with_window_functions(self, test_dataset, temp_db):
         """Test queries with window functions."""
@@ -455,7 +456,8 @@ class TestDuckDBEdgeCases:
         )
 
         assert result.success is True
-        assert "row_num" in result.data
+        assert result.dataframe is not None
+        assert "row_num" in result.dataframe.columns
 
     def test_query_syntax_error(self, test_dataset, temp_db):
         """Test handling of SQL syntax errors."""

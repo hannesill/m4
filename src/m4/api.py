@@ -4,22 +4,35 @@ This module provides a clean Python API for code execution environments
 like Claude Code. Functions delegate to the same tool classes used by
 the MCP server, ensuring consistent behavior across interfaces.
 
+Unlike the MCP server, this API returns native Python types:
+- execute_query() returns pd.DataFrame
+- get_schema() returns dict with tables list
+- get_table_info() returns dict with schema DataFrame
+- etc.
+
 Example:
     from m4 import execute_query, set_dataset, get_schema
+    import pandas as pd
 
     set_dataset("mimic-iv")
-    print(get_schema())
+    schema = get_schema()  # Returns dict with 'tables' list
+    print(schema['tables'])
 
-    result = execute_query("SELECT COUNT(*) FROM patients")
-    print(result)
+    df = execute_query("SELECT COUNT(*) FROM patients")
+    print(df)  # DataFrame
 
 All functions work with the currently active dataset. Use set_dataset()
 to switch between datasets.
 """
 
+from typing import Any
+
+import pandas as pd
+
 from m4.config import get_active_dataset as _get_active_dataset
 from m4.config import set_active_dataset as _set_active_dataset
 from m4.core.datasets import DatasetRegistry
+from m4.core.exceptions import DatasetError, M4Error, ModalityError, QueryError
 from m4.core.tools import ToolRegistry, ToolSelector, init_tools
 from m4.core.tools.notes import (
     GetNoteInput,
@@ -38,29 +51,22 @@ init_tools()
 # Tool selector for compatibility checking
 _tool_selector = ToolSelector()
 
-
-class M4Error(Exception):
-    """Base exception for M4 API errors."""
-
-    pass
-
-
-class DatasetError(M4Error):
-    """Raised when there's an issue with dataset configuration."""
-
-    pass
-
-
-class QueryError(M4Error):
-    """Raised when a query fails to execute."""
-
-    pass
-
-
-class ModalityError(M4Error):
-    """Raised when a tool is incompatible with the active dataset."""
-
-    pass
+# Re-export exceptions for convenience
+__all__ = [
+    "DatasetError",
+    "M4Error",
+    "ModalityError",
+    "QueryError",
+    "execute_query",
+    "get_active_dataset",
+    "get_note",
+    "get_schema",
+    "get_table_info",
+    "list_datasets",
+    "list_patient_notes",
+    "search_notes",
+    "set_dataset",
+]
 
 
 # =============================================================================
@@ -129,26 +135,26 @@ def get_active_dataset() -> str:
 # =============================================================================
 
 
-def get_schema() -> str:
-    """List all tables available in the active dataset.
+def get_schema() -> dict[str, Any]:
+    """Get database schema information for the active dataset.
 
     Returns:
-        Formatted list of table names.
+        dict with:
+            - backend_info: str - Backend description
+            - tables: list[str] - List of table names
 
     Example:
         >>> set_dataset("mimic-iv")
-        >>> print(get_schema())
-        admissions
-        diagnoses_icd
-        patients
-        ...
+        >>> schema = get_schema()
+        >>> print(schema['tables'])
+        ['admissions', 'diagnoses_icd', 'patients', ...]
     """
     dataset = DatasetRegistry.get_active()
     tool = ToolRegistry.get("get_database_schema")
-    return tool.invoke(dataset, GetDatabaseSchemaInput()).result
+    return tool.invoke(dataset, GetDatabaseSchemaInput())
 
 
-def get_table_info(table_name: str, show_sample: bool = True) -> str:
+def get_table_info(table_name: str, show_sample: bool = True) -> dict[str, Any]:
     """Get column information and sample data for a table.
 
     Args:
@@ -156,49 +162,50 @@ def get_table_info(table_name: str, show_sample: bool = True) -> str:
         show_sample: If True, include sample rows (default: True).
 
     Returns:
-        Formatted table schema and optional sample data.
+        dict with:
+            - backend_info: str - Backend description
+            - table_name: str - Table name
+            - schema: pd.DataFrame - Column information
+            - sample: pd.DataFrame | None - Sample rows if requested
+
+    Raises:
+        QueryError: If table doesn't exist.
 
     Example:
-        >>> print(get_table_info("patients"))
-        Column Information:
-        subject_id | INTEGER | ...
-        gender | VARCHAR | ...
-
-        Sample Data (first 3 rows):
-        ...
+        >>> info = get_table_info("patients")
+        >>> print(info['schema'])  # DataFrame with column info
+        >>> print(info['sample'])  # DataFrame with sample rows
     """
     dataset = DatasetRegistry.get_active()
     tool = ToolRegistry.get("get_table_info")
     return tool.invoke(
         dataset, GetTableInfoInput(table_name=table_name, show_sample=show_sample)
-    ).result
+    )
 
 
-def execute_query(sql: str) -> str:
+def execute_query(sql: str) -> pd.DataFrame:
     """Execute a SQL SELECT query against the active dataset.
 
     Args:
         sql: SQL SELECT query string.
 
     Returns:
-        Query results as formatted string.
+        pd.DataFrame with query results.
 
     Raises:
-        QueryError: If query is unsafe or execution fails.
+        SecurityError: If query violates security constraints.
+        QueryError: If query execution fails.
 
     Example:
-        >>> result = execute_query("SELECT gender, COUNT(*) FROM patients GROUP BY gender")
-        >>> print(result)
+        >>> df = execute_query("SELECT gender, COUNT(*) FROM patients GROUP BY gender")
+        >>> print(df)
+           gender  count_star()
+        0       M            55
+        1       F            45
     """
     dataset = DatasetRegistry.get_active()
     tool = ToolRegistry.get("execute_query")
-    result = tool.invoke(dataset, ExecuteQueryInput(sql_query=sql)).result
-
-    # Convert security errors to exceptions for Python API
-    if result.startswith("**Security Error:**"):
-        raise QueryError(result.replace("**Security Error:** ", ""))
-
-    return result
+    return tool.invoke(dataset, ExecuteQueryInput(sql_query=sql))
 
 
 # =============================================================================
@@ -223,7 +230,7 @@ def search_notes(
     note_type: str = "all",
     limit: int = 5,
     snippet_length: int = 300,
-) -> str:
+) -> dict[str, Any]:
     """Search clinical notes by keyword, returning snippets.
 
     Args:
@@ -233,15 +240,21 @@ def search_notes(
         snippet_length: Characters of context around matches (default: 300).
 
     Returns:
-        Matching snippets with note IDs.
+        dict with:
+            - backend_info: str - Backend description
+            - query: str - Search term used
+            - snippet_length: int - Snippet length
+            - results: dict[str, pd.DataFrame] - Results by note type
 
     Raises:
         ModalityError: If active dataset doesn't support notes.
+        QueryError: If note_type is invalid.
 
     Example:
         >>> set_dataset("mimic-iv-note")
         >>> results = search_notes("pneumonia", limit=3)
-        >>> print(results)
+        >>> for note_type, df in results['results'].items():
+        ...     print(f"{note_type}: {len(df)} matches")
     """
     _check_notes_compatibility("search_notes")
 
@@ -255,10 +268,10 @@ def search_notes(
             limit=limit,
             snippet_length=snippet_length,
         ),
-    ).result
+    )
 
 
-def get_note(note_id: str, max_length: int | None = None) -> str:
+def get_note(note_id: str, max_length: int | None = None) -> dict[str, Any]:
     """Retrieve full text of a clinical note by ID.
 
     Args:
@@ -266,14 +279,21 @@ def get_note(note_id: str, max_length: int | None = None) -> str:
         max_length: Optional maximum characters to return.
 
     Returns:
-        Full note text (or truncated if max_length specified).
+        dict with:
+            - backend_info: str - Backend description
+            - note_id: str - Note identifier
+            - subject_id: int - Patient ID
+            - text: str - Full note text (possibly truncated)
+            - note_length: int - Original note length
+            - truncated: bool - Whether text was truncated
 
     Raises:
         ModalityError: If active dataset doesn't support notes.
+        QueryError: If note not found.
 
     Example:
         >>> note = get_note("10000032_DS-1")
-        >>> print(note[:500])
+        >>> print(note['text'][:500])
     """
     _check_notes_compatibility("get_note")
 
@@ -282,14 +302,14 @@ def get_note(note_id: str, max_length: int | None = None) -> str:
     return tool.invoke(
         dataset,
         GetNoteInput(note_id=note_id, max_length=max_length),
-    ).result
+    )
 
 
 def list_patient_notes(
     subject_id: int,
     note_type: str = "all",
     limit: int = 20,
-) -> str:
+) -> dict[str, Any]:
     """List available clinical notes for a patient (metadata only).
 
     Args:
@@ -298,14 +318,19 @@ def list_patient_notes(
         limit: Maximum notes to return (default: 20).
 
     Returns:
-        List of note metadata (IDs, types, lengths) without full text.
+        dict with:
+            - backend_info: str - Backend description
+            - subject_id: int - Patient ID
+            - notes: dict[str, pd.DataFrame] - Note metadata by type
 
     Raises:
         ModalityError: If active dataset doesn't support notes.
+        QueryError: If note_type is invalid.
 
     Example:
         >>> notes = list_patient_notes(10000032)
-        >>> print(notes)
+        >>> for note_type, df in notes['notes'].items():
+        ...     print(f"{note_type}: {len(df)} notes")
     """
     _check_notes_compatibility("list_patient_notes")
 
@@ -318,4 +343,4 @@ def list_patient_notes(
             note_type=note_type,
             limit=limit,
         ),
-    ).result
+    )

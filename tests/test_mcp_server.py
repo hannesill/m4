@@ -177,7 +177,8 @@ class TestMCPTools:
                         "execute_query", {"sql_query": query}
                     )
                     result_text = str(result)
-                    assert "Security Error" in result_text
+                    # Security errors are formatted as "**Error:** <message>"
+                    assert "**Error:**" in result_text
 
     @pytest.mark.asyncio
     async def test_invalid_sql(self, test_db):
@@ -333,10 +334,15 @@ class TestBigQueryIntegration:
                     mock_backend = Mock()
                     mock_backend.name = "bigquery"
 
+                    import pandas as pd
+
                     from m4.core.backends.base import QueryResult
 
+                    # Create a mock DataFrame for the result
+                    mock_df = pd.DataFrame({"result": ["Mock BigQuery result"]})
                     mock_backend.execute_query.return_value = QueryResult(
-                        data="Mock BigQuery result", row_count=5
+                        dataframe=mock_df,
+                        row_count=5,
                     )
                     mock_backend.get_backend_info.return_value = (
                         "Backend: BigQuery (test-project)"

@@ -3,6 +3,11 @@
 This module defines the core Tool protocol that all M4 tools must implement.
 Tools declare their required modalities and are automatically filtered based
 on the active dataset's modalities.
+
+Architecture Note:
+    Tools return native Python types (DataFrame, list, dict, str, None).
+    The MCP server serializes these for the protocol; the Python API
+    receives them directly.
 """
 
 from collections.abc import Set as AbstractSet
@@ -29,12 +34,15 @@ class ToolInput:
     pass
 
 
+# ToolOutput is kept for backwards compatibility but deprecated
+# New tools should return native types directly
 @dataclass
 class ToolOutput:
-    """Base class for tool output.
+    """DEPRECATED: Base class for tool output.
 
-    All tools return a ToolOutput with at least a result string.
-    Additional metadata can be included for debugging or logging.
+    This class is kept for backwards compatibility during migration.
+    New tools should return native Python types directly (DataFrame,
+    list, dict, str, None) instead of wrapping them in ToolOutput.
 
     Attributes:
         result: The tool's output as a formatted string
@@ -57,22 +65,32 @@ class Tool(Protocol):
         name: Unique identifier for the tool
         description: Human-readable description (shown to LLMs)
         input_model: Class for parsing input parameters
-        output_model: Class for formatting output
         required_modalities: Modalities required (e.g., TABULAR, NOTES)
         supported_datasets: Optional set of dataset names (None = all compatible)
+
+    Return Types:
+        Tools return native Python types that are appropriate for their function:
+        - pd.DataFrame: Query results
+        - list[str]: Table names, dataset names
+        - dict: Schema info, structured metadata
+        - str: Already-formatted text, messages
+        - None: Side-effect operations (success implied)
+        - int/float: Counts, aggregates
 
     Example:
         class ExecuteQueryTool:
             name = "execute_query"
             description = "Execute SQL queries"
             input_model = ExecuteQueryInput
-            output_model = ToolOutput
             required_modalities = frozenset({Modality.TABULAR})
             supported_datasets = None
 
-            def invoke(self, dataset, params):
-                # Implementation
-                ...
+            def invoke(self, dataset, params) -> pd.DataFrame:
+                # Returns DataFrame directly
+                result = backend.execute_query(sql, dataset)
+                if not result.success:
+                    raise QueryError(result.error)
+                return result.dataframe
 
             def is_compatible(self, dataset):
                 # Compatibility check
@@ -85,13 +103,12 @@ class Tool(Protocol):
 
     # Input/output specifications
     input_model: type[ToolInput]
-    output_model: type[ToolOutput]
 
     # Compatibility constraints
     required_modalities: AbstractSet[Modality]
     supported_datasets: AbstractSet[str] | None  # None = all compatible datasets
 
-    def invoke(self, dataset: DatasetDefinition, params: ToolInput) -> ToolOutput:
+    def invoke(self, dataset: DatasetDefinition, params: ToolInput) -> Any:
         """Execute the tool with given parameters on the specified dataset.
 
         Args:
@@ -99,11 +116,16 @@ class Tool(Protocol):
             params: Tool-specific input parameters
 
         Returns:
-            ToolOutput with formatted results
+            Native Python type appropriate for the tool:
+            - DataFrame for query results
+            - list for collections
+            - dict for structured data
+            - str for text
+            - None for side-effect operations
 
         Raises:
-            Any exceptions should be caught and returned as error messages
-            in the ToolOutput.result field.
+            M4Error: For expected errors (query failures, security violations)
+            Other exceptions: For unexpected errors
         """
         ...
 
