@@ -71,7 +71,7 @@ Copy the generated JSON into your client's MCP settings, restart, and start aski
 
 ## Code Execution
 
-For complex analysis that goes beyond simple queries, M4 provides a Python API that returns native DataFrames instead of formatted strings. This transforms M4 from a query tool into a complete clinical data analysis environment.
+For complex analysis that goes beyond simple queries, M4 provides a Python API that returns Python data types instead of formatted strings (e.g. pd.DataFrame for SQL queries). This transforms M4 from a query tool into a complete clinical data analysis environment.
 
 ```python
 from m4 import set_dataset, execute_query, get_schema
@@ -106,12 +106,17 @@ The API uses the same tools as the MCP server, so behavior is consistent. But in
 See [Code Execution Guide](docs/CODE_EXECUTION.md) for the full API reference.
 
 
-## Claude Skills
+## Agent Skills
 
-M4 ships with Claude Code skills that teach Claude how to use the Python API effectively. Skills are contextual prompts that activate when relevant—when you ask Claude about clinical data analysis, it automatically knows how to use M4's API.
+M4 ships with skills that teach AI coding assistants how to use the Python API effectively. Skills are contextual prompts that activate when relevant—when you ask about clinical data analysis, the assistant automatically knows how to use M4's API.
+
+**Supported tools:** Claude Code, Cursor, Cline, Codex CLI, Gemini CLI, GitHub Copilot
 
 ```bash
-m4 config claude --skills  # Install during setup
+m4 skills                        # Interactive tool selection
+m4 skills --tools claude,cursor  # Install for specific tools
+m4 skills --list                 # Show installed skills
+m4 config claude --skills        # Install during Claude Desktop setup
 ```
 
 See [Skills Guide](docs/SKILLS.md) for details on the available skills and how to create custom ones.
