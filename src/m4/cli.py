@@ -511,6 +511,143 @@ def status_cmd(
     )
 
 
+def _prompt_select_tools() -> list[str]:
+    """Interactive prompt to select AI coding tools for skills installation.
+
+    Returns:
+        List of selected tool names.
+    """
+    from m4.skills import AI_TOOLS
+
+    tools_list = list(AI_TOOLS.values())
+
+    console.print()
+    console.print("[bold]Which AI coding tools do you use?[/bold]")
+    console.print("[muted](Enter comma-separated numbers, e.g., 1,2,3)[/muted]")
+    console.print()
+
+    for i, tool in enumerate(tools_list, 1):
+        console.print(f"  [bold]{i}.[/bold] {tool.display_name}")
+
+    console.print()
+
+    # Default to Claude Code (index 1)
+    selection = typer.prompt(
+        "Select tools",
+        default="1",
+        show_default=True,
+    )
+
+    # Parse selection
+    selected_tools = []
+    try:
+        indices = [int(x.strip()) for x in selection.split(",")]
+        for idx in indices:
+            if 1 <= idx <= len(tools_list):
+                selected_tools.append(tools_list[idx - 1].name)
+            else:
+                warning(f"Invalid selection: {idx} (ignored)")
+    except ValueError:
+        warning(f"Could not parse selection: {selection}")
+        warning("Defaulting to Claude Code only")
+        selected_tools = ["claude"]
+
+    if not selected_tools:
+        selected_tools = ["claude"]
+
+    return selected_tools
+
+
+@app.command("skills")
+def skills_cmd(
+    tools: Annotated[
+        str | None,
+        typer.Option(
+            "--tools",
+            "-t",
+            help="Comma-separated list of tools (claude,cursor,cline,codex,gemini,copilot). Interactive if omitted.",
+        ),
+    ] = None,
+    list_installed: Annotated[
+        bool,
+        typer.Option(
+            "--list",
+            "-l",
+            help="List installed skills across all tools.",
+        ),
+    ] = False,
+):
+    """
+    Install M4 skills for AI coding tools.
+
+    Skills teach AI assistants how to use M4's Python API effectively.
+    Supports Claude Code, Cursor, Cline, Codex CLI, Gemini CLI, and GitHub Copilot.
+
+    Examples:
+
+    • m4 skills                     # Interactive tool selection
+
+    • m4 skills --tools claude,cursor  # Install for specific tools
+
+    • m4 skills --list              # Show installed skills
+    """
+    from m4.skills import AI_TOOLS, get_all_installed_skills, install_skills
+
+    if list_installed:
+        # Show installed skills
+        installed = get_all_installed_skills()
+
+        if not installed:
+            console.print("[muted]No M4 skills installed.[/muted]")
+            console.print()
+            console.print("[muted]Install with:[/muted] [command]m4 skills[/command]")
+            return
+
+        console.print("[bold]Installed M4 skills:[/bold]")
+        console.print()
+
+        for tool_name, skill_names in installed.items():
+            tool = AI_TOOLS[tool_name]
+            console.print(f"  [success]●[/success] {tool.display_name}")
+            for skill in skill_names:
+                console.print(f"    [muted]└─[/muted] {skill}")
+
+        return
+
+    # Determine which tools to install for
+    if tools:
+        # Parse comma-separated list
+        selected_tools = [t.strip().lower() for t in tools.split(",")]
+        # Validate
+        invalid = [t for t in selected_tools if t not in AI_TOOLS]
+        if invalid:
+            error(f"Unknown tools: {', '.join(invalid)}")
+            console.print(f"[muted]Supported: {', '.join(AI_TOOLS.keys())}[/muted]")
+            raise typer.Exit(code=1)
+    else:
+        # Interactive selection
+        selected_tools = _prompt_select_tools()
+
+    # Install skills
+    console.print()
+    info(f"Installing skills for: {', '.join(selected_tools)}")
+
+    try:
+        results = install_skills(tools=selected_tools)
+
+        for tool_name, paths in results.items():
+            tool = AI_TOOLS[tool_name]
+            for skill_path in paths:
+                success(f"Installed {skill_path.name} → {tool.display_name}")
+
+        console.print()
+        success("Skills installation complete!")
+
+    except Exception as e:
+        error(f"Skills installation failed: {e}")
+        raise typer.Exit(code=1)
+
+
 @app.command("config")
 def config_cmd(
     client: Annotated[
@@ -584,7 +721,7 @@ def config_cmd(
         bool,
         typer.Option(
             "--skills",
-            help="Install Claude Code skills to .claude/skills/ (only with 'claude' client)",
+            help="Install M4 skills after config. Interactive tool selection, or Claude-only with 'claude' client.",
         ),
     ] = False,
 ):
@@ -658,24 +795,20 @@ def config_cmd(
             error("Python interpreter not found. Please ensure Python is installed.")
             raise typer.Exit(code=1)
 
-        # Install skills if requested
+        # Install skills if requested (Claude-only for backwards compatibility)
         if skills:
-            from m4.skills import install_skills
+            from m4.skills import AI_TOOLS, install_skills
 
             try:
-                installed = install_skills()
-                for skill_path in installed:
-                    success(f"Installed skill: {skill_path.name} → {skill_path}")
+                results = install_skills(tools=["claude"])
+                for tool_name, paths in results.items():
+                    tool = AI_TOOLS[tool_name]
+                    for skill_path in paths:
+                        success(f"Installed skill: {skill_path.name} → {skill_path}")
             except Exception as e:
                 warning(f"Skills installation failed: {e}")
 
     else:
-        # Skills flag only works with claude client
-        if skills:
-            warning("--skills flag is only supported with 'claude' client")
-            console.print(
-                "  [muted]Use:[/muted] [command]m4 config claude --skills[/command]"
-            )
         # Run the dynamic config generator
         script_path = script_dir / "dynamic_mcp_config.py"
 
@@ -724,6 +857,25 @@ def config_cmd(
         except FileNotFoundError:
             error("Python interpreter not found. Please ensure Python is installed.")
             raise typer.Exit(code=1)
+
+        # Install skills if requested (interactive tool selection)
+        if skills:
+            from m4.skills import AI_TOOLS, install_skills
+
+            selected_tools = _prompt_select_tools()
+            console.print()
+            info(f"Installing skills for: {', '.join(selected_tools)}")
+
+            try:
+                results = install_skills(tools=selected_tools)
+                for tool_name, paths in results.items():
+                    tool = AI_TOOLS[tool_name]
+                    for skill_path in paths:
+                        success(
+                            f"Installed skill: {skill_path.name} → {tool.display_name}"
+                        )
+            except Exception as e:
+                warning(f"Skills installation failed: {e}")
 
 
 if __name__ == "__main__":
