@@ -3,9 +3,9 @@ requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
 [project]
-name = "m4-mcp"
+name = "m4-infra"
 dynamic = ["version"]
-description = "MIMIC-IV + MCP + Models: Local MIMIC-IV querying with LLMs via Model Context Protocol"
+description = "Infrastructure for AI-assisted clinical research with EHR datasets"
 requires-python = ">=3.10"
 authors = [
     { name = "Rafi Al Attrach", email = "rafiaa@mit.edu" },
@@ -67,7 +67,8 @@ dev = [
 
 [project.scripts]
 m4 = "m4.cli:app"
-m4-mcp = "m4.mcp_server:main"  # Primary entry point for simplicity (enables `uvx m4-mcp`)
+m4-infra = "m4.mcp_server:main"  # Primary entry point (enables `uvx m4-infra`)
+m4-mcp = "m4.mcp_server:main"  # Kept for backwards compatibility
 m4-mcp-server = "m4.mcp_server:main"  # Kept for backwards compatibility
 
 [project.urls]

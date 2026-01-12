@@ -7,7 +7,7 @@ This guide helps AI agents like Cline install and configure the M4 MCP server.
 Use `uvx` for zero-installation setup:
 
 ```bash
-uvx m4-mcp
+uvx m4-infra
 ```
 
 ## Backend Configuration
@@ -22,7 +22,7 @@ M4 supports two backends. Choose one:
   "mcpServers": {
     "m4": {
       "command": "uvx",
-      "args": ["m4-mcp"],
+      "args": ["m4-infra"],
       "env": {
         "M4_BACKEND": "duckdb"
       }
@@ -48,7 +48,7 @@ M4 supports two backends. Choose one:
   "mcpServers": {
     "m4": {
       "command": "uvx",
-      "args": ["m4-mcp"],
+      "args": ["m4-infra"],
       "env": {
         "M4_BACKEND": "bigquery",
         "M4_PROJECT_ID": "user-project-id"
