@@ -809,6 +809,12 @@ def config_cmd(
                 warning(f"Skills installation failed: {e}")
 
     else:
+        # Skills flag only works with claude client
+        if skills:
+            warning("--skills flag is only supported with 'claude' client")
+            console.print(
+                "  [muted]Use:[/muted] [command]m4 config claude --skills[/command]"
+            )
         # Run the dynamic config generator
         script_path = script_dir / "dynamic_mcp_config.py"
 
