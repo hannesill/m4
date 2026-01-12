@@ -40,7 +40,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 
 ```bash
 mkdir my-research && cd my-research
-uv init && uv add m4-mcp
+uv init && uv add m4-infra
 uv run m4 init mimic-iv-demo
 ```
 
@@ -63,7 +63,7 @@ Copy the generated JSON into your client's MCP settings, restart, and start aski
 <details>
 <summary>Different setup options</summary>
 
-* If you don't want to use uv, you can just run pip install m4-mcp
+* If you don't want to use uv, you can just run pip install m4-infra
 
 * If you want to use Docker, look at <a href="docs/DEVELOPMENT.md">docs/DEVELOPMENT.md</a>
 </details>
