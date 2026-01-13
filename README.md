@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Query clinical datasets through Claude, Cursor, or any MCP client—with clinical intelligence built in</strong>
+  <strong>Give your AI agents clinical intelligence & access to MIMIC-IV, eICU, and more</strong>
 </p>
 
 <p align="center">
@@ -14,9 +14,9 @@
   <a href="https://github.com/hannesill/m4/actions/workflows/tests.yaml"><img alt="Tests" src="https://github.com/hannesill/m4/actions/workflows/tests.yaml/badge.svg"></a>
 </p>
 
-M4 is infrastructure for AI-assisted clinical research. It provides LLM agents with tools, a Python API, and clinical knowledge to query MIMIC-IV, eICU, and custom datasets—going beyond SQL generation to understand clinical semantics.
+M4 is infrastructure for AI-assisted clinical research. Initialize MIMIC-IV, eICU, or custom datasets as fast local databases (with optional BigQuery for cloud access). Your AI agents get specialized tools (MCP, Python API) and clinical knowledge (agent skills) to query and analyze them.
 
-[Usage example](https://claude.ai/share/93f26832-f298-4d1d-96e3-5608d7f0d7ad)
+[Usage example – M4 MCP](https://claude.ai/share/93f26832-f298-4d1d-96e3-5608d7f0d7ad)
 
 > M4 builds on the [M3](https://github.com/rafiattrach/m3) project. Please [cite](#citation) their work when using M4!
 
@@ -27,13 +27,17 @@ Clinical research shouldn't require mastering database schemas. Whether you're s
 
 M4 makes this possible by giving AI agents deep clinical knowledge:
 
-**Understand clinical semantics.** LLMs can write SQL, but have a harder time with (dataset-specific) clinical semantics. M4's comprehensive agent skills encode validated clinical concepts—so "find sepsis patients" produces clinically correct queries on any supported dataset.
+**Understand clinical semantics.** 
+LLMs can write SQL, but have a harder time with (dataset-specific) clinical semantics. M4's comprehensive agent skills encode validated clinical concepts—so "find sepsis patients" produces clinically correct queries on any supported dataset.
 
-**Work across modalities.** Clinical research with M4 spans structured data, clinical notes, and (soon) waveforms and imaging. M4 dynamically selects tools based on what each dataset contains—query labs in MIMIC-IV, search discharge summaries in MIMIC-IV-Note, all through the same interface.
+**Work across modalities.** 
+Clinical research with M4 spans structured data, clinical notes, and (soon) waveforms and imaging. M4 dynamically selects tools based on what each dataset contains—query labs in MIMIC-IV, search discharge summaries in MIMIC-IV-Note, all through the same interface.
 
-**Go beyond chat.** Data exploration and simple research questions work great via MCP. But real research requires iteration: explore a cohort, compute statistics, visualize distributions, refine criteria. M4's Python API returns DataFrames that integrate with pandas, scipy, and matplotlib—turning your AI assistant into a research partner that can execute complete analysis workflows.
+**Go beyond chat.** 
+Data exploration and simple research questions work great via MCP. But real research requires iteration: explore a cohort, compute statistics, visualize distributions, refine criteria. M4's Python API returns DataFrames that integrate with pandas, scipy, and matplotlib—turning your AI assistant into a research partner that can execute complete analysis workflows.
 
-**Cross-dataset research.** You should be able to ask for multi-dataset queries or cross-dataset comparisons. M4 makes this easier than ever as the AI can switch between your initialized datasets on its own, allowing it to do cross-dataset tasks for you.
+**Cross-dataset research.** 
+You should be able to ask for multi-dataset queries or cross-dataset comparisons. M4 makes this easier than ever as the AI can switch between your initialized datasets on its own, allowing it to do cross-dataset tasks for you.
 
 
 ## Quickstart (3 steps)
