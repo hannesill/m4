@@ -78,14 +78,14 @@ m4_data/
 
 ## Using Existing CSV Files
 
-If you already have CSV files, point to them with `--src`:
+If you already have CSV files (either `.csv` or `.csv.gz`), point to them with `--src`:
 
 ```bash
 m4 init my-dataset --src /path/to/csvs
 ```
 
 M4 will:
-1. Convert the CSVs to Parquet
+1. Convert CSV/CSV.gz files to Parquet format
 2. Create DuckDB views
 3. Set the dataset as active
 

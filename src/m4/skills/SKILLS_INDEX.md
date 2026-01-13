@@ -65,10 +65,10 @@ This directory contains Agent Skills extracted from the MIT-LCP repositories (mi
 
 ## Skill Statistics
 
-- **Total Skills**: 16
+- **Total Skills**: 17
 - **MIMIC-IV Specific**: 13
 - **eICU Specific**: 0
-- **Multi-Database**: 3
+- **Multi-Database**: 4
 
 ## Category Distribution
 
@@ -79,6 +79,7 @@ This directory contains Agent Skills extracted from the MIT-LCP repositories (mi
 - Lab/Measurements: 2
 - Cohort Definitions: 1
 - Data Quality: 3
+- M4 Framework: 1
 
 ---
 

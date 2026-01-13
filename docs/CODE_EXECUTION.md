@@ -27,12 +27,12 @@ schema = get_schema()
 print(schema['tables'])  # List of table names
 
 # 3. Inspect a table
-info = get_table_info("patients")
+info = get_table_info("hosp_patients")
 print(info['schema'])  # DataFrame: column names, types, descriptions
 print(info['sample'])  # DataFrame: sample rows
 
 # 4. Run queries
-df = execute_query("SELECT * FROM patients LIMIT 1000")
+df = execute_query("SELECT * FROM hosp_patients LIMIT 1000")
 print(df.head())
 print(df.describe())
 ```
@@ -73,14 +73,14 @@ print(schema['backend_info'])  # 'DuckDB (local): /path/to/db'
 print(schema['tables'])        # ['admissions', 'diagnoses_icd', ...]
 
 # Table details
-info = get_table_info("admissions")
+info = get_table_info("hosp_admissions")
 print(info['schema'])  # DataFrame with column_name, data_type, description
 print(info['sample'])  # DataFrame with sample rows
 
 # Execute queries - returns pandas DataFrame
 df = execute_query("""
     SELECT gender, COUNT(*) as count
-    FROM patients
+    FROM hosp_patients
     GROUP BY gender
 """)
 print(df)
@@ -88,6 +88,8 @@ print(df)
 # 0      M    185
 # 1      F    165
 ```
+
+> **Table naming convention:** Tables are prefixed by module (`hosp_`, `icu_`) to indicate their source schema in MIMIC-IV. Use `get_schema()` to see all available tables.
 
 ### Clinical Notes
 
@@ -134,11 +136,11 @@ M4Error (base)
 from m4 import execute_query, set_dataset, DatasetError, QueryError, ModalityError
 
 try:
-    df = execute_query("SELECT * FROM patients")
+    df = execute_query("SELECT * FROM hosp_patients")
 except DatasetError:
     # No dataset selected
     set_dataset("mimic-iv")
-    df = execute_query("SELECT * FROM patients")
+    df = execute_query("SELECT * FROM hosp_patients")
 except QueryError as e:
     # Bad SQL or missing table
     print(f"Query failed: {e}")
@@ -167,9 +169,9 @@ icu_stays = execute_query("""
         a.hospital_expire_flag,
         p.gender,
         p.anchor_age as age
-    FROM icustays i
-    JOIN admissions a ON i.hadm_id = a.hadm_id
-    JOIN patients p ON i.subject_id = p.subject_id
+    FROM icu_icustays i
+    JOIN hosp_admissions a ON i.hadm_id = a.hadm_id
+    JOIN hosp_patients p ON i.subject_id = p.subject_id
 """)
 
 # Step 2: Analyze with pandas
@@ -224,10 +226,10 @@ Claude Code can execute Python directly, making the API immediately useful. When
 3. Execute it in the sandbox
 4. Interpret results and iterate
 
-Install the M4 skill to give Claude contextual knowledge about the API:
+Install the M4 skills to give Claude contextual knowledge about the API:
 
 ```bash
-m4 config claude --skills
+m4 skills --tools claude
 ```
 
 See [Skills Guide](SKILLS.md) for more on how skills enhance Claude's capabilities.

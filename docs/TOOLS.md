@@ -99,7 +99,7 @@ search_notes("diabetes", note_type="discharge", limit=10)
 Retrieve the full text of a single clinical note by ID.
 
 **Parameters:**
-- `note_id` (string, required): The note identifier (e.g., `"10000032-DS-1"`)
+- `note_id` (string, required): The note identifier (e.g., `"10000032_DS-1"`)
 - `max_length` (int, optional): Truncate output to this length
 
 **Returns:** Full note text (or truncated if `max_length` specified)
@@ -108,8 +108,8 @@ Retrieve the full text of a single clinical note by ID.
 
 **Example:**
 ```
-get_note("10000032-DS-1")
-get_note("10000032-DS-1", max_length=5000)  # Truncate to 5000 chars
+get_note("10000032_DS-1")
+get_note("10000032_DS-1", max_length=5000)  # Truncate to 5000 chars
 ```
 
 ### `list_patient_notes`
@@ -162,7 +162,7 @@ execute_query("SELECT subject_id FROM hosp_patients WHERE anchor_age > 80 LIMIT 
 set_dataset("mimic-iv-note")
 list_patient_notes(10000032)
 search_notes("heart failure", note_type="discharge")
-get_note("10000032-DS-1")
+get_note("10000032_DS-1")
 ```
 
 ---
@@ -193,3 +193,23 @@ Clinical notes in MIMIC-IV-Note come in two types:
 | `radiology` | Radiology reports - findings from imaging studies | 500-2,000 chars |
 
 Use the `note_type` parameter to filter searches and listings.
+
+---
+
+## Python API Alternative
+
+For complex analysis beyond simple queries, M4 provides a Python API that returns native types (DataFrames) instead of formatted strings. The API uses the same underlying tools but is designed for:
+
+- Multi-step analyses where each query informs the next
+- Statistical computations, survival analysis, cohort characterization
+- Large result sets that shouldn't flood your context window
+- Building reproducible analysis notebooks
+
+```python
+from m4 import set_dataset, execute_query
+
+set_dataset("mimic-iv")
+df = execute_query("SELECT * FROM hosp_patients")  # Returns pandas DataFrame
+```
+
+See [Code Execution Guide](CODE_EXECUTION.md) for the full API reference.

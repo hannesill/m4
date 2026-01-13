@@ -1,11 +1,11 @@
-# M4: A Toolbox for LLMs on Clinical Data
+# M4: Infrastructure for AI-Assisted Clinical Research
 
 <p align="center">
   <img src="webapp/public/m4_logo_transparent.png" alt="M4 Logo" width="180"/>
 </p>
 
 <p align="center">
-  <strong>Query clinical datasets with natural language through Claude, Cursor, or any MCP client</strong>
+  <strong>Query clinical datasets through Claude, Cursor, or any MCP client—with clinical intelligence built in</strong>
 </p>
 
 <p align="center">
@@ -14,12 +14,26 @@
   <a href="https://github.com/hannesill/m4/actions/workflows/tests.yaml"><img alt="Tests" src="https://github.com/hannesill/m4/actions/workflows/tests.yaml/badge.svg"></a>
 </p>
 
-M4 is an infrastructure layer for multimodal EHR data that provides LLM agents with a unified toolbox for querying clinical datasets.
-It supports tabular data and clinical notes, dynamically selecting tools by modality to query MIMIC-IV, eICU, and custom datasets through a single natural-language interface.
+M4 is infrastructure for AI-assisted clinical research. It provides LLM agents with tools, a Python API, and clinical knowledge to query MIMIC-IV, eICU, and custom datasets—going beyond SQL generation to understand clinical semantics.
 
 [Usage example](https://claude.ai/share/93f26832-f298-4d1d-96e3-5608d7f0d7ad)
 
-> M4 is a fork of the [M3](https://github.com/rafiattrach/m3) project and would not be possible without it 🫶 Please [cite](#citation) their work when using M4!
+> M4 builds on the [M3](https://github.com/rafiattrach/m3) project. Please [cite](#citation) their work when using M4!
+
+
+## Why M4?
+
+Clinical research shouldn't require mastering database schemas. Whether you're screening a hypothesis, characterizing a cohort, or running a multi-step survival analysis—you should be able to describe what you want and get clinically meaningful results.
+
+M4 makes this possible by giving AI agents deep clinical knowledge:
+
+**Understand clinical semantics.** LLMs can write SQL, but have a harder time with (dataset-specific) clinical semantics. M4's comprehensive agent skills encode validated clinical concepts—so "find sepsis patients" produces clinically correct queries on any supported dataset.
+
+**Work across modalities.** Clinical research with M4 spans structured data, clinical notes, and (soon) waveforms and imaging. M4 dynamically selects tools based on what each dataset contains—query labs in MIMIC-IV, search discharge summaries in MIMIC-IV-Note, all through the same interface.
+
+**Go beyond chat.** Data exploration and simple research questions work great via MCP. But real research requires iteration: explore a cohort, compute statistics, visualize distributions, refine criteria. M4's Python API returns DataFrames that integrate with pandas, scipy, and matplotlib—turning your AI assistant into a research partner that can execute complete analysis workflows.
+
+**Cross-dataset research.** You should be able to ask for multi-dataset queries or cross-dataset comparisons. M4 makes this easier than ever as the AI can switch between your initialized datasets on its own, allowing it to do cross-dataset tasks for you.
 
 
 ## Quickstart (3 steps)
@@ -41,7 +55,8 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 ```bash
 mkdir my-research && cd my-research
 uv init && uv add m4-infra
-uv run m4 init mimic-iv-demo
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+m4 init mimic-iv-demo
 ```
 
 This downloads the free MIMIC-IV demo dataset (~16MB) and sets up a local DuckDB database.
@@ -50,12 +65,12 @@ This downloads the free MIMIC-IV demo dataset (~16MB) and sets up a local DuckDB
 
 **Claude Desktop:**
 ```bash
-uv run m4 config claude --quick
+m4 config claude --quick
 ```
 
 **Other clients (Cursor, LibreChat, etc.):**
 ```bash
-uv run m4 config --quick
+m4 config --quick
 ```
 
 Copy the generated JSON into your client's MCP settings, restart, and start asking questions!
@@ -84,9 +99,9 @@ print(schema['tables'])  # ['admissions', 'diagnoses_icd', ...]
 
 # Query returns a pandas DataFrame
 df = execute_query("""
-    SELECT diagnosis, COUNT(*) as n
-    FROM diagnoses_icd
-    GROUP BY diagnosis
+    SELECT icd_code, COUNT(*) as n
+    FROM hosp_diagnoses_icd
+    GROUP BY icd_code
     ORDER BY n DESC
     LIMIT 10
 """)
@@ -108,7 +123,16 @@ See [Code Execution Guide](docs/CODE_EXECUTION.md) for the full API reference.
 
 ## Agent Skills
 
-M4 ships with skills that teach AI coding assistants how to use the Python API effectively. Skills are contextual prompts that activate when relevant—when you ask about clinical data analysis, the assistant automatically knows how to use M4's API.
+M4 ships with 17 skills that teach AI coding assistants clinical research patterns. Skills activate automatically when relevant—ask about "SOFA scores" or "sepsis cohorts" and Claude uses validated SQL from MIT-LCP repositories.
+
+**Included skills:**
+- **API**: `m4-api` for Python API usage
+- **Severity Scores**: SOFA, APACHE III, SAPS-II, OASIS, LODS, SIRS
+- **Sepsis**: Sepsis-3 cohort identification, suspected infection
+- **Organ Failure**: KDIGO AKI staging
+- **Measurements**: GCS calculation, baseline creatinine, vasopressor equivalents
+- **Cohort Selection**: First ICU stay identification
+- **Data Quality**: Table relationships, MIMIC-eICU mapping, research pitfalls
 
 **Supported tools:** Claude Code, Cursor, Cline, Codex CLI, Gemini CLI, GitHub Copilot
 
@@ -116,10 +140,9 @@ M4 ships with skills that teach AI coding assistants how to use the Python API e
 m4 skills                        # Interactive tool selection
 m4 skills --tools claude,cursor  # Install for specific tools
 m4 skills --list                 # Show installed skills
-m4 config claude --skills        # Install during Claude Desktop setup
 ```
 
-See [Skills Guide](docs/SKILLS.md) for details on the available skills and how to create custom ones.
+See [Skills Guide](docs/SKILLS.md) for the full list and how to create custom skills.
 
 
 ## Example Questions
@@ -164,16 +187,16 @@ m4 status --all     # List all available datasets
 2. **Download the data:**
    ```bash
    # For MIMIC-IV
-   wget -r -N -c -np --user YOUR_USERNAME --ask-password \
+   wget -r -N -c -np --cut-dirs=2 -nH --user YOUR_USERNAME --ask-password \
      https://physionet.org/files/mimiciv/3.1/ \
      -P m4_data/raw_files/mimic-iv
 
    # For eICU
-   wget -r -N -c -np --user YOUR_USERNAME --ask-password \
+   wget -r -N -c -np --cut-dirs=2 -nH --user YOUR_USERNAME --ask-password \
      https://physionet.org/files/eicu-crd/2.0/ \
      -P m4_data/raw_files/eicu
    ```
-   Put the downloaded data in a `m4_data` directory that ideally is located within the project directory. Name the directory for the dataset `mimic-iv`/`eicu`.
+   The `--cut-dirs=2 -nH` flags ensure CSV files land directly in `m4_data/raw_files/mimic-iv/` rather than a nested `physionet.org/files/...` structure.
 
 3. **Initialize:**
    ```bash
@@ -213,34 +236,32 @@ M4 exposes these tools to your AI client. Tools are filtered based on the active
 
 | Guide | Description |
 |-------|-------------|
+| [Architecture](docs/ARCHITECTURE.md) | Design philosophy, system overview, clinical semantics |
 | [Code Execution](docs/CODE_EXECUTION.md) | Python API for programmatic access |
-| [Skills](docs/SKILLS.md) | Claude Code skills for contextual assistance |
+| [Skills](docs/SKILLS.md) | 17 clinical research skills and custom skill creation |
 | [Tools Reference](docs/TOOLS.md) | MCP tool documentation |
 | [BigQuery Setup](docs/BIGQUERY.md) | Google Cloud for full datasets |
 | [Custom Datasets](docs/CUSTOM_DATASETS.md) | Add your own PhysioNet datasets |
-| [Development](docs/DEVELOPMENT.md) | Contributing, testing, architecture |
+| [Development](docs/DEVELOPMENT.md) | Contributing, testing, code style |
 | [OAuth2 Authentication](docs/OAUTH2_AUTHENTICATION.md) | Enterprise security setup |
 
 ## Roadmap
 
-M4 is designed as a growing toolbox for LLM agents working with EHR data. Planned and ongoing directions include:
+M4 is infrastructure for AI-assisted clinical research. Current priorities:
 
-- **More Tools**
-  - Implement tools for current modalities (e.g. statistical reports, RAG)
-  - Add tools for new modalities (images, waveforms)
+- **Clinical Semantics**
+  - More concept mappings (comorbidity indices, medication classes)
+  - Semantic search over clinical notes (beyond keyword matching)
+  - More agent skills that provide meaningful clinical knowledge
 
-- **Better context handling**
-  - Concise, dataset-aware context for LLM agents
+- **New Modalities**
+  - Waveforms (ECG, arterial blood pressure)
+  - Imaging (chest X-rays)
 
-- **Dataset expansion**
-  - Out-of-the-box support for additional PhysioNet datasets
-  - Improved support for institutional/custom EHR schemas
-
-- **Evaluation & reproducibility**
-  - Session export and replay
-  - Evaluation with the latest LLMs and smaller expert models
-
-The roadmap reflects current development goals and may evolve as the project matures.
+- **Clinical Research Agents**
+  - Skills and guardrails that enforce scientific integrity and best practices (documentation, etc.)
+  - Query logging and session export
+  - Result fingerprints for audit trails
 
 ## Troubleshooting
 

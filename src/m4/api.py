@@ -18,7 +18,7 @@ Example:
     schema = get_schema()  # Returns dict with 'tables' list
     print(schema['tables'])
 
-    df = execute_query("SELECT COUNT(*) FROM patients")
+    df = execute_query("SELECT COUNT(*) FROM hosp_patients")
     print(df)  # DataFrame
 
 All functions work with the currently active dataset. Use set_dataset()
@@ -197,7 +197,7 @@ def execute_query(sql: str) -> pd.DataFrame:
         QueryError: If query execution fails.
 
     Example:
-        >>> df = execute_query("SELECT gender, COUNT(*) FROM patients GROUP BY gender")
+        >>> df = execute_query("SELECT gender, COUNT(*) FROM hosp_patients GROUP BY gender")
         >>> print(df)
            gender  count_star()
         0       M            55

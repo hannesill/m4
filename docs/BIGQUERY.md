@@ -22,12 +22,12 @@ This opens a browser to complete authentication.
 
 **Claude Desktop:**
 ```bash
-uv run m4 config claude --backend bigquery --project-id YOUR_PROJECT_ID
+m4 config claude --backend bigquery --project-id YOUR_PROJECT_ID
 ```
 
 **Other clients:**
 ```bash
-uv run m4 config --backend bigquery --project-id YOUR_PROJECT_ID
+m4 config --backend bigquery --project-id YOUR_PROJECT_ID
 ```
 
 Replace `YOUR_PROJECT_ID` with your Google Cloud project ID.
@@ -49,6 +49,7 @@ M4 uses these PhysioNet BigQuery datasets:
 | Dataset | BigQuery Project | Dataset IDs |
 |---------|-----------------|-------------|
 | mimic-iv | `physionet-data` | `mimiciv_3_1_hosp`, `mimiciv_3_1_icu` |
+| mimic-iv-note | `physionet-data` | `mimiciv_note` |
 | eicu | `physionet-data` | `eicu_crd` |
 
 ## Environment Variables
@@ -66,7 +67,7 @@ BigQuery charges based on data scanned. Tips to minimize costs:
 
 - Use `LIMIT` clauses in queries
 - Query specific columns instead of `SELECT *`
-- The convenience tools (`get_icu_stays`, `get_lab_results`) include reasonable limits
+- Use the `limit` parameter in `execute_query` (default: 100 rows)
 
 ## Troubleshooting
 

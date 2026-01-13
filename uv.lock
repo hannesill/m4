@@ -1445,7 +1445,7 @@ wheels = [
 ]
 
 [[package]]
-name = "m4-mcp"
+name = "m4-infra"
 source = { editable = "." }
 dependencies = [
     { name = "appdirs" },

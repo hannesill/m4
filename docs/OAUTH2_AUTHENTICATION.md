@@ -11,6 +11,28 @@ m4 config claude --enable-oauth2 \
   --oauth2-audience m4-api
 ```
 
+## MCP Configuration with OAuth2
+
+For manual MCP client configuration with OAuth2 enabled:
+
+```json
+{
+  "mcpServers": {
+    "m4": {
+      "command": "uvx",
+      "args": ["m4-infra"],
+      "env": {
+        "M4_BACKEND": "duckdb",
+        "M4_OAUTH2_ENABLED": "true",
+        "M4_OAUTH2_ISSUER_URL": "https://your-auth-provider.com",
+        "M4_OAUTH2_AUDIENCE": "m4-api",
+        "M4_OAUTH2_TOKEN": "your-jwt-token"
+      }
+    }
+  }
+}
+```
+
 ## Environment Variables
 
 ### Required (when OAuth2 enabled)

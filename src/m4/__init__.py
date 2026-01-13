@@ -8,7 +8,7 @@ Quick Start:
 
     set_dataset("mimic-iv")
     print(get_schema())
-    result = execute_query("SELECT COUNT(*) FROM patients")
+    result = execute_query("SELECT COUNT(*) FROM hosp_patients")
 
 For MCP server usage, run: m4 serve
 """
