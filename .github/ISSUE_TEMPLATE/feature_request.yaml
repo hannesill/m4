@@ -1,5 +1,5 @@
 name: "💡 Feature Request"
-description: Suggest a new feature or enhancement for M3.
+description: Suggest a new feature or enhancement for M4.
 title: "💡 [FEAT] - <title>"
 labels:
   - "feature"
@@ -10,7 +10,7 @@ body:
         <p align="center">
           <img src="https://miro.medium.com/v2/resize:fit:400/1*QEps725rQjfgqNnlbRYb1g.png" alt="Harvard MIT HST Logo">
           <br>
-          <em><a href="https://doi.org/10.48550/arXiv.2507.01053">M3's Paper</a>—<a href="https://rafiattrach.github.io/m3/">M3's Website</a>.</em>
+          <em><a href="https://doi.org/10.48550/arXiv.2507.01053">M3's Paper</a>—<a href="https://hannesill.github.io/m4/">M4's Website</a>.</em>
         </p>
   - type: checkboxes
     id: checks
@@ -56,7 +56,7 @@ body:
     id: roadmap-alignment
     attributes:
       label: "Roadmap Alignment"
-      description: Which part of the M3 roadmap does this feature align with?
+      description: Which part of the M4 roadmap does this feature align with?
       options:
         - "Broader Dataset Coverage"
         - "Richer MCP Tooling"
@@ -68,7 +68,7 @@ body:
     attributes:
       label: "Other Roadmap Alignment"
       description: "Only fill this if you selected 'Other' in the Roadmap Alignment dropdown."
-      placeholder: "Describe how this feature aligns with M3's goals."
+      placeholder: "Describe how this feature aligns with M4's goals."
     validations:
       required: false
   - type: markdown

@@ -1,5 +1,5 @@
 name: "🐛 Bug Report"
-description: Create a new ticket for a bug in M3.
+description: Create a new ticket for a bug in M4.
 title: "🐛 [BUG] - <title>"
 labels:
   - "bug"
@@ -10,7 +10,7 @@ body:
         <p align="center">
           <img src="https://miro.medium.com/v2/resize:fit:400/1*QEps725rQjfgqNnlbRYb1g.png" alt="Harvard MIT HST Logo">
           <br>
-          <em><a href="https://doi.org/10.48550/arXiv.2507.01053">M3's Paper</a>—<a href="https://rafiattrach.github.io/m3/">M3's Website</a>.</em>
+          <em><a href="https://doi.org/10.48550/arXiv.2507.01053">M3's Paper</a>—<a href="https://hannesill.github.io/m4/">M4's Website</a>.</em>
         </p>
   - type: checkboxes
     id: checks
@@ -32,7 +32,7 @@ body:
     id: reprod-url
     attributes:
       label: "Reproduction URL"
-      description: "If you’ve forked M3, provide a GitHub URL or repository link to reproduce the issue."
+      description: "If you've forked M4, provide a GitHub URL or repository link to reproduce the issue."
       placeholder: "Hint: Optional, but it helps us resolve the issue faster. Leave empty if not applicable."
     validations:
       required: false
@@ -119,10 +119,10 @@ body:
     validations:
       required: true
   - type: input
-    id: m3-version
+    id: m4-version
     attributes:
-      label: "M3 Version"
-      description: What version of M3 are you using? Run 'm3 --version' to check.
+      label: "M4 Version"
+      description: What version of M4 are you using? Run 'm4 --version' to check.
       placeholder: "e.g., 0.1.0"
     validations:
       required: true
