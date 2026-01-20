@@ -1,5 +1,5 @@
 name: "❓ Ask a Question"
-description: Ask a question about M3.
+description: Ask a question about M4.
 title: "❓ [QUESTION] - <title>"
 labels:
   - "question"
@@ -10,7 +10,7 @@ body:
         <p align="center">
           <img src="https://miro.medium.com/v2/resize:fit:400/1*QEps725rQjfgqNnlbRYb1g.png" alt="Harvard MIT HST Logo">
           <br>
-          <em><a href="https://doi.org/10.48550/arXiv.2507.01053">M3's Paper</a>—<a href="https://rafiattrach.github.io/m3/">M3's Website</a>.</em>
+          <em><a href="https://doi.org/10.48550/arXiv.2507.01053">M3's Paper</a>—<a href="https://hannesill.github.io/m4/">M4's Website</a>.</em>
         </p>
   - type: checkboxes
     id: checks
@@ -40,7 +40,7 @@ body:
     id: project-area
     attributes:
       label: "Project Area"
-      description: Specify the area of M3 your question relates to.
+      description: Specify the area of M4 your question relates to.
       placeholder: "Hint: Optional, e.g., CLI, MCP Server, OAuth2, etc."
     validations:
       required: false
