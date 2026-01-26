@@ -43,7 +43,7 @@ The Simplified Acute Physiology Score II (SAPS-II) is a widely used severity sco
 | Chronic Disease | AIDS/Hematologic Malignancy/Metastatic Cancer | 9-17 |
 | Admission Type | Scheduled Surgical/Medical/Unscheduled Surgical | 0-8 |
 
-## Pre-computed Table
+## MIMIC-IV Pre-computed Table Access
 
 ```sql
 SELECT
@@ -71,6 +71,9 @@ SELECT
     admissiontype_score
 FROM mimiciv_derived.sapsii;
 ```
+**MIMIC-specific notes**: 
+- Urine output is summed over available hours, not extrapolated to 24h. For stays <24h, this may overestimate severity.
+- Follows MIT-LCP/mimic-code canonical implementation.
 
 ## Critical Implementation Notes
 
@@ -92,7 +95,8 @@ FROM mimiciv_derived.sapsii;
    ```
    sapsii_prob = 1 / (1 + exp(-(-7.7631 + 0.0737*sapsii + 0.9971*ln(sapsii+1))))
    ```
-
+   Note: This 1993 formula tends to overestimate mortality in modern ICU cohorts (calibration drift). Consider recalibration for contemporary populations.
+   
 6. **Time Window**: Uses data from ICU admission to 24 hours after.
 
 ## Example: Severity Distribution
