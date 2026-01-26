@@ -86,7 +86,7 @@ WHERE hr = 24;  -- 24 hours after ICU admission
 
 6. **Arterial Blood Gas**: Use only arterial specimens (`specimen = 'ART.'`) for PaO2/FiO2.
 
-7. **Missing Components**: Missing data is imputed as 0 (normal) in the final score. Document which components are missing; do not claim complete scores when data is absent. If you prefer to treat missing data as NA rather than 0, you will need to modify the SQL (remove the COALESCE(..., 0) wrapper). Statistically, it is more appropriate to treat missing values as missing and calculate SOFA scores after proper imputation.  
+7. **Missing Components**: Missing data is imputed as 0 (normal) in the final score. Document which components are missing; do not claim complete scores when data is absent. If you prefer to treat missing data as NA rather than 0, you will need to modify the SQL (remove the COALESCE(..., 0) wrapper). Statistically, it is more appropriate to treat missing values as missing and calculate SOFA scores after proper imputation.
 
 8. **Urine Output Calculation**: Uses `uo_tm_24hr` to verify 24 hours of data available before calculating rate.
 
