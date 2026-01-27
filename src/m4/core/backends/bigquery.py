@@ -46,7 +46,7 @@ class BigQueryBackend:
                                If provided, this project is used for all queries.
         """
         self._project_id_override = project_id_override
-        self._client_cache: dict[str, Any] = {"client": None, "project_id": None}
+        self._client_cache: dict[str, Any] = {"client": None}
 
     @property
     def name(self) -> str:
@@ -55,6 +55,9 @@ class BigQueryBackend:
 
     def _get_project_id(self, dataset: DatasetDefinition) -> str:
         """Get the BigQuery project ID for a dataset.
+
+        NOTE: This is NOT the project_id of the user (the one billed for the queries),
+        but rather the project_id that hosts the dataset.
 
         Priority:
         1. Instance override (project_id_override)
@@ -84,16 +87,16 @@ class BigQueryBackend:
         # Priority 4: Default
         return "physionet-data"
 
-    def _get_client(self, dataset: DatasetDefinition) -> tuple[Any, str]:
+    def _get_client(self) -> tuple[Any, str]:
         """Get or create a BigQuery client.
 
-        Clients are cached per project ID to avoid re-initialization overhead.
+        Clients are cached to avoid re-initialization overhead.
 
         Args:
             dataset: The dataset definition
 
         Returns:
-            Tuple of (BigQuery client, project ID)
+            BigQuery client
 
         Raises:
             ConnectionError: If BigQuery dependencies are not installed
@@ -108,24 +111,24 @@ class BigQueryBackend:
                 backend=self.name,
             )
 
-        project_id = self._get_project_id(dataset)
-
         # Check cache
         if (
             self._client_cache["client"] is not None
-            and self._client_cache["project_id"] == project_id
         ):
-            return self._client_cache["client"], project_id
+            return self._client_cache["client"]
 
         # Create new client
+        # We initialize the client without it to allow for ambient credential detection
+        # (gcloud default project), as the project_id is the billing project rather than
+        # the target project.
         try:
-            client = bigquery.Client(project=project_id)
+            client = bigquery.Client()
+            # Use the resolved project ID for caching, even if client is project-agnostic
             self._client_cache["client"] = client
-            self._client_cache["project_id"] = project_id
-            return client, project_id
+            return client
         except Exception as e:
             raise ConnectionError(
-                f"Failed to initialize BigQuery client for project {project_id}: {e}",
+                f"Failed to initialize BigQuery client: {e}",
                 backend=self.name,
             )
 
@@ -143,7 +146,7 @@ class BigQueryBackend:
             import pandas as pd
             from google.cloud import bigquery as bq
 
-            client, _ = self._get_client(dataset)
+            client = self._get_client()
 
             job_config = bq.QueryJobConfig()
             query_job = client.query(sql, job_config=job_config)
