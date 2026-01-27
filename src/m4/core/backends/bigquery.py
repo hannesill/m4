@@ -46,7 +46,7 @@ class BigQueryBackend:
                                If provided, this project is used for all queries.
         """
         self._project_id_override = project_id_override
-        self._client_cache: dict[str, Any] = {"client": None}
+        self._client_cache: dict[str, Any] = {"client": None, "project_id": None}
 
     @property
     def name(self) -> str:
@@ -81,13 +81,10 @@ class BigQueryBackend:
         # Priority 3: Default
         return "physionet-data"
 
-    def _get_client(self) -> tuple[Any, str]:
+    def _get_client(self) -> Any:
         """Get or create a BigQuery client.
 
         Clients are cached to avoid re-initialization overhead.
-
-        Args:
-            dataset: The dataset definition
 
         Returns:
             BigQuery client

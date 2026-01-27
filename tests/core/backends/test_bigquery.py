@@ -146,7 +146,7 @@ class TestBigQueryQueryExecution:
             mock_bq = MagicMock()
             with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
                 backend = BigQueryBackend()
-                backend._client_cache = {"client": mock_bigquery}
+                backend._client_cache = {"client": mock_bigquery, "project_id": None}
 
                 result = backend.execute_query("SELECT * FROM test", test_dataset)
 
@@ -169,7 +169,7 @@ class TestBigQueryQueryExecution:
             mock_bq = MagicMock()
             with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
                 backend = BigQueryBackend()
-                backend._client_cache = {"client": mock_bigquery}
+                backend._client_cache = {"client": mock_bigquery, "project_id": None}
 
                 result = backend.execute_query("SELECT * FROM empty", test_dataset)
 
@@ -215,7 +215,7 @@ class TestBigQueryTableOperations:
             mock_bq = MagicMock()
             with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
                 backend = BigQueryBackend()
-                backend._client_cache = {"client": mock_bigquery}
+                backend._client_cache = {"client": mock_bigquery, "project_id": None}
 
                 result = backend.get_table_info(
                     "`test-project.test_dataset.patients`", test_dataset
