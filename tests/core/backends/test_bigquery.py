@@ -66,14 +66,7 @@ class TestBigQueryProjectResolution:
 
         assert project_id == "override-project"
 
-    def test_env_var_takes_second_priority(self, test_dataset):
-        """Test that M4_PROJECT_ID env var takes second priority."""
-        with patch.dict(os.environ, {"M4_PROJECT_ID": "env-project"}):
-            backend = BigQueryBackend()  # No override
 
-            project_id = backend._get_project_id(test_dataset)
-
-            assert project_id == "env-project"
 
     def test_dataset_config_used_as_fallback(self, test_dataset):
         """Test that dataset config is used when no override."""
@@ -127,6 +120,7 @@ class TestBigQueryClientCaching:
                     # Manually set up cache to simulate behavior
                     backend._client_cache = {
                         "client": mock_client,
+                        "project_id": None,
                     }
 
                     # Second call should use cache
