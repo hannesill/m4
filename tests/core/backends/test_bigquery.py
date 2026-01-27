@@ -34,7 +34,7 @@ def mock_bigquery():
     """Mock the BigQuery client and module."""
     with patch("m4.core.backends.bigquery.BigQueryBackend._get_client") as mock:
         mock_client = MagicMock()
-        mock.return_value = (mock_client, "test-project")
+        mock.return_value = mock_client
         yield mock_client
 
 
@@ -112,35 +112,29 @@ class TestBigQueryProjectResolution:
 class TestBigQueryClientCaching:
     """Test BigQuery client caching."""
 
-    def test_client_cached(self, test_dataset):
+    def test_client_cached(self):
         """Test that client is cached for same project."""
         with patch.dict("sys.modules", {"google.cloud.bigquery": MagicMock()}):
-            with patch(
-                "m4.core.backends.bigquery.BigQueryBackend._get_project_id"
-            ) as mock_get_project:
-                mock_get_project.return_value = "test-project"
+            backend = BigQueryBackend()
 
-                backend = BigQueryBackend()
+            # First call creates client
+            mock_bq = MagicMock()
+            mock_client = MagicMock()
+            mock_bq.Client.return_value = mock_client
 
-                # First call creates client
-                mock_bq = MagicMock()
-                mock_client = MagicMock()
-                mock_bq.Client.return_value = mock_client
+            with patch.dict("sys.modules", {"google.cloud": MagicMock()}):
+                with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
+                    # Manually set up cache to simulate behavior
+                    backend._client_cache = {
+                        "client": mock_client,
+                    }
 
-                with patch.dict("sys.modules", {"google.cloud": MagicMock()}):
-                    with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
-                        # Manually set up cache to simulate behavior
-                        backend._client_cache = {
-                            "client": mock_client,
-                            "project_id": "test-project",
-                        }
+                    # Second call should use cache
+                    client = backend._get_client()
 
-                        # Second call should use cache
-                        client, _project = backend._get_client(test_dataset)
-
-                        assert client == mock_client
-                        # Client should not be created again
-                        mock_bq.Client.assert_not_called()
+                    assert client == mock_client
+                    # Client should not be created again
+                    mock_bq.Client.assert_not_called()
 
 
 class TestBigQueryQueryExecution:
@@ -161,8 +155,7 @@ class TestBigQueryQueryExecution:
             with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
                 backend = BigQueryBackend()
                 backend._client_cache = {
-                    "client": mock_bigquery,
-                    "project_id": "test-project",
+                    "client": mock_bigquery
                 }
 
                 result = backend.execute_query("SELECT * FROM test", test_dataset)
@@ -187,8 +180,7 @@ class TestBigQueryQueryExecution:
             with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
                 backend = BigQueryBackend()
                 backend._client_cache = {
-                    "client": mock_bigquery,
-                    "project_id": "test-project",
+                    "client": mock_bigquery
                 }
 
                 result = backend.execute_query("SELECT * FROM empty", test_dataset)
@@ -236,8 +228,7 @@ class TestBigQueryTableOperations:
             with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
                 backend = BigQueryBackend()
                 backend._client_cache = {
-                    "client": mock_bigquery,
-                    "project_id": "test-project",
+                    "client": mock_bigquery
                 }
 
                 result = backend.get_table_info(
