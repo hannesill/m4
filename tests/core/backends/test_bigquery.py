@@ -66,8 +66,6 @@ class TestBigQueryProjectResolution:
 
         assert project_id == "override-project"
 
-
-
     def test_dataset_config_used_as_fallback(self, test_dataset):
         """Test that dataset config is used when no override."""
         # Clear env var if set
@@ -148,9 +146,7 @@ class TestBigQueryQueryExecution:
             mock_bq = MagicMock()
             with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
                 backend = BigQueryBackend()
-                backend._client_cache = {
-                    "client": mock_bigquery
-                }
+                backend._client_cache = {"client": mock_bigquery}
 
                 result = backend.execute_query("SELECT * FROM test", test_dataset)
 
@@ -173,9 +169,7 @@ class TestBigQueryQueryExecution:
             mock_bq = MagicMock()
             with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
                 backend = BigQueryBackend()
-                backend._client_cache = {
-                    "client": mock_bigquery
-                }
+                backend._client_cache = {"client": mock_bigquery}
 
                 result = backend.execute_query("SELECT * FROM empty", test_dataset)
 
@@ -221,9 +215,7 @@ class TestBigQueryTableOperations:
             mock_bq = MagicMock()
             with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
                 backend = BigQueryBackend()
-                backend._client_cache = {
-                    "client": mock_bigquery
-                }
+                backend._client_cache = {"client": mock_bigquery}
 
                 result = backend.get_table_info(
                     "`test-project.test_dataset.patients`", test_dataset

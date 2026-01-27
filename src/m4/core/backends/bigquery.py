@@ -104,7 +104,7 @@ class BigQueryBackend:
                 "Install with: pip install google-cloud-bigquery",
                 backend=self.name,
             )
-        
+
         project_id = os.getenv("M4_PROJECT_ID", None)
 
         # Check cache
