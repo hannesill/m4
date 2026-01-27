@@ -61,9 +61,8 @@ class BigQueryBackend:
 
         Priority:
         1. Instance override (project_id_override)
-        2. Environment variable M4_PROJECT_ID
-        3. Dataset configuration
-        4. Default: physionet-data
+        2. Dataset configuration
+        3. Default: physionet-data
 
         Args:
             dataset: The dataset definition
@@ -75,16 +74,11 @@ class BigQueryBackend:
         if self._project_id_override:
             return self._project_id_override
 
-        # Priority 2: Environment variable
-        env_project = os.getenv("M4_PROJECT_ID")
-        if env_project:
-            return env_project
-
-        # Priority 3: Dataset configuration
+        # Priority 2: Dataset configuration
         if dataset.bigquery_project_id:
             return dataset.bigquery_project_id
 
-        # Priority 4: Default
+        # Priority 3: Default
         return "physionet-data"
 
     def _get_client(self) -> tuple[Any, str]:
@@ -110,10 +104,13 @@ class BigQueryBackend:
                 "Install with: pip install google-cloud-bigquery",
                 backend=self.name,
             )
+        
+        project_id = os.getenv("M4_PROJECT_ID", None)
 
         # Check cache
         if (
             self._client_cache["client"] is not None
+            and self._client_cache["project_id"] == project_id
         ):
             return self._client_cache["client"]
 
@@ -121,10 +118,15 @@ class BigQueryBackend:
         # We initialize the client without it to allow for ambient credential detection
         # (gcloud default project), as the project_id is the billing project rather than
         # the target project.
+
         try:
-            client = bigquery.Client()
+            if project_id:
+                client = bigquery.Client(project=project_id)
+            else:
+                client = bigquery.Client()
             # Use the resolved project ID for caching, even if client is project-agnostic
             self._client_cache["client"] = client
+            self._client_cache["project_id"] = project_id
             return client
         except Exception as e:
             raise ConnectionError(
