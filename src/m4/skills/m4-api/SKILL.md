@@ -132,3 +132,7 @@ Use the Python API when you need to:
 - Chain queries in analysis pipelines
 - Perform pandas operations on results
 - Avoid parsing formatted output
+
+
+IMPORTANT:
+- The table names change if using a local duckdb instance or the bigquery hosted instance. Always check the table names, schema and the dataset ids before querying. This means that even if a skill is giving you a query to run, you should verify that the table names are correct for your current backend and dataset. The table structure and variables are the same, only the table and dataset names differ.

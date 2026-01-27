@@ -5,7 +5,7 @@ Use Google Cloud BigQuery to access full clinical datasets without downloading f
 ## Prerequisites
 
 1. **Google Cloud account** with BigQuery access
-2. **PhysioNet credentialed access** for MIMIC-IV or eICU ([apply here](https://physionet.org/))
+2. **PhysioNet credentialed access** for MIMIC-IV or eICU ([apply here](https://physionet.org/)). Scroll to the bottom of the page and request access to the BigQuery dataset.
 3. **gcloud CLI** installed ([installation guide](https://cloud.google.com/sdk/docs/install))
 
 ## Setup
@@ -30,7 +30,7 @@ m4 config claude --backend bigquery --project-id YOUR_PROJECT_ID
 m4 config --backend bigquery --project-id YOUR_PROJECT_ID
 ```
 
-Replace `YOUR_PROJECT_ID` with your Google Cloud project ID.
+Replace `YOUR_PROJECT_ID` with your own billing project for BigQuery usage, not the PhysioNet dataset project. The variable is mandatory to ensure billing is correctly attributed.
 
 ### 3. Set the dataset
 
