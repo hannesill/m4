@@ -4,6 +4,8 @@ from unittest import mock
 import duckdb
 import requests
 
+from m4.core.backends.duckdb import DuckDBBackend
+from m4.core.datasets import DatasetDefinition, Modality
 from m4.data_io import (
     COMMON_USER_AGENT,
     _create_duckdb_with_views,
@@ -237,3 +239,55 @@ def test_no_schema_mapping_flat_naming(tmp_path):
         assert cnt == 1
     finally:
         con.close()
+
+
+# ------------------------------------------------------------
+# Round-trip integration test: parquet → DuckDB → backend API
+# ------------------------------------------------------------
+
+
+def test_roundtrip_parquet_to_backend_api(tmp_path):
+    """End-to-end: create parquet, init DuckDB with schema_mapping,
+    then verify get_table_list / get_table_info / get_sample_data
+    all work through the DuckDBBackend API."""
+    parquet_root = tmp_path / "parquet"
+    _create_parquet(
+        parquet_root / "hosp",
+        "patients",
+        "subject_id,gender,anchor_age\n1,M,65\n2,F,42\n",
+    )
+    _create_parquet(
+        parquet_root / "icu",
+        "icustays",
+        "subject_id,stay_id\n1,10\n2,20\n",
+    )
+
+    mapping = {"hosp": "mimiciv_hosp", "icu": "mimiciv_icu"}
+    db_path = tmp_path / "roundtrip.duckdb"
+    ok = _create_duckdb_with_views(db_path, parquet_root, schema_mapping=mapping)
+    assert ok
+
+    ds = DatasetDefinition(
+        name="roundtrip-test",
+        modalities=frozenset({Modality.TABULAR}),
+        schema_mapping=mapping,
+    )
+    backend = DuckDBBackend(db_path_override=db_path)
+
+    # get_table_list returns schema-qualified names
+    tables = backend.get_table_list(ds)
+    assert "mimiciv_hosp.patients" in tables
+    assert "mimiciv_icu.icustays" in tables
+
+    # get_table_info works for schema-qualified names
+    info = backend.get_table_info("mimiciv_hosp.patients", ds)
+    assert info.success is True
+    col_names = info.dataframe["name"].tolist()
+    assert "subject_id" in col_names
+    assert "gender" in col_names
+
+    # get_sample_data works for schema-qualified names
+    sample = backend.get_sample_data("mimiciv_hosp.patients", ds, limit=1)
+    assert sample.success is True
+    assert sample.row_count <= 1
+    assert "subject_id" in sample.dataframe.columns

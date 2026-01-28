@@ -1,5 +1,6 @@
 """Tests for SQL validation and parameter sanitization."""
 
+from m4.core.datasets import DatasetRegistry
 from m4.core.validation import (
     format_error_with_guidance,
     is_safe_query,
@@ -402,3 +403,13 @@ class TestValidateTableName:
         assert validate_table_name("table name") is False
         assert validate_table_name("table;name") is False
         assert validate_table_name("table--name") is False
+
+    def test_all_builtin_canonical_names_accepted(self):
+        """All primary_verification_table values from built-in datasets pass validation."""
+        DatasetRegistry.reset()
+        for ds in DatasetRegistry.list_all():
+            table = ds.primary_verification_table
+            if table:
+                assert validate_table_name(table) is True, (
+                    f"{ds.name}: primary_verification_table '{table}' failed validation"
+                )
