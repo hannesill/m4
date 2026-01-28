@@ -25,7 +25,7 @@ WITH co AS (
         , stay_id
         , intime AS starttime
         , DATETIME_ADD(intime, INTERVAL '24' HOUR) AS endtime
-    FROM `physionet-data.mimiciv_icu.icustays`
+    FROM mimiciv_icu.icustays
 )
 
 , cpap AS (
@@ -46,7 +46,7 @@ WITH co AS (
             END
         ) AS cpap
     FROM co
-    INNER JOIN `physionet-data.mimiciv_icu.chartevents` ce
+    INNER JOIN mimiciv_icu.chartevents ce
         ON co.stay_id = ce.stay_id
             AND ce.charttime > co.starttime
             AND ce.charttime <= co.endtime
@@ -68,8 +68,8 @@ WITH co AS (
             PARTITION BY adm.hadm_id
             ORDER BY transfertime
         ) AS serviceorder
-    FROM `physionet-data.mimiciv_hosp.admissions` adm
-    LEFT JOIN `physionet-data.mimiciv_hosp.services` se
+    FROM mimiciv_hosp.admissions adm
+    LEFT JOIN mimiciv_hosp.services se
         ON adm.hadm_id = se.hadm_id
 )
 
@@ -160,7 +160,7 @@ WITH co AS (
                 ) BETWEEN 'C77' AND 'C79' THEN 1
             WHEN icd_version = 10 AND SUBSTR(icd_code, 1, 4) = 'C800' THEN 1
             ELSE 0 END) AS mets      /* Metastatic cancer */
-    FROM `physionet-data.mimiciv_hosp.diagnoses_icd`
+    FROM mimiciv_hosp.diagnoses_icd
     GROUP BY hadm_id
 )
 
@@ -174,12 +174,12 @@ WITH co AS (
         , CASE WHEN vd.stay_id IS NOT NULL THEN 1 ELSE 0 END AS vent
         , CASE WHEN cp.subject_id IS NOT NULL THEN 1 ELSE 0 END AS cpap
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.bg` bg
+    LEFT JOIN mimiciv_derived.bg bg
         ON co.subject_id = bg.subject_id
             AND bg.specimen = 'ART.'
             AND bg.charttime > co.starttime
             AND bg.charttime <= co.endtime
-    LEFT JOIN `physionet-data.mimiciv_derived.ventilation` vd
+    LEFT JOIN mimiciv_derived.ventilation vd
         ON co.stay_id = vd.stay_id
             AND bg.charttime > vd.starttime
             AND bg.charttime <= vd.endtime
@@ -203,7 +203,7 @@ WITH co AS (
     SELECT co.stay_id
         , MIN(gcs.gcs) AS mingcs
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.gcs` gcs
+    LEFT JOIN mimiciv_derived.gcs gcs
         ON co.stay_id = gcs.stay_id
             AND co.starttime < gcs.charttime
             AND gcs.charttime <= co.endtime
@@ -220,7 +220,7 @@ WITH co AS (
         , MIN(vital.temperature) AS tempc_min
         , MAX(vital.temperature) AS tempc_max
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.vitalsign` vital
+    LEFT JOIN mimiciv_derived.vitalsign vital
         ON co.subject_id = vital.subject_id
             AND co.starttime < vital.charttime
             AND co.endtime >= vital.charttime
@@ -232,7 +232,7 @@ WITH co AS (
         co.stay_id
         , SUM(uo.urineoutput) AS urineoutput
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.urine_output` uo
+    LEFT JOIN mimiciv_derived.urine_output uo
         ON co.stay_id = uo.stay_id
             AND co.starttime < uo.charttime
             AND co.endtime >= uo.charttime
@@ -251,7 +251,7 @@ WITH co AS (
         , MIN(labs.bicarbonate) AS bicarbonate_min
         , MAX(labs.bicarbonate) AS bicarbonate_max
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.chemistry` labs
+    LEFT JOIN mimiciv_derived.chemistry labs
         ON co.subject_id = labs.subject_id
             AND co.starttime < labs.charttime
             AND co.endtime >= labs.charttime
@@ -264,7 +264,7 @@ WITH co AS (
         , MIN(cbc.wbc) AS wbc_min
         , MAX(cbc.wbc) AS wbc_max
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.complete_blood_count` cbc
+    LEFT JOIN mimiciv_derived.complete_blood_count cbc
         ON co.subject_id = cbc.subject_id
             AND co.starttime < cbc.charttime
             AND co.endtime >= cbc.charttime
@@ -277,7 +277,7 @@ WITH co AS (
         , MIN(enz.bilirubin_total) AS bilirubin_min
         , MAX(enz.bilirubin_total) AS bilirubin_max
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.enzyme` enz
+    LEFT JOIN mimiciv_derived.enzyme enz
         ON co.subject_id = enz.subject_id
             AND co.starttime < enz.charttime
             AND co.endtime >= enz.charttime
@@ -334,10 +334,10 @@ WITH co AS (
         END AS admissiontype
 
 
-    FROM `physionet-data.mimiciv_icu.icustays` ie
-    INNER JOIN `physionet-data.mimiciv_hosp.admissions` adm
+    FROM mimiciv_icu.icustays ie
+    INNER JOIN mimiciv_hosp.admissions adm
         ON ie.hadm_id = adm.hadm_id
-    LEFT JOIN `physionet-data.mimiciv_derived.age` va
+    LEFT JOIN mimiciv_derived.age va
         ON ie.hadm_id = va.hadm_id
     INNER JOIN co
         ON ie.stay_id = co.stay_id

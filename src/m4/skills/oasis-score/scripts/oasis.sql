@@ -35,8 +35,8 @@ WITH surgflag AS (
             WHEN LOWER(curr_service) LIKE '%surg%' THEN 1
             WHEN curr_service = 'ORTHO' THEN 1
             ELSE 0 END) AS surgical
-    FROM `physionet-data.mimiciv_icu.icustays` ie
-    LEFT JOIN `physionet-data.mimiciv_hosp.services` se
+    FROM mimiciv_icu.icustays ie
+    LEFT JOIN mimiciv_hosp.services se
         ON ie.hadm_id = se.hadm_id
             AND se.transfertime < DATETIME_ADD(ie.intime, INTERVAL '1' DAY)
     GROUP BY ie.stay_id
@@ -48,8 +48,8 @@ WITH surgflag AS (
         , MAX(
             CASE WHEN v.stay_id IS NOT NULL THEN 1 ELSE 0 END
         ) AS vent
-    FROM `physionet-data.mimiciv_icu.icustays` ie
-    LEFT JOIN `physionet-data.mimiciv_derived.ventilation` v
+    FROM mimiciv_icu.icustays ie
+    LEFT JOIN mimiciv_derived.ventilation v
         ON ie.stay_id = v.stay_id
             AND v.ventilation_status = 'InvasiveVent'
             AND (
@@ -109,21 +109,21 @@ WITH surgflag AS (
             ELSE 0 END
         AS icustay_expire_flag
         , adm.hospital_expire_flag
-    FROM `physionet-data.mimiciv_icu.icustays` ie
-    INNER JOIN `physionet-data.mimiciv_hosp.admissions` adm
+    FROM mimiciv_icu.icustays ie
+    INNER JOIN mimiciv_hosp.admissions adm
         ON ie.hadm_id = adm.hadm_id
-    INNER JOIN `physionet-data.mimiciv_hosp.patients` pat
+    INNER JOIN mimiciv_hosp.patients pat
         ON ie.subject_id = pat.subject_id
-    LEFT JOIN `physionet-data.mimiciv_derived.age` ag
+    LEFT JOIN mimiciv_derived.age ag
         ON ie.hadm_id = ag.hadm_id
     LEFT JOIN surgflag sf
         ON ie.stay_id = sf.stay_id
     -- join to custom tables to get more data....
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_gcs` gcs
+    LEFT JOIN mimiciv_derived.first_day_gcs gcs
         ON ie.stay_id = gcs.stay_id
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_vitalsign` vital
+    LEFT JOIN mimiciv_derived.first_day_vitalsign vital
         ON ie.stay_id = vital.stay_id
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_urine_output` uo
+    LEFT JOIN mimiciv_derived.first_day_urine_output uo
         ON ie.stay_id = uo.stay_id
     LEFT JOIN vent
         ON ie.stay_id = vent.stay_id

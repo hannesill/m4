@@ -45,15 +45,16 @@ class TestMCPTools:
 
     @pytest.fixture
     def test_db(self, tmp_path):
-        """Create a test DuckDB database."""
+        """Create a test DuckDB database with schema-qualified tables."""
         import duckdb
 
         db_path = tmp_path / "test.duckdb"
         con = duckdb.connect(str(db_path))
         try:
+            con.execute("CREATE SCHEMA mimiciv_icu")
             con.execute(
                 """
-                CREATE TABLE icu_icustays (
+                CREATE TABLE mimiciv_icu.icustays (
                     subject_id INTEGER,
                     hadm_id INTEGER,
                     stay_id INTEGER,
@@ -64,14 +65,15 @@ class TestMCPTools:
             )
             con.execute(
                 """
-                INSERT INTO icu_icustays (subject_id, hadm_id, stay_id, intime, outtime) VALUES
+                INSERT INTO mimiciv_icu.icustays (subject_id, hadm_id, stay_id, intime, outtime) VALUES
                     (10000032, 20000001, 30000001, '2180-07-23 15:00:00', '2180-07-24 12:00:00'),
                     (10000033, 20000002, 30000002, '2180-08-15 10:30:00', '2180-08-16 14:15:00')
                 """
             )
+            con.execute("CREATE SCHEMA mimiciv_hosp")
             con.execute(
                 """
-                CREATE TABLE hosp_labevents (
+                CREATE TABLE mimiciv_hosp.labevents (
                     subject_id INTEGER,
                     hadm_id INTEGER,
                     itemid INTEGER,
@@ -82,7 +84,7 @@ class TestMCPTools:
             )
             con.execute(
                 """
-                INSERT INTO hosp_labevents (subject_id, hadm_id, itemid, charttime, value) VALUES
+                INSERT INTO mimiciv_hosp.labevents (subject_id, hadm_id, itemid, charttime, value) VALUES
                     (10000032, 20000001, 50912, '2180-07-23 16:00:00', '120'),
                     (10000033, 20000002, 50912, '2180-08-15 11:00:00', '95')
                 """
@@ -131,7 +133,9 @@ class TestMCPTools:
                         # Test execute_query tool
                         result = await client.call_tool(
                             "execute_query",
-                            {"sql_query": "SELECT COUNT(*) as count FROM icu_icustays"},
+                            {
+                                "sql_query": "SELECT COUNT(*) as count FROM mimiciv_icu.icustays"
+                            },
                         )
                         result_text = str(result)
                         assert "count" in result_text
@@ -141,8 +145,8 @@ class TestMCPTools:
                         result = await client.call_tool("get_database_schema", {})
                         result_text = str(result)
                         assert (
-                            "icu_icustays" in result_text
-                            or "hosp_labevents" in result_text
+                            "mimiciv_icu.icustays" in result_text
+                            or "mimiciv_hosp.labevents" in result_text
                         )
 
     @pytest.mark.asyncio
@@ -164,12 +168,12 @@ class TestMCPTools:
             async with Client(mcp) as client:
                 # Test dangerous queries are blocked
                 dangerous_queries = [
-                    "UPDATE icu_icustays SET subject_id = 999",
-                    "DELETE FROM icu_icustays",
-                    "INSERT INTO icu_icustays VALUES (1, 2, 3, '2020-01-01', '2020-01-02')",
-                    "DROP TABLE icu_icustays",
+                    "UPDATE mimiciv_icu.icustays SET subject_id = 999",
+                    "DELETE FROM mimiciv_icu.icustays",
+                    "INSERT INTO mimiciv_icu.icustays VALUES (1, 2, 3, '2020-01-01', '2020-01-02')",
+                    "DROP TABLE mimiciv_icu.icustays",
                     "CREATE TABLE test (id INTEGER)",
-                    "ALTER TABLE icu_icustays ADD COLUMN test TEXT",
+                    "ALTER TABLE mimiciv_icu.icustays ADD COLUMN test TEXT",
                 ]
 
                 for query in dangerous_queries:
@@ -254,7 +258,7 @@ class TestMCPTools:
                         result = await client.call_tool(
                             "execute_query",
                             {
-                                "sql_query": "SELECT * FROM icu_icustays WHERE subject_id = 999999"
+                                "sql_query": "SELECT * FROM mimiciv_icu.icustays WHERE subject_id = 999999"
                             },
                         )
                         result_text = str(result)
@@ -286,7 +290,7 @@ class TestMCPTools:
                 # Test that tools require authentication
                 result = await client.call_tool(
                     "execute_query",
-                    {"sql_query": "SELECT COUNT(*) FROM icu_icustays"},
+                    {"sql_query": "SELECT COUNT(*) FROM mimiciv_icu.icustays"},
                 )
                 result_text = str(result)
                 assert "Missing OAuth2 access token" in result_text

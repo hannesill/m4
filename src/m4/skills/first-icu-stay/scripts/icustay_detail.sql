@@ -40,8 +40,8 @@ SELECT ie.subject_id, ie.hadm_id, ie.stay_id
             ) = 1 THEN True
         ELSE False END AS first_icu_stay
 
-FROM `physionet-data.mimiciv_icu.icustays` ie
-INNER JOIN `physionet-data.mimiciv_hosp.admissions` adm
+FROM mimiciv_icu.icustays ie
+INNER JOIN mimiciv_hosp.admissions adm
     ON ie.hadm_id = adm.hadm_id
-INNER JOIN `physionet-data.mimiciv_hosp.patients` pat
+INNER JOIN mimiciv_hosp.patients pat
     ON ie.subject_id = pat.subject_id

@@ -36,11 +36,11 @@ WITH pa AS (
     SELECT ie.stay_id, bg.charttime
         , po2 AS pao2
         , ROW_NUMBER() OVER (PARTITION BY ie.stay_id ORDER BY bg.po2 DESC) AS rn
-    FROM `physionet-data.mimiciv_derived.bg` bg
-    INNER JOIN `physionet-data.mimiciv_icu.icustays` ie
+    FROM mimiciv_derived.bg bg
+    INNER JOIN mimiciv_icu.icustays ie
         ON bg.hadm_id = ie.hadm_id
             AND bg.charttime >= ie.intime AND bg.charttime < ie.outtime
-    LEFT JOIN `physionet-data.mimiciv_derived.ventilation` vd
+    LEFT JOIN mimiciv_derived.ventilation vd
         ON ie.stay_id = vd.stay_id
             AND bg.charttime >= vd.starttime
             AND bg.charttime <= vd.endtime
@@ -61,11 +61,11 @@ WITH pa AS (
             PARTITION BY ie.stay_id ORDER BY bg.aado2 DESC
         ) AS rn
     -- row number indicating the highest AaDO2
-    FROM `physionet-data.mimiciv_derived.bg` bg
-    INNER JOIN `physionet-data.mimiciv_icu.icustays` ie
+    FROM mimiciv_derived.bg bg
+    INNER JOIN mimiciv_icu.icustays ie
         ON bg.hadm_id = ie.hadm_id
             AND bg.charttime >= ie.intime AND bg.charttime < ie.outtime
-    INNER JOIN `physionet-data.mimiciv_derived.ventilation` vd
+    INNER JOIN mimiciv_derived.ventilation vd
         ON ie.stay_id = vd.stay_id
             AND bg.charttime >= vd.starttime
             AND bg.charttime <= vd.endtime
@@ -127,8 +127,8 @@ WITH pa AS (
                     ELSE 12
                 END
         END AS acidbase_score
-    FROM `physionet-data.mimiciv_derived.bg` bg
-    INNER JOIN `physionet-data.mimiciv_icu.icustays` ie
+    FROM mimiciv_derived.bg bg
+    INNER JOIN mimiciv_icu.icustays ie
         ON bg.hadm_id = ie.hadm_id
             AND bg.charttime >= ie.intime AND bg.charttime < ie.outtime
     WHERE ph IS NOT NULL AND pco2 IS NOT NULL
@@ -159,10 +159,10 @@ WITH pa AS (
                 AND icd.ckd = 0
                 THEN 1
             ELSE 0 END AS arf
-    FROM `physionet-data.mimiciv_icu.icustays` ie
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_urine_output` uo
+    FROM mimiciv_icu.icustays ie
+    LEFT JOIN mimiciv_derived.first_day_urine_output uo
         ON ie.stay_id = uo.stay_id
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_lab` labs
+    LEFT JOIN mimiciv_derived.first_day_lab labs
         ON ie.stay_id = labs.stay_id
     LEFT JOIN
         (
@@ -181,7 +181,7 @@ WITH pa AS (
                 -- for acute-on-chronic ARF
                 ELSE 0 END)
                 AS ckd
-            FROM `physionet-data.mimiciv_hosp.diagnoses_icd`
+            FROM mimiciv_hosp.diagnoses_icd
             GROUP BY hadm_id
         ) icd
         ON ie.hadm_id = icd.hadm_id
@@ -193,8 +193,8 @@ WITH pa AS (
         , MAX(
             CASE WHEN v.stay_id IS NOT NULL THEN 1 ELSE 0 END
         ) AS vent
-    FROM `physionet-data.mimiciv_icu.icustays` ie
-    LEFT JOIN `physionet-data.mimiciv_derived.ventilation` v
+    FROM mimiciv_icu.icustays ie
+    LEFT JOIN mimiciv_derived.ventilation v
         ON ie.stay_id = v.stay_id
             AND v.ventilation_status = 'InvasiveVent'
             AND (
@@ -285,10 +285,10 @@ WITH pa AS (
         -- acute renal failure
         , arf.arf AS arf
 
-    FROM `physionet-data.mimiciv_icu.icustays` ie
-    INNER JOIN `physionet-data.mimiciv_hosp.admissions` adm
+    FROM mimiciv_icu.icustays ie
+    INNER JOIN mimiciv_hosp.admissions adm
         ON ie.hadm_id = adm.hadm_id
-    INNER JOIN `physionet-data.mimiciv_hosp.patients` pat
+    INNER JOIN mimiciv_hosp.patients pat
         ON ie.subject_id = pat.subject_id
 
     -- join to above views - the row number filters to 1 row per stay_id
@@ -307,13 +307,13 @@ WITH pa AS (
     -- join to custom tables to get more data....
     LEFT JOIN vent
         ON ie.stay_id = vent.stay_id
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_gcs` gcs
+    LEFT JOIN mimiciv_derived.first_day_gcs gcs
         ON ie.stay_id = gcs.stay_id
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_vitalsign` vital
+    LEFT JOIN mimiciv_derived.first_day_vitalsign vital
         ON ie.stay_id = vital.stay_id
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_urine_output` uo
+    LEFT JOIN mimiciv_derived.first_day_urine_output uo
         ON ie.stay_id = uo.stay_id
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_lab` labs
+    LEFT JOIN mimiciv_derived.first_day_lab labs
         ON ie.stay_id = labs.stay_id
 )
 
@@ -888,7 +888,7 @@ SELECT ie.subject_id, ie.hadm_id, ie.stay_id
     , glucose_score
     , acidbase_score
     , gcs_score
-FROM `physionet-data.mimiciv_icu.icustays` ie
+FROM mimiciv_icu.icustays ie
 LEFT JOIN score s
           ON ie.stay_id = s.stay_id
 ;

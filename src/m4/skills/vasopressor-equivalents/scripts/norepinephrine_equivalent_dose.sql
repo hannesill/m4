@@ -25,7 +25,7 @@ SELECT stay_id, starttime, endtime
         -- angiotensin_ii*10 -- angiotensin ii rarely used, though
         -- it could be included due to norepinephrine sparing effects
         AS NUMERIC), 4) AS norepinephrine_equivalent_dose
-FROM `physionet-data.mimiciv_derived.vasoactive_agent`
+FROM mimiciv_derived.vasoactive_agent
 WHERE norepinephrine IS NOT NULL
     OR epinephrine IS NOT NULL
     OR phenylephrine IS NOT NULL

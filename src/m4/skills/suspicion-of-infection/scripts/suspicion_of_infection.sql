@@ -15,7 +15,7 @@ WITH ab_tbl AS (
             PARTITION BY subject_id
             ORDER BY starttime, stoptime, antibiotic
         ) AS ab_id
-    FROM `physionet-data.mimiciv_derived.antibiotic` abx
+    FROM mimiciv_derived.antibiotic abx
 )
 
 , me AS (
@@ -36,7 +36,7 @@ WITH ab_tbl AS (
                       AND org_name != ''
                 THEN 1 ELSE 0
             END) AS positiveculture
-    FROM `physionet-data.mimiciv_hosp.microbiologyevents`
+    FROM mimiciv_hosp.microbiologyevents
     GROUP BY micro_specimen_id
 )
 

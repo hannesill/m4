@@ -8,8 +8,8 @@ WITH uo_stg1 AS (
             , 1
         ) AS hours_since_previous_row
         , urineoutput
-    FROM `physionet-data.mimiciv_icu.icustays` ie
-    INNER JOIN `physionet-data.mimiciv_derived.urine_output` uo
+    FROM mimiciv_icu.icustays ie
+    INNER JOIN mimiciv_derived.urine_output uo
         ON ie.stay_id = uo.stay_id
 )
 
@@ -105,7 +105,7 @@ SELECT
     , uo_tm_12hr
     , uo_tm_24hr
 FROM uo_stg2 ur
-LEFT JOIN `physionet-data.mimiciv_derived.weight_durations` wd
+LEFT JOIN mimiciv_derived.weight_durations wd
     ON ur.stay_id = wd.stay_id
         AND ur.charttime >= wd.starttime
         AND ur.charttime < wd.endtime

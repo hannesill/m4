@@ -30,7 +30,7 @@ WITH cr_stg AS (
             WHEN cr.creat >= (cr.creat_low_past_48hr + 0.3) THEN 1
             WHEN cr.creat >= (cr.creat_low_past_7day * 1.5) THEN 1
             ELSE 0 END AS aki_stage_creat
-    FROM `physionet-data.mimiciv_derived.kdigo_creatinine` cr
+    FROM mimiciv_derived.kdigo_creatinine cr
 )
 
 -- stages for UO / creat
@@ -59,8 +59,8 @@ WITH cr_stg AS (
             -- Stage 1: <0.5 ml/kg/h for 6–12 hours
             WHEN uo.uo_tm_6hr >= 6 AND uo.uo_rt_6hr < 0.5 THEN 1
             ELSE 0 END AS aki_stage_uo
-    FROM `physionet-data.mimiciv_derived.kdigo_uo` uo
-    INNER JOIN `physionet-data.mimiciv_icu.icustays` ie
+    FROM mimiciv_derived.kdigo_uo uo
+    INNER JOIN mimiciv_icu.icustays ie
         ON uo.stay_id = ie.stay_id
 )
 
@@ -72,7 +72,7 @@ WITH cr_stg AS (
         , CASE
             WHEN charttime IS NOT NULL THEN 3
             ELSE NULL END AS aki_stage_crrt
-    FROM `physionet-data.mimiciv_derived.crrt`
+    FROM mimiciv_derived.crrt
     WHERE crrt_mode IS NOT NULL
 )
 
@@ -137,7 +137,7 @@ SELECT
         ORDER BY DATETIME_DIFF(tm.charttime, ie.intime, SECOND)
         RANGE BETWEEN 21600 PRECEDING AND CURRENT ROW
     ) AS aki_stage_smoothed
-FROM `physionet-data.mimiciv_icu.icustays` ie
+FROM mimiciv_icu.icustays ie
 -- get all possible charttimes as listed in tm_stg
 LEFT JOIN tm_stg tm
     ON ie.stay_id = tm.stay_id

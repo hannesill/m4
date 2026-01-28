@@ -144,7 +144,10 @@ class TestTabularDataAPI:
         """Test get_schema returns dict with tables."""
         mock_get_active.return_value = mock_tabular_dataset
         mock_backend = MagicMock()
-        mock_backend.get_table_list.return_value = ["patients", "admissions"]
+        mock_backend.get_table_list.return_value = [
+            "mimiciv_hosp.patients",
+            "mimiciv_hosp.admissions",
+        ]
         mock_backend.get_backend_info.return_value = "Backend: DuckDB"
         mock_get_backend.return_value = mock_backend
 
@@ -152,8 +155,8 @@ class TestTabularDataAPI:
 
         # Result is now a dict with 'tables' key
         assert isinstance(result, dict)
-        assert "patients" in result["tables"]
-        assert "admissions" in result["tables"]
+        assert "mimiciv_hosp.patients" in result["tables"]
+        assert "mimiciv_hosp.admissions" in result["tables"]
         mock_backend.get_table_list.assert_called_once()
 
     @patch(TABULAR_BACKEND_PATCH)

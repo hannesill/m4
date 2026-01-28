@@ -36,12 +36,12 @@ WITH scorecomp AS (
         , l.wbc_min
         , l.wbc_max
         , l.bands_max
-    FROM `physionet-data.mimiciv_icu.icustays` ie
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_bg_art` bg
+    FROM mimiciv_icu.icustays ie
+    LEFT JOIN mimiciv_derived.first_day_bg_art bg
         ON ie.stay_id = bg.stay_id
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_vitalsign` v
+    LEFT JOIN mimiciv_derived.first_day_vitalsign v
         ON ie.stay_id = v.stay_id
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_lab` l
+    LEFT JOIN mimiciv_derived.first_day_lab l
         ON ie.stay_id = l.stay_id
 )
 
@@ -94,7 +94,7 @@ SELECT
     + COALESCE(wbc_score, 0)
     AS sirs
     , temp_score, heart_rate_score, resp_score, wbc_score
-FROM `physionet-data.mimiciv_icu.icustays` ie
+FROM mimiciv_icu.icustays ie
 LEFT JOIN scorecalc s
           ON ie.stay_id = s.stay_id
 ;

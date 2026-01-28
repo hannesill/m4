@@ -16,7 +16,7 @@ WITH sofa AS (
         , cns_24hours AS cns
         , renal_24hours AS renal
         , sofa_24hours AS sofa_score
-    FROM `physionet-data.mimiciv_derived.sofa`
+    FROM mimiciv_derived.sofa
     WHERE sofa_24hours >= 2
 )
 
@@ -51,7 +51,7 @@ WITH sofa AS (
             ORDER BY
                 suspected_infection_time, antibiotic_time, culture_time, endtime
         ) AS rn_sus
-    FROM `physionet-data.mimiciv_derived.suspicion_of_infection` AS soi
+    FROM mimiciv_derived.suspicion_of_infection AS soi
     INNER JOIN sofa
         ON soi.stay_id = sofa.stay_id
             AND sofa.endtime >= DATETIME_SUB(

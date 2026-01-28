@@ -148,11 +148,11 @@ class SearchNotesTool:
         """Get table names for a note type."""
         note_type = note_type.lower()
         if note_type == "discharge":
-            return ["discharge"]
+            return ["mimiciv_note.discharge"]
         elif note_type == "radiology":
-            return ["radiology"]
+            return ["mimiciv_note.radiology"]
         elif note_type == "all":
-            return ["discharge", "radiology"]
+            return ["mimiciv_note.discharge", "mimiciv_note.radiology"]
         return []
 
     def is_compatible(self, dataset: DatasetDefinition) -> bool:
@@ -207,7 +207,7 @@ class GetNoteTool:
         note_id = params.note_id.replace("'", "''")
 
         # Try both tables since we may not know which one contains the note
-        for table in ["discharge", "radiology"]:
+        for table in ["mimiciv_note.discharge", "mimiciv_note.radiology"]:
             sql = f"""
                 SELECT
                     note_id,
@@ -334,11 +334,11 @@ class ListPatientNotesTool:
         """Get table names for a note type."""
         note_type = note_type.lower()
         if note_type == "discharge":
-            return ["discharge"]
+            return ["mimiciv_note.discharge"]
         elif note_type == "radiology":
-            return ["radiology"]
+            return ["mimiciv_note.radiology"]
         elif note_type == "all":
-            return ["discharge", "radiology"]
+            return ["mimiciv_note.discharge", "mimiciv_note.radiology"]
         return []
 
     def is_compatible(self, dataset: DatasetDefinition) -> bool:

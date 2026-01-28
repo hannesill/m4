@@ -32,8 +32,8 @@ WITH co AS (
         -- start/endtime can be used to filter to values within this hour
         , DATETIME_SUB(ih.endtime, INTERVAL '1' HOUR) AS starttime
         , ih.endtime
-    FROM `physionet-data.mimiciv_derived.icustay_hourly` ih
-    INNER JOIN `physionet-data.mimiciv_icu.icustays` ie
+    FROM mimiciv_derived.icustay_hourly ih
+    INNER JOIN mimiciv_icu.icustays ie
         ON ih.stay_id = ie.stay_id
 )
 
@@ -52,10 +52,10 @@ WITH co AS (
         , CASE
             WHEN vd.stay_id IS NOT NULL THEN pao2fio2ratio ELSE null
         END AS pao2fio2ratio_vent
-    FROM `physionet-data.mimiciv_icu.icustays` ie
-    INNER JOIN `physionet-data.mimiciv_derived.bg` bg
+    FROM mimiciv_icu.icustays ie
+    INNER JOIN mimiciv_derived.bg bg
         ON ie.subject_id = bg.subject_id
-    LEFT JOIN `physionet-data.mimiciv_derived.ventilation` vd
+    LEFT JOIN mimiciv_derived.ventilation vd
         ON ie.stay_id = vd.stay_id
             AND bg.charttime >= vd.starttime
             AND bg.charttime <= vd.endtime
@@ -69,7 +69,7 @@ WITH co AS (
         -- vitals
         , MIN(vs.mbp) AS meanbp_min
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.vitalsign` vs
+    LEFT JOIN mimiciv_derived.vitalsign vs
         ON co.stay_id = vs.stay_id
             AND co.starttime < vs.charttime
             AND co.endtime >= vs.charttime
@@ -81,7 +81,7 @@ WITH co AS (
         -- gcs
         , MIN(gcs.gcs) AS gcs_min
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.gcs` gcs
+    LEFT JOIN mimiciv_derived.gcs gcs
         ON co.stay_id = gcs.stay_id
             AND co.starttime < gcs.charttime
             AND co.endtime >= gcs.charttime
@@ -92,7 +92,7 @@ WITH co AS (
     SELECT co.stay_id, co.hr
         , MAX(enz.bilirubin_total) AS bilirubin_max
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.enzyme` enz
+    LEFT JOIN mimiciv_derived.enzyme enz
         ON co.hadm_id = enz.hadm_id
             AND co.starttime < enz.charttime
             AND co.endtime >= enz.charttime
@@ -103,7 +103,7 @@ WITH co AS (
     SELECT co.stay_id, co.hr
         , MAX(chem.creatinine) AS creatinine_max
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.chemistry` chem
+    LEFT JOIN mimiciv_derived.chemistry chem
         ON co.hadm_id = chem.hadm_id
             AND co.starttime < chem.charttime
             AND co.endtime >= chem.charttime
@@ -114,7 +114,7 @@ WITH co AS (
     SELECT co.stay_id, co.hr
         , MIN(cbc.platelet) AS platelet_min
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.complete_blood_count` cbc
+    LEFT JOIN mimiciv_derived.complete_blood_count cbc
         ON co.hadm_id = cbc.hadm_id
             AND co.starttime < cbc.charttime
             AND co.endtime >= cbc.charttime
@@ -143,7 +143,7 @@ WITH co AS (
                 THEN uo.urineoutput_24hr / uo.uo_tm_24hr * 24
             END) AS uo_24hr
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.urine_output_rate` uo
+    LEFT JOIN mimiciv_derived.urine_output_rate uo
         ON co.stay_id = uo.stay_id
             AND co.starttime < uo.charttime
             AND co.endtime >= uo.charttime
@@ -161,19 +161,19 @@ WITH co AS (
         , MAX(dop.vaso_rate) AS rate_dopamine
         , MAX(dob.vaso_rate) AS rate_dobutamine
     FROM co
-    LEFT JOIN `physionet-data.mimiciv_derived.epinephrine` epi
+    LEFT JOIN mimiciv_derived.epinephrine epi
         ON co.stay_id = epi.stay_id
             AND co.endtime > epi.starttime
             AND co.endtime <= epi.endtime
-    LEFT JOIN `physionet-data.mimiciv_derived.norepinephrine` nor
+    LEFT JOIN mimiciv_derived.norepinephrine nor
         ON co.stay_id = nor.stay_id
             AND co.endtime > nor.starttime
             AND co.endtime <= nor.endtime
-    LEFT JOIN `physionet-data.mimiciv_derived.dopamine` dop
+    LEFT JOIN mimiciv_derived.dopamine dop
         ON co.stay_id = dop.stay_id
             AND co.endtime > dop.starttime
             AND co.endtime <= dop.endtime
-    LEFT JOIN `physionet-data.mimiciv_derived.dobutamine` dob
+    LEFT JOIN mimiciv_derived.dobutamine dob
         ON co.stay_id = dob.stay_id
             AND co.endtime > dob.starttime
             AND co.endtime <= dob.endtime

@@ -33,8 +33,8 @@ WITH cpap AS (
                 WHEN LOWER(ce.value) LIKE '%cpap%' THEN 1
                 WHEN LOWER(ce.value) LIKE '%bipap mask%' THEN 1
                 ELSE 0 END) AS cpap
-    FROM `physionet-data.mimiciv_icu.icustays` ie
-    INNER JOIN `physionet-data.mimiciv_icu.chartevents` ce
+    FROM mimiciv_icu.icustays ie
+    INNER JOIN mimiciv_icu.chartevents ce
         ON ie.stay_id = ce.stay_id
             AND ce.charttime >= ie.intime
             AND ce.charttime <= DATETIME_ADD(ie.intime, INTERVAL '1' DAY)
@@ -52,11 +52,11 @@ WITH cpap AS (
         , pao2fio2ratio
         , CASE WHEN vd.stay_id IS NOT NULL THEN 1 ELSE 0 END AS vent
         , CASE WHEN cp.stay_id IS NOT NULL THEN 1 ELSE 0 END AS cpap
-    FROM `physionet-data.mimiciv_derived.bg` bg
-    INNER JOIN `physionet-data.mimiciv_icu.icustays` ie
+    FROM mimiciv_derived.bg bg
+    INNER JOIN mimiciv_icu.icustays ie
         ON bg.hadm_id = ie.hadm_id
             AND bg.charttime >= ie.intime AND bg.charttime < ie.outtime
-    LEFT JOIN `physionet-data.mimiciv_derived.ventilation` vd
+    LEFT JOIN mimiciv_derived.ventilation vd
         ON ie.stay_id = vd.stay_id
             AND bg.charttime >= vd.starttime
             AND bg.charttime <= vd.endtime
@@ -104,10 +104,10 @@ WITH cpap AS (
 
         , uo.urineoutput
 
-    FROM `physionet-data.mimiciv_icu.icustays` ie
-    INNER JOIN `physionet-data.mimiciv_hosp.admissions` adm
+    FROM mimiciv_icu.icustays ie
+    INNER JOIN mimiciv_hosp.admissions adm
         ON ie.hadm_id = adm.hadm_id
-    INNER JOIN `physionet-data.mimiciv_hosp.patients` pat
+    INNER JOIN mimiciv_hosp.patients pat
         ON ie.subject_id = pat.subject_id
 
     -- join to above view to get pao2/fio2 ratio
@@ -115,13 +115,13 @@ WITH cpap AS (
         ON ie.stay_id = pf.stay_id
 
     -- join to custom tables to get more data....
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_gcs` gcs
+    LEFT JOIN mimiciv_derived.first_day_gcs gcs
         ON ie.stay_id = gcs.stay_id
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_vitalsign` vital
+    LEFT JOIN mimiciv_derived.first_day_vitalsign vital
         ON ie.stay_id = vital.stay_id
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_urine_output` uo
+    LEFT JOIN mimiciv_derived.first_day_urine_output uo
         ON ie.stay_id = uo.stay_id
-    LEFT JOIN `physionet-data.mimiciv_derived.first_day_lab` labs
+    LEFT JOIN mimiciv_derived.first_day_lab labs
         ON ie.stay_id = labs.stay_id
 )
 
@@ -224,7 +224,7 @@ SELECT ie.subject_id, ie.hadm_id, ie.stay_id
     , pulmonary
     , hematologic
     , hepatic
-FROM `physionet-data.mimiciv_icu.icustays` ie
+FROM mimiciv_icu.icustays ie
 LEFT JOIN scorecomp s
           ON ie.stay_id = s.stay_id
 ;

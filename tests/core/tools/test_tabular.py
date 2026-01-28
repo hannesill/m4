@@ -50,9 +50,9 @@ class TestGetDatabaseSchemaTool:
     def test_invoke_returns_table_list(self, mock_dataset, mock_backend):
         """Test that invoke returns dict with tables."""
         mock_backend.get_table_list.return_value = [
-            "patients",
-            "admissions",
-            "icustays",
+            "mimiciv_hosp.patients",
+            "mimiciv_hosp.admissions",
+            "mimiciv_icu.icustays",
         ]
 
         with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
@@ -60,7 +60,11 @@ class TestGetDatabaseSchemaTool:
             result = tool.invoke(mock_dataset, GetDatabaseSchemaInput())
 
             # Result is now a dict
-            assert result["tables"] == ["patients", "admissions", "icustays"]
+            assert result["tables"] == [
+                "mimiciv_hosp.patients",
+                "mimiciv_hosp.admissions",
+                "mimiciv_icu.icustays",
+            ]
             assert result["backend_info"] == "Mock backend info"
 
     def test_invoke_handles_empty_table_list(self, mock_dataset, mock_backend):
