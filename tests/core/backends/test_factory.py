@@ -53,12 +53,15 @@ class TestGetBackend:
         assert isinstance(backend_mixed, DuckDBBackend)
 
     def test_get_backend_default_is_duckdb(self):
-        """Test that default backend is DuckDB when no env var set."""
+        """Test that default backend is DuckDB when no env var or config set."""
         env_backup = os.environ.pop("M4_BACKEND", None)
         try:
-            backend = get_backend()
+            # Mock config to return no backend (simulating fresh install)
+            with patch("m4.config.load_runtime_config", return_value={}):
+                reset_backend_cache()
+                backend = get_backend()
 
-            assert isinstance(backend, DuckDBBackend)
+                assert isinstance(backend, DuckDBBackend)
         finally:
             if env_backup:
                 os.environ["M4_BACKEND"] = env_backup

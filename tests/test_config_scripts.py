@@ -24,7 +24,8 @@ class TestMCPConfigGenerator:
         ):
             config = generator.generate_config()
 
-            assert config["mcpServers"]["m4"]["env"]["M4_BACKEND"] == "duckdb"
+            # M4_BACKEND is no longer in env - backend comes from config file
+            assert "M4_BACKEND" not in config["mcpServers"]["m4"]["env"]
             assert "M4_PROJECT_ID" not in config["mcpServers"]["m4"]["env"]
             assert config["mcpServers"]["m4"]["args"] == ["-m", "m4.mcp_server"]
 
@@ -40,7 +41,8 @@ class TestMCPConfigGenerator:
                 backend="bigquery", project_id="test-project"
             )
 
-            assert config["mcpServers"]["m4"]["env"]["M4_BACKEND"] == "bigquery"
+            # M4_BACKEND is no longer in env - backend comes from config file
+            assert "M4_BACKEND" not in config["mcpServers"]["m4"]["env"]
             assert config["mcpServers"]["m4"]["env"]["M4_PROJECT_ID"] == "test-project"
             assert (
                 config["mcpServers"]["m4"]["env"]["GOOGLE_CLOUD_PROJECT"]
@@ -59,7 +61,8 @@ class TestMCPConfigGenerator:
                 backend="duckdb", db_path="/custom/path/database.duckdb"
             )
 
-            assert config["mcpServers"]["m4"]["env"]["M4_BACKEND"] == "duckdb"
+            # M4_BACKEND is no longer in env - backend comes from config file
+            assert "M4_BACKEND" not in config["mcpServers"]["m4"]["env"]
             assert (
                 config["mcpServers"]["m4"]["env"]["M4_DB_PATH"]
                 == "/custom/path/database.duckdb"
@@ -93,7 +96,8 @@ class TestMCPConfigGenerator:
             env = config["mcpServers"]["m4"]["env"]
             assert env["DEBUG"] == "true"
             assert env["LOG_LEVEL"] == "info"
-            assert env["M4_BACKEND"] == "duckdb"  # Default should still be there
+            # M4_BACKEND is no longer in env - backend comes from config file
+            assert "M4_BACKEND" not in env
 
     def test_validation_invalid_python_path(self):
         """Test that invalid Python path raises error."""

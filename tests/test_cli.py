@@ -235,3 +235,88 @@ def test_status_happy_path(mock_detect, mock_active, mock_size):
     assert "mimic-iv" in result.stdout
     # Updated Rich format: "Parquet size:  X.XX GB"
     assert "Parquet size:" in result.stdout
+
+
+# ----------------------------------------------------------------
+# Backend command tests
+# ----------------------------------------------------------------
+
+
+@patch("m4.cli.set_active_backend")
+def test_backend_duckdb_happy_path(mock_set_backend):
+    """Test setting backend to duckdb."""
+    result = runner.invoke(app, ["backend", "duckdb"])
+
+    assert result.exit_code == 0
+    assert "Active backend set to 'duckdb'" in result.stdout
+    mock_set_backend.assert_called_once_with("duckdb")
+
+
+@patch("m4.cli.set_active_backend")
+@patch("m4.cli.get_active_dataset")
+@patch("m4.cli.DatasetRegistry.get")
+def test_backend_bigquery_happy_path(mock_registry, mock_get_dataset, mock_set_backend):
+    """Test setting backend to bigquery."""
+    # Mock a dataset that supports BigQuery
+    mock_get_dataset.return_value = "mimic-iv"
+    mock_ds = MagicMock()
+    mock_ds.bigquery_dataset_ids = ["mimiciv_3_1_hosp"]
+    mock_registry.return_value = mock_ds
+
+    result = runner.invoke(app, ["backend", "bigquery"])
+
+    assert result.exit_code == 0
+    assert "Active backend set to 'bigquery'" in result.stdout
+    assert "BigQuery requires valid Google Cloud credentials" in result.stdout
+    mock_set_backend.assert_called_once_with("bigquery")
+
+
+@patch("m4.cli.set_active_backend")
+@patch("m4.cli.get_active_dataset")
+@patch("m4.cli.DatasetRegistry.get")
+def test_backend_bigquery_warns_unsupported_dataset(
+    mock_registry, mock_get_dataset, mock_set_backend
+):
+    """Test that bigquery backend warns when current dataset doesn't support BQ."""
+    # Mock a dataset that doesn't support BigQuery
+    mock_get_dataset.return_value = "custom-dataset"
+    mock_ds = MagicMock()
+    mock_ds.bigquery_dataset_ids = []  # No BigQuery support
+    mock_registry.return_value = mock_ds
+
+    result = runner.invoke(app, ["backend", "bigquery"])
+
+    assert result.exit_code == 0
+    assert "Active backend set to 'bigquery'" in result.stdout
+    assert "is not available in BigQuery" in result.stdout
+    mock_set_backend.assert_called_once_with("bigquery")
+
+
+def test_backend_invalid_choice():
+    """Test that invalid backend choice fails with helpful message."""
+    result = runner.invoke(app, ["backend", "mysql"])
+
+    assert result.exit_code == 1
+    assert "Invalid Backend" in result.stdout
+    assert "mysql" in result.stdout
+    assert "bigquery" in result.stdout
+    assert "duckdb" in result.stdout
+
+
+@patch("m4.cli.set_active_backend")
+def test_backend_case_insensitive(mock_set_backend):
+    """Test that backend choice is case-insensitive."""
+    result = runner.invoke(app, ["backend", "BIGQUERY"])
+
+    assert result.exit_code == 0
+    mock_set_backend.assert_called_once_with("bigquery")
+
+
+@patch("m4.cli.set_active_backend")
+def test_backend_duckdb_shows_init_hint(mock_set_backend):
+    """Test that duckdb backend shows initialization hint."""
+    result = runner.invoke(app, ["backend", "duckdb"])
+
+    assert result.exit_code == 0
+    assert "DuckDB uses local database files" in result.stdout
+    assert "m4 init" in result.stdout

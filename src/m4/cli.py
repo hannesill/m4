@@ -7,11 +7,14 @@ from typing import Annotated
 import typer
 
 from m4.config import (
+    VALID_BACKENDS,
     detect_available_local_datasets,
+    get_active_backend,
     get_active_dataset,
     get_dataset_parquet_root,
     get_default_database_path,
     logger,
+    set_active_backend,
     set_active_dataset,
 )
 from m4.console import (
@@ -394,6 +397,55 @@ def use_cmd(
             )
 
 
+@app.command("backend")
+def backend_cmd(
+    target: Annotated[
+        str,
+        typer.Argument(help="Backend to use: duckdb or bigquery", metavar="BACKEND"),
+    ],
+):
+    """Set the active backend (duckdb or bigquery)."""
+    target = target.lower()
+
+    if target not in VALID_BACKENDS:
+        print_error_panel(
+            "Invalid Backend",
+            f"Backend '{target}' is not valid.",
+            hint=f"Valid backends: {', '.join(sorted(VALID_BACKENDS))}",
+        )
+        raise typer.Exit(code=1)
+
+    set_active_backend(target)
+    success(f"Active backend set to '{target}'")
+
+    # Show helpful context
+    if target == "bigquery":
+        info("BigQuery requires valid Google Cloud credentials")
+        console.print(
+            "  [muted]Ensure GOOGLE_APPLICATION_CREDENTIALS is set or run:[/muted]"
+        )
+        console.print("  [command]gcloud auth application-default login[/command]")
+
+        # Warn if current dataset doesn't support BigQuery
+        try:
+            active = get_active_dataset()
+            ds_def = DatasetRegistry.get(active)
+            if ds_def and not ds_def.bigquery_dataset_ids:
+                console.print()
+                warning(f"Current dataset '{active}' is not available in BigQuery")
+                console.print(
+                    "  [muted]Queries will fail. Switch dataset with:[/muted] "
+                    "[command]m4 use <dataset>[/command]"
+                )
+        except ValueError:
+            pass  # No active dataset set
+    else:
+        info("DuckDB uses local database files")
+        console.print(
+            "  [muted]Run[/muted] [command]m4 init[/command] [muted]if you haven't initialized your dataset[/muted]"
+        )
+
+
 @app.command("status")
 def status_cmd(
     show_all: Annotated[
@@ -459,6 +511,9 @@ def status_cmd(
         return
 
     console.print(f"[bold]Active dataset:[/bold] [success]{active}[/success]")
+
+    backend = get_active_backend()
+    console.print(f"[bold]Backend:[/bold] [success]{backend}[/success]")
 
     # Get info for active dataset
     ds_info = availability.get(active)
@@ -662,7 +717,7 @@ def config_cmd(
         typer.Option(
             "--backend",
             "-b",
-            help="Backend to use (duckdb or bigquery). Default: duckdb",
+            help="Configure settings for backend (duckdb or bigquery). Note: Use 'm4 backend' to switch the active backend.",
         ),
     ] = "duckdb",
     db_path: Annotated[
