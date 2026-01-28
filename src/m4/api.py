@@ -18,10 +18,11 @@ Example:
     schema = get_schema()  # Returns dict with 'tables' list
     print(schema['tables'])
 
-    df = execute_query("SELECT COUNT(*) FROM hosp_patients")
+    df = execute_query("SELECT COUNT(*) FROM mimiciv_hosp.patients")
     print(df)  # DataFrame
 
-All functions work with the currently active dataset. Use set_dataset()
+All queries use canonical schema.table names (e.g., mimiciv_hosp.patients)
+that work on both DuckDB and BigQuery backends. Use set_dataset()
 to switch between datasets.
 """
 
@@ -197,7 +198,7 @@ def execute_query(sql: str) -> pd.DataFrame:
         QueryError: If query execution fails.
 
     Example:
-        >>> df = execute_query("SELECT gender, COUNT(*) FROM hosp_patients GROUP BY gender")
+        >>> df = execute_query("SELECT gender, COUNT(*) FROM mimiciv_hosp.patients GROUP BY gender")
         >>> print(df)
            gender  count_star()
         0       M            55
