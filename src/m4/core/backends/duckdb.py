@@ -32,13 +32,14 @@ class DuckDBBackend:
 
         # Execute a query
         result = backend.execute_query(
-            "SELECT * FROM hosp_patients LIMIT 5",
+            "SELECT * FROM mimiciv_hosp.patients LIMIT 5",
             mimic_demo
         )
         print(result.data)
 
-        # Get table list
+        # Get table list (returns schema-qualified names)
         tables = backend.get_table_list(mimic_demo)
+        # e.g. ["mimiciv_hosp.admissions", "mimiciv_hosp.patients", ...]
     """
 
     def __init__(self, db_path_override: str | Path | None = None):
@@ -167,24 +168,45 @@ class DuckDBBackend:
     def get_table_list(self, dataset: DatasetDefinition) -> list[str]:
         """Get list of available tables in the dataset.
 
+        Returns schema-qualified names (e.g. ``mimiciv_hosp.patients``) when
+        the database contains non-system schemas.  Falls back to unqualified
+        names from the ``main`` schema for backward compatibility with custom
+        datasets that have no schema mapping.
+
         Args:
             dataset: The dataset definition
 
         Returns:
-            List of table names
+            List of table names (schema-qualified when applicable)
         """
-        query = """
+        # First try non-system schemas (created by schema_mapping)
+        schema_query = """
+        SELECT table_schema || '.' || table_name AS qualified_name
+        FROM information_schema.tables
+        WHERE table_schema NOT IN ('main', 'information_schema', 'pg_catalog')
+        ORDER BY table_schema, table_name
+        """
+        result = self.execute_query(schema_query, dataset)
+
+        if (
+            result.error is None
+            and result.dataframe is not None
+            and not result.dataframe.empty
+        ):
+            return result.dataframe["qualified_name"].tolist()
+
+        # Fallback: query main schema (backward compat)
+        fallback_query = """
         SELECT table_name
         FROM information_schema.tables
         WHERE table_schema = 'main'
         ORDER BY table_name
         """
-        result = self.execute_query(query, dataset)
+        result = self.execute_query(fallback_query, dataset)
 
         if result.error or result.dataframe is None or result.dataframe.empty:
             return []
 
-        # Extract table names from DataFrame
         return result.dataframe["table_name"].tolist()
 
     def get_table_info(
@@ -192,8 +214,12 @@ class DuckDBBackend:
     ) -> QueryResult:
         """Get schema information for a specific table.
 
+        Supports both schema-qualified names (``mimiciv_hosp.patients``) and
+        simple names (``patients``).  Schema-qualified names use
+        ``information_schema.columns``; simple names use ``PRAGMA table_info``.
+
         Args:
-            table_name: Name of the table to inspect
+            table_name: Name of the table to inspect (may be schema-qualified)
             dataset: The dataset definition
 
         Returns:
@@ -202,9 +228,21 @@ class DuckDBBackend:
         Raises:
             TableNotFoundError: If the table does not exist
         """
-        # Use PRAGMA table_info for DuckDB
-        # Execute directly to catch CatalogException before error sanitization
-        query = f"PRAGMA table_info('{table_name}')"
+        if "." in table_name:
+            schema, table = table_name.split(".", 1)
+            query = f"""
+                SELECT ordinal_position AS cid,
+                       column_name AS name,
+                       data_type AS type,
+                       CASE WHEN is_nullable = 'YES' THEN 1 ELSE 0 END AS notnull,
+                       column_default AS dflt_value,
+                       0 AS pk
+                FROM information_schema.columns
+                WHERE table_schema = '{schema}' AND table_name = '{table}'
+                ORDER BY ordinal_position
+            """
+        else:
+            query = f"PRAGMA table_info('{table_name}')"
 
         try:
             conn = self._connect(dataset)
@@ -237,8 +275,11 @@ class DuckDBBackend:
     ) -> QueryResult:
         """Get sample rows from a table.
 
+        Supports both schema-qualified names (``mimiciv_hosp.patients``) and
+        simple names (``patients``).
+
         Args:
-            table_name: Name of the table to sample
+            table_name: Name of the table to sample (may be schema-qualified)
             dataset: The dataset definition
             limit: Maximum number of rows to return
 
@@ -248,7 +289,11 @@ class DuckDBBackend:
         # Sanitize limit
         limit = max(1, min(limit, 100))
 
-        query = f'SELECT * FROM "{table_name}" LIMIT {limit}'
+        if "." in table_name:
+            schema, table = table_name.split(".", 1)
+            query = f'SELECT * FROM {schema}."{table}" LIMIT {limit}'
+        else:
+            query = f'SELECT * FROM "{table_name}" LIMIT {limit}'
         return self.execute_query(query, dataset)
 
     def get_backend_info(self, dataset: DatasetDefinition) -> str:

@@ -26,6 +26,10 @@ def test_dataset():
         modalities={Modality.TABULAR},
         bigquery_project_id="test-project",
         bigquery_dataset_ids=["test_dataset_1", "test_dataset_2"],
+        bigquery_schema_mapping={
+            "test_schema_1": "test_dataset_1",
+            "test_schema_2": "test_dataset_2",
+        },
     )
 
 
@@ -226,10 +230,205 @@ class TestBigQueryTableOperations:
                 assert "column_name" in result.dataframe.columns
 
     def test_get_table_info_invalid_qualified_name(self, test_dataset):
-        """Test error handling for invalid qualified name."""
+        """Test error handling for invalid qualified name (too many parts)."""
         backend = BigQueryBackend()
 
-        result = backend.get_table_info("invalid.name", test_dataset)
+        result = backend.get_table_info("a.b.c.d", test_dataset)
+
+        assert result.success is False
+        assert "Invalid" in result.error
+
+
+class TestBigQueryCanonicalTranslation:
+    """Test canonical schema.table to BigQuery name translation."""
+
+    def test_translate_canonical_to_bq(self, test_dataset):
+        """Test translating canonical schema.table to BQ fully-qualified name."""
+        backend = BigQueryBackend()
+        sql = "SELECT * FROM test_schema_1.patients LIMIT 10"
+
+        result = backend._translate_canonical_to_bq(sql, test_dataset)
+
+        assert result == (
+            "SELECT * FROM `test-project.test_dataset_1.patients` LIMIT 10"
+        )
+
+    def test_translate_multiple_tables(self, test_dataset):
+        """Test translating multiple canonical references in one query."""
+        backend = BigQueryBackend()
+        sql = (
+            "SELECT * FROM test_schema_1.patients p "
+            "JOIN test_schema_2.admissions a ON p.id = a.patient_id"
+        )
+
+        result = backend._translate_canonical_to_bq(sql, test_dataset)
+
+        assert "`test-project.test_dataset_1.patients`" in result
+        assert "`test-project.test_dataset_2.admissions`" in result
+
+    def test_translate_backticks_passthrough(self, test_dataset):
+        """Test that backtick-wrapped names pass through untouched."""
+        backend = BigQueryBackend()
+        sql = "SELECT * FROM `test-project.test_dataset_1.patients` LIMIT 10"
+
+        result = backend._translate_canonical_to_bq(sql, test_dataset)
+
+        assert result == sql
+
+    def test_translate_empty_mapping(self):
+        """Test that empty mapping returns SQL unchanged."""
+        dataset = DatasetDefinition(
+            name="no-mapping",
+            bigquery_project_id="test-project",
+            bigquery_dataset_ids=["ds1"],
+            bigquery_schema_mapping={},
+        )
+        backend = BigQueryBackend()
+        sql = "SELECT * FROM some_schema.patients"
+
+        result = backend._translate_canonical_to_bq(sql, dataset)
+
+        assert result == sql
+
+    def test_translate_canonical_mimiciv_example(self):
+        """Test with realistic MIMIC-IV schema mapping."""
+        dataset = DatasetDefinition(
+            name="mimic-iv-test",
+            bigquery_project_id="physionet-data",
+            bigquery_dataset_ids=["mimiciv_3_1_hosp"],
+            bigquery_schema_mapping={"mimiciv_hosp": "mimiciv_3_1_hosp"},
+        )
+        backend = BigQueryBackend()
+        sql = "SELECT * FROM mimiciv_hosp.patients WHERE subject_id = 123"
+
+        result = backend._translate_canonical_to_bq(sql, dataset)
+
+        assert result == (
+            "SELECT * FROM `physionet-data.mimiciv_3_1_hosp.patients` "
+            "WHERE subject_id = 123"
+        )
+
+
+class TestBigQueryCanonicalTableOperations:
+    """Test table operations with canonical schema.table format."""
+
+    def test_get_table_list_canonical_format(self, test_dataset, mock_bigquery):
+        """Test that get_table_list returns canonical schema.table format."""
+        import pandas as pd
+
+        # Mock returns table names for each dataset
+        mock_df_1 = pd.DataFrame({"table_name": ["patients", "admissions"]})
+        mock_df_2 = pd.DataFrame({"table_name": ["vitals"]})
+
+        mock_job_1 = MagicMock()
+        mock_job_1.to_dataframe.return_value = mock_df_1
+        mock_job_2 = MagicMock()
+        mock_job_2.to_dataframe.return_value = mock_df_2
+
+        mock_bigquery.query.side_effect = [mock_job_1, mock_job_2]
+
+        with patch.dict("sys.modules", {"google.cloud": MagicMock()}):
+            mock_bq = MagicMock()
+            with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
+                backend = BigQueryBackend()
+                backend._client_cache = {"client": mock_bigquery, "project_id": None}
+
+                tables = backend.get_table_list(test_dataset)
+
+                assert "test_schema_1.admissions" in tables
+                assert "test_schema_1.patients" in tables
+                assert "test_schema_2.vitals" in tables
+                # Verify NO backtick-wrapped names
+                assert not any("`" in t for t in tables)
+
+    def test_get_table_list_fallback_no_mapping(self, mock_bigquery):
+        """Test get_table_list falls back to dataset ID when no reverse mapping."""
+        import pandas as pd
+
+        dataset = DatasetDefinition(
+            name="no-mapping",
+            bigquery_project_id="test-project",
+            bigquery_dataset_ids=["raw_dataset"],
+            bigquery_schema_mapping={},
+        )
+
+        mock_df = pd.DataFrame({"table_name": ["patients"]})
+        mock_job = MagicMock()
+        mock_job.to_dataframe.return_value = mock_df
+        mock_bigquery.query.return_value = mock_job
+
+        with patch.dict("sys.modules", {"google.cloud": MagicMock()}):
+            mock_bq = MagicMock()
+            with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
+                backend = BigQueryBackend()
+                backend._client_cache = {"client": mock_bigquery, "project_id": None}
+
+                tables = backend.get_table_list(dataset)
+
+                # Falls back to BQ dataset ID as schema name
+                assert "raw_dataset.patients" in tables
+
+    def test_get_table_info_canonical_format(self, test_dataset, mock_bigquery):
+        """Test get_table_info accepts canonical schema.table format."""
+        import pandas as pd
+
+        mock_df = pd.DataFrame(
+            {
+                "column_name": ["id", "name"],
+                "data_type": ["INT64", "STRING"],
+                "is_nullable": ["NO", "YES"],
+            }
+        )
+        mock_query_job = MagicMock()
+        mock_query_job.to_dataframe.return_value = mock_df
+        mock_bigquery.query.return_value = mock_query_job
+
+        with patch.dict("sys.modules", {"google.cloud": MagicMock()}):
+            mock_bq = MagicMock()
+            with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
+                backend = BigQueryBackend()
+                backend._client_cache = {"client": mock_bigquery, "project_id": None}
+
+                result = backend.get_table_info("test_schema_1.patients", test_dataset)
+
+                assert result.success is True
+                assert result.dataframe is not None
+
+                # Verify the query used the translated BQ dataset ID
+                call_args = mock_bigquery.query.call_args
+                executed_sql = call_args[0][0]
+                assert "test_dataset_1" in executed_sql
+                assert "patients" in executed_sql
+
+    def test_get_sample_data_canonical_format(self, test_dataset, mock_bigquery):
+        """Test get_sample_data accepts canonical schema.table format."""
+        import pandas as pd
+
+        mock_df = pd.DataFrame({"id": [1, 2], "name": ["a", "b"]})
+        mock_query_job = MagicMock()
+        mock_query_job.to_dataframe.return_value = mock_df
+        mock_bigquery.query.return_value = mock_query_job
+
+        with patch.dict("sys.modules", {"google.cloud": MagicMock()}):
+            mock_bq = MagicMock()
+            with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
+                backend = BigQueryBackend()
+                backend._client_cache = {"client": mock_bigquery, "project_id": None}
+
+                result = backend.get_sample_data("test_schema_1.patients", test_dataset)
+
+                assert result.success is True
+
+                # Verify the query used the translated BQ name
+                call_args = mock_bigquery.query.call_args
+                executed_sql = call_args[0][0]
+                assert "`test-project.test_dataset_1.patients`" in executed_sql
+
+    def test_get_sample_data_invalid_name(self, test_dataset):
+        """Test get_sample_data with too many dot-separated parts."""
+        backend = BigQueryBackend()
+
+        result = backend.get_sample_data("a.b.c.d", test_dataset)
 
         assert result.success is False
         assert "Invalid" in result.error
