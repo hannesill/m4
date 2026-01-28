@@ -8,6 +8,8 @@ import os
 import shutil
 from pathlib import Path
 
+from m4.config import get_active_backend
+
 
 def get_claude_config_path():
     """Get the Claude Desktop configuration file path."""
@@ -106,7 +108,7 @@ def create_mcp_config(
                 "args": ["-m", "m4.mcp_server"],
                 "cwd": str(current_dir),
                 "env": {
-                    "M4_BACKEND": backend,
+                    # Backend is read from m4_data/config.json (set via `m4 backend`)
                     # Set M4_DATA_DIR to ensure server finds data in the correct location
                     "M4_DATA_DIR": str(m4_data_dir),
                 },
@@ -197,14 +199,16 @@ def setup_claude_desktop(
 
         print("✅ Successfully configured Claude Desktop!")
         print(f"📁 Config file: {claude_config_path}")
-        print(f"🔧 Backend: {backend}")
 
-        if backend == "duckdb":
+        active_backend = get_active_backend()
+        print(f"🔧 Backend: {active_backend} (use 'm4 backend' to switch)")
+
+        if active_backend == "duckdb":
             db_path_display = (
                 db_path or "default (m4_data/databases/mimic_iv_demo.duckdb)"
             )
             print(f"💾 Database: {db_path_display}")
-        elif backend == "bigquery":
+        elif active_backend == "bigquery":
             project_display = project_id or "physionet-data"
             print(f"☁️  Project: {project_display}")
 
@@ -283,7 +287,7 @@ def main():
         exit(1)
 
     print("🚀 Setting up M4 MCP Server with Claude Desktop...")
-    print(f"📊 Backend: {args.backend}")
+    print(f"📊 Backend: {get_active_backend()} (from m4_data/config.json)")
 
     # Prepare OAuth2 configuration if enabled
     oauth2_config = None

@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from m4.config import get_default_database_path
+from m4.config import get_active_backend, get_default_database_path
 
 # Error messages
 _DATABASE_PATH_ERROR_MSG = (
@@ -113,8 +113,8 @@ class MCPConfigGenerator:
         m4_data_dir = self._find_m4_data_dir(working_directory)
 
         # Build environment variables
+        # Backend is read from m4_data/config.json (set via `m4 backend`)
         env = {
-            "M4_BACKEND": backend,
             # Set M4_DATA_DIR to ensure server finds data in the correct location
             "M4_DATA_DIR": str(m4_data_dir),
         }
@@ -326,11 +326,14 @@ def print_config_info(config: dict[str, Any]):
     print(f"🏷️  Server name: {server_name}")
     print(f"🐍 Python path: {server_config['command']}")
     print(f"📁 Working directory: {server_config['cwd']}")
-    print(f"🔧 Backend: {server_config['env'].get('M4_BACKEND', 'unknown')}")
+
+    # Backend is read from config file, not from MCP env
+    backend = get_active_backend()
+    print(f"🔧 Backend: {backend} (from m4_data/config.json)")
 
     if "M4_DB_PATH" in server_config["env"]:
         print(f"💾 Database path: {server_config['env']['M4_DB_PATH']}")
-    elif server_config["env"].get("M4_BACKEND") in ("duckdb",):
+    elif backend == "duckdb":
         # Show the default path when using DuckDB backend
         default_path = get_default_database_path("mimic-iv-demo")
         if default_path is None:
@@ -340,14 +343,13 @@ def print_config_info(config: dict[str, Any]):
     if "M4_PROJECT_ID" in server_config["env"]:
         print(f"☁️  Project ID: {server_config['env']['M4_PROJECT_ID']}")
 
-    # Show additional env vars
+    # Show additional env vars (excluding ones we've already displayed)
     additional_env = {
         k: v
         for k, v in server_config["env"].items()
         if k
         not in [
             "PYTHONPATH",
-            "M4_BACKEND",
             "M4_DB_PATH",
             "M4_PROJECT_ID",
             "GOOGLE_CLOUD_PROJECT",

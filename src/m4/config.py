@@ -244,6 +244,53 @@ def set_active_dataset(choice: str) -> None:
     save_runtime_config(cfg)
 
 
+VALID_BACKENDS = {"duckdb", "bigquery"}
+
+
+def get_active_backend() -> str:
+    """Get the active backend.
+
+    Priority:
+    1. M4_BACKEND environment variable
+    2. Config file setting
+    3. Default to 'duckdb'
+
+    Returns:
+        Backend name ('duckdb' or 'bigquery')
+    """
+    # Priority 1: Environment variable
+    env_backend = os.getenv("M4_BACKEND")
+    if env_backend:
+        return env_backend.lower()
+
+    # Priority 2: Config file
+    cfg = load_runtime_config()
+    backend = cfg.get("backend")
+    if backend:
+        return backend.lower()
+
+    # Default
+    return "duckdb"
+
+
+def set_active_backend(choice: str) -> None:
+    """Set the active backend.
+
+    Args:
+        choice: Backend name ('duckdb' or 'bigquery')
+
+    Raises:
+        ValueError: If the backend is not valid
+    """
+    choice = choice.lower()
+    if choice not in VALID_BACKENDS:
+        raise ValueError(f"backend must be one of {VALID_BACKENDS}. Got: {choice}")
+
+    cfg = load_runtime_config()
+    cfg["backend"] = choice
+    save_runtime_config(cfg)
+
+
 def get_duckdb_path_for(choice: str) -> Path | None:
     return get_default_database_path(choice)
 

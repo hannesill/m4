@@ -7,9 +7,9 @@ This package provides the backend abstraction layer for M4:
 - get_backend(): Factory function for backend selection
 """
 
-import os
 import threading
 
+from m4.config import get_active_backend
 from m4.core.backends.base import (
     Backend,
     BackendError,
@@ -35,7 +35,7 @@ def get_backend(backend_type: str | None = None) -> Backend:
     Args:
         backend_type: Type of backend ('duckdb' or 'bigquery').
                      If None, uses M4_BACKEND environment variable,
-                     defaulting to 'duckdb'.
+                     then config file, defaulting to 'duckdb'.
 
     Returns:
         Backend instance
@@ -51,7 +51,7 @@ def get_backend(backend_type: str | None = None) -> Backend:
         bq_backend = get_backend("bigquery")
     """
     if backend_type is None:
-        backend_type = os.getenv("M4_BACKEND", "duckdb")
+        backend_type = get_active_backend()
 
     backend_type = backend_type.lower()
 

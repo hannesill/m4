@@ -168,6 +168,17 @@ class BigQueryBackend:
         Returns:
             QueryResult with query output as native DataFrame
         """
+        # Check if dataset supports BigQuery
+        if not dataset.bigquery_dataset_ids:
+            return QueryResult(
+                dataframe=None,
+                error=(
+                    f"Dataset '{dataset.name}' is not available in BigQuery. "
+                    f"Use 'm4 backend duckdb' to switch to local database, "
+                    f"or 'm4 use <dataset>' to choose a BigQuery-enabled dataset."
+                ),
+            )
+
         sql = self._translate_canonical_to_bq(sql, dataset)
         try:
             import pandas as pd
@@ -309,7 +320,11 @@ class BigQueryBackend:
         if not dataset.bigquery_dataset_ids:
             return QueryResult(
                 dataframe=None,
-                error="No BigQuery datasets configured for this dataset",
+                error=(
+                    f"Dataset '{dataset.name}' is not available in BigQuery. "
+                    f"Use 'm4 backend duckdb' to switch to local database, "
+                    f"or 'm4 use <dataset>' to choose a BigQuery-enabled dataset."
+                ),
             )
 
         project_id = self._get_project_id(dataset)
@@ -389,7 +404,11 @@ class BigQueryBackend:
         if not dataset.bigquery_dataset_ids:
             return QueryResult(
                 dataframe=None,
-                error="No BigQuery datasets configured for this dataset",
+                error=(
+                    f"Dataset '{dataset.name}' is not available in BigQuery. "
+                    f"Use 'm4 backend duckdb' to switch to local database, "
+                    f"or 'm4 use <dataset>' to choose a BigQuery-enabled dataset."
+                ),
             )
 
         project_id = self._get_project_id(dataset)
