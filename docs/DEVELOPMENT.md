@@ -79,12 +79,13 @@ Point your MCP client to your local development environment:
     "m4": {
       "command": "/absolute/path/to/m4/.venv/bin/python",
       "args": ["-m", "m4.mcp_server"],
-      "cwd": "/absolute/path/to/m4",
-      "env": { "M4_BACKEND": "duckdb" }
+      "cwd": "/absolute/path/to/m4"
     }
   }
 }
 ```
+
+The active backend is configured via `m4 backend duckdb` (or `bigquery`), not through the MCP env block.
 
 ## Architecture Overview
 

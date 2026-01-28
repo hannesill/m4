@@ -22,7 +22,6 @@ For manual MCP client configuration with OAuth2 enabled:
       "command": "uvx",
       "args": ["m4-infra"],
       "env": {
-        "M4_BACKEND": "duckdb",
         "M4_OAUTH2_ENABLED": "true",
         "M4_OAUTH2_ISSUER_URL": "https://your-auth-provider.com",
         "M4_OAUTH2_AUDIENCE": "m4-api",
@@ -32,6 +31,8 @@ For manual MCP client configuration with OAuth2 enabled:
   }
 }
 ```
+
+> **Note:** The active backend is configured via `m4 backend duckdb` (or `bigquery`), not through MCP env vars.
 
 ## Environment Variables
 

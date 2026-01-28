@@ -18,7 +18,13 @@ gcloud auth application-default login
 
 This opens a browser to complete authentication.
 
-### 2. Configure M4 for BigQuery
+### 2. Switch to BigQuery backend
+
+```bash
+m4 backend bigquery
+```
+
+### 3. Configure your MCP client
 
 **Claude Desktop:**
 ```bash
@@ -32,13 +38,13 @@ m4 config --backend bigquery --project-id YOUR_PROJECT_ID
 
 Replace `YOUR_PROJECT_ID` with your own billing project for BigQuery usage, not the PhysioNet dataset project. The variable is mandatory to ensure billing is correctly attributed.
 
-### 3. Set the dataset
+### 4. Set the dataset
 
 ```bash
 m4 use mimic-iv    # or eicu
 ```
 
-### 4. Restart your MCP client
+### 5. Restart your MCP client
 
 The AI client will now query BigQuery directly.
 
@@ -54,7 +60,7 @@ M4 uses these PhysioNet BigQuery datasets:
 
 ## Environment Variables
 
-You can also configure BigQuery via environment variables:
+You can also override the backend via environment variables (these take priority over `m4 backend`):
 
 ```bash
 export M4_BACKEND=bigquery

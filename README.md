@@ -99,12 +99,12 @@ set_dataset("mimic-iv")
 
 # Get schema as a dict
 schema = get_schema()
-print(schema['tables'])  # ['admissions', 'diagnoses_icd', ...]
+print(schema['tables'])  # ['mimiciv_hosp.admissions', 'mimiciv_hosp.diagnoses_icd', ...]
 
 # Query returns a pandas DataFrame
 df = execute_query("""
     SELECT icd_code, COUNT(*) as n
-    FROM hosp_diagnoses_icd
+    FROM mimiciv_hosp.diagnoses_icd
     GROUP BY icd_code
     ORDER BY n DESC
     LIMIT 10
@@ -176,10 +176,11 @@ Once connected, try asking:
 
 These datasets are supported out of the box. However, it is possible to add any other custom dataset by following [these instructions](docs/CUSTOM_DATASETS.md).
 
-Switch datasets anytime:
+Switch datasets or backends anytime:
 ```bash
 m4 use mimic-iv     # Switch to full MIMIC-IV
-m4 status           # Show active dataset details
+m4 backend bigquery # Switch to BigQuery (or duckdb)
+m4 status           # Show active dataset and backend
 m4 status --all     # List all available datasets
 ```
 
