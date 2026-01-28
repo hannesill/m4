@@ -3,6 +3,7 @@
 from m4.core.validation import (
     format_error_with_guidance,
     is_safe_query,
+    validate_table_name,
 )
 
 
@@ -346,3 +347,58 @@ class TestFormatErrorWithGuidance:
         """Generic errors should still provide guidance."""
         result = format_error_with_guidance("Unknown error occurred")
         assert "get_database_schema()" in result
+
+
+class TestValidateTableName:
+    """Tests for validate_table_name function."""
+
+    def test_simple_table_name(self):
+        """Plain table names are valid."""
+        assert validate_table_name("patients") is True
+        assert validate_table_name("hosp_admissions") is True
+
+    def test_qualified_name_two_parts(self):
+        """schema.table format is valid."""
+        assert validate_table_name("mimiciv_hosp.patients") is True
+        assert validate_table_name("eicu_crd.patient") is True
+        assert validate_table_name("mimiciv_hosp.admissions") is True
+
+    def test_three_parts_invalid(self):
+        """Three-part names (a.b.c) are invalid."""
+        assert validate_table_name("a.b.c") is False
+
+    def test_empty_schema_invalid(self):
+        """Leading dot (.table) is invalid."""
+        assert validate_table_name(".table") is False
+
+    def test_empty_table_invalid(self):
+        """Trailing dot (schema.) is invalid."""
+        assert validate_table_name("schema.") is False
+
+    def test_backtick_wrapped_passthrough(self):
+        """Backtick-wrapped BigQuery names pass through."""
+        assert validate_table_name("`project.dataset.table`") is True
+        assert (
+            validate_table_name("`physionet-data.mimiciv_3_1_hosp.admissions`") is True
+        )
+
+    def test_empty_and_none(self):
+        """Empty string and None are invalid."""
+        assert validate_table_name("") is False
+        assert validate_table_name(None) is False
+
+    def test_sql_keyword_as_table_rejected(self):
+        """SQL keywords are rejected as the table part."""
+        assert validate_table_name("SELECT") is False
+        assert validate_table_name("DROP") is False
+
+    def test_sql_keyword_as_schema_allowed(self):
+        """SQL keywords in the schema part are not rejected (unlikely but spec says only check table part)."""
+        # The schema part is not checked against SQL keywords
+        assert validate_table_name("select.patients") is True
+
+    def test_special_characters_rejected(self):
+        """Names with special characters are rejected."""
+        assert validate_table_name("table name") is False
+        assert validate_table_name("table;name") is False
+        assert validate_table_name("table--name") is False

@@ -135,6 +135,10 @@ def is_safe_query(sql_query: str) -> tuple[bool, str]:
 def validate_table_name(table_name: str) -> bool:
     """Validate a table name to prevent SQL injection.
 
+    Accepts plain table names (``patients``), qualified names
+    (``mimiciv_hosp.patients``), and backtick-wrapped BigQuery names
+    (``\\`project.dataset.table\\```).
+
     Args:
         table_name: The table name to validate
 
@@ -144,12 +148,22 @@ def validate_table_name(table_name: str) -> bool:
     if not table_name or not isinstance(table_name, str):
         return False
 
-    # Only allow alphanumeric characters and underscores
-    # Table names shouldn't contain special characters
-    if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", table_name):
+    # Backtick-wrapped BigQuery names pass through without further checks
+    if table_name.startswith("`") and table_name.endswith("`"):
+        return True
+
+    # Split on dot — allow 1 part (table) or 2 parts (schema.table)
+    parts = table_name.split(".")
+    if len(parts) not in (1, 2):
         return False
 
-    # Block SQL keywords as table names
+    # Each part must be a valid identifier
+    identifier_re = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+    for part in parts:
+        if not identifier_re.match(part):
+            return False
+
+    # Block SQL keywords in the table part only (last element)
     sql_keywords = {
         "SELECT",
         "FROM",
@@ -162,7 +176,8 @@ def validate_table_name(table_name: str) -> bool:
         "ALTER",
         "TRUNCATE",
     }
-    if table_name.upper() in sql_keywords:
+    table_part = parts[-1]
+    if table_part.upper() in sql_keywords:
         return False
 
     return True

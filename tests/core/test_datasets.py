@@ -61,6 +61,12 @@ class TestDatasetDefinition:
         )
         assert isinstance(ds.modalities, frozenset)
 
+    def test_schema_mapping_defaults_to_empty(self):
+        """Test that schema_mapping defaults to empty dict."""
+        ds = DatasetDefinition(name="test-dataset")
+        assert ds.schema_mapping == {}
+        assert ds.bigquery_schema_mapping == {}
+
 
 class TestDatasetRegistry:
     """Test DatasetRegistry with enhanced datasets."""
@@ -123,6 +129,46 @@ class TestDatasetRegistry:
         assert "mimic-iv-demo" in names
         assert "mimic-iv" in names
         assert "eicu" in names
+
+    def test_mimic_demo_schema_mapping(self):
+        """Test MIMIC-IV demo has correct schema mappings."""
+        DatasetRegistry.reset()
+        ds = DatasetRegistry.get("mimic-iv-demo")
+        assert ds.schema_mapping == {"hosp": "mimiciv_hosp", "icu": "mimiciv_icu"}
+        assert ds.bigquery_schema_mapping == {}
+        assert ds.primary_verification_table == "mimiciv_hosp.admissions"
+
+    def test_mimic_iv_schema_mapping(self):
+        """Test MIMIC-IV has correct schema and BigQuery mappings."""
+        DatasetRegistry.reset()
+        ds = DatasetRegistry.get("mimic-iv")
+        assert ds.schema_mapping == {
+            "hosp": "mimiciv_hosp",
+            "icu": "mimiciv_icu",
+            "derived": "mimiciv_derived",
+        }
+        assert ds.bigquery_schema_mapping == {
+            "mimiciv_hosp": "mimiciv_3_1_hosp",
+            "mimiciv_icu": "mimiciv_3_1_icu",
+            "mimiciv_derived": "mimiciv_derived",
+        }
+        assert ds.primary_verification_table == "mimiciv_hosp.admissions"
+
+    def test_mimic_iv_note_schema_mapping(self):
+        """Test MIMIC-IV Note has correct schema mappings."""
+        DatasetRegistry.reset()
+        ds = DatasetRegistry.get("mimic-iv-note")
+        assert ds.schema_mapping == {"note": "mimiciv_note"}
+        assert ds.bigquery_schema_mapping == {"mimiciv_note": "mimiciv_note"}
+        assert ds.primary_verification_table == "mimiciv_note.discharge"
+
+    def test_eicu_schema_mapping(self):
+        """Test eICU has correct schema mappings with empty-string key."""
+        DatasetRegistry.reset()
+        ds = DatasetRegistry.get("eicu")
+        assert ds.schema_mapping == {"": "eicu_crd"}
+        assert ds.bigquery_schema_mapping == {"eicu_crd": "eicu_crd"}
+        assert ds.primary_verification_table == "eicu_crd.patient"
 
 
 class TestJSONLoading:

@@ -5,6 +5,7 @@ protocol for executing queries against Google BigQuery datasets.
 """
 
 import os
+import re
 from typing import Any
 
 from m4.core.backends.base import (
@@ -131,6 +132,32 @@ class BigQueryBackend:
                 backend=self.name,
             )
 
+    def _translate_canonical_to_bq(self, sql: str, dataset: DatasetDefinition) -> str:
+        """Translate canonical schema.table names to fully-qualified BigQuery names.
+
+        For each entry in dataset.bigquery_schema_mapping, replaces canonical
+        schema.table references with backtick-wrapped `project.bq_dataset.table`.
+        Names already wrapped in backticks are left untouched.
+
+        Args:
+            sql: SQL string potentially containing canonical schema.table references
+            dataset: The dataset definition with bigquery_schema_mapping
+
+        Returns:
+            SQL string with canonical names replaced by BigQuery fully-qualified names
+        """
+        if not dataset.bigquery_schema_mapping:
+            return sql
+
+        project_id = self._get_project_id(dataset)
+
+        for canonical_schema, bq_dataset_id in dataset.bigquery_schema_mapping.items():
+            pattern = rf"(?<![.\w`]){re.escape(canonical_schema)}\.(\w+)"
+            replacement = rf"`{project_id}.{bq_dataset_id}.\1`"
+            sql = re.sub(pattern, replacement, sql)
+
+        return sql
+
     def execute_query(self, sql: str, dataset: DatasetDefinition) -> QueryResult:
         """Execute a SQL query against BigQuery.
 
@@ -141,6 +168,7 @@ class BigQueryBackend:
         Returns:
             QueryResult with query output as native DataFrame
         """
+        sql = self._translate_canonical_to_bq(sql, dataset)
         try:
             import pandas as pd
             from google.cloud import bigquery as bq
@@ -175,13 +203,13 @@ class BigQueryBackend:
     def get_table_list(self, dataset: DatasetDefinition) -> list[str]:
         """Get list of available tables in the dataset.
 
-        Returns fully qualified table names suitable for direct use in queries.
+        Returns canonical schema.table names (e.g., mimiciv_hosp.patients).
 
         Args:
             dataset: The dataset definition
 
         Returns:
-            List of fully qualified table names (e.g., `project.dataset.table`)
+            List of canonical table names in schema.table format
         """
         if not dataset.bigquery_dataset_ids:
             return []
@@ -189,9 +217,12 @@ class BigQueryBackend:
         project_id = self._get_project_id(dataset)
         tables = []
 
+        # Build reverse mapping: bq_dataset_id -> canonical_schema
+        reverse_mapping = {v: k for k, v in dataset.bigquery_schema_mapping.items()}
+
         for dataset_id in dataset.bigquery_dataset_ids:
             query = f"""
-            SELECT CONCAT('`{project_id}.{dataset_id}.', table_name, '`') as table_name
+            SELECT table_name
             FROM `{project_id}.{dataset_id}.INFORMATION_SCHEMA.TABLES`
             """
             result = self.execute_query(query, dataset)
@@ -199,8 +230,11 @@ class BigQueryBackend:
             if result.error or result.dataframe is None:
                 continue
 
-            # Extract table names from DataFrame
-            tables.extend(result.dataframe["table_name"].tolist())
+            # Map BQ dataset ID to canonical schema, fall back to dataset ID
+            canonical_schema = reverse_mapping.get(dataset_id, dataset_id)
+
+            for table in result.dataframe["table_name"].tolist():
+                tables.append(f"{canonical_schema}.{table}")
 
         return sorted(tables)
 
@@ -210,32 +244,54 @@ class BigQueryBackend:
         """Get schema information for a specific table.
 
         Args:
-            table_name: Name of the table (simple or fully qualified)
+            table_name: Name of the table. Accepts:
+                - Canonical format: schema.table (e.g., mimiciv_hosp.patients)
+                - Backtick-wrapped BQ format: `project.dataset.table`
+                - Simple name: table (searches all configured datasets)
             dataset: The dataset definition
 
         Returns:
             QueryResult with column information as DataFrame
         """
-        # Handle both simple and qualified table names
-        is_qualified = "." in table_name
+        has_backticks = "`" in table_name
+        has_dot = "." in table_name
 
-        if is_qualified:
-            # Parse qualified name: `project.dataset.table` or project.dataset.table
-            clean_name = table_name.strip("`")
-            parts = clean_name.split(".")
-
-            if len(parts) != 3:
-                return QueryResult(
-                    dataframe=None,
-                    error=(
-                        f"Invalid qualified table name: {table_name}. "
-                        "Expected format: project.dataset.table"
-                    ),
-                )
-
-            project_id = parts[0]
-            dataset_id = parts[1]
-            simple_name = parts[2]
+        if has_backticks or has_dot:
+            # Qualified name - parse components
+            if has_backticks:
+                # Backtick-wrapped BQ format: `project.dataset.table`
+                clean_name = table_name.strip("`")
+                parts = clean_name.split(".")
+                if len(parts) != 3:
+                    return QueryResult(
+                        dataframe=None,
+                        error=(
+                            f"Invalid qualified table name: {table_name}. "
+                            "Expected format: `project.dataset.table`"
+                        ),
+                    )
+                project_id, dataset_id, simple_name = parts
+            else:
+                parts = table_name.split(".")
+                if len(parts) == 2:
+                    # Canonical format: schema.table
+                    canonical_schema, simple_name = parts
+                    project_id = self._get_project_id(dataset)
+                    dataset_id = dataset.bigquery_schema_mapping.get(
+                        canonical_schema, canonical_schema
+                    )
+                elif len(parts) == 3:
+                    # Legacy 3-part: project.dataset.table
+                    project_id, dataset_id, simple_name = parts
+                else:
+                    return QueryResult(
+                        dataframe=None,
+                        error=(
+                            f"Invalid table name: {table_name}. "
+                            "Expected format: schema.table or "
+                            "`project.dataset.table`"
+                        ),
+                    )
 
             query = f"""
             SELECT column_name, data_type, is_nullable
@@ -282,7 +338,10 @@ class BigQueryBackend:
         """Get sample rows from a table.
 
         Args:
-            table_name: Name of the table (simple or fully qualified)
+            table_name: Name of the table. Accepts:
+                - Canonical format: schema.table (e.g., mimiciv_hosp.patients)
+                - Backtick-wrapped BQ format: `project.dataset.table`
+                - Simple name: table (searches all configured datasets)
             dataset: The dataset definition
             limit: Maximum number of rows to return
 
@@ -292,12 +351,37 @@ class BigQueryBackend:
         # Sanitize limit
         limit = max(1, min(limit, 100))
 
-        # Handle qualified vs simple names
-        is_qualified = "." in table_name
+        has_backticks = "`" in table_name
+        has_dot = "." in table_name
 
-        if is_qualified:
-            clean_name = table_name.strip("`")
-            full_name = f"`{clean_name}`"
+        if has_backticks or has_dot:
+            if has_backticks:
+                # Backtick-wrapped BQ format
+                clean_name = table_name.strip("`")
+                full_name = f"`{clean_name}`"
+            else:
+                parts = table_name.split(".")
+                if len(parts) == 2:
+                    # Canonical format: schema.table
+                    canonical_schema, simple_name = parts
+                    project_id = self._get_project_id(dataset)
+                    bq_dataset_id = dataset.bigquery_schema_mapping.get(
+                        canonical_schema, canonical_schema
+                    )
+                    full_name = f"`{project_id}.{bq_dataset_id}.{simple_name}`"
+                elif len(parts) == 3:
+                    # Legacy 3-part: project.dataset.table
+                    full_name = f"`{'.'.join(parts)}`"
+                else:
+                    return QueryResult(
+                        dataframe=None,
+                        error=(
+                            f"Invalid table name: {table_name}. "
+                            "Expected format: schema.table or "
+                            "`project.dataset.table`"
+                        ),
+                    )
+
             query = f"SELECT * FROM {full_name} LIMIT {limit}"
             return self.execute_query(query, dataset)
 

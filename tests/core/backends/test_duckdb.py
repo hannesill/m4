@@ -470,3 +470,133 @@ class TestDuckDBEdgeCases:
 
         assert result.success is False
         assert result.error is not None
+
+
+# ----------------------------------------------------------------
+# Schema-qualified operations
+# ----------------------------------------------------------------
+
+
+@pytest.fixture
+def schema_dataset():
+    """Dataset definition with schema mapping."""
+    return DatasetDefinition(
+        name="schema-test",
+        modalities={Modality.TABULAR},
+        schema_mapping={"hosp": "mimiciv_hosp", "icu": "mimiciv_icu"},
+    )
+
+
+@pytest.fixture
+def schema_db(schema_dataset):
+    """DuckDB with real schemas and schema-qualified views."""
+    import duckdb
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = Path(tmpdir) / "schema_test.duckdb"
+        conn = duckdb.connect(str(db_path))
+
+        conn.execute("CREATE SCHEMA mimiciv_hosp")
+        conn.execute("CREATE SCHEMA mimiciv_icu")
+
+        conn.execute(
+            """
+            CREATE TABLE mimiciv_hosp.patients (
+                subject_id INTEGER PRIMARY KEY,
+                gender VARCHAR,
+                anchor_age INTEGER
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO mimiciv_hosp.patients VALUES
+            (1, 'M', 65), (2, 'F', 42)
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE TABLE mimiciv_icu.icustays (
+                subject_id INTEGER,
+                stay_id INTEGER PRIMARY KEY
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO mimiciv_icu.icustays VALUES (1, 10), (2, 20)
+            """
+        )
+        conn.close()
+
+        yield db_path
+
+
+class TestSchemaQualifiedTableList:
+    """Test get_table_list returns schema.table format."""
+
+    def test_returns_qualified_names(self, schema_dataset, schema_db):
+        backend = DuckDBBackend(db_path_override=schema_db)
+        tables = backend.get_table_list(schema_dataset)
+
+        assert "mimiciv_hosp.patients" in tables
+        assert "mimiciv_icu.icustays" in tables
+
+    def test_fallback_to_main_schema(self, test_dataset, temp_db):
+        """Databases without custom schemas fall back to main."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+        tables = backend.get_table_list(test_dataset)
+
+        assert "patients" in tables
+
+
+class TestSchemaQualifiedTableInfo:
+    """Test get_table_info with schema.table input."""
+
+    def test_schema_qualified_info(self, schema_dataset, schema_db):
+        backend = DuckDBBackend(db_path_override=schema_db)
+        result = backend.get_table_info("mimiciv_hosp.patients", schema_dataset)
+
+        assert result.success is True
+        assert result.dataframe is not None
+        assert "name" in result.dataframe.columns
+        col_names = result.dataframe["name"].tolist()
+        assert "subject_id" in col_names
+        assert "gender" in col_names
+
+    def test_simple_name_still_works(self, test_dataset, temp_db):
+        """PRAGMA table_info path for unqualified names."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+        result = backend.get_table_info("patients", test_dataset)
+
+        assert result.success is True
+        assert "name" in result.dataframe.columns
+
+    def test_schema_qualified_not_found(self, schema_dataset, schema_db):
+        backend = DuckDBBackend(db_path_override=schema_db)
+
+        with pytest.raises(TableNotFoundError):
+            backend.get_table_info("mimiciv_hosp.nonexistent", schema_dataset)
+
+
+class TestSchemaQualifiedSampleData:
+    """Test get_sample_data with schema.table input."""
+
+    def test_schema_qualified_sample(self, schema_dataset, schema_db):
+        backend = DuckDBBackend(db_path_override=schema_db)
+        result = backend.get_sample_data(
+            "mimiciv_hosp.patients", schema_dataset, limit=1
+        )
+
+        assert result.success is True
+        assert result.row_count <= 1
+        assert result.dataframe is not None
+        assert "subject_id" in result.dataframe.columns
+
+    def test_simple_name_sample(self, test_dataset, temp_db):
+        backend = DuckDBBackend(db_path_override=temp_db)
+        result = backend.get_sample_data("patients", test_dataset, limit=2)
+
+        assert result.success is True
+        assert result.row_count <= 2
