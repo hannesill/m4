@@ -70,7 +70,7 @@ from m4 import execute_query, get_schema, get_table_info
 # Schema exploration
 schema = get_schema()
 print(schema['backend_info'])  # 'DuckDB (local): /path/to/db'
-print(schema['tables'])        # ['admissions', 'diagnoses_icd', ...]
+print(schema['tables'])        # ['mimiciv_hosp.admissions', 'mimiciv_hosp.diagnoses_icd', ...]
 
 # Table details
 info = get_table_info("mimiciv_hosp.admissions")

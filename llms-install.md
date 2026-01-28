@@ -32,10 +32,7 @@ pip install m4-infra
   "mcpServers": {
     "m4": {
       "command": "uvx",
-      "args": ["m4-infra"],
-      "env": {
-        "M4_BACKEND": "duckdb"
-      }
+      "args": ["m4-infra"]
     }
   }
 }
@@ -48,6 +45,12 @@ pip install m4-infra
 
 ### BigQuery Backend (Full Datasets)
 
+First, switch the active backend:
+```bash
+m4 backend bigquery
+```
+
+Then use this MCP configuration:
 ```json
 {
   "mcpServers": {
@@ -55,7 +58,6 @@ pip install m4-infra
       "command": "uvx",
       "args": ["m4-infra"],
       "env": {
-        "M4_BACKEND": "bigquery",
         "M4_PROJECT_ID": "user-project-id"
       }
     }
@@ -101,7 +103,7 @@ set_dataset("mimic-iv")
 # Returns pandas DataFrame
 df = execute_query("""
     SELECT subject_id, gender, anchor_age
-    FROM hosp_patients
+    FROM mimiciv_hosp.patients
     WHERE anchor_age > 65
 """)
 
