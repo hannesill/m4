@@ -13,11 +13,13 @@ Create a JSON file in `m4_data/datasets/`:
   "description": "MIMIC-IV Emergency Department Module",
   "file_listing_url": "https://physionet.org/files/mimic-iv-ed/2.2/",
   "subdirectories_to_scan": ["ed"],
-  "primary_verification_table": "ed_edstays",
+  "primary_verification_table": "mimiciv_ed.edstays",
   "requires_authentication": true,
   "bigquery_project_id": "physionet-data",
   "bigquery_dataset_ids": ["mimiciv_ed"],
-  "modalities": ["TABULAR"]
+  "modalities": ["TABULAR"],
+  "schema_mapping": {"ed": "mimiciv_ed"},
+  "bigquery_schema_mapping": {"mimiciv_ed": "mimiciv_ed"}
 }
 ```
 
@@ -39,6 +41,8 @@ m4 init mimic-iv-ed --src /path/to/your/csv/files
 | `bigquery_project_id` | No | GCP project for BigQuery access |
 | `bigquery_dataset_ids` | No | BigQuery dataset IDs |
 | `modalities` | No | Data types in this dataset (see below). Defaults to `["TABULAR"]` |
+| `schema_mapping` | No | Maps filesystem subdirectories to canonical schema names (see below) |
+| `bigquery_schema_mapping` | No | Maps canonical schema names to BigQuery dataset IDs (see below) |
 
 ### Available Modalities
 
@@ -48,6 +52,48 @@ m4 init mimic-iv-ed --src /path/to/your/csv/files
 | `NOTES` | Clinical notes and discharge summaries | `search_notes`, `get_note`, `list_patient_notes` |
 
 Tools are filtered based on the dataset's declared modalities. If not specified, defaults to `["TABULAR"]`.
+
+### Schema Mapping (Canonical Table Names)
+
+M4 uses canonical `schema.table` names (e.g., `mimiciv_hosp.patients`) that work identically on both DuckDB and BigQuery backends. The `schema_mapping` and `bigquery_schema_mapping` fields control how these canonical names are constructed.
+
+**`schema_mapping`** maps filesystem subdirectories to canonical schema names. When DuckDB creates views, files from each subdirectory are placed into the corresponding schema:
+
+```json
+{
+  "schema_mapping": {
+    "hosp": "mimiciv_hosp",
+    "icu": "mimiciv_icu"
+  }
+}
+```
+
+With this mapping, a file at `hosp/patients.csv` becomes queryable as `mimiciv_hosp.patients`.
+
+For datasets where all files are in the root directory (no subdirectories), use an empty string key:
+
+```json
+{
+  "schema_mapping": {
+    "": "eicu_crd"
+  }
+}
+```
+
+**`bigquery_schema_mapping`** maps canonical schema names to BigQuery dataset IDs. This allows the BigQuery backend to translate canonical names to the actual GCP dataset names:
+
+```json
+{
+  "bigquery_schema_mapping": {
+    "mimiciv_hosp": "mimiciv_3_1_hosp",
+    "mimiciv_icu": "mimiciv_3_1_icu"
+  }
+}
+```
+
+With this, a query for `mimiciv_hosp.patients` is rewritten to `physionet-data.mimiciv_3_1_hosp.patients` on BigQuery.
+
+Custom datasets without `schema_mapping` still work — tables will be created with flat names in the `main` schema (backward-compatible behavior).
 
 ## Initialization Process
 

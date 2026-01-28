@@ -27,12 +27,12 @@ schema = get_schema()
 print(schema['tables'])  # List of table names
 
 # 3. Inspect a table
-info = get_table_info("hosp_patients")
+info = get_table_info("mimiciv_hosp.patients")
 print(info['schema'])  # DataFrame: column names, types, descriptions
 print(info['sample'])  # DataFrame: sample rows
 
 # 4. Run queries
-df = execute_query("SELECT * FROM hosp_patients LIMIT 1000")
+df = execute_query("SELECT * FROM mimiciv_hosp.patients LIMIT 1000")
 print(df.head())
 print(df.describe())
 ```
@@ -73,14 +73,14 @@ print(schema['backend_info'])  # 'DuckDB (local): /path/to/db'
 print(schema['tables'])        # ['admissions', 'diagnoses_icd', ...]
 
 # Table details
-info = get_table_info("hosp_admissions")
+info = get_table_info("mimiciv_hosp.admissions")
 print(info['schema'])  # DataFrame with column_name, data_type, description
 print(info['sample'])  # DataFrame with sample rows
 
 # Execute queries - returns pandas DataFrame
 df = execute_query("""
     SELECT gender, COUNT(*) as count
-    FROM hosp_patients
+    FROM mimiciv_hosp.patients
     GROUP BY gender
 """)
 print(df)
@@ -89,7 +89,7 @@ print(df)
 # 1      F    165
 ```
 
-> **Table naming convention:** Tables are prefixed by module (`hosp_`, `icu_`) to indicate their source schema in MIMIC-IV. Use `get_schema()` to see all available tables.
+> **Table naming convention:** Tables use canonical `schema.table` names (e.g., `mimiciv_hosp.patients`, `mimiciv_icu.icustays`) that work on both DuckDB and BigQuery backends. Use `get_schema()` to see all available tables.
 
 ### Clinical Notes
 
@@ -136,11 +136,11 @@ M4Error (base)
 from m4 import execute_query, set_dataset, DatasetError, QueryError, ModalityError
 
 try:
-    df = execute_query("SELECT * FROM hosp_patients")
+    df = execute_query("SELECT * FROM mimiciv_hosp.patients")
 except DatasetError:
     # No dataset selected
     set_dataset("mimic-iv")
-    df = execute_query("SELECT * FROM hosp_patients")
+    df = execute_query("SELECT * FROM mimiciv_hosp.patients")
 except QueryError as e:
     # Bad SQL or missing table
     print(f"Query failed: {e}")
@@ -169,9 +169,9 @@ icu_stays = execute_query("""
         a.hospital_expire_flag,
         p.gender,
         p.anchor_age as age
-    FROM icu_icustays i
-    JOIN hosp_admissions a ON i.hadm_id = a.hadm_id
-    JOIN hosp_patients p ON i.subject_id = p.subject_id
+    FROM mimiciv_icu.icustays i
+    JOIN mimiciv_hosp.admissions a ON i.hadm_id = a.hadm_id
+    JOIN mimiciv_hosp.patients p ON i.subject_id = p.subject_id
 """)
 
 # Step 2: Analyze with pandas

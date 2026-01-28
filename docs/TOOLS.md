@@ -66,7 +66,7 @@ Execute a read-only SQL SELECT query.
 **Example:**
 ```sql
 SELECT subject_id, gender, anchor_age
-FROM hosp_patients
+FROM mimiciv_hosp.patients
 WHERE anchor_age > 65
 LIMIT 10
 ```
@@ -156,7 +156,7 @@ MIMIC-IV and MIMIC-IV-Note are separate datasets that can be linked via `subject
 ```
 # 1. Find patients of interest in MIMIC-IV (tabular)
 set_dataset("mimic-iv")
-execute_query("SELECT subject_id FROM hosp_patients WHERE anchor_age > 80 LIMIT 5")
+execute_query("SELECT subject_id FROM mimiciv_hosp.patients WHERE anchor_age > 80 LIMIT 5")
 
 # 2. Switch to notes and explore their clinical narratives
 set_dataset("mimic-iv-note")
@@ -209,7 +209,7 @@ For complex analysis beyond simple queries, M4 provides a Python API that return
 from m4 import set_dataset, execute_query
 
 set_dataset("mimic-iv")
-df = execute_query("SELECT * FROM hosp_patients")  # Returns pandas DataFrame
+df = execute_query("SELECT * FROM mimiciv_hosp.patients")  # Returns pandas DataFrame
 ```
 
 See [Code Execution Guide](CODE_EXECUTION.md) for the full API reference.

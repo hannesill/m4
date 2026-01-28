@@ -38,12 +38,12 @@ schema = get_schema()
 print(schema['tables'])  # List of table names
 
 # Step 3: Inspect specific tables before querying
-info = get_table_info("hosp_patients")
+info = get_table_info("mimiciv_hosp.patients")
 print(info['schema'])  # DataFrame with column names, types
 print(info['sample'])  # DataFrame with sample rows
 
 # Step 4: Execute queries
-df = execute_query("SELECT gender, COUNT(*) as n FROM hosp_patients GROUP BY gender")
+df = execute_query("SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROUP BY gender")
 # Returns pd.DataFrame - use pandas operations freely
 ```
 
@@ -90,12 +90,12 @@ M4Error (base)
 from m4 import execute_query, set_dataset, DatasetError, QueryError, ModalityError
 
 try:
-    df = execute_query("SELECT * FROM hosp_patients")
+    df = execute_query("SELECT * FROM mimiciv_hosp.patients")
 except DatasetError as e:
     # No dataset selected, or dataset not found
     # Recovery: call set_dataset() first, or check list_datasets()
     set_dataset("mimic-iv")
-    df = execute_query("SELECT * FROM hosp_patients")
+    df = execute_query("SELECT * FROM mimiciv_hosp.patients")
 except QueryError as e:
     # SQL error or table not found
     # Recovery: check table name with get_schema(), fix SQL syntax
@@ -112,7 +112,7 @@ except ModalityError as e:
 
 ```python
 set_dataset("mimic-iv")
-df1 = execute_query("SELECT COUNT(*) FROM hosp_patients")  # Uses mimic-iv
+df1 = execute_query("SELECT COUNT(*) FROM mimiciv_hosp.patients")  # Uses mimic-iv
 
 set_dataset("eicu")
 df2 = execute_query("SELECT COUNT(*) FROM patient")        # Uses eicu
@@ -134,5 +134,4 @@ Use the Python API when you need to:
 - Avoid parsing formatted output
 
 
-IMPORTANT:
-- The table names change if using a local duckdb instance or the bigquery hosted instance. Always check the table names, schema and the dataset ids before querying. This means that even if a skill is giving you a query to run, you should verify that the table names are correct for your current backend and dataset. The table structure and variables are the same, only the table and dataset names differ.
+NOTE: All queries use canonical `schema.table` names (e.g., `mimiciv_hosp.patients`, `mimiciv_icu.icustays`). These names work on both the local DuckDB backend and the BigQuery backend — no need to adjust table names per backend.

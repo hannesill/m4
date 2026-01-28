@@ -78,7 +78,7 @@ For complex analysis: multi-step workflows, statistical computations, survival a
 ```python
 from m4 import set_dataset, execute_query
 set_dataset("mimic-iv")
-df = execute_query("SELECT * FROM hosp_patients")  # Returns DataFrame
+df = execute_query("SELECT * FROM mimiciv_hosp.patients")  # Returns DataFrame
 ```
 
 **3. Agent Skills (Knowledge)**
