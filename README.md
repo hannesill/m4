@@ -278,6 +278,9 @@ m4 init mimic-iv-demo --force
 **MCP client won't connect:**
 Check client logs (Claude Desktop: Help → View Logs) and ensure the config JSON is valid.
 
+**`m4` command opens GNU M4 instead of the CLI:**
+On macOS/Linux, `m4` is a built-in system utility. Make sure your virtual environment is activated (`source .venv/bin/activate`) so that the correct `m4` binary is found first. Alternatively, use `uv run m4 [command]` to run within the project environment without activating it.
+
 **Need to reconfigure:**
 ```bash
 m4 config claude --quick   # Regenerate Claude Desktop config
