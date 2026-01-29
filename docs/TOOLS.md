@@ -35,6 +35,8 @@ set_dataset("mimic-iv-note")
 
 These tools are available for datasets with the `TABULAR` modality (mimic-iv, mimic-iv-demo, eicu).
 
+**Derived tables:** For MIMIC-IV, after materializing derived tables with `m4 init-derived mimic-iv`, the `execute_query` tool can query pre-computed clinical concept tables in the `mimiciv_derived.*` schema. These tables provide validated severity scores, sepsis cohorts, organ failure staging, and more -- eliminating the need to write complex clinical SQL from scratch. See [Derived Table Categories](#derived-table-categories) below for the full list.
+
 ### `get_database_schema`
 List all tables in the current dataset.
 
@@ -193,6 +195,26 @@ Clinical notes in MIMIC-IV-Note come in two types:
 | `radiology` | Radiology reports - findings from imaging studies | 500-2,000 chars |
 
 Use the `note_type` parameter to filter searches and listings.
+
+---
+
+## Derived Table Categories
+
+After running `m4 init-derived mimic-iv`, the following pre-computed tables become available in the `mimiciv_derived` schema. Query them with `execute_query` like any other table (e.g., `SELECT * FROM mimiciv_derived.sofa LIMIT 10`).
+
+| Category | Tables | Description |
+|----------|--------|-------------|
+| **Scores** | `sofa`, `sapsii`, `apsiii`, `oasis`, `lods`, `sirs` | Severity and mortality prediction scores |
+| **Sepsis** | `sepsis3`, `suspicion_of_infection` | Sepsis-3 cohort identification and suspected infection events |
+| **Organ Failure** | `kdigo_creatinine`, `kdigo_uo`, `kdigo_stages`, `meld` | KDIGO AKI staging and MELD liver score |
+| **Medications** | `norepinephrine`, `epinephrine`, `dopamine`, `dobutamine`, `phenylephrine`, `vasopressin`, `milrinone`, `norepinephrine_equivalent_dose`, `vasoactive_agent`, `antibiotic`, `acei`, `nsaid`, `neuroblock` | Individual vasopressors, equivalents, and other drug classes |
+| **Measurements** | `vitalsign`, `bg`, `blood_gas`, `chemistry`, `complete_blood_count`, `coagulation`, `cardiac_marker`, `enzyme`, `inflammation`, `icp`, `height`, `urine_output`, `urine_output_rate`, `ventilator_setting`, `oxygen_delivery`, `rhythm`, `gcs`, `creatinine_baseline`, `blood_differential` | Labs, vitals, and clinical measurements |
+| **Demographics** | `age`, `icustay_detail`, `icustay_times`, `icustay_hourly`, `weight_durations` | Patient demographics and ICU stay metadata |
+| **First Day** | `first_day_bg`, `first_day_bg_art`, `first_day_gcs`, `first_day_height`, `first_day_lab`, `first_day_rrt`, `first_day_sofa`, `first_day_urine_output`, `first_day_vitalsign`, `first_day_weight` | Aggregated values from the first 24 hours of ICU admission |
+| **Treatment** | `ventilation`, `rrt`, `crrt`, `invasive_line` | Mechanical ventilation, renal replacement therapy, and lines |
+| **Comorbidity** | `charlson` | Charlson comorbidity index |
+
+These tables are materialized from vendored [mimic-code](https://github.com/MIT-LCP/mimic-code) SQL and are available for MIMIC-IV only (not mimic-iv-demo or eICU). BigQuery users already have access via `physionet-data.mimiciv_derived`.
 
 ---
 

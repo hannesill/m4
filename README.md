@@ -159,6 +159,12 @@ Once connected, try asking:
 - *"Find all ICU stays longer than 7 days"*
 - *"What are the most common lab tests?"*
 
+**Derived concept tables (mimic-iv, after `m4 init-derived`):**
+- *"What are the average SOFA scores for patients with sepsis?"*
+- *"Show KDIGO AKI staging distribution across ICU stays"*
+- *"Find patients on norepinephrine with SOFA > 10"*
+- *"What is the 30-day mortality for patients with Charlson index > 5?"*
+
 **Clinical notes (mimic-iv-note):**
 - *"Search for notes mentioning diabetes"*
 - *"List all notes for patient 10000032"*
@@ -167,12 +173,12 @@ Once connected, try asking:
 
 ## Supported Datasets
 
-| Dataset | Modality | Size | Access | Local | BigQuery |
-|---------|----------|------|--------|-------|----------|
-| **mimic-iv-demo** | Tabular | 100 patients | Free | Yes | No |
-| **mimic-iv** | Tabular | 365k patients | [PhysioNet credentialed](https://physionet.org/content/mimiciv/) | Yes | Yes |
-| **mimic-iv-note** | Notes | 331k notes | [PhysioNet credentialed](https://physionet.org/content/mimic-iv-note/) | Yes | Yes |
-| **eicu** | Tabular | 200k+ patients | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes |
+| Dataset | Modality | Size | Access | Local | BigQuery | Derived Tables |
+|---------|----------|------|--------|-------|----------|----------------|
+| **mimic-iv-demo** | Tabular | 100 patients | Free | Yes | No | No |
+| **mimic-iv** | Tabular | 365k patients | [PhysioNet credentialed](https://physionet.org/content/mimiciv/) | Yes | Yes | Yes (63 tables) |
+| **mimic-iv-note** | Notes | 331k notes | [PhysioNet credentialed](https://physionet.org/content/mimic-iv-note/) | Yes | Yes | No |
+| **eicu** | Tabular | 200k+ patients | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes | No |
 
 These datasets are supported out of the box. However, it is possible to add any other custom dataset by following [these instructions](docs/CUSTOM_DATASETS.md).
 
@@ -183,6 +189,14 @@ m4 backend bigquery # Switch to BigQuery (or duckdb)
 m4 status           # Show active dataset and backend
 m4 status --all     # List all available datasets
 ```
+
+**Derived concept tables** (MIMIC-IV only):
+```bash
+m4 init-derived mimic-iv         # Materialize ~63 derived tables (SOFA, sepsis3, KDIGO, etc.)
+m4 init-derived mimic-iv --list  # List available derived tables without materializing
+```
+
+After running `m4 init mimic-iv`, you are prompted whether to materialize derived tables. You can also run `m4 init-derived` separately at any time. Derived tables are created in the `mimiciv_derived` schema (e.g., `mimiciv_derived.sofa`) and are immediately queryable. The SQL is vendored from the [mimic-code](https://github.com/MIT-LCP/mimic-code) repository -- production-tested and DuckDB-compatible. BigQuery users already have these tables available via `physionet-data.mimiciv_derived` and do not need to run `init-derived`.
 
 <details>
 <summary><strong>Setting up MIMIC-IV or eICU (credentialed datasets)</strong></summary>

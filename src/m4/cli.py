@@ -34,6 +34,8 @@ from m4.console import (
     warning,
 )
 from m4.core.datasets import DatasetRegistry
+from m4.core.derived.builtins import list_builtins
+from m4.core.derived.materializer import materialize_all
 from m4.data_io import (
     compute_parquet_dir_size,
     convert_csv_to_parquet,
@@ -340,6 +342,117 @@ def dataset_init_cmd(
 
     # Set active dataset to match init target
     set_active_dataset(dataset_key)
+
+    # Offer to materialize derived tables for supported datasets
+    _DERIVED_SUPPORTED = {"mimic-iv"}
+
+    if dataset_key in _DERIVED_SUPPORTED and get_active_backend() == "duckdb":
+        console.print()
+        materialize = typer.confirm(
+            "Materialize derived tables? "
+            "(SOFA, sepsis3, KDIGO, scores, medications, etc.)",
+            default=False,
+        )
+        if materialize:
+            try:
+                materialize_all(dataset_key, final_db_path)
+            except Exception as e:
+                error(f"Derived table materialization failed: {e}")
+                console.print(
+                    "  [muted]You can retry later with:[/muted] "
+                    f"[command]m4 init-derived {dataset_key}[/command]"
+                )
+
+
+@app.command("init-derived")
+def init_derived_cmd(
+    dataset_name: Annotated[
+        str,
+        typer.Argument(
+            help="Dataset to materialize derived tables for.",
+            metavar="DATASET_NAME",
+        ),
+    ],
+    list_only: Annotated[
+        bool,
+        typer.Option(
+            "--list",
+            "-l",
+            help="List available derived tables without materializing.",
+        ),
+    ] = False,
+):
+    """Materialize built-in derived tables for a dataset.
+
+    Creates clinically validated concept tables (SOFA scores, sepsis cohorts,
+    KDIGO staging, etc.) from vendored mimic-code SQL. These tables become
+    queryable as mimiciv_derived.* via standard SQL.
+
+    On BigQuery, derived tables already exist — no materialization needed.
+    """
+    dataset_key = dataset_name.lower()
+    ds = DatasetRegistry.get(dataset_key)
+
+    if not ds:
+        supported = ", ".join([d.name for d in DatasetRegistry.list_all()])
+        print_error_panel(
+            "Dataset Not Found",
+            f"Dataset '{dataset_name}' is not supported or not configured.",
+            hint=f"Supported datasets: {supported}",
+        )
+        raise typer.Exit(code=1)
+
+    # Block unsupported datasets
+    if dataset_key in ("mimic-iv-demo",):
+        print_error_panel(
+            "Not Supported",
+            f"Derived tables are not supported for '{dataset_key}'.",
+            hint=(
+                "The demo dataset has only 100 patients; many derived concepts "
+                "produce empty or unreliable results. Use the full mimic-iv dataset."
+            ),
+        )
+        raise typer.Exit(code=1)
+
+    # Block if BigQuery backend
+    if get_active_backend() == "bigquery":
+        info(
+            "BigQuery backend active — built-in derived tables are already available "
+            "on physionet-data.mimiciv_derived. No materialization needed."
+        )
+        return
+
+    if list_only:
+        try:
+            names = list_builtins(dataset_key)
+            console.print(f"\n[bold]Available derived tables for {dataset_key}:[/bold]")
+            console.print(f"[muted]({len(names)} tables)[/muted]\n")
+            for name in names:
+                console.print(f"  {name}")
+        except ValueError as e:
+            error(str(e))
+            raise typer.Exit(code=1)
+        return
+
+    db_path = get_default_database_path(dataset_key)
+    if not db_path or not db_path.exists():
+        print_error_panel(
+            "Database Not Found",
+            f"No DuckDB database found for '{dataset_key}'.",
+            hint=f"Initialize first: m4 init {dataset_key}",
+        )
+        raise typer.Exit(code=1)
+
+    try:
+        created = materialize_all(dataset_key, db_path)
+        success(f"Created {len(created)} derived tables in mimiciv_derived schema")
+    except ValueError as e:
+        error(str(e))
+        raise typer.Exit(code=1)
+    except Exception as e:
+        error(f"Materialization failed: {e}")
+        logger.error(f"Derived table materialization error: {e}", exc_info=True)
+        raise typer.Exit(code=1)
 
 
 @app.command("use")
