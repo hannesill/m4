@@ -27,6 +27,15 @@ uv run m4 init mimic-iv-demo
 # Initialize a dataset (downloads demo data if needed)
 uv run m4 init mimic-iv-demo
 
+# Materialize derived concept tables (MIMIC-IV only)
+# Requires a database initialized with current M4 schema mapping.
+# If you get a "Required schemas not found" error, reinitialize first:
+#   uv run m4 init mimic-iv --force
+uv run m4 init-derived mimic-iv
+
+# List available derived tables without materializing
+uv run m4 init-derived mimic-iv --list
+
 # Switch active dataset
 uv run m4 use mimic-iv
 
@@ -101,7 +110,8 @@ Core Layer (src/m4/core/)
     │
     ├── datasets.py    - Dataset definitions and modalities
     ├── tools/         - Tool implementations (tabular, notes, management)
-    └── backends/      - Database backends (DuckDB, BigQuery)
+    ├── backends/      - Database backends (DuckDB, BigQuery)
+    └── derived/       - Derived concept tables (vendored mimic-code SQL)
 
 Infrastructure Layer
     │
@@ -231,6 +241,22 @@ Run the full test suite before submitting PRs:
 ```bash
 uv run pre-commit run --all-files
 ```
+
+## Updating Vendored Derived SQL
+
+The derived table SQL in `src/m4/core/derived/builtins/mimic_iv/` is vendored from the [mimic-code](https://github.com/MIT-LCP/mimic-code) repository. When mimic-code releases updated SQL (e.g., bug fixes or new concept tables), follow these steps to update:
+
+1. **Check upstream changes:** Review the mimic-code repository for changes to the `mimic-iv/concepts_duckdb/` directory.
+
+2. **Copy updated SQL files:** Replace the corresponding files under `src/m4/core/derived/builtins/mimic_iv/`. Preserve the existing directory structure (score/, sepsis/, medication/, etc.).
+
+3. **Update the orchestrator:** If new tables were added or execution order changed, update `duckdb.sql` to reflect the new `.read` directives from mimic-code's orchestrator.
+
+4. **Test materialization:** Run `m4 init-derived mimic-iv` against a local MIMIC-IV database to verify all tables build successfully.
+
+5. **Update documentation:** If new table categories or tables were added, update `docs/TOOLS.md` (Derived Table Categories section) and `README.md`.
+
+The vendored approach means M4 works offline and ensures reproducibility -- users get the exact SQL version bundled with their M4 release, regardless of upstream changes.
 
 ## Pull Request Process
 

@@ -175,6 +175,52 @@ class Tool(Protocol):
 
 The `ToolSelector` filters tools based on active dataset modalities.
 
+### Derived Table System (`core/derived/`)
+
+Pre-computed clinical concept tables materialized from vendored SQL. This system provides ~63 derived tables for MIMIC-IV, covering severity scores, sepsis definitions, organ failure staging, medications, measurements, and more.
+
+**Architecture:**
+
+```
+core/derived/
+├── __init__.py              # Public API: materialize_all()
+├── materializer.py          # Orchestrates CREATE TABLE execution
+└── builtins/
+    ├── __init__.py           # Execution order parsing, listing
+    └── mimic_iv/
+        ├── duckdb.sql        # Orchestrator (defines dependency order)
+        ├── score/            # SOFA, SAPS-II, APACHE III, OASIS, LODS, SIRS
+        ├── sepsis/           # Sepsis-3, suspicion of infection
+        ├── organfailure/     # KDIGO creatinine/UO/stages, MELD
+        ├── medication/       # Vasopressors, antibiotics, ACE inhibitors, NSAIDs, etc.
+        ├── measurement/      # Labs, vitals, GCS, blood gas, urine output, etc.
+        ├── demographics/     # Age, ICU stay details, weight durations
+        ├── firstday/         # First-day labs, vitals, GCS, SOFA, etc.
+        ├── treatment/        # Ventilation, RRT, CRRT, invasive lines
+        └── comorbidity/      # Charlson comorbidity index
+```
+
+**Vendored SQL approach:** The SQL files are sourced from the [mimic-code](https://github.com/MIT-LCP/mimic-code) repository, which is peer-reviewed and used in hundreds of published studies. The files are vendored (copied into M4's source tree) rather than fetched at runtime, ensuring reproducibility and offline operation. Each SQL file creates a table in the `mimiciv_derived` schema.
+
+**Materialization flow:**
+1. User runs `m4 init-derived mimic-iv` (or accepts the prompt during `m4 init mimic-iv`)
+2. The materializer opens a read-write DuckDB connection to the existing database
+3. A pre-flight check verifies that required base schemas (`mimiciv_hosp`, `mimiciv_icu`) exist — these are created by `m4 init` via schema mapping
+4. It drops and recreates the `mimiciv_derived` schema
+5. The `duckdb.sql` orchestrator defines execution order (respecting inter-table dependencies)
+6. Each SQL file is executed sequentially, creating tables like `mimiciv_derived.sofa`, `mimiciv_derived.sepsis3`, etc.
+7. Tables become immediately queryable via `execute_query`
+
+**Schema dependency:** The vendored SQL references schema-qualified tables (e.g., `mimiciv_icu.chartevents`, `mimiciv_hosp.patients`). These schemas are created by `m4 init` using the dataset's `schema_mapping`. If you initialized your database with an older version of M4 that used flat naming (e.g., `icu_chartevents`), you must reinitialize with `m4 init mimic-iv --force` before running `init-derived`.
+
+**DuckDB-specific SQL modifications:** Most vendored SQL is used as-is from mimic-code. Where the upstream SQL causes severe performance problems under DuckDB (but runs fine on PostgreSQL/BigQuery), we apply targeted rewrites that preserve identical output. These are documented in comments at the top of each modified file. Current modifications:
+
+- `sepsis/suspicion_of_infection.sql`: The upstream query uses `OR` conditions in its JOIN clauses (one branch for cultures with `charttime`, another for cultures with only `chartdate`). `OR` in join predicates prevents DuckDB's IEJoin range-join optimization, causing nested-loop scans (~18 min on full MIMIC-IV). The rewrite splits the `OR` into two separate `INNER JOIN` + `UNION ALL` paths with identical comparison operators, enabling IEJoin on each path.
+
+**Backend note:** Derived table materialization is a DuckDB-only operation. BigQuery users already have these tables available at `physionet-data.mimiciv_derived` and do not need to run `init-derived`.
+
+**Dataset support:** Currently limited to MIMIC-IV (full dataset). Not available for mimic-iv-demo or eICU.
+
 ### Backend System (`core/backends/`)
 
 Backend protocol for query execution:
@@ -225,12 +271,12 @@ mortality_rate = aki_cohort['hospital_expire_flag'].mean()
 
 ## Supported Datasets
 
-| Dataset | Modalities | Patients | Access |
-|---------|------------|----------|--------|
-| mimic-iv-demo | TABULAR | 100 | Free |
-| mimic-iv | TABULAR | 365k | PhysioNet credentialed |
-| mimic-iv-note | NOTES | 331k notes | PhysioNet credentialed |
-| eicu | TABULAR | 200k+ | PhysioNet credentialed |
+| Dataset | Modalities | Patients | Access | Derived Tables |
+|---------|------------|----------|--------|----------------|
+| mimic-iv-demo | TABULAR | 100 | Free | No |
+| mimic-iv | TABULAR | 365k | PhysioNet credentialed | Yes (63 tables) |
+| mimic-iv-note | NOTES | 331k notes | PhysioNet credentialed | No |
+| eicu | TABULAR | 200k+ | PhysioNet credentialed | No |
 
 Custom datasets can be added via JSON definition. See [Custom Datasets](CUSTOM_DATASETS.md).
 

@@ -96,6 +96,19 @@ Skills are installed to `.claude/skills/` (or equivalent for other tools). AI as
 | **clinical-research-pitfalls** | "immortal time bias", "information leakage", "selection bias" | Common methodological mistakes and how to avoid them |
 
 
+## Skills vs. Derived Tables
+
+Skills and derived tables are complementary features that share the same clinical knowledge source (mimic-code), but serve different purposes:
+
+**Derived tables** (`mimiciv_derived.*`) provide pre-computed results. After running `m4 init-derived mimic-iv`, tables like `mimiciv_derived.sofa` and `mimiciv_derived.sepsis3` are ready to query directly. For standard analyses -- computing mortality by SOFA score, identifying sepsis cohorts, filtering by AKI stage -- derived tables are the preferred approach. They are faster (no complex SQL at query time), validated (production-tested SQL from mimic-code), and consistent (every user gets the same results).
+
+**Skills** provide adaptable SQL patterns that the AI assistant can modify for non-standard use cases. When a researcher needs a custom SOFA variant, wants to apply different time windows, or needs to combine concepts in novel ways, skills give the AI the clinical knowledge to generate correct queries from scratch.
+
+**When to use which:**
+- Use derived tables for standard clinical concepts (scores, cohorts, staging) -- they are pre-computed and immediately available
+- Use skills when you need customized logic, non-standard criteria, or when working with datasets that do not have derived tables (e.g., eICU)
+- Skills and derived tables can be used together -- for example, joining a custom cohort with `mimiciv_derived.sofa` for severity scores
+
 ## Skill Structure
 
 Each skill is a directory containing a `SKILL.md` file:
