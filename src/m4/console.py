@@ -201,6 +201,85 @@ def create_spinner_progress() -> Progress:
     )
 
 
+def print_derived_status_line(
+    materialized: int,
+    total: int,
+    dataset_name: str,
+    has_support: bool,
+    is_bigquery: bool = False,
+) -> None:
+    """Print a single-line derived table status.
+
+    Renders one of:
+    - ``Derived: OK (60/60)``
+    - ``Derived: PARTIAL (43/60 — run m4 init-derived mimic-iv --force)``
+    - ``Derived: NO (0/60 — run m4 init-derived mimic-iv)``
+    - ``Derived: - `` (unsupported dataset)
+    - ``Derived: OK (BigQuery)`` (BigQuery backend)
+    """
+    if is_bigquery:
+        console.print(
+            "  [muted]Derived:[/muted]       [success]OK[/success] (BigQuery)"
+        )
+        return
+
+    if not has_support:
+        console.print("  [muted]Derived:[/muted]       [muted]-[/muted]")
+        return
+
+    if materialized == total:
+        console.print(
+            f"  [muted]Derived:[/muted]       [success]OK[/success] ({materialized}/{total})"
+        )
+    elif materialized == 0:
+        console.print(
+            f"  [muted]Derived:[/muted]       [error]NO[/error] "
+            f"(0/{total} — run m4 init-derived {dataset_name})"
+        )
+    else:
+        console.print(
+            f"  [muted]Derived:[/muted]       [warning]PARTIAL[/warning] "
+            f"({materialized}/{total} — run m4 init-derived {dataset_name} --force)"
+        )
+
+
+def print_derived_detail(
+    dataset_name: str,
+    categories: dict[str, list[str]],
+    materialized: set[str],
+) -> None:
+    """Print grouped per-table derived status.
+
+    Example output::
+
+        Derived tables for mimic-iv: 60/60 materialized
+
+          demographics (5/5)
+            OK  age
+            OK  icustay_detail
+            ...
+    """
+    total = sum(len(tables) for tables in categories.values())
+    mat_count = sum(
+        1 for tables in categories.values() for t in tables if t in materialized
+    )
+
+    console.print(
+        f"\n[bold]Derived tables for {dataset_name}:[/bold] "
+        f"{mat_count}/{total} materialized\n"
+    )
+
+    for category, tables in categories.items():
+        cat_ok = sum(1 for t in tables if t in materialized)
+        console.print(f"  [bold]{category}[/bold] ({cat_ok}/{len(tables)})")
+        for table in tables:
+            if table in materialized:
+                console.print(f"    [success]OK[/success]  {table}")
+            else:
+                console.print(f"    [error]--[/error]  {table}")
+        console.print()
+
+
 def print_dataset_status(
     name: str,
     parquet_present: bool,
@@ -211,6 +290,10 @@ def print_dataset_status(
     bigquery_available: bool = False,
     row_count: int | None = None,
     is_active: bool = False,
+    derived_materialized: int | None = None,
+    derived_total: int | None = None,
+    derived_has_support: bool = False,
+    derived_is_bigquery: bool = False,
 ) -> None:
     """Print formatted dataset status information."""
     # Header with active indicator
@@ -225,6 +308,15 @@ def print_dataset_status(
     console.print(f"  [muted]Local Parquet:[/muted] {pq_status}")
     console.print(f"  [muted]Local DuckDB:[/muted]  {db_status}")
     console.print(f"  [muted]BigQuery:[/muted]      {bq_status}")
+
+    # Derived status line
+    print_derived_status_line(
+        materialized=derived_materialized or 0,
+        total=derived_total or 0,
+        dataset_name=name,
+        has_support=derived_has_support,
+        is_bigquery=derived_is_bigquery,
+    )
 
     if parquet_present:
         console.print(f"  [muted]Parquet path:[/muted]  [path]{parquet_root}[/path]")
@@ -288,6 +380,7 @@ def print_datasets_table(
     table.add_column("Active", justify="center")
     table.add_column("Local", justify="center")
     table.add_column("BigQuery", justify="center")
+    table.add_column("Derived", justify="center")
     table.add_column("Size", justify="right")
 
     for ds in datasets:
@@ -313,6 +406,14 @@ def print_datasets_table(
         bq = ds.get("bigquery_available", False)
         bq_str = "[success]OK[/success]" if bq else "[muted]-[/muted]"
 
+        # Derived status
+        derived_mat = ds.get("derived_materialized")
+        derived_tot = ds.get("derived_total")
+        if derived_mat is not None and derived_tot is not None:
+            derived_str = f"{derived_mat}/{derived_tot}"
+        else:
+            derived_str = "[muted]-[/muted]"
+
         # Size
         size_gb = ds.get("parquet_size_gb")
         if size_gb is not None:
@@ -320,6 +421,6 @@ def print_datasets_table(
         else:
             size_str = "[muted]-[/muted]"
 
-        table.add_row(name, active_str, local_str, bq_str, size_str)
+        table.add_row(name, active_str, local_str, bq_str, derived_str, size_str)
 
     console.print(table)

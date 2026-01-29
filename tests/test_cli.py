@@ -235,6 +235,44 @@ def test_status_happy_path(mock_detect, mock_active, mock_size):
     assert "mimic-iv" in result.stdout
     # Updated Rich format: "Parquet size:  X.XX GB"
     assert "Parquet size:" in result.stdout
+    # Derived status line should be present
+    assert "Derived:" in result.stdout
+
+
+@patch("m4.cli.list_materialized_tables")
+@patch("m4.cli.get_default_database_path")
+@patch("m4.cli.get_active_backend", return_value="duckdb")
+@patch("m4.cli.get_active_dataset", return_value="mimic-iv")
+def test_status_derived_flag(
+    mock_active, mock_backend, mock_db_path, mock_mat, tmp_path
+):
+    """Test m4 status --derived shows grouped category listing."""
+    db_file = tmp_path / "mimic_iv.duckdb"
+    db_file.touch()
+    mock_db_path.return_value = db_file
+    mock_mat.return_value = {"sofa", "sepsis3", "age"}
+
+    result = runner.invoke(app, ["status", "--derived"])
+    assert result.exit_code == 0
+    assert "Derived tables for mimic-iv" in result.stdout
+    assert "materialized" in result.stdout
+
+
+@patch("m4.cli.get_active_backend", return_value="duckdb")
+@patch("m4.cli.get_active_dataset", return_value="mimic-iv-demo")
+def test_status_derived_flag_unsupported_dataset(mock_active, mock_backend):
+    """Test --derived with a dataset that has no derived support."""
+    result = runner.invoke(app, ["status", "--derived"])
+    assert result.exit_code == 0
+    assert "not available" in result.stdout
+
+
+@patch("m4.cli.get_active_dataset", return_value=None)
+def test_status_derived_flag_no_active_dataset(mock_active):
+    """Test --derived with no active dataset set."""
+    result = runner.invoke(app, ["status", "--derived"])
+    assert result.exit_code == 0
+    assert "No active dataset" in result.stdout
 
 
 # ----------------------------------------------------------------

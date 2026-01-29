@@ -80,3 +80,37 @@ def list_builtins(dataset_name: str) -> list[str]:
         ValueError: If the dataset has no built-in derived tables.
     """
     return [path.stem for path in get_execution_order(dataset_name)]
+
+
+def has_derived_support(dataset_name: str) -> bool:
+    """Check whether a dataset has built-in derived table definitions.
+
+    Args:
+        dataset_name: Name of the dataset (e.g., "mimic-iv").
+
+    Returns:
+        True if derived tables are available for this dataset.
+    """
+    return dataset_name in _DATASET_DIRS
+
+
+def get_tables_by_category(dataset_name: str) -> dict[str, list[str]]:
+    """Group derived table names by their parent directory (category).
+
+    Returns tables in execution order, grouped by clinical category
+    (e.g., "demographics", "score", "sepsis").
+
+    Args:
+        dataset_name: Name of the dataset (e.g., "mimic-iv").
+
+    Returns:
+        Ordered dict mapping category name to list of table names.
+
+    Raises:
+        ValueError: If the dataset has no built-in derived tables.
+    """
+    categories: dict[str, list[str]] = {}
+    for path in get_execution_order(dataset_name):
+        category = path.parent.name
+        categories.setdefault(category, []).append(path.stem)
+    return categories

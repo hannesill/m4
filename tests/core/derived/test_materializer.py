@@ -15,6 +15,7 @@ from m4.core.derived.builtins import get_execution_order
 from m4.core.derived.materializer import (
     _check_required_schemas,
     get_derived_table_count,
+    list_materialized_tables,
     materialize_all,
 )
 
@@ -97,6 +98,83 @@ class TestGetDerivedTableCount:
         db_path.touch()
 
         get_derived_table_count(db_path)
+
+        mock_con.close.assert_called_once()
+
+
+class TestListMaterializedTables:
+    """Tests for list_materialized_tables()."""
+
+    @patch("m4.core.derived.materializer.duckdb")
+    def test_returns_set_of_table_names(self, mock_duckdb, tmp_path):
+        mock_con = MagicMock()
+        mock_con.execute.return_value.fetchall.return_value = [
+            ("sofa",),
+            ("sepsis3",),
+            ("age",),
+        ]
+        mock_duckdb.connect.return_value = mock_con
+
+        db_path = tmp_path / "test.duckdb"
+        db_path.touch()
+
+        result = list_materialized_tables(db_path)
+
+        assert result == {"sofa", "sepsis3", "age"}
+        mock_duckdb.connect.assert_called_once_with(str(db_path), read_only=True)
+        mock_con.close.assert_called_once()
+
+    @patch("m4.core.derived.materializer.duckdb")
+    def test_returns_empty_set_when_schema_missing(self, mock_duckdb, tmp_path):
+        mock_duckdb.CatalogException = type("CatalogException", (Exception,), {})
+        mock_con = MagicMock()
+        mock_con.execute.side_effect = mock_duckdb.CatalogException("schema not found")
+        mock_duckdb.connect.return_value = mock_con
+
+        db_path = tmp_path / "test.duckdb"
+        db_path.touch()
+
+        result = list_materialized_tables(db_path)
+
+        assert result == set()
+        mock_con.close.assert_called_once()
+
+    @patch("m4.core.derived.materializer.duckdb")
+    def test_returns_empty_set_when_database_locked(self, mock_duckdb, tmp_path):
+        mock_duckdb.IOException = Exception
+        mock_duckdb.connect.side_effect = mock_duckdb.IOException("Could not set lock")
+
+        db_path = tmp_path / "test.duckdb"
+        db_path.touch()
+
+        result = list_materialized_tables(db_path)
+
+        assert result == set()
+
+    @patch("m4.core.derived.materializer.duckdb")
+    def test_returns_empty_set_when_no_tables(self, mock_duckdb, tmp_path):
+        mock_con = MagicMock()
+        mock_con.execute.return_value.fetchall.return_value = []
+        mock_duckdb.connect.return_value = mock_con
+
+        db_path = tmp_path / "test.duckdb"
+        db_path.touch()
+
+        result = list_materialized_tables(db_path)
+
+        assert result == set()
+        mock_con.close.assert_called_once()
+
+    @patch("m4.core.derived.materializer.duckdb")
+    def test_closes_connection(self, mock_duckdb, tmp_path):
+        mock_con = MagicMock()
+        mock_con.execute.return_value.fetchall.return_value = [("sofa",)]
+        mock_duckdb.connect.return_value = mock_con
+
+        db_path = tmp_path / "test.duckdb"
+        db_path.touch()
+
+        list_materialized_tables(db_path)
 
         mock_con.close.assert_called_once()
 

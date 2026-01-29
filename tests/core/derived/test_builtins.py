@@ -14,6 +14,8 @@ import pytest
 from m4.core.derived.builtins import (
     _BUILTINS_DIR,
     get_execution_order,
+    get_tables_by_category,
+    has_derived_support,
     list_builtins,
 )
 
@@ -135,6 +137,76 @@ class TestListBuiltins:
         assert "sofa" in names
         assert "sepsis3" in names
         assert "age" in names
+
+
+class TestHasDerivedSupport:
+    """Tests for has_derived_support()."""
+
+    def test_returns_true_for_mimic_iv(self):
+        assert has_derived_support("mimic-iv") is True
+
+    def test_returns_false_for_unsupported_dataset(self):
+        assert has_derived_support("eicu") is False
+
+    def test_returns_false_for_unknown_dataset(self):
+        assert has_derived_support("nonexistent") is False
+
+    def test_returns_false_for_demo(self):
+        assert has_derived_support("mimic-iv-demo") is False
+
+
+class TestGetTablesByCategory:
+    """Tests for get_tables_by_category()."""
+
+    def test_returns_dict_of_string_to_list(self):
+        result = get_tables_by_category("mimic-iv")
+        assert isinstance(result, dict)
+        for key, value in result.items():
+            assert isinstance(key, str)
+            assert isinstance(value, list)
+            assert all(isinstance(name, str) for name in value)
+
+    def test_contains_expected_categories(self):
+        result = get_tables_by_category("mimic-iv")
+        expected = {
+            "demographics",
+            "score",
+            "sepsis",
+            "measurement",
+            "medication",
+            "treatment",
+            "organfailure",
+            "comorbidity",
+            "firstday",
+        }
+        assert expected.issubset(result.keys())
+
+    def test_total_matches_list_builtins(self):
+        categories = get_tables_by_category("mimic-iv")
+        total = sum(len(tables) for tables in categories.values())
+        assert total == len(list_builtins("mimic-iv"))
+
+    def test_preserves_execution_order_within_categories(self):
+        """Tables within each category should appear in execution order."""
+        categories = get_tables_by_category("mimic-iv")
+        builtins = list_builtins("mimic-iv")
+        for tables in categories.values():
+            indices = [builtins.index(t) for t in tables]
+            assert indices == sorted(indices), (
+                f"Tables not in execution order: {tables}"
+            )
+
+    def test_unsupported_dataset_raises_value_error(self):
+        with pytest.raises(ValueError, match="No built-in derived tables"):
+            get_tables_by_category("eicu")
+
+    def test_sofa_in_score_category(self):
+        result = get_tables_by_category("mimic-iv")
+        assert "sofa" in result.get("score", [])
+
+    def test_sepsis3_in_sepsis_category(self):
+        result = get_tables_by_category("mimic-iv")
+        assert "sepsis3" in result.get("sepsis", [])
 
 
 class TestSqlFileIntegrity:
