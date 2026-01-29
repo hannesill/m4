@@ -86,7 +86,17 @@ def materialize_all(
     """
     execution_order = get_execution_order(dataset_name)
 
-    con = duckdb.connect(str(db_path))
+    try:
+        con = duckdb.connect(str(db_path))
+    except duckdb.IOException as e:
+        if "Could not set lock" in str(e):
+            raise RuntimeError(
+                f"Database '{db_path.name}' is locked by another process. "
+                "Close any running M4 servers or other DuckDB connections "
+                "to this database and try again."
+            ) from e
+        raise
+
     try:
         _check_required_schemas(con, dataset_name)
 

@@ -116,11 +116,23 @@ class DuckDBBackend:
 
         try:
             return duckdb.connect(str(db_path), read_only=True)
+        except duckdb.IOException as e:
+            if "Could not set lock" in str(e):
+                raise ConnectionError(
+                    f"Database '{db_path.name}' is locked by another process. "
+                    "Close any running M4 servers or other DuckDB connections "
+                    "to this database and try again.",
+                    backend=self.name,
+                ) from e
+            raise ConnectionError(
+                f"Failed to connect to DuckDB: {e}",
+                backend=self.name,
+            ) from e
         except Exception as e:
             raise ConnectionError(
                 f"Failed to connect to DuckDB: {e}",
                 backend=self.name,
-            )
+            ) from e
 
     def execute_query(self, sql: str, dataset: DatasetDefinition) -> QueryResult:
         """Execute a SQL query against the dataset.
