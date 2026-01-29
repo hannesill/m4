@@ -188,6 +188,7 @@ m4 use mimic-iv     # Switch to full MIMIC-IV
 m4 backend bigquery # Switch to BigQuery (or duckdb)
 m4 status           # Show active dataset and backend
 m4 status --all     # List all available datasets
+m4 status --derived # Show per-table derived materialization status
 ```
 
 **Derived concept tables** (MIMIC-IV only):

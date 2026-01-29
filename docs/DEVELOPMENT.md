@@ -44,6 +44,9 @@ uv run m4 status
 
 # List all datasets (compact table)
 uv run m4 status --all
+
+# Show per-table derived materialization status
+uv run m4 status --derived
 ```
 
 ### MCP Client Configuration
