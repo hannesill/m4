@@ -474,11 +474,21 @@ def _create_duckdb_with_views(
                         dir_key = ""
                     schema_name = schema_mapping.get(dir_key)
                     if schema_name is None:
-                        logger.warning(
-                            f"No schema mapping for directory '{dir_key}', "
-                            f"skipping {pq}"
-                        )
-                        continue
+                        # Fallback: flat files with a single-schema mapping
+                        # (e.g. mimic-iv-note parquets at root instead of note/)
+                        unique_schemas = set(schema_mapping.values())
+                        if dir_key == "" and len(unique_schemas) == 1:
+                            schema_name = next(iter(unique_schemas))
+                            logger.debug(
+                                f"Flat file '{pq.name}' mapped to sole "
+                                f"schema '{schema_name}'"
+                            )
+                        else:
+                            logger.warning(
+                                f"No schema mapping for directory '{dir_key}', "
+                                f"skipping {pq}"
+                            )
+                            continue
                     table_name = rel.stem.lower()
                     view_name = f"{schema_name}.{table_name}"
                 else:
