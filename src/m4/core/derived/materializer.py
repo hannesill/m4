@@ -94,6 +94,36 @@ def get_derived_table_count(db_path: Path) -> int:
         con.close()
 
 
+def list_materialized_tables(db_path: Path) -> set[str]:
+    """Return the set of table names in the mimiciv_derived schema.
+
+    Opens a read-only connection and queries information_schema.tables.
+    Follows the same error-handling pattern as ``get_derived_table_count()``.
+
+    Args:
+        db_path: Path to the DuckDB database file.
+
+    Returns:
+        Set of table names currently materialized, or empty set if the
+        schema doesn't exist or the database is locked.
+    """
+    try:
+        con = duckdb.connect(str(db_path), read_only=True)
+    except duckdb.IOException:
+        return set()
+
+    try:
+        rows = con.execute(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_schema = 'mimiciv_derived'"
+        ).fetchall()
+        return {row[0] for row in rows}
+    except duckdb.CatalogException:
+        return set()
+    finally:
+        con.close()
+
+
 def materialize_all(
     dataset_name: str,
     db_path: Path,

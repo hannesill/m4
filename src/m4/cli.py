@@ -25,6 +25,7 @@ from m4.console import (
     print_command,
     print_dataset_status,
     print_datasets_table,
+    print_derived_detail,
     print_error_panel,
     print_init_complete,
     print_key_value,
@@ -34,8 +35,16 @@ from m4.console import (
     warning,
 )
 from m4.core.datasets import DatasetRegistry
-from m4.core.derived.builtins import list_builtins
-from m4.core.derived.materializer import get_derived_table_count, materialize_all
+from m4.core.derived.builtins import (
+    get_tables_by_category,
+    has_derived_support,
+    list_builtins,
+)
+from m4.core.derived.materializer import (
+    get_derived_table_count,
+    list_materialized_tables,
+    materialize_all,
+)
 from m4.data_io import (
     compute_parquet_dir_size,
     convert_csv_to_parquet,
@@ -344,9 +353,7 @@ def dataset_init_cmd(
     set_active_dataset(dataset_key)
 
     # Offer to materialize derived tables for supported datasets
-    _DERIVED_SUPPORTED = {"mimic-iv"}
-
-    if dataset_key in _DERIVED_SUPPORTED and get_active_backend() == "duckdb":
+    if has_derived_support(dataset_key) and get_active_backend() == "duckdb":
         existing_derived = get_derived_table_count(final_db_path)
 
         if existing_derived > 0 and not force:
@@ -634,8 +641,53 @@ def status_cmd(
             help="Show all supported datasets in a table view.",
         ),
     ] = False,
+    show_derived: Annotated[
+        bool,
+        typer.Option(
+            "--derived",
+            "-d",
+            help="Show detailed derived table status grouped by category.",
+        ),
+    ] = False,
 ):
     """Show active dataset status. Use --all for all supported datasets."""
+
+    # --derived: detailed per-table view (early return)
+    if show_derived:
+        active = get_active_dataset()
+        if not active:
+            console.print("[warning]No active dataset set.[/warning]")
+            raise typer.Exit()
+
+        if not has_derived_support(active):
+            console.print(
+                f"[muted]Derived tables are not available for '{active}'.[/muted]"
+            )
+            raise typer.Exit()
+
+        backend = get_active_backend()
+        if backend == "bigquery":
+            info(
+                "BigQuery backend active — derived tables are available "
+                "as physionet-data.mimiciv_derived.*"
+            )
+            raise typer.Exit()
+
+        db_path = get_default_database_path(active)
+        if not db_path or not db_path.exists():
+            console.print(
+                f"[warning]No DuckDB database found for '{active}'.[/warning]"
+            )
+            console.print(
+                f"  [muted]Initialize with:[/muted] [command]m4 init {active}[/command]"
+            )
+            raise typer.Exit()
+
+        categories = get_tables_by_category(active)
+        materialized = list_materialized_tables(db_path)
+        print_derived_detail(active, categories, materialized)
+        return
+
     print_logo(show_tagline=False, show_version=True)
     console.print()
 
@@ -663,6 +715,18 @@ def status_cmd(
                 except Exception:
                     pass
 
+            # Get derived counts if supported and db present
+            derived_materialized = None
+            derived_total = None
+            if has_derived_support(label) and ds_info["db_present"]:
+                try:
+                    derived_total = len(list_builtins(label))
+                    derived_materialized = get_derived_table_count(
+                        Path(ds_info["db_path"])
+                    )
+                except Exception:
+                    pass
+
             datasets_info.append(
                 {
                     "name": label,
@@ -670,6 +734,8 @@ def status_cmd(
                     "db_present": ds_info["db_present"],
                     "bigquery_available": bigquery_available,
                     "parquet_size_gb": parquet_size_gb,
+                    "derived_materialized": derived_materialized,
+                    "derived_total": derived_total,
                 }
             )
 
@@ -731,6 +797,18 @@ def status_cmd(
                     f"  [muted]Try:[/muted] [command]m4 init {active} --force[/command]"
                 )
 
+    # Gather derived table info
+    derived_has_support = has_derived_support(active)
+    derived_is_bigquery = bigquery_available and backend == "bigquery"
+    derived_materialized = None
+    derived_total = None
+    if derived_has_support and not derived_is_bigquery and ds_info["db_present"]:
+        try:
+            derived_total = len(list_builtins(active))
+            derived_materialized = get_derived_table_count(Path(ds_info["db_path"]))
+        except Exception:
+            pass
+
     print_dataset_status(
         name=active,
         parquet_present=ds_info["parquet_present"],
@@ -741,6 +819,10 @@ def status_cmd(
         bigquery_available=bigquery_available,
         row_count=row_count,
         is_active=True,
+        derived_materialized=derived_materialized,
+        derived_total=derived_total,
+        derived_has_support=derived_has_support,
+        derived_is_bigquery=derived_is_bigquery,
     )
 
 
