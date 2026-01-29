@@ -208,13 +208,16 @@ class TestSetDatasetTool:
                     mock_reg.return_value = DatasetDefinition(
                         name="mimic-iv-demo", bigquery_dataset_ids=[]
                     )
+                    with patch(
+                        "m4.core.tools.management.get_active_backend",
+                        return_value="duckdb",
+                    ):
+                        tool = SetDatasetTool()
+                        params = SetDatasetInput(dataset_name="mimic-iv-demo")
+                        result = tool.invoke(dummy_dataset, params)
 
-                    tool = SetDatasetTool()
-                    params = SetDatasetInput(dataset_name="mimic-iv-demo")
-                    result = tool.invoke(dummy_dataset, params)
-
-                    mock_set.assert_called_once_with("mimic-iv-demo")
-                    assert result["dataset_name"] == "mimic-iv-demo"
+                        mock_set.assert_called_once_with("mimic-iv-demo")
+                        assert result["dataset_name"] == "mimic-iv-demo"
 
     def test_invoke_rejects_unknown_dataset(self, mock_availability, dummy_dataset):
         """Test rejection of unknown dataset raises DatasetError."""
@@ -311,13 +314,16 @@ class TestSetDatasetTool:
                     mock_reg.return_value = DatasetDefinition(
                         name="mimic-iv-demo", bigquery_dataset_ids=[]
                     )
+                    with patch(
+                        "m4.core.tools.management.get_active_backend",
+                        return_value="duckdb",
+                    ):
+                        tool = SetDatasetTool()
+                        params = SetDatasetInput(dataset_name="MIMIC-IV-DEMO")
+                        tool.invoke(dummy_dataset, params)
 
-                    tool = SetDatasetTool()
-                    params = SetDatasetInput(dataset_name="MIMIC-IV-DEMO")
-                    tool.invoke(dummy_dataset, params)
-
-                    # Should normalize to lowercase
-                    mock_set.assert_called_once_with("mimic-iv-demo")
+                        # Should normalize to lowercase
+                        mock_set.assert_called_once_with("mimic-iv-demo")
 
     def test_is_compatible_always_true(self):
         """Test that management tools are always compatible."""

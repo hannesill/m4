@@ -26,14 +26,16 @@ def inject_version(monkeypatch):
 class TestInitDerivedList:
     """Tests for m4 init-derived --list."""
 
-    def test_list_mimic_iv_shows_tables(self):
+    @patch("m4.cli.get_active_backend", return_value="duckdb")
+    def test_list_mimic_iv_shows_tables(self, mock_backend):
         result = runner.invoke(app, ["init-derived", "mimic-iv", "--list"])
         assert result.exit_code == 0
         assert "sofa" in result.stdout
         assert "sepsis3" in result.stdout
         assert "age" in result.stdout
 
-    def test_list_mimic_iv_shows_count(self):
+    @patch("m4.cli.get_active_backend", return_value="duckdb")
+    def test_list_mimic_iv_shows_count(self, mock_backend):
         result = runner.invoke(app, ["init-derived", "mimic-iv", "--list"])
         assert result.exit_code == 0
         assert "tables" in result.stdout
@@ -68,7 +70,8 @@ class TestInitDerivedErrors:
         assert result.exit_code == 1
         assert "Not Found" in result.stdout or "not found" in result.stdout.lower()
 
-    def test_eicu_not_supported(self):
+    @patch("m4.cli.get_active_backend", return_value="duckdb")
+    def test_eicu_not_supported(self, mock_backend):
         result = runner.invoke(app, ["init-derived", "eicu"])
         assert result.exit_code == 1
 
