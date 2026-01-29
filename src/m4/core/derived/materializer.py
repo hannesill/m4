@@ -3,6 +3,11 @@
 Handles the full pipeline of creating derived tables in DuckDB from
 vendored mimic-code SQL. Uses direct CREATE TABLE statements — the same
 approach mimic-code itself uses.
+
+WARNING: This module writes to the database (DROP/CREATE schemas and tables).
+It is intentionally excluded from all tool surfaces (MCP server, Python API)
+so that neither LLM tools nor user-facing APIs can trigger materialization.
+Only the CLI (``m4 init-derived``, ``m4 init``) should call into this module.
 """
 
 from __future__ import annotations
