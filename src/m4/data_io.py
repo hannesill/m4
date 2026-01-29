@@ -424,7 +424,18 @@ def _create_duckdb_with_views(
     If schema_mapping is None (backward compat for custom datasets),
     uses flat naming: hosp/admissions.parquet → hosp_admissions
     """
-    con = duckdb.connect(str(db_path))
+    try:
+        con = duckdb.connect(str(db_path))
+    except duckdb.IOException as e:
+        if "Could not set lock" in str(e):
+            logger.error(
+                f"Database '{db_path.name}' is locked by another process. "
+                "Close any running M4 servers or other DuckDB connections "
+                "to this database and try again."
+            )
+            return False
+        raise
+
     try:
         # Find all parquet files
         parquet_files = list(parquet_root.rglob("*.parquet"))

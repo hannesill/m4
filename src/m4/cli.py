@@ -356,6 +356,20 @@ def dataset_init_cmd(
         if materialize:
             try:
                 materialize_all(dataset_key, final_db_path)
+            except RuntimeError as e:
+                if "locked by another process" in str(e):
+                    print_error_panel(
+                        "Database Locked",
+                        str(e),
+                        hint="If the M4 MCP server is running, stop it "
+                        "before materializing derived tables.",
+                    )
+                else:
+                    error(f"Derived table materialization failed: {e}")
+                console.print(
+                    "  [muted]You can retry later with:[/muted] "
+                    f"[command]m4 init-derived {dataset_key}[/command]"
+                )
             except Exception as e:
                 error(f"Derived table materialization failed: {e}")
                 console.print(
@@ -448,6 +462,18 @@ def init_derived_cmd(
         success(f"Created {len(created)} derived tables in mimiciv_derived schema")
     except ValueError as e:
         error(str(e))
+        raise typer.Exit(code=1)
+    except RuntimeError as e:
+        if "locked by another process" in str(e):
+            print_error_panel(
+                "Database Locked",
+                str(e),
+                hint="If the M4 MCP server is running, stop it before "
+                "materializing derived tables.",
+            )
+        else:
+            error(f"Materialization failed: {e}")
+            logger.error(f"Derived table materialization error: {e}", exc_info=True)
         raise typer.Exit(code=1)
     except Exception as e:
         error(f"Materialization failed: {e}")
