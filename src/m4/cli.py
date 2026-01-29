@@ -35,7 +35,7 @@ from m4.console import (
 )
 from m4.core.datasets import DatasetRegistry
 from m4.core.derived.builtins import list_builtins
-from m4.core.derived.materializer import materialize_all
+from m4.core.derived.materializer import get_derived_table_count, materialize_all
 from m4.data_io import (
     compute_parquet_dir_size,
     convert_csv_to_parquet,
@@ -395,6 +395,14 @@ def init_derived_cmd(
             help="List available derived tables without materializing.",
         ),
     ] = False,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            "-f",
+            help="Force re-materialization even if derived tables already exist.",
+        ),
+    ] = False,
 ):
     """Materialize built-in derived tables for a dataset.
 
@@ -456,6 +464,15 @@ def init_derived_cmd(
             hint=f"Initialize first: m4 init {dataset_key}",
         )
         raise typer.Exit(code=1)
+
+    # Skip if derived tables already exist (unless --force)
+    existing_count = get_derived_table_count(db_path)
+    if existing_count > 0 and not force:
+        info(
+            f"Derived tables already materialized ({existing_count} tables). "
+            "Use --force to recreate."
+        )
+        return
 
     try:
         created = materialize_all(dataset_key, db_path)

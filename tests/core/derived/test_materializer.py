@@ -12,7 +12,11 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 
 from m4.core.derived.builtins import get_execution_order
-from m4.core.derived.materializer import _check_required_schemas, materialize_all
+from m4.core.derived.materializer import (
+    _check_required_schemas,
+    get_derived_table_count,
+    materialize_all,
+)
 
 # Schema rows returned by mocked DuckDB for the pre-flight check
 _MOCK_SCHEMA_ROWS = [("mimiciv_hosp",), ("mimiciv_icu",), ("main",)]
@@ -23,6 +27,78 @@ def _make_mock_con():
     mock_con = MagicMock()
     mock_con.execute.return_value.fetchall.return_value = _MOCK_SCHEMA_ROWS
     return mock_con
+
+
+class TestGetDerivedTableCount:
+    """Tests for get_derived_table_count()."""
+
+    @patch("m4.core.derived.materializer.duckdb")
+    def test_returns_count_when_tables_exist(self, mock_duckdb, tmp_path):
+        mock_con = MagicMock()
+        mock_con.execute.return_value.fetchone.return_value = (42,)
+        mock_duckdb.connect.return_value = mock_con
+
+        db_path = tmp_path / "test.duckdb"
+        db_path.touch()
+
+        count = get_derived_table_count(db_path)
+
+        assert count == 42
+        mock_duckdb.connect.assert_called_once_with(str(db_path), read_only=True)
+        mock_con.close.assert_called_once()
+
+    @patch("m4.core.derived.materializer.duckdb")
+    def test_returns_zero_when_schema_missing(self, mock_duckdb, tmp_path):
+        mock_duckdb.CatalogException = type("CatalogException", (Exception,), {})
+        mock_con = MagicMock()
+        mock_con.execute.side_effect = mock_duckdb.CatalogException("schema not found")
+        mock_duckdb.connect.return_value = mock_con
+
+        db_path = tmp_path / "test.duckdb"
+        db_path.touch()
+
+        count = get_derived_table_count(db_path)
+
+        assert count == 0
+        mock_con.close.assert_called_once()
+
+    @patch("m4.core.derived.materializer.duckdb")
+    def test_returns_zero_when_schema_empty(self, mock_duckdb, tmp_path):
+        mock_con = MagicMock()
+        mock_con.execute.return_value.fetchone.return_value = (0,)
+        mock_duckdb.connect.return_value = mock_con
+
+        db_path = tmp_path / "test.duckdb"
+        db_path.touch()
+
+        count = get_derived_table_count(db_path)
+
+        assert count == 0
+
+    @patch("m4.core.derived.materializer.duckdb")
+    def test_returns_zero_when_database_locked(self, mock_duckdb, tmp_path):
+        mock_duckdb.IOException = Exception
+        mock_duckdb.connect.side_effect = mock_duckdb.IOException("Could not set lock")
+
+        db_path = tmp_path / "test.duckdb"
+        db_path.touch()
+
+        count = get_derived_table_count(db_path)
+
+        assert count == 0
+
+    @patch("m4.core.derived.materializer.duckdb")
+    def test_closes_connection(self, mock_duckdb, tmp_path):
+        mock_con = MagicMock()
+        mock_con.execute.return_value.fetchone.return_value = (5,)
+        mock_duckdb.connect.return_value = mock_con
+
+        db_path = tmp_path / "test.duckdb"
+        db_path.touch()
+
+        get_derived_table_count(db_path)
+
+        mock_con.close.assert_called_once()
 
 
 class TestCheckRequiredSchemas:

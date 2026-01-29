@@ -61,6 +61,39 @@ def _check_required_schemas(con: duckdb.DuckDBPyConnection, dataset_name: str) -
         )
 
 
+def get_derived_table_count(db_path: Path) -> int:
+    """Count existing tables in the mimiciv_derived schema.
+
+    Opens a read-only connection to check how many derived tables
+    have already been materialized.
+
+    Args:
+        db_path: Path to the DuckDB database file.
+
+    Returns:
+        Number of tables in mimiciv_derived schema, or 0 if the
+        schema doesn't exist or the database is locked.
+    """
+    try:
+        con = duckdb.connect(str(db_path), read_only=True)
+    except duckdb.IOException:
+        # Database locked or inaccessible — return 0 so the caller
+        # proceeds to materialize and gets a clearer lock error there.
+        return 0
+
+    try:
+        result = con.execute(
+            "SELECT COUNT(*) FROM information_schema.tables "
+            "WHERE table_schema = 'mimiciv_derived'"
+        ).fetchone()
+        return result[0] if result else 0
+    except duckdb.CatalogException:
+        # Schema doesn't exist
+        return 0
+    finally:
+        con.close()
+
+
 def materialize_all(
     dataset_name: str,
     db_path: Path,
