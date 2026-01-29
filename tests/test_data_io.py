@@ -224,6 +224,28 @@ def test_schema_mapping_root_level(tmp_path):
         con.close()
 
 
+def test_schema_mapping_flat_files_single_schema_fallback(tmp_path):
+    """Flat parquet files with a single-schema mapping (e.g. mimic-iv-note
+    with {"note": "mimiciv_note"}) should fall back to that schema."""
+    parquet_root = tmp_path / "parquet"
+    _create_parquet(parquet_root, "discharge", "subject_id,note\n1,text\n2,more\n")
+    _create_parquet(parquet_root, "radiology", "subject_id,note\n3,xray\n")
+
+    db_path = tmp_path / "test.duckdb"
+    mapping = {"note": "mimiciv_note"}
+    ok = _create_duckdb_with_views(db_path, parquet_root, schema_mapping=mapping)
+    assert ok
+
+    con = duckdb.connect(str(db_path))
+    try:
+        cnt = con.execute("SELECT COUNT(*) FROM mimiciv_note.discharge").fetchone()[0]
+        assert cnt == 2
+        cnt = con.execute("SELECT COUNT(*) FROM mimiciv_note.radiology").fetchone()[0]
+        assert cnt == 1
+    finally:
+        con.close()
+
+
 def test_no_schema_mapping_flat_naming(tmp_path):
     """Without schema_mapping, views use flat naming (backward compat)."""
     parquet_root = tmp_path / "parquet"
