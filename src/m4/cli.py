@@ -32,6 +32,8 @@ from m4.console import (
 )
 from m4.core.datasets import DatasetRegistry
 from m4.data_io import (
+    _create_derived_tables_internal,
+    _verify_derived_tables_internal,
     compute_parquet_dir_size,
     convert_csv_to_parquet,
     download_dataset,
@@ -123,6 +125,13 @@ def dataset_init_cmd(
             "--force",
             "-f",
             help="Force recreation of DuckDB even if it exists.",
+        ),
+    ] = False,
+    no_derived: Annotated[
+        bool,
+        typer.Option(
+            "--no-derived",
+            help="Skip creation of derived tables (age, GCS, vitals, etc.).",
         ),
     ] = False,
 ):
@@ -236,7 +245,7 @@ def dataset_init_cmd(
             out_dir.mkdir(parents=True, exist_ok=True)
 
             console.print()
-            print_step(1, 3, f"Downloading dataset '{dataset_key}'")
+            print_step(1, 4, f"Downloading dataset '{dataset_key}'")
             print_key_value("Source", listing_url)
             print_key_value("Destination", out_dir)
 
@@ -267,7 +276,7 @@ def dataset_init_cmd(
     # Step 2: Ensure Parquet exists (convert if missing)
     if not parquet_present:
         console.print()
-        print_step(2, 3, "Converting CSV to Parquet")
+        print_step(2, 4, "Converting CSV to Parquet")
         print_key_value("Source", csv_root)
         print_key_value("Destination", pq_root)
         ok = convert_csv_to_parquet(dataset_key, csv_root, pq_root)
@@ -294,7 +303,7 @@ def dataset_init_cmd(
         final_db_path.unlink()
 
     console.print()
-    print_step(3, 3, "Creating DuckDB views")
+    print_step(3, 4, "Creating DuckDB views")
     print_key_value("Database", final_db_path)
     print_key_value("Parquet root", pq_root)
 
@@ -315,6 +324,29 @@ def dataset_init_cmd(
         f"Dataset '{dataset_name}' initialization seems complete. "
         "Verifying database integrity..."
     )
+
+    # Step 4: Create derived tables (unless skipped)
+    if not no_derived:
+        console.print()
+        print_step(4, 4, "Creating derived tables")
+
+        derived_ok = _create_derived_tables_internal(dataset_key, final_db_path)
+        if not derived_ok:
+            warning(
+                "Derived table creation failed. "
+                "OASIS and other clinical scores may not work."
+            )
+            console.print(
+                "  [muted]You can retry with:[/muted] "
+                f"[command]m4 init {dataset_key}[/command]"
+            )
+        else:
+            # Verify derived tables
+            derived_counts = _verify_derived_tables_internal(final_db_path, dataset_key)
+            total_derived = len([c for c in derived_counts.values() if c > 0])
+            success(f"Verified {total_derived} derived tables")
+    else:
+        info("Skipping derived tables (--no-derived)")
 
     verification_table_name = ds.primary_verification_table
     if not verification_table_name:

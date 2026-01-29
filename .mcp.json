@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "m4": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "m4-mcp"],
+      "env": {
+        "M4_SKILLS_PATH": "/Users/DukyongYoon/Codes/M4/m4/src/m4/skills"
+      }
+    }
+  }
+}

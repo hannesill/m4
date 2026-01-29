@@ -22,6 +22,17 @@ from m4.console import (
 )
 from m4.core.datasets import DatasetRegistry
 
+# Public API - derived table functions are intentionally excluded
+# to prevent external tools from modifying the database
+__all__ = [
+    "download_dataset",
+    "convert_csv_to_parquet",
+    "init_duckdb_from_parquet",
+    "verify_table_rowcount",
+    "ensure_duckdb_for_dataset",
+    "compute_parquet_dir_size",
+]
+
 ########################################################
 # Download functionality
 ########################################################
@@ -529,3 +540,128 @@ def compute_parquet_dir_size(parquet_root: Path) -> int:
         except OSError:
             pass
     return total
+
+
+########################################################
+# Derived tables (MIT-LCP mimic-code)
+########################################################
+
+
+def _create_derived_tables_internal(dataset_name: str, db_path: Path) -> bool:
+    """
+    Internal function to create MIMIC-IV derived tables.
+
+    WARNING: This function modifies the database by creating tables.
+    It should ONLY be called from the CLI init command, never from
+    MCP tools or other external interfaces.
+
+    Derived tables are based on MIT-LCP mimic-code:
+    https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts
+
+    Args:
+        dataset_name: Name of the dataset (e.g., 'mimic-iv-demo')
+        db_path: Path to the DuckDB database
+
+    Returns:
+        True if all tables were created successfully, False otherwise
+    """
+    from m4.derived.registry import DerivedTableRegistry
+
+    ds = DatasetRegistry.get(dataset_name.lower())
+    if not ds:
+        logger.error(f"Dataset '{dataset_name}' not found")
+        return False
+
+    # Get applicable derived tables for this dataset
+    tables = DerivedTableRegistry.get_tables_for_dataset(dataset_name)
+    if not tables:
+        logger.info(f"No derived tables defined for dataset '{dataset_name}'")
+        return True
+
+    # Get execution order (topologically sorted by dependencies)
+    try:
+        execution_order = DerivedTableRegistry.get_execution_order(tables)
+    except ValueError as e:
+        logger.error(f"Dependency error: {e}")
+        return False
+
+    scripts_dir = DerivedTableRegistry.get_scripts_dir()
+
+    con = duckdb.connect(str(db_path))
+    try:
+        # Create schema if not exists
+        con.execute("CREATE SCHEMA IF NOT EXISTS mimiciv_derived")
+
+        total_tables = len(execution_order)
+        logger.info(f"Creating {total_tables} derived tables...")
+
+        console.print()
+        with create_task_progress() as progress:
+            task = progress.add_task(
+                f"Creating {total_tables} derived tables...", total=total_tables
+            )
+
+            for table_def in execution_order:
+                sql_path = scripts_dir / table_def.sql_file
+                if not sql_path.exists():
+                    logger.error(f"SQL file not found: {sql_path}")
+                    return False
+
+                sql = sql_path.read_text()
+                table_name = f"mimiciv_derived.{table_def.name}"
+
+                progress.update(task, description=f"Creating {table_name}...")
+                logger.debug(f"Creating derived table: {table_name}")
+
+                try:
+                    # Drop existing table to allow re-creation
+                    con.execute(f"DROP TABLE IF EXISTS {table_name}")
+                    con.execute(sql)
+                    logger.debug(f"Created: {table_name}")
+                except Exception as e:
+                    logger.error(f"Failed to create {table_name}: {e}")
+                    raise
+
+                progress.update(task, advance=1)
+
+        con.commit()
+        success(f"Created {total_tables} derived tables")
+        return True
+
+    except Exception as e:
+        logger.error(f"Derived table creation failed: {e}")
+        return False
+    finally:
+        con.close()
+
+
+def _verify_derived_tables_internal(db_path: Path, dataset_name: str) -> dict[str, int]:
+    """
+    Internal function to verify derived tables.
+
+    WARNING: This is an internal function for CLI use only.
+
+    Args:
+        db_path: Path to the DuckDB database
+        dataset_name: Name of the dataset
+
+    Returns:
+        Dictionary mapping table name to row count (0 if table doesn't exist)
+    """
+    from m4.derived.registry import DerivedTableRegistry
+
+    tables = DerivedTableRegistry.get_tables_for_dataset(dataset_name)
+    results: dict[str, int] = {}
+
+    con = duckdb.connect(str(db_path))
+    try:
+        for table_def in tables:
+            table_name = f"mimiciv_derived.{table_def.name}"
+            try:
+                result = con.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()
+                results[table_def.name] = result[0] if result else 0
+            except Exception:
+                results[table_def.name] = 0
+        return results
+    finally:
+        con.close()
