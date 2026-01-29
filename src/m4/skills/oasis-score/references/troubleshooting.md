@@ -170,7 +170,7 @@ SET streaming_mode=true;
 **Check component values:**
 
 ```sql
-SELECT 
+SELECT
     stay_id,
     oasis,
     age, age_score,

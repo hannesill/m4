@@ -157,7 +157,7 @@ WITH surgflag AS (
             AND se.transfertime < DATETIME_ADD(ie.intime, INTERVAL '1' DAY)
     GROUP BY ie.stay_id
 )
-SELECT 
+SELECT
     stay_id,
     DATETIME_DIFF(intime, admittime, MINUTE) AS preiculos
 FROM `physionet-data.mimiciv_icu.icustays` ie
@@ -180,7 +180,7 @@ WITH surgflag AS (
             AND se.transfertime < ie.intime + INTERVAL '1' DAY
     GROUP BY ie.stay_id
 )
-SELECT 
+SELECT
     stay_id,
     DATEDIFF('minute', admittime, intime) AS preiculos
 FROM icu_icustays ie
@@ -257,7 +257,7 @@ INNER JOIN hosp_admissions adm
 
 **BigQuery:**
 ```sql
-SELECT 
+SELECT
     stay_id,
     oasis,
     oasis_prob
@@ -269,7 +269,7 @@ LIMIT 100;
 
 **DuckDB:**
 ```sql
-SELECT 
+SELECT
     stay_id,
     oasis,
     oasis_prob
@@ -287,7 +287,7 @@ LIMIT 100;
 
 **BigQuery:**
 ```sql
-SELECT 
+SELECT
     o.stay_id,
     o.oasis,
     ie.intime,
@@ -301,7 +301,7 @@ WHERE o.oasis >= 30;
 
 **DuckDB:**
 ```sql
-SELECT 
+SELECT
     o.stay_id,
     o.oasis,
     ie.intime,
@@ -368,7 +368,7 @@ ORDER BY avg_score;
 
 1. **Export from DuckDB:**
    ```sql
-   COPY mimiciv_derived.oasis 
+   COPY mimiciv_derived.oasis
    TO 'oasis.parquet' (FORMAT PARQUET);
    ```
 
@@ -411,7 +411,7 @@ WHERE stay_id = 30000032;
 
 **3. Check aggregates match:**
 ```sql
-SELECT 
+SELECT
     COUNT(*) AS total,
     AVG(oasis) AS avg_score,
     MIN(oasis) AS min_score,

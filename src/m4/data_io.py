@@ -25,12 +25,12 @@ from m4.core.datasets import DatasetRegistry
 # Public API - derived table functions are intentionally excluded
 # to prevent external tools from modifying the database
 __all__ = [
-    "download_dataset",
+    "compute_parquet_dir_size",
     "convert_csv_to_parquet",
+    "download_dataset",
+    "ensure_duckdb_for_dataset",
     "init_duckdb_from_parquet",
     "verify_table_rowcount",
-    "ensure_duckdb_for_dataset",
-    "compute_parquet_dir_size",
 ]
 
 ########################################################

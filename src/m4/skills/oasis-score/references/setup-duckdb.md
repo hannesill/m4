@@ -56,8 +56,8 @@ duckdb your_database.db < scripts/oasis_duckdb.sql
 
 ```sql
 -- Check all derived tables exist
-SELECT table_name 
-FROM information_schema.tables 
+SELECT table_name
+FROM information_schema.tables
 WHERE table_schema = 'mimiciv_derived'
 ORDER BY table_name;
 
@@ -149,7 +149,7 @@ For fastest queries, materialize derived tables:
 
 ```sql
 -- Create materialized table
-CREATE TABLE mimiciv_derived.oasis_mat AS 
+CREATE TABLE mimiciv_derived.oasis_mat AS
 SELECT * FROM mimiciv_derived.oasis;
 
 -- Use materialized version
@@ -193,10 +193,10 @@ DROP TABLE IF EXISTS mimiciv_derived.ventilation CASCADE;
 
 ```sql
 -- Check when OASIS table was created
-SELECT 
+SELECT
     table_name,
     table_type
-FROM information_schema.tables 
+FROM information_schema.tables
 WHERE table_schema = 'mimiciv_derived'
     AND table_name = 'oasis';
 ```

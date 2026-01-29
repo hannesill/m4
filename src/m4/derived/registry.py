@@ -113,9 +113,7 @@ class DerivedTableRegistry:
         return list(cls._tables.values())
 
     @classmethod
-    def get_tables_for_dataset(
-        cls, dataset_name: str
-    ) -> list[DerivedTableDefinition]:
+    def get_tables_for_dataset(cls, dataset_name: str) -> list[DerivedTableDefinition]:
         """Get derived tables applicable to a specific dataset."""
         return [
             t
