@@ -321,3 +321,84 @@ def test_backend_duckdb_shows_init_hint(mock_set_backend):
     assert result.exit_code == 0
     assert "DuckDB uses local database files" in result.stdout
     assert "m4 init" in result.stdout
+
+
+# ----------------------------------------------------------------
+# Init command: derived table skip/force behavior
+# ----------------------------------------------------------------
+
+
+class TestInitDerivedTableSkipForce:
+    """Tests for derived table skip/force behavior at the end of m4 init.
+
+    These tests mock the entire init pipeline to focus on the derived-table
+    section, which only runs for mimic-iv on the duckdb backend.
+    """
+
+    def _invoke_init(self, tmp_path, *, force=False, derived_count=0, input_text=None):
+        """Helper that mocks the full init pipeline and invokes m4 init mimic-iv.
+
+        Returns the CliRunner result and the mock for materialize_all.
+        """
+        pq_dir = tmp_path / "parquet" / "mimic-iv"
+        pq_dir.mkdir(parents=True)
+        (pq_dir / "test.parquet").touch()
+
+        db_file = tmp_path / "mimic_iv.duckdb"
+        db_file.touch()
+
+        args = ["init", "mimic-iv"]
+        if force:
+            args.append("--force")
+
+        with (
+            patch("m4.config._find_project_root_from_cwd", return_value=Path.cwd()),
+            patch("m4.cli.get_dataset_parquet_root", return_value=pq_dir),
+            patch("m4.cli.get_default_database_path", return_value=db_file),
+            patch("m4.cli.init_duckdb_from_parquet", return_value=True),
+            patch("m4.cli.verify_table_rowcount", return_value=100),
+            patch("m4.cli.set_active_dataset"),
+            patch("m4.cli.get_active_backend", return_value="duckdb"),
+            patch("m4.cli.get_derived_table_count", return_value=derived_count),
+            patch("m4.cli.materialize_all") as mock_materialize,
+        ):
+            mock_materialize.return_value = ["sofa", "sepsis3", "age"]
+            result = runner.invoke(app, args, input=input_text)
+            return result, mock_materialize
+
+    def test_skips_prompt_when_derived_exist(self, tmp_path):
+        """When derived tables exist and no --force, skip prompt and notify."""
+        result, mock_materialize = self._invoke_init(tmp_path, derived_count=42)
+
+        assert result.exit_code == 0
+        assert "already materialized" in result.stdout
+        assert "42 tables" in result.stdout
+        mock_materialize.assert_not_called()
+
+    def test_force_rematerializes_without_prompt(self, tmp_path):
+        """When --force and derived tables exist, rematerialize without prompt."""
+        result, mock_materialize = self._invoke_init(
+            tmp_path, force=True, derived_count=42
+        )
+
+        assert result.exit_code == 0
+        mock_materialize.assert_called_once()
+
+    def test_prompts_when_no_derived_exist(self, tmp_path):
+        """When no derived tables exist, prompt the user (answer no)."""
+        result, mock_materialize = self._invoke_init(
+            tmp_path, derived_count=0, input_text="n\n"
+        )
+
+        assert result.exit_code == 0
+        assert "Materialize derived tables?" in result.stdout
+        mock_materialize.assert_not_called()
+
+    def test_prompts_and_materializes_on_yes(self, tmp_path):
+        """When no derived tables exist and user says yes, materialize."""
+        result, mock_materialize = self._invoke_init(
+            tmp_path, derived_count=0, input_text="y\n"
+        )
+
+        assert result.exit_code == 0
+        mock_materialize.assert_called_once()

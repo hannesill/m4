@@ -347,35 +347,50 @@ def dataset_init_cmd(
     _DERIVED_SUPPORTED = {"mimic-iv"}
 
     if dataset_key in _DERIVED_SUPPORTED and get_active_backend() == "duckdb":
-        console.print()
-        materialize = typer.confirm(
-            "Materialize derived tables? "
-            "(SOFA, sepsis3, KDIGO, scores, medications, etc.)",
-            default=False,
-        )
-        if materialize:
-            try:
-                materialize_all(dataset_key, final_db_path)
-            except RuntimeError as e:
-                if "locked by another process" in str(e):
-                    print_error_panel(
-                        "Database Locked",
-                        str(e),
-                        hint="If the M4 MCP server is running, stop it "
-                        "before materializing derived tables.",
+        existing_derived = get_derived_table_count(final_db_path)
+
+        if existing_derived > 0 and not force:
+            # Already materialized — skip prompt, just notify
+            console.print()
+            info(
+                f"Derived tables already materialized ({existing_derived} tables). "
+                "Use --force to recreate."
+            )
+        else:
+            # No existing tables → prompt; --force → recreate without prompt
+            if force and existing_derived > 0:
+                do_materialize = True
+            else:
+                console.print()
+                do_materialize = typer.confirm(
+                    "Materialize derived tables? "
+                    "(SOFA, sepsis3, KDIGO, scores, medications, etc.)",
+                    default=False,
+                )
+
+            if do_materialize:
+                try:
+                    materialize_all(dataset_key, final_db_path)
+                except RuntimeError as e:
+                    if "locked by another process" in str(e):
+                        print_error_panel(
+                            "Database Locked",
+                            str(e),
+                            hint="If the M4 MCP server is running, stop it "
+                            "before materializing derived tables.",
+                        )
+                    else:
+                        error(f"Derived table materialization failed: {e}")
+                    console.print(
+                        "  [muted]You can retry later with:[/muted] "
+                        f"[command]m4 init-derived {dataset_key}[/command]"
                     )
-                else:
+                except Exception as e:
                     error(f"Derived table materialization failed: {e}")
-                console.print(
-                    "  [muted]You can retry later with:[/muted] "
-                    f"[command]m4 init-derived {dataset_key}[/command]"
-                )
-            except Exception as e:
-                error(f"Derived table materialization failed: {e}")
-                console.print(
-                    "  [muted]You can retry later with:[/muted] "
-                    f"[command]m4 init-derived {dataset_key}[/command]"
-                )
+                    console.print(
+                        "  [muted]You can retry later with:[/muted] "
+                        f"[command]m4 init-derived {dataset_key}[/command]"
+                    )
 
 
 @app.command("init-derived")
