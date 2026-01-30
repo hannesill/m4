@@ -139,6 +139,21 @@ def _serialize_datasets_result(result: dict[str, Any]) -> str:
         output.append(f"  Local Parquet: {parquet_icon}")
         output.append(f"  Local Database: {db_icon}")
         output.append(f"  BigQuery Support: {bq_status}")
+
+        derived = info.get("derived")
+        if derived and derived.get("supported"):
+            total = derived["total"]
+            materialized = derived.get("materialized")
+            if materialized is not None:
+                icon = "✅" if materialized == total else "⚠️"
+                output.append(
+                    f"  Derived Tables: {icon} {materialized}/{total} materialized"
+                )
+                if materialized < total:
+                    output.append(f"    Run: m4 init-derived {label}")
+            else:
+                output.append(f"  Derived Tables: ✅ {total} available")
+
         output.append("")
 
     return "\n".join(output)

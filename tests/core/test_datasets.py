@@ -124,10 +124,11 @@ class TestDatasetRegistry:
         DatasetRegistry.reset()
         all_datasets = DatasetRegistry.list_all()
 
-        assert len(all_datasets) >= 3  # At least mimic-demo, mimic-iv, and eicu
+        assert len(all_datasets) >= 4
         names = [ds.name for ds in all_datasets]
         assert "mimic-iv-demo" in names
         assert "mimic-iv" in names
+        assert "mimic-iv-note" in names
         assert "eicu" in names
 
     def test_mimic_demo_schema_mapping(self):
@@ -148,8 +149,8 @@ class TestDatasetRegistry:
             "derived": "mimiciv_derived",
         }
         assert ds.bigquery_schema_mapping == {
-            "mimiciv_hosp": "mimiciv_hosp",
-            "mimiciv_icu": "mimiciv_icu",
+            "mimiciv_hosp": "mimiciv_3_1_hosp",
+            "mimiciv_icu": "mimiciv_3_1_icu",
             "mimiciv_derived": "mimiciv_derived",
         }
         assert ds.primary_verification_table == "mimiciv_hosp.admissions"

@@ -12,6 +12,7 @@ Architecture Note:
 """
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from m4.config import (
@@ -21,6 +22,8 @@ from m4.config import (
     set_active_dataset,
 )
 from m4.core.datasets import DatasetDefinition, DatasetRegistry, Modality
+from m4.core.derived.builtins import has_derived_support, list_builtins
+from m4.core.derived.materializer import get_derived_table_count
 from m4.core.exceptions import DatasetError
 from m4.core.tools.base import ToolInput
 
@@ -76,12 +79,30 @@ class ListDatasetsTool:
 
         for label, info in availability.items():
             ds_def = DatasetRegistry.get(label)
+
+            # Derived table info
+            derived_info = None
+            if has_derived_support(label):
+                total = len(list_builtins(label))
+                materialized = None
+                if backend_name == "duckdb":
+                    if info["db_present"] and info.get("db_path"):
+                        materialized = get_derived_table_count(Path(info["db_path"]))
+                    else:
+                        materialized = 0
+                derived_info = {
+                    "supported": True,
+                    "total": total,
+                    "materialized": materialized,
+                }
+
             datasets_info[label] = {
                 "is_active": label == active,
                 "parquet_present": info["parquet_present"],
                 "db_present": info["db_present"],
                 "bigquery_support": bool(ds_def and ds_def.bigquery_dataset_ids),
                 "modalities": ([m.name for m in ds_def.modalities] if ds_def else []),
+                "derived": derived_info,
             }
 
         return {

@@ -109,6 +109,7 @@ class SearchNotesTool:
             )
 
         results: dict[str, pd.DataFrame] = {}
+        errors: list[str] = []
         search_term = params.query.replace("'", "''")  # Escape single quotes
 
         for table in tables_to_search:
@@ -119,10 +120,10 @@ class SearchNotesTool:
                     note_id,
                     subject_id,
                     CASE
-                        WHEN POSITION(LOWER('{search_term}') IN LOWER(text)) > 0 THEN
+                        WHEN STRPOS(LOWER(text), LOWER('{search_term}')) > 0 THEN
                             SUBSTRING(
                                 text,
-                                GREATEST(1, POSITION(LOWER('{search_term}') IN LOWER(text)) - {params.snippet_length // 2}),
+                                GREATEST(1, STRPOS(LOWER(text), LOWER('{search_term}')) - {params.snippet_length // 2}),
                                 {params.snippet_length}
                             )
                         ELSE LEFT(text, {params.snippet_length})
@@ -136,13 +137,18 @@ class SearchNotesTool:
             result = backend.execute_query(sql, dataset)
             if result.success and result.dataframe is not None:
                 results[table] = result.dataframe
+            elif result.error:
+                errors.append(f"{table}: {result.error}")
 
-        return {
+        response: dict[str, Any] = {
             "backend_info": backend.get_backend_info(dataset),
             "query": params.query,
             "snippet_length": params.snippet_length,
             "results": results,
         }
+        if errors:
+            response["errors"] = errors
+        return response
 
     def _get_tables_for_type(self, note_type: str) -> list[str]:
         """Get table names for a note type."""
@@ -207,6 +213,7 @@ class GetNoteTool:
         note_id = params.note_id.replace("'", "''")
 
         # Try both tables since we may not know which one contains the note
+        errors: list[str] = []
         for table in ["mimiciv_note.discharge", "mimiciv_note.radiology"]:
             sql = f"""
                 SELECT
@@ -220,6 +227,9 @@ class GetNoteTool:
             """
 
             result = backend.execute_query(sql, dataset)
+            if result.error:
+                errors.append(f"{table}: {result.error}")
+                continue
             if (
                 result.success
                 and result.dataframe is not None
@@ -244,11 +254,14 @@ class GetNoteTool:
                     "truncated": truncated,
                 }
 
-        raise QueryError(
-            f"Note '{params.note_id}' not found. "
-            "Use list_patient_notes(subject_id) or search_notes(query) "
+        error_msg = f"Note '{params.note_id}' not found."
+        if errors:
+            error_msg += " Backend errors: " + "; ".join(errors)
+        error_msg += (
+            " Use list_patient_notes(subject_id) or search_notes(query) "
             "to find valid note IDs."
         )
+        raise QueryError(error_msg)
 
     def is_compatible(self, dataset: DatasetDefinition) -> bool:
         """Check compatibility."""
@@ -305,6 +318,7 @@ class ListPatientNotesTool:
             )
 
         notes: dict[str, pd.DataFrame] = {}
+        errors: list[str] = []
 
         for table in tables_to_query:
             # Query for metadata only - explicitly exclude full text
@@ -323,12 +337,17 @@ class ListPatientNotesTool:
             result = backend.execute_query(sql, dataset)
             if result.success and result.dataframe is not None:
                 notes[table] = result.dataframe
+            elif result.error:
+                errors.append(f"{table}: {result.error}")
 
-        return {
+        response: dict[str, Any] = {
             "backend_info": backend.get_backend_info(dataset),
             "subject_id": params.subject_id,
             "notes": notes,
         }
+        if errors:
+            response["errors"] = errors
+        return response
 
     def _get_tables_for_type(self, note_type: str) -> list[str]:
         """Get table names for a note type."""

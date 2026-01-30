@@ -4,6 +4,7 @@ Tests cover:
 - Tool invoke methods directly
 - Edge cases and error conditions
 - Backend warning messages
+- Derived table info in list_datasets
 
 Note: Tools now return native types (dict) instead of ToolOutput.
 """
@@ -20,6 +21,10 @@ from m4.core.tools.management import (
     SetDatasetInput,
     SetDatasetTool,
 )
+
+# All ListDatasetsTool tests disable derived lookups by default.
+# Tests that specifically verify derived behavior override this.
+_NO_DERIVED = patch("m4.core.tools.management.has_derived_support", return_value=False)
 
 
 @pytest.fixture
@@ -51,9 +56,12 @@ class TestListDatasetsTool:
 
     def test_invoke_lists_available_datasets(self, mock_availability, dummy_dataset):
         """Test that invoke returns dict with dataset info."""
-        with patch(
-            "m4.core.tools.management.detect_available_local_datasets",
-            return_value=mock_availability,
+        with (
+            _NO_DERIVED,
+            patch(
+                "m4.core.tools.management.detect_available_local_datasets",
+                return_value=mock_availability,
+            ),
         ):
             with patch(
                 "m4.core.tools.management.get_active_dataset",
@@ -76,9 +84,12 @@ class TestListDatasetsTool:
 
     def test_invoke_shows_parquet_status(self, mock_availability, dummy_dataset):
         """Test that parquet availability is included."""
-        with patch(
-            "m4.core.tools.management.detect_available_local_datasets",
-            return_value=mock_availability,
+        with (
+            _NO_DERIVED,
+            patch(
+                "m4.core.tools.management.detect_available_local_datasets",
+                return_value=mock_availability,
+            ),
         ):
             with patch(
                 "m4.core.tools.management.get_active_dataset",
@@ -100,9 +111,12 @@ class TestListDatasetsTool:
 
     def test_invoke_shows_database_status(self, mock_availability, dummy_dataset):
         """Test that database availability is included."""
-        with patch(
-            "m4.core.tools.management.detect_available_local_datasets",
-            return_value=mock_availability,
+        with (
+            _NO_DERIVED,
+            patch(
+                "m4.core.tools.management.detect_available_local_datasets",
+                return_value=mock_availability,
+            ),
         ):
             with patch(
                 "m4.core.tools.management.get_active_dataset",
@@ -121,9 +135,12 @@ class TestListDatasetsTool:
 
     def test_invoke_shows_bigquery_status(self, mock_availability, dummy_dataset):
         """Test that BigQuery support status is included."""
-        with patch(
-            "m4.core.tools.management.detect_available_local_datasets",
-            return_value=mock_availability,
+        with (
+            _NO_DERIVED,
+            patch(
+                "m4.core.tools.management.detect_available_local_datasets",
+                return_value=mock_availability,
+            ),
         ):
             with patch(
                 "m4.core.tools.management.get_active_dataset",
@@ -144,9 +161,12 @@ class TestListDatasetsTool:
 
     def test_invoke_handles_no_datasets(self, dummy_dataset):
         """Test handling when no datasets are available."""
-        with patch(
-            "m4.core.tools.management.detect_available_local_datasets",
-            return_value={},
+        with (
+            _NO_DERIVED,
+            patch(
+                "m4.core.tools.management.detect_available_local_datasets",
+                return_value={},
+            ),
         ):
             with patch(
                 "m4.core.tools.management.get_active_dataset",
@@ -159,9 +179,12 @@ class TestListDatasetsTool:
 
     def test_invoke_shows_backend_type(self, mock_availability, dummy_dataset):
         """Test that backend type is included."""
-        with patch(
-            "m4.core.tools.management.detect_available_local_datasets",
-            return_value=mock_availability,
+        with (
+            _NO_DERIVED,
+            patch(
+                "m4.core.tools.management.detect_available_local_datasets",
+                return_value=mock_availability,
+            ),
         ):
             with patch(
                 "m4.core.tools.management.get_active_dataset",
@@ -376,3 +399,187 @@ class TestManagementToolProtocol:
         assert tool.input_model == SetDatasetInput
         assert isinstance(tool.required_modalities, frozenset)
         assert tool.supported_datasets is None  # Always available
+
+
+class TestListDatasetsDerivedInfo:
+    """Test derived table info in list_datasets results."""
+
+    def test_derived_info_for_supported_dataset_duckdb(self, dummy_dataset):
+        """Test that derived info is populated for datasets with derived support."""
+        availability = {
+            "mimic-iv": {
+                "parquet_present": True,
+                "db_present": True,
+                "db_path": "/tmp/mimic_iv.duckdb",
+            },
+        }
+
+        with (
+            patch(
+                "m4.core.tools.management.detect_available_local_datasets",
+                return_value=availability,
+            ),
+            patch(
+                "m4.core.tools.management.get_active_dataset",
+                return_value="mimic-iv",
+            ),
+            patch(
+                "m4.core.tools.management.get_active_backend",
+                return_value="duckdb",
+            ),
+            patch("m4.core.tools.management.DatasetRegistry.get") as mock_reg,
+            patch(
+                "m4.core.tools.management.has_derived_support",
+                return_value=True,
+            ),
+            patch(
+                "m4.core.tools.management.list_builtins",
+                return_value=["age", "sofa", "sepsis3"],
+            ),
+            patch(
+                "m4.core.tools.management.get_derived_table_count",
+                return_value=2,
+            ),
+        ):
+            mock_reg.return_value = DatasetDefinition(
+                name="mimic-iv", bigquery_dataset_ids=["mimiciv_hosp"]
+            )
+
+            tool = ListDatasetsTool()
+            result = tool.invoke(dummy_dataset, ListDatasetsInput())
+
+            derived = result["datasets"]["mimic-iv"]["derived"]
+            assert derived is not None
+            assert derived["supported"] is True
+            assert derived["total"] == 3
+            assert derived["materialized"] == 2
+
+    def test_derived_info_duckdb_no_db(self, dummy_dataset):
+        """Test derived info when DuckDB database doesn't exist yet."""
+        availability = {
+            "mimic-iv": {
+                "parquet_present": True,
+                "db_present": False,
+                "db_path": "",
+            },
+        }
+
+        with (
+            patch(
+                "m4.core.tools.management.detect_available_local_datasets",
+                return_value=availability,
+            ),
+            patch(
+                "m4.core.tools.management.get_active_dataset",
+                return_value="mimic-iv",
+            ),
+            patch(
+                "m4.core.tools.management.get_active_backend",
+                return_value="duckdb",
+            ),
+            patch("m4.core.tools.management.DatasetRegistry.get") as mock_reg,
+            patch(
+                "m4.core.tools.management.has_derived_support",
+                return_value=True,
+            ),
+            patch(
+                "m4.core.tools.management.list_builtins",
+                return_value=["age", "sofa"],
+            ),
+            patch(
+                "m4.core.tools.management.get_derived_table_count",
+            ) as mock_count,
+        ):
+            mock_reg.return_value = DatasetDefinition(
+                name="mimic-iv", bigquery_dataset_ids=[]
+            )
+
+            tool = ListDatasetsTool()
+            result = tool.invoke(dummy_dataset, ListDatasetsInput())
+
+            derived = result["datasets"]["mimic-iv"]["derived"]
+            assert derived["materialized"] == 0
+            mock_count.assert_not_called()
+
+    def test_derived_info_bigquery_backend(self, dummy_dataset):
+        """Test derived info on BigQuery (materialized is None)."""
+        availability = {
+            "mimic-iv": {
+                "parquet_present": False,
+                "db_present": False,
+                "db_path": "",
+            },
+        }
+
+        with (
+            patch(
+                "m4.core.tools.management.detect_available_local_datasets",
+                return_value=availability,
+            ),
+            patch(
+                "m4.core.tools.management.get_active_dataset",
+                return_value="mimic-iv",
+            ),
+            patch(
+                "m4.core.tools.management.get_active_backend",
+                return_value="bigquery",
+            ),
+            patch("m4.core.tools.management.DatasetRegistry.get") as mock_reg,
+            patch(
+                "m4.core.tools.management.has_derived_support",
+                return_value=True,
+            ),
+            patch(
+                "m4.core.tools.management.list_builtins",
+                return_value=["age", "sofa", "sepsis3"],
+            ),
+        ):
+            mock_reg.return_value = DatasetDefinition(
+                name="mimic-iv", bigquery_dataset_ids=["mimiciv_hosp"]
+            )
+
+            tool = ListDatasetsTool()
+            result = tool.invoke(dummy_dataset, ListDatasetsInput())
+
+            derived = result["datasets"]["mimic-iv"]["derived"]
+            assert derived["supported"] is True
+            assert derived["total"] == 3
+            assert derived["materialized"] is None
+
+    def test_no_derived_info_for_unsupported_dataset(self, dummy_dataset):
+        """Test that derived is None for datasets without derived support."""
+        availability = {
+            "eicu": {
+                "parquet_present": True,
+                "db_present": True,
+                "db_path": "/tmp/eicu.duckdb",
+            },
+        }
+
+        with (
+            patch(
+                "m4.core.tools.management.detect_available_local_datasets",
+                return_value=availability,
+            ),
+            patch(
+                "m4.core.tools.management.get_active_dataset",
+                return_value="eicu",
+            ),
+            patch(
+                "m4.core.tools.management.get_active_backend",
+                return_value="duckdb",
+            ),
+            patch("m4.core.tools.management.DatasetRegistry.get") as mock_reg,
+            patch(
+                "m4.core.tools.management.has_derived_support",
+                return_value=False,
+            ),
+        ):
+            mock_reg.return_value = DatasetDefinition(
+                name="eicu", bigquery_dataset_ids=["eicu_crd"]
+            )
+
+            tool = ListDatasetsTool()
+            result = tool.invoke(dummy_dataset, ListDatasetsInput())
+
+            assert result["datasets"]["eicu"]["derived"] is None
