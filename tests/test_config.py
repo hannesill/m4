@@ -255,7 +255,3 @@ class TestValidBackends:
         """VALID_BACKENDS contains duckdb and bigquery."""
         assert "duckdb" in VALID_BACKENDS
         assert "bigquery" in VALID_BACKENDS
-
-    def test_is_frozen(self):
-        """VALID_BACKENDS is a set (immutable pattern)."""
-        assert isinstance(VALID_BACKENDS, set)

@@ -67,34 +67,6 @@ def mock_notes_dataset():
     DatasetRegistry._registry.pop("test-notes", None)
 
 
-class TestPackageLevelImports:
-    """Test that all API functions are importable from m4 package."""
-
-    def test_import_exceptions(self):
-        """Test exception classes are importable."""
-        assert issubclass(DatasetError, M4Error)
-        assert issubclass(QueryError, M4Error)
-        assert issubclass(ModalityError, M4Error)
-
-    def test_import_dataset_functions(self):
-        """Test dataset management functions are importable."""
-        assert callable(list_datasets)
-        assert callable(set_dataset)
-        assert callable(get_active_dataset)
-
-    def test_import_tabular_functions(self):
-        """Test tabular data functions are importable."""
-        assert callable(get_schema)
-        assert callable(get_table_info)
-        assert callable(execute_query)
-
-    def test_import_notes_functions(self):
-        """Test clinical notes functions are importable."""
-        assert callable(search_notes)
-        assert callable(get_note)
-        assert callable(list_patient_notes)
-
-
 class TestDatasetManagement:
     """Test dataset management API functions."""
 

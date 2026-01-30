@@ -411,3 +411,98 @@ class TestValidateTableName:
                 assert validate_table_name(table) is True, (
                     f"{ds.name}: primary_verification_table '{table}' failed validation"
                 )
+
+    def test_numeric_start_rejected(self):
+        """Table names starting with a digit are rejected."""
+        assert validate_table_name("123table") is False
+        assert validate_table_name("1") is False
+
+    def test_underscore_start_allowed(self):
+        """Table names starting with underscore are valid identifiers."""
+        assert validate_table_name("_internal") is True
+        assert validate_table_name("schema._table") is True
+
+    def test_all_sql_keywords_blocked_as_table(self):
+        """All SQL keywords in the blocklist are rejected as table names."""
+        keywords = [
+            "SELECT",
+            "FROM",
+            "WHERE",
+            "INSERT",
+            "UPDATE",
+            "DELETE",
+            "DROP",
+            "CREATE",
+            "ALTER",
+            "TRUNCATE",
+        ]
+        for kw in keywords:
+            assert validate_table_name(kw) is False, (
+                f"SQL keyword '{kw}' should be rejected as table name"
+            )
+            assert validate_table_name(kw.lower()) is False, (
+                f"Lowercase SQL keyword '{kw.lower()}' should be rejected"
+            )
+
+    def test_sql_keyword_in_schema_qualified(self):
+        """SQL keywords in schema.keyword form are rejected (keyword is the table part)."""
+        assert validate_table_name("myschema.SELECT") is False
+        assert validate_table_name("myschema.DROP") is False
+
+
+class TestIsSafeQueryRobustness:
+    """Test is_safe_query robustness against edge cases that could
+    cause false positives or false negatives in a clinical context."""
+
+    def test_cte_queries_allowed(self):
+        """Common Table Expressions (WITH ... AS) are safe."""
+        is_safe, msg = is_safe_query(
+            "WITH cohort AS (SELECT subject_id FROM patients) "
+            "SELECT * FROM cohort LIMIT 10"
+        )
+        assert is_safe is True
+
+    def test_window_functions_allowed(self):
+        """Window functions are legitimate clinical analysis SQL."""
+        is_safe, msg = is_safe_query(
+            "SELECT subject_id, ROW_NUMBER() OVER (PARTITION BY subject_id ORDER BY charttime) "
+            "FROM labevents LIMIT 10"
+        )
+        assert is_safe is True
+
+    def test_subquery_in_select_allowed(self):
+        """Subqueries in SELECT list are legitimate."""
+        is_safe, msg = is_safe_query(
+            "SELECT subject_id, "
+            "(SELECT COUNT(*) FROM admissions a WHERE a.subject_id = p.subject_id) "
+            "FROM patients p LIMIT 10"
+        )
+        assert is_safe is True
+
+    def test_exec_keyword_blocked(self):
+        """EXEC / EXECUTE are blocked even embedded in SELECT."""
+        is_safe, _ = is_safe_query("SELECT * FROM t WHERE EXEC xp_cmdshell('dir')")
+        assert is_safe is False
+
+    def test_merge_keyword_blocked(self):
+        """MERGE is a write operation and should be blocked."""
+        is_safe, _ = is_safe_query(
+            "MERGE INTO patients USING new_data ON patients.id = new_data.id"
+        )
+        assert is_safe is False
+
+    def test_truncate_keyword_blocked(self):
+        """TRUNCATE is a write operation and should be blocked."""
+        is_safe, _ = is_safe_query("TRUNCATE TABLE patients")
+        assert is_safe is False
+
+    def test_replace_keyword_blocked(self):
+        """REPLACE is a write operation and should be blocked."""
+        is_safe, _ = is_safe_query("REPLACE INTO patients VALUES (1, 'test')")
+        assert is_safe is False
+
+    def test_none_input_returns_false(self):
+        """None input should not crash the validator."""
+        # is_safe_query expects str; passing None should return False gracefully
+        is_safe, _ = is_safe_query(None)
+        assert is_safe is False

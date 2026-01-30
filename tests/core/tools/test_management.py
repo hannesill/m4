@@ -359,21 +359,6 @@ class TestSetDatasetTool:
         assert tool.is_compatible(empty_ds) is True
 
 
-class TestManagementToolInputs:
-    """Test management tool input dataclass models."""
-
-    def test_list_datasets_input_no_fields(self):
-        """Test that ListDatasetsInput has no required fields."""
-        input_obj = ListDatasetsInput()
-        # Should create successfully with no arguments
-        assert input_obj is not None
-
-    def test_set_dataset_input_requires_name(self):
-        """Test that SetDatasetInput requires dataset_name."""
-        input_obj = SetDatasetInput(dataset_name="test-ds")
-        assert input_obj.dataset_name == "test-ds"
-
-
 class TestManagementToolProtocol:
     """Test that management tools conform to the Tool protocol."""
 

@@ -697,3 +697,120 @@ class TestNoActiveDatasetError:
                         assert "No active dataset" in result_text, (
                             f"{tool_name} error message missing context"
                         )
+
+
+class TestMCPNotesTools:
+    """Test MCP notes tools (search_notes, get_note, list_patient_notes).
+
+    These tests verify that notes tools:
+    1. Return compatibility errors on datasets without NOTES modality
+    2. Return error messages (not crashes) when no dataset is active
+    """
+
+    @pytest.fixture
+    def tabular_only_dataset(self):
+        """Dataset with only TABULAR modality (no NOTES)."""
+        return DatasetDefinition(
+            name="tabular-only",
+            modalities=frozenset({Modality.TABULAR}),
+        )
+
+    # --- Incompatible dataset tests ---
+
+    @pytest.mark.asyncio
+    async def test_search_notes_incompatible_dataset(self, tabular_only_dataset):
+        """search_notes should return compatibility error on TABULAR-only dataset."""
+        with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active",
+                return_value=tabular_only_dataset,
+            ):
+                async with Client(mcp) as client:
+                    result = await client.call_tool("search_notes", {"query": "sepsis"})
+                    result_text = str(result)
+                    assert "NOTES" in result_text
+                    assert "search_notes" in result_text
+                    assert "tabular-only" in result_text
+
+    @pytest.mark.asyncio
+    async def test_get_note_incompatible_dataset(self, tabular_only_dataset):
+        """get_note should return compatibility error on TABULAR-only dataset."""
+        with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active",
+                return_value=tabular_only_dataset,
+            ):
+                async with Client(mcp) as client:
+                    result = await client.call_tool("get_note", {"note_id": "12345"})
+                    result_text = str(result)
+                    assert "NOTES" in result_text
+                    assert "get_note" in result_text
+                    assert "tabular-only" in result_text
+
+    @pytest.mark.asyncio
+    async def test_list_patient_notes_incompatible_dataset(self, tabular_only_dataset):
+        """list_patient_notes should return compatibility error on TABULAR-only dataset."""
+        with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active",
+                return_value=tabular_only_dataset,
+            ):
+                async with Client(mcp) as client:
+                    result = await client.call_tool(
+                        "list_patient_notes", {"subject_id": 10000032}
+                    )
+                    result_text = str(result)
+                    assert "NOTES" in result_text
+                    assert "list_patient_notes" in result_text
+                    assert "tabular-only" in result_text
+
+    # --- No active dataset tests ---
+
+    @pytest.mark.asyncio
+    async def test_search_notes_no_active_dataset(self):
+        """search_notes should return error when no dataset is active."""
+        from m4.core.exceptions import DatasetError
+
+        with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active",
+                side_effect=DatasetError("No active dataset"),
+            ):
+                async with Client(mcp) as client:
+                    result = await client.call_tool(
+                        "search_notes", {"query": "infection"}
+                    )
+                    result_text = str(result)
+                    assert "Error" in result_text
+
+    @pytest.mark.asyncio
+    async def test_get_note_no_active_dataset(self):
+        """get_note should return error when no dataset is active."""
+        from m4.core.exceptions import DatasetError
+
+        with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active",
+                side_effect=DatasetError("No active dataset"),
+            ):
+                async with Client(mcp) as client:
+                    result = await client.call_tool("get_note", {"note_id": "99999"})
+                    result_text = str(result)
+                    assert "Error" in result_text
+
+    @pytest.mark.asyncio
+    async def test_list_patient_notes_no_active_dataset(self):
+        """list_patient_notes should return error when no dataset is active."""
+        from m4.core.exceptions import DatasetError
+
+        with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active",
+                side_effect=DatasetError("No active dataset"),
+            ):
+                async with Client(mcp) as client:
+                    result = await client.call_tool(
+                        "list_patient_notes", {"subject_id": 10000032}
+                    )
+                    result_text = str(result)
+                    assert "Error" in result_text
