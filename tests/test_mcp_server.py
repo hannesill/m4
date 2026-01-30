@@ -358,7 +358,7 @@ class TestBigQueryIntegration:
                         result = await client.call_tool(
                             "execute_query",
                             {
-                                "sql_query": "SELECT COUNT(*) FROM `physionet-data.mimiciv_3_1_icu.icustays`"
+                                "sql_query": "SELECT COUNT(*) FROM `physionet-data.mimiciv_icu.icustays`"
                             },
                         )
                         result_text = str(result)

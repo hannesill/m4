@@ -41,7 +41,7 @@ def get_backend(backend_type: str | None = None) -> Backend:
         Backend instance
 
     Raises:
-        ValueError: If an unsupported backend type is requested
+        BackendError: If an unsupported backend type is requested
 
     Example:
         # Get default backend
@@ -66,7 +66,7 @@ def get_backend(backend_type: str | None = None) -> Backend:
         elif backend_type == "bigquery":
             backend = BigQueryBackend()
         else:
-            raise ValueError(
+            raise BackendError(
                 f"Unsupported backend: {backend_type}. "
                 "Supported backends: duckdb, bigquery"
             )

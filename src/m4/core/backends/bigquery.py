@@ -4,7 +4,6 @@ This module provides the BigQueryBackend class that implements the Backend
 protocol for executing queries against Google BigQuery datasets.
 """
 
-import os
 import re
 from typing import Any
 
@@ -29,7 +28,7 @@ class BigQueryBackend:
 
         # Execute a query
         result = backend.execute_query(
-            "SELECT * FROM `physionet-data.mimiciv_3_1_hosp.patients` LIMIT 5",
+            "SELECT * FROM `physionet-data.mimiciv_hosp.patients` LIMIT 5",
             mimic_full
         )
         print(result.data)
@@ -103,7 +102,9 @@ class BigQueryBackend:
                 backend=self.name,
             )
 
-        project_id = os.getenv("M4_PROJECT_ID", None)
+        from m4.config import get_bigquery_project_id
+
+        project_id = get_bigquery_project_id()
 
         # Check cache
         if (

@@ -130,7 +130,7 @@ class TestDatasetManagement:
     @patch("m4.api._get_active_dataset")
     def test_get_active_dataset_none_raises_error(self, mock_get):
         """Test getting active dataset when none is set."""
-        mock_get.side_effect = ValueError("No active dataset")
+        mock_get.side_effect = DatasetError("No active dataset")
         with pytest.raises(DatasetError):
             get_active_dataset()
 

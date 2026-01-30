@@ -67,10 +67,28 @@ def sanitize_error_message(error: Exception, backend_name: str = "unknown") -> s
     if "syntax error" in error_str or "parse error" in error_str:
         return "SQL syntax error. Please check your query syntax."
 
+    # BigQuery 404: dataset or project not found
+    if "not found" in error_str and (
+        "dataset" in error_str or "project" in error_str or "404" in error_str
+    ):
+        return (
+            "Resource not found. Check that the dataset and project ID are correct. "
+            "Use get_backend_info() to verify your configuration."
+        )
+
+    # Billing errors (check before permission — billing errors often contain "access denied")
+    if "billing" in error_str:
+        return (
+            "Billing error. Ensure your Google Cloud project has billing enabled "
+            "and the project ID is correct."
+        )
+
     if (
         "permission" in error_str
         or "access denied" in error_str
         or "unauthorized" in error_str
+        or "forbidden" in error_str
+        or "403" in error_str
     ):
         return "Permission denied. Check your access credentials."
 
@@ -80,8 +98,17 @@ def sanitize_error_message(error: Exception, backend_name: str = "unknown") -> s
     if "connection" in error_str or "network" in error_str:
         return "Connection error. Please check your network and try again."
 
-    # Generic fallback - don't expose internal details
-    return "Query execution failed. Please check your query and try again."
+    # Quota / rate limit
+    if "quota" in error_str or "rate limit" in error_str:
+        return "Quota exceeded or rate limited. Wait and retry, or request a quota increase."
+
+    # Generic fallback — include error type AND message for diagnostics
+    error_type = type(error).__name__
+    error_msg = str(error)
+    # Truncate very long error messages but keep enough to be useful
+    if len(error_msg) > 200:
+        error_msg = error_msg[:200] + "..."
+    return f"Query execution failed ({error_type}): {error_msg}"
 
 
 @dataclass
