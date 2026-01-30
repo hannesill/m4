@@ -295,8 +295,8 @@ class TestBigQueryCanonicalTranslation:
         dataset = DatasetDefinition(
             name="mimic-iv-test",
             bigquery_project_id="physionet-data",
-            bigquery_dataset_ids=["mimiciv_3_1_hosp"],
-            bigquery_schema_mapping={"mimiciv_hosp": "mimiciv_3_1_hosp"},
+            bigquery_dataset_ids=["mimiciv_hosp"],
+            bigquery_schema_mapping={"mimiciv_hosp": "mimiciv_hosp"},
         )
         backend = BigQueryBackend()
         sql = "SELECT * FROM mimiciv_hosp.patients WHERE subject_id = 123"
@@ -304,7 +304,7 @@ class TestBigQueryCanonicalTranslation:
         result = backend._translate_canonical_to_bq(sql, dataset)
 
         assert result == (
-            "SELECT * FROM `physionet-data.mimiciv_3_1_hosp.patients` "
+            "SELECT * FROM `physionet-data.mimiciv_hosp.patients` "
             "WHERE subject_id = 123"
         )
 

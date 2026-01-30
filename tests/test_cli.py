@@ -7,6 +7,7 @@ import pytest
 from typer.testing import CliRunner
 
 from m4.cli import app
+from m4.core.exceptions import DatasetError
 
 runner = CliRunner()
 
@@ -89,7 +90,8 @@ def test_config_validation_bigquery_with_db_path():
     assert "db-path can only be used with --backend duckdb" in result.output
 
 
-def test_config_validation_bigquery_requires_project_id():
+@patch("m4.cli.get_bigquery_project_id", return_value=None)
+def test_config_validation_bigquery_requires_project_id(mock_get_project):
     """Test that bigquery backend requires project-id parameter."""
     result = runner.invoke(app, ["config", "claude", "--backend", "bigquery"])
     # missing project-id should fail for bigquery backend
@@ -109,7 +111,8 @@ def test_config_validation_duckdb_with_project_id():
 
 
 @patch("subprocess.run")
-def test_config_claude_success(mock_subprocess):
+@patch("m4.cli.get_active_backend", return_value="duckdb")
+def test_config_claude_success(mock_backend, mock_subprocess):
     """Test successful Claude Desktop configuration."""
     mock_subprocess.return_value = MagicMock(returncode=0)
 
@@ -124,7 +127,8 @@ def test_config_claude_success(mock_subprocess):
 
 
 @patch("subprocess.run")
-def test_config_universal_quick_mode(mock_subprocess):
+@patch("m4.cli.get_active_backend", return_value="duckdb")
+def test_config_universal_quick_mode(mock_backend, mock_subprocess):
     """Test universal config generator in quick mode."""
     mock_subprocess.return_value = MagicMock(returncode=0)
 
@@ -139,7 +143,8 @@ def test_config_universal_quick_mode(mock_subprocess):
 
 
 @patch("subprocess.run")
-def test_config_script_failure(mock_subprocess):
+@patch("m4.cli.get_active_backend", return_value="duckdb")
+def test_config_script_failure(mock_backend, mock_subprocess):
     """Test error handling when config script fails."""
     mock_subprocess.side_effect = subprocess.CalledProcessError(1, "cmd")
 
@@ -151,10 +156,11 @@ def test_config_script_failure(mock_subprocess):
 
 
 @patch("subprocess.run")
+@patch("m4.cli.get_active_backend", return_value="duckdb")
 @patch("m4.cli.get_default_database_path")
 @patch("m4.cli.get_active_dataset")
 def test_config_claude_infers_db_path_demo(
-    mock_active, mock_get_default, mock_subprocess
+    mock_active, mock_get_default, mock_backend, mock_subprocess
 ):
     mock_active.return_value = None  # unset -> default to demo
     mock_get_default.return_value = Path("/tmp/inferred-demo.duckdb")
@@ -169,10 +175,11 @@ def test_config_claude_infers_db_path_demo(
 
 
 @patch("subprocess.run")
+@patch("m4.cli.get_active_backend", return_value="duckdb")
 @patch("m4.cli.get_default_database_path")
 @patch("m4.cli.get_active_dataset")
 def test_config_claude_infers_db_path_full(
-    mock_active, mock_get_default, mock_subprocess
+    mock_active, mock_get_default, mock_backend, mock_subprocess
 ):
     mock_active.return_value = "mimic-iv"
     mock_get_default.return_value = Path("/tmp/inferred-full.duckdb")
@@ -290,15 +297,18 @@ def test_backend_duckdb_happy_path(mock_set_backend):
     mock_set_backend.assert_called_once_with("duckdb")
 
 
+@patch("m4.cli.get_bigquery_project_id", return_value="my-project")
 @patch("m4.cli.set_active_backend")
 @patch("m4.cli.get_active_dataset")
 @patch("m4.cli.DatasetRegistry.get")
-def test_backend_bigquery_happy_path(mock_registry, mock_get_dataset, mock_set_backend):
+def test_backend_bigquery_happy_path(
+    mock_registry, mock_get_dataset, mock_set_backend, mock_get_project
+):
     """Test setting backend to bigquery."""
     # Mock a dataset that supports BigQuery
     mock_get_dataset.return_value = "mimic-iv"
     mock_ds = MagicMock()
-    mock_ds.bigquery_dataset_ids = ["mimiciv_3_1_hosp"]
+    mock_ds.bigquery_dataset_ids = ["mimiciv_hosp"]
     mock_registry.return_value = mock_ds
 
     result = runner.invoke(app, ["backend", "bigquery"])
@@ -341,9 +351,10 @@ def test_backend_invalid_choice():
     assert "duckdb" in result.stdout
 
 
+@patch("m4.cli.get_bigquery_project_id", return_value="my-project")
 @patch("m4.cli.set_active_backend")
-@patch("m4.cli.get_active_dataset", side_effect=ValueError("No active dataset"))
-def test_backend_case_insensitive(mock_get_dataset, mock_set_backend):
+@patch("m4.cli.get_active_dataset", side_effect=DatasetError("No active dataset"))
+def test_backend_case_insensitive(mock_get_dataset, mock_set_backend, mock_get_project):
     """Test that backend choice is case-insensitive."""
     result = runner.invoke(app, ["backend", "BIGQUERY"])
 
@@ -440,3 +451,197 @@ class TestInitDerivedTableSkipForce:
 
         assert result.exit_code == 0
         mock_materialize.assert_called_once()
+
+
+# ----------------------------------------------------------------
+# Backend command: --project-id tests
+# ----------------------------------------------------------------
+
+
+@patch("m4.cli.set_bigquery_project_id")
+@patch("m4.cli.set_active_backend")
+@patch("m4.cli.get_active_dataset", side_effect=DatasetError("No active dataset"))
+def test_backend_bigquery_with_project_id(
+    mock_get_dataset, mock_set_backend, mock_set_project
+):
+    """Test backend bigquery --project-id persists project ID."""
+    result = runner.invoke(
+        app, ["backend", "bigquery", "--project-id", "my-gcp-project"]
+    )
+
+    assert result.exit_code == 0
+    assert "Active backend set to 'bigquery'" in result.stdout
+    mock_set_backend.assert_called_once_with("bigquery")
+    mock_set_project.assert_called_once_with("my-gcp-project")
+
+
+@patch("m4.cli.set_bigquery_project_id")
+@patch("m4.cli.set_active_backend")
+def test_backend_duckdb_rejects_project_id(mock_set_backend, mock_set_project):
+    """Test backend duckdb --project-id is rejected."""
+    result = runner.invoke(app, ["backend", "duckdb", "--project-id", "my-gcp-project"])
+
+    assert result.exit_code == 1
+    assert "project-id can only be used with bigquery" in result.output
+    mock_set_backend.assert_not_called()
+    mock_set_project.assert_not_called()
+
+
+@patch("m4.cli.get_bigquery_project_id", return_value=None)
+@patch("m4.cli.set_bigquery_project_id")
+@patch("m4.cli.set_active_backend")
+@patch("m4.cli.get_active_dataset", side_effect=DatasetError("No active dataset"))
+def test_backend_bigquery_without_project_id_errors(
+    mock_get_dataset, mock_set_backend, mock_set_project, mock_get_project
+):
+    """Test backend bigquery without --project-id and no config project ID errors."""
+    result = runner.invoke(app, ["backend", "bigquery"])
+
+    assert result.exit_code == 1
+    assert "Project ID Required" in result.stdout
+    assert "m4 backend bigquery --project-id" in result.stdout
+    mock_set_backend.assert_not_called()
+    mock_set_project.assert_not_called()
+
+
+@patch("m4.cli.get_bigquery_project_id", return_value="existing-project")
+@patch("m4.cli.set_bigquery_project_id")
+@patch("m4.cli.set_active_backend")
+@patch("m4.cli.get_active_dataset", side_effect=DatasetError("No active dataset"))
+def test_backend_bigquery_without_flag_uses_config_project_id(
+    mock_get_dataset, mock_set_backend, mock_set_project, mock_get_project
+):
+    """Test backend bigquery without --project-id succeeds when project ID is in config."""
+    result = runner.invoke(app, ["backend", "bigquery"])
+
+    assert result.exit_code == 0
+    mock_set_backend.assert_called_once_with("bigquery")
+    mock_set_project.assert_not_called()
+
+
+# ----------------------------------------------------------------
+# Config command: persistence to config.json tests
+# ----------------------------------------------------------------
+
+
+@patch("subprocess.run")
+@patch("m4.cli.set_bigquery_project_id")
+@patch("m4.cli.set_active_backend")
+def test_config_claude_bigquery_persists_to_config(
+    mock_set_backend, mock_set_project, mock_subprocess
+):
+    """Test that m4 config claude --backend bigquery persists backend and project_id."""
+    mock_subprocess.return_value = MagicMock(returncode=0)
+
+    result = runner.invoke(
+        app,
+        ["config", "claude", "--backend", "bigquery", "--project-id", "my-project"],
+    )
+
+    assert result.exit_code == 0
+    mock_set_backend.assert_called_once_with("bigquery")
+    mock_set_project.assert_called_once_with("my-project")
+
+
+@patch("subprocess.run")
+@patch("m4.cli.get_active_backend", return_value="duckdb")
+@patch("m4.cli.set_bigquery_project_id")
+@patch("m4.cli.set_active_backend")
+def test_config_claude_without_backend_flag_does_not_overwrite(
+    mock_set_backend, mock_set_project, mock_get_backend, mock_subprocess
+):
+    """Test that m4 config claude without --backend does not overwrite the active backend."""
+    mock_subprocess.return_value = MagicMock(returncode=0)
+
+    result = runner.invoke(app, ["config", "claude"])
+
+    assert result.exit_code == 0
+    mock_set_backend.assert_not_called()
+    mock_set_project.assert_not_called()
+
+
+@patch("subprocess.run")
+@patch("m4.cli.get_bigquery_project_id", return_value="inferred-project")
+@patch("m4.cli.get_active_backend", return_value="bigquery")
+def test_config_claude_infers_bigquery_project_from_config(
+    mock_backend, mock_get_project, mock_subprocess
+):
+    """Test that m4 config claude infers project-id from config.json when backend is bigquery."""
+    mock_subprocess.return_value = MagicMock(returncode=0)
+
+    result = runner.invoke(app, ["config", "claude"])
+
+    assert result.exit_code == 0
+    # Verify the setup script was called with --backend bigquery and --project-id
+    call_args = mock_subprocess.call_args[0][0]
+    assert "--backend" in call_args
+    assert "bigquery" in call_args
+    assert "--project-id" in call_args
+    assert "inferred-project" in call_args
+
+
+@patch("m4.cli.get_bigquery_project_id", return_value=None)
+@patch("m4.cli.get_active_backend", return_value="bigquery")
+def test_config_claude_errors_when_bigquery_no_project_in_config(
+    mock_backend, mock_get_project
+):
+    """Test that m4 config claude errors when backend is bigquery but no project-id anywhere."""
+    result = runner.invoke(app, ["config", "claude"])
+
+    assert result.exit_code == 1
+    assert "BigQuery backend requires a project ID" in result.output
+
+
+@patch("subprocess.run")
+@patch("m4.cli.set_bigquery_project_id")
+@patch("m4.cli.set_active_backend")
+def test_config_universal_bigquery_persists_to_config(
+    mock_set_backend, mock_set_project, mock_subprocess
+):
+    """Test that m4 config --quick --backend bigquery persists to config.json."""
+    mock_subprocess.return_value = MagicMock(returncode=0)
+
+    result = runner.invoke(
+        app,
+        [
+            "config",
+            "--quick",
+            "--backend",
+            "bigquery",
+            "--project-id",
+            "my-project",
+        ],
+    )
+
+    assert result.exit_code == 0
+    mock_set_backend.assert_called_once_with("bigquery")
+    mock_set_project.assert_called_once_with("my-project")
+
+
+# ----------------------------------------------------------------
+# Status command: BigQuery project ID display
+# ----------------------------------------------------------------
+
+
+@patch("m4.cli.get_bigquery_project_id", return_value="my-gcp-project")
+@patch("m4.cli.get_active_backend", return_value="bigquery")
+@patch("m4.cli.compute_parquet_dir_size", return_value=123)
+@patch("m4.cli.get_active_dataset", return_value="mimic-iv")
+@patch("m4.cli.detect_available_local_datasets")
+def test_status_bigquery_shows_project_id(
+    mock_detect, mock_active, mock_size, mock_backend, mock_get_project
+):
+    """Test that m4 status shows BigQuery project ID in parentheses."""
+    mock_detect.return_value = {
+        "mimic-iv": {
+            "parquet_present": True,
+            "db_present": False,
+            "parquet_root": "/tmp/full",
+            "db_path": "/tmp/full.duckdb",
+        },
+    }
+
+    result = runner.invoke(app, ["status"])
+    assert result.exit_code == 0
+    assert "bigquery" in result.stdout
+    assert "my-gcp-project" in result.stdout

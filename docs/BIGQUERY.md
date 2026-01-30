@@ -54,7 +54,7 @@ M4 uses these PhysioNet BigQuery datasets:
 
 | Dataset | BigQuery Project | Dataset IDs |
 |---------|-----------------|-------------|
-| mimic-iv | `physionet-data` | `mimiciv_3_1_hosp`, `mimiciv_3_1_icu` |
+| mimic-iv | `physionet-data` | `mimiciv_hosp`, `mimiciv_icu` |
 | mimic-iv-note | `physionet-data` | `mimiciv_note` |
 | eicu | `physionet-data` | `eicu_crd` |
 

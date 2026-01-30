@@ -379,9 +379,7 @@ class TestValidateTableName:
     def test_backtick_wrapped_passthrough(self):
         """Backtick-wrapped BigQuery names pass through."""
         assert validate_table_name("`project.dataset.table`") is True
-        assert (
-            validate_table_name("`physionet-data.mimiciv_3_1_hosp.admissions`") is True
-        )
+        assert validate_table_name("`physionet-data.mimiciv_hosp.admissions`") is True
 
     def test_empty_and_none(self):
         """Empty string and None are invalid."""

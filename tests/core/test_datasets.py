@@ -148,8 +148,8 @@ class TestDatasetRegistry:
             "derived": "mimiciv_derived",
         }
         assert ds.bigquery_schema_mapping == {
-            "mimiciv_hosp": "mimiciv_3_1_hosp",
-            "mimiciv_icu": "mimiciv_3_1_icu",
+            "mimiciv_hosp": "mimiciv_hosp",
+            "mimiciv_icu": "mimiciv_icu",
             "mimiciv_derived": "mimiciv_derived",
         }
         assert ds.primary_verification_table == "mimiciv_hosp.admissions"

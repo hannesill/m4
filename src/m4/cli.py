@@ -11,11 +11,13 @@ from m4.config import (
     detect_available_local_datasets,
     get_active_backend,
     get_active_dataset,
+    get_bigquery_project_id,
     get_dataset_parquet_root,
     get_default_database_path,
     logger,
     set_active_backend,
     set_active_dataset,
+    set_bigquery_project_id,
 )
 from m4.console import (
     console,
@@ -45,6 +47,7 @@ from m4.core.derived.materializer import (
     list_materialized_tables,
     materialize_all,
 )
+from m4.core.exceptions import DatasetError
 from m4.data_io import (
     compute_parquet_dir_size,
     convert_csv_to_parquet,
@@ -587,6 +590,13 @@ def backend_cmd(
         str,
         typer.Argument(help="Backend to use: duckdb or bigquery", metavar="BACKEND"),
     ],
+    project_id: Annotated[
+        str | None,
+        typer.Option(
+            "--project-id",
+            help="Google Cloud project ID for billing (bigquery only)",
+        ),
+    ] = None,
 ):
     """Set the active backend (duckdb or bigquery)."""
     target = target.lower()
@@ -597,6 +607,11 @@ def backend_cmd(
             f"Backend '{target}' is not valid.",
             hint=f"Valid backends: {', '.join(sorted(VALID_BACKENDS))}",
         )
+        raise typer.Exit(code=1)
+
+    # Reject --project-id for duckdb
+    if target == "duckdb" and project_id:
+        error("--project-id can only be used with bigquery backend")
         raise typer.Exit(code=1)
 
     # Block if current dataset is incompatible with new backend
@@ -611,10 +626,26 @@ def backend_cmd(
                     hint="Switch dataset first: m4 use <dataset>",
                 )
                 raise typer.Exit(code=1)
-        except ValueError:
+        except (ValueError, DatasetError):
             pass  # No active dataset set
 
+    # BigQuery requires a project ID — either provided now or already in config
+    if target == "bigquery":
+        effective_project_id = project_id or get_bigquery_project_id()
+        if not effective_project_id:
+            print_error_panel(
+                "Project ID Required",
+                "BigQuery backend requires a project ID.",
+                hint="Set it with: m4 backend bigquery --project-id <ID>",
+            )
+            raise typer.Exit(code=1)
+
     set_active_backend(target)
+
+    # Persist project ID if provided
+    if project_id:
+        set_bigquery_project_id(project_id)
+
     success(f"Active backend set to '{target}'")
 
     # Show helpful context
@@ -757,7 +788,12 @@ def status_cmd(
     console.print(f"[bold]Active dataset:[/bold] [success]{active}[/success]")
 
     backend = get_active_backend()
-    console.print(f"[bold]Backend:[/bold] [success]{backend}[/success]")
+    backend_label = backend
+    if backend == "bigquery":
+        bq_project = get_bigquery_project_id()
+        if bq_project:
+            backend_label = f"{backend} ({bq_project})"
+    console.print(f"[bold]Backend:[/bold] [success]{backend_label}[/success]")
 
     # Get info for active dataset
     ds_info = availability.get(active)
@@ -973,13 +1009,13 @@ def config_cmd(
         ),
     ] = None,
     backend: Annotated[
-        str,
+        str | None,
         typer.Option(
             "--backend",
             "-b",
             help="Configure settings for backend (duckdb or bigquery). Note: Use 'm4 backend' to switch the active backend.",
         ),
-    ] = "duckdb",
+    ] = None,
     db_path: Annotated[
         str | None,
         typer.Option(
@@ -1061,18 +1097,37 @@ def config_cmd(
         error("Could not find m4.mcp_client_configs package")
         raise typer.Exit(code=1)
 
-    # Validate backend-specific arguments
-    # duckdb: db_path allowed, project_id not allowed
-    if backend == "duckdb" and project_id:
-        error("--project-id can only be used with --backend bigquery")
-        raise typer.Exit(code=1)
+    # Track whether backend/project_id were explicitly provided by the user
+    backend_explicit = backend is not None
+    project_id_explicit = project_id is not None
+    if backend is None:
+        backend = get_active_backend()
 
-    # bigquery: requires project_id, db_path not allowed
-    if backend == "bigquery" and db_path:
-        error("--db-path can only be used with --backend duckdb")
-        raise typer.Exit(code=1)
+    # Infer project_id from config when backend is bigquery and not explicitly passed
     if backend == "bigquery" and not project_id:
-        error("--project-id is required when using --backend bigquery")
+        project_id = get_bigquery_project_id()
+
+    # Validate backend-specific arguments only when --backend is explicit
+    if backend_explicit:
+        # duckdb: db_path allowed, project_id not allowed
+        if backend == "duckdb" and project_id:
+            error("--project-id can only be used with --backend bigquery")
+            raise typer.Exit(code=1)
+
+        # bigquery: requires project_id, db_path not allowed
+        if backend == "bigquery" and db_path:
+            error("--db-path can only be used with --backend duckdb")
+            raise typer.Exit(code=1)
+        if backend == "bigquery" and not project_id:
+            error("--project-id is required when using --backend bigquery")
+            raise typer.Exit(code=1)
+
+    # Even when inferred, bigquery still requires a project_id
+    if backend == "bigquery" and not project_id:
+        error(
+            "BigQuery backend requires a project ID. "
+            "Set it with: m4 backend bigquery --project-id <ID>"
+        )
         raise typer.Exit(code=1)
 
     if client == "claude":
@@ -1102,6 +1157,11 @@ def config_cmd(
         try:
             result = subprocess.run(cmd, check=True, capture_output=False)
             if result.returncode == 0:
+                # Persist backend and project_id only if explicitly provided
+                if backend_explicit:
+                    set_active_backend(backend)
+                if project_id_explicit:
+                    set_bigquery_project_id(project_id)
                 success("Claude Desktop configuration completed!")
         except subprocess.CalledProcessError as e:
             error(f"Claude Desktop setup failed with exit code {e.returncode}")
@@ -1164,8 +1224,14 @@ def config_cmd(
 
         try:
             result = subprocess.run(cmd, check=True, capture_output=False)
-            if result.returncode == 0 and quick:
-                success("Configuration generated successfully!")
+            if result.returncode == 0:
+                # Persist backend and project_id only if explicitly provided
+                if backend_explicit:
+                    set_active_backend(backend)
+                if project_id_explicit:
+                    set_bigquery_project_id(project_id)
+                if quick:
+                    success("Configuration generated successfully!")
         except subprocess.CalledProcessError as e:
             error(f"Configuration generation failed with exit code {e.returncode}")
             raise typer.Exit(code=e.returncode)

@@ -9,6 +9,7 @@ import pytest
 import m4.config as config_mod
 from m4.config import get_active_dataset, set_active_dataset
 from m4.core.datasets import DatasetRegistry
+from m4.core.exceptions import DatasetError
 
 
 def test_dynamic_dataset_switching(tmp_path, monkeypatch):
@@ -37,8 +38,8 @@ def test_dynamic_dataset_switching(tmp_path, monkeypatch):
     if (data_dir / "config.json").exists():
         (data_dir / "config.json").unlink()
 
-    # With no active dataset configured, DatasetRegistry.get_active() raises ValueError
-    with pytest.raises(ValueError):
+    # With no active dataset configured, DatasetRegistry.get_active() raises DatasetError
+    with pytest.raises(DatasetError):
         DatasetRegistry.get_active()
 
     # 2. Set active dataset to something else (simulating 'm4 use')

@@ -85,13 +85,13 @@ For datasets where all files are in the root directory (no subdirectories), use 
 ```json
 {
   "bigquery_schema_mapping": {
-    "mimiciv_hosp": "mimiciv_3_1_hosp",
-    "mimiciv_icu": "mimiciv_3_1_icu"
+    "mimiciv_hosp": "mimiciv_hosp",
+    "mimiciv_icu": "mimiciv_icu"
   }
 }
 ```
 
-With this, a query for `mimiciv_hosp.patients` is rewritten to `physionet-data.mimiciv_3_1_hosp.patients` on BigQuery.
+With this, a query for `mimiciv_hosp.patients` is rewritten to `physionet-data.mimiciv_hosp.patients` on BigQuery.
 
 Custom datasets without `schema_mapping` still work — tables will be created with flat names in the `main` schema (backward-compatible behavior).
 

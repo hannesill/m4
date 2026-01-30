@@ -5,9 +5,11 @@ import pytest
 from m4.config import (
     VALID_BACKENDS,
     get_active_backend,
+    get_bigquery_project_id,
     get_dataset_parquet_root,
     get_default_database_path,
     set_active_backend,
+    set_bigquery_project_id,
 )
 from m4.core.datasets import DatasetRegistry
 
@@ -183,6 +185,67 @@ class TestSetActiveBackend:
         assert saved["backend"] == "bigquery"
         assert saved["dataset"] == "mimic-iv"
         assert saved["other"] == "value"
+
+
+class TestBigQueryProjectId:
+    """Tests for get_bigquery_project_id / set_bigquery_project_id functions."""
+
+    def test_default_is_none(self, isolated_config, monkeypatch):
+        """Default project ID is None when nothing is configured."""
+        monkeypatch.delenv("M4_PROJECT_ID", raising=False)
+
+        assert get_bigquery_project_id() is None
+
+    def test_env_var_takes_priority(self, isolated_config, monkeypatch):
+        """M4_PROJECT_ID env var takes priority over config file."""
+        isolated_config.write_text('{"bigquery_project_id": "from-config"}')
+        monkeypatch.setenv("M4_PROJECT_ID", "from-env")
+
+        assert get_bigquery_project_id() == "from-env"
+
+    def test_config_file_used_when_no_env(self, isolated_config, monkeypatch):
+        """Config file setting is used when no env var is set."""
+        isolated_config.write_text('{"bigquery_project_id": "my-project"}')
+        monkeypatch.delenv("M4_PROJECT_ID", raising=False)
+
+        assert get_bigquery_project_id() == "my-project"
+
+    def test_set_project_id(self, isolated_config, monkeypatch):
+        """Can set project ID via set_bigquery_project_id."""
+        import json
+
+        monkeypatch.delenv("M4_PROJECT_ID", raising=False)
+
+        set_bigquery_project_id("new-project")
+
+        saved = json.loads(isolated_config.read_text())
+        assert saved["bigquery_project_id"] == "new-project"
+        assert get_bigquery_project_id() == "new-project"
+
+    def test_clear_project_id(self, isolated_config, monkeypatch):
+        """Can clear project ID by setting None."""
+        monkeypatch.delenv("M4_PROJECT_ID", raising=False)
+
+        set_bigquery_project_id("some-project")
+        assert get_bigquery_project_id() == "some-project"
+
+        set_bigquery_project_id(None)
+        assert get_bigquery_project_id() is None
+
+    def test_preserves_other_config(self, isolated_config):
+        """Setting project ID preserves other config values."""
+        import json
+
+        isolated_config.write_text(
+            '{"backend": "bigquery", "active_dataset": "mimic-iv"}'
+        )
+
+        set_bigquery_project_id("my-project")
+
+        saved = json.loads(isolated_config.read_text())
+        assert saved["bigquery_project_id"] == "my-project"
+        assert saved["backend"] == "bigquery"
+        assert saved["active_dataset"] == "mimic-iv"
 
 
 class TestValidBackends:

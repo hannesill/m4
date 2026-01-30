@@ -13,6 +13,8 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
+from m4.core.exceptions import DatasetError
+
 if TYPE_CHECKING:
     pass
 
@@ -86,7 +88,7 @@ class DatasetDefinition:
     schema_mapping: dict[str, str] = field(default_factory=dict)
 
     # Canonical schema -> BigQuery dataset ID
-    # e.g. {"mimiciv_hosp": "mimiciv_3_1_hosp"}
+    # e.g. {"mimiciv_hosp": "mimiciv_hosp"}
     bigquery_schema_mapping: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -145,21 +147,21 @@ class DatasetRegistry:
             DatasetDefinition for the active dataset
 
         Raises:
-            ValueError: If no active dataset is configured or dataset not found
+            DatasetError: If no active dataset is configured or dataset not found
         """
         # Import here to avoid circular dependency
         from m4.config import get_active_dataset
 
         active_ds_name = get_active_dataset()
         if not active_ds_name:
-            raise ValueError(
+            raise DatasetError(
                 "No active dataset configured. "
                 "Use `set_dataset('dataset-name')` to select a dataset."
             )
 
         ds_def = cls.get(active_ds_name)
         if not ds_def:
-            raise ValueError(
+            raise DatasetError(
                 f"Active dataset '{active_ds_name}' not found in registry. "
                 f"Available datasets: {', '.join(d.name for d in cls.list_all())}"
             )
@@ -261,8 +263,8 @@ class DatasetRegistry:
                 "derived": "mimiciv_derived",
             },
             bigquery_schema_mapping={
-                "mimiciv_hosp": "mimiciv_3_1_hosp",
-                "mimiciv_icu": "mimiciv_3_1_icu",
+                "mimiciv_hosp": "mimiciv_hosp",
+                "mimiciv_icu": "mimiciv_icu",
                 "mimiciv_derived": "mimiciv_derived",
             },
         )
