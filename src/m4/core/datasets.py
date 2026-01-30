@@ -248,7 +248,11 @@ class DatasetRegistry:
             subdirectories_to_scan=["hosp", "icu"],
             primary_verification_table="mimiciv_hosp.admissions",
             bigquery_project_id="physionet-data",
-            bigquery_dataset_ids=["mimiciv_3_1_hosp", "mimiciv_3_1_icu"],
+            bigquery_dataset_ids=[
+                "mimiciv_3_1_hosp",
+                "mimiciv_3_1_icu",
+                "mimiciv_derived",
+            ],
             requires_authentication=True,
             modalities=frozenset({Modality.TABULAR}),
             related_datasets={

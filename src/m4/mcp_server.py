@@ -315,14 +315,16 @@ def get_database_schema() -> str:
     Returns:
         List of all available tables in the database with current backend info.
     """
-    dataset = DatasetRegistry.get_active()
-
-    # Proactive capability check
-    compat_result = _tool_selector.check_compatibility("get_database_schema", dataset)
-    if not compat_result.compatible:
-        return compat_result.error_message
-
     try:
+        dataset = DatasetRegistry.get_active()
+
+        # Proactive capability check
+        compat_result = _tool_selector.check_compatibility(
+            "get_database_schema", dataset
+        )
+        if not compat_result.compatible:
+            return compat_result.error_message
+
         tool = ToolRegistry.get("get_database_schema")
         result = tool.invoke(dataset, GetDatabaseSchemaInput())
         return _serialize_schema_result(result)
@@ -344,14 +346,14 @@ def get_table_info(table_name: str, show_sample: bool = True) -> str:
     Returns:
         Table structure with column names, types, and sample data.
     """
-    dataset = DatasetRegistry.get_active()
-
-    # Proactive capability check
-    compat_result = _tool_selector.check_compatibility("get_table_info", dataset)
-    if not compat_result.compatible:
-        return compat_result.error_message
-
     try:
+        dataset = DatasetRegistry.get_active()
+
+        # Proactive capability check
+        compat_result = _tool_selector.check_compatibility("get_table_info", dataset)
+        if not compat_result.compatible:
+            return compat_result.error_message
+
         tool = ToolRegistry.get("get_table_info")
         result = tool.invoke(
             dataset, GetTableInfoInput(table_name=table_name, show_sample=show_sample)
@@ -377,14 +379,14 @@ def execute_query(sql_query: str) -> str:
     Returns:
         Query results or helpful error messages.
     """
-    dataset = DatasetRegistry.get_active()
-
-    # Proactive capability check
-    compat_result = _tool_selector.check_compatibility("execute_query", dataset)
-    if not compat_result.compatible:
-        return compat_result.error_message
-
     try:
+        dataset = DatasetRegistry.get_active()
+
+        # Proactive capability check
+        compat_result = _tool_selector.check_compatibility("execute_query", dataset)
+        if not compat_result.compatible:
+            return compat_result.error_message
+
         tool = ToolRegistry.get("execute_query")
         result = tool.invoke(dataset, ExecuteQueryInput(sql_query=sql_query))
         # Result is a DataFrame - serialize it
@@ -422,13 +424,13 @@ def search_notes(
     Returns:
         Matching snippets with note IDs for follow-up retrieval.
     """
-    dataset = DatasetRegistry.get_active()
-
-    compat_result = _tool_selector.check_compatibility("search_notes", dataset)
-    if not compat_result.compatible:
-        return compat_result.error_message
-
     try:
+        dataset = DatasetRegistry.get_active()
+
+        compat_result = _tool_selector.check_compatibility("search_notes", dataset)
+        if not compat_result.compatible:
+            return compat_result.error_message
+
         tool = ToolRegistry.get("search_notes")
         result = tool.invoke(
             dataset,
@@ -460,13 +462,13 @@ def get_note(note_id: str, max_length: int | None = None) -> str:
     Returns:
         Full note text, or truncated version if max_length specified.
     """
-    dataset = DatasetRegistry.get_active()
-
-    compat_result = _tool_selector.check_compatibility("get_note", dataset)
-    if not compat_result.compatible:
-        return compat_result.error_message
-
     try:
+        dataset = DatasetRegistry.get_active()
+
+        compat_result = _tool_selector.check_compatibility("get_note", dataset)
+        if not compat_result.compatible:
+            return compat_result.error_message
+
         tool = ToolRegistry.get("get_note")
         result = tool.invoke(
             dataset,
@@ -500,13 +502,15 @@ def list_patient_notes(
     Returns:
         List of available notes with metadata for the patient.
     """
-    dataset = DatasetRegistry.get_active()
-
-    compat_result = _tool_selector.check_compatibility("list_patient_notes", dataset)
-    if not compat_result.compatible:
-        return compat_result.error_message
-
     try:
+        dataset = DatasetRegistry.get_active()
+
+        compat_result = _tool_selector.check_compatibility(
+            "list_patient_notes", dataset
+        )
+        if not compat_result.compatible:
+            return compat_result.error_message
+
         tool = ToolRegistry.get("list_patient_notes")
         result = tool.invoke(
             dataset,

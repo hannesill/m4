@@ -112,25 +112,18 @@ class TestBigQueryClientCaching:
         with patch.dict("sys.modules", {"google.cloud.bigquery": MagicMock()}):
             backend = BigQueryBackend()
 
-            # First call creates client
-            mock_bq = MagicMock()
-            mock_client = MagicMock()
-            mock_bq.Client.return_value = mock_client
+        mock_client = MagicMock()
+        backend._client_cache = {
+            "client": mock_client,
+            "project_id": None,
+        }
 
-            with patch.dict("sys.modules", {"google.cloud": MagicMock()}):
-                with patch.dict("sys.modules", {"google.cloud.bigquery": mock_bq}):
-                    # Manually set up cache to simulate behavior
-                    backend._client_cache = {
-                        "client": mock_client,
-                        "project_id": None,
-                    }
+        # Mock get_bigquery_project_id to return None so cache lookup succeeds
+        with patch("m4.config.get_bigquery_project_id", return_value=None):
+            with patch.dict("sys.modules", {"google.cloud.bigquery": MagicMock()}):
+                client = backend._get_client()
 
-                    # Second call should use cache
-                    client = backend._get_client()
-
-                    assert client == mock_client
-                    # Client should not be created again
-                    mock_bq.Client.assert_not_called()
+                assert client is mock_client
 
 
 class TestBigQueryQueryExecution:

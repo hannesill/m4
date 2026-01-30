@@ -365,23 +365,6 @@ class TestBigQueryIntegration:
                         assert "Mock BigQuery result" in result_text
 
 
-class TestServerIntegration:
-    """Test overall server integration."""
-
-    def test_server_main_function_exists(self):
-        """Test that the main function exists and is callable."""
-        from m4.mcp_server import main
-
-        assert callable(main)
-
-    def test_server_can_be_imported_as_module(self):
-        """Test that the server can be imported as a module."""
-        import m4.mcp_server
-
-        assert hasattr(m4.mcp_server, "mcp")
-        assert hasattr(m4.mcp_server, "main")
-
-
 class TestModalityChecking:
     """Test proactive modality-based tool filtering.
 
@@ -678,3 +661,39 @@ class TestModalityChecking:
 
         # Should show warning about no tools or just management tools
         assert "No data tools available" in snapshot or "list_datasets" in snapshot
+
+
+class TestNoActiveDatasetError:
+    """Test that MCP tools return error messages when no dataset is configured."""
+
+    @pytest.mark.asyncio
+    async def test_tools_return_error_when_no_active_dataset(self):
+        """All data tools should return an error string, not crash,
+        when DatasetRegistry.get_active() raises DatasetError."""
+        from m4.core.exceptions import DatasetError
+
+        with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
+            with patch(
+                "m4.mcp_server.DatasetRegistry.get_active",
+                side_effect=DatasetError("No active dataset configured."),
+            ):
+                async with Client(mcp) as client:
+                    # Test all 6 tools that call get_active()
+                    tools_and_args = [
+                        ("get_database_schema", {}),
+                        ("get_table_info", {"table_name": "test"}),
+                        ("execute_query", {"sql_query": "SELECT 1"}),
+                        ("search_notes", {"query": "test"}),
+                        ("get_note", {"note_id": "123"}),
+                        ("list_patient_notes", {"subject_id": 1}),
+                    ]
+
+                    for tool_name, args in tools_and_args:
+                        result = await client.call_tool(tool_name, args)
+                        result_text = str(result)
+                        assert "**Error:**" in result_text, (
+                            f"{tool_name} did not return error message"
+                        )
+                        assert "No active dataset" in result_text, (
+                            f"{tool_name} error message missing context"
+                        )

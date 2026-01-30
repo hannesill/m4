@@ -451,7 +451,9 @@ def _create_duckdb_with_views(
         # Create schemas upfront if schema_mapping provided
         if schema_mapping:
             for schema_name in set(schema_mapping.values()):
-                con.execute(f"CREATE SCHEMA IF NOT EXISTS {schema_name}")
+                if schema_name == "mimiciv_derived":
+                    continue  # Created by m4 init-derived
+                con.execute(f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"')
 
         logger.info(f"Creating {len(parquet_files)} views in DuckDB...")
         start_time = time.time()

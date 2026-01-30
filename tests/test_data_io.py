@@ -246,6 +246,41 @@ def test_schema_mapping_flat_files_single_schema_fallback(tmp_path):
         con.close()
 
 
+def test_mimiciv_derived_schema_not_created_during_init(tmp_path):
+    """The mimiciv_derived schema should NOT be created during normal init.
+    It is created by m4 init-derived (materializer.py) when needed."""
+    parquet_root = tmp_path / "parquet"
+    _create_parquet(
+        parquet_root / "hosp", "admissions", "subject_id,hadm_id\n1,100\n2,200\n"
+    )
+    _create_parquet(
+        parquet_root / "icu", "icustays", "subject_id,stay_id\n1,10\n2,20\n"
+    )
+
+    db_path = tmp_path / "test.duckdb"
+    mapping = {
+        "hosp": "mimiciv_hosp",
+        "icu": "mimiciv_icu",
+        "derived": "mimiciv_derived",
+    }
+    ok = _create_duckdb_with_views(db_path, parquet_root, schema_mapping=mapping)
+    assert ok
+
+    con = duckdb.connect(str(db_path))
+    try:
+        schemas = [
+            r[0]
+            for r in con.execute(
+                "SELECT schema_name FROM information_schema.schemata"
+            ).fetchall()
+        ]
+        assert "mimiciv_hosp" in schemas
+        assert "mimiciv_icu" in schemas
+        assert "mimiciv_derived" not in schemas
+    finally:
+        con.close()
+
+
 def test_no_schema_mapping_flat_naming(tmp_path):
     """Without schema_mapping, views use flat naming (backward compat)."""
     parquet_root = tmp_path / "parquet"
