@@ -11,9 +11,7 @@ def _skills_dir() -> Path:
 def _skills_on_disk() -> list[str]:
     skills_dir = _skills_dir()
     return sorted(
-        d.name
-        for d in skills_dir.iterdir()
-        if d.is_dir() and (d / "SKILL.md").exists()
+        d.name for d in skills_dir.iterdir() if d.is_dir() and (d / "SKILL.md").exists()
     )
 
 
@@ -51,4 +49,3 @@ def test_skills_index_matches_skills_on_disk():
         "and (2) update any 'Skill Statistics' / 'Category Distribution' counts "
         "to match the new set of skills."
     )
-
