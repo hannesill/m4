@@ -60,15 +60,16 @@ This directory contains Agent Skills extracted from the MIT-LCP repositories (mi
 | Skill | Description | Database |
 |-------|-------------|----------|
 | [m4-api](m4-api/SKILL.md) | Python API for M4 clinical data queries | Both |
+| [m4-research](m4-research/SKILL.md) | Structured clinical research workflow and protocol drafting | Both |
 
 ---
 
 ## Skill Statistics
 
-- **Total Skills**: 17
+- **Total Skills**: 18
 - **MIMIC-IV Specific**: 13
 - **eICU Specific**: 0
-- **Multi-Database**: 4
+- **Multi-Database**: 5
 
 ## Category Distribution
 
@@ -79,7 +80,7 @@ This directory contains Agent Skills extracted from the MIT-LCP repositories (mi
 - Lab/Measurements: 2
 - Cohort Definitions: 1
 - Data Quality: 3
-- M4 Framework: 1
+- M4 Framework: 2
 
 ---
 
