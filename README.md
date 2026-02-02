@@ -127,7 +127,9 @@ See [Code Execution Guide](docs/CODE_EXECUTION.md) for the full API reference an
 
 ## Agent Skills
 
-M4 ships with 17 skills that teach AI coding assistants clinical research patterns. Skills activate automatically when relevant—ask about "SOFA scores" or "sepsis cohorts" and Claude uses validated SQL from MIT-LCP repositories.
+M4 ships with a set of skills that teach AI coding assistants clinical research patterns. Skills activate automatically when relevant—ask about "SOFA scores" or "sepsis cohorts" and Claude uses validated SQL from MIT-LCP repositories.
+
+For the canonical list of bundled skills, see `src/m4/skills/SKILLS_INDEX.md`.
 
 **Included skills:**
 - **API**: `m4-api` for Python API usage

@@ -22,7 +22,7 @@ M4 addresses this by providing three layers of clinical intelligence:
 
 1. **Schema Documentation**: Tables and columns annotated with clinical meaning, not just data types
 2. **Concept Mappings**: Curated mappings from clinical concepts ("sepsis", "kidney function") to database-specific implementations
-3. **Agent Skills**: 17 skills—1 for the Python API and 16 validated clinical research patterns (SOFA scoring, Sepsis-3 criteria, KDIGO AKI staging) extracted from MIT-LCP repositories
+3. **Agent Skills**: Skills for the Python API and validated clinical research patterns (SOFA scoring, Sepsis-3 criteria, KDIGO AKI staging) extracted from MIT-LCP repositories. For the canonical list, see `src/m4/skills/SKILLS_INDEX.md`.
 
 This transforms M4 from "an MCP server that runs SQL" into "infrastructure that understands clinical research."
 
