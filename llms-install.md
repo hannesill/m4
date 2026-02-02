@@ -7,7 +7,7 @@ This guide helps AI agents like Cline, Cursor, and other MCP clients install and
 M4 is infrastructure for AI-assisted clinical research. It provides:
 - **MCP Server**: Query clinical datasets (MIMIC-IV, eICU) via natural language
 - **Python API**: Direct programmatic access returning pandas DataFrames
-- **Clinical Skills**: 17 skills (1 API + 16 clinical research skills for severity scores, sepsis, AKI staging, and more)
+- **Clinical Skills**: A set of bundled skills for the Python API and validated clinical research patterns.
 
 ## Installation
 
@@ -120,7 +120,9 @@ df.plot(kind='bar', x='gender', y='anchor_age')
 
 ## Clinical Research Skills
 
-M4 ships with 17 skills: 1 for the Python API (`m4-api`) and 16 clinical research skills extracted from MIT-LCP validated code:
+M4 ships with a set of bundled skills for the Python API (`m4-api`) and clinical research patterns extracted from MIT-LCP validated code.
+
+For the canonical list of bundled skills, see `src/m4/skills/SKILLS_INDEX.md`.
 
 ### Severity Scores
 - `sofa-score` - Sequential Organ Failure Assessment

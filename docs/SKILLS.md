@@ -1,6 +1,8 @@
 # Agent Skills
 
-Skills are contextual prompts that teach AI coding assistants how to accomplish specific tasks. M4 ships with 17 skills: one for the Python API, and 16 clinical research skills extracted from MIT-LCP validated code repositories.
+Skills are contextual prompts that teach AI coding assistants how to accomplish specific tasks.
+
+For the canonical list of bundled skills, see `src/m4/skills/SKILLS_INDEX.md`.
 
 ## What Skills Do
 
