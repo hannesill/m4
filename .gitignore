@@ -57,10 +57,14 @@ junit.xml
 *.tmp
 *.swp
 
-# SQLite databases (if you don't want to commit local test/demo dbs)
+# Local database files
 *.db
 *.db-journal*
 mimic*.db
+*.duckdb
+*.duckdb.wal
+*.duckdb.tmp
+mimic*.duckdb
 
 # Configuration files
 config.json

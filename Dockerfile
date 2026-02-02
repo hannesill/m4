@@ -10,7 +10,7 @@ COPY src ./src
 RUN pip install --no-cache-dir build && \
     python -m build --wheel
 
-# Base runtime: install m4 and baked SQLite DB
+# Base runtime: install m4 and baked DuckDB DB
 FROM python:3.11-slim AS base
 
 ENV PYTHONUNBUFFERED=1 \
@@ -25,7 +25,7 @@ RUN pip install --no-cache-dir /tmp/*.whl && rm /tmp/*.whl
 # Download and initialize demo DB using m4 init
 RUN m4 init mimic-iv-demo
 
-# Lite: SQLite only
+# Lite: local DuckDB only
 FROM base AS lite
 CMD ["python", "-m", "m4.mcp_server"]
 

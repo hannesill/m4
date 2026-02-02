@@ -75,7 +75,7 @@ body:
       label: "Backend"
       description: Which backend were you using when the bug occurred?
       options:
-        - "SQLite"
+        - "DuckDB"
         - "BigQuery"
         - "Other"
   - type: input
