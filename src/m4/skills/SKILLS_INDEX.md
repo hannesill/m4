@@ -8,50 +8,50 @@ This directory contains skills for the M4 framework, covering clinical research 
 
 | Skill | Description |
 |-------|-------------|
-| [sofa-score](sofa-score/SKILL.md) | Sequential Organ Failure Assessment score calculation |
-| [apsiii-score](apsiii-score/SKILL.md) | APACHE III (Acute Physiology Score III) with mortality prediction |
-| [sapsii-score](sapsii-score/SKILL.md) | SAPS-II score with mortality prediction |
-| [oasis-score](oasis-score/SKILL.md) | Oxford Acute Severity of Illness Score (no labs required) |
-| [lods-score](lods-score/SKILL.md) | Logistic Organ Dysfunction Score |
-| [sirs-criteria](sirs-criteria/SKILL.md) | Systemic Inflammatory Response Syndrome criteria |
+| [sofa-score](clinical/sofa-score/SKILL.md) | Sequential Organ Failure Assessment score calculation |
+| [apsiii-score](clinical/apsiii-score/SKILL.md) | APACHE III (Acute Physiology Score III) with mortality prediction |
+| [sapsii-score](clinical/sapsii-score/SKILL.md) | SAPS-II score with mortality prediction |
+| [oasis-score](clinical/oasis-score/SKILL.md) | Oxford Acute Severity of Illness Score (no labs required) |
+| [lods-score](clinical/lods-score/SKILL.md) | Logistic Organ Dysfunction Score |
+| [sirs-criteria](clinical/sirs-criteria/SKILL.md) | Systemic Inflammatory Response Syndrome criteria |
 
 ### Sepsis and Infection
 
 | Skill | Description |
 |-------|-------------|
-| [sepsis-3-cohort](sepsis-3-cohort/SKILL.md) | Sepsis-3 cohort identification (SOFA >= 2 + infection) |
-| [suspicion-of-infection](suspicion-of-infection/SKILL.md) | Suspected infection events (antibiotic + culture) |
+| [sepsis-3-cohort](clinical/sepsis-3-cohort/SKILL.md) | Sepsis-3 cohort identification (SOFA >= 2 + infection) |
+| [suspicion-of-infection](clinical/suspicion-of-infection/SKILL.md) | Suspected infection events (antibiotic + culture) |
 
 ### Organ Failure
 
 | Skill | Description |
 |-------|-------------|
-| [kdigo-aki-staging](kdigo-aki-staging/SKILL.md) | KDIGO AKI staging using creatinine and urine output |
+| [kdigo-aki-staging](clinical/kdigo-aki-staging/SKILL.md) | KDIGO AKI staging using creatinine and urine output |
 
 ### Medications and Treatments
 
 | Skill | Description |
 |-------|-------------|
-| [vasopressor-equivalents](vasopressor-equivalents/SKILL.md) | Norepinephrine-equivalent dose calculation |
+| [vasopressor-equivalents](clinical/vasopressor-equivalents/SKILL.md) | Norepinephrine-equivalent dose calculation |
 
 ### Laboratory and Measurements
 
 | Skill | Description |
 |-------|-------------|
-| [baseline-creatinine](baseline-creatinine/SKILL.md) | Baseline creatinine estimation for AKI staging |
-| [gcs-calculation](gcs-calculation/SKILL.md) | Glasgow Coma Scale extraction with intubation handling |
+| [baseline-creatinine](clinical/baseline-creatinine/SKILL.md) | Baseline creatinine estimation for AKI staging |
+| [gcs-calculation](clinical/gcs-calculation/SKILL.md) | Glasgow Coma Scale extraction with intubation handling |
 
 ### Cohort Definitions
 
 | Skill | Description |
 |-------|-------------|
-| [first-icu-stay](first-icu-stay/SKILL.md) | First ICU stay selection and cohort construction |
+| [first-icu-stay](clinical/first-icu-stay/SKILL.md) | First ICU stay selection and cohort construction |
 
 ### Research Methodology
 
 | Skill | Description |
 |-------|-------------|
-| [clinical-research-pitfalls](clinical-research-pitfalls/SKILL.md) | Common methodological mistakes and how to avoid them |
+| [clinical-research-pitfalls](clinical/clinical-research-pitfalls/SKILL.md) | Common methodological mistakes and how to avoid them |
 
 ## System Skills
 
@@ -59,16 +59,16 @@ This directory contains skills for the M4 framework, covering clinical research 
 
 | Skill | Description |
 |-------|-------------|
-| [mimic-table-relationships](mimic-table-relationships/SKILL.md) | MIMIC-IV table relationships and join patterns |
-| [mimic-eicu-mapping](mimic-eicu-mapping/SKILL.md) | Mapping between MIMIC-IV and eICU databases |
+| [mimic-table-relationships](system/mimic-table-relationships/SKILL.md) | MIMIC-IV table relationships and join patterns |
+| [mimic-eicu-mapping](system/mimic-eicu-mapping/SKILL.md) | Mapping between MIMIC-IV and eICU databases |
 
 ### M4 Framework
 
 | Skill | Description |
 |-------|-------------|
-| [m4-api](m4-api/SKILL.md) | Python API for M4 clinical data queries |
-| [m4-research](m4-research/SKILL.md) | Structured clinical research workflow and protocol drafting |
-| [create-m4-skill](create-m4-skill/SKILL.md) | Guide for creating new M4 skills |
+| [m4-api](system/m4-api/SKILL.md) | Python API for M4 clinical data queries |
+| [m4-research](system/m4-research/SKILL.md) | Structured clinical research workflow and protocol drafting |
+| [create-m4-skill](system/create-m4-skill/SKILL.md) | Guide for creating new M4 skills |
 
 ---
 

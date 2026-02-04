@@ -12,7 +12,29 @@ This document defines how M4 skills should be structured, including metadata, pr
 
 ## Skill Directory Structure
 
-Each skill lives in its own directory under `src/m4/skills/`:
+Skills are organized by category under `src/m4/skills/`:
+
+```
+src/m4/skills/
+├── clinical/           # Clinical domain knowledge
+│   ├── sofa-score/
+│   │   ├── SKILL.md
+│   │   ├── PROVENANCE.yaml
+│   │   └── scripts/
+│   │       └── mimic-iv.sql
+│   ├── sepsis-3-cohort/
+│   │   └── ...
+│   └── ...
+├── system/             # M4 framework and data structure knowledge
+│   ├── m4-api/
+│   │   └── SKILL.md
+│   └── ...
+├── installer.py
+├── SKILL_FORMAT.md
+└── SKILLS_INDEX.md
+```
+
+Each skill directory follows this structure:
 
 ```
 skill-name/
@@ -22,6 +44,8 @@ skill-name/
     ├── mimic-iv.sql    # Dataset-specific scripts in separate files
     └── eicu.sql
 ```
+
+When installed to agent tool directories (e.g., `.claude/skills/`), skills are flattened — the category subdirectories are not preserved. This ensures compatibility with all agent tools regardless of their skill discovery mechanism.
 
 ## SKILL.md
 

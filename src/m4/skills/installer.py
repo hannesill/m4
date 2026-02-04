@@ -113,8 +113,29 @@ def install_skills(
     return results
 
 
+def _discover_skills(source: Path) -> list[Path]:
+    """Find all skill directories recursively under source.
+
+    Skills are identified by the presence of a SKILL.md file. The source
+    directory is organized into category subdirectories (e.g., clinical/,
+    system/) but skills are discovered at any depth.
+
+    Args:
+        source: Root directory to search for skills.
+
+    Returns:
+        Sorted list of skill directory paths.
+    """
+    return sorted(p.parent for p in source.rglob("SKILL.md"))
+
+
 def _install_skills_to_dir(source: Path, target_dir: Path) -> list[Path]:
     """Install all skills from source to target directory.
+
+    Discovers skills recursively from the source tree but installs them
+    flat into the target directory. This allows the source to be organized
+    into category subdirectories (clinical/, system/) while keeping the
+    installed layout flat for agent tool compatibility.
 
     Args:
         source: Source directory containing skill subdirectories.
@@ -127,18 +148,18 @@ def _install_skills_to_dir(source: Path, target_dir: Path) -> list[Path]:
 
     installed = []
 
-    for skill_dir in source.iterdir():
-        if skill_dir.is_dir() and (skill_dir / "SKILL.md").exists():
-            target_skill_dir = target_dir / skill_dir.name
+    for skill_dir in _discover_skills(source):
+        # Flatten: use only the skill directory name, not the full subpath
+        target_skill_dir = target_dir / skill_dir.name
 
-            # Remove existing installation of this skill
-            if target_skill_dir.exists():
-                logger.debug(f"Removing existing skill at {target_skill_dir}")
-                shutil.rmtree(target_skill_dir)
+        # Remove existing installation of this skill
+        if target_skill_dir.exists():
+            logger.debug(f"Removing existing skill at {target_skill_dir}")
+            shutil.rmtree(target_skill_dir)
 
-            logger.debug(f"Copying skill from {skill_dir} to {target_skill_dir}")
-            shutil.copytree(skill_dir, target_skill_dir)
-            installed.append(target_skill_dir)
+        logger.debug(f"Copying skill from {skill_dir} to {target_skill_dir}")
+        shutil.copytree(skill_dir, target_skill_dir)
+        installed.append(target_skill_dir)
 
     return installed
 

@@ -10,9 +10,7 @@ def _skills_dir() -> Path:
 
 def _skills_on_disk() -> list[str]:
     skills_dir = _skills_dir()
-    return sorted(
-        d.name for d in skills_dir.iterdir() if d.is_dir() and (d / "SKILL.md").exists()
-    )
+    return sorted(p.parent.name for p in skills_dir.rglob("SKILL.md"))
 
 
 def _skills_index_path() -> Path:
@@ -20,12 +18,14 @@ def _skills_index_path() -> Path:
 
 
 def _parse_indexed_skill_names(index_text: str) -> set[str]:
-    # Skill links are written like: [sofa-score](sofa-score/SKILL.md)
+    # Skill links like: [sofa-score](clinical/sofa-score/SKILL.md)
     names: set[str] = set()
     for m in re.finditer(r"\[[^\]]+\]\(([^)]+)\)", index_text):
         target = m.group(1).strip()
         if target.endswith("/SKILL.md") and "://" not in target:
-            names.add(target.split("/", 1)[0])
+            # Extract skill name: the directory immediately before SKILL.md
+            parts = target.removesuffix("/SKILL.md").split("/")
+            names.add(parts[-1])
     return names
 
 
