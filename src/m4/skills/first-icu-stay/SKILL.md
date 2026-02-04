@@ -1,14 +1,8 @@
 ---
 name: first-icu-stay
-description: Identify first ICU stays and first hospital admissions in MIMIC-IV for cohort selection. Use to exclude readmissions, create independent observations, or build adult patient cohorts.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: cohort-definitions
-  source: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/demographics
-  validated: true
+description: Identify first ICU stays and first hospital admissions for cohort selection. Use to exclude readmissions, create independent observations, or build adult patient cohorts.
+tier: validated
+category: clinical
 ---
 
 # First ICU Stay Selection

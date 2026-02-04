@@ -1,14 +1,8 @@
 ---
 name: mimic-eicu-mapping
 description: Map equivalent concepts between MIMIC-IV and eICU databases. Use for multi-database studies, external validation, or understanding structural differences between databases.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: both
-  category: data-quality
-  source: https://github.com/MIT-LCP/mimic-code, https://github.com/MIT-LCP/eicu-code
-  validated: true
+tier: validated
+category: system
 ---
 
 # MIMIC-IV to eICU Mapping

@@ -1,14 +1,8 @@
 ---
 name: sofa-score
-description: Calculate SOFA (Sequential Organ Failure Assessment) score for ICU patients in MIMIC-IV. Use for sepsis severity assessment, organ dysfunction quantification, mortality prediction, or Sepsis-3 criteria evaluation.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: severity-scores
-  source: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/score
-  validated: true
+description: Calculate SOFA (Sequential Organ Failure Assessment) score for ICU patients. Use for sepsis severity assessment, organ dysfunction quantification, mortality prediction, or Sepsis-3 criteria evaluation.
+tier: validated
+category: clinical
 ---
 
 # SOFA Score Calculation

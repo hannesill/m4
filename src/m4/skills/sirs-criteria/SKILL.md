@@ -1,14 +1,8 @@
 ---
 name: sirs-criteria
-description: Calculate SIRS (Systemic Inflammatory Response Syndrome) criteria for ICU patients in MIMIC-IV. Use for historical sepsis definitions, inflammatory response assessment, or research comparing SIRS vs Sepsis-3.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: severity-scores
-  source: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/score
-  validated: true
+description: Calculate SIRS (Systemic Inflammatory Response Syndrome) criteria for ICU patients. Use for historical sepsis definitions, inflammatory response assessment, or research comparing SIRS vs Sepsis-3.
+tier: validated
+category: clinical
 ---
 
 # SIRS Criteria Calculation

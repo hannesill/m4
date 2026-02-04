@@ -1,14 +1,8 @@
 ---
 name: sapsii-score
-description: Calculate SAPS-II (Simplified Acute Physiology Score II) for ICU patients in MIMIC-IV. Use for mortality prediction, severity assessment, or international ICU benchmarking.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: severity-scores
-  source: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/score
-  validated: true
+description: Calculate SAPS-II (Simplified Acute Physiology Score II) for ICU patients. Use for mortality prediction, severity assessment, or international ICU benchmarking.
+tier: validated
+category: clinical
 ---
 
 # SAPS-II Score Calculation

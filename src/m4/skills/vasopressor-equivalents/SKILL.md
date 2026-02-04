@@ -1,14 +1,8 @@
 ---
 name: vasopressor-equivalents
-description: Calculate norepinephrine-equivalent dose for vasopressor comparison in MIMIC-IV. Use for hemodynamic support quantification, shock severity assessment, or vasopressor weaning studies.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: derived-concepts
-  source: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/medication
-  validated: true
+description: Calculate norepinephrine-equivalent dose for vasopressor comparison. Use for hemodynamic support quantification, shock severity assessment, or vasopressor weaning studies.
+tier: validated
+category: clinical
 ---
 
 # Vasopressor Equivalent Dose

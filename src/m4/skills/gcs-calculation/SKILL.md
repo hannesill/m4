@@ -1,14 +1,8 @@
 ---
 name: gcs-calculation
-description: Extract and calculate Glasgow Coma Scale (GCS) for ICU patients in MIMIC-IV. Use for neurological assessment, consciousness monitoring, or trauma severity scoring.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: derived-concepts
-  source: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/measurement
-  validated: true
+description: Extract and calculate Glasgow Coma Scale (GCS) for ICU patients. Use for neurological assessment, consciousness monitoring, or trauma severity scoring.
+tier: validated
+category: clinical
 ---
 
 # Glasgow Coma Scale (GCS) Calculation
