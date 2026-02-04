@@ -1,14 +1,8 @@
 ---
 name: clinical-research-pitfalls
-description: Avoid common methodological mistakes in clinical research with MIMIC-IV and eICU databases. Covers immortal time bias, information leakage, selection bias, and other critical pitfalls.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: both
-  category: data-quality
-  source: https://github.com/MIT-LCP/mimic-code
-  validated: true
+description: Avoid common methodological mistakes in clinical research with EHR databases. Covers immortal time bias, information leakage, selection bias, and other critical pitfalls.
+tier: validated
+category: clinical
 ---
 
 # Clinical Research Pitfalls

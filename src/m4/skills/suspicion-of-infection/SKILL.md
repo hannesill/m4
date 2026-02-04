@@ -1,14 +1,8 @@
 ---
 name: suspicion-of-infection
-description: Identify suspected infection events in MIMIC-IV using antibiotic administration plus culture timing. Use as a component of Sepsis-3 definition or for infection research.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: derived-concepts
-  source: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/sepsis
-  validated: true
+description: Identify suspected infection events using antibiotic administration plus culture timing. Use as a component of Sepsis-3 definition or for infection research.
+tier: validated
+category: clinical
 ---
 
 # Suspicion of Infection

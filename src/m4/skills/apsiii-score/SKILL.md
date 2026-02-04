@@ -1,14 +1,8 @@
 ---
 name: apsiii-score
-description: Calculate APACHE III (Acute Physiology Score III) for ICU patients in MIMIC-IV. Use for mortality prediction, severity stratification, case-mix adjustment, or risk-adjusted outcome comparisons.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: severity-scores
-  source: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/score
-  validated: true
+description: Calculate APACHE III (Acute Physiology Score III) for ICU patients. Use for mortality prediction, severity stratification, case-mix adjustment, or risk-adjusted outcome comparisons.
+tier: validated
+category: clinical
 ---
 
 # APACHE III (APS III) Score Calculation

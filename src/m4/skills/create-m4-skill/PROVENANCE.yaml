@@ -1,0 +1,27 @@
+sources:
+  - url: https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md
+    description: Skill creator pattern and progressive disclosure design principles
+    license: Apache-2.0
+
+created:
+  by: Claude Sonnet 4.5 (AI Assistant)
+  role: adaptation
+  date: 2026-02-03
+
+reviews:
+  - by: Hannes Ill (M4 Project Lead)
+    date: 2026-02-04
+    scope: completeness, format-compliance
+    notes: Review for alignment with M4 skill format requirements and clinical workflow integration
+
+references:
+  - M4 SKILL_FORMAT.md documentation
+  - Anthropic Skills Framework skill-creator pattern
+
+changelog:
+  - version: "1.0"
+    date: 2026-02-03
+    summary: Initial creation based on skill-creator pattern, adapted for M4 clinical research skills with tier system and provenance tracking requirements
+  - version: "2.0"
+    date: 2026-02-04
+    summary: Standardized to 4-field frontmatter (name, description, tier, category). Added support for both clinical and system skill creation. Added dataset-agnostic design guidance. Removed duplicated format spec in favor of SKILL_FORMAT.md reference.

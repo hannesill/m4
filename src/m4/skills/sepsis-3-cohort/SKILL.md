@@ -1,14 +1,8 @@
 ---
 name: sepsis-3-cohort
-description: Identify Sepsis-3 patients in MIMIC-IV using the consensus definition (SOFA >= 2 + suspected infection). Use for sepsis cohort studies, outcome research, or quality metrics.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: cohort-definitions
-  source: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/sepsis
-  validated: true
+description: Identify Sepsis-3 patients using the consensus definition (SOFA >= 2 + suspected infection). Use for sepsis cohort studies, outcome research, or quality metrics.
+tier: validated
+category: clinical
 ---
 
 # Sepsis-3 Cohort Identification

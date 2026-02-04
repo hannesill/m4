@@ -1,75 +1,82 @@
-# M4 Clinical Research Skills Index
+# M4 Skills Index
 
-This directory contains Agent Skills extracted from the MIT-LCP repositories (mimic-code, eicu-code) to enable clinical research with the M4 framework.
+This directory contains skills for the M4 framework, covering clinical research concepts and system functionality.
 
-## Skills by Category
+## Clinical Skills
 
 ### Severity Scores
 
-| Skill | Description | Database |
-|-------|-------------|----------|
-| [sofa-score](sofa-score/SKILL.md) | Sequential Organ Failure Assessment score calculation | MIMIC-IV |
-| [apsiii-score](apsiii-score/SKILL.md) | APACHE III (Acute Physiology Score III) with mortality prediction | MIMIC-IV |
-| [sapsii-score](sapsii-score/SKILL.md) | SAPS-II score with mortality prediction | MIMIC-IV |
-| [oasis-score](oasis-score/SKILL.md) | Oxford Acute Severity of Illness Score (no labs required) | MIMIC-IV |
-| [lods-score](lods-score/SKILL.md) | Logistic Organ Dysfunction Score | MIMIC-IV |
-| [sirs-criteria](sirs-criteria/SKILL.md) | Systemic Inflammatory Response Syndrome criteria | MIMIC-IV |
+| Skill | Description |
+|-------|-------------|
+| [sofa-score](sofa-score/SKILL.md) | Sequential Organ Failure Assessment score calculation |
+| [apsiii-score](apsiii-score/SKILL.md) | APACHE III (Acute Physiology Score III) with mortality prediction |
+| [sapsii-score](sapsii-score/SKILL.md) | SAPS-II score with mortality prediction |
+| [oasis-score](oasis-score/SKILL.md) | Oxford Acute Severity of Illness Score (no labs required) |
+| [lods-score](lods-score/SKILL.md) | Logistic Organ Dysfunction Score |
+| [sirs-criteria](sirs-criteria/SKILL.md) | Systemic Inflammatory Response Syndrome criteria |
 
 ### Sepsis and Infection
 
-| Skill | Description | Database |
-|-------|-------------|----------|
-| [sepsis-3-cohort](sepsis-3-cohort/SKILL.md) | Sepsis-3 cohort identification (SOFA >= 2 + infection) | MIMIC-IV |
-| [suspicion-of-infection](suspicion-of-infection/SKILL.md) | Suspected infection events (antibiotic + culture) | MIMIC-IV |
+| Skill | Description |
+|-------|-------------|
+| [sepsis-3-cohort](sepsis-3-cohort/SKILL.md) | Sepsis-3 cohort identification (SOFA >= 2 + infection) |
+| [suspicion-of-infection](suspicion-of-infection/SKILL.md) | Suspected infection events (antibiotic + culture) |
 
 ### Organ Failure
 
-| Skill | Description | Database |
-|-------|-------------|----------|
-| [kdigo-aki-staging](kdigo-aki-staging/SKILL.md) | KDIGO AKI staging using creatinine and urine output | MIMIC-IV |
+| Skill | Description |
+|-------|-------------|
+| [kdigo-aki-staging](kdigo-aki-staging/SKILL.md) | KDIGO AKI staging using creatinine and urine output |
 
 ### Medications and Treatments
 
-| Skill | Description | Database |
-|-------|-------------|----------|
-| [vasopressor-equivalents](vasopressor-equivalents/SKILL.md) | Norepinephrine-equivalent dose calculation | MIMIC-IV |
+| Skill | Description |
+|-------|-------------|
+| [vasopressor-equivalents](vasopressor-equivalents/SKILL.md) | Norepinephrine-equivalent dose calculation |
 
 ### Laboratory and Measurements
 
-| Skill | Description | Database |
-|-------|-------------|----------|
-| [baseline-creatinine](baseline-creatinine/SKILL.md) | Baseline creatinine estimation for AKI staging | MIMIC-IV |
-| [gcs-calculation](gcs-calculation/SKILL.md) | Glasgow Coma Scale extraction with intubation handling | MIMIC-IV |
+| Skill | Description |
+|-------|-------------|
+| [baseline-creatinine](baseline-creatinine/SKILL.md) | Baseline creatinine estimation for AKI staging |
+| [gcs-calculation](gcs-calculation/SKILL.md) | Glasgow Coma Scale extraction with intubation handling |
 
 ### Cohort Definitions
 
-| Skill | Description | Database |
-|-------|-------------|----------|
-| [first-icu-stay](first-icu-stay/SKILL.md) | First ICU stay selection and cohort construction | MIMIC-IV |
+| Skill | Description |
+|-------|-------------|
+| [first-icu-stay](first-icu-stay/SKILL.md) | First ICU stay selection and cohort construction |
 
-### Data Quality and Structure
+### Research Methodology
 
-| Skill | Description | Database |
-|-------|-------------|----------|
-| [mimic-table-relationships](mimic-table-relationships/SKILL.md) | MIMIC-IV table relationships and join patterns | MIMIC-IV |
-| [mimic-eicu-mapping](mimic-eicu-mapping/SKILL.md) | Mapping between MIMIC-IV and eICU databases | Both |
-| [clinical-research-pitfalls](clinical-research-pitfalls/SKILL.md) | Common methodological mistakes and how to avoid them | Both |
+| Skill | Description |
+|-------|-------------|
+| [clinical-research-pitfalls](clinical-research-pitfalls/SKILL.md) | Common methodological mistakes and how to avoid them |
+
+## System Skills
+
+### Data Structure
+
+| Skill | Description |
+|-------|-------------|
+| [mimic-table-relationships](mimic-table-relationships/SKILL.md) | MIMIC-IV table relationships and join patterns |
+| [mimic-eicu-mapping](mimic-eicu-mapping/SKILL.md) | Mapping between MIMIC-IV and eICU databases |
 
 ### M4 Framework
 
-| Skill | Description | Database |
-|-------|-------------|----------|
-| [m4-api](m4-api/SKILL.md) | Python API for M4 clinical data queries | Both |
-| [m4-research](m4-research/SKILL.md) | Structured clinical research workflow and protocol drafting | Both |
+| Skill | Description |
+|-------|-------------|
+| [m4-api](m4-api/SKILL.md) | Python API for M4 clinical data queries |
+| [m4-research](m4-research/SKILL.md) | Structured clinical research workflow and protocol drafting |
+| [create-m4-skill](create-m4-skill/SKILL.md) | Guide for creating new M4 skills |
 
 ---
 
 ## Skill Statistics
 
-- **Total Skills**: 18
-- **MIMIC-IV Specific**: 13
-- **eICU Specific**: 0
-- **Multi-Database**: 5
+- **Total Skills**: 19
+- **Clinical**: 14
+- **System**: 5
 
 ## Category Distribution
 
@@ -79,8 +86,9 @@ This directory contains Agent Skills extracted from the MIT-LCP repositories (mi
 - Medications: 1
 - Lab/Measurements: 2
 - Cohort Definitions: 1
-- Data Quality: 3
-- M4 Framework: 2
+- Research Methodology: 1
+- Data Structure: 2
+- M4 Framework: 3
 
 ---
 
@@ -115,13 +123,13 @@ The following valuable concepts exist in the source repositories but were not ex
 
 ## Usage Notes
 
-1. **Pre-computed Tables**: Most skills reference pre-computed derived tables in `mimiciv_derived` schema. These are available on BigQuery and can be regenerated for PostgreSQL.
+1. **Dataset-Agnostic Design**: Skills document concepts, not dataset-specific implementations. Dataset-specific SQL lives in each skill's `scripts/` subdirectory.
 
-2. **SQL Dialect**: SQL examples use BigQuery syntax. For PostgreSQL, convert using the `convert_bigquery_to_postgres.sh` script in mimic-code.
+2. **Pre-computed Tables**: Most clinical skills reference pre-computed derived tables in `mimiciv_derived` schema. These are available on BigQuery and can be regenerated locally via `m4 init-derived`.
 
-3. **Script Files**: Full SQL implementations are in each skill's `scripts/` subdirectory.
+3. **Script Files**: Full SQL implementations are in each skill's `scripts/` subdirectory, with separate files per dataset where applicable.
 
-4. **Validation Status**: All skills are derived from MIT-LCP validated code repositories.
+4. **Format Reference**: See [SKILL_FORMAT.md](SKILL_FORMAT.md) for the canonical skill structure specification.
 
 ---
 

@@ -1,14 +1,8 @@
 ---
 name: mimic-table-relationships
 description: Understand MIMIC-IV table relationships, join patterns, and identifier hierarchy. Use for correct data linkage, avoiding duplicates, and proper temporal joins.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: data-quality
-  source: https://github.com/MIT-LCP/mimic-code
-  validated: true
+tier: validated
+category: system
 ---
 
 # MIMIC-IV Table Relationships

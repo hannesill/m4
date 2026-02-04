@@ -1,6 +1,8 @@
 ---
 name: m4-api
-description: Use the M4 Python API to query clinical datasets (MIMIC-IV, eICU) programmatically. Triggers on "M4 API", "query MIMIC with Python", "clinical data analysis", "EHR data", "execute SQL on MIMIC", or when writing code to access clinical databases.
+description: Use the M4 Python API to query clinical datasets programmatically. Use when writing code to access clinical databases, executing SQL via Python, or performing multi-step data analysis.
+tier: community
+category: system
 ---
 
 # M4 Python API

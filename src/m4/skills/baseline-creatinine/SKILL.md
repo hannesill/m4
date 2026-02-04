@@ -1,14 +1,8 @@
 ---
 name: baseline-creatinine
-description: Estimate baseline serum creatinine for AKI assessment in MIMIC-IV. Use for KDIGO staging, AKI research, or renal function baseline establishment.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: derived-concepts
-  source: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/measurement
-  validated: true
+description: Estimate baseline serum creatinine for AKI assessment. Use for KDIGO staging, AKI research, or renal function baseline establishment.
+tier: validated
+category: clinical
 ---
 
 # Baseline Creatinine Estimation

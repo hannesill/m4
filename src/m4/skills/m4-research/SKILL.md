@@ -1,13 +1,8 @@
 ---
 name: m4-research
-description: Start a structured clinical research session. Triggers on "/research", "start research", "new study", "analyze cohort", "investigate hypothesis", "research question", or when users describe clinical research goals. Interviews the user, then produces a rigorous research plan.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: both
-  category: research-workflow
-  validated: true
+description: Start a structured clinical research session. Use when users describe research goals, want to analyze cohorts, investigate hypotheses, or need a rigorous research plan. Interviews the user, then produces a research protocol.
+tier: validated
+category: system
 ---
 
 # M4 Clinical Research Workflow

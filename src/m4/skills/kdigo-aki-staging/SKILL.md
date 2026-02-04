@@ -1,14 +1,8 @@
 ---
 name: kdigo-aki-staging
-description: Calculate KDIGO AKI (Acute Kidney Injury) staging for ICU patients in MIMIC-IV using creatinine and urine output criteria. Use for nephrology research, AKI outcome studies, or renal function monitoring.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: organ-failure
-  source: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/organfailure
-  validated: true
+description: Calculate KDIGO AKI (Acute Kidney Injury) staging for ICU patients using creatinine and urine output criteria. Use for nephrology research, AKI outcome studies, or renal function monitoring.
+tier: validated
+category: clinical
 ---
 
 # KDIGO AKI Staging
