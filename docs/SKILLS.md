@@ -25,15 +25,28 @@ m4 config claude --skills
 Or install to an existing project:
 
 ```bash
-# Interactive tool selection
+# Interactive tool and skill selection
 m4 skills
 
-# Install for specific tools
+# Install all skills for specific tools
 m4 skills --tools claude,cursor
 
-# List installed skills
+# Install only validated clinical skills
+m4 skills --tools claude --tier validated --category clinical
+
+# Install specific skills by name
+m4 skills --tools claude --skills sofa-score,sepsis-3-cohort,m4-api
+
+# Install only system skills
+m4 skills --tools claude --category system
+
+# List installed skills (with tier and category)
 m4 skills --list
 ```
+
+When `--tools` is omitted, an interactive prompt lets you select tools. When no filter flags (`--skills`, `--tier`, `--category`) are provided in interactive mode, you are also prompted to choose between installing all skills or filtering by category, tier, or individual selection.
+
+Filters combine with AND logic: `--tier validated --category clinical` installs only skills that are both validated and clinical. Filtered installs are additive — existing skills that don't match the filter are left untouched.
 
 Skills are installed to `.claude/skills/` (or equivalent for other tools). AI assistants automatically discover skills in these locations.
 
@@ -209,6 +222,18 @@ Check which M4 skills are installed:
 
 ```bash
 m4 skills --list
+```
+
+The output shows each tool with its installed skills, tier, and category:
+
+```
+Installed M4 skills:
+
+  ● Claude Code (N skills)
+    └─ apsiii-score                    clinical   validated
+    └─ sofa-score                      clinical   validated
+    └─ m4-api                          system     community
+    ...
 ```
 
 Or look in your project:

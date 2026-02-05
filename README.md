@@ -146,9 +146,12 @@ For the canonical list of bundled skills, see `src/m4/skills/SKILLS_INDEX.md`.
 **Supported tools:** Claude Code, Cursor, Cline, Codex CLI, Gemini CLI, GitHub Copilot
 
 ```bash
-m4 skills                        # Interactive tool selection
-m4 skills --tools claude,cursor  # Install for specific tools
-m4 skills --list                 # Show installed skills
+m4 skills                                    # Interactive tool and skill selection
+m4 skills --tools claude,cursor              # Install all skills for specific tools
+m4 skills --tools claude --tier validated     # Only validated skills
+m4 skills --tools claude --category clinical  # Only clinical skills
+m4 skills --tools claude --skills sofa-score,m4-api  # Specific skills by name
+m4 skills --list                             # Show installed skills with metadata
 ```
 
 See [Skills Guide](docs/SKILLS.md) for the full list and how to create custom skills.

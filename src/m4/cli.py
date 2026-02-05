@@ -909,6 +909,110 @@ def _prompt_select_tools() -> list[str]:
     return selected_tools
 
 
+def _prompt_select_skills() -> tuple[
+    list[str] | None, list[str] | None, list[str] | None
+]:
+    """Interactive prompt to filter which skills to install.
+
+    Returns:
+        Tuple of (skill_names, tiers, categories) — all None means install all.
+    """
+    from m4.skills import get_available_skills
+
+    all_skills = get_available_skills()
+    total = len(all_skills)
+
+    # Collect category and tier counts
+    cat_counts: dict[str, int] = {}
+    tier_counts: dict[str, int] = {}
+    for s in all_skills:
+        cat_counts[s.category] = cat_counts.get(s.category, 0) + 1
+        tier_counts[s.tier] = tier_counts.get(s.tier, 0) + 1
+
+    console.print()
+    console.print("[bold]Install all skills or filter?[/bold]")
+    console.print(f"  [bold]1.[/bold] All skills ({total} available)")
+    console.print("  [bold]2.[/bold] Filter by category")
+    console.print("  [bold]3.[/bold] Filter by tier")
+    console.print("  [bold]4.[/bold] Select individual skills")
+    console.print()
+
+    choice = typer.prompt("Selection", default="1", show_default=True)
+
+    if choice == "1":
+        return None, None, None
+
+    if choice == "2":
+        # Show categories
+        cats = sorted(cat_counts.keys())
+        console.print()
+        console.print("[bold]Select categories:[/bold]")
+        console.print("[muted](Enter comma-separated numbers)[/muted]")
+        console.print()
+        for i, cat in enumerate(cats, 1):
+            console.print(f"  [bold]{i}.[/bold] {cat} ({cat_counts[cat]} skills)")
+        console.print()
+        sel = typer.prompt("Categories", default="1")
+        selected_cats = []
+        try:
+            for idx in (int(x.strip()) for x in sel.split(",")):
+                if 1 <= idx <= len(cats):
+                    selected_cats.append(cats[idx - 1])
+        except ValueError:
+            pass
+        if selected_cats:
+            return None, None, selected_cats
+        return None, None, None
+
+    if choice == "3":
+        # Show tiers
+        tiers = sorted(tier_counts.keys())
+        console.print()
+        console.print("[bold]Select tiers:[/bold]")
+        console.print("[muted](Enter comma-separated numbers)[/muted]")
+        console.print()
+        for i, t in enumerate(tiers, 1):
+            console.print(f"  [bold]{i}.[/bold] {t} ({tier_counts[t]} skills)")
+        console.print()
+        sel = typer.prompt("Tiers", default="1")
+        selected_tiers = []
+        try:
+            for idx in (int(x.strip()) for x in sel.split(",")):
+                if 1 <= idx <= len(tiers):
+                    selected_tiers.append(tiers[idx - 1])
+        except ValueError:
+            pass
+        if selected_tiers:
+            return None, selected_tiers, None
+        return None, None, None
+
+    if choice == "4":
+        # Show all skills
+        console.print()
+        console.print("[bold]Select skills:[/bold]")
+        console.print("[muted](Enter comma-separated numbers)[/muted]")
+        console.print()
+        for i, s in enumerate(all_skills, 1):
+            console.print(
+                f"  [bold]{i:2d}.[/bold] {s.name:<30s} {s.category:<10s} {s.tier}"
+            )
+        console.print()
+        sel = typer.prompt("Skills")
+        selected_names = []
+        try:
+            for idx in (int(x.strip()) for x in sel.split(",")):
+                if 1 <= idx <= len(all_skills):
+                    selected_names.append(all_skills[idx - 1].name)
+        except ValueError:
+            pass
+        if selected_names:
+            return selected_names, None, None
+        return None, None, None
+
+    # Default: install all
+    return None, None, None
+
+
 @app.command("skills")
 def skills_cmd(
     tools: Annotated[
@@ -927,6 +1031,29 @@ def skills_cmd(
             help="List installed skills across all tools.",
         ),
     ] = False,
+    skill_names: Annotated[
+        str | None,
+        typer.Option(
+            "--skills",
+            "-s",
+            help="Comma-separated skill names to install (e.g., sofa-score,sepsis-3-cohort).",
+        ),
+    ] = None,
+    tier_filter: Annotated[
+        str | None,
+        typer.Option(
+            "--tier",
+            help="Comma-separated tiers to install (validated,expert,community).",
+        ),
+    ] = None,
+    category_filter: Annotated[
+        str | None,
+        typer.Option(
+            "--category",
+            "-c",
+            help="Comma-separated categories to install (clinical,system).",
+        ),
+    ] = None,
 ):
     """
     Install M4 skills for AI coding tools.
@@ -936,16 +1063,28 @@ def skills_cmd(
 
     Examples:
 
-    • m4 skills                     # Interactive tool selection
+    • m4 skills                              # Interactive selection
 
-    • m4 skills --tools claude,cursor  # Install for specific tools
+    • m4 skills --tools claude,cursor        # Install all skills for specific tools
 
-    • m4 skills --list              # Show installed skills
+    • m4 skills --tools claude --tier validated  # Only validated skills
+
+    • m4 skills --tools claude --category clinical  # Only clinical skills
+
+    • m4 skills --tools claude --skills sofa-score,m4-api  # Specific skills
+
+    • m4 skills --list                       # Show installed skills
     """
-    from m4.skills import AI_TOOLS, get_all_installed_skills, install_skills
+    from m4.skills import (
+        AI_TOOLS,
+        get_all_installed_skills,
+        get_available_skills,
+        install_skills,
+    )
+    from m4.skills.installer import _parse_skill_metadata
 
     if list_installed:
-        # Show installed skills
+        # Show installed skills with metadata
         installed = get_all_installed_skills()
 
         if not installed:
@@ -954,16 +1093,49 @@ def skills_cmd(
             console.print("[muted]Install with:[/muted] [command]m4 skills[/command]")
             return
 
+        console.print()
         console.print("[bold]Installed M4 skills:[/bold]")
         console.print()
 
-        for tool_name, skill_names in installed.items():
+        for tool_name, skill_name_list in installed.items():
             tool = AI_TOOLS[tool_name]
-            console.print(f"  [success]●[/success] {tool.display_name}")
-            for skill in skill_names:
-                console.print(f"    [muted]└─[/muted] {skill}")
+            console.print(
+                f"  [success]●[/success] {tool.display_name} "
+                f"({len(skill_name_list)} skills)"
+            )
+            # Parse metadata from installed skills for richer output
+            skills_dir = Path.cwd() / tool.skills_dir
+            for skill_name in sorted(skill_name_list):
+                skill_dir = skills_dir / skill_name
+                meta = _parse_skill_metadata(skill_dir)
+                if meta:
+                    console.print(
+                        f"    [muted]└─[/muted] {meta.name:<30s} "
+                        f"{meta.category:<10s} {meta.tier}"
+                    )
+                else:
+                    console.print(f"    [muted]└─[/muted] {skill_name}")
 
         return
+
+    # Parse filter flags
+    skills_list = (
+        [s.strip() for s in skill_names.split(",") if s.strip()]
+        if skill_names
+        else None
+    )
+    tier_list = (
+        [t.strip().lower() for t in tier_filter.split(",") if t.strip()]
+        if tier_filter
+        else None
+    )
+    category_list = (
+        [c.strip().lower() for c in category_filter.split(",") if c.strip()]
+        if category_filter
+        else None
+    )
+
+    has_cli_filters = skills_list or tier_list or category_list
 
     # Determine which tools to install for
     if tools:
@@ -979,12 +1151,36 @@ def skills_cmd(
         # Interactive selection
         selected_tools = _prompt_select_tools()
 
+    # Interactive skill filtering (only when no CLI filters provided)
+    if not has_cli_filters and not tools:
+        i_names, i_tiers, i_cats = _prompt_select_skills()
+        if i_names:
+            skills_list = i_names
+        if i_tiers:
+            tier_list = i_tiers
+        if i_cats:
+            category_list = i_cats
+
+    # Show what will be installed
+    selected = get_available_skills(
+        tier=tier_list, category=category_list, names=skills_list
+    )
+
+    if not selected:
+        warning("No skills match the given filters.")
+        return
+
     # Install skills
     console.print()
-    info(f"Installing skills for: {', '.join(selected_tools)}")
+    info(f"Installing {len(selected)} skill(s) for: {', '.join(selected_tools)}")
 
     try:
-        results = install_skills(tools=selected_tools)
+        results = install_skills(
+            tools=selected_tools,
+            skills=skills_list,
+            tier=tier_list,
+            category=category_list,
+        )
 
         for tool_name, paths in results.items():
             tool = AI_TOOLS[tool_name]

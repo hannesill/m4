@@ -3,7 +3,9 @@
 from m4.skills.installer import (
     AI_TOOLS,
     AITool,
+    SkillInfo,
     get_all_installed_skills,
+    get_available_skills,
     get_available_tools,
     get_installed_skills,
     get_skills_source,
@@ -13,7 +15,9 @@ from m4.skills.installer import (
 __all__ = [
     "AI_TOOLS",
     "AITool",
+    "SkillInfo",
     "get_all_installed_skills",
+    "get_available_skills",
     "get_available_tools",
     "get_installed_skills",
     "get_skills_source",
