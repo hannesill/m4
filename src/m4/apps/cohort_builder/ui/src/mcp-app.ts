@@ -64,6 +64,11 @@ let lastResult: CohortResult | null = null;
 let previousCounts = { patients: 0, admissions: 0, icuStays: 0 };
 let baselinePatientCount: number | null = null;
 
+// Phase 4: Request lifecycle management
+let currentRequestId = 0; // Monotonically increasing request ID for ordering
+let isVisible = true; // Track visibility for resource management
+let pendingRefresh = false; // Queue refresh when invisible
+
 // DOM element for percentage
 const countPercentage = document.getElementById("countPercentage") as HTMLElement;
 
@@ -408,9 +413,52 @@ function addIcdCode(code: string): void {
   }
 }
 
+/**
+ * Client-side validation for age range
+ * Returns error message if invalid, null if valid
+ */
+function validateAgeRange(): string | null {
+  const ageMin = ageMinInput.value ? parseInt(ageMinInput.value, 10) : null;
+  const ageMax = ageMaxInput.value ? parseInt(ageMaxInput.value, 10) : null;
+
+  if (ageMin !== null && !isNaN(ageMin)) {
+    if (ageMin < 0 || ageMin > 130) {
+      return "Minimum age must be between 0 and 130";
+    }
+  }
+  if (ageMax !== null && !isNaN(ageMax)) {
+    if (ageMax < 0 || ageMax > 130) {
+      return "Maximum age must be between 0 and 130";
+    }
+  }
+  if (ageMin !== null && ageMax !== null && !isNaN(ageMin) && !isNaN(ageMax)) {
+    if (ageMin > ageMax) {
+      return "Minimum age cannot be greater than maximum age";
+    }
+  }
+  return null;
+}
+
 async function refreshCohort(): Promise<void> {
+  // Phase 4: If not visible, queue refresh for when we become visible
+  if (!isVisible) {
+    pendingRefresh = true;
+    return;
+  }
+
+  // Phase 4: Client-side validation before sending request
+  const validationError = validateAgeRange();
+  if (validationError) {
+    showError(validationError);
+    return;
+  }
+
   showLoading();
   hideError();
+
+  // Phase 4: Track request ID for ordering - ignore stale responses
+  currentRequestId++;
+  const thisRequestId = currentRequestId;
 
   try {
     const criteria = getCriteriaFromForm();
@@ -418,6 +466,11 @@ async function refreshCohort(): Promise<void> {
       name: "query_cohort",
       arguments: criteria,
     });
+
+    // Phase 4: Ignore response if a newer request has been made
+    if (thisRequestId !== currentRequestId) {
+      return; // Stale response, discard
+    }
 
     // Parse the result - it comes as content array with text
     const textContent = result.content?.find(
@@ -439,10 +492,17 @@ async function refreshCohort(): Promise<void> {
       await updateModelContextWithCohort(criteria, cohortResult);
     }
   } catch (error) {
+    // Phase 4: Ignore errors from stale requests
+    if (thisRequestId !== currentRequestId) {
+      return;
+    }
     const message = error instanceof Error ? error.message : "Query failed";
     showError(message);
   } finally {
-    hideLoading();
+    // Phase 4: Only hide loading if this is still the current request
+    if (thisRequestId === currentRequestId) {
+      hideLoading();
+    }
   }
 }
 
@@ -520,9 +580,14 @@ app.onhostcontextchanged = (ctx) => {
 
 // Handle teardown (cleanup)
 app.onteardown = async () => {
+  // Cancel pending debounce
   if (debounceTimer !== null) {
     clearTimeout(debounceTimer);
   }
+  // Phase 4: Cancel any in-flight requests by incrementing request ID
+  currentRequestId++;
+  // Clear pending refresh flag
+  pendingRefresh = false;
   return {};
 };
 
@@ -606,9 +671,59 @@ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () 
   }
 });
 
+// --- Phase 4: Visibility-based resource management ---
+
+/**
+ * Set up IntersectionObserver to pause queries when the app scrolls out of view.
+ * This conserves resources when the app is not visible in a scrollable conversation.
+ */
+function setupVisibilityObserver(): void {
+  // Use IntersectionObserver if available (modern browsers)
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const wasVisible = isVisible;
+          isVisible = entry.isIntersecting;
+
+          // If becoming visible and we have a pending refresh, execute it
+          if (!wasVisible && isVisible && pendingRefresh) {
+            pendingRefresh = false;
+            refreshCohort();
+          }
+        });
+      },
+      {
+        // Consider visible if any part of the app is in the viewport
+        threshold: 0,
+        // Small margin to trigger slightly before fully out of view
+        rootMargin: "50px",
+      }
+    );
+
+    // Observe the document body (the root of our app)
+    observer.observe(document.body);
+  }
+
+  // Also handle page visibility (tab switching)
+  document.addEventListener("visibilitychange", () => {
+    const wasVisible = isVisible;
+    isVisible = document.visibilityState === "visible";
+
+    // If becoming visible and we have a pending refresh, execute it
+    if (!wasVisible && isVisible && pendingRefresh) {
+      pendingRefresh = false;
+      refreshCohort();
+    }
+  });
+}
+
 // --- Initialize ---
 // Apply system theme immediately (before host context is received)
 applyDocumentTheme(getSystemTheme());
+
+// Set up visibility observer for resource management
+setupVisibilityObserver();
 
 // Connect to host, then apply host context (including theme)
 app.connect().then(() => {

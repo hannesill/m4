@@ -8,6 +8,8 @@ This module provides two tools:
 from dataclasses import dataclass
 from typing import Any
 
+import pandas as pd
+
 from m4.apps.cohort_builder.query_builder import (
     QueryCohortInput,
     build_cohort_count_sql,
@@ -174,34 +176,53 @@ class QueryCohortTool:
                 sql=gender_sql,
             )
 
-        # Extract results
+        # Extract results with safe empty-data handling
         count_df = count_result.dataframe
-        patient_count = (
-            int(count_df["patient_count"].iloc[0]) if count_df is not None else 0
-        )
-        admission_count = (
-            int(count_df["admission_count"].iloc[0]) if count_df is not None else 0
-        )
-        # ICU stay count is only present when has_icu_stay=True
+        patient_count = 0
+        admission_count = 0
         icu_stay_count = None
-        if (
-            count_df is not None
-            and "icu_stay_count" in count_df.columns
-            and params.has_icu_stay is True
-        ):
-            icu_stay_count = int(count_df["icu_stay_count"].iloc[0])
 
-        # Build age distribution dict
+        if count_df is not None and len(count_df) > 0:
+            if "patient_count" in count_df.columns:
+                val = count_df["patient_count"].iloc[0]
+                patient_count = int(val) if pd.notna(val) else 0
+            if "admission_count" in count_df.columns:
+                val = count_df["admission_count"].iloc[0]
+                admission_count = int(val) if pd.notna(val) else 0
+            # ICU stay count is only present when has_icu_stay=True
+            if "icu_stay_count" in count_df.columns and params.has_icu_stay is True:
+                val = count_df["icu_stay_count"].iloc[0]
+                icu_stay_count = int(val) if pd.notna(val) else 0
+
+        # Build age distribution dict with safe column checking
         age_distribution = {}
-        if demographics_result.dataframe is not None:
-            for _, row in demographics_result.dataframe.iterrows():
-                age_distribution[row["age_bucket"]] = int(row["patient_count"])
+        demo_df = demographics_result.dataframe
+        if (
+            demo_df is not None
+            and len(demo_df) > 0
+            and "age_bucket" in demo_df.columns
+            and "patient_count" in demo_df.columns
+        ):
+            for _, row in demo_df.iterrows():
+                bucket = row["age_bucket"]
+                count = row["patient_count"]
+                if pd.notna(bucket) and pd.notna(count):
+                    age_distribution[str(bucket)] = int(count)
 
-        # Build gender distribution dict
+        # Build gender distribution dict with safe column checking
         gender_distribution = {}
-        if gender_result.dataframe is not None:
-            for _, row in gender_result.dataframe.iterrows():
-                gender_distribution[row["gender"]] = int(row["patient_count"])
+        gender_df = gender_result.dataframe
+        if (
+            gender_df is not None
+            and len(gender_df) > 0
+            and "gender" in gender_df.columns
+            and "patient_count" in gender_df.columns
+        ):
+            for _, row in gender_df.iterrows():
+                gender = row["gender"]
+                count = row["patient_count"]
+                if pd.notna(gender) and pd.notna(count):
+                    gender_distribution[str(gender)] = int(count)
 
         result = {
             "patient_count": patient_count,

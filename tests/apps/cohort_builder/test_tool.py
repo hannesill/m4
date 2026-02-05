@@ -355,3 +355,174 @@ class TestQueryCohortToolInvoke:
         ):
             with pytest.raises(ValueError, match="age_min must be between"):
                 tool.invoke(dataset, params)
+
+
+class TestQueryCohortToolEdgeCases:
+    """Test QueryCohortTool edge case handling (Phase 4 hardening)."""
+
+    def test_invoke_handles_empty_dataframe(self):
+        """invoke() should return 0 counts when database is empty."""
+        tool = QueryCohortTool()
+        dataset = DatasetDefinition(
+            name="mimic-iv-demo",
+            modalities=frozenset({Modality.TABULAR}),
+        )
+        params = QueryCohortInput()
+
+        # Create mock backend with empty dataframes
+        backend = MagicMock()
+
+        empty_count_result = MagicMock()
+        empty_count_result.success = True
+        empty_count_result.dataframe = pd.DataFrame()  # Empty
+
+        empty_demo_result = MagicMock()
+        empty_demo_result.success = True
+        empty_demo_result.dataframe = pd.DataFrame()  # Empty
+
+        empty_gender_result = MagicMock()
+        empty_gender_result.success = True
+        empty_gender_result.dataframe = pd.DataFrame()  # Empty
+
+        def execute_query(sql, dataset):
+            if "age_bucket" in sql:
+                return empty_demo_result
+            elif "GROUP BY p.gender" in sql:
+                return empty_gender_result
+            else:
+                return empty_count_result
+
+        backend.execute_query.side_effect = execute_query
+
+        with patch("m4.apps.cohort_builder.tool.get_backend", return_value=backend):
+            result = tool.invoke(dataset, params)
+
+        # Should return 0 counts, not crash
+        assert result["patient_count"] == 0
+        assert result["admission_count"] == 0
+        assert result["demographics"]["age"] == {}
+        assert result["demographics"]["gender"] == {}
+
+    def test_invoke_handles_none_dataframe(self):
+        """invoke() should return 0 counts when dataframe is None."""
+        tool = QueryCohortTool()
+        dataset = DatasetDefinition(
+            name="mimic-iv-demo",
+            modalities=frozenset({Modality.TABULAR}),
+        )
+        params = QueryCohortInput()
+
+        # Create mock backend with None dataframes
+        backend = MagicMock()
+
+        none_result = MagicMock()
+        none_result.success = True
+        none_result.dataframe = None  # None instead of empty
+
+        backend.execute_query.return_value = none_result
+
+        with patch("m4.apps.cohort_builder.tool.get_backend", return_value=backend):
+            result = tool.invoke(dataset, params)
+
+        assert result["patient_count"] == 0
+        assert result["admission_count"] == 0
+        assert result["demographics"]["age"] == {}
+        assert result["demographics"]["gender"] == {}
+
+    def test_invoke_handles_null_values_in_cells(self):
+        """invoke() should handle None values in dataframe cells gracefully."""
+        tool = QueryCohortTool()
+        dataset = DatasetDefinition(
+            name="mimic-iv-demo",
+            modalities=frozenset({Modality.TABULAR}),
+        )
+        params = QueryCohortInput()
+
+        backend = MagicMock()
+
+        # Count with None values in cells
+        count_df = pd.DataFrame({"patient_count": [None], "admission_count": [None]})
+        count_result = MagicMock()
+        count_result.success = True
+        count_result.dataframe = count_df
+
+        # Demographics with mixed None values
+        demographics_df = pd.DataFrame(
+            {
+                "age_bucket": ["20-29", None, "40-49"],
+                "patient_count": [20, 30, None],
+            }
+        )
+        demo_result = MagicMock()
+        demo_result.success = True
+        demo_result.dataframe = demographics_df
+
+        # Gender with None values
+        gender_df = pd.DataFrame({"gender": ["F", None], "patient_count": [55, None]})
+        gender_result = MagicMock()
+        gender_result.success = True
+        gender_result.dataframe = gender_df
+
+        def execute_query(sql, dataset):
+            if "age_bucket" in sql:
+                return demo_result
+            elif "GROUP BY p.gender" in sql:
+                return gender_result
+            else:
+                return count_result
+
+        backend.execute_query.side_effect = execute_query
+
+        with patch("m4.apps.cohort_builder.tool.get_backend", return_value=backend):
+            result = tool.invoke(dataset, params)
+
+        # Count should be 0 for None values
+        assert result["patient_count"] == 0
+        assert result["admission_count"] == 0
+        # Only valid rows should be included
+        assert result["demographics"]["age"] == {"20-29": 20}
+        assert result["demographics"]["gender"] == {"F": 55}
+
+    def test_invoke_handles_icu_with_empty_database(self):
+        """invoke() should return 0 ICU stay count when database is empty."""
+        tool = QueryCohortTool()
+        dataset = DatasetDefinition(
+            name="mimic-iv-demo",
+            modalities=frozenset({Modality.TABULAR}),
+        )
+        params = QueryCohortInput(has_icu_stay=True)
+
+        backend = MagicMock()
+
+        # Empty count result with ICU column
+        count_df = pd.DataFrame(
+            {
+                "patient_count": [0],
+                "admission_count": [0],
+                "icu_stay_count": [0],
+            }
+        )
+        count_result = MagicMock()
+        count_result.success = True
+        count_result.dataframe = count_df
+
+        empty_result = MagicMock()
+        empty_result.success = True
+        empty_result.dataframe = pd.DataFrame()
+
+        def execute_query(sql, dataset):
+            if "age_bucket" in sql:
+                return empty_result
+            elif "GROUP BY p.gender" in sql:
+                return empty_result
+            else:
+                return count_result
+
+        backend.execute_query.side_effect = execute_query
+
+        with patch("m4.apps.cohort_builder.tool.get_backend", return_value=backend):
+            result = tool.invoke(dataset, params)
+
+        assert result["patient_count"] == 0
+        assert result["admission_count"] == 0
+        assert result["icu_stay_count"] == 0
