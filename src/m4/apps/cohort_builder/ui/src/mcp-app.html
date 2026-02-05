@@ -225,6 +225,36 @@
       margin-top: 4px;
     }
 
+    .icd-match-mode {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .match-mode-label {
+      font-size: 0.75rem;
+      color: var(--color-text-secondary);
+    }
+
+    .toggle-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      color: var(--color-text-secondary);
+    }
+
+    .toggle-label input {
+      accent-color: var(--color-accent);
+    }
+
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -426,6 +456,19 @@
         <div class="tag-input-container">
           <div class="tags" id="icdTags"></div>
           <input type="text" class="form-input tag-input" id="icdInput" placeholder="Type code and press Enter">
+        </div>
+        <div class="icd-match-mode">
+          <span class="match-mode-label">Match:</span>
+          <div class="toggle-group">
+            <label class="toggle-label">
+              <input type="radio" name="icdMatchMode" value="any" checked>
+              Any (OR)
+            </label>
+            <label class="toggle-label">
+              <input type="radio" name="icdMatchMode" value="all">
+              All (AND)
+            </label>
+          </div>
         </div>
         <span class="form-hint">e.g., I10 (hypertension), E11 (diabetes), J18 (pneumonia)</span>
       </div>

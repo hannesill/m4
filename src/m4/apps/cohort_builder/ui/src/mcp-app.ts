@@ -29,6 +29,7 @@ const ageMaxInput = document.getElementById("ageMax") as HTMLInputElement;
 const genderRadios = document.querySelectorAll<HTMLInputElement>('input[name="gender"]');
 const icdInput = document.getElementById("icdInput") as HTMLInputElement;
 const icdTags = document.getElementById("icdTags") as HTMLElement;
+const icdMatchModeRadios = document.querySelectorAll<HTMLInputElement>('input[name="icdMatchMode"]');
 const icuStayRadios = document.querySelectorAll<HTMLInputElement>('input[name="icuStay"]');
 const mortalityRadios = document.querySelectorAll<HTMLInputElement>('input[name="mortality"]');
 
@@ -156,6 +157,14 @@ function getCriteriaFromForm(): Record<string, unknown> {
   // ICD codes
   if (icdCodes.length > 0) {
     criteria.icd_codes = [...icdCodes];
+
+    // ICD match mode (AND/OR)
+    const selectedMatchMode = document.querySelector<HTMLInputElement>(
+      'input[name="icdMatchMode"]:checked'
+    );
+    if (selectedMatchMode && selectedMatchMode.value === "all") {
+      criteria.icd_match_all = true;
+    }
   }
 
   // ICU stay
@@ -315,6 +324,11 @@ ageMaxInput.addEventListener("input", onCriteriaChange);
 
 // Gender radio buttons
 genderRadios.forEach((radio) => {
+  radio.addEventListener("change", onCriteriaChange);
+});
+
+// ICD match mode radio buttons
+icdMatchModeRadios.forEach((radio) => {
   radio.addEventListener("change", onCriteriaChange);
 });
 

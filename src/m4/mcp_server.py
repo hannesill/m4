@@ -583,6 +583,7 @@ def query_cohort(
     age_max: int | None = None,
     gender: str | None = None,
     icd_codes: list[str] | None = None,
+    icd_match_all: bool | None = None,
     has_icu_stay: bool | None = None,
     in_hospital_mortality: bool | None = None,
 ) -> str:
@@ -596,6 +597,7 @@ def query_cohort(
         age_max: Maximum patient age (0-130, inclusive).
         gender: Patient gender ('M' or 'F').
         icd_codes: List of ICD diagnosis code prefixes to filter by.
+        icd_match_all: If True, patient must have ALL ICD codes (AND); default is ANY (OR).
         has_icu_stay: If True, require ICU stay; if False, exclude ICU patients.
         in_hospital_mortality: If True, require in-hospital death; if False, exclude deaths.
 
@@ -619,6 +621,7 @@ def query_cohort(
                 age_max=age_max,
                 gender=gender,
                 icd_codes=icd_codes,
+                icd_match_all=icd_match_all,
                 has_icu_stay=has_icu_stay,
                 in_hospital_mortality=in_hospital_mortality,
             ),
