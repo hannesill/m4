@@ -1,0 +1,26 @@
+sources:
+  - url: https://doi.org/10.1016/j.jbi.2024.104631
+    description: EquiFlow methodology for equity-focused cohort flow diagrams
+    license: CC-BY-4.0
+
+created:
+  by: Dukyong Yoon, MD
+  role: adaptation
+  date: 2025-01-29
+
+reviews:
+  - by: Dukyong Yoon, MD
+    date: 2025-02-05
+    scope: clinical-accuracy
+    notes: Verified SMD thresholds and default equity variable selection against Ellen 2024 publication.
+
+references:
+  - Ellen JG, et al. "Participant flow diagrams for health equity in AI." J Biomed Inform. 2024;152:104631.
+
+changelog:
+  - version: "1.0"
+    date: 2025-01-29
+    summary: Initial skill creation with CohortFlow wrapper and SMD reference
+  - version: "1.1"
+    date: 2025-02-05
+    summary: Reformatted to SKILL_FORMAT.md standard

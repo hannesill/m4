@@ -1,0 +1,26 @@
+sources:
+  - url: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/score
+    description: MIT-LCP mimic-code OASIS implementation
+    license: Apache-2.0
+
+created:
+  by: m4-clinical-extraction
+  role: clinical-extraction
+  date: 2025-01-15
+
+reviews:
+  - by: Dukyong Yoon, MD
+    date: 2025-02-05
+    scope: clinical-accuracy
+    notes: Verified scoring thresholds against Johnson 2013. Reformatted frontmatter to SKILL_FORMAT.md standard.
+
+references:
+  - Johnson AEW, Kramer AA, Clifford GD. "A new severity of illness scale using a subset of Acute Physiology And Chronic Health Evaluation data elements shows comparable predictive accuracy." Critical Care Medicine. 2013;41(7):1711-1718.
+
+changelog:
+  - version: "1.0"
+    date: 2025-01-15
+    summary: Initial extraction from mimic-code
+  - version: "1.1"
+    date: 2025-02-05
+    summary: Reformatted frontmatter to SKILL_FORMAT.md standard, added PROVENANCE.yaml

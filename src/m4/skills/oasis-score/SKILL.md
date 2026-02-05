@@ -1,14 +1,7 @@
 ---
 name: oasis-score
 description: Calculate OASIS (Oxford Acute Severity of Illness Score) for ICU patients in MIMIC-IV. Use for mortality prediction with fewer variables than APACHE/SAPS, or when lab data is limited.
-license: Apache-2.0
-metadata:
-  author: m4-clinical-extraction
-  version: "1.0"
-  database: mimic-iv
-  category: severity-scores
-  source: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/score
-  validated: true
+tier: expert
 ---
 
 # OASIS Score Calculation
@@ -86,14 +79,9 @@ FROM mimiciv_derived.oasis;
    oasis_prob = 1 / (1 + exp(-(-6.1746 + 0.1275 * oasis)))
    ```
 
-## Advantages Over APACHE/SAPS
+## Example Queries
 
-- Simpler to calculate (10 variables vs 15-17)
-- No laboratory data required
-- Can be calculated earlier in admission
-- Similar predictive accuracy
-
-## Example: Quick Severity Assessment
+### Quick Severity Assessment
 
 ```sql
 SELECT
@@ -110,7 +98,7 @@ FROM mimiciv_derived.oasis
 ORDER BY oasis DESC;
 ```
 
-## Example: Compare OASIS vs SAPS-II Predictions
+### Compare OASIS vs SAPS-II Predictions
 
 ```sql
 SELECT

@@ -14,6 +14,7 @@ This directory contains Agent Skills extracted from the MIT-LCP repositories (mi
 | [oasis-score](oasis-score/SKILL.md) | Oxford Acute Severity of Illness Score (no labs required) | MIMIC-IV |
 | [lods-score](lods-score/SKILL.md) | Logistic Organ Dysfunction Score | MIMIC-IV |
 | [sirs-criteria](sirs-criteria/SKILL.md) | Systemic Inflammatory Response Syndrome criteria | MIMIC-IV |
+| [hfrs](hfrs/SKILL.md) | Hospital Frailty Risk Score from ICD codes (Gilbert 2018) | MIMIC-IV |
 
 ### Sepsis and Infection
 
@@ -54,6 +55,7 @@ This directory contains Agent Skills extracted from the MIT-LCP repositories (mi
 | [mimic-table-relationships](mimic-table-relationships/SKILL.md) | MIMIC-IV table relationships and join patterns | MIMIC-IV |
 | [mimic-eicu-mapping](mimic-eicu-mapping/SKILL.md) | Mapping between MIMIC-IV and eICU databases | Both |
 | [clinical-research-pitfalls](clinical-research-pitfalls/SKILL.md) | Common methodological mistakes and how to avoid them | Both |
+| [equiflow](equiflow/SKILL.md) | Equity-focused cohort flow diagrams with SMD bias detection (Ellen 2024) | Both |
 
 ### M4 Framework
 
@@ -66,20 +68,20 @@ This directory contains Agent Skills extracted from the MIT-LCP repositories (mi
 
 ## Skill Statistics
 
-- **Total Skills**: 18
-- **MIMIC-IV Specific**: 13
+- **Total Skills**: 20
+- **MIMIC-IV Specific**: 14
 - **eICU Specific**: 0
-- **Multi-Database**: 5
+- **Multi-Database**: 6
 
 ## Category Distribution
 
-- Severity Scores: 6
+- Severity Scores: 7
 - Sepsis/Infection: 2
 - Organ Failure: 1
 - Medications: 1
 - Lab/Measurements: 2
 - Cohort Definitions: 1
-- Data Quality: 3
+- Data Quality: 4
 - M4 Framework: 2
 
 ---
