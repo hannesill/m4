@@ -79,7 +79,7 @@ source = "file"
 path = "src/m4/__init__.py"
 
 [tool.pdm.build]
-includes = ["src/m4/", "src/m4/skills/**/*.md", "src/m4/core/derived/builtins/**/*.sql"]
+includes = ["src/m4/", "src/m4/skills/**/*.md", "src/m4/core/derived/builtins/**/*.sql", "src/m4/apps/**/*.html"]
 
 [tool.ruff]
 line-length = 88

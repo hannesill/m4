@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>M4 Cohort Builder</title>
+  <style>
+    :root {
+      --color-background: #ffffff;
+      --color-background-secondary: #f5f5f5;
+      --color-text-primary: #1a1a1a;
+      --color-text-secondary: #666666;
+      --color-border: #e0e0e0;
+      --color-accent: #0066cc;
+      --color-accent-hover: #0052a3;
+      --color-success: #22c55e;
+      --color-error: #ef4444;
+      --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      padding: 16px;
+      line-height: 1.5;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: 8px;
+    }
+
+    .header h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .patient-count {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .count-badge {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-accent);
+      transition: opacity 0.2s;
+    }
+
+    .count-badge.loading {
+      opacity: 0.5;
+    }
+
+    .count-label {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+    }
+
+    .panel {
+      background: var(--color-background-secondary);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .panel-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .form-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      background: var(--color-background);
+      color: var(--color-text-primary);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+    }
+
+    .form-input::placeholder {
+      color: var(--color-text-secondary);
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 16px;
+    }
+
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+
+    .radio-label input {
+      accent-color: var(--color-accent);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: var(--color-background);
+      border-radius: 6px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--color-text-secondary);
+      margin-top: 2px;
+    }
+
+    .bar-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bar-label {
+      width: 48px;
+      font-size: 0.75rem;
+      color: var(--color-text-secondary);
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 20px;
+      background: var(--color-border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--color-accent);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .bar-value {
+      width: 48px;
+      font-size: 0.75rem;
+      color: var(--color-text-secondary);
+      flex-shrink: 0;
+    }
+
+    .sql-preview {
+      margin-top: 16px;
+    }
+
+    .sql-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: none;
+      border: none;
+      color: var(--color-text-secondary);
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .sql-toggle:hover {
+      color: var(--color-text-primary);
+    }
+
+    .sql-code {
+      margin-top: 8px;
+      padding: 12px;
+      background: var(--color-background);
+      border-radius: 6px;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 0.75rem;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      color: var(--color-text-secondary);
+      display: none;
+    }
+
+    .sql-code.visible {
+      display: block;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .loading-overlay.hidden {
+      display: none;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--color-border);
+      border-top-color: var(--color-accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      grid-column: 1 / -1;
+      padding: 12px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      color: var(--color-error);
+      font-size: 0.875rem;
+      display: none;
+    }
+
+    .error-message.visible {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+  </div>
+
+  <div class="container">
+    <header class="header">
+      <h1>M4 Cohort Builder</h1>
+      <div class="patient-count">
+        <span class="count-badge" id="patientCount">--</span>
+        <span class="count-label">patients</span>
+      </div>
+    </header>
+
+    <div class="error-message" id="errorMessage"></div>
+
+    <div class="panel">
+      <h2 class="panel-title">Criteria</h2>
+
+      <div class="form-group">
+        <label class="form-label">Age Range</label>
+        <div class="form-row">
+          <input type="number" class="form-input" id="ageMin" placeholder="Min" min="0" max="130">
+          <span>to</span>
+          <input type="number" class="form-input" id="ageMax" placeholder="Max" min="0" max="130">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Gender</label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="gender" value="">
+            All
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="gender" value="M">
+            Male
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="gender" value="F">
+            Female
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-title">Results</h2>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="patientCountStat">--</div>
+          <div class="stat-label">Patients</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="admissionCountStat">--</div>
+          <div class="stat-label">Admissions</div>
+        </div>
+      </div>
+
+      <h3 class="panel-title" style="margin-top: 16px;">Age Distribution</h3>
+      <div class="bar-chart" id="ageChart">
+        <!-- Filled by JS -->
+      </div>
+
+      <h3 class="panel-title" style="margin-top: 16px;">Gender</h3>
+      <div class="bar-chart" id="genderChart">
+        <!-- Filled by JS -->
+      </div>
+
+      <div class="sql-preview">
+        <button class="sql-toggle" id="sqlToggle">
+          <span id="sqlToggleIcon">+</span> Show SQL
+        </button>
+        <pre class="sql-code" id="sqlCode"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./mcp-app.ts"></script>
+</body>
+</html>
