@@ -156,6 +156,75 @@
       accent-color: var(--color-accent);
     }
 
+    .tag-input-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 6px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      background: var(--color-background);
+      min-height: 38px;
+      align-items: center;
+    }
+
+    .tag-input-container:focus-within {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: var(--color-accent);
+      color: white;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .tag-remove {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0;
+      opacity: 0.8;
+    }
+
+    .tag-remove:hover {
+      opacity: 1;
+    }
+
+    .tag-input {
+      flex: 1;
+      min-width: 100px;
+      border: none !important;
+      padding: 4px !important;
+      box-shadow: none !important;
+    }
+
+    .tag-input:focus {
+      outline: none;
+    }
+
+    .form-hint {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--color-text-secondary);
+      margin-top: 4px;
+    }
+
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -348,6 +417,51 @@
           <label class="radio-label">
             <input type="radio" name="gender" value="F">
             Female
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">ICD Codes (prefix match)</label>
+        <div class="tag-input-container">
+          <div class="tags" id="icdTags"></div>
+          <input type="text" class="form-input tag-input" id="icdInput" placeholder="Type code and press Enter">
+        </div>
+        <span class="form-hint">e.g., I10 (hypertension), E11 (diabetes), J18 (pneumonia)</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">ICU Stay</label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="icuStay" value="">
+            Any
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="icuStay" value="true">
+            ICU patients only
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="icuStay" value="false">
+            Non-ICU only
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">In-Hospital Mortality</label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="mortality" value="">
+            Any
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="mortality" value="true">
+            Deceased only
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="mortality" value="false">
+            Survivors only
           </label>
         </div>
       </div>
