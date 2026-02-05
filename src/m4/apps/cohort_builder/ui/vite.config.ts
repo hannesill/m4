@@ -5,6 +5,8 @@ import { resolve } from "path";
 export default defineConfig({
   plugins: [viteSingleFile()],
   root: "src",
+  // Disable publicDir since assets are inlined as base64 for single-file output
+  publicDir: false,
   build: {
     outDir: resolve(__dirname, ".."),
     emptyOutDir: false,
