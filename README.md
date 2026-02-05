@@ -39,6 +39,9 @@ Data exploration and simple research questions work great via MCP. But real rese
 **Cross-dataset research.**
 You should be able to ask for multi-dataset queries or cross-dataset comparisons. M4 makes this easier than ever as the AI can switch between your initialized datasets on its own, allowing it to do cross-dataset tasks for you.
 
+**Interactive exploration.**
+Some research tasks—like cohort definition—benefit from real-time visual feedback rather than iterative text queries. M4 Apps embed purpose-built UIs directly in your AI client, letting you drag sliders, toggle filters, and see instant results without leaving your workflow.
+
 
 ## Quickstart (3 steps)
 
@@ -157,6 +160,22 @@ m4 skills --list                             # Show installed skills with metada
 See [Skills Guide](docs/SKILLS.md) for the full list and how to create custom skills.
 
 
+## M4 Apps
+
+M4 Apps bring interactivity to clinical research. Instead of text-only responses, apps render interactive UIs directly in your AI client—ideal for tasks that benefit from real-time visual feedback.
+
+**Cohort Builder**: Define patient cohorts with live filtering. Adjust age ranges, add diagnosis codes, and toggle clinical criteria while watching counts update instantly.
+
+```
+User: Help me build a cohort of elderly diabetic patients
+Claude: [Launches Cohort Builder UI with interactive filters]
+```
+
+M4 Apps require a host that supports the MCP Apps protocol (like Claude Desktop). In other clients, you'll get text-based results instead.
+
+See [M4 Apps Guide](docs/M4_APPS.md) for details on available apps and how they work.
+
+
 ## Example Questions
 
 Once connected, try asking:
@@ -266,6 +285,7 @@ M4 exposes these tools to your AI client. Tools are filtered based on the active
 |-------|-------------|
 | [Architecture](docs/ARCHITECTURE.md) | Design philosophy, system overview, clinical semantics |
 | [Code Execution](docs/CODE_EXECUTION.md) | Python API for programmatic access |
+| [M4 Apps](docs/M4_APPS.md) | Interactive UIs for clinical research tasks |
 | [Skills](docs/SKILLS.md) | Clinical and system skills for AI-assisted research |
 | [Tools Reference](docs/TOOLS.md) | MCP tool documentation |
 | [BigQuery Setup](docs/BIGQUERY.md) | Google Cloud for full datasets |
