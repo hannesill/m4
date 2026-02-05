@@ -5,7 +5,13 @@
  * Uses the @modelcontextprotocol/ext-apps SDK for host communication.
  */
 
-import { App } from "@modelcontextprotocol/ext-apps";
+import {
+  App,
+  applyDocumentTheme,
+  applyHostStyleVariables,
+  applyHostFonts,
+  type McpUiHostContext,
+} from "@modelcontextprotocol/ext-apps";
 
 // Initialize the MCP App
 const app = new App({
@@ -32,11 +38,31 @@ const icdTags = document.getElementById("icdTags") as HTMLElement;
 const icdMatchModeRadios = document.querySelectorAll<HTMLInputElement>('input[name="icdMatchMode"]');
 const icuStayRadios = document.querySelectorAll<HTMLInputElement>('input[name="icuStay"]');
 const mortalityRadios = document.querySelectorAll<HTMLInputElement>('input[name="mortality"]');
+const fullscreenBtn = document.getElementById("fullscreenBtn") as HTMLButtonElement;
+const fullscreenIcon = document.getElementById("fullscreenIcon") as SVGElement;
+
+// Types
+interface CohortResult {
+  patient_count: number;
+  admission_count: number;
+  demographics: {
+    age: Record<string, number>;
+    gender: Record<string, number>;
+  };
+  sql: string;
+}
 
 // State
 let debounceTimer: number | null = null;
 let sqlVisible = false;
 let icdCodes: string[] = [];
+let currentDisplayMode: "inline" | "fullscreen" = "inline";
+let lastResult: CohortResult | null = null;
+let previousCounts = { patients: 0, admissions: 0 };
+let baselinePatientCount: number | null = null;
+
+// DOM element for percentage
+const countPercentage = document.getElementById("countPercentage") as HTMLElement;
 
 // --- Utility Functions ---
 
@@ -63,21 +89,159 @@ function formatNumber(n: number): string {
   return n.toLocaleString();
 }
 
-interface CohortResult {
-  patient_count: number;
-  admission_count: number;
-  demographics: {
-    age: Record<string, number>;
-    gender: Record<string, number>;
-  };
-  sql: string;
+/**
+ * Animate a number from one value to another with easing
+ */
+function animateNumber(
+  element: HTMLElement,
+  from: number,
+  to: number,
+  duration: number = 300
+): void {
+  const startTime = performance.now();
+  const diff = to - from;
+
+  // Skip animation if no change or initial load
+  if (diff === 0 || from === 0) {
+    element.textContent = formatNumber(to);
+    return;
+  }
+
+  // Add pulse animation class
+  element.classList.add("count-pulse");
+
+  function update(currentTime: number) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+
+    // Ease out cubic
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(from + diff * eased);
+
+    element.textContent = formatNumber(current);
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      element.classList.remove("count-pulse");
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+/**
+ * Update model context with current cohort state for LLM awareness
+ */
+async function updateModelContextWithCohort(
+  criteria: Record<string, unknown>,
+  result: CohortResult
+): Promise<void> {
+  const criteriaLines: string[] = [];
+
+  if (criteria.age_min !== undefined || criteria.age_max !== undefined) {
+    const min = criteria.age_min ?? "any";
+    const max = criteria.age_max ?? "any";
+    criteriaLines.push(`- Age: ${min} to ${max}`);
+  }
+  if (criteria.gender) {
+    criteriaLines.push(`- Gender: ${criteria.gender === "M" ? "Male" : "Female"}`);
+  }
+  if (criteria.icd_codes && Array.isArray(criteria.icd_codes) && criteria.icd_codes.length > 0) {
+    const matchMode = criteria.icd_match_all ? "all (AND)" : "any (OR)";
+    criteriaLines.push(`- ICD codes (${matchMode}): ${(criteria.icd_codes as string[]).join(", ")}`);
+  }
+  if (criteria.has_icu_stay !== undefined) {
+    criteriaLines.push(`- ICU stay: ${criteria.has_icu_stay ? "Yes" : "No"}`);
+  }
+  if (criteria.in_hospital_mortality !== undefined) {
+    criteriaLines.push(`- In-hospital mortality: ${criteria.in_hospital_mortality ? "Yes (deceased)" : "No (survivors)"}`);
+  }
+
+  const markdown = `---
+patient-count: ${result.patient_count}
+admission-count: ${result.admission_count}
+---
+
+Current cohort selection in M4 Cohort Builder:
+
+**Patients:** ${formatNumber(result.patient_count)}
+**Admissions:** ${formatNumber(result.admission_count)}
+
+${criteriaLines.length > 0 ? "**Applied filters:**\n" + criteriaLines.join("\n") : "**Filters:** None (all patients)"}`;
+
+  try {
+    await app.updateModelContext({
+      content: [{ type: "text", text: markdown }],
+    });
+  } catch {
+    // Silently ignore if host doesn't support updateModelContext
+  }
+}
+
+/**
+ * Toggle fullscreen mode
+ */
+async function toggleFullscreen(): Promise<void> {
+  const ctx = app.getHostContext();
+  const newMode = currentDisplayMode === "inline" ? "fullscreen" : "inline";
+
+  if (ctx?.availableDisplayModes?.includes(newMode)) {
+    try {
+      const result = await app.requestDisplayMode({ mode: newMode });
+      currentDisplayMode = result.mode as "inline" | "fullscreen";
+      updateFullscreenUI();
+    } catch {
+      // Host denied the request
+    }
+  }
+}
+
+/**
+ * Update UI based on current fullscreen state
+ */
+function updateFullscreenUI(): void {
+  const isFullscreen = currentDisplayMode === "fullscreen";
+  document.body.classList.toggle("fullscreen", isFullscreen);
+
+  // Update icon to show appropriate action
+  if (isFullscreen) {
+    // Show minimize icon
+    fullscreenIcon.innerHTML = '<path d="M4 14h6m0 0v6m0-6L3 21M20 10h-6m0 0V4m0 6l7-7"/>';
+  } else {
+    // Show expand icon
+    fullscreenIcon.innerHTML = '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
+  }
 }
 
 function updateDisplay(result: CohortResult): void {
-  // Update counts
-  patientCount.textContent = formatNumber(result.patient_count);
-  patientCountStat.textContent = formatNumber(result.patient_count);
-  admissionCountStat.textContent = formatNumber(result.admission_count);
+  // Store baseline on first load (when no filters are applied)
+  if (baselinePatientCount === null) {
+    baselinePatientCount = result.patient_count;
+  }
+
+  // Update counts with animation
+  animateNumber(patientCount, previousCounts.patients, result.patient_count);
+  animateNumber(patientCountStat, previousCounts.patients, result.patient_count);
+  animateNumber(admissionCountStat, previousCounts.admissions, result.admission_count);
+
+  // Update percentage display
+  if (baselinePatientCount > 0) {
+    const percentage = (result.patient_count / baselinePatientCount) * 100;
+    countPercentage.textContent = `${percentage.toFixed(1)}%`;
+    countPercentage.style.display = "inline";
+  } else {
+    countPercentage.style.display = "none";
+  }
+
+  // Store current counts for next animation
+  previousCounts = {
+    patients: result.patient_count,
+    admissions: result.admission_count,
+  };
+
+  // Store result for model context updates
+  lastResult = result;
 
   // Update age chart
   const ageBuckets = [
@@ -252,7 +416,11 @@ async function refreshCohort(): Promise<void> {
         return;
       }
 
-      updateDisplay(data as CohortResult);
+      const cohortResult = data as CohortResult;
+      updateDisplay(cohortResult);
+
+      // Update model context so LLM knows current cohort state
+      await updateModelContextWithCohort(criteria, cohortResult);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Query failed";
@@ -283,22 +451,31 @@ app.ontoolresult = () => {
   refreshCohort();
 };
 
-// Handle host context changes (theme, safe area, etc.)
-app.onhostcontextchanged = (ctx) => {
-  // Apply host theme via CSS variables
-  if (ctx.theme === "dark") {
-    document.documentElement.style.setProperty("--color-background", "#1a1a1a");
-    document.documentElement.style.setProperty("--color-background-secondary", "#2a2a2a");
-    document.documentElement.style.setProperty("--color-text-primary", "#ffffff");
-    document.documentElement.style.setProperty("--color-text-secondary", "#a0a0a0");
-    document.documentElement.style.setProperty("--color-border", "#404040");
+/**
+ * Detect system color scheme preference
+ */
+function getSystemTheme(): "light" | "dark" {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+/**
+ * Apply host context styling (theme, CSS variables, fonts, safe areas)
+ * Uses SDK helpers to properly set data-theme, color-scheme, and CSS variables
+ */
+function applyHostContext(ctx: McpUiHostContext): void {
+  // Apply theme - SDK sets both data-theme and color-scheme
+  if (ctx.theme) {
+    applyDocumentTheme(ctx.theme);
   }
 
   // Apply host CSS variables if provided
   if (ctx.styles?.variables) {
-    for (const [key, value] of Object.entries(ctx.styles.variables)) {
-      document.documentElement.style.setProperty(key, value as string);
-    }
+    applyHostStyleVariables(ctx.styles.variables);
+  }
+
+  // Apply host fonts if provided
+  if (ctx.styles?.css?.fonts) {
+    applyHostFonts(ctx.styles.css.fonts);
   }
 
   // Apply safe area insets
@@ -306,6 +483,23 @@ app.onhostcontextchanged = (ctx) => {
     const { top, right, bottom, left } = ctx.safeAreaInsets;
     document.body.style.padding = `${top}px ${right}px ${bottom}px ${left}px`;
   }
+
+  // Handle display mode changes
+  if (ctx.displayMode) {
+    currentDisplayMode = ctx.displayMode as "inline" | "fullscreen";
+    updateFullscreenUI();
+  }
+
+  // Show/hide fullscreen button based on availability
+  if (ctx.availableDisplayModes) {
+    const canFullscreen = ctx.availableDisplayModes.includes("fullscreen");
+    fullscreenBtn.style.display = canFullscreen ? "block" : "none";
+  }
+}
+
+// Handle host context changes (theme, safe area, display modes, etc.)
+app.onhostcontextchanged = (ctx) => {
+  applyHostContext(ctx);
 };
 
 // Handle teardown (cleanup)
@@ -383,5 +577,27 @@ sqlToggle.addEventListener("click", () => {
   sqlToggle.innerHTML = `<span id="sqlToggleIcon">${sqlVisible ? "−" : "+"}</span> ${sqlVisible ? "Hide" : "Show"} SQL`;
 });
 
-// --- Connect to Host ---
-app.connect();
+// Fullscreen toggle
+fullscreenBtn.addEventListener("click", toggleFullscreen);
+
+// Listen for system color scheme changes and reapply theme
+// Only applies if host hasn't set an explicit theme
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  const ctx = app.getHostContext();
+  // If host provides no theme, use system preference
+  if (!ctx?.theme) {
+    applyDocumentTheme(getSystemTheme());
+  }
+});
+
+// --- Initialize ---
+// Apply system theme immediately (before host context is received)
+applyDocumentTheme(getSystemTheme());
+
+// Connect to host, then apply host context (including theme)
+app.connect().then(() => {
+  const ctx = app.getHostContext();
+  if (ctx) {
+    applyHostContext(ctx);
+  }
+});
