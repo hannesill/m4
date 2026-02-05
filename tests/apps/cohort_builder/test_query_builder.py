@@ -218,6 +218,36 @@ class TestIcdCodesCriteria:
 
         assert "icd_code LIKE 'E11.9%'" in sql
 
+    def test_icd_match_all_single_code(self):
+        """Single ICD code with match_all should create single EXISTS."""
+        criteria = QueryCohortInput(icd_codes=["I10"], icd_match_all=True)
+        sql = build_cohort_count_sql(criteria)
+
+        assert "EXISTS" in sql
+        assert "icd_code LIKE 'I10%'" in sql
+        assert " OR " not in sql
+
+    def test_icd_match_all_multiple_codes(self):
+        """Multiple ICD codes with match_all should create separate EXISTS for each."""
+        criteria = QueryCohortInput(icd_codes=["I10", "E11"], icd_match_all=True)
+        sql = build_cohort_count_sql(criteria)
+
+        # Each code should have its own EXISTS clause
+        assert sql.count("EXISTS") == 2
+        assert "icd_code LIKE 'I10%'" in sql
+        assert "icd_code LIKE 'E11%'" in sql
+        # Should not use OR to combine them
+        assert " OR " not in sql or "OR" not in sql.split("diagnoses_icd")[1]
+
+    def test_icd_match_any_is_default(self):
+        """Without icd_match_all, should use OR (default behavior)."""
+        criteria = QueryCohortInput(icd_codes=["I10", "E11"])
+        sql = build_cohort_count_sql(criteria)
+
+        # Should have single EXISTS with OR
+        assert sql.count("EXISTS") == 1
+        assert " OR " in sql
+
 
 class TestIcdCodesValidation:
     """Test ICD codes validation errors."""
@@ -363,6 +393,8 @@ class TestSqlSafety:
             QueryCohortInput(gender="M"),
             QueryCohortInput(icd_codes=["A00"]),
             QueryCohortInput(icd_codes=["A00.1", "B99.9", "Z87"]),
+            QueryCohortInput(icd_codes=["I10", "E11"], icd_match_all=True),
+            QueryCohortInput(icd_codes=["I10", "E11"], icd_match_all=False),
             QueryCohortInput(has_icu_stay=True),
             QueryCohortInput(has_icu_stay=False),
             QueryCohortInput(in_hospital_mortality=True),
@@ -372,6 +404,15 @@ class TestSqlSafety:
                 age_max=65,
                 gender="F",
                 icd_codes=["I10"],
+                has_icu_stay=True,
+                in_hospital_mortality=True,
+            ),
+            QueryCohortInput(
+                age_min=18,
+                age_max=65,
+                gender="F",
+                icd_codes=["I10", "E11"],
+                icd_match_all=True,
                 has_icu_stay=True,
                 in_hospital_mortality=True,
             ),

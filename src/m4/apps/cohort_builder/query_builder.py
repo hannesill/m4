@@ -35,6 +35,7 @@ class QueryCohortInput(ToolInput):
         age_max: Maximum patient age (inclusive), 0-130
         gender: Patient gender ('M' or 'F')
         icd_codes: List of ICD diagnosis code prefixes to filter by
+        icd_match_all: If True, patient must have ALL ICD codes (AND); if False, ANY code (OR)
         has_icu_stay: If True, require ICU stay; if False, exclude ICU patients
         in_hospital_mortality: If True, require in-hospital death; if False, exclude deaths
     """
@@ -43,6 +44,7 @@ class QueryCohortInput(ToolInput):
     age_max: int | None = None
     gender: str | None = None
     icd_codes: list[str] | None = field(default=None)
+    icd_match_all: bool | None = None
     has_icu_stay: bool | None = None
     in_hospital_mortality: bool | None = None
 
@@ -103,6 +105,12 @@ def _validate_criteria(criteria: QueryCohortInput) -> None:
                     "Only alphanumeric characters and dots are allowed."
                 )
 
+    if criteria.icd_match_all is not None:
+        if not isinstance(criteria.icd_match_all, bool):
+            raise ValueError(
+                f"icd_match_all must be a boolean, got {type(criteria.icd_match_all)}"
+            )
+
     if criteria.has_icu_stay is not None:
         if not isinstance(criteria.has_icu_stay, bool):
             raise ValueError(
@@ -139,13 +147,24 @@ def _build_where_clauses(criteria: QueryCohortInput) -> list[str]:
         where_clauses.append(f"p.gender = '{criteria.gender}'")
 
     if criteria.icd_codes:
-        # Build OR conditions for each ICD code prefix
         # Each code is validated against ICD_CODE_PATTERN, safe to interpolate
-        icd_conditions = [f"d.icd_code LIKE '{code}%'" for code in criteria.icd_codes]
-        where_clauses.append(
-            f"EXISTS (SELECT 1 FROM mimiciv_hosp.diagnoses_icd d "
-            f"WHERE d.hadm_id = a.hadm_id AND ({' OR '.join(icd_conditions)}))"
-        )
+        if criteria.icd_match_all:
+            # AND logic: patient must have ALL specified ICD codes
+            # Use separate EXISTS for each code
+            for code in criteria.icd_codes:
+                where_clauses.append(
+                    f"EXISTS (SELECT 1 FROM mimiciv_hosp.diagnoses_icd d "
+                    f"WHERE d.hadm_id = a.hadm_id AND d.icd_code LIKE '{code}%')"
+                )
+        else:
+            # OR logic (default): patient must have ANY of the specified ICD codes
+            icd_conditions = [
+                f"d.icd_code LIKE '{code}%'" for code in criteria.icd_codes
+            ]
+            where_clauses.append(
+                f"EXISTS (SELECT 1 FROM mimiciv_hosp.diagnoses_icd d "
+                f"WHERE d.hadm_id = a.hadm_id AND ({' OR '.join(icd_conditions)}))"
+            )
 
     if criteria.has_icu_stay is True:
         where_clauses.append(
