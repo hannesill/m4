@@ -292,12 +292,14 @@ class TestIcuStayCriteria:
     """Test ICU stay filtering criteria."""
 
     def test_has_icu_stay_true(self):
-        """has_icu_stay=True should add EXISTS subquery."""
+        """has_icu_stay=True should JOIN icustays and include icu_stay_count."""
         criteria = QueryCohortInput(has_icu_stay=True)
         sql = build_cohort_count_sql(criteria)
 
-        assert "EXISTS" in sql
-        assert "mimiciv_icu.icustays" in sql
+        # Should JOIN icustays table (not EXISTS) for ICU stay count
+        assert "JOIN mimiciv_icu.icustays" in sql
+        assert "icu_stay_count" in sql
+        assert "COUNT(DISTINCT i.stay_id)" in sql
         assert "NOT EXISTS" not in sql
 
     def test_has_icu_stay_false(self):

@@ -187,11 +187,14 @@ def _build_where_clauses(criteria: QueryCohortInput) -> list[str]:
 def build_cohort_count_sql(criteria: QueryCohortInput) -> str:
     """Build SQL query for cohort patient and admission counts.
 
+    When has_icu_stay=True, also returns icu_stay_count (total ICU stays).
+
     Args:
         criteria: Cohort filtering criteria
 
     Returns:
-        SQL query string that returns patient_count and admission_count
+        SQL query string that returns patient_count, admission_count,
+        and optionally icu_stay_count
 
     Raises:
         ValueError: If criteria validation fails
@@ -200,8 +203,19 @@ def build_cohort_count_sql(criteria: QueryCohortInput) -> str:
 
     where_clauses = _build_where_clauses(criteria)
 
-    # Build the query
-    sql = """SELECT
+    # When ICU filter is active, include ICU stay count via JOIN
+    if criteria.has_icu_stay is True:
+        sql = """SELECT
+    COUNT(DISTINCT p.subject_id) AS patient_count,
+    COUNT(DISTINCT a.hadm_id) AS admission_count,
+    COUNT(DISTINCT i.stay_id) AS icu_stay_count
+FROM mimiciv_hosp.patients p
+JOIN mimiciv_hosp.admissions a ON p.subject_id = a.subject_id
+JOIN mimiciv_icu.icustays i ON i.hadm_id = a.hadm_id"""
+        # Remove the ICU EXISTS clause since we're using JOIN
+        where_clauses = [c for c in where_clauses if "mimiciv_icu.icustays" not in c]
+    else:
+        sql = """SELECT
     COUNT(DISTINCT p.subject_id) AS patient_count,
     COUNT(DISTINCT a.hadm_id) AS admission_count
 FROM mimiciv_hosp.patients p

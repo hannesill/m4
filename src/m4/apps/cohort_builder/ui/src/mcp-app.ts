@@ -25,6 +25,8 @@ const errorMessage = document.getElementById("errorMessage") as HTMLElement;
 const patientCount = document.getElementById("patientCount") as HTMLElement;
 const patientCountStat = document.getElementById("patientCountStat") as HTMLElement;
 const admissionCountStat = document.getElementById("admissionCountStat") as HTMLElement;
+const icuStayCountStat = document.getElementById("icuStayCountStat") as HTMLElement;
+const icuStayStatCard = document.getElementById("icuStayStatCard") as HTMLElement;
 const ageChart = document.getElementById("ageChart") as HTMLElement;
 const genderChart = document.getElementById("genderChart") as HTMLElement;
 const sqlCode = document.getElementById("sqlCode") as HTMLElement;
@@ -45,6 +47,7 @@ const fullscreenIcon = document.getElementById("fullscreenIcon") as SVGElement;
 interface CohortResult {
   patient_count: number;
   admission_count: number;
+  icu_stay_count?: number;
   demographics: {
     age: Record<string, number>;
     gender: Record<string, number>;
@@ -58,7 +61,7 @@ let sqlVisible = false;
 let icdCodes: string[] = [];
 let currentDisplayMode: "inline" | "fullscreen" = "inline";
 let lastResult: CohortResult | null = null;
-let previousCounts = { patients: 0, admissions: 0 };
+let previousCounts = { patients: 0, admissions: 0, icuStays: 0 };
 let baselinePatientCount: number | null = null;
 
 // DOM element for percentage
@@ -158,15 +161,19 @@ async function updateModelContextWithCohort(
     criteriaLines.push(`- In-hospital mortality: ${criteria.in_hospital_mortality ? "Yes (deceased)" : "No (survivors)"}`);
   }
 
+  const icuStayLine = result.icu_stay_count !== undefined
+    ? `\n**ICU Stays:** ${formatNumber(result.icu_stay_count)}`
+    : "";
+
   const markdown = `---
 patient-count: ${result.patient_count}
-admission-count: ${result.admission_count}
+admission-count: ${result.admission_count}${result.icu_stay_count !== undefined ? `\nicu-stay-count: ${result.icu_stay_count}` : ""}
 ---
 
 Current cohort selection in M4 Cohort Builder:
 
 **Patients:** ${formatNumber(result.patient_count)}
-**Admissions:** ${formatNumber(result.admission_count)}
+**Admissions:** ${formatNumber(result.admission_count)}${icuStayLine}
 
 ${criteriaLines.length > 0 ? "**Applied filters:**\n" + criteriaLines.join("\n") : "**Filters:** None (all patients)"}`;
 
@@ -225,6 +232,14 @@ function updateDisplay(result: CohortResult): void {
   animateNumber(patientCountStat, previousCounts.patients, result.patient_count);
   animateNumber(admissionCountStat, previousCounts.admissions, result.admission_count);
 
+  // Update ICU stay count (only shown when ICU filter is active)
+  if (result.icu_stay_count !== undefined && icuStayStatCard && icuStayCountStat) {
+    icuStayStatCard.style.display = "block";
+    animateNumber(icuStayCountStat, previousCounts.icuStays, result.icu_stay_count);
+  } else if (icuStayStatCard) {
+    icuStayStatCard.style.display = "none";
+  }
+
   // Update percentage display
   if (baselinePatientCount > 0) {
     const percentage = (result.patient_count / baselinePatientCount) * 100;
@@ -238,6 +253,7 @@ function updateDisplay(result: CohortResult): void {
   previousCounts = {
     patients: result.patient_count,
     admissions: result.admission_count,
+    icuStays: result.icu_stay_count ?? 0,
   };
 
   // Store result for model context updates

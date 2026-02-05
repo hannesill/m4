@@ -182,6 +182,14 @@ class QueryCohortTool:
         admission_count = (
             int(count_df["admission_count"].iloc[0]) if count_df is not None else 0
         )
+        # ICU stay count is only present when has_icu_stay=True
+        icu_stay_count = None
+        if (
+            count_df is not None
+            and "icu_stay_count" in count_df.columns
+            and params.has_icu_stay is True
+        ):
+            icu_stay_count = int(count_df["icu_stay_count"].iloc[0])
 
         # Build age distribution dict
         age_distribution = {}
@@ -195,7 +203,7 @@ class QueryCohortTool:
             for _, row in gender_result.dataframe.iterrows():
                 gender_distribution[row["gender"]] = int(row["patient_count"])
 
-        return {
+        result = {
             "patient_count": patient_count,
             "admission_count": admission_count,
             "demographics": {
@@ -213,6 +221,10 @@ class QueryCohortTool:
             },
             "sql": count_sql,
         }
+        # Include ICU stay count when available
+        if icu_stay_count is not None:
+            result["icu_stay_count"] = icu_stay_count
+        return result
 
     def is_compatible(self, dataset: DatasetDefinition) -> bool:
         """Check if this tool is compatible with the given dataset."""
