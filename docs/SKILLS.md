@@ -45,6 +45,8 @@ Skills are installed to `.claude/skills/` (or equivalent for other tools). AI as
 | Skill | Triggers On | Description |
 |-------|-------------|-------------|
 | **m4-api** | "M4 API", "query MIMIC with Python", "clinical data analysis" | Complete Python API usage including `set_dataset()`, DataFrame handling, error handling |
+| **m4-research** | "research workflow", "clinical study", "protocol" | Structured clinical research workflow and protocol drafting |
+| **create-m4-skill** | "create skill", "new skill", "skill template" | Guide for creating new M4 skills |
 
 ### Severity Scores
 
@@ -136,12 +138,16 @@ The `SKILL.md` contains:
 ---
 name: sofa-score
 description: Calculate SOFA score for ICU patients...
+tier: validated
+category: clinical
 ---
 
 # SOFA Score Calculation
 
 [Detailed instructions, SQL examples, clinical context...]
 ```
+
+The frontmatter has four required fields: `name`, `description`, `tier` (one of `validated`, `expert`, `community`), and `category` (`clinical` or `system`). See `src/m4/skills/SKILL_FORMAT.md` for full details.
 
 Clinical skills include validated SQL scripts in their `scripts/` subdirectory.
 
@@ -154,6 +160,8 @@ You can extend M4 with project-specific skills. Create a skill for your research
 ---
 name: cardiac-surgery-cohort
 description: Identify cardiac surgery patients. Triggers on "CABG", "valve replacement", "cardiac surgery"
+tier: community
+category: clinical
 ---
 
 # Cardiac Surgery Cohort Selection

@@ -72,26 +72,6 @@ This directory contains skills for the M4 framework, covering clinical research 
 
 ---
 
-## Skill Statistics
-
-- **Total Skills**: 19
-- **Clinical**: 14
-- **System**: 5
-
-## Category Distribution
-
-- Severity Scores: 6
-- Sepsis/Infection: 2
-- Organ Failure: 1
-- Medications: 1
-- Lab/Measurements: 2
-- Cohort Definitions: 1
-- Research Methodology: 1
-- Data Structure: 2
-- M4 Framework: 3
-
----
-
 ## Gaps and Future Work
 
 ### Concepts Not Yet Extracted

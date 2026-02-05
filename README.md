@@ -131,14 +131,17 @@ M4 ships with a set of skills that teach AI coding assistants clinical research 
 
 For the canonical list of bundled skills, see `src/m4/skills/SKILLS_INDEX.md`.
 
-**Included skills:**
-- **API**: `m4-api` for Python API usage
+**Clinical skills:**
 - **Severity Scores**: SOFA, APACHE III, SAPS-II, OASIS, LODS, SIRS
 - **Sepsis**: Sepsis-3 cohort identification, suspected infection
 - **Organ Failure**: KDIGO AKI staging
 - **Measurements**: GCS calculation, baseline creatinine, vasopressor equivalents
 - **Cohort Selection**: First ICU stay identification
-- **Data Quality**: Table relationships, MIMIC-eICU mapping, research pitfalls
+- **Research Methodology**: Common research pitfalls and how to avoid them
+
+**System skills:**
+- **M4 Framework**: Python API usage, research workflow, skill creation guide
+- **Data Structure**: MIMIC-IV table relationships, MIMIC-eICU mapping
 
 **Supported tools:** Claude Code, Cursor, Cline, Codex CLI, Gemini CLI, GitHub Copilot
 
@@ -260,7 +263,7 @@ M4 exposes these tools to your AI client. Tools are filtered based on the active
 |-------|-------------|
 | [Architecture](docs/ARCHITECTURE.md) | Design philosophy, system overview, clinical semantics |
 | [Code Execution](docs/CODE_EXECUTION.md) | Python API for programmatic access |
-| [Skills](docs/SKILLS.md) | 17 clinical research skills and custom skill creation |
+| [Skills](docs/SKILLS.md) | Clinical and system skills for AI-assisted research |
 | [Tools Reference](docs/TOOLS.md) | MCP tool documentation |
 | [BigQuery Setup](docs/BIGQUERY.md) | Google Cloud for full datasets |
 | [Custom Datasets](docs/CUSTOM_DATASETS.md) | Add your own PhysioNet datasets |
