@@ -27,10 +27,15 @@ const sqlToggleIcon = document.getElementById("sqlToggleIcon") as HTMLElement;
 const ageMinInput = document.getElementById("ageMin") as HTMLInputElement;
 const ageMaxInput = document.getElementById("ageMax") as HTMLInputElement;
 const genderRadios = document.querySelectorAll<HTMLInputElement>('input[name="gender"]');
+const icdInput = document.getElementById("icdInput") as HTMLInputElement;
+const icdTags = document.getElementById("icdTags") as HTMLElement;
+const icuStayRadios = document.querySelectorAll<HTMLInputElement>('input[name="icuStay"]');
+const mortalityRadios = document.querySelectorAll<HTMLInputElement>('input[name="mortality"]');
 
 // State
 let debounceTimer: number | null = null;
 let sqlVisible = false;
+let icdCodes: string[] = [];
 
 // --- Utility Functions ---
 
@@ -148,7 +153,70 @@ function getCriteriaFromForm(): Record<string, unknown> {
     criteria.gender = selectedGender.value;
   }
 
+  // ICD codes
+  if (icdCodes.length > 0) {
+    criteria.icd_codes = [...icdCodes];
+  }
+
+  // ICU stay
+  const selectedIcuStay = document.querySelector<HTMLInputElement>(
+    'input[name="icuStay"]:checked'
+  );
+  if (selectedIcuStay && selectedIcuStay.value) {
+    criteria.has_icu_stay = selectedIcuStay.value === "true";
+  }
+
+  // In-hospital mortality
+  const selectedMortality = document.querySelector<HTMLInputElement>(
+    'input[name="mortality"]:checked'
+  );
+  if (selectedMortality && selectedMortality.value) {
+    criteria.in_hospital_mortality = selectedMortality.value === "true";
+  }
+
   return criteria;
+}
+
+// --- ICD Tag Management ---
+
+function renderIcdTags(): void {
+  icdTags.innerHTML = icdCodes
+    .map(
+      (code, index) => `
+        <span class="tag">
+          ${code}
+          <button class="tag-remove" data-index="${index}">&times;</button>
+        </span>
+      `
+    )
+    .join("");
+
+  // Add click handlers for remove buttons
+  icdTags.querySelectorAll(".tag-remove").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const index = parseInt((e.target as HTMLElement).dataset.index || "0", 10);
+      icdCodes.splice(index, 1);
+      renderIcdTags();
+      onCriteriaChange();
+    });
+  });
+}
+
+function addIcdCode(code: string): void {
+  // Normalize: uppercase, trim
+  const normalized = code.trim().toUpperCase();
+
+  // Validate format (alphanumeric and dots only)
+  if (!/^[A-Z0-9.]+$/.test(normalized)) {
+    return;
+  }
+
+  // Avoid duplicates
+  if (!icdCodes.includes(normalized)) {
+    icdCodes.push(normalized);
+    renderIcdTags();
+    onCriteriaChange();
+  }
 }
 
 async function refreshCohort(): Promise<void> {
@@ -250,12 +318,47 @@ genderRadios.forEach((radio) => {
   radio.addEventListener("change", onCriteriaChange);
 });
 
-// Set default gender to "All"
+// ICU stay radio buttons
+icuStayRadios.forEach((radio) => {
+  radio.addEventListener("change", onCriteriaChange);
+});
+
+// Mortality radio buttons
+mortalityRadios.forEach((radio) => {
+  radio.addEventListener("change", onCriteriaChange);
+});
+
+// ICD code input
+icdInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    if (icdInput.value.trim()) {
+      addIcdCode(icdInput.value);
+      icdInput.value = "";
+    }
+  }
+});
+
+// Set default values
 const allGenderRadio = document.querySelector<HTMLInputElement>(
   'input[name="gender"][value=""]'
 );
 if (allGenderRadio) {
   allGenderRadio.checked = true;
+}
+
+const anyIcuRadio = document.querySelector<HTMLInputElement>(
+  'input[name="icuStay"][value=""]'
+);
+if (anyIcuRadio) {
+  anyIcuRadio.checked = true;
+}
+
+const anyMortalityRadio = document.querySelector<HTMLInputElement>(
+  'input[name="mortality"][value=""]'
+);
+if (anyMortalityRadio) {
+  anyMortalityRadio.checked = true;
 }
 
 // SQL toggle

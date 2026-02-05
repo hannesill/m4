@@ -75,7 +75,14 @@ class CohortBuilderTool:
                 "Use the interactive UI to filter patients by criteria."
             ),
             "dataset": dataset.name,
-            "supported_criteria": ["age_min", "age_max", "gender"],
+            "supported_criteria": [
+                "age_min",
+                "age_max",
+                "gender",
+                "icd_codes",
+                "has_icu_stay",
+                "in_hospital_mortality",
+            ],
         }
 
     def is_compatible(self, dataset: DatasetDefinition) -> bool:
@@ -198,6 +205,9 @@ class QueryCohortTool:
                 "age_min": params.age_min,
                 "age_max": params.age_max,
                 "gender": params.gender,
+                "icd_codes": params.icd_codes,
+                "has_icu_stay": params.has_icu_stay,
+                "in_hospital_mortality": params.in_hospital_mortality,
             },
             "sql": count_sql,
         }

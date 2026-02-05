@@ -582,6 +582,9 @@ def query_cohort(
     age_min: int | None = None,
     age_max: int | None = None,
     gender: str | None = None,
+    icd_codes: list[str] | None = None,
+    has_icu_stay: bool | None = None,
+    in_hospital_mortality: bool | None = None,
 ) -> str:
     """Query cohort counts based on filtering criteria.
 
@@ -592,6 +595,9 @@ def query_cohort(
         age_min: Minimum patient age (0-130, inclusive).
         age_max: Maximum patient age (0-130, inclusive).
         gender: Patient gender ('M' or 'F').
+        icd_codes: List of ICD diagnosis code prefixes to filter by.
+        has_icu_stay: If True, require ICU stay; if False, exclude ICU patients.
+        in_hospital_mortality: If True, require in-hospital death; if False, exclude deaths.
 
     Returns:
         JSON with patient_count, admission_count, demographics, and SQL.
@@ -608,7 +614,14 @@ def query_cohort(
         tool = ToolRegistry.get("query_cohort")
         result = tool.invoke(
             dataset,
-            QueryCohortInput(age_min=age_min, age_max=age_max, gender=gender),
+            QueryCohortInput(
+                age_min=age_min,
+                age_max=age_max,
+                gender=gender,
+                icd_codes=icd_codes,
+                has_icu_stay=has_icu_stay,
+                in_hospital_mortality=in_hospital_mortality,
+            ),
         )
         # Return JSON directly for MCP App UI compatibility
         return json.dumps(result)
