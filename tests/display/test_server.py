@@ -963,3 +963,77 @@ class TestRunManagerServer:
             headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
         )
         assert resp.json() == []
+
+
+class TestSingletonGuard:
+    """Test helpers that prevent duplicate server instances."""
+
+    def test_scan_for_existing_server_finds_running(self, store):
+        """Start a server on a test port, verify _scan_for_existing_server finds it."""
+        from m4.display.server import _scan_for_existing_server
+
+        srv = DisplayServer(
+            store=store,
+            port=7749,
+            host="127.0.0.1",
+            session_id="scan-test",
+        )
+        srv.start(open_browser=False)
+        actual_port = srv.port
+        try:
+            result = _scan_for_existing_server("127.0.0.1", actual_port, actual_port)
+            assert result is not None
+            assert result["port"] == actual_port
+            assert result["session_id"] == "scan-test"
+            assert result["url"] == f"http://127.0.0.1:{actual_port}"
+        finally:
+            srv.stop()
+
+    def test_scan_for_existing_server_empty_range(self):
+        """Scanning unused ports returns None."""
+        from m4.display.server import _scan_for_existing_server
+
+        result = _scan_for_existing_server("127.0.0.1", 7790, 7792)
+        assert result is None
+
+    def test_is_pid_alive_current_process(self):
+        """Current process PID should be alive."""
+        import os
+
+        from m4.display.server import _is_pid_alive
+
+        assert _is_pid_alive(os.getpid()) is True
+
+    def test_is_pid_alive_dead_pid(self):
+        """Non-existent PID should not be alive."""
+        from m4.display.server import _is_pid_alive
+
+        assert _is_pid_alive(999999999) is False
+
+    def test_check_health_on_running_server(self, store):
+        """_check_health returns True for a running server."""
+        from m4.display.server import _check_health
+
+        srv = DisplayServer(
+            store=store,
+            port=7748,
+            host="127.0.0.1",
+            session_id="health-test",
+        )
+        srv.start(open_browser=False)
+        actual_port = srv.port
+        url = f"http://127.0.0.1:{actual_port}"
+        try:
+            assert _check_health(url, "health-test") is True
+            # Wrong session_id should fail
+            assert _check_health(url, "wrong-id") is False
+            # No session_id check should pass
+            assert _check_health(url) is True
+        finally:
+            srv.stop()
+
+    def test_check_health_on_dead_port(self):
+        """_check_health returns False for a port with no server."""
+        from m4.display.server import _check_health
+
+        assert _check_health("http://127.0.0.1:7790") is False

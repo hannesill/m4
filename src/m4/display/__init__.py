@@ -57,6 +57,40 @@ def _pid_file_path() -> Path:
     return _get_display_dir() / ".server.json"
 
 
+def _lock_file_path() -> Path:
+    """Return the path to the server lock file."""
+    return _get_display_dir() / ".server.lock"
+
+
+def _scan_port_range(
+    host: str = "127.0.0.1",
+    port_start: int = 7741,
+    port_end: int = 7750,
+) -> dict[str, Any] | None:
+    """Probe each port in range for a live M4 display server.
+
+    Returns server info dict if found, None otherwise.
+    """
+    import urllib.request
+
+    for port in range(port_start, port_end + 1):
+        url = f"http://{host}:{port}"
+        try:
+            req = urllib.request.Request(f"{url}/api/health", method="GET")
+            with urllib.request.urlopen(req, timeout=0.5) as resp:
+                data = json.loads(resp.read())
+                if data.get("status") == "ok":
+                    return {
+                        "url": url,
+                        "host": host,
+                        "port": port,
+                        "session_id": data.get("session_id"),
+                    }
+        except Exception:
+            continue
+    return None
+
+
 def _is_process_alive(pid: int) -> bool:
     """Check if a process with the given PID is alive."""
     try:
@@ -170,9 +204,13 @@ def _ensure_started(
     Discovery flow:
     1. If _remote_url set → health check → if healthy, return
     2. If in-process _server running → return
-    3. _discover_server() → if found, set _remote_url, _auth_token, return
-    4. No server → _start_process(), poll discovery with backoff for up to 5s
+    3. Acquire file lock
+    4. Inside lock: _discover_server() → _scan_port_range() → _start_process()
+    5. Release lock
+    6. Fallback in-thread server if polling fails
     """
+    import fcntl
+
     global _server, _store, _run_manager, _session_id, _remote_url, _auth_token
 
     with _lock:
@@ -192,16 +230,47 @@ def _ensure_started(
         # Ensure run manager exists for local artifact storage
         _ensure_run_manager()
 
-        # Try to discover an existing persistent server
-        info = _discover_server()
-        if info:
-            _remote_url = info["url"]
-            _auth_token = info.get("token")
-            _session_id = info["session_id"]
-            return
+        # Acquire cross-process file lock before discovery + start
+        lock_path = _lock_file_path()
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        lock_fd = open(lock_path, "w")
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
 
-        # No server found → start a new persistent process
-        _start_process(port=port, open_browser=open_browser)
+            # Try to discover an existing persistent server (PID file)
+            info = _discover_server()
+            if info:
+                _remote_url = info["url"]
+                _auth_token = info.get("token")
+                _session_id = info["session_id"]
+                return
+
+            # Port-range scan as fallback (catches servers without PID files).
+            # If we find a server, try to get its token from the PID file.
+            # Without a token we can't push cards, so only short-circuit
+            # if we have a usable connection.
+            found = _scan_port_range("127.0.0.1", 7741, 7750)
+            if found:
+                # Re-read PID file — it may have appeared after the scan
+                pid_info = _discover_server()
+                if pid_info and pid_info.get("url") == found["url"]:
+                    _remote_url = pid_info["url"]
+                    _auth_token = pid_info.get("token")
+                    _session_id = pid_info["session_id"]
+                    return
+                # Server exists but no token — log and let _start_process
+                # pick the next available port
+                logger.debug(
+                    f"Found server at {found['url']} but no auth token; "
+                    "starting new server on next available port"
+                )
+
+            # No server found → start a new persistent process
+            _start_process(port=port, open_browser=open_browser)
+
+        finally:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            lock_fd.close()
 
         # Poll for the PID file to appear (server writes it after binding)
         deadline = time.monotonic() + 5.0

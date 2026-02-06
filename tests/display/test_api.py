@@ -659,3 +659,18 @@ class TestStopServerPreservesData:
         runs_after = mgr2.list_runs()
         assert len(runs_after) == 1
         assert runs_after[0]["label"] == "keep-me"
+
+
+class TestFileLocking:
+    """Test file lock and port scan helpers in the display module."""
+
+    def test_lock_file_path(self, tmp_path, monkeypatch):
+        """_lock_file_path returns correct path."""
+        monkeypatch.setattr(display, "_get_display_dir", lambda: tmp_path / "display")
+        path = display._lock_file_path()
+        assert path == tmp_path / "display" / ".server.lock"
+
+    def test_scan_port_range_returns_none_when_empty(self):
+        """Scanning unused ports returns None."""
+        result = display._scan_port_range("127.0.0.1", 7790, 7792)
+        assert result is None
