@@ -101,6 +101,8 @@ class DisplayServer:
             Route("/", self._index),
             Route("/api/health", self._api_health),
             Route("/api/cards", self._api_cards),
+            Route("/api/table/{card_id}/stats", self._api_table_stats),
+            Route("/api/table/{card_id}/export", self._api_table_export),
             Route("/api/table/{card_id}", self._api_table),
             Route("/api/artifact/{card_id}", self._api_artifact),
             Route("/api/clear", self._api_clear, methods=["POST"]),
@@ -138,6 +140,7 @@ class DisplayServer:
         limit = int(request.query_params.get("limit", "50"))
         sort_col = request.query_params.get("sort")
         sort_asc = request.query_params.get("asc", "true").lower() == "true"
+        search = request.query_params.get("search") or None
 
         try:
             page = self.store.read_table_page(
@@ -146,8 +149,46 @@ class DisplayServer:
                 limit=limit,
                 sort_col=sort_col,
                 sort_asc=sort_asc,
+                search=search,
             )
             return JSONResponse(page)
+        except FileNotFoundError:
+            return JSONResponse(
+                {"error": f"No table artifact for card {card_id}"}, status_code=404
+            )
+
+    async def _api_table_stats(self, request: Request) -> JSONResponse:
+        """Return per-column statistics for a table artifact."""
+        card_id = request.path_params["card_id"]
+        try:
+            stats = self.store.table_stats(card_id)
+            return JSONResponse(stats)
+        except FileNotFoundError:
+            return JSONResponse(
+                {"error": f"No table artifact for card {card_id}"}, status_code=404
+            )
+
+    async def _api_table_export(self, request: Request) -> Response:
+        """Export a table artifact as CSV."""
+        card_id = request.path_params["card_id"]
+        sort_col = request.query_params.get("sort")
+        sort_asc = request.query_params.get("asc", "true").lower() == "true"
+        search = request.query_params.get("search") or None
+
+        try:
+            csv_data = self.store.export_table_csv(
+                card_id=card_id,
+                sort_col=sort_col,
+                sort_asc=sort_asc,
+                search=search,
+            )
+            return Response(
+                content=csv_data,
+                media_type="text/csv",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{card_id}.csv"',
+                },
+            )
         except FileNotFoundError:
             return JSONResponse(
                 {"error": f"No table artifact for card {card_id}"}, status_code=404

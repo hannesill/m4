@@ -14,8 +14,10 @@ stays lightweight. The artifact store uses a session directory layout:
 
 from __future__ import annotations
 
+import io
 import json
 import logging
+import re
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -202,6 +204,52 @@ class ArtifactStore:
         logger.debug(f"Stored image artifact: {path} ({len(data)} bytes)")
         return path
 
+    @staticmethod
+    def _sanitize_search(search: str) -> str | None:
+        """Sanitize a search string, returning None if invalid."""
+        if not search or not search.strip():
+            return None
+        s = search.strip()
+        # Reject SQL keywords to prevent injection
+        sql_keywords = re.compile(
+            r"\b(DROP|DELETE|INSERT|UPDATE|ALTER|CREATE|EXEC|UNION|--|;)\b",
+            re.IGNORECASE,
+        )
+        if sql_keywords.search(s):
+            return None
+        # Only allow alphanumeric, spaces, basic punctuation
+        if not re.match(r"^[\w\s.,\-:/'\"()]+$", s):
+            return None
+        return s
+
+    def _parquet_columns(
+        self, path: Path, con: duckdb.DuckDBPyConnection
+    ) -> list[tuple[str, str]]:
+        """Return list of (column_name, column_type) for a Parquet file."""
+        rows = con.execute(
+            f"SELECT name, type FROM parquet_schema('{path}') WHERE name != 'duckdb_schema'"
+        ).fetchall()
+        return [(r[0], r[1]) for r in rows]
+
+    def _build_search_where(
+        self,
+        search: str,
+        col_info: list[tuple[str, str]],
+    ) -> str:
+        """Build a WHERE clause that searches across all columns."""
+        escaped = search.replace("'", "''")
+        clauses = []
+        for col_name, col_type in col_info:
+            upper = col_type.upper()
+            if any(t in upper for t in ("VARCHAR", "UTF8", "STRING", "TEXT")):
+                clauses.append(f"\"{col_name}\" ILIKE '%{escaped}%'")
+            else:
+                # Cast non-text columns to VARCHAR for general search
+                clauses.append(f"CAST(\"{col_name}\" AS VARCHAR) ILIKE '%{escaped}%'")
+        if not clauses:
+            return ""
+        return " WHERE " + " OR ".join(clauses)
+
     def read_table_page(
         self,
         card_id: str,
@@ -209,7 +257,7 @@ class ArtifactStore:
         limit: int = 50,
         sort_col: str | None = None,
         sort_asc: bool = True,
-        filter_expr: str | None = None,
+        search: str | None = None,
     ) -> dict[str, Any]:
         """Read a page of rows from a stored Parquet artifact using DuckDB.
 
@@ -219,7 +267,7 @@ class ArtifactStore:
             limit: Maximum rows to return.
             sort_col: Column to sort by (None for insertion order).
             sort_asc: Sort ascending if True, descending if False.
-            filter_expr: SQL WHERE expression for filtering (not yet implemented).
+            search: Free-text search string (ILIKE across all columns).
 
         Returns:
             Dict with 'columns', 'rows', 'total_rows', 'offset', 'limit'.
@@ -233,25 +281,26 @@ class ArtifactStore:
 
         con = duckdb.connect(":memory:")
         try:
-            # Get total row count
+            col_info = self._parquet_columns(path, con)
+            col_names = [c[0] for c in col_info]
+
+            # Build WHERE clause for search
+            where = ""
+            sanitized = self._sanitize_search(search) if search else None
+            if sanitized:
+                where = self._build_search_where(sanitized, col_info)
+
+            # Get total row count (filtered if searching)
             total = con.execute(
-                f"SELECT COUNT(*) FROM read_parquet('{path}')"
+                f"SELECT COUNT(*) FROM read_parquet('{path}'){where}"
             ).fetchone()[0]
 
             # Build query
-            query = f"SELECT * FROM read_parquet('{path}')"
+            query = f"SELECT * FROM read_parquet('{path}'){where}"
 
-            if sort_col:
+            if sort_col and sort_col in col_names:
                 direction = "ASC" if sort_asc else "DESC"
-                # Validate sort_col is an actual column name to prevent injection
-                columns = [
-                    row[0]
-                    for row in con.execute(
-                        f"SELECT name FROM parquet_schema('{path}')"
-                    ).fetchall()
-                ]
-                if sort_col in columns:
-                    query += f' ORDER BY "{sort_col}" {direction}'
+                query += f' ORDER BY "{sort_col}" {direction}'
 
             query += f" LIMIT {int(limit)} OFFSET {int(offset)}"
 
@@ -266,6 +315,133 @@ class ArtifactStore:
                 "offset": offset,
                 "limit": limit,
             }
+        finally:
+            con.close()
+
+    def table_stats(self, card_id: str) -> dict[str, dict[str, Any]]:
+        """Compute per-column statistics for a stored Parquet artifact.
+
+        Args:
+            card_id: Card ID whose Parquet artifact to analyze.
+
+        Returns:
+            Dict mapping column name → stats dict with keys like
+            min, max, mean, null_count, approx_unique.
+
+        Raises:
+            FileNotFoundError: If no Parquet artifact exists for this card_id.
+        """
+        path = self._artifacts_dir / f"{card_id}.parquet"
+        if not path.exists():
+            raise FileNotFoundError(f"No Parquet artifact for card {card_id}")
+
+        con = duckdb.connect(":memory:")
+        try:
+            col_info = self._parquet_columns(path, con)
+            stats: dict[str, dict[str, Any]] = {}
+
+            for col_name, col_type in col_info:
+                upper = col_type.upper()
+                is_numeric = any(
+                    t in upper
+                    for t in (
+                        "INT",
+                        "FLOAT",
+                        "DOUBLE",
+                        "DECIMAL",
+                        "NUMERIC",
+                        "BIGINT",
+                        "SMALLINT",
+                        "TINYINT",
+                    )
+                )
+
+                aggs = [
+                    f'COUNT(*) - COUNT("{col_name}") AS null_count',
+                    f'APPROX_COUNT_DISTINCT("{col_name}") AS approx_unique',
+                    f'MIN("{col_name}") AS min_val',
+                    f'MAX("{col_name}") AS max_val',
+                ]
+                if is_numeric:
+                    aggs.append(f'AVG("{col_name}") AS mean_val')
+
+                row = con.execute(
+                    f"SELECT {', '.join(aggs)} FROM read_parquet('{path}')"
+                ).fetchone()
+
+                col_stats: dict[str, Any] = {
+                    "null_count": row[0],
+                    "approx_unique": row[1],
+                    "min": self._serialize_value(row[2]),
+                    "max": self._serialize_value(row[3]),
+                }
+                if is_numeric:
+                    col_stats["mean"] = round(row[4], 4) if row[4] is not None else None
+
+                stats[col_name] = col_stats
+
+            return stats
+        finally:
+            con.close()
+
+    @staticmethod
+    def _serialize_value(val: Any) -> Any:
+        """Convert DuckDB values to JSON-serializable types."""
+        if val is None:
+            return None
+        if hasattr(val, "isoformat"):
+            return val.isoformat()
+        try:
+            json.dumps(val)
+            return val
+        except (TypeError, ValueError):
+            return str(val)
+
+    def export_table_csv(
+        self,
+        card_id: str,
+        sort_col: str | None = None,
+        sort_asc: bool = True,
+        search: str | None = None,
+    ) -> str:
+        """Export a full table as CSV (with optional sort/search but no pagination).
+
+        Args:
+            card_id: Card ID whose Parquet artifact to export.
+            sort_col: Column to sort by.
+            sort_asc: Sort ascending if True.
+            search: Free-text search filter.
+
+        Returns:
+            CSV string of the full (optionally filtered/sorted) table.
+
+        Raises:
+            FileNotFoundError: If no Parquet artifact exists for this card_id.
+        """
+        path = self._artifacts_dir / f"{card_id}.parquet"
+        if not path.exists():
+            raise FileNotFoundError(f"No Parquet artifact for card {card_id}")
+
+        con = duckdb.connect(":memory:")
+        try:
+            col_info = self._parquet_columns(path, con)
+            col_names = [c[0] for c in col_info]
+
+            where = ""
+            sanitized = self._sanitize_search(search) if search else None
+            if sanitized:
+                where = self._build_search_where(sanitized, col_info)
+
+            query = f"SELECT * FROM read_parquet('{path}'){where}"
+
+            if sort_col and sort_col in col_names:
+                direction = "ASC" if sort_asc else "DESC"
+                query += f' ORDER BY "{sort_col}" {direction}'
+
+            df = con.execute(query).fetchdf()
+            buf = io.StringIO()
+            df.to_csv(buf, index=False)
+            return buf.getvalue()
         finally:
             con.close()
 
