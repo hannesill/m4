@@ -488,6 +488,52 @@
   .status-disconnected { background: var(--error); }
   .status-connecting { background: var(--warning); }
 
+  /* Plotly chart cards */
+  .plotly-container {
+    width: 100%;
+    min-height: 300px;
+    position: relative;
+  }
+
+  .plotly-container .js-plotly-plot {
+    width: 100% !important;
+  }
+
+  .chart-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: var(--text-muted);
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .chart-loading::before {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Image cards (matplotlib SVG) */
+  .image-container {
+    text-align: center;
+  }
+
+  .image-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+
   /* Copy toast */
   .copy-toast {
     position: fixed;
@@ -557,6 +603,8 @@
     reconnectDelay: 1000,
     reconnectTimer: null,
     markedLoaded: false,
+    plotlyLoaded: false,
+    plotlyCallbacks: [],
     runIds: [],
     activeRunFilter: '',
   };
@@ -792,6 +840,12 @@
       case 'table':
         renderTable(body, cardData);
         break;
+      case 'plotly':
+        renderPlotly(body, cardData);
+        break;
+      case 'image':
+        renderImage(body, cardData);
+        break;
       case 'markdown':
         renderMarkdown(body, cardData);
         break;
@@ -851,6 +905,13 @@
           text += row.map(function(v) { return v === null ? '' : String(v); }).join('\t') + '\n';
         });
       }
+    } else if (cardData.card_type === 'plotly') {
+      text = JSON.stringify(cardData.preview && cardData.preview.spec, null, 2);
+    } else if (cardData.card_type === 'image') {
+      // For images, copy the artifact URL so it can be opened/embedded
+      text = cardData.artifact_id
+        ? location.origin + '/api/artifact/' + cardData.artifact_id
+        : '(no artifact)';
     } else {
       text = JSON.stringify(cardData.preview, null, 2);
     }
@@ -1130,6 +1191,163 @@
     });
 
     container.appendChild(dl);
+  }
+
+  // --- Plotly Charts ---
+
+  function renderPlotly(container, cardData) {
+    var spec = cardData.preview && cardData.preview.spec;
+    if (!spec) {
+      container.textContent = 'No chart data';
+      return;
+    }
+
+    var plotDiv = document.createElement('div');
+    plotDiv.className = 'plotly-container';
+    plotDiv.id = 'plotly-' + cardData.card_id;
+    container.appendChild(plotDiv);
+
+    function doRender() {
+      var data = spec.data || [];
+      var layout = Object.assign({}, spec.layout || {}, {
+        autosize: true,
+        margin: { l: 50, r: 30, t: 40, b: 50 },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        font: { color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() },
+      });
+      var config = { responsive: true, displayModeBar: true, displaylogo: false };
+
+      window.Plotly.newPlot(plotDiv, data, layout, config).then(function() {
+        // Attach point selection event
+        plotDiv.on('plotly_selected', function(eventData) {
+          if (eventData && state.ws && state.connected) {
+            var points = (eventData.points || []).map(function(pt) {
+              return { x: pt.x, y: pt.y, pointIndex: pt.pointIndex, curveNumber: pt.curveNumber };
+            });
+            state.ws.send(JSON.stringify({
+              type: 'display.event',
+              event_type: 'point_select',
+              card_id: cardData.card_id,
+              payload: { points: points },
+            }));
+          }
+        });
+
+        plotDiv.on('plotly_click', function(eventData) {
+          if (eventData && state.ws && state.connected) {
+            var points = (eventData.points || []).map(function(pt) {
+              return { x: pt.x, y: pt.y, pointIndex: pt.pointIndex, curveNumber: pt.curveNumber };
+            });
+            state.ws.send(JSON.stringify({
+              type: 'display.event',
+              event_type: 'point_click',
+              card_id: cardData.card_id,
+              payload: { points: points },
+            }));
+          }
+        });
+      });
+    }
+
+    if (window.Plotly) {
+      doRender();
+    } else {
+      // Show loading indicator
+      var loading = document.createElement('div');
+      loading.className = 'chart-loading';
+      loading.textContent = 'Loading chart library...';
+      plotDiv.appendChild(loading);
+
+      loadPlotly(function() {
+        plotDiv.removeChild(loading);
+        doRender();
+      });
+    }
+  }
+
+  function loadPlotly(callback) {
+    if (window.Plotly) {
+      if (callback) callback();
+      return;
+    }
+
+    // Queue callbacks if already loading
+    if (state.plotlyLoaded) {
+      state.plotlyCallbacks.push(callback);
+      return;
+    }
+    state.plotlyLoaded = true;
+    state.plotlyCallbacks.push(callback);
+
+    var script = document.createElement('script');
+    script.src = '/static/vendor/plotly.min.js';
+    script.onload = function() {
+      var cbs = state.plotlyCallbacks;
+      state.plotlyCallbacks = [];
+      cbs.forEach(function(cb) { if (cb) cb(); });
+    };
+    script.onerror = function() {
+      state.plotlyLoaded = false;
+      var cbs = state.plotlyCallbacks;
+      state.plotlyCallbacks = [];
+      cbs.forEach(function(cb) {
+        // Attempt fallback: render as static image if artifact exists
+      });
+    };
+    document.head.appendChild(script);
+  }
+
+  // Resize Plotly charts on window resize
+  window.addEventListener('resize', function() {
+    if (!window.Plotly) return;
+    var plots = document.querySelectorAll('.plotly-container .js-plotly-plot');
+    plots.forEach(function(plot) {
+      window.Plotly.Plots.resize(plot);
+    });
+  });
+
+  // Re-color Plotly charts on theme change
+  var _origThemeToggle = themeToggleEl.onclick;
+  themeToggleEl.onclick = function() {
+    _origThemeToggle.call(this);
+    if (!window.Plotly) return;
+    var textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim();
+    var plots = document.querySelectorAll('.plotly-container .js-plotly-plot');
+    plots.forEach(function(plot) {
+      window.Plotly.relayout(plot, {
+        'paper_bgcolor': 'transparent',
+        'plot_bgcolor': 'transparent',
+        'font.color': textColor,
+      });
+    });
+  };
+
+  // --- Image Cards (matplotlib SVG) ---
+
+  function renderImage(container, cardData) {
+    var preview = cardData.preview || {};
+    var imgContainer = document.createElement('div');
+    imgContainer.className = 'image-container';
+
+    var img = document.createElement('img');
+
+    if (preview.data && preview.format === 'svg') {
+      img.src = 'data:image/svg+xml;base64,' + preview.data;
+    } else if (preview.data && preview.format === 'png') {
+      img.src = 'data:image/png;base64,' + preview.data;
+    } else if (cardData.artifact_id) {
+      // Fall back to artifact endpoint
+      img.src = '/api/artifact/' + cardData.artifact_id;
+    } else {
+      container.textContent = 'No image data';
+      return;
+    }
+
+    img.alt = cardData.title || 'Figure';
+    img.style.maxWidth = '100%';
+    imgContainer.appendChild(img);
+    container.appendChild(imgContainer);
   }
 
   function addSection(title, runId) {
