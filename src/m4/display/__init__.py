@@ -27,7 +27,9 @@ logger = logging.getLogger(__name__)
 # Module-level state (thread-safe via _lock)
 _lock = threading.Lock()
 _server: Any = None  # DisplayServer | None
-_store: Any = None  # ArtifactStore | None
+_store: Any = None  # ArtifactStore | None (backwards-compat, resolves to current run)
+_run_manager: Any = None  # RunManager | None
+_current_run_id: str | None = None
 _session_id: str | None = None
 _remote_url: str | None = None
 _auth_token: str | None = None
@@ -149,6 +151,16 @@ def _get_session_dir() -> Path:
     return _get_display_dir()
 
 
+def _ensure_run_manager() -> Any:
+    """Ensure a RunManager exists for local artifact storage."""
+    global _run_manager
+    if _run_manager is None:
+        from m4.display.run_manager import RunManager
+
+        _run_manager = RunManager(_get_display_dir())
+    return _run_manager
+
+
 def _ensure_started(
     port: int = 7741,
     open_browser: bool = True,
@@ -161,7 +173,7 @@ def _ensure_started(
     3. _discover_server() → if found, set _remote_url, _auth_token, return
     4. No server → _start_process(), poll discovery with backoff for up to 5s
     """
-    global _server, _store, _session_id, _remote_url, _auth_token
+    global _server, _store, _run_manager, _session_id, _remote_url, _auth_token
 
     with _lock:
         # Fast path: already connected to remote
@@ -177,18 +189,15 @@ def _ensure_started(
         if _server is not None and _server.is_running:
             return
 
+        # Ensure run manager exists for local artifact storage
+        _ensure_run_manager()
+
         # Try to discover an existing persistent server
         info = _discover_server()
         if info:
             _remote_url = info["url"]
             _auth_token = info.get("token")
             _session_id = info["session_id"]
-            # Create a local store for rendering artifacts to disk
-            if _store is None:
-                from m4.display.artifacts import ArtifactStore
-
-                session_dir = _get_display_dir() / _session_id
-                _store = ArtifactStore(session_dir=session_dir, session_id=_session_id)
             return
 
         # No server found → start a new persistent process
@@ -202,30 +211,19 @@ def _ensure_started(
                 _remote_url = info["url"]
                 _auth_token = info.get("token")
                 _session_id = info["session_id"]
-                if _store is None:
-                    from m4.display.artifacts import ArtifactStore
-
-                    session_dir = _get_display_dir() / _session_id
-                    _store = ArtifactStore(
-                        session_dir=session_dir, session_id=_session_id
-                    )
                 return
             time.sleep(0.1)
 
         # Fallback: start in-thread if process discovery failed
         logger.debug("Process discovery failed, falling back to in-thread server")
-        from m4.display.artifacts import ArtifactStore
         from m4.display.server import DisplayServer
 
         if _session_id is None:
             _session_id = uuid.uuid4().hex[:12]
 
-        session_dir = _get_display_dir() / _session_id
-
-        if _store is None:
-            _store = ArtifactStore(session_dir=session_dir, session_id=_session_id)
-
-        _server = DisplayServer(store=_store, port=port)
+        _server = DisplayServer(
+            run_manager=_run_manager, port=port, session_id=_session_id
+        )
         _server.start(open_browser=open_browser)
 
 
@@ -291,9 +289,11 @@ def stop() -> None:
 def stop_server() -> bool:
     """Stop a running persistent display server via POST /api/shutdown.
 
+    Run data persists on disk. Only the PID file is cleaned up.
+
     Returns True if a server was stopped.
     """
-    global _remote_url, _auth_token, _store, _session_id
+    global _remote_url, _auth_token, _store, _run_manager, _session_id
 
     info = _discover_server()
     if not info:
@@ -330,25 +330,13 @@ def stop_server() -> bool:
                 break
             time.sleep(0.1)
 
-    # Clean up PID file
+    # Clean up PID file only — run data persists
     pid_path = _pid_file_path()
     if pid_path.exists():
         try:
             pid_path.unlink()
         except OSError:
             pass
-
-    # Clean up session directory
-    session_id = info.get("session_id")
-    if session_id:
-        import shutil
-
-        session_dir = _get_display_dir() / session_id
-        if session_dir.exists():
-            try:
-                shutil.rmtree(session_dir)
-            except OSError:
-                pass
 
     # Stop event polling
     _event_poll_stop.set()
@@ -357,11 +345,13 @@ def stop_server() -> bool:
     _event_callbacks.clear()
 
     # Clear module state
+    session_id = info.get("session_id")
     with _lock:
         _remote_url = None
         _auth_token = None
         if _session_id == session_id:
             _store = None
+            _run_manager = None
             _session_id = None
 
     return True
@@ -442,18 +432,31 @@ def show(
     from m4.display.artifacts import _serialize_card
     from m4.display.renderer import render
 
+    # Resolve the store for this card via RunManager
+    store = _store  # backwards-compat fallback
+    if _run_manager is not None:
+        _label, store = _run_manager.get_or_create_run(run_id)
+        # Use the resolved label for the card's run_id
+        run_id = _label
+
     if replace is not None:
         # Update an existing card in place
+        # Resolve store for the card being replaced
+        replace_store = store
+        if _run_manager is not None:
+            rs = _run_manager.get_store_for_card(replace)
+            if rs:
+                replace_store = rs
         card = render(
             obj,
             title=title,
             description=description,
             source=source,
             run_id=run_id,
-            store=_store,
+            store=replace_store,
         )
         # Update the old card's entry in the store
-        updated = _store.update_card(
+        updated = replace_store.update_card(
             replace,
             **{
                 "title": card.title,
@@ -485,8 +488,14 @@ def show(
         description=description,
         source=source,
         run_id=run_id,
-        store=_store,
+        store=store,
     )
+
+    # Register the card in RunManager's cross-run index
+    if _run_manager is not None and run_id:
+        dir_name = _run_manager._label_to_dir.get(run_id)
+        if dir_name:
+            _run_manager.register_card(card.card_id, dir_name)
 
     # Set interaction fields and update the stored card
     interaction_updates = {}
@@ -502,7 +511,7 @@ def show(
         card.on_send = on_send
         interaction_updates["on_send"] = on_send
     if interaction_updates:
-        _store.update_card(card.card_id, **interaction_updates)
+        store.update_card(card.card_id, **interaction_updates)
 
     if _remote_url:
         _push_remote(_serialize_card(card))
@@ -520,7 +529,7 @@ def show(
         message=result.get("message"),
         summary=result.get("summary", ""),
         artifact_id=result.get("artifact_id"),
-        _store=_store,
+        _store=store,
     )
 
 
@@ -555,25 +564,6 @@ def _poll_remote_response(card_id: str, timeout: float) -> dict[str, Any]:
         return {"action": "timeout", "card_id": card_id}
 
 
-def clear(keep_pinned: bool = True) -> None:
-    """Clear all cards from the display.
-
-    Args:
-        keep_pinned: If True, preserve pinned cards.
-    """
-    with _lock:
-        if _store is not None:
-            _store.clear(keep_pinned=keep_pinned)
-        if _remote_url and _auth_token:
-            _remote_command(
-                _remote_url,
-                _auth_token,
-                {"type": "clear", "keep_pinned": keep_pinned},
-            )
-        elif _server is not None:
-            _server.push_clear(keep_pinned=keep_pinned)
-
-
 def section(title: str, run_id: str | None = None) -> None:
     """Insert a section divider in the display feed.
 
@@ -586,6 +576,12 @@ def section(title: str, run_id: str | None = None) -> None:
     from m4.display._types import CardDescriptor, CardType
     from m4.display.renderer import _make_card_id, _make_timestamp
 
+    # Resolve store via RunManager if available
+    store = _store
+    if _run_manager is not None:
+        _label, store = _run_manager.get_or_create_run(run_id)
+        run_id = _label
+
     card = CardDescriptor(
         card_id=_make_card_id(),
         card_type=CardType.SECTION,
@@ -595,8 +591,8 @@ def section(title: str, run_id: str | None = None) -> None:
         preview={"title": title},
     )
 
-    if _store is not None:
-        _store.store_card(card)
+    if store is not None:
+        store.store_card(card)
     if _remote_url and _auth_token:
         _remote_command(
             _remote_url,
@@ -605,6 +601,48 @@ def section(title: str, run_id: str | None = None) -> None:
         )
     elif _server is not None:
         _server.push_section(title, run_id=run_id)
+
+
+def list_runs() -> list[dict[str, Any]]:
+    """List all display runs with metadata and card counts.
+
+    Returns:
+        List of dicts with label, dir_name, start_time, card_count.
+    """
+    _ensure_run_manager()
+    if _run_manager is not None:
+        return _run_manager.list_runs()
+    return []
+
+
+def delete_run(run_id: str) -> bool:
+    """Delete a display run by label.
+
+    Args:
+        run_id: The run label to delete.
+
+    Returns:
+        True if the run was deleted, False if not found.
+    """
+    _ensure_run_manager()
+    if _run_manager is not None:
+        return _run_manager.delete_run(run_id)
+    return False
+
+
+def clean_runs(older_than: str = "7d") -> int:
+    """Remove display runs older than a given age.
+
+    Args:
+        older_than: Age string (e.g., '7d', '24h', '0d' for all).
+
+    Returns:
+        Number of runs removed.
+    """
+    _ensure_run_manager()
+    if _run_manager is not None:
+        return _run_manager.clean_runs(older_than)
+    return 0
 
 
 def export(path: str, format: str = "html") -> None:
@@ -694,12 +732,31 @@ def pending_requests() -> list:
     from m4.display._types import DisplayRequest
 
     _ensure_started()
-    if _store is None:
+
+    if _run_manager is not None:
+        raw = _run_manager.list_requests(pending_only=True)
+        ack_cb = _run_manager.acknowledge_request
+        # Use first available store for artifact loading
+        first_store = _store
+        if first_store is None:
+            stores = list(_run_manager._stores.values())
+            first_store = stores[0] if stores else None
+    elif _store is not None:
+        raw = _store.list_requests(pending_only=True)
+        ack_cb = _store.acknowledge_request
+        first_store = _store
+    else:
         return []
 
-    raw = _store.list_requests(pending_only=True)
     requests = []
     for r in raw:
+        # Try to find the right store for this request's artifact
+        req_store = first_store
+        if _run_manager and r.get("card_id"):
+            card_store = _run_manager.get_store_for_card(r["card_id"])
+            if card_store:
+                req_store = card_store
+
         req = DisplayRequest(
             request_id=r["request_id"],
             card_id=r.get("card_id", ""),
@@ -708,8 +765,8 @@ def pending_requests() -> list:
             artifact_id=r.get("artifact_id"),
             timestamp=r.get("timestamp", ""),
             instruction=r.get("instruction"),
-            _store=_store,
-            _ack_callback=_store.acknowledge_request,
+            _store=req_store,
+            _ack_callback=ack_cb,
         )
         requests.append(req)
     return requests
@@ -718,6 +775,8 @@ def pending_requests() -> list:
 def get_selection(artifact_id: str) -> Any:
     """Load a selection DataFrame from the artifact store by ID.
 
+    Searches across all run stores and the display-level artifacts dir.
+
     Args:
         artifact_id: The artifact ID returned in a DisplayResponse or
             DisplayRequest.
@@ -725,11 +784,24 @@ def get_selection(artifact_id: str) -> Any:
     Returns:
         pd.DataFrame if found, None otherwise.
     """
-    if _store is None:
-        return None
-    path = _store._artifacts_dir / f"{artifact_id}.parquet"
-    if path.exists():
-        import pandas as pd
+    import pandas as pd
 
-        return pd.read_parquet(path)
+    # Search run_manager stores
+    if _run_manager is not None:
+        for store in _run_manager._stores.values():
+            path = store._artifacts_dir / f"{artifact_id}.parquet"
+            if path.exists():
+                return pd.read_parquet(path)
+        # Check display-level artifacts dir
+        display_artifacts = _run_manager.display_dir / "artifacts"
+        path = display_artifacts / f"{artifact_id}.parquet"
+        if path.exists():
+            return pd.read_parquet(path)
+
+    # Legacy fallback
+    if _store is not None:
+        path = _store._artifacts_dir / f"{artifact_id}.parquet"
+        if path.exists():
+            return pd.read_parquet(path)
+
     return None

@@ -1,16 +1,19 @@
-"""Tests for m4.display public API (show, start, stop, clear, section).
+"""Tests for m4.display public API (show, start, stop, section).
 
 Tests cover:
 - show() returns a card_id
 - show() stores cards in artifact store
 - show() with different object types
-- clear() removes cards
 - section() creates section cards
 - Module state management
 - Server discovery and client mode
 - Blocking show (wait=True)
 - pending_requests() and get_selection()
 - on_event() callback registration
+- RunManager integration: list_runs, delete_run, clean_runs
+- Multi-run show() calls
+- Auto-run creation
+- stop_server() preserves run data
 """
 
 import json
@@ -21,6 +24,7 @@ import pytest
 import m4.display as display
 from m4.display._types import CardType, DisplayRequest, DisplayResponse
 from m4.display.artifacts import ArtifactStore
+from m4.display.run_manager import RunManager
 
 
 @pytest.fixture(autouse=True)
@@ -28,6 +32,8 @@ def reset_module_state():
     """Reset module-level state before each test."""
     display._server = None
     display._store = None
+    display._run_manager = None
+    display._current_run_id = None
     display._session_id = None
     display._remote_url = None
     display._auth_token = None
@@ -40,6 +46,8 @@ def reset_module_state():
             pass
     display._server = None
     display._store = None
+    display._run_manager = None
+    display._current_run_id = None
     display._session_id = None
     display._remote_url = None
     display._auth_token = None
@@ -56,6 +64,17 @@ def store(tmp_path):
 
 
 @pytest.fixture
+def run_manager(tmp_path):
+    """Create a RunManager and inject it into module state."""
+    display_dir = tmp_path / "display"
+    display_dir.mkdir()
+    mgr = RunManager(display_dir)
+    display._run_manager = mgr
+    display._session_id = "rm-test"
+    return mgr
+
+
+@pytest.fixture
 def mock_server(store, monkeypatch):
     """Mock the server to avoid actually starting it."""
 
@@ -65,7 +84,6 @@ def mock_server(store, monkeypatch):
         def __init__(self):
             self.pushed_cards = []
             self.pushed_sections = []
-            self.pushed_clears = []
             self.event_callbacks = []
             self._mock_response = {"action": "timeout", "card_id": ""}
 
@@ -83,9 +101,6 @@ def mock_server(store, monkeypatch):
 
         def push_section(self, title, run_id=None):
             self.pushed_sections.append((title, run_id))
-
-        def push_clear(self, keep_pinned=True):
-            self.pushed_clears.append(keep_pinned)
 
         def wait_for_response_sync(self, card_id, timeout):
             return self._mock_response
@@ -152,28 +167,6 @@ class TestShow:
         assert len(mock_server.pushed_cards) == 3
 
 
-class TestClear:
-    def test_clears_store(self, store, mock_server):
-        display.show("card 1")
-        display.show("card 2")
-        assert len(store.list_cards()) == 2
-        display.clear()
-        assert len(store.list_cards()) == 0
-
-    def test_pushes_clear_to_server(self, store, mock_server):
-        display.clear()
-        assert len(mock_server.pushed_clears) == 1
-
-    def test_clear_keeps_pinned(self, store, mock_server):
-        display.show("card 1")
-        card_id = display.show("card 2")
-        store.update_card(card_id, pinned=True)
-        display.clear(keep_pinned=True)
-        remaining = store.list_cards()
-        assert len(remaining) == 1
-        assert remaining[0].pinned is True
-
-
 class TestSection:
     def test_creates_section_card(self, store, mock_server):
         display.section("Results")
@@ -217,10 +210,6 @@ class TestModuleState:
     def test_stop_when_not_started(self):
         # Should not raise
         display.stop()
-
-    def test_clear_when_no_store(self):
-        # Should not raise
-        display.clear()
 
 
 class TestDiscovery:
@@ -320,7 +309,7 @@ class TestDiscovery:
 
 
 class TestClientMode:
-    """Test that show/clear/section push via HTTP when _remote_url is set.
+    """Test that show/section push via HTTP when _remote_url is set.
 
     _ensure_started is monkeypatched to a no-op since we're testing the
     push path, not the discovery/startup flow.
@@ -345,23 +334,6 @@ class TestClientMode:
         assert commands_sent[0][0] == "http://127.0.0.1:7741"
         assert commands_sent[0][1] == "test-token"
         assert commands_sent[0][2]["type"] == "card"
-
-    def test_clear_uses_remote_command(self, store, monkeypatch):
-        """clear() pushes via _remote_command when _remote_url is set."""
-        commands_sent = []
-
-        def mock_remote_command(url, token, payload):
-            commands_sent.append(payload)
-            return True
-
-        display._remote_url = "http://127.0.0.1:7741"
-        display._auth_token = "test-token"
-        monkeypatch.setattr(display, "_remote_command", mock_remote_command)
-
-        display.clear(keep_pinned=False)
-        assert len(commands_sent) == 1
-        assert commands_sent[0]["type"] == "clear"
-        assert commands_sent[0]["keep_pinned"] is False
 
     def test_section_uses_remote_command(self, store, monkeypatch):
         """section() pushes via _remote_command when _remote_url is set."""
@@ -580,3 +552,110 @@ class TestOnEvent:
         display.on_event(lambda e: None)
         display.on_event(lambda e: None)
         assert len(mock_server.event_callbacks) == 2
+
+
+class TestListRuns:
+    def test_list_runs_empty(self, run_manager):
+        assert display.list_runs() == []
+
+    def test_list_runs_after_show(self, run_manager, mock_server):
+        display.show("hello", run_id="test-run")
+        runs = display.list_runs()
+        assert len(runs) == 1
+        assert runs[0]["label"] == "test-run"
+        assert runs[0]["card_count"] == 1
+
+    def test_list_runs_multiple(self, run_manager, mock_server):
+        display.show("card-a", run_id="run-a")
+        display.show("card-b", run_id="run-b")
+        runs = display.list_runs()
+        assert len(runs) == 2
+        labels = {r["label"] for r in runs}
+        assert labels == {"run-a", "run-b"}
+
+
+class TestDeleteRun:
+    def test_delete_existing_run(self, run_manager, mock_server):
+        display.show("hello", run_id="to-delete")
+        assert len(display.list_runs()) == 1
+        result = display.delete_run("to-delete")
+        assert result is True
+        assert display.list_runs() == []
+
+    def test_delete_nonexistent_run(self, run_manager):
+        assert display.delete_run("nope") is False
+
+
+class TestCleanRuns:
+    def test_clean_removes_all(self, run_manager, mock_server):
+        display.show("card-a", run_id="old-a")
+        display.show("card-b", run_id="old-b")
+        removed = display.clean_runs("0d")
+        assert removed == 2
+        assert display.list_runs() == []
+
+    def test_clean_keeps_recent(self, run_manager, mock_server):
+        display.show("card", run_id="recent")
+        removed = display.clean_runs("1d")
+        assert removed == 0
+        assert len(display.list_runs()) == 1
+
+
+class TestAutoRun:
+    def test_show_without_run_id_creates_auto(self, run_manager, mock_server):
+        display.show("hello")
+        runs = display.list_runs()
+        assert len(runs) == 1
+        assert runs[0]["label"].startswith("auto-")
+
+    def test_multiple_shows_without_run_id(self, run_manager, mock_server):
+        """Multiple show() calls without run_id reuse the same auto-run."""
+        display.show("card 1")
+        display.show("card 2")
+        runs = display.list_runs()
+        # Both cards go into the same auto-run (same timestamp within test)
+        assert len(runs) == 1
+        assert runs[0]["card_count"] == 2
+
+
+class TestMultiRunShow:
+    def test_different_run_ids_create_separate_runs(self, run_manager, mock_server):
+        display.show("card-a", run_id="run-a")
+        display.show("card-b", run_id="run-b")
+        display.show("card-a2", run_id="run-a")
+
+        runs = display.list_runs()
+        assert len(runs) == 2
+
+        # run-a should have 2 cards
+        run_a = next(r for r in runs if r["label"] == "run-a")
+        assert run_a["card_count"] == 2
+
+        # run-b should have 1 card
+        run_b = next(r for r in runs if r["label"] == "run-b")
+        assert run_b["card_count"] == 1
+
+
+class TestStopServerPreservesData:
+    def test_stop_preserves_run_data(self, run_manager, mock_server, tmp_path):
+        """stop_server() should not delete run data."""
+        display.show("persistent", run_id="keep-me")
+        runs_before = display.list_runs()
+        assert len(runs_before) == 1
+
+        # Verify the run directory exists
+        run_dir = run_manager._runs_dir / run_manager._label_to_dir["keep-me"]
+        assert run_dir.exists()
+
+        # Simulate stop (stop the mock server)
+        display.stop()
+
+        # Run directory should still exist on disk
+        assert run_dir.exists()
+
+        # Create a new RunManager (simulates restart) — data should be discovered
+        mgr2 = RunManager(run_manager.display_dir)
+        assert "keep-me" in mgr2._label_to_dir
+        runs_after = mgr2.list_runs()
+        assert len(runs_after) == 1
+        assert runs_after[0]["label"] == "keep-me"

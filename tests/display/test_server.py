@@ -2,7 +2,7 @@
 
 Tests cover:
 - DisplayServer creation and port finding
-- REST endpoints (cards, table paging, clear, session)
+- REST endpoints (cards, table paging, session)
 - WebSocket connection and card replay
 - Static file serving
 - Health, command, and shutdown endpoints
@@ -17,6 +17,7 @@ import pytest
 
 from m4.display.artifacts import ArtifactStore
 from m4.display.renderer import render
+from m4.display.run_manager import RunManager
 from m4.display.server import DisplayServer
 
 _TEST_TOKEN = "test-secret-token-1234"
@@ -36,6 +37,27 @@ def server(store):
         host="127.0.0.1",
         token=_TEST_TOKEN,
         session_id="server-test",
+    )
+    return srv
+
+
+@pytest.fixture
+def run_mgr(tmp_path):
+    """Create a RunManager for testing."""
+    display_dir = tmp_path / "display"
+    display_dir.mkdir()
+    return RunManager(display_dir)
+
+
+@pytest.fixture
+def rm_server(run_mgr):
+    """Create a DisplayServer backed by RunManager (no legacy store)."""
+    srv = DisplayServer(
+        run_manager=run_mgr,
+        port=7798,
+        host="127.0.0.1",
+        token=_TEST_TOKEN,
+        session_id="rm-server-test",
     )
     return srv
 
@@ -176,51 +198,6 @@ class TestStarletteApp:
         resp = client.get("/api/artifact/nonexistent")
         assert resp.status_code == 404
 
-    def test_api_clear(self, app, store):
-        from starlette.testclient import TestClient
-
-        render("card 1", store=store)
-        render("card 2", store=store)
-        assert len(store.list_cards()) == 2
-
-        client = TestClient(app)
-        resp = client.post(
-            "/api/clear",
-            json={"keep_pinned": False},
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
-        assert resp.status_code == 200
-        assert store.list_cards() == []
-
-    def test_api_clear_requires_auth(self, app):
-        from starlette.testclient import TestClient
-
-        client = TestClient(app)
-        resp = client.post(
-            "/api/clear",
-            json={"keep_pinned": False},
-        )
-        assert resp.status_code == 401
-
-    def test_api_clear_keeps_pinned(self, app, store):
-        from starlette.testclient import TestClient
-
-        render("card 1", store=store)
-        card2 = render("card 2", store=store)
-        store.update_card(card2.card_id, pinned=True)
-        assert len(store.list_cards()) == 2
-
-        client = TestClient(app)
-        resp = client.post(
-            "/api/clear",
-            json={"keep_pinned": True},
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
-        assert resp.status_code == 200
-        remaining = store.list_cards()
-        assert len(remaining) == 1
-        assert remaining[0].card_id == card2.card_id
-
     def test_api_session(self, app):
         from starlette.testclient import TestClient
 
@@ -308,21 +285,6 @@ class TestCommandEndpoint:
         )
         assert resp.status_code == 200
         assert resp.json()["status"] == "ok"
-
-    def test_command_clear(self, app, store):
-        from starlette.testclient import TestClient
-
-        render("card 1", store=store)
-        assert len(store.list_cards()) == 1
-
-        client = TestClient(app)
-        resp = client.post(
-            "/api/command",
-            json={"type": "clear", "keep_pinned": False},
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
-        assert resp.status_code == 200
-        assert store.list_cards() == []
 
     def test_command_requires_auth(self, app):
         from starlette.testclient import TestClient
@@ -854,3 +816,150 @@ class TestUpdateCommand:
         )
         assert resp.status_code == 200
         assert resp.json()["status"] == "ok"
+
+
+class TestRunManagerServer:
+    """Test server endpoints backed by RunManager."""
+
+    @pytest.fixture
+    def app(self, rm_server):
+        return rm_server._app
+
+    def test_api_runs_empty(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        resp = client.get("/api/runs")
+        assert resp.status_code == 200
+        assert resp.json() == []
+
+    def test_api_runs_lists_runs(self, app, run_mgr):
+        from starlette.testclient import TestClient
+
+        run_mgr.get_or_create_run("run-a")
+        run_mgr.get_or_create_run("run-b")
+
+        client = TestClient(app)
+        resp = client.get("/api/runs")
+        assert resp.status_code == 200
+        runs = resp.json()
+        assert len(runs) == 2
+        labels = {r["label"] for r in runs}
+        assert labels == {"run-a", "run-b"}
+
+    def test_api_run_delete(self, app, run_mgr):
+        from starlette.testclient import TestClient
+
+        run_mgr.get_or_create_run("to-delete")
+
+        client = TestClient(app)
+        resp = client.delete(
+            "/api/runs/to-delete",
+            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+
+        # Verify run is gone
+        resp = client.get("/api/runs")
+        assert resp.json() == []
+
+    def test_api_run_delete_nonexistent(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        resp = client.delete(
+            "/api/runs/nonexistent",
+            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+        )
+        assert resp.status_code == 404
+
+    def test_api_run_delete_requires_auth(self, app, run_mgr):
+        from starlette.testclient import TestClient
+
+        run_mgr.get_or_create_run("protected")
+
+        client = TestClient(app)
+        resp = client.delete("/api/runs/protected")
+        assert resp.status_code == 401
+
+    def test_api_cards_via_run_manager(self, app, run_mgr):
+        from starlette.testclient import TestClient
+
+        _, store_a = run_mgr.get_or_create_run("run-a")
+        _, store_b = run_mgr.get_or_create_run("run-b")
+
+        render("card-a", run_id="run-a", store=store_a)
+        render("card-b", run_id="run-b", store=store_b)
+
+        client = TestClient(app)
+
+        # All cards
+        resp = client.get("/api/cards")
+        assert len(resp.json()) == 2
+
+        # Filter by run_id
+        resp = client.get("/api/cards?run_id=run-a")
+        cards = resp.json()
+        assert len(cards) == 1
+        assert cards[0]["run_id"] == "run-a"
+
+    def test_api_session_includes_run_ids(self, app, run_mgr):
+        from starlette.testclient import TestClient
+
+        run_mgr.get_or_create_run("session-run")
+
+        client = TestClient(app)
+        resp = client.get("/api/session")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "run_ids" in data
+        assert "session-run" in data["run_ids"]
+
+    def test_websocket_replays_run_manager_cards(self, app, run_mgr):
+        from starlette.testclient import TestClient
+
+        _, store = run_mgr.get_or_create_run("ws-run")
+        render("hello", title="WS Card", store=store)
+
+        client = TestClient(app)
+        with client.websocket_connect("/ws") as ws:
+            msg = ws.receive_json()
+            assert msg["type"] == "display.add"
+            assert msg["card"]["title"] == "WS Card"
+
+    def test_request_queue_via_run_manager(self, app, run_mgr):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+
+        # Submit a request
+        resp = client.post(
+            "/api/requests",
+            json={"card_id": "c1", "prompt": "Test via RM"},
+        )
+        assert resp.status_code == 200
+
+        # Poll
+        resp = client.get(
+            "/api/requests",
+            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+        )
+        requests = resp.json()
+        assert len(requests) == 1
+        assert requests[0]["prompt"] == "Test via RM"
+
+        # Ack
+        request_id = requests[0]["request_id"]
+        resp = client.post(
+            f"/api/requests/{request_id}/ack",
+            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+        )
+        assert resp.status_code == 200
+
+        # Verify drained
+        resp = client.get(
+            "/api/requests",
+            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+        )
+        assert resp.json() == []

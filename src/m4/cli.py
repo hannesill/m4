@@ -1486,6 +1486,21 @@ def display_cmd(
             help="Show status of running display server.",
         ),
     ] = False,
+    list_runs: Annotated[
+        bool,
+        typer.Option(
+            "--list",
+            "-l",
+            help="List all display runs.",
+        ),
+    ] = False,
+    clean: Annotated[
+        str | None,
+        typer.Option(
+            "--clean",
+            help="Remove runs older than duration (e.g., '7d', '24h', '0d' for all).",
+        ),
+    ] = None,
 ):
     """Start, stop, or check the M4 display server.
 
@@ -1499,9 +1514,41 @@ def display_cmd(
     • m4 display --no-open          # Start without opening browser
     • m4 display --status           # Show server status
     • m4 display --stop             # Stop running server
+    • m4 display --list             # List all display runs
+    • m4 display --clean 7d         # Remove runs older than 7 days
     """
     from m4.display import server_status as get_status
     from m4.display import stop_server as do_stop
+
+    if list_runs:
+        from m4.display import list_runs as do_list_runs
+
+        runs = do_list_runs()
+        if not runs:
+            info("No display runs found.")
+            return
+
+        console.print()
+        console.print(f"[bold]Display runs ({len(runs)}):[/bold]")
+        console.print()
+        for run in runs:
+            label = run.get("label", "?")
+            start = run.get("start_time", "?")
+            cards = run.get("card_count", 0)
+            console.print(
+                f"  [success]{label:<30s}[/success] {cards:>3d} cards   {start}"
+            )
+        return
+
+    if clean is not None:
+        from m4.display import clean_runs as do_clean
+
+        removed = do_clean(older_than=clean)
+        if removed > 0:
+            success(f"Removed {removed} run(s).")
+        else:
+            info("No runs matched the age filter.")
+        return
 
     if stop_server:
         if do_stop():

@@ -11,7 +11,6 @@ Endpoints:
     GET  /api/cards?run_id=...           → list card descriptors
     GET  /api/table/{card_id}            → table page (offset, limit, sort)
     GET  /api/artifact/{card_id}         → raw artifact
-    POST /api/clear                      → clear display
     GET  /api/session                    → session metadata
     GET  /api/health                     → health check (returns session_id)
     POST /api/command                    → unified command endpoint (auth required)
@@ -44,6 +43,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from m4.display._types import CardDescriptor
 from m4.display.artifacts import ArtifactStore, _serialize_card
+from m4.display.run_manager import RunManager
 
 logger = logging.getLogger(__name__)
 
@@ -67,28 +67,32 @@ def _get_display_dir() -> Path:
 class DisplayServer:
     """WebSocket + REST server for the display pipeline.
 
-    Manages the Starlette app, WebSocket connections, and artifact store.
+    Manages the Starlette app, WebSocket connections, and run manager.
     Designed to run in a background thread via ``start()``.
 
     Args:
-        store: ArtifactStore for persisting and reading artifacts.
+        store: ArtifactStore for persisting and reading artifacts (legacy).
+        run_manager: RunManager for run-centric storage (preferred).
         port: Port to bind to (auto-discovers if taken).
         host: Host to bind to (default: 127.0.0.1 for security).
     """
 
     def __init__(
         self,
-        store: ArtifactStore,
+        store: ArtifactStore | None = None,
         port: int = _DEFAULT_PORT,
         host: str = "127.0.0.1",
         token: str | None = None,
         session_id: str | None = None,
+        run_manager: RunManager | None = None,
     ) -> None:
+        self.run_manager = run_manager
+        # Backwards compat: if only store is passed, wrap it
         self.store = store
         self.host = host
         self.port = port
         self.token = token
-        self.session_id = session_id or store.session_id
+        self.session_id = session_id or (store.session_id if store else "display")
         self._pid_path: Path | None = None
         self._connections: list[WebSocket] = []
         self._lock = threading.Lock()
@@ -114,7 +118,6 @@ class DisplayServer:
             Route("/api/table/{card_id}/export", self._api_table_export),
             Route("/api/table/{card_id}", self._api_table),
             Route("/api/artifact/{card_id}", self._api_artifact),
-            Route("/api/clear", self._api_clear, methods=["POST"]),
             Route("/api/session", self._api_session),
             Route("/api/command", self._api_command, methods=["POST"]),
             Route("/api/shutdown", self._api_shutdown, methods=["POST"]),
@@ -130,6 +133,12 @@ class DisplayServer:
                 methods=["GET"],
             ),
             Route("/api/events", self._api_events, methods=["GET"]),
+            Route("/api/runs", self._api_runs, methods=["GET"]),
+            Route(
+                "/api/runs/{run_id:path}",
+                self._api_run_delete,
+                methods=["DELETE"],
+            ),
             WebSocketRoute("/ws", self._ws_endpoint),
         ]
 
@@ -138,6 +147,25 @@ class DisplayServer:
             routes.append(Mount("/static", app=StaticFiles(directory=str(_STATIC_DIR))))
 
         return Starlette(routes=routes)
+
+    # --- Store Resolution ---
+
+    def _resolve_store(self, card_id: str | None = None) -> ArtifactStore | None:
+        """Resolve the ArtifactStore for a given card_id.
+
+        If run_manager is available, looks up the card in the cross-run index.
+        Falls back to the legacy self.store. Refreshes from disk if not found.
+        """
+        if card_id and self.run_manager:
+            store = self.run_manager.get_store_for_card(card_id)
+            if store:
+                return store
+            # Card not in index — client may have created a new run
+            self.run_manager.refresh()
+            store = self.run_manager.get_store_for_card(card_id)
+            if store:
+                return store
+        return self.store
 
     # --- HTTP Endpoints ---
 
@@ -151,7 +179,13 @@ class DisplayServer:
     async def _api_cards(self, request: Request) -> JSONResponse:
         """List card descriptors, optionally filtered by run_id."""
         run_id = request.query_params.get("run_id")
-        cards = self.store.list_cards(run_id=run_id)
+        if self.run_manager:
+            self.run_manager.refresh()
+            cards = self.run_manager.list_all_cards(run_id=run_id)
+        elif self.store:
+            cards = self.store.list_cards(run_id=run_id)
+        else:
+            cards = []
         return JSONResponse([_serialize_card(c) for c in cards])
 
     async def _api_table(self, request: Request) -> JSONResponse:
@@ -163,8 +197,14 @@ class DisplayServer:
         sort_asc = request.query_params.get("asc", "true").lower() == "true"
         search = request.query_params.get("search") or None
 
+        store = self._resolve_store(card_id)
+        if store is None:
+            return JSONResponse(
+                {"error": f"No table artifact for card {card_id}"}, status_code=404
+            )
+
         try:
-            page = self.store.read_table_page(
+            page = store.read_table_page(
                 card_id=card_id,
                 offset=offset,
                 limit=limit,
@@ -181,8 +221,13 @@ class DisplayServer:
     async def _api_table_stats(self, request: Request) -> JSONResponse:
         """Return per-column statistics for a table artifact."""
         card_id = request.path_params["card_id"]
+        store = self._resolve_store(card_id)
+        if store is None:
+            return JSONResponse(
+                {"error": f"No table artifact for card {card_id}"}, status_code=404
+            )
         try:
-            stats = self.store.table_stats(card_id)
+            stats = store.table_stats(card_id)
             return JSONResponse(stats)
         except FileNotFoundError:
             return JSONResponse(
@@ -196,8 +241,14 @@ class DisplayServer:
         sort_asc = request.query_params.get("asc", "true").lower() == "true"
         search = request.query_params.get("search") or None
 
+        store = self._resolve_store(card_id)
+        if store is None:
+            return JSONResponse(
+                {"error": f"No table artifact for card {card_id}"}, status_code=404
+            )
+
         try:
-            csv_data = self.store.export_table_csv(
+            csv_data = store.export_table_csv(
                 card_id=card_id,
                 sort_col=sort_col,
                 sort_asc=sort_asc,
@@ -218,8 +269,13 @@ class DisplayServer:
     async def _api_artifact(self, request: Request) -> Response:
         """Return a raw artifact by card ID."""
         card_id = request.path_params["card_id"]
+        store = self._resolve_store(card_id)
+        if store is None:
+            return JSONResponse(
+                {"error": f"No artifact for card {card_id}"}, status_code=404
+            )
         try:
-            data = self.store.get_artifact(card_id)
+            data = store.get_artifact(card_id)
             if isinstance(data, dict):
                 return JSONResponse(data)
             # Determine media type from file extension
@@ -228,7 +284,7 @@ class DisplayServer:
                 ("svg", "image/svg+xml"),
                 ("png", "image/png"),
             ):
-                if (self.store._artifacts_dir / f"{card_id}.{ext}").exists():
+                if (store._artifacts_dir / f"{card_id}.{ext}").exists():
                     media_type = mime
                     break
             return Response(content=data, media_type=media_type)
@@ -237,28 +293,19 @@ class DisplayServer:
                 {"error": f"No artifact for card {card_id}"}, status_code=404
             )
 
-    async def _api_clear(self, request: Request) -> JSONResponse:
-        """Clear all cards from the display. Requires auth."""
-        if not self._check_auth(request):
-            return JSONResponse({"error": "unauthorized"}, status_code=401)
-        body: dict[str, Any] = {}
-        try:
-            body = await request.json()
-        except Exception:
-            pass
-        keep_pinned = body.get("keep_pinned", True)
-        self.store.clear(keep_pinned=keep_pinned)
-        # Broadcast clear to all connected clients
-        await self._broadcast({"type": "display.clear", "keep_pinned": keep_pinned})
-        return JSONResponse({"status": "ok"})
-
     async def _api_session(self, request: Request) -> JSONResponse:
         """Return session metadata."""
-        meta_path = self.store._meta_path
-        if meta_path.exists():
-            meta = json.loads(meta_path.read_text())
-            return JSONResponse(meta)
-        return JSONResponse({"session_id": self.store.session_id, "run_ids": []})
+        if self.run_manager:
+            runs = self.run_manager.list_runs()
+            run_labels = [r["label"] for r in runs]
+            return JSONResponse({"session_id": self.session_id, "run_ids": run_labels})
+        if self.store:
+            meta_path = self.store._meta_path
+            if meta_path.exists():
+                meta = json.loads(meta_path.read_text())
+                return JSONResponse(meta)
+            return JSONResponse({"session_id": self.store.session_id, "run_ids": []})
+        return JSONResponse({"session_id": self.session_id, "run_ids": []})
 
     async def _api_health(self, request: Request) -> JSONResponse:
         """Health check endpoint. No auth required."""
@@ -277,7 +324,6 @@ class DisplayServer:
         Requires Bearer token auth. Accepts JSON body with "type" field:
         - {"type": "card", "card": {...}}
         - {"type": "section", "title": "...", "run_id": "..."}
-        - {"type": "clear", "keep_pinned": true}
         """
         if not self._check_auth(request):
             return JSONResponse({"error": "unauthorized"}, status_code=401)
@@ -292,7 +338,17 @@ class DisplayServer:
         if cmd_type == "card":
             card_data = body.get("card", {})
             message = {"type": "display.add", "card": card_data}
-            # Also store the card in the artifact store index if it has card_id
+            # Register card in run_manager's card index if available
+            card_id = card_data.get("card_id")
+            run_id = card_data.get("run_id")
+            if card_id and self.run_manager and run_id:
+                dir_name = self.run_manager._label_to_dir.get(run_id)
+                if not dir_name:
+                    # Client may have created the run — pick it up from disk
+                    self.run_manager.refresh()
+                    dir_name = self.run_manager._label_to_dir.get(run_id)
+                if dir_name:
+                    self.run_manager.register_card(card_id, dir_name)
             await self._broadcast(message)
             return JSONResponse({"status": "ok"})
 
@@ -316,12 +372,6 @@ class DisplayServer:
                 "card": card_data,
             }
             await self._broadcast(message)
-            return JSONResponse({"status": "ok"})
-
-        elif cmd_type == "clear":
-            keep_pinned = body.get("keep_pinned", True)
-            self.store.clear(keep_pinned=keep_pinned)
-            await self._broadcast({"type": "display.clear", "keep_pinned": keep_pinned})
             return JSONResponse({"status": "ok"})
 
         return JSONResponse(
@@ -360,14 +410,27 @@ class DisplayServer:
             points = body.get("points")
             instruction = body.get("instruction")
 
+            # Resolve store for selection storage
+            sel_store = self._resolve_store(card_id)
+
             # Store selection as artifact if data was provided
             artifact_id = None
             if selected_rows and columns:
                 artifact_id = f"sel-{request_id}"
-                self.store.store_selection(artifact_id, selected_rows, columns)
+                if self.run_manager:
+                    self.run_manager.store_selection(
+                        artifact_id, selected_rows, columns
+                    )
+                elif sel_store:
+                    sel_store.store_selection(artifact_id, selected_rows, columns)
             elif points:
                 artifact_id = f"sel-{request_id}"
-                self.store.store_selection_json(artifact_id, {"points": points})
+                if self.run_manager:
+                    self.run_manager.store_selection_json(
+                        artifact_id, {"points": points}
+                    )
+                elif sel_store:
+                    sel_store.store_selection_json(artifact_id, {"points": points})
 
             summary = self._build_summary(card_id, selected_rows, points, columns)
 
@@ -381,7 +444,10 @@ class DisplayServer:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "acknowledged": False,
             }
-            self.store.store_request(req_dict)
+            if self.run_manager:
+                self.run_manager.store_request(req_dict)
+            elif self.store:
+                self.store.store_request(req_dict)
 
             return JSONResponse({"status": "ok", "request_id": request_id})
 
@@ -389,7 +455,12 @@ class DisplayServer:
         if not self._check_auth(request):
             return JSONResponse({"error": "unauthorized"}, status_code=401)
 
-        pending = self.store.list_requests(pending_only=True)
+        if self.run_manager:
+            pending = self.run_manager.list_requests(pending_only=True)
+        elif self.store:
+            pending = self.store.list_requests(pending_only=True)
+        else:
+            pending = []
         return JSONResponse(pending)
 
     async def _api_request_ack(self, request: Request) -> JSONResponse:
@@ -398,7 +469,10 @@ class DisplayServer:
             return JSONResponse({"error": "unauthorized"}, status_code=401)
 
         request_id = request.path_params["request_id"]
-        self.store.acknowledge_request(request_id)
+        if self.run_manager:
+            self.run_manager.acknowledge_request(request_id)
+        elif self.store:
+            self.store.acknowledge_request(request_id)
         return JSONResponse({"status": "ok"})
 
     async def _api_response(self, request: Request) -> JSONResponse:
@@ -432,6 +506,28 @@ class DisplayServer:
             self._event_queue.clear()
         return JSONResponse(events)
 
+    # --- Run Endpoints ---
+
+    async def _api_runs(self, request: Request) -> JSONResponse:
+        """List all runs with metadata and card counts."""
+        if self.run_manager:
+            self.run_manager.refresh()
+            return JSONResponse(self.run_manager.list_runs())
+        return JSONResponse([])
+
+    async def _api_run_delete(self, request: Request) -> JSONResponse:
+        """Delete a run by label. Requires auth."""
+        if not self._check_auth(request):
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+        run_id = request.path_params["run_id"]
+        if self.run_manager:
+            deleted = self.run_manager.delete_run(run_id)
+            if deleted:
+                return JSONResponse({"status": "ok"})
+            return JSONResponse({"error": f"Run '{run_id}' not found"}, status_code=404)
+        return JSONResponse({"error": "No run manager"}, status_code=400)
+
     # --- WebSocket ---
 
     async def _ws_endpoint(self, ws: WebSocket) -> None:
@@ -443,7 +539,12 @@ class DisplayServer:
 
         # Replay existing cards on connect
         try:
-            cards = self.store.list_cards()
+            if self.run_manager:
+                cards = self.run_manager.list_all_cards()
+            elif self.store:
+                cards = self.store.list_cards()
+            else:
+                cards = []
             for card in cards:
                 msg = {
                     "type": "display.add",
@@ -486,13 +587,24 @@ class DisplayServer:
             columns = payload.get("columns")
             points = payload.get("points")
 
+            sel_store = self._resolve_store(card_id)
             artifact_id = None
             if selected_rows and columns:
                 artifact_id = f"resp-{card_id}"
-                self.store.store_selection(artifact_id, selected_rows, columns)
+                if self.run_manager:
+                    self.run_manager.store_selection(
+                        artifact_id, selected_rows, columns
+                    )
+                elif sel_store:
+                    sel_store.store_selection(artifact_id, selected_rows, columns)
             elif points:
                 artifact_id = f"resp-{card_id}"
-                self.store.store_selection_json(artifact_id, {"points": points})
+                if self.run_manager:
+                    self.run_manager.store_selection_json(
+                        artifact_id, {"points": points}
+                    )
+                elif sel_store:
+                    sel_store.store_selection_json(artifact_id, {"points": points})
 
             summary = self._build_summary(card_id, selected_rows, points, columns)
 
@@ -517,13 +629,24 @@ class DisplayServer:
             points = payload.get("points")
             instruction = payload.get("instruction")
 
+            sel_store = self._resolve_store(card_id)
             artifact_id = None
             if selected_rows and columns:
                 artifact_id = f"sel-{request_id}"
-                self.store.store_selection(artifact_id, selected_rows, columns)
+                if self.run_manager:
+                    self.run_manager.store_selection(
+                        artifact_id, selected_rows, columns
+                    )
+                elif sel_store:
+                    sel_store.store_selection(artifact_id, selected_rows, columns)
             elif points:
                 artifact_id = f"sel-{request_id}"
-                self.store.store_selection_json(artifact_id, {"points": points})
+                if self.run_manager:
+                    self.run_manager.store_selection_json(
+                        artifact_id, {"points": points}
+                    )
+                elif sel_store:
+                    sel_store.store_selection_json(artifact_id, {"points": points})
 
             summary = self._build_summary(card_id, selected_rows, points, columns)
 
@@ -537,7 +660,10 @@ class DisplayServer:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "acknowledged": False,
             }
-            self.store.store_request(req_dict)
+            if self.run_manager:
+                self.run_manager.store_request(req_dict)
+            elif self.store:
+                self.store.store_request(req_dict)
 
         else:
             # General events (row_click, point_select, etc.)
@@ -578,7 +704,12 @@ class DisplayServer:
         # Look up card title from store
         card_title = ""
         try:
-            cards = self.store.list_cards()
+            if self.run_manager:
+                cards = self.run_manager.list_all_cards()
+            elif self.store:
+                cards = self.store.list_cards()
+            else:
+                cards = []
             for c in cards:
                 if c.card_id == card_id:
                     card_title = c.title or ""
@@ -832,14 +963,6 @@ class DisplayServer:
         }
         self._broadcast_from_thread(message)
 
-    def push_clear(self, keep_pinned: bool = True) -> None:
-        """Push a clear command to all connected clients."""
-        message = {
-            "type": "display.clear",
-            "keep_pinned": keep_pinned,
-        }
-        self._broadcast_from_thread(message)
-
     def _broadcast_from_thread(self, message: dict[str, Any]) -> None:
         """Broadcast a message from a sync context (called from Python API thread)."""
         with self._lock:
@@ -857,7 +980,7 @@ class DisplayServer:
 def _run_standalone(port: int = _DEFAULT_PORT, no_open: bool = False) -> None:
     """Run the display server as a standalone persistent process.
 
-    Generates a session_id and auth token, creates ArtifactStore +
+    Generates a session_id and auth token, creates RunManager +
     DisplayServer, writes a PID file, and blocks until terminated.
     """
     import uuid
@@ -866,11 +989,10 @@ def _run_standalone(port: int = _DEFAULT_PORT, no_open: bool = False) -> None:
     token = secrets.token_hex(16)
 
     display_dir = _get_display_dir()
-    session_dir = display_dir / session_id
 
-    store = ArtifactStore(session_dir=session_dir, session_id=session_id)
+    run_manager = RunManager(display_dir)
     server = DisplayServer(
-        store=store,
+        run_manager=run_manager,
         port=port,
         host="127.0.0.1",
         token=token,

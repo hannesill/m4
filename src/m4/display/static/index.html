@@ -114,16 +114,6 @@
 
   .btn:hover { background: var(--bg-header); }
 
-  .btn-danger {
-    color: var(--error);
-    border-color: var(--error);
-  }
-
-  .btn-danger:hover {
-    background: var(--error);
-    color: white;
-  }
-
   .btn-icon {
     padding: 5px 8px;
     border: none;
@@ -940,7 +930,6 @@
   <div class="header-actions">
     <span class="request-badge hidden" id="request-badge" title="Pending agent requests">0</span>
     <button class="btn-icon" id="theme-toggle" title="Toggle theme">&#9789;</button>
-    <button class="btn btn-danger" onclick="clearCards()">Clear</button>
   </div>
 </div>
 
@@ -1071,6 +1060,7 @@
       state.reconnectDelay = 1000;
       updateStatus('connected');
       loadSessionInfo();
+      loadRuns();
     };
 
     ws.onmessage = function(event) {
@@ -1103,9 +1093,6 @@
     switch (msg.type) {
       case 'display.add':
         addCard(msg.card);
-        break;
-      case 'display.clear':
-        handleClear(msg.keep_pinned);
         break;
       case 'display.section':
         addSection(msg.title, msg.run_id);
@@ -1201,14 +1188,14 @@
     var pinBtn = document.createElement('button');
     pinBtn.className = 'card-action-btn' + (cardData.pinned ? ' pinned' : '');
     pinBtn.innerHTML = '&#128204;';
-    pinBtn.title = cardData.pinned ? 'Unpin' : 'Pin (survives clear)';
+    pinBtn.title = cardData.pinned ? 'Unpin' : 'Pin';
     pinBtn.onclick = function(e) {
       e.stopPropagation();
       cardData.pinned = !cardData.pinned;
       pinBtn.classList.toggle('pinned', cardData.pinned);
       el.classList.toggle('pinned', cardData.pinned);
       el.dataset.pinned = cardData.pinned ? 'true' : 'false';
-      pinBtn.title = cardData.pinned ? 'Unpin' : 'Pin (survives clear)';
+      pinBtn.title = cardData.pinned ? 'Unpin' : 'Pin';
     };
     actions.appendChild(pinBtn);
 
@@ -2271,26 +2258,6 @@
     setTimeout(function() { el.classList.remove('flash'); }, 600);
   }
 
-  function handleClear(keepPinned) {
-    var items = feed.querySelectorAll('.card, .section-divider');
-    items.forEach(function(el) {
-      if (keepPinned && el.dataset && el.dataset.pinned === 'true') return;
-      el.remove();
-    });
-
-    state.cards = keepPinned
-      ? state.cards.filter(function(c) { return c.pinned; })
-      : [];
-
-    // Rebuild run filter
-    rebuildRunFilter();
-    updateCardCount();
-
-    if (state.cards.length === 0) {
-      showEmptyState();
-    }
-  }
-
   function rebuildRunFilter() {
     var runs = [];
     state.cards.forEach(function(c) {
@@ -2328,15 +2295,6 @@
     feed.appendChild(empty);
   }
 
-  // --- Actions ---
-  window.clearCards = function() {
-    fetch('/api/clear', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keep_pinned: true }),
-    });
-  };
-
   // --- UI Helpers ---
   function updateStatus(status) {
     var dotClass = status === 'connected' ? 'status-connected'
@@ -2365,6 +2323,41 @@
       .then(function(data) {
         var sid = (data.session_id || '').substring(0, 8);
         sessionInfoEl.textContent = sid ? 'session: ' + sid : '';
+      })
+      .catch(function() {});
+  }
+
+  function loadRuns() {
+    fetch('/api/runs')
+      .then(function(r) { return r.json(); })
+      .then(function(runs) {
+        if (!Array.isArray(runs)) return;
+        // Rebuild run filter dropdown with API data
+        var currentFilter = runFilterEl.value;
+        runFilterEl.innerHTML = '<option value="">All runs</option>';
+        state.runIds = [];
+        runs.forEach(function(run) {
+          var label = run.label || run.dir_name || '';
+          if (!label) return;
+          if (state.runIds.indexOf(label) === -1) state.runIds.push(label);
+          var opt = document.createElement('option');
+          opt.value = label;
+          var cardCount = run.card_count || 0;
+          opt.textContent = label + ' (' + cardCount + ')';
+          runFilterEl.appendChild(opt);
+        });
+        // Restore previous filter if still valid
+        if (state.runIds.indexOf(currentFilter) !== -1) {
+          runFilterEl.value = currentFilter;
+        } else {
+          runFilterEl.value = '';
+          state.activeRunFilter = '';
+        }
+        // Update footer with run count
+        var totalRuns = runs.length;
+        if (totalRuns > 0) {
+          sessionInfoEl.textContent = totalRuns + ' run' + (totalRuns !== 1 ? 's' : '');
+        }
       })
       .catch(function() {});
   }
