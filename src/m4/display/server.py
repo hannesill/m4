@@ -28,6 +28,8 @@ import secrets
 import signal
 import socket
 import threading
+import uuid
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -93,6 +95,13 @@ class DisplayServer:
         self._server: uvicorn.Server | None = None
         self._thread: threading.Thread | None = None
         self._started = threading.Event()
+        self._loop: asyncio.AbstractEventLoop | None = None
+
+        # Phase 4: Agent-human interaction state
+        self._pending_responses: dict[str, asyncio.Future] = {}
+        self._event_callbacks: list[Callable] = []
+        self._event_queue: list[dict[str, Any]] = []
+
         self._app = self._build_app()
 
     def _build_app(self) -> Starlette:
@@ -109,6 +118,18 @@ class DisplayServer:
             Route("/api/session", self._api_session),
             Route("/api/command", self._api_command, methods=["POST"]),
             Route("/api/shutdown", self._api_shutdown, methods=["POST"]),
+            Route("/api/requests", self._api_requests, methods=["GET", "POST"]),
+            Route(
+                "/api/requests/{request_id}/ack",
+                self._api_request_ack,
+                methods=["POST"],
+            ),
+            Route(
+                "/api/response/{card_id}",
+                self._api_response,
+                methods=["GET"],
+            ),
+            Route("/api/events", self._api_events, methods=["GET"]),
             WebSocketRoute("/ws", self._ws_endpoint),
         ]
 
@@ -217,7 +238,9 @@ class DisplayServer:
             )
 
     async def _api_clear(self, request: Request) -> JSONResponse:
-        """Clear all cards from the display."""
+        """Clear all cards from the display. Requires auth."""
+        if not self._check_auth(request):
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
         body: dict[str, Any] = {}
         try:
             body = await request.json()
@@ -284,6 +307,17 @@ class DisplayServer:
             await self._broadcast(message)
             return JSONResponse({"status": "ok"})
 
+        elif cmd_type == "update":
+            card_id = body.get("card_id", "")
+            card_data = body.get("card", {})
+            message = {
+                "type": "display.update",
+                "card_id": card_id,
+                "card": card_data,
+            }
+            await self._broadcast(message)
+            return JSONResponse({"status": "ok"})
+
         elif cmd_type == "clear":
             keep_pinned = body.get("keep_pinned", True)
             self.store.clear(keep_pinned=keep_pinned)
@@ -303,6 +337,100 @@ class DisplayServer:
         if self._server:
             self._server.should_exit = True
         return JSONResponse({"status": "shutting_down"})
+
+    # --- Request Endpoints ---
+
+    async def _api_requests(self, request: Request) -> JSONResponse:
+        """Handle request queue: POST to submit, GET to poll.
+
+        POST (from browser, no auth): Submit a new request.
+        GET (from agent, auth required): List pending requests.
+        """
+        if request.method == "POST":
+            try:
+                body = await request.json()
+            except Exception:
+                return JSONResponse({"error": "invalid JSON"}, status_code=400)
+
+            request_id = body.get("request_id") or uuid.uuid4().hex[:12]
+            card_id = body.get("card_id", "")
+            prompt = body.get("prompt", "")
+            selected_rows = body.get("selected_rows")
+            columns = body.get("columns")
+            points = body.get("points")
+            instruction = body.get("instruction")
+
+            # Store selection as artifact if data was provided
+            artifact_id = None
+            if selected_rows and columns:
+                artifact_id = f"sel-{request_id}"
+                self.store.store_selection(artifact_id, selected_rows, columns)
+            elif points:
+                artifact_id = f"sel-{request_id}"
+                self.store.store_selection_json(artifact_id, {"points": points})
+
+            summary = self._build_summary(card_id, selected_rows, points, columns)
+
+            req_dict = {
+                "request_id": request_id,
+                "card_id": card_id,
+                "prompt": prompt,
+                "summary": summary,
+                "artifact_id": artifact_id,
+                "instruction": instruction,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "acknowledged": False,
+            }
+            self.store.store_request(req_dict)
+
+            return JSONResponse({"status": "ok", "request_id": request_id})
+
+        # GET — requires auth
+        if not self._check_auth(request):
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+        pending = self.store.list_requests(pending_only=True)
+        return JSONResponse(pending)
+
+    async def _api_request_ack(self, request: Request) -> JSONResponse:
+        """Acknowledge (consume) a request. Requires auth."""
+        if not self._check_auth(request):
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+        request_id = request.path_params["request_id"]
+        self.store.acknowledge_request(request_id)
+        return JSONResponse({"status": "ok"})
+
+    async def _api_response(self, request: Request) -> JSONResponse:
+        """Long-poll endpoint for blocking show() responses.
+
+        Agent calls GET /api/response/{card_id}?timeout=N and the server
+        holds the connection until the browser responds or timeout.
+        Requires auth.
+        """
+        if not self._check_auth(request):
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+        card_id = request.path_params["card_id"]
+        timeout = float(request.query_params.get("timeout", "300"))
+        timeout = min(timeout, 600)  # Cap at 10 minutes
+
+        result = await self.wait_for_response(card_id, timeout)
+        return JSONResponse(result)
+
+    async def _api_events(self, request: Request) -> JSONResponse:
+        """Return and drain queued UI events. Requires auth.
+
+        Events (row_click, point_select, etc.) are queued by the WebSocket
+        handler and consumed here by remote clients polling via on_event().
+        """
+        if not self._check_auth(request):
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+        with self._lock:
+            events = list(self._event_queue)
+            self._event_queue.clear()
+        return JSONResponse(events)
 
     # --- WebSocket ---
 
@@ -328,8 +456,7 @@ class DisplayServer:
         try:
             while True:
                 data = await ws.receive_json()
-                # Handle client events (future: on_event callbacks)
-                logger.debug(f"Received WebSocket message: {data.get('type')}")
+                await self._handle_ws_event(data)
         except WebSocketDisconnect:
             logger.debug("WebSocket client disconnected")
         except Exception:
@@ -338,6 +465,146 @@ class DisplayServer:
             with self._lock:
                 if ws in self._connections:
                     self._connections.remove(ws)
+
+    async def _handle_ws_event(self, data: dict[str, Any]) -> None:
+        """Route incoming WebSocket events from the browser."""
+        msg_type = data.get("type")
+        logger.debug(f"Received WebSocket message: {msg_type}")
+
+        if msg_type != "display.event":
+            return
+
+        event_type = data.get("event_type")
+        card_id = data.get("card_id", "")
+        payload = data.get("payload", {})
+
+        if event_type == "response":
+            # Resolve a pending blocking show() call
+            action = payload.get("action", "confirm")
+            message = payload.get("message")
+            selected_rows = payload.get("selected_rows")
+            columns = payload.get("columns")
+            points = payload.get("points")
+
+            artifact_id = None
+            if selected_rows and columns:
+                artifact_id = f"resp-{card_id}"
+                self.store.store_selection(artifact_id, selected_rows, columns)
+            elif points:
+                artifact_id = f"resp-{card_id}"
+                self.store.store_selection_json(artifact_id, {"points": points})
+
+            summary = self._build_summary(card_id, selected_rows, points, columns)
+
+            result = {
+                "action": action,
+                "card_id": card_id,
+                "message": message,
+                "artifact_id": artifact_id,
+                "summary": summary,
+            }
+
+            future = self._pending_responses.get(card_id)
+            if future and not future.done():
+                future.set_result(result)
+
+        elif event_type == "send_to_agent":
+            # Queue a user-initiated request
+            request_id = uuid.uuid4().hex[:12]
+            prompt = payload.get("prompt", "")
+            selected_rows = payload.get("selected_rows")
+            columns = payload.get("columns")
+            points = payload.get("points")
+            instruction = payload.get("instruction")
+
+            artifact_id = None
+            if selected_rows and columns:
+                artifact_id = f"sel-{request_id}"
+                self.store.store_selection(artifact_id, selected_rows, columns)
+            elif points:
+                artifact_id = f"sel-{request_id}"
+                self.store.store_selection_json(artifact_id, {"points": points})
+
+            summary = self._build_summary(card_id, selected_rows, points, columns)
+
+            req_dict = {
+                "request_id": request_id,
+                "card_id": card_id,
+                "prompt": prompt,
+                "summary": summary,
+                "artifact_id": artifact_id,
+                "instruction": instruction,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "acknowledged": False,
+            }
+            self.store.store_request(req_dict)
+
+        else:
+            # General events (row_click, point_select, etc.)
+            from m4.display._types import DisplayEvent
+
+            event = DisplayEvent(
+                event_type=event_type,
+                card_id=card_id,
+                payload=payload,
+            )
+            for cb in self._event_callbacks:
+                try:
+                    cb(event)
+                except Exception:
+                    logger.debug(f"Event callback error for {event_type}")
+
+            # Queue for remote clients polling via GET /api/events
+            with self._lock:
+                self._event_queue.append(
+                    {
+                        "event_type": event_type,
+                        "card_id": card_id,
+                        "payload": payload,
+                    }
+                )
+                # Bound the queue to prevent unbounded growth
+                if len(self._event_queue) > 1000:
+                    self._event_queue = self._event_queue[-500:]
+
+    def _build_summary(
+        self,
+        card_id: str,
+        selected_rows: list | None,
+        points: list | None = None,
+        columns: list | None = None,
+    ) -> str:
+        """Build a human-readable summary of a selection."""
+        # Look up card title from store
+        card_title = ""
+        try:
+            cards = self.store.list_cards()
+            for c in cards:
+                if c.card_id == card_id:
+                    card_title = c.title or ""
+                    break
+        except Exception:
+            pass
+
+        parts = []
+        if selected_rows:
+            n = len(selected_rows)
+            ncols = len(columns) if columns else 0
+            shape = f"{n} row{'s' if n != 1 else ''}"
+            if ncols:
+                shape += f" \u00d7 {ncols} col{'s' if ncols != 1 else ''}"
+            parts.append(shape)
+            if columns:
+                col_str = ", ".join(str(c) for c in columns[:6])
+                if len(columns) > 6:
+                    col_str += ", \u2026"
+                parts.append(f"({col_str})")
+        if points:
+            n = len(points)
+            parts.append(f"{n} point{'s' if n != 1 else ''}")
+        if card_title:
+            parts.append(f"from '{card_title}'")
+        return " ".join(parts) if parts else ""
 
     async def _broadcast(self, message: dict[str, Any]) -> None:
         """Send a message to all connected WebSocket clients."""
@@ -350,6 +617,56 @@ class DisplayServer:
                 with self._lock:
                     if ws in self._connections:
                         self._connections.remove(ws)
+
+    # --- Blocking Response ---
+
+    async def wait_for_response(self, card_id: str, timeout: float) -> dict[str, Any]:
+        """Wait for a browser response to a blocking show() card.
+
+        Args:
+            card_id: The card ID to wait for.
+            timeout: Maximum seconds to wait.
+
+        Returns:
+            Dict with action, card_id, message, artifact_id.
+        """
+        loop = asyncio.get_event_loop()
+        future: asyncio.Future = loop.create_future()
+        self._pending_responses[card_id] = future
+        try:
+            return await asyncio.wait_for(future, timeout=timeout)
+        except asyncio.TimeoutError:
+            return {"action": "timeout", "card_id": card_id}
+        finally:
+            self._pending_responses.pop(card_id, None)
+
+    def wait_for_response_sync(self, card_id: str, timeout: float) -> dict[str, Any]:
+        """Sync wrapper for wait_for_response (called from Python API thread).
+
+        Args:
+            card_id: The card ID to wait for.
+            timeout: Maximum seconds to wait.
+
+        Returns:
+            Dict with action, card_id, message, artifact_id.
+        """
+        if self._loop is None:
+            return {"action": "timeout", "card_id": card_id}
+        future = asyncio.run_coroutine_threadsafe(
+            self.wait_for_response(card_id, timeout), self._loop
+        )
+        try:
+            return future.result(timeout=timeout + 1)
+        except Exception:
+            return {"action": "timeout", "card_id": card_id}
+
+    def register_event_callback(self, callback: Callable) -> None:
+        """Register a callback for UI events.
+
+        Args:
+            callback: Function that receives DisplayEvent instances.
+        """
+        self._event_callbacks.append(callback)
 
     # --- Lifecycle ---
 
@@ -489,6 +806,19 @@ class DisplayServer:
         """
         message = {
             "type": "display.add",
+            "card": _serialize_card(card),
+        }
+        self._broadcast_from_thread(message)
+
+    def push_update(self, card_id: str, card: CardDescriptor) -> None:
+        """Push a card update to all connected WebSocket clients.
+
+        Sends a display.update message with the full card data so
+        the frontend can re-render the card in place.
+        """
+        message = {
+            "type": "display.update",
+            "card_id": card_id,
             "card": _serialize_card(card),
         }
         self._broadcast_from_thread(message)

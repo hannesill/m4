@@ -32,6 +32,11 @@ _session_id: str | None = None
 _remote_url: str | None = None
 _auth_token: str | None = None
 
+# Event polling state (for remote server mode)
+_event_callbacks: list[Any] = []
+_event_poll_thread: threading.Thread | None = None
+_event_poll_stop = threading.Event()
+
 
 def _get_display_dir() -> Path:
     """Resolve the display directory under {m4_data}/display/."""
@@ -268,8 +273,14 @@ def _start_process(port: int = 7741, open_browser: bool = True) -> None:
 
 
 def stop() -> None:
-    """Stop the in-process display server."""
-    global _server
+    """Stop the in-process display server and event polling."""
+    global _server, _event_poll_thread
+
+    _event_poll_stop.set()
+    if _event_poll_thread is not None:
+        _event_poll_thread.join(timeout=2)
+        _event_poll_thread = None
+    _event_callbacks.clear()
 
     with _lock:
         if _server is not None:
@@ -339,6 +350,12 @@ def stop_server() -> bool:
             except OSError:
                 pass
 
+    # Stop event polling
+    _event_poll_stop.set()
+    if _event_poll_thread is not None:
+        _event_poll_thread.join(timeout=2)
+    _event_callbacks.clear()
+
     # Clear module state
     with _lock:
         _remote_url = None
@@ -386,8 +403,14 @@ def show(
     source: str | None = None,
     replace: str | None = None,
     position: str | None = None,
-) -> str:
-    """Push any displayable object to the browser. Returns card_id.
+    wait: bool = False,
+    prompt: str | None = None,
+    timeout: float = 300,
+    on_send: str | None = None,
+) -> Any:
+    """Push any displayable object to the browser.
+
+    Returns card_id (str) by default, or DisplayResponse when wait=True.
 
     Supported types:
     - pd.DataFrame → interactive table (artifact-backed, paged)
@@ -405,17 +428,22 @@ def show(
         source: Provenance string (e.g., table name, query).
         replace: Card ID to update instead of appending.
         position: "top" to prepend instead of append.
+        wait: If True, block until user responds in the browser.
+        prompt: Question shown to the user (requires wait=True).
+        timeout: Seconds to wait for response (default 300).
+        on_send: Instruction for the agent when user clicks 'Send to Agent'.
 
     Returns:
-        The card_id for the created/updated card.
+        str (card_id) when wait=False, DisplayResponse when wait=True.
     """
     _ensure_started()
 
+    from m4.display._types import DisplayResponse
     from m4.display.artifacts import _serialize_card
     from m4.display.renderer import render
 
     if replace is not None:
-        # Update an existing card
+        # Update an existing card in place
         card = render(
             obj,
             title=title,
@@ -424,8 +452,8 @@ def show(
             run_id=run_id,
             store=_store,
         )
-        # Update the old card's entry
-        _store.update_card(
+        # Update the old card's entry in the store
+        updated = _store.update_card(
             replace,
             **{
                 "title": card.title,
@@ -435,10 +463,20 @@ def show(
                 "artifact_type": card.artifact_type,
             },
         )
+        # Broadcast an update (not add) so frontend re-renders in place
+        update_card = updated if updated else card
         if _remote_url:
-            _push_remote(_serialize_card(card))
+            _remote_command(
+                _remote_url,
+                _auth_token,
+                {
+                    "type": "update",
+                    "card_id": replace,
+                    "card": _serialize_card(update_card),
+                },
+            )
         elif _server is not None:
-            _server.push_card(card)
+            _server.push_update(replace, update_card)
         return card.card_id
 
     card = render(
@@ -450,12 +488,71 @@ def show(
         store=_store,
     )
 
+    # Set interaction fields and update the stored card
+    interaction_updates = {}
+    if wait:
+        card.response_requested = True
+        interaction_updates["response_requested"] = True
+        card.timeout = timeout
+        interaction_updates["timeout"] = timeout
+    if prompt is not None:
+        card.prompt = prompt
+        interaction_updates["prompt"] = prompt
+    if on_send is not None:
+        card.on_send = on_send
+        interaction_updates["on_send"] = on_send
+    if interaction_updates:
+        _store.update_card(card.card_id, **interaction_updates)
+
     if _remote_url:
         _push_remote(_serialize_card(card))
     elif _server is not None:
         _server.push_card(card)
 
-    return card.card_id
+    if not wait:
+        return card.card_id
+
+    # Blocking flow: wait for user response
+    result = _wait_for_card_response(card.card_id, timeout)
+    return DisplayResponse(
+        action=result.get("action", "timeout"),
+        card_id=card.card_id,
+        message=result.get("message"),
+        summary=result.get("summary", ""),
+        artifact_id=result.get("artifact_id"),
+        _store=_store,
+    )
+
+
+def _wait_for_card_response(card_id: str, timeout: float) -> dict[str, Any]:
+    """Wait for a browser response to a blocking card.
+
+    Uses in-process server if available, otherwise polls remote endpoint.
+    """
+    if _server is not None and hasattr(_server, "wait_for_response_sync"):
+        return _server.wait_for_response_sync(card_id, timeout)
+
+    if _remote_url and _auth_token:
+        return _poll_remote_response(card_id, timeout)
+
+    return {"action": "timeout", "card_id": card_id}
+
+
+def _poll_remote_response(card_id: str, timeout: float) -> dict[str, Any]:
+    """Poll the remote server for a blocking response via long-poll."""
+    import urllib.request
+
+    url = f"{_remote_url}/api/response/{card_id}?timeout={timeout}"
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={"Authorization": f"Bearer {_auth_token}"},
+            method="GET",
+        )
+        with urllib.request.urlopen(req, timeout=timeout + 5) as resp:
+            return json.loads(resp.read())
+    except Exception:
+        return {"action": "timeout", "card_id": card_id}
 
 
 def clear(keep_pinned: bool = True) -> None:
@@ -523,7 +620,116 @@ def export(path: str, format: str = "html") -> None:
 def on_event(callback: Any) -> None:
     """Register a callback for UI events (row click, point select, etc.).
 
+    The callback receives DisplayEvent instances with event_type, card_id,
+    and payload fields. Common event types: 'row_click', 'point_select',
+    'point_click'.
+
+    Works in both in-process and remote server modes. For remote servers,
+    starts a background polling thread that fetches events via REST.
+
     Args:
         callback: Function that receives DisplayEvent instances.
     """
-    raise NotImplementedError("Event handling is planned for Phase 4")
+    global _event_poll_thread
+
+    _ensure_started()
+    _event_callbacks.append(callback)
+
+    if _server is not None and hasattr(_server, "register_event_callback"):
+        # In-process server: register directly
+        _server.register_event_callback(callback)
+    elif _remote_url is not None:
+        # Remote server: start polling thread if not already running
+        if _event_poll_thread is None or not _event_poll_thread.is_alive():
+            _event_poll_stop.clear()
+            _event_poll_thread = threading.Thread(
+                target=_poll_remote_events, daemon=True
+            )
+            _event_poll_thread.start()
+
+
+def _poll_remote_events() -> None:
+    """Background thread that polls a remote server for UI events."""
+    import urllib.request
+
+    from m4.display._types import DisplayEvent
+
+    while not _event_poll_stop.is_set():
+        try:
+            url = f"{_remote_url}/api/events"
+            req = urllib.request.Request(
+                url,
+                headers={"Authorization": f"Bearer {_auth_token}"},
+                method="GET",
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                events = json.loads(resp.read())
+            for evt_data in events:
+                event = DisplayEvent(
+                    event_type=evt_data.get("event_type", ""),
+                    card_id=evt_data.get("card_id", ""),
+                    payload=evt_data.get("payload", {}),
+                )
+                for cb in _event_callbacks:
+                    try:
+                        cb(event)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        _event_poll_stop.wait(0.5)
+
+
+def pending_requests() -> list:
+    """Poll for user-initiated requests from the browser.
+
+    Returns a list of DisplayRequest objects. Each request has:
+    - request_id, card_id, prompt, artifact_id, timestamp, instruction
+    - .data() method to load the selected DataFrame
+    - .acknowledge() method to mark as handled
+
+    Returns:
+        List of DisplayRequest objects.
+    """
+    from m4.display._types import DisplayRequest
+
+    _ensure_started()
+    if _store is None:
+        return []
+
+    raw = _store.list_requests(pending_only=True)
+    requests = []
+    for r in raw:
+        req = DisplayRequest(
+            request_id=r["request_id"],
+            card_id=r.get("card_id", ""),
+            prompt=r.get("prompt", ""),
+            summary=r.get("summary", ""),
+            artifact_id=r.get("artifact_id"),
+            timestamp=r.get("timestamp", ""),
+            instruction=r.get("instruction"),
+            _store=_store,
+            _ack_callback=_store.acknowledge_request,
+        )
+        requests.append(req)
+    return requests
+
+
+def get_selection(artifact_id: str) -> Any:
+    """Load a selection DataFrame from the artifact store by ID.
+
+    Args:
+        artifact_id: The artifact ID returned in a DisplayResponse or
+            DisplayRequest.
+
+    Returns:
+        pd.DataFrame if found, None otherwise.
+    """
+    if _store is None:
+        return None
+    path = _store._artifacts_dir / f"{artifact_id}.parquet"
+    if path.exists():
+        import pandas as pd
+
+        return pd.read_parquet(path)
+    return None

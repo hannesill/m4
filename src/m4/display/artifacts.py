@@ -44,6 +44,10 @@ def _serialize_card(card: CardDescriptor) -> dict[str, Any]:
         "artifact_id": card.artifact_id,
         "artifact_type": card.artifact_type,
         "preview": card.preview,
+        "response_requested": card.response_requested,
+        "prompt": card.prompt,
+        "on_send": card.on_send,
+        "timeout": card.timeout,
     }
     if card.provenance:
         d["provenance"] = {
@@ -82,6 +86,10 @@ def _deserialize_card(d: dict[str, Any]) -> CardDescriptor:
         artifact_type=d.get("artifact_type"),
         preview=d.get("preview", {}),
         provenance=provenance,
+        response_requested=d.get("response_requested", False),
+        prompt=d.get("prompt"),
+        on_send=d.get("on_send"),
+        timeout=d.get("timeout"),
     )
 
 
@@ -528,6 +536,84 @@ class ArtifactStore:
 
         self._write_index(pinned)
         logger.debug(f"Cleared {len(removed)} cards, kept {len(pinned)} pinned")
+
+    def store_selection(self, selection_id: str, rows: list, columns: list) -> Path:
+        """Store a selection of rows as a Parquet artifact.
+
+        Args:
+            selection_id: Unique ID for this selection.
+            rows: List of row data (each row is a list of values).
+            columns: Column names corresponding to row values.
+
+        Returns:
+            Path to the stored Parquet file.
+        """
+        df = pd.DataFrame(rows, columns=columns)
+        return self.store_dataframe(selection_id, df)
+
+    def store_selection_json(self, selection_id: str, data: dict) -> Path:
+        """Store a chart point selection as a JSON artifact.
+
+        Args:
+            selection_id: Unique ID for this selection.
+            data: Dict with selection data (e.g., {"points": [...]}).
+
+        Returns:
+            Path to the stored JSON file.
+        """
+        return self.store_json(selection_id, data)
+
+    @property
+    def _requests_path(self) -> Path:
+        """Path to the requests queue file."""
+        return self.session_dir / "requests.json"
+
+    def store_request(self, request: dict[str, Any]) -> None:
+        """Append a request to the request queue.
+
+        Args:
+            request: Request dict with request_id, card_id, prompt, etc.
+        """
+        requests = self._read_requests()
+        request.setdefault("acknowledged", False)
+        requests.append(request)
+        self._requests_path.write_text(json.dumps(requests, indent=2))
+
+    def _read_requests(self) -> list[dict[str, Any]]:
+        """Read the request queue from disk."""
+        if not self._requests_path.exists():
+            return []
+        try:
+            return json.loads(self._requests_path.read_text())
+        except (json.JSONDecodeError, FileNotFoundError):
+            return []
+
+    def list_requests(self, pending_only: bool = True) -> list[dict[str, Any]]:
+        """List requests from the queue.
+
+        Args:
+            pending_only: If True, only return unacknowledged requests.
+
+        Returns:
+            List of request dicts.
+        """
+        requests = self._read_requests()
+        if pending_only:
+            requests = [r for r in requests if not r.get("acknowledged", False)]
+        return requests
+
+    def acknowledge_request(self, request_id: str) -> None:
+        """Mark a request as acknowledged in the queue.
+
+        Args:
+            request_id: ID of the request to acknowledge.
+        """
+        requests = self._read_requests()
+        for r in requests:
+            if r.get("request_id") == request_id:
+                r["acknowledged"] = True
+                break
+        self._requests_path.write_text(json.dumps(requests, indent=2))
 
     def delete_session(self) -> None:
         """Delete the entire session directory."""

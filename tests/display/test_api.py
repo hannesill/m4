@@ -8,6 +8,9 @@ Tests cover:
 - section() creates section cards
 - Module state management
 - Server discovery and client mode
+- Blocking show (wait=True)
+- pending_requests() and get_selection()
+- on_event() callback registration
 """
 
 import json
@@ -16,7 +19,7 @@ import pandas as pd
 import pytest
 
 import m4.display as display
-from m4.display._types import CardType
+from m4.display._types import CardType, DisplayRequest, DisplayResponse
 from m4.display.artifacts import ArtifactStore
 
 
@@ -63,6 +66,8 @@ def mock_server(store, monkeypatch):
             self.pushed_cards = []
             self.pushed_sections = []
             self.pushed_clears = []
+            self.event_callbacks = []
+            self._mock_response = {"action": "timeout", "card_id": ""}
 
         def start(self, open_browser=True):
             pass
@@ -73,11 +78,20 @@ def mock_server(store, monkeypatch):
         def push_card(self, card):
             self.pushed_cards.append(card)
 
+        def push_update(self, card_id, card):
+            self.pushed_cards.append(card)
+
         def push_section(self, title, run_id=None):
             self.pushed_sections.append((title, run_id))
 
         def push_clear(self, keep_pinned=True):
             self.pushed_clears.append(keep_pinned)
+
+        def wait_for_response_sync(self, card_id, timeout):
+            return self._mock_response
+
+        def register_event_callback(self, callback):
+            self.event_callbacks.append(callback)
 
     mock = MockServer()
     display._server = mock
@@ -367,3 +381,202 @@ class TestClientMode:
         assert commands_sent[0]["type"] == "section"
         assert commands_sent[0]["title"] == "Results"
         assert commands_sent[0]["run_id"] == "r1"
+
+
+class TestBlockingShow:
+    def test_wait_returns_display_response(self, store, mock_server):
+        mock_server._mock_response = {
+            "action": "confirm",
+            "card_id": "test",
+            "message": "Looks good",
+            "artifact_id": None,
+        }
+        result = display.show("hello", wait=True)
+        assert isinstance(result, DisplayResponse)
+        assert result.action == "confirm"
+        assert result.message == "Looks good"
+
+    def test_wait_timeout_returns_timeout_action(self, store, mock_server):
+        mock_server._mock_response = {
+            "action": "timeout",
+            "card_id": "test",
+        }
+        result = display.show("hello", wait=True, timeout=1)
+        assert isinstance(result, DisplayResponse)
+        assert result.action == "timeout"
+
+    def test_wait_skip_returns_skip_action(self, store, mock_server):
+        mock_server._mock_response = {
+            "action": "skip",
+            "card_id": "test",
+        }
+        result = display.show("hello", wait=True)
+        assert isinstance(result, DisplayResponse)
+        assert result.action == "skip"
+
+    def test_wait_sets_response_requested(self, store, mock_server):
+        mock_server._mock_response = {"action": "confirm", "card_id": "x"}
+        display.show("hello", wait=True)
+        cards = store.list_cards()
+        assert len(cards) == 1
+        assert cards[0].response_requested is True
+
+    def test_prompt_stored_in_card(self, store, mock_server):
+        mock_server._mock_response = {"action": "confirm", "card_id": "x"}
+        display.show("hello", wait=True, prompt="Pick patients")
+        cards = store.list_cards()
+        assert cards[0].prompt == "Pick patients"
+
+    def test_response_data_accessor(self, store, mock_server):
+        """DisplayResponse.data() loads artifact when available."""
+        # Store a selection artifact manually
+        df = pd.DataFrame({"id": [1, 2], "name": ["a", "b"]})
+        store.store_dataframe("resp-sel1", df)
+
+        mock_server._mock_response = {
+            "action": "confirm",
+            "card_id": "test",
+            "artifact_id": "resp-sel1",
+        }
+        result = display.show("hello", wait=True)
+        assert result.artifact_id == "resp-sel1"
+        loaded = result.data()
+        assert loaded is not None
+        assert len(loaded) == 2
+        assert list(loaded.columns) == ["id", "name"]
+
+    def test_response_data_returns_none_without_artifact(self, store, mock_server):
+        mock_server._mock_response = {
+            "action": "confirm",
+            "card_id": "test",
+            "artifact_id": None,
+        }
+        result = display.show("hello", wait=True)
+        assert result.data() is None
+
+    def test_non_wait_returns_card_id_string(self, store, mock_server):
+        result = display.show("hello", wait=False)
+        assert isinstance(result, str)
+
+
+class TestOnSend:
+    def test_on_send_stored_in_card(self, store, mock_server):
+        display.show("hello", on_send="Analyze these rows")
+        cards = store.list_cards()
+        assert len(cards) == 1
+        assert cards[0].on_send == "Analyze these rows"
+
+    def test_on_send_in_serialized_card(self, store, mock_server):
+        from m4.display.artifacts import _serialize_card
+
+        display.show("hello", on_send="Process data")
+        card = store.list_cards()[0]
+        serialized = _serialize_card(card)
+        assert serialized["on_send"] == "Process data"
+
+
+class TestPendingRequests:
+    def test_pending_requests_empty(self, store, mock_server):
+        requests = display.pending_requests()
+        assert requests == []
+
+    def test_pending_requests_returns_queued(self, store, mock_server):
+        store.store_request(
+            {
+                "request_id": "req-1",
+                "card_id": "c1",
+                "prompt": "Analyze this",
+                "artifact_id": None,
+                "timestamp": "2025-01-01T00:00:00Z",
+            }
+        )
+        requests = display.pending_requests()
+        assert len(requests) == 1
+        assert isinstance(requests[0], DisplayRequest)
+        assert requests[0].request_id == "req-1"
+        assert requests[0].prompt == "Analyze this"
+
+    def test_pending_requests_excludes_acknowledged(self, store, mock_server):
+        store.store_request(
+            {
+                "request_id": "req-1",
+                "card_id": "c1",
+                "prompt": "First",
+            }
+        )
+        store.store_request(
+            {
+                "request_id": "req-2",
+                "card_id": "c2",
+                "prompt": "Second",
+            }
+        )
+        store.acknowledge_request("req-1")
+        requests = display.pending_requests()
+        assert len(requests) == 1
+        assert requests[0].request_id == "req-2"
+
+    def test_request_acknowledge(self, store, mock_server):
+        store.store_request(
+            {
+                "request_id": "req-1",
+                "card_id": "c1",
+                "prompt": "Test",
+            }
+        )
+        requests = display.pending_requests()
+        assert len(requests) == 1
+        requests[0].acknowledge()
+        # After acknowledge, no pending
+        requests = display.pending_requests()
+        assert len(requests) == 0
+
+    def test_request_data_accessor(self, store, mock_server):
+        df = pd.DataFrame({"x": [10, 20]})
+        store.store_dataframe("sel-req-1", df)
+        store.store_request(
+            {
+                "request_id": "req-1",
+                "card_id": "c1",
+                "prompt": "Check this",
+                "artifact_id": "sel-req-1",
+            }
+        )
+        requests = display.pending_requests()
+        loaded = requests[0].data()
+        assert loaded is not None
+        assert len(loaded) == 2
+
+
+class TestGetSelection:
+    def test_get_selection_loads_dataframe(self, store, mock_server):
+        df = pd.DataFrame({"a": [1, 2, 3]})
+        store.store_dataframe("sel-test", df)
+        result = display.get_selection("sel-test")
+        assert result is not None
+        assert len(result) == 3
+        assert list(result.columns) == ["a"]
+
+    def test_get_selection_returns_none_for_missing(self, store, mock_server):
+        result = display.get_selection("nonexistent")
+        assert result is None
+
+    def test_get_selection_returns_none_without_store(self, mock_server):
+        display._store = None
+        result = display.get_selection("anything")
+        assert result is None
+
+
+class TestOnEvent:
+    def test_on_event_registers_callback(self, store, mock_server):
+        def my_callback(event):
+            pass
+
+        display.on_event(my_callback)
+        assert len(mock_server.event_callbacks) == 1
+        assert mock_server.event_callbacks[0] is my_callback
+
+    def test_on_event_multiple_callbacks(self, store, mock_server):
+        display.on_event(lambda e: None)
+        display.on_event(lambda e: None)
+        assert len(mock_server.event_callbacks) == 2

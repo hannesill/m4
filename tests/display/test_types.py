@@ -4,10 +4,19 @@ Tests cover:
 - CardType enum values and string serialization
 - CardDescriptor creation and defaults
 - CardProvenance creation
-- DisplayEvent creation
+- DisplayEvent creation and repr
+- DisplayResponse repr and artifact_path
+- DisplayRequest repr and artifact_path
 """
 
-from m4.display._types import CardDescriptor, CardProvenance, CardType, DisplayEvent
+from m4.display._types import (
+    CardDescriptor,
+    CardProvenance,
+    CardType,
+    DisplayEvent,
+    DisplayRequest,
+    DisplayResponse,
+)
 
 
 class TestCardType:
@@ -100,3 +109,147 @@ class TestDisplayEvent:
     def test_defaults(self):
         event = DisplayEvent(event_type="test", card_id="c1")
         assert event.payload == {}
+
+    def test_repr_row_click(self):
+        event = DisplayEvent(
+            event_type="row_click",
+            card_id="abcdef1234567890",
+            payload={"row": {"id": 1, "name": "Alice", "age": 30}},
+        )
+        r = repr(event)
+        assert "row_click" in r
+        assert "abcdef12" in r
+        assert "id=1" in r
+        assert "name='Alice'" in r
+
+    def test_repr_row_click_truncates_keys(self):
+        event = DisplayEvent(
+            event_type="row_click",
+            card_id="card1234",
+            payload={"row": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5}},
+        )
+        r = repr(event)
+        assert "\u2026" in r
+
+    def test_repr_point_select(self):
+        event = DisplayEvent(
+            event_type="point_select",
+            card_id="card1234",
+            payload={"points": [{"x": 1}, {"x": 2}]},
+        )
+        r = repr(event)
+        assert "2 points" in r
+
+    def test_repr_generic_event(self):
+        event = DisplayEvent(event_type="custom", card_id="card1234")
+        r = repr(event)
+        assert "custom" in r
+        assert "card1234" in r
+
+
+class TestDisplayResponse:
+    def test_repr_basic(self):
+        resp = DisplayResponse(action="confirm", card_id="c1", message="Looks good")
+        r = repr(resp)
+        assert "confirm" in r
+        assert "Looks good" in r
+
+    def test_repr_with_summary(self):
+        resp = DisplayResponse(
+            action="confirm",
+            card_id="c1",
+            summary="5 rows \u00d7 3 cols (a, b, c) from 'Cohort'",
+        )
+        r = repr(resp)
+        assert "Selection:" in r
+        assert "5 rows" in r
+
+    def test_repr_no_message(self):
+        resp = DisplayResponse(action="timeout", card_id="c1")
+        r = repr(resp)
+        assert "timeout" in r
+        assert "message" not in r
+
+    def test_repr_artifact_not_on_disk(self):
+        resp = DisplayResponse(action="confirm", card_id="c1", artifact_id="resp-abc")
+        r = repr(resp)
+        assert "resp-abc" in r
+        assert "not on disk" in r
+
+    def test_artifact_path_with_store(self, tmp_path):
+        from m4.display.artifacts import ArtifactStore
+
+        store = ArtifactStore(session_dir=tmp_path, session_id="s1")
+        import pandas as pd
+
+        df = pd.DataFrame({"x": [1, 2]})
+        store.store_dataframe("resp-test", df)
+
+        resp = DisplayResponse(
+            action="confirm",
+            card_id="c1",
+            artifact_id="resp-test",
+            _store=store,
+        )
+        assert resp.artifact_path is not None
+        assert "resp-test.parquet" in resp.artifact_path
+        r = repr(resp)
+        assert "resp-test.parquet" in r
+        assert "not on disk" not in r
+
+    def test_artifact_path_none_without_store(self):
+        resp = DisplayResponse(action="confirm", card_id="c1")
+        assert resp.artifact_path is None
+
+
+class TestDisplayRequest:
+    def test_repr_basic(self):
+        req = DisplayRequest(request_id="r1", card_id="c1", prompt="Analyze this")
+        r = repr(req)
+        assert "Analyze this" in r
+
+    def test_repr_with_instruction(self):
+        req = DisplayRequest(
+            request_id="r1",
+            card_id="c1",
+            prompt="Check data",
+            instruction="Summarize findings",
+        )
+        r = repr(req)
+        assert "Summarize findings" in r
+
+    def test_repr_with_summary(self):
+        req = DisplayRequest(
+            request_id="r1",
+            card_id="c1",
+            prompt="Check",
+            summary="3 rows \u00d7 2 cols (id, name)",
+        )
+        r = repr(req)
+        assert "Selection:" in r
+        assert "3 rows" in r
+
+    def test_artifact_path_with_store(self, tmp_path):
+        from m4.display.artifacts import ArtifactStore
+
+        store = ArtifactStore(session_dir=tmp_path, session_id="s1")
+        import pandas as pd
+
+        df = pd.DataFrame({"a": [1]})
+        store.store_dataframe("sel-r1", df)
+
+        req = DisplayRequest(
+            request_id="r1",
+            card_id="c1",
+            prompt="Test",
+            artifact_id="sel-r1",
+            _store=store,
+        )
+        assert req.artifact_path is not None
+        assert "sel-r1.parquet" in req.artifact_path
+        r = repr(req)
+        assert "sel-r1.parquet" in r
+
+    def test_artifact_path_none_without_store(self):
+        req = DisplayRequest(request_id="r1", card_id="c1", prompt="Test")
+        assert req.artifact_path is None
