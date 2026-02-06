@@ -1,0 +1,25 @@
+sources: []
+
+created:
+  by: m4-clinical-extraction
+  role: authoring
+  date: 2025-01-13
+
+reviews:
+  - by: Ahram Han, MD
+    date: 2026-02-06
+    scope: clinical-accuracy
+    notes: Reviewed methodology content. Fixed frontmatter to format spec. Moved to clinical/ category. Added PROVENANCE.yaml.
+
+references:
+  - "von Elm E, et al. The Strengthening the Reporting of Observational Studies in Epidemiology (STROBE) statement. Lancet. 2007;370(9596):1453-7."
+  - "Collins GS, et al. Transparent reporting of a multivariable prediction model for individual prognosis or diagnosis (TRIPOD). BMJ. 2015;350:g7594."
+  - "Bossuyt PM, et al. STARD 2015: an updated list of essential items for reporting diagnostic accuracy studies. BMJ. 2015;351:h5527."
+
+changelog:
+  - version: "1.0"
+    date: 2025-01-13
+    summary: Initial creation with 8-phase workflow and 7 reference files
+  - version: "1.1"
+    date: 2026-02-06
+    summary: Fixed frontmatter to format spec, moved to clinical/ category, added PROVENANCE.yaml

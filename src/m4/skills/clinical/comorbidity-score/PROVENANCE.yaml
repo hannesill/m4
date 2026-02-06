@@ -1,0 +1,32 @@
+sources:
+  - url: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/comorbidity
+    description: MIT-LCP mimic-code Charlson implementation
+    license: Apache-2.0
+  - url: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iii/concepts/comorbidity
+    description: MIT-LCP mimic-code MIMIC-III Elixhauser implementation (adapted for MIMIC-IV with ICD-10-CM)
+    license: Apache-2.0
+
+created:
+  by: m4-clinical-extraction
+  role: clinical-extraction
+  date: 2025-01-13
+
+reviews:
+  - by: Ahram Han, MD
+    date: 2026-02-06
+    scope: clinical-accuracy
+    notes: Reviewed clinical accuracy. Restructured to format spec. Elixhauser adapted from MIMIC-III script with ICD-10-CM mappings from Quan 2005. Charlson available in derived tables; Elixhauser is not.
+
+references:
+  - Charlson ME, et al. "A new method of classifying prognostic comorbidity." J Chronic Dis. 1987;40(5):373-83.
+  - Elixhauser A, et al. "Comorbidity measures for use with administrative data." Med Care. 1998;36(1):8-27.
+  - Quan H, et al. "Coding algorithms for defining comorbidities in ICD-9-CM and ICD-10 administrative data." Med Care. 2005;43(11):1130-9.
+  - van Walraven C, et al. "A modification of the Elixhauser comorbidity measures into a point system for hospital death." Med Care. 2009;47(6):626-33.
+
+changelog:
+  - version: "1.0"
+    date: 2025-01-13
+    summary: Initial extraction from mimic-code
+  - version: "1.1"
+    date: 2026-02-06
+    summary: Restructured to format spec, moved to clinical/ category, fixed name mismatch, added PROVENANCE.yaml, added eICU availability and limitations

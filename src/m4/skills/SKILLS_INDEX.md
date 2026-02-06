@@ -15,6 +15,7 @@ This directory contains skills for the M4 framework, covering clinical research 
 | [lods-score](clinical/lods-score/SKILL.md) | Logistic Organ Dysfunction Score |
 | [sirs-criteria](clinical/sirs-criteria/SKILL.md) | Systemic Inflammatory Response Syndrome criteria |
 | [hfrs](clinical/hfrs/SKILL.md) | Hospital Frailty Risk Score from ICD codes (Gilbert 2018) |
+| [comorbidity-score](clinical/comorbidity-score/SKILL.md) | Charlson and Elixhauser comorbidity indices for risk adjustment |
 
 ### Sepsis and Infection
 
@@ -53,6 +54,7 @@ This directory contains skills for the M4 framework, covering clinical research 
 | Skill | Description |
 |-------|-------------|
 | [clinical-research-pitfalls](clinical/clinical-research-pitfalls/SKILL.md) | Common methodological mistakes and how to avoid them |
+| [clinical-research-analysis-framework](clinical/clinical-research-analysis-framework/SKILL.md) | Guided statistical/ML analysis workflow with structured consultation and audit trails |
 | [equiflow](clinical/equiflow/SKILL.md) | Equity-focused cohort flow diagrams with SMD bias detection (Ellen 2024) |
 
 ## System Skills
@@ -81,12 +83,11 @@ This directory contains skills for the M4 framework, covering clinical research 
 The following valuable concepts exist in the source repositories but were not extracted:
 
 1. **APACHE-II Score**: Older scoring system, still used in some contexts
-2. **Charlson Comorbidity Index**: Important confounder adjustment
-3. **Ventilation Duration**: Time on mechanical ventilation
-4. **Antibiotic Classification**: Categorization by class/spectrum
-5. **MELD Score**: Model for End-Stage Liver Disease
-6. **CRRT Concepts**: Continuous renal replacement therapy details
-7. **Code Status**: DNR/DNI documentation
+2. **Ventilation Duration**: Time on mechanical ventilation
+3. **Antibiotic Classification**: Categorization by class/spectrum
+4. **MELD Score**: Model for End-Stage Liver Disease
+5. **CRRT Concepts**: Continuous renal replacement therapy details
+6. **Code Status**: DNR/DNI documentation
 
 ### eICU-Specific Concepts Needed
 
