@@ -160,8 +160,16 @@ class DisplayServer:
             data = self.store.get_artifact(card_id)
             if isinstance(data, dict):
                 return JSONResponse(data)
-            # Binary data (parquet, svg, png)
-            return Response(content=data, media_type="application/octet-stream")
+            # Determine media type from file extension
+            media_type = "application/octet-stream"
+            for ext, mime in (
+                ("svg", "image/svg+xml"),
+                ("png", "image/png"),
+            ):
+                if (self.store._artifacts_dir / f"{card_id}.{ext}").exists():
+                    media_type = mime
+                    break
+            return Response(content=data, media_type=media_type)
         except FileNotFoundError:
             return JSONResponse(
                 {"error": f"No artifact for card {card_id}"}, status_code=404

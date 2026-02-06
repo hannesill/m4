@@ -2,12 +2,17 @@
 
 Tests cover:
 - DataFrame → table CardDescriptor with Parquet artifact on disk
+- Plotly Figure → chart CardDescriptor with JSON artifact
+- matplotlib Figure → image CardDescriptor with SVG artifact
 - str → inline markdown CardDescriptor
 - dict → inline key-value CardDescriptor
 - Unknown type → repr() fallback as markdown
 - Renderer calls Redactor (pass-through for now)
 - Error when no store provided
+- SVG sanitization (script stripping, size limits)
 """
+
+import json
 
 import pandas as pd
 import pytest
@@ -15,7 +20,12 @@ import pytest
 from m4.display._types import CardType
 from m4.display.artifacts import ArtifactStore
 from m4.display.redaction import Redactor
-from m4.display.renderer import render
+from m4.display.renderer import (
+    _is_matplotlib_figure,
+    _is_plotly_figure,
+    _sanitize_svg,
+    render,
+)
 
 
 @pytest.fixture
@@ -205,3 +215,205 @@ class TestRedactorIntegration:
         df = pd.DataFrame({"x": [1]})
         card = render(df, store=store)
         assert card.card_type == CardType.TABLE
+
+
+class TestSanitizeSvg:
+    def test_strips_script_tags(self):
+        svg = b'<svg><script>alert("xss")</script><circle r="10"/></svg>'
+        result = _sanitize_svg(svg)
+        assert b"<script" not in result
+        assert b"alert" not in result
+        assert b"<circle" in result
+
+    def test_strips_event_attributes(self):
+        svg = b'<svg><rect onload="alert(1)" onclick="evil()" width="10"/></svg>'
+        result = _sanitize_svg(svg)
+        assert b"onload" not in result
+        assert b"onclick" not in result
+        assert b"width" in result
+
+    def test_preserves_valid_svg(self):
+        svg = b'<svg xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40"/></svg>'
+        result = _sanitize_svg(svg)
+        assert b"<circle" in result
+        assert b'cx="50"' in result
+
+    def test_rejects_oversized_svg(self):
+        svg = b"<svg>" + b"x" * (2 * 1024 * 1024 + 1) + b"</svg>"
+        with pytest.raises(ValueError, match="SVG exceeds size limit"):
+            _sanitize_svg(svg)
+
+    def test_size_limit_after_stripping(self):
+        # Just under limit after stripping scripts
+        inner = b"x" * (2 * 1024 * 1024 - 100)
+        svg = b"<svg>" + inner + b"</svg>"
+        result = _sanitize_svg(svg)
+        assert b"<svg>" in result
+
+
+class TestRenderPlotly:
+    @pytest.fixture
+    def plotly_fig(self):
+        pytest.importorskip("plotly")
+        import plotly.graph_objects as go
+
+        fig = go.Figure(data=[go.Bar(x=["A", "B", "C"], y=[1, 2, 3])])
+        fig.update_layout(title="Test Chart")
+        return fig
+
+    def test_creates_plotly_card(self, store, plotly_fig):
+        card = render(plotly_fig, store=store)
+        assert card.card_type == CardType.PLOTLY
+
+    def test_has_json_artifact(self, store, plotly_fig):
+        card = render(plotly_fig, store=store)
+        assert card.artifact_id is not None
+        assert card.artifact_type == "json"
+
+    def test_json_artifact_on_disk(self, store, plotly_fig):
+        card = render(plotly_fig, store=store)
+        json_path = store._artifacts_dir / f"{card.artifact_id}.json"
+        assert json_path.exists()
+        spec = json.loads(json_path.read_text())
+        assert "data" in spec
+        assert "layout" in spec
+
+    def test_preview_contains_spec(self, store, plotly_fig):
+        card = render(plotly_fig, store=store)
+        assert "spec" in card.preview
+        assert "data" in card.preview["spec"]
+
+    def test_infers_title_from_layout(self, store, plotly_fig):
+        card = render(plotly_fig, store=store)
+        assert card.title == "Test Chart"
+
+    def test_custom_title_overrides(self, store, plotly_fig):
+        card = render(plotly_fig, title="My Chart", store=store)
+        assert card.title == "My Chart"
+
+    def test_default_title_when_no_layout_title(self, store):
+        pytest.importorskip("plotly")
+        import plotly.graph_objects as go
+
+        fig = go.Figure(data=[go.Scatter(x=[1], y=[1])])
+        card = render(fig, store=store)
+        assert card.title == "Chart"
+
+    def test_stored_in_index(self, store, plotly_fig):
+        render(plotly_fig, store=store)
+        cards = store.list_cards()
+        assert len(cards) == 1
+        assert cards[0].card_type == CardType.PLOTLY
+
+    def test_run_id_propagated(self, store, plotly_fig):
+        card = render(plotly_fig, run_id="analysis-1", store=store)
+        assert card.run_id == "analysis-1"
+
+    def test_provenance_with_source(self, store, plotly_fig):
+        card = render(plotly_fig, source="cohort_analysis", store=store)
+        assert card.provenance is not None
+        assert card.provenance.source == "cohort_analysis"
+
+
+class TestIsPlotlyFigure:
+    def test_detects_plotly_figure(self):
+        pytest.importorskip("plotly")
+        import plotly.graph_objects as go
+
+        assert _is_plotly_figure(go.Figure()) is True
+
+    def test_rejects_non_plotly(self):
+        assert _is_plotly_figure("not a figure") is False
+        assert _is_plotly_figure(42) is False
+        assert _is_plotly_figure({"data": []}) is False
+
+
+class TestRenderMatplotlib:
+    @pytest.fixture
+    def mpl_fig(self):
+        mpl = pytest.importorskip("matplotlib")
+        mpl.use("Agg")
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots()
+        ax.plot([1, 2, 3], [1, 4, 9])
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+        return fig
+
+    def test_creates_image_card(self, store, mpl_fig):
+        card = render(mpl_fig, store=store)
+        assert card.card_type == CardType.IMAGE
+
+    def test_has_svg_artifact(self, store, mpl_fig):
+        card = render(mpl_fig, store=store)
+        assert card.artifact_id is not None
+        assert card.artifact_type == "svg"
+
+    def test_svg_artifact_on_disk(self, store, mpl_fig):
+        card = render(mpl_fig, store=store)
+        svg_path = store._artifacts_dir / f"{card.artifact_id}.svg"
+        assert svg_path.exists()
+        content = svg_path.read_text()
+        assert "<svg" in content
+
+    def test_preview_contains_base64(self, store, mpl_fig):
+        card = render(mpl_fig, store=store)
+        assert "data" in card.preview
+        assert card.preview["format"] == "svg"
+        assert card.preview["size_bytes"] > 0
+        # Verify base64 is valid
+        import base64
+
+        decoded = base64.b64decode(card.preview["data"])
+        assert b"<svg" in decoded
+
+    def test_svg_is_sanitized(self, store, mpl_fig):
+        card = render(mpl_fig, store=store)
+        svg_path = store._artifacts_dir / f"{card.artifact_id}.svg"
+        content = svg_path.read_text()
+        assert "<script" not in content
+
+    def test_custom_title(self, store, mpl_fig):
+        card = render(mpl_fig, title="My Plot", store=store)
+        assert card.title == "My Plot"
+
+    def test_default_title(self, store, mpl_fig):
+        card = render(mpl_fig, store=store)
+        assert card.title == "Figure"
+
+    def test_title_from_suptitle(self, store):
+        mpl = pytest.importorskip("matplotlib")
+        mpl.use("Agg")
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots()
+        fig.suptitle("Super Title")
+        ax.plot([1, 2], [1, 2])
+        card = render(fig, store=store)
+        assert card.title == "Super Title"
+
+    def test_stored_in_index(self, store, mpl_fig):
+        render(mpl_fig, store=store)
+        cards = store.list_cards()
+        assert len(cards) == 1
+        assert cards[0].card_type == CardType.IMAGE
+
+    def test_run_id_propagated(self, store, mpl_fig):
+        card = render(mpl_fig, run_id="plot-run", store=store)
+        assert card.run_id == "plot-run"
+
+
+class TestIsMatplotlibFigure:
+    def test_detects_matplotlib_figure(self):
+        mpl = pytest.importorskip("matplotlib")
+        mpl.use("Agg")
+        import matplotlib.pyplot as plt
+
+        fig, _ = plt.subplots()
+        assert _is_matplotlib_figure(fig) is True
+        plt.close(fig)
+
+    def test_rejects_non_matplotlib(self):
+        assert _is_matplotlib_figure("not a figure") is False
+        assert _is_matplotlib_figure(42) is False
