@@ -1,0 +1,26 @@
+sources:
+  - url: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/score
+    description: MIT-LCP mimic-code SAPS-II implementation
+    license: Apache-2.0
+
+created:
+  by: m4-clinical-extraction
+  role: clinical-extraction
+  date: 2025-01-13
+
+reviews:
+  - by: Ahram Han, MD
+    date: 2026-02-06
+    scope: clinical-accuracy
+    notes: Reviewed clinical accuracy and added limitations of SAPS-II extraction in MIMIC. Made body dataset-agnostic and renamed script to mimic-iv.sql.
+
+references:
+  - Le Gall JR, Lemeshow S, Saulnier F. "A new Simplified Acute Physiology Score (SAPS II) based on a European/North American multicenter study." JAMA. 1993;270(24):2957-2963.
+
+changelog:
+  - version: "1.0"
+    date: 2025-01-13
+    summary: Initial extraction from mimic-code
+  - version: "1.1"
+    date: 2026-02-06
+    summary: Added PROVENANCE.yaml, restructured SKILL.md with general/dataset-specific sections, added eICU availability and limitations, renamed script to mimic-iv.sql
