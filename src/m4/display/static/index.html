@@ -694,6 +694,238 @@
   }
 
   .table-wrapper tr { cursor: pointer; }
+
+  /* Waiting card (response_requested) */
+  .card.waiting {
+    border-left: 3px solid var(--accent);
+  }
+
+  @keyframes subtlePulse {
+    0%, 100% { box-shadow: var(--shadow); }
+    50% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent), var(--shadow); }
+  }
+
+  .card.waiting { animation: subtlePulse 3s ease-in-out infinite; }
+
+  /* Response UI panel */
+  .card-response-ui {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .response-prompt {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .response-message-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 12px;
+    font-family: var(--font);
+    resize: vertical;
+    min-height: 36px;
+    max-height: 120px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .response-message-input:focus { border-color: var(--accent); }
+
+  .response-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .response-btn {
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .response-btn-confirm {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .response-btn-confirm:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+
+  .response-btn-skip {
+    background: var(--bg);
+    color: var(--text-muted);
+  }
+
+  .response-btn-skip:hover {
+    background: var(--bg-header);
+    color: var(--text);
+  }
+
+  .response-timeout {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+
+  /* Table row checkboxes for selection */
+  .table-wrapper th.select-col,
+  .table-wrapper td.select-col {
+    width: 32px;
+    text-align: center;
+    padding: 5px 4px;
+  }
+
+  .table-wrapper td.select-col input[type="checkbox"],
+  .table-wrapper th.select-col input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
+
+  /* Send to Agent button */
+  .send-to-agent-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 3px 5px;
+    border-radius: 3px;
+    line-height: 1;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .send-to-agent-btn:hover {
+    color: var(--accent);
+    background: var(--bg-card);
+  }
+
+  /* Prompt popover */
+  .prompt-popover {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 50;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 12px;
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeIn 0.15s ease;
+  }
+
+  .prompt-popover textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 12px;
+    font-family: var(--font);
+    resize: vertical;
+    min-height: 60px;
+    max-height: 120px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .prompt-popover textarea:focus { border-color: var(--accent); }
+
+  .prompt-popover .send-btn {
+    align-self: flex-end;
+    padding: 5px 14px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .prompt-popover .send-btn:hover { background: var(--accent-hover); }
+
+  /* Card flash animation on update */
+  @keyframes flashHighlight {
+    0% { background: color-mix(in srgb, var(--accent) 15%, var(--bg)); }
+    100% { background: var(--bg); }
+  }
+
+  .card.flash { animation: flashHighlight 0.6s ease; }
+
+  /* Pending request badge */
+  .request-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--accent);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .request-badge.hidden { display: none; }
+
+  /* Card updating overlay */
+  .card-updating-overlay {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--bg) 60%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    border-radius: var(--radius);
+  }
+
+  .card-updating-overlay::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  .card { position: relative; }
+
+  /* Sent confirmation */
+  .sent-badge {
+    display: inline-block;
+    font-size: 11px;
+    color: var(--success);
+    font-weight: 500;
+    padding: 2px 6px;
+  }
 </style>
 </head>
 <body>
@@ -706,6 +938,7 @@
     </select>
   </div>
   <div class="header-actions">
+    <span class="request-badge hidden" id="request-badge" title="Pending agent requests">0</span>
     <button class="btn-icon" id="theme-toggle" title="Toggle theme">&#9789;</button>
     <button class="btn btn-danger" onclick="clearCards()">Clear</button>
   </div>
@@ -878,7 +1111,7 @@
         addSection(msg.title, msg.run_id);
         break;
       case 'display.update':
-        updateCard(msg.card_id, msg.changes);
+        updateCard(msg.card_id, msg.card);
         break;
     }
   }
@@ -953,6 +1186,17 @@
     };
     actions.appendChild(copyBtn);
 
+    // Send to Agent button
+    var sendBtn = document.createElement('button');
+    sendBtn.className = 'send-to-agent-btn';
+    sendBtn.innerHTML = '&#9993;';
+    sendBtn.title = 'Send to Agent';
+    sendBtn.onclick = function(e) {
+      e.stopPropagation();
+      togglePromptPopover(sendBtn, cardData, el);
+    };
+    actions.appendChild(sendBtn);
+
     // Pin button
     var pinBtn = document.createElement('button');
     pinBtn.className = 'card-action-btn' + (cardData.pinned ? ' pinned' : '');
@@ -1000,6 +1244,13 @@
     }
 
     el.appendChild(body);
+
+    // Waiting card: response UI
+    if (cardData.response_requested) {
+      el.classList.add('waiting');
+      var responseUI = buildResponseUI(cardData, el);
+      el.appendChild(responseUI);
+    }
 
     // Provenance
     if (cardData.provenance) {
@@ -1174,6 +1425,21 @@
     var thead = document.createElement('thead');
     var headerRow = document.createElement('tr');
 
+    // Add select-all checkbox column for waiting cards
+    if (cardData.response_requested) {
+      var selectAllTh = document.createElement('th');
+      selectAllTh.className = 'select-col';
+      var selectAllCb = document.createElement('input');
+      selectAllCb.type = 'checkbox';
+      selectAllCb.title = 'Select all';
+      selectAllCb.onchange = function() {
+        var cbs = wrapper.querySelectorAll('tbody .select-col input[type="checkbox"]');
+        cbs.forEach(function(cb) { cb.checked = selectAllCb.checked; });
+      };
+      selectAllTh.appendChild(selectAllCb);
+      headerRow.appendChild(selectAllTh);
+    }
+
     preview.columns.forEach(function(col) {
       var th = document.createElement('th');
       var isNumeric = false;
@@ -1297,8 +1563,19 @@
 
   function renderTableRows(tbody, rows, columns, dtypes, cardData) {
     tbody.innerHTML = '';
+    var hasCheckboxes = cardData && cardData.response_requested;
     rows.forEach(function(row, rowIdx) {
       var tr = document.createElement('tr');
+      // Add selection checkbox for waiting cards
+      if (hasCheckboxes) {
+        var selTd = document.createElement('td');
+        selTd.className = 'select-col';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.onclick = function(e) { e.stopPropagation(); };
+        selTd.appendChild(cb);
+        tr.appendChild(selTd);
+      }
       row.forEach(function(val, i) {
         var td = document.createElement('td');
         td.textContent = val === null ? '\u2014' : String(val);
@@ -1693,6 +1970,234 @@
     container.appendChild(imgContainer);
   }
 
+  // --- Response UI for waiting cards ---
+
+  function buildResponseUI(cardData, cardEl) {
+    var container = document.createElement('div');
+    container.className = 'card-response-ui';
+
+    // Prompt
+    if (cardData.prompt) {
+      var promptEl = document.createElement('div');
+      promptEl.className = 'response-prompt';
+      promptEl.textContent = cardData.prompt;
+      container.appendChild(promptEl);
+    }
+
+    // Message input
+    var msgInput = document.createElement('textarea');
+    msgInput.className = 'response-message-input';
+    msgInput.placeholder = 'Optional message...';
+    msgInput.rows = 1;
+    container.appendChild(msgInput);
+
+    // Actions
+    var actionsRow = document.createElement('div');
+    actionsRow.className = 'response-actions';
+
+    var confirmBtn = document.createElement('button');
+    confirmBtn.className = 'response-btn response-btn-confirm';
+    confirmBtn.textContent = 'Confirm';
+    confirmBtn.onclick = function() {
+      sendResponse(cardData, cardEl, 'confirm', msgInput.value);
+    };
+    actionsRow.appendChild(confirmBtn);
+
+    var skipBtn = document.createElement('button');
+    skipBtn.className = 'response-btn response-btn-skip';
+    skipBtn.textContent = 'Skip';
+    skipBtn.onclick = function() {
+      sendResponse(cardData, cardEl, 'skip', null);
+    };
+    actionsRow.appendChild(skipBtn);
+
+    // Timeout countdown
+    var timeoutEl = document.createElement('span');
+    timeoutEl.className = 'response-timeout';
+    actionsRow.appendChild(timeoutEl);
+    container.appendChild(actionsRow);
+
+    // Start countdown (use backend-configured timeout, default 5 min)
+    var remaining = (cardData.timeout && cardData.timeout > 0) ? Math.floor(cardData.timeout) : 300;
+    function updateCountdown() {
+      var mins = Math.floor(remaining / 60);
+      var secs = remaining % 60;
+      timeoutEl.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+      if (remaining <= 0) {
+        clearInterval(timer);
+        timeoutEl.textContent = 'Timed out';
+        return;
+      }
+      remaining--;
+    }
+    updateCountdown();
+    var timer = setInterval(updateCountdown, 1000);
+    container._timer = timer;
+
+    return container;
+  }
+
+  function sendResponse(cardData, cardEl, action, message) {
+    // Gather selected rows if this is a table card with selection checkboxes
+    var selectedRows = null;
+    var columns = null;
+    var tbody = cardEl.querySelector('tbody');
+    if (cardData.card_type === 'table' && tbody) {
+      var checkboxes = tbody.querySelectorAll('input[type="checkbox"]:checked');
+      if (checkboxes.length > 0) {
+        columns = cardData.preview.columns;
+        selectedRows = [];
+        checkboxes.forEach(function(cb) {
+          var tr = cb.closest('tr');
+          var cells = [];
+          tr.querySelectorAll('td:not(.select-col)').forEach(function(td) {
+            cells.push(td.textContent === '\u2014' ? null : td.textContent);
+          });
+          selectedRows.push(cells);
+        });
+      }
+    }
+
+    // Send via WebSocket
+    if (state.ws && state.connected) {
+      state.ws.send(JSON.stringify({
+        type: 'display.event',
+        event_type: 'response',
+        card_id: cardData.card_id,
+        payload: {
+          action: action,
+          message: message,
+          selected_rows: selectedRows,
+          columns: columns,
+        },
+      }));
+    }
+
+    // Update UI: remove response panel, remove waiting style
+    var responseUI = cardEl.querySelector('.card-response-ui');
+    if (responseUI) {
+      if (responseUI._timer) clearInterval(responseUI._timer);
+      responseUI.remove();
+    }
+    cardEl.classList.remove('waiting');
+
+    // Show confirmation badge
+    var badge = document.createElement('span');
+    badge.className = 'sent-badge';
+    badge.textContent = action === 'confirm' ? 'Confirmed' : 'Skipped';
+    var header = cardEl.querySelector('.card-header');
+    if (header) header.appendChild(badge);
+  }
+
+  // --- Send to Agent popover ---
+
+  function togglePromptPopover(btn, cardData, cardEl) {
+    // Close any existing popover
+    var existing = document.querySelector('.prompt-popover');
+    if (existing) {
+      existing.remove();
+      return;
+    }
+
+    var popover = document.createElement('div');
+    popover.className = 'prompt-popover';
+
+    var textarea = document.createElement('textarea');
+    textarea.placeholder = 'Message for the agent...';
+    popover.appendChild(textarea);
+
+    var sendBtnEl = document.createElement('button');
+    sendBtnEl.className = 'send-btn';
+    sendBtnEl.textContent = 'Send';
+    sendBtnEl.onclick = function() {
+      var promptText = textarea.value.trim();
+      if (!promptText) return;
+      submitSendToAgent(cardData, cardEl, promptText);
+      popover.remove();
+    };
+    popover.appendChild(sendBtnEl);
+
+    // Position relative to the button's parent header
+    var header = btn.closest('.card-header');
+    if (header) header.style.position = 'relative';
+    header.appendChild(popover);
+
+    textarea.focus();
+
+    // Close on click outside
+    function closeOnOutside(e) {
+      if (!popover.contains(e.target) && e.target !== btn) {
+        popover.remove();
+        document.removeEventListener('mousedown', closeOnOutside);
+      }
+    }
+    setTimeout(function() {
+      document.addEventListener('mousedown', closeOnOutside);
+    }, 0);
+  }
+
+  function submitSendToAgent(cardData, cardEl, promptText) {
+    // Gather selected/visible rows for table cards
+    var selectedRows = null;
+    var columns = null;
+    var tbody = cardEl.querySelector('tbody');
+    if (cardData.card_type === 'table' && tbody) {
+      columns = cardData.preview.columns;
+      // Try checked rows first, fall back to all visible rows
+      var checkboxes = tbody.querySelectorAll('input[type="checkbox"]:checked');
+      if (checkboxes.length > 0) {
+        selectedRows = [];
+        checkboxes.forEach(function(cb) {
+          var tr = cb.closest('tr');
+          var cells = [];
+          tr.querySelectorAll('td:not(.select-col)').forEach(function(td) {
+            cells.push(td.textContent === '\u2014' ? null : td.textContent);
+          });
+          selectedRows.push(cells);
+        });
+      }
+    }
+
+    // Send via WebSocket
+    if (state.ws && state.connected) {
+      state.ws.send(JSON.stringify({
+        type: 'display.event',
+        event_type: 'send_to_agent',
+        card_id: cardData.card_id,
+        payload: {
+          prompt: promptText,
+          selected_rows: selectedRows,
+          columns: columns,
+          instruction: cardData.on_send || null,
+        },
+      }));
+    }
+
+    // Submit via REST only if WebSocket is not connected (fallback)
+    if (!state.ws || !state.connected) {
+      fetch('/api/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          card_id: cardData.card_id,
+          prompt: promptText,
+          selected_rows: selectedRows,
+          columns: columns,
+          instruction: cardData.on_send || null,
+        }),
+      }).catch(function() {});
+    }
+
+    // Show "Sent" confirmation and update badge
+    incrementRequestBadge();
+    showToast('Sent to agent');
+
+    // Copy formatted snippet to clipboard
+    var snippet = 'Agent Request: ' + promptText;
+    if (cardData.title) snippet = '[' + cardData.title + '] ' + snippet;
+    navigator.clipboard.writeText(snippet).catch(function() {});
+  }
+
   function addSection(title, runId) {
     var empty = document.getElementById('empty-state');
     if (empty && empty.parentNode) {
@@ -1714,8 +2219,56 @@
     scrollToBottom();
   }
 
-  function updateCard(cardId, changes) {
-    // Future: handle card updates (replace=)
+  function updateCard(cardId, newCardData) {
+    var el = document.getElementById('card-' + cardId);
+    if (!el) return;
+
+    // Update state.cards entry
+    if (newCardData) {
+      for (var i = 0; i < state.cards.length; i++) {
+        if (state.cards[i].card_id === cardId) {
+          state.cards[i] = newCardData;
+          break;
+        }
+      }
+
+      // Update title
+      var titleEl = el.querySelector('.card-title');
+      if (titleEl && newCardData.title) {
+        titleEl.textContent = newCardData.title;
+      }
+
+      // Re-render body content
+      var body = el.querySelector('.card-body');
+      if (body) {
+        body.innerHTML = '';
+        switch (newCardData.card_type) {
+          case 'table':
+            renderTable(body, newCardData);
+            break;
+          case 'plotly':
+            renderPlotly(body, newCardData);
+            break;
+          case 'image':
+            renderImage(body, newCardData);
+            break;
+          case 'markdown':
+            renderMarkdown(body, newCardData);
+            break;
+          case 'keyvalue':
+            renderKeyValue(body, newCardData);
+            break;
+          default:
+            body.textContent = JSON.stringify(newCardData.preview);
+        }
+      }
+    }
+
+    // Flash animation to highlight the update
+    el.classList.remove('flash');
+    void el.offsetWidth; // Force reflow
+    el.classList.add('flash');
+    setTimeout(function() { el.classList.remove('flash'); }, 600);
   }
 
   function handleClear(keepPinned) {
@@ -1820,6 +2373,40 @@
     requestAnimationFrame(function() {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     });
+  }
+
+  // --- Pending Request Badge ---
+  var requestBadgeEl = document.getElementById('request-badge');
+
+  function pollRequestCount() {
+    fetch('/api/requests', {
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(function(r) {
+        // 401 means auth required (no token from browser), which is expected.
+        // The badge shows based on the count of queued requests the server knows about.
+        // Use the public POST count instead — track locally.
+        return null;
+      })
+      .catch(function() {});
+  }
+
+  // Track pending request count client-side (incremented on send, no server poll needed)
+  var pendingRequestCount = 0;
+
+  function incrementRequestBadge() {
+    pendingRequestCount++;
+    requestBadgeEl.textContent = pendingRequestCount;
+    requestBadgeEl.classList.remove('hidden');
+  }
+
+  function decrementRequestBadge() {
+    pendingRequestCount = Math.max(0, pendingRequestCount - 1);
+    if (pendingRequestCount === 0) {
+      requestBadgeEl.classList.add('hidden');
+    } else {
+      requestBadgeEl.textContent = pendingRequestCount;
+    }
   }
 
   // --- Init ---
