@@ -293,6 +293,8 @@
   /* Table cards */
   .table-wrapper {
     overflow-x: auto;
+    overflow-y: auto;
+    max-height: 360px;
     font-size: 13px;
   }
 
@@ -312,6 +314,7 @@
     background: var(--bg-card);
     position: sticky;
     top: 0;
+    z-index: 1;
     cursor: pointer;
     user-select: none;
     transition: background 0.15s;
@@ -555,6 +558,142 @@
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+
+  /* Table toolbar (search + export) */
+  .table-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0 4px;
+  }
+
+  .table-search {
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 12px;
+    font-family: var(--font);
+    outline: none;
+    flex: 1;
+    max-width: 260px;
+    transition: border-color 0.15s;
+  }
+
+  .table-search:focus { border-color: var(--accent); }
+
+  .table-search::placeholder { color: var(--text-muted); }
+
+  /* Column type badges */
+  .type-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 500;
+    padding: 0 4px;
+    margin-left: 4px;
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    vertical-align: middle;
+    line-height: 15px;
+    letter-spacing: 0.3px;
+  }
+
+  /* Export button */
+  .export-btn {
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 11px;
+    font-family: var(--font);
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+
+  .export-btn:hover {
+    background: var(--bg-header);
+    color: var(--text);
+  }
+
+  /* Row detail panel */
+  .row-detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.25);
+    z-index: 150;
+    animation: fadeOverlay 0.15s ease;
+  }
+
+  @keyframes fadeOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .row-detail-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: min(480px, 90vw);
+    background: var(--bg);
+    border-left: 1px solid var(--border);
+    box-shadow: -4px 0 16px rgba(0,0,0,0.12);
+    z-index: 151;
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+
+  .row-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .row-detail-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .row-detail-close:hover {
+    color: var(--text);
+    background: var(--bg-header);
+  }
+
+  .row-detail-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .row-detail-body .kv-list {
+    grid-template-columns: minmax(80px, auto) 1fr;
+    gap: 6px 16px;
+  }
+
+  .table-wrapper tr { cursor: pointer; }
 </style>
 </head>
 <body>
@@ -935,19 +1074,105 @@
     }, 1500);
   }
 
+  function mapDtypeLabel(dtype) {
+    if (!dtype) return '';
+    var d = dtype.toLowerCase();
+    if (d.match(/^int/)) return 'int';
+    if (d.match(/^float|^double|^decimal|^numeric/)) return 'float';
+    if (d.match(/^bool/)) return 'bool';
+    if (d.match(/^date|^time|^timestamp/)) return 'date';
+    if (d.match(/^varchar|^text|^string|^utf|^object/)) return 'str';
+    return dtype.split(/[^a-zA-Z]/)[0].toLowerCase().substring(0, 5);
+  }
+
   function renderTable(container, cardData) {
     var preview = cardData.preview;
     if (!preview || !preview.columns) return;
 
+    // Shared state for this table
+    var sortState = { col: null, asc: true };
+    var pagerState = { offset: 0, limit: 50 };
+    var searchState = { text: '' };
+    var shape = preview.shape || [0, 0];
+    var totalRowsRef = { value: shape[0] };
+    var rowInfoEl = document.createElement('span');
+    var pagerEl = { current: null };
+
+    function updateRowInfo() {
+      var total = totalRowsRef.value;
+      var start = total > 0 ? pagerState.offset + 1 : 0;
+      var end = Math.min(pagerState.offset + pagerState.limit, total);
+      var text = shape[1] + ' columns \u00b7 ' + total.toLocaleString() + ' rows';
+      if (searchState.text) text += ' (filtered)';
+      if (total > 0 && (start > 1 || end < total)) text += ' (showing ' + start + '\u2013' + end + ')';
+      rowInfoEl.textContent = text;
+    }
+
+    // --- Toolbar (search + export) ---
+    var toolbar = document.createElement('div');
+    toolbar.className = 'table-toolbar';
+
+    if (cardData.artifact_id) {
+      var searchInput = document.createElement('input');
+      searchInput.type = 'text';
+      searchInput.className = 'table-search';
+      searchInput.placeholder = 'Search rows...';
+      var debounceTimer = null;
+      searchInput.oninput = function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+          searchState.text = searchInput.value;
+          pagerState.offset = 0;
+          reloadTable(cardData.artifact_id, pagerState, sortState, searchState, wrapper, preview.columns, preview.dtypes, totalRowsRef, rowInfoEl, pagerEl, updateRowInfo);
+        }, 300);
+      };
+      toolbar.appendChild(searchInput);
+
+      var exportCsvBtn = document.createElement('button');
+      exportCsvBtn.className = 'export-btn';
+      exportCsvBtn.textContent = 'Export CSV';
+      exportCsvBtn.onclick = function() {
+        var url = '/api/table/' + cardData.artifact_id + '/export?format=csv';
+        if (sortState.col) url += '&sort=' + encodeURIComponent(sortState.col) + '&asc=' + sortState.asc;
+        if (searchState.text) url += '&search=' + encodeURIComponent(searchState.text);
+        window.location = url;
+      };
+      toolbar.appendChild(exportCsvBtn);
+
+      var copyTsvBtn = document.createElement('button');
+      copyTsvBtn.className = 'export-btn';
+      copyTsvBtn.textContent = 'Copy TSV';
+      copyTsvBtn.onclick = function() {
+        var tbody = wrapper.querySelector('tbody');
+        var headerCells = wrapper.querySelectorAll('thead th');
+        var headers = [];
+        headerCells.forEach(function(th) {
+          // Get just the column name text (not the sort indicator or type badge)
+          headers.push(th.firstChild.textContent);
+        });
+        var lines = [headers.join('\t')];
+        var bodyRows = tbody.querySelectorAll('tr');
+        bodyRows.forEach(function(tr) {
+          var cells = [];
+          tr.querySelectorAll('td').forEach(function(td) { cells.push(td.textContent); });
+          lines.push(cells.join('\t'));
+        });
+        navigator.clipboard.writeText(lines.join('\n')).then(function() {
+          showToast('Copied TSV to clipboard');
+        }).catch(function() {});
+      };
+      toolbar.appendChild(copyTsvBtn);
+    }
+
+    container.appendChild(toolbar);
+
+    // --- Table ---
     var wrapper = document.createElement('div');
     wrapper.className = 'table-wrapper';
 
     var table = document.createElement('table');
     var thead = document.createElement('thead');
     var headerRow = document.createElement('tr');
-
-    // Sort state for this table
-    var sortState = { col: null, asc: true };
 
     preview.columns.forEach(function(col) {
       var th = document.createElement('th');
@@ -963,12 +1188,19 @@
       var label = document.createTextNode(col);
       th.appendChild(label);
 
+      // Type badge
+      if (preview.dtypes && preview.dtypes[col]) {
+        var badge = document.createElement('span');
+        badge.className = 'type-badge';
+        badge.textContent = mapDtypeLabel(preview.dtypes[col]);
+        th.appendChild(badge);
+      }
+
       var indicator = document.createElement('span');
       indicator.className = 'sort-indicator';
       indicator.textContent = '\u2195';
       th.appendChild(indicator);
 
-      // Only enable server-side sort if there's an artifact to query
       if (cardData.artifact_id) {
         th.onclick = function() {
           if (sortState.col === col) {
@@ -977,15 +1209,14 @@
             sortState.col = col;
             sortState.asc = true;
           }
-          // Update indicators
           headerRow.querySelectorAll('.sort-indicator').forEach(function(ind) {
             ind.classList.remove('active');
             ind.textContent = '\u2195';
           });
           indicator.classList.add('active');
           indicator.textContent = sortState.asc ? '\u25b2' : '\u25bc';
-          // Reload from server with sort
-          loadSortedPage(cardData.artifact_id, 0, 50, sortState.col, sortState.asc, wrapper, preview.columns, preview.dtypes, preview.shape ? preview.shape[0] : 0, rowInfoEl, pagerState);
+          pagerState.offset = 0;
+          reloadTable(cardData.artifact_id, pagerState, sortState, searchState, wrapper, preview.columns, preview.dtypes, totalRowsRef, rowInfoEl, pagerEl, updateRowInfo);
         };
       }
 
@@ -997,43 +1228,76 @@
 
     var tbody = document.createElement('tbody');
     var rows = preview.preview_rows || [];
-    renderTableRows(tbody, rows, preview.columns, preview.dtypes);
+    renderTableRows(tbody, rows, preview.columns, preview.dtypes, cardData);
 
     table.appendChild(tbody);
     wrapper.appendChild(table);
 
-    // Table info & pagination
-    var shape = preview.shape || [0, 0];
-    var totalRows = shape[0];
+    // --- Table info & pagination ---
+    var totalRows = totalRowsRef.value;
     var previewCount = rows.length;
 
     var info = document.createElement('div');
     info.className = 'table-info';
-
-    var rowInfoEl = document.createElement('span');
-    var rowInfoText = shape[1] + ' columns \u00b7 ' + totalRows.toLocaleString() + ' rows';
-    if (previewCount < totalRows) {
-      rowInfoText += ' (showing 1\u2013' + previewCount + ')';
-    }
-    rowInfoEl.textContent = rowInfoText;
     info.appendChild(rowInfoEl);
 
-    // Pager state object for sharing between sort and pagination
-    var pagerState = { offset: 0, limit: 50 };
-
-    // Pager (only if more rows exist)
     if (totalRows > previewCount && cardData.artifact_id) {
-      var pager = createPager(cardData.artifact_id, totalRows, preview.columns, preview.dtypes, wrapper, rowInfoEl, pagerState, sortState);
+      // Initial view has only preview rows — load the full first page immediately
+      reloadTable(cardData.artifact_id, pagerState, sortState, searchState, wrapper, preview.columns, preview.dtypes, totalRowsRef, rowInfoEl, pagerEl, updateRowInfo);
+      var pager = createPager(cardData.artifact_id, totalRowsRef, preview.columns, preview.dtypes, wrapper, rowInfoEl, pagerState, sortState, searchState, cardData, updateRowInfo);
+      pagerEl.current = pager;
       info.appendChild(pager);
+    } else {
+      // Small table — preview is the full data
+      rowInfoEl.textContent = shape[1] + ' columns \u00b7 ' + totalRows.toLocaleString() + ' rows';
     }
 
     container.appendChild(wrapper);
     container.appendChild(info);
   }
 
-  function renderTableRows(tbody, rows, columns, dtypes) {
+  function reloadTable(artifactId, pagerState, sortState, searchState, wrapper, columns, dtypes, totalRowsRef, rowInfoEl, pagerEl, updateRowInfo) {
+    var url = '/api/table/' + artifactId + '?offset=' + pagerState.offset + '&limit=' + pagerState.limit;
+    if (sortState && sortState.col) {
+      url += '&sort=' + encodeURIComponent(sortState.col) + '&asc=' + sortState.asc;
+    }
+    if (searchState && searchState.text) {
+      url += '&search=' + encodeURIComponent(searchState.text);
+    }
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        totalRowsRef.value = data.total_rows;
+        var tbody = wrapper.querySelector('tbody');
+        // Find the parent card to get cardData for row click events
+        var cardEl = wrapper.closest('.card');
+        var cardData = null;
+        if (cardEl) {
+          var cardId = cardEl.dataset.cardId;
+          cardData = state.cards.find(function(c) { return c.card_id === cardId; });
+        }
+        renderTableRows(tbody, data.rows, columns, dtypes, cardData);
+        if (updateRowInfo) updateRowInfo();
+
+        // Rebuild pager if needed
+        if (pagerEl && pagerEl.current) {
+          var parent = pagerEl.current.parentNode;
+          parent.removeChild(pagerEl.current);
+          var newPager = createPager(artifactId, totalRowsRef, columns, dtypes, wrapper, rowInfoEl, pagerState, sortState, searchState, cardData, updateRowInfo);
+          pagerEl.current = newPager;
+          parent.appendChild(newPager);
+        } else if (data.total_rows > pagerState.limit) {
+          var infoDiv = rowInfoEl.parentNode;
+          var newPager = createPager(artifactId, totalRowsRef, columns, dtypes, wrapper, rowInfoEl, pagerState, sortState, searchState, cardData, updateRowInfo);
+          pagerEl.current = newPager;
+          infoDiv.appendChild(newPager);
+        }
+      });
+  }
+
+  function renderTableRows(tbody, rows, columns, dtypes, cardData) {
     tbody.innerHTML = '';
-    rows.forEach(function(row) {
+    rows.forEach(function(row, rowIdx) {
       var tr = document.createElement('tr');
       row.forEach(function(val, i) {
         var td = document.createElement('td');
@@ -1046,27 +1310,101 @@
         }
         tr.appendChild(td);
       });
+      // Row click → detail panel + WebSocket event
+      tr.onclick = function() {
+        var rowObj = {};
+        columns.forEach(function(col, i) { rowObj[col] = row[i]; });
+        showRowDetail(columns, row, dtypes, cardData);
+        // Fire WebSocket event
+        if (cardData && state.ws && state.connected) {
+          state.ws.send(JSON.stringify({
+            type: 'display.event',
+            event_type: 'row_click',
+            card_id: cardData.card_id,
+            payload: { row_index: rowIdx, row: rowObj },
+          }));
+        }
+      };
       tbody.appendChild(tr);
     });
   }
 
-  function loadSortedPage(artifactId, offset, limit, sortCol, sortAsc, wrapper, columns, dtypes, totalRows, rowInfoEl, pagerState) {
-    var url = '/api/table/' + artifactId + '?offset=' + offset + '&limit=' + limit;
-    if (sortCol) {
-      url += '&sort=' + encodeURIComponent(sortCol) + '&asc=' + sortAsc;
-    }
-    fetch(url)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        var tbody = wrapper.querySelector('tbody');
-        renderTableRows(tbody, data.rows, columns, dtypes);
-        if (pagerState) pagerState.offset = offset;
-        var end = Math.min(offset + limit, totalRows);
-        rowInfoEl.textContent = columns.length + ' columns \u00b7 ' + totalRows.toLocaleString() + ' rows (showing ' + (offset + 1) + '\u2013' + end + ')';
-      });
+  function showRowDetail(columns, row, dtypes, cardData) {
+    // Remove any existing detail panel
+    closeRowDetail();
+
+    var overlay = document.createElement('div');
+    overlay.className = 'row-detail-overlay';
+    overlay.id = 'row-detail-overlay';
+    overlay.onclick = function(e) {
+      if (e.target === overlay) closeRowDetail();
+    };
+
+    var panel = document.createElement('div');
+    panel.className = 'row-detail-panel';
+
+    var header = document.createElement('div');
+    header.className = 'row-detail-header';
+    var headerTitle = document.createElement('span');
+    headerTitle.textContent = (cardData && cardData.title ? cardData.title + ' \u2014 ' : '') + 'Row Detail';
+    header.appendChild(headerTitle);
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'row-detail-close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.onclick = closeRowDetail;
+    header.appendChild(closeBtn);
+    panel.appendChild(header);
+
+    var body = document.createElement('div');
+    body.className = 'row-detail-body';
+
+    var dl = document.createElement('div');
+    dl.className = 'kv-list';
+
+    columns.forEach(function(col, i) {
+      var keyEl = document.createElement('div');
+      keyEl.className = 'kv-key';
+      var keyText = col;
+      if (dtypes && dtypes[col]) {
+        keyText += ' ';
+        var badge = document.createElement('span');
+        badge.className = 'type-badge';
+        badge.textContent = mapDtypeLabel(dtypes[col]);
+        keyEl.textContent = col + ' ';
+        keyEl.appendChild(badge);
+      } else {
+        keyEl.textContent = col;
+      }
+
+      var valEl = document.createElement('div');
+      valEl.className = 'kv-value';
+      valEl.textContent = row[i] === null ? '\u2014' : String(row[i]);
+      valEl.style.wordBreak = 'break-all';
+
+      dl.appendChild(keyEl);
+      dl.appendChild(valEl);
+    });
+
+    body.appendChild(dl);
+    panel.appendChild(body);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    // ESC to close
+    document.addEventListener('keydown', _rowDetailEsc);
   }
 
-  function createPager(artifactId, totalRows, columns, dtypes, wrapper, rowInfoEl, pagerState, sortState) {
+  function _rowDetailEsc(e) {
+    if (e.key === 'Escape') closeRowDetail();
+  }
+
+  function closeRowDetail() {
+    var overlay = document.getElementById('row-detail-overlay');
+    if (overlay) overlay.remove();
+    document.removeEventListener('keydown', _rowDetailEsc);
+  }
+
+  function createPager(artifactId, totalRowsRef, columns, dtypes, wrapper, rowInfoEl, pagerState, sortState, searchState, cardData, updateRowInfo) {
     var limit = pagerState.limit;
 
     var pager = document.createElement('div');
@@ -1082,12 +1420,13 @@
     nextBtn.textContent = 'Next \u2192';
 
     function updatePage() {
-      var start = pagerState.offset + 1;
-      var end = Math.min(pagerState.offset + limit, totalRows);
-      pageInfo.textContent = start + '\u2013' + end + ' of ' + totalRows.toLocaleString();
+      var total = totalRowsRef.value;
+      var start = total > 0 ? pagerState.offset + 1 : 0;
+      var end = Math.min(pagerState.offset + limit, total);
+      pageInfo.textContent = start + '\u2013' + end + ' of ' + total.toLocaleString();
       prevBtn.disabled = pagerState.offset === 0;
-      nextBtn.disabled = pagerState.offset + limit >= totalRows;
-      rowInfoEl.textContent = columns.length + ' columns \u00b7 ' + totalRows.toLocaleString() + ' rows (showing ' + start + '\u2013' + end + ')';
+      nextBtn.disabled = pagerState.offset + limit >= total;
+      if (updateRowInfo) updateRowInfo();
     }
 
     function loadPage() {
@@ -1095,11 +1434,15 @@
       if (sortState && sortState.col) {
         url += '&sort=' + encodeURIComponent(sortState.col) + '&asc=' + sortState.asc;
       }
+      if (searchState && searchState.text) {
+        url += '&search=' + encodeURIComponent(searchState.text);
+      }
       fetch(url)
         .then(function(r) { return r.json(); })
         .then(function(data) {
+          totalRowsRef.value = data.total_rows;
           var tbody = wrapper.querySelector('tbody');
-          renderTableRows(tbody, data.rows, columns, dtypes);
+          renderTableRows(tbody, data.rows, columns, dtypes, cardData);
           updatePage();
         });
     }
