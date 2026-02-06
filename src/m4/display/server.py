@@ -52,6 +52,62 @@ _DEFAULT_PORT = 7741
 _MAX_PORT = 7750
 
 
+def _is_pid_alive(pid: int) -> bool:
+    """Check if a process with the given PID is alive."""
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def _check_health(url: str, session_id: str | None = None) -> bool:
+    """GET /api/health and optionally validate session_id matches."""
+    try:
+        import urllib.request
+
+        req = urllib.request.Request(f"{url}/api/health", method="GET")
+        with urllib.request.urlopen(req, timeout=0.5) as resp:
+            data = json.loads(resp.read())
+            if data.get("status") != "ok":
+                return False
+            if session_id is not None:
+                return data.get("session_id") == session_id
+            return True
+    except Exception:
+        return False
+
+
+def _scan_for_existing_server(
+    host: str = "127.0.0.1",
+    port_start: int = _DEFAULT_PORT,
+    port_end: int = _MAX_PORT,
+) -> dict[str, Any] | None:
+    """Probe each port in range for a live M4 display server.
+
+    Returns server info dict if found, None otherwise.
+    Timeout is 0.5s per port; refused connections are instant.
+    """
+    import urllib.request
+
+    for port in range(port_start, port_end + 1):
+        url = f"http://{host}:{port}"
+        try:
+            req = urllib.request.Request(f"{url}/api/health", method="GET")
+            with urllib.request.urlopen(req, timeout=0.5) as resp:
+                data = json.loads(resp.read())
+                if data.get("status") == "ok":
+                    return {
+                        "url": url,
+                        "host": host,
+                        "port": port,
+                        "session_id": data.get("session_id"),
+                    }
+        except Exception:
+            continue
+    return None
+
+
 def _get_display_dir() -> Path:
     """Resolve the display directory under {m4_data}/display/."""
     try:
@@ -980,42 +1036,81 @@ class DisplayServer:
 def _run_standalone(port: int = _DEFAULT_PORT, no_open: bool = False) -> None:
     """Run the display server as a standalone persistent process.
 
-    Generates a session_id and auth token, creates RunManager +
-    DisplayServer, writes a PID file, and blocks until terminated.
+    Acquires a file lock to prevent duplicate servers, checks for
+    existing servers (via PID file and port scan), then starts.
     """
-    import uuid
-
-    session_id = uuid.uuid4().hex[:12]
-    token = secrets.token_hex(16)
+    import atexit
+    import fcntl
+    import sys
 
     display_dir = _get_display_dir()
+    display_dir.mkdir(parents=True, exist_ok=True)
 
-    run_manager = RunManager(display_dir)
-    server = DisplayServer(
-        run_manager=run_manager,
-        port=port,
-        host="127.0.0.1",
-        token=token,
-        session_id=session_id,
-    )
-
+    lock_path = display_dir / ".server.lock"
     pid_path = display_dir / ".server.json"
-    stop_event = threading.Event()
 
-    def _shutdown(signum: int, frame: Any) -> None:
-        logger.debug(f"Received signal {signum}, shutting down...")
-        stop_event.set()
+    # Acquire cross-process file lock
+    lock_fd = open(lock_path, "w")
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        # Another process holds the lock — a server is starting
+        logger.debug("Another server process holds the lock, exiting")
+        lock_fd.close()
+        sys.exit(0)
 
-    signal.signal(signal.SIGTERM, _shutdown)
-    signal.signal(signal.SIGINT, _shutdown)
+    try:
+        # Check PID file for an existing healthy server
+        if pid_path.exists():
+            try:
+                info = json.loads(pid_path.read_text())
+                pid = info.get("pid")
+                url = info.get("url")
+                sid = info.get("session_id")
+                if pid and url and _is_pid_alive(pid) and _check_health(url, sid):
+                    logger.debug(f"Healthy server already running (pid={pid}), exiting")
+                    sys.exit(0)
+            except (json.JSONDecodeError, OSError):
+                pass
 
-    import atexit
+        # Port-range scan as fallback
+        existing = _scan_for_existing_server("127.0.0.1", _DEFAULT_PORT, _MAX_PORT)
+        if existing:
+            logger.debug(f"Found existing server at {existing['url']}, exiting")
+            sys.exit(0)
 
-    atexit.register(server.stop)
+        # No server found — start one while holding the lock
+        session_id = uuid.uuid4().hex[:12]
+        token = secrets.token_hex(16)
 
-    server.start(open_browser=not no_open, pid_path=pid_path)
+        run_manager = RunManager(display_dir)
+        server = DisplayServer(
+            run_manager=run_manager,
+            port=port,
+            host="127.0.0.1",
+            token=token,
+            session_id=session_id,
+        )
 
-    # Block until signal
+        stop_event = threading.Event()
+
+        def _shutdown(signum: int, frame: Any) -> None:
+            logger.debug(f"Received signal {signum}, shutting down...")
+            stop_event.set()
+
+        signal.signal(signal.SIGTERM, _shutdown)
+        signal.signal(signal.SIGINT, _shutdown)
+        atexit.register(server.stop)
+
+        # start() writes the PID file after binding — still inside the lock
+        server.start(open_browser=not no_open, pid_path=pid_path)
+
+    finally:
+        # Release the lock after PID file is written (or on error)
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        lock_fd.close()
+
+    # Block until signal (outside lock — other processes can now discover us)
     stop_event.wait()
     server.stop()
 
