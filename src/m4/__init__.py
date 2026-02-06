@@ -35,6 +35,7 @@ from m4.api import (
     search_notes,
     set_dataset,
 )
+from m4.display import show
 
 __all__ = [
     "DatasetError",
@@ -51,4 +52,5 @@ __all__ = [
     "list_patient_notes",
     "search_notes",
     "set_dataset",
+    "show",
 ]

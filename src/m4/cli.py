@@ -1455,5 +1455,74 @@ def config_cmd(
                 warning(f"Skills installation failed: {e}")
 
 
+@app.command("display")
+def display_cmd(
+    port: Annotated[
+        int,
+        typer.Option(
+            "--port",
+            "-p",
+            help="Port to bind the display server to.",
+        ),
+    ] = 7741,
+    no_open: Annotated[
+        bool,
+        typer.Option(
+            "--no-open",
+            help="Start without opening browser.",
+        ),
+    ] = False,
+    mode: Annotated[
+        str,
+        typer.Option(
+            "--mode",
+            "-m",
+            help="Run mode: 'thread' (default) or 'process' (separate daemon).",
+        ),
+    ] = "thread",
+):
+    """Start the M4 display server.
+
+    Opens a browser tab that renders visualizations pushed from Python via show().
+
+    Examples:
+
+    \b
+    • m4 display                    # Start display server, open browser
+    • m4 display --port 7742        # Custom port
+    • m4 display --no-open          # Start without opening browser
+    """
+    from m4.display import start
+
+    open_browser = not no_open
+    info(f"Starting M4 Display server on port {port}...")
+
+    start(port=port, open_browser=open_browser, mode=mode)
+
+    if mode == "thread":
+        # Keep the process alive for thread mode
+        import signal
+
+        success(f"Display server running at http://127.0.0.1:{port}")
+        console.print("[muted]Press Ctrl+C to stop.[/muted]")
+
+        try:
+            signal.pause()
+        except (KeyboardInterrupt, AttributeError):
+            # signal.pause() not available on Windows, fallback
+            try:
+                import time
+
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                pass
+
+        from m4.display import stop
+
+        stop()
+        info("Display server stopped.")
+
+
 if __name__ == "__main__":
     app()
