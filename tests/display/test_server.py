@@ -5,6 +5,8 @@ Tests cover:
 - REST endpoints (cards, table paging, clear, session)
 - WebSocket connection and card replay
 - Static file serving
+- Health, command, and shutdown endpoints
+- Auth token enforcement
 """
 
 import pandas as pd
@@ -13,6 +15,8 @@ import pytest
 from m4.display.artifacts import ArtifactStore
 from m4.display.renderer import render
 from m4.display.server import DisplayServer
+
+_TEST_TOKEN = "test-secret-token-1234"
 
 
 @pytest.fixture
@@ -23,7 +27,13 @@ def store(tmp_path):
 
 @pytest.fixture
 def server(store):
-    srv = DisplayServer(store=store, port=7799, host="127.0.0.1")
+    srv = DisplayServer(
+        store=store,
+        port=7799,
+        host="127.0.0.1",
+        token=_TEST_TOKEN,
+        session_id="server-test",
+    )
     return srv
 
 
@@ -237,3 +247,145 @@ class TestStarletteApp:
             msg2 = ws.receive_json()
             assert msg2["type"] == "display.add"
             assert msg2["card"]["title"] == "Card 2"
+
+
+class TestHealthEndpoint:
+    @pytest.fixture
+    def app(self, server):
+        return server._app
+
+    def test_health_returns_ok(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        resp = client.get("/api/health")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "ok"
+        assert data["session_id"] == "server-test"
+
+
+class TestCommandEndpoint:
+    @pytest.fixture
+    def app(self, server):
+        return server._app
+
+    def test_command_push_card(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        resp = client.post(
+            "/api/command",
+            json={"type": "card", "card": {"card_id": "c1", "title": "Test"}},
+            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+
+    def test_command_section(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        resp = client.post(
+            "/api/command",
+            json={"type": "section", "title": "Results", "run_id": "r1"},
+            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+
+    def test_command_clear(self, app, store):
+        from starlette.testclient import TestClient
+
+        render("card 1", store=store)
+        assert len(store.list_cards()) == 1
+
+        client = TestClient(app)
+        resp = client.post(
+            "/api/command",
+            json={"type": "clear", "keep_pinned": False},
+            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+        )
+        assert resp.status_code == 200
+        assert store.list_cards() == []
+
+    def test_command_requires_auth(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        # No auth header
+        resp = client.post(
+            "/api/command",
+            json={"type": "card", "card": {"card_id": "c1"}},
+        )
+        assert resp.status_code == 401
+
+    def test_command_rejects_wrong_token(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        resp = client.post(
+            "/api/command",
+            json={"type": "card", "card": {"card_id": "c1"}},
+            headers={"Authorization": "Bearer wrong-token"},
+        )
+        assert resp.status_code == 401
+
+    def test_command_unknown_type(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        resp = client.post(
+            "/api/command",
+            json={"type": "unknown"},
+            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+        )
+        assert resp.status_code == 400
+
+
+class TestShutdownEndpoint:
+    @pytest.fixture
+    def app(self, server):
+        return server._app
+
+    def test_shutdown_requires_auth(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        resp = client.post("/api/shutdown")
+        assert resp.status_code == 401
+
+    def test_shutdown_with_auth(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        resp = client.post(
+            "/api/shutdown",
+            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "shutting_down"
+
+
+class TestPidFile:
+    def test_write_and_remove_pid_file(self, store, tmp_path):
+        import json
+
+        pid_path = tmp_path / ".server.json"
+        srv = DisplayServer(
+            store=store,
+            port=7799,
+            token="tok",
+            session_id="sess-1",
+        )
+        srv._write_pid_file(pid_path)
+        assert pid_path.exists()
+
+        data = json.loads(pid_path.read_text())
+        assert data["port"] == 7799
+        assert data["session_id"] == "sess-1"
+        assert data["token"] == "tok"
+        assert "pid" in data
+
+        srv._remove_pid_file()
+        assert not pid_path.exists()

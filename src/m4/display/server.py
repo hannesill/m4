@@ -13,6 +13,9 @@ Endpoints:
     GET  /api/artifact/{card_id}         → raw artifact
     POST /api/clear                      → clear display
     GET  /api/session                    → session metadata
+    GET  /api/health                     → health check (returns session_id)
+    POST /api/command                    → unified command endpoint (auth required)
+    POST /api/shutdown                   → graceful shutdown (auth required)
 """
 
 from __future__ import annotations
@@ -20,8 +23,12 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+import secrets
+import signal
 import socket
 import threading
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +50,18 @@ _DEFAULT_PORT = 7741
 _MAX_PORT = 7750
 
 
+def _get_display_dir() -> Path:
+    """Resolve the display directory under {m4_data}/display/."""
+    try:
+        from m4.config import _PROJECT_DATA_DIR
+
+        return _PROJECT_DATA_DIR / "display"
+    except Exception:
+        import tempfile
+
+        return Path(tempfile.gettempdir()) / "m4_data" / "display"
+
+
 class DisplayServer:
     """WebSocket + REST server for the display pipeline.
 
@@ -60,10 +79,15 @@ class DisplayServer:
         store: ArtifactStore,
         port: int = _DEFAULT_PORT,
         host: str = "127.0.0.1",
+        token: str | None = None,
+        session_id: str | None = None,
     ) -> None:
         self.store = store
         self.host = host
         self.port = port
+        self.token = token
+        self.session_id = session_id or store.session_id
+        self._pid_path: Path | None = None
         self._connections: list[WebSocket] = []
         self._lock = threading.Lock()
         self._server: uvicorn.Server | None = None
@@ -75,11 +99,14 @@ class DisplayServer:
         """Build the Starlette application with all routes."""
         routes = [
             Route("/", self._index),
+            Route("/api/health", self._api_health),
             Route("/api/cards", self._api_cards),
             Route("/api/table/{card_id}", self._api_table),
             Route("/api/artifact/{card_id}", self._api_artifact),
             Route("/api/clear", self._api_clear, methods=["POST"]),
             Route("/api/session", self._api_session),
+            Route("/api/command", self._api_command, methods=["POST"]),
+            Route("/api/shutdown", self._api_shutdown, methods=["POST"]),
             WebSocketRoute("/ws", self._ws_endpoint),
         ]
 
@@ -161,6 +188,73 @@ class DisplayServer:
             return JSONResponse(meta)
         return JSONResponse({"session_id": self.store.session_id, "run_ids": []})
 
+    async def _api_health(self, request: Request) -> JSONResponse:
+        """Health check endpoint. No auth required."""
+        return JSONResponse({"status": "ok", "session_id": self.session_id})
+
+    def _check_auth(self, request: Request) -> bool:
+        """Check Bearer token authorization."""
+        if not self.token:
+            return True
+        auth = request.headers.get("authorization", "")
+        return auth == f"Bearer {self.token}"
+
+    async def _api_command(self, request: Request) -> JSONResponse:
+        """Unified command endpoint for pushing cards/sections/clears.
+
+        Requires Bearer token auth. Accepts JSON body with "type" field:
+        - {"type": "card", "card": {...}}
+        - {"type": "section", "title": "...", "run_id": "..."}
+        - {"type": "clear", "keep_pinned": true}
+        """
+        if not self._check_auth(request):
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse({"error": "invalid JSON"}, status_code=400)
+
+        cmd_type = body.get("type")
+
+        if cmd_type == "card":
+            card_data = body.get("card", {})
+            message = {"type": "display.add", "card": card_data}
+            # Also store the card in the artifact store index if it has card_id
+            await self._broadcast(message)
+            return JSONResponse({"status": "ok"})
+
+        elif cmd_type == "section":
+            title = body.get("title", "")
+            run_id = body.get("run_id")
+            message = {
+                "type": "display.section",
+                "title": title,
+                "run_id": run_id,
+            }
+            await self._broadcast(message)
+            return JSONResponse({"status": "ok"})
+
+        elif cmd_type == "clear":
+            keep_pinned = body.get("keep_pinned", True)
+            self.store.clear(keep_pinned=keep_pinned)
+            await self._broadcast({"type": "display.clear", "keep_pinned": keep_pinned})
+            return JSONResponse({"status": "ok"})
+
+        return JSONResponse(
+            {"error": f"unknown command type: {cmd_type}"}, status_code=400
+        )
+
+    async def _api_shutdown(self, request: Request) -> JSONResponse:
+        """Gracefully shut down the server. Requires auth."""
+        if not self._check_auth(request):
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+        # Schedule shutdown after returning the response
+        if self._server:
+            self._server.should_exit = True
+        return JSONResponse({"status": "shutting_down"})
+
     # --- WebSocket ---
 
     async def _ws_endpoint(self, ws: WebSocket) -> None:
@@ -221,11 +315,16 @@ class DisplayServer:
                 continue
         raise RuntimeError(f"No available port in range {self.port}-{_MAX_PORT}")
 
-    def start(self, open_browser: bool = True) -> None:
+    def start(
+        self,
+        open_browser: bool = True,
+        pid_path: Path | None = None,
+    ) -> None:
         """Start the server in a background daemon thread.
 
         Args:
             open_browser: Open a browser tab to the display.
+            pid_path: If set, write a PID file after the server binds.
         """
         if self._thread and self._thread.is_alive():
             return
@@ -253,6 +352,10 @@ class DisplayServer:
 
         # Wait a moment for the server to fully bind
         self._wait_for_server()
+
+        # Write PID file if requested
+        if pid_path is not None:
+            self._write_pid_file(pid_path)
 
         import sys
 
@@ -284,7 +387,8 @@ class DisplayServer:
                 time.sleep(0.05)
 
     def stop(self) -> None:
-        """Stop the server."""
+        """Stop the server and remove PID file if set."""
+        self._remove_pid_file()
         if self._server:
             self._server.should_exit = True
         if self._thread:
@@ -292,6 +396,32 @@ class DisplayServer:
             self._thread = None
         self._server = None
         logger.debug("Display server stopped")
+
+    def _write_pid_file(self, pid_path: Path) -> None:
+        """Write the PID file with server metadata."""
+        self._pid_path = pid_path
+        pid_path.parent.mkdir(parents=True, exist_ok=True)
+        info = {
+            "pid": os.getpid(),
+            "port": self.port,
+            "host": self.host,
+            "url": self.url,
+            "session_id": self.session_id,
+            "token": self.token,
+            "started_at": datetime.now(timezone.utc).isoformat(),
+        }
+        pid_path.write_text(json.dumps(info, indent=2))
+        logger.debug(f"PID file written: {pid_path}")
+
+    def _remove_pid_file(self) -> None:
+        """Remove the PID file if it exists and was written by this server."""
+        if self._pid_path and self._pid_path.exists():
+            try:
+                self._pid_path.unlink()
+                logger.debug(f"PID file removed: {self._pid_path}")
+            except OSError:
+                pass
+            self._pid_path = None
 
     @property
     def is_running(self) -> bool:
@@ -343,3 +473,59 @@ class DisplayServer:
                 asyncio.run_coroutine_threadsafe(ws.send_json(message), loop)
         except Exception:
             logger.debug("Could not broadcast message")
+
+
+def _run_standalone(port: int = _DEFAULT_PORT, no_open: bool = False) -> None:
+    """Run the display server as a standalone persistent process.
+
+    Generates a session_id and auth token, creates ArtifactStore +
+    DisplayServer, writes a PID file, and blocks until terminated.
+    """
+    import uuid
+
+    session_id = uuid.uuid4().hex[:12]
+    token = secrets.token_hex(16)
+
+    display_dir = _get_display_dir()
+    session_dir = display_dir / session_id
+
+    store = ArtifactStore(session_dir=session_dir, session_id=session_id)
+    server = DisplayServer(
+        store=store,
+        port=port,
+        host="127.0.0.1",
+        token=token,
+        session_id=session_id,
+    )
+
+    pid_path = display_dir / ".server.json"
+    stop_event = threading.Event()
+
+    def _shutdown(signum: int, frame: Any) -> None:
+        logger.debug(f"Received signal {signum}, shutting down...")
+        stop_event.set()
+
+    signal.signal(signal.SIGTERM, _shutdown)
+    signal.signal(signal.SIGINT, _shutdown)
+
+    import atexit
+
+    atexit.register(server.stop)
+
+    server.start(open_browser=not no_open, pid_path=pid_path)
+
+    # Block until signal
+    stop_event.wait()
+    server.stop()
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="M4 Display Server")
+    parser.add_argument(
+        "--port", type=int, default=_DEFAULT_PORT, help="Port to bind to"
+    )
+    parser.add_argument("--no-open", action="store_true", help="Don't open browser")
+    args = parser.parse_args()
+    _run_standalone(port=args.port, no_open=args.no_open)

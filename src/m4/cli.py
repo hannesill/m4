@@ -1472,56 +1472,62 @@ def display_cmd(
             help="Start without opening browser.",
         ),
     ] = False,
-    mode: Annotated[
-        str,
+    stop_server: Annotated[
+        bool,
         typer.Option(
-            "--mode",
-            "-m",
-            help="Run mode: 'thread' (default) or 'process' (separate daemon).",
+            "--stop",
+            help="Stop a running persistent display server.",
         ),
-    ] = "thread",
+    ] = False,
+    status: Annotated[
+        bool,
+        typer.Option(
+            "--status",
+            help="Show status of running display server.",
+        ),
+    ] = False,
 ):
-    """Start the M4 display server.
+    """Start, stop, or check the M4 display server.
 
     Opens a browser tab that renders visualizations pushed from Python via show().
 
     Examples:
 
     \b
-    • m4 display                    # Start display server, open browser
+    • m4 display                    # Start persistent display server
     • m4 display --port 7742        # Custom port
     • m4 display --no-open          # Start without opening browser
+    • m4 display --status           # Show server status
+    • m4 display --stop             # Stop running server
     """
-    from m4.display import start
+    from m4.display import server_status as get_status
+    from m4.display import stop_server as do_stop
 
-    open_browser = not no_open
+    if stop_server:
+        if do_stop():
+            success("Display server stopped.")
+        else:
+            info("No running display server found.")
+        return
+
+    if status:
+        srv_info = get_status()
+        if srv_info:
+            success("Display server is running")
+            console.print(f"  [bold]URL:[/bold]        {srv_info.get('url')}")
+            console.print(f"  [bold]PID:[/bold]        {srv_info.get('pid')}")
+            console.print(f"  [bold]Port:[/bold]       {srv_info.get('port')}")
+            console.print(f"  [bold]Session:[/bold]    {srv_info.get('session_id')}")
+            console.print(f"  [bold]Started:[/bold]    {srv_info.get('started_at')}")
+        else:
+            info("No running display server found.")
+        return
+
+    # Start persistent foreground server
+    from m4.display.server import _run_standalone
+
     info(f"Starting M4 Display server on port {port}...")
-
-    start(port=port, open_browser=open_browser, mode=mode)
-
-    if mode == "thread":
-        # Keep the process alive for thread mode
-        import signal
-
-        success(f"Display server running at http://127.0.0.1:{port}")
-        console.print("[muted]Press Ctrl+C to stop.[/muted]")
-
-        try:
-            signal.pause()
-        except (KeyboardInterrupt, AttributeError):
-            # signal.pause() not available on Windows, fallback
-            try:
-                import time
-
-                while True:
-                    time.sleep(1)
-            except KeyboardInterrupt:
-                pass
-
-        from m4.display import stop
-
-        stop()
-        info("Display server stopped.")
+    _run_standalone(port=port, no_open=no_open)
 
 
 if __name__ == "__main__":
