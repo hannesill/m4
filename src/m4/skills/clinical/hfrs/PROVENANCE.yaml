@@ -1,0 +1,23 @@
+sources:
+  - url: https://doi.org/10.1016/S0140-6736(18)30668-8
+    description: Original HFRS publication with 109 ICD-10 codes and weights
+    license: CC-BY-4.0
+
+created:
+  by: Dukyong Yoon, MD
+  role: clinical-extraction
+  date: 2025-01-29
+
+reviews:
+  - by: Dukyong Yoon, MD
+    date: 2025-02-05
+    scope: clinical-accuracy
+    notes: Verified ICD-10 code weights against Gilbert 2018 Table S1. Added ICD-9 mappings for MIMIC-IV compatibility (not in original publication).
+
+references:
+  - Gilbert T, et al. "Development and validation of a Hospital Frailty Risk Score focusing on older people in acute care settings using electronic hospital records: an observational study." Lancet. 2018;391:1775-82.
+
+changelog:
+  - version: "1.0"
+    date: 2025-01-29
+    summary: Initial skill creation with SQL and Python implementations
