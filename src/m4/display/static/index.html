@@ -16,10 +16,28 @@
     --accent-hover: #3a56d4;
     --success: #2ec4b6;
     --error: #e63946;
+    --warning: #ffc107;
     --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
     --mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
     --radius: 8px;
     --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --pin-color: #f59e0b;
+  }
+
+  [data-theme="dark"] {
+    --bg: #1a1b26;
+    --bg-card: #24253a;
+    --bg-header: #1e1f32;
+    --text: #c0caf5;
+    --text-muted: #7982a9;
+    --border: #33354a;
+    --accent: #7aa2f7;
+    --accent-hover: #89b4fa;
+    --success: #9ece6a;
+    --error: #f7768e;
+    --warning: #e0af68;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --pin-color: #e0af68;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,6 +47,7 @@
     background: var(--bg);
     color: var(--text);
     line-height: 1.5;
+    transition: background 0.2s, color 0.2s;
   }
 
   /* Header */
@@ -38,40 +57,59 @@
     z-index: 100;
     background: var(--bg);
     border-bottom: 1px solid var(--border);
-    padding: 12px 24px;
+    padding: 10px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    transition: background 0.2s, border-color 0.2s;
   }
 
   .header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
   }
 
   .header h1 {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     letter-spacing: -0.3px;
   }
 
-  .header-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .btn {
-    padding: 6px 14px;
+  .run-filter {
+    padding: 5px 10px;
     border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--bg);
     color: var(--text);
-    font-size: 13px;
+    font-size: 12px;
+    font-family: var(--font);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .run-filter:focus { border-color: var(--accent); }
+
+  .header-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .btn {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 12px;
     cursor: pointer;
     font-family: var(--font);
-    transition: background 0.15s;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .btn:hover { background: var(--bg-header); }
@@ -86,6 +124,23 @@
     color: white;
   }
 
+  .btn-icon {
+    padding: 5px 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .btn-icon:hover {
+    color: var(--text);
+    background: var(--bg-header);
+  }
+
   /* Card feed */
   .feed {
     max-width: 960px;
@@ -94,7 +149,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    min-height: calc(100vh - 120px);
+    min-height: calc(100vh - 110px);
   }
 
   .empty-state {
@@ -124,7 +179,15 @@
     box-shadow: var(--shadow);
     overflow: hidden;
     animation: fadeIn 0.2s ease;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.2s;
   }
+
+  .card.pinned {
+    border-color: var(--pin-color);
+    box-shadow: 0 0 0 1px var(--pin-color), var(--shadow);
+  }
+
+  .card.hidden-by-filter { display: none; }
 
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(8px); }
@@ -134,33 +197,97 @@
   .card-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
+    padding: 8px 12px;
     background: var(--bg-header);
     border-bottom: 1px solid var(--border);
     font-size: 13px;
+    gap: 8px;
+    user-select: none;
+    transition: background 0.2s, border-color 0.2s;
   }
+
+  .card-collapse-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 10px;
+    padding: 2px;
+    line-height: 1;
+    transition: transform 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .card-collapse-btn:hover { color: var(--text); }
+  .card-collapse-btn.collapsed { transform: rotate(-90deg); }
 
   .card-title {
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
+
+  .card-actions {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .card-action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 3px 5px;
+    border-radius: 3px;
+    line-height: 1;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .card-action-btn:hover {
+    color: var(--text);
+    background: var(--bg-card);
+  }
+
+  .card-action-btn.pinned { color: var(--pin-color); }
+  .card-action-btn.copied { color: var(--success); }
 
   .card-meta {
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 11px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .card-body {
     padding: 16px;
+    transition: background 0.2s;
+  }
+
+  .card-body.collapsed {
+    display: none;
   }
 
   .card-provenance {
-    padding: 6px 16px;
+    padding: 6px 12px;
     border-top: 1px solid var(--border);
     font-size: 11px;
     color: var(--text-muted);
     font-family: var(--mono);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    transition: border-color 0.2s;
+  }
+
+  .card-provenance.collapsed {
+    display: none;
   }
 
   /* Table cards */
@@ -178,17 +305,36 @@
 
   .table-wrapper th {
     text-align: left;
-    padding: 8px 12px;
+    padding: 7px 12px;
     border-bottom: 2px solid var(--border);
     font-weight: 600;
     white-space: nowrap;
     background: var(--bg-card);
     position: sticky;
     top: 0;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
   }
 
+  .table-wrapper th:hover {
+    background: var(--bg-header);
+  }
+
+  .table-wrapper th .sort-indicator {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 10px;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .table-wrapper th:hover .sort-indicator { opacity: 0.5; }
+  .table-wrapper th .sort-indicator.active { opacity: 1; color: var(--accent); }
+
   .table-wrapper td {
-    padding: 6px 12px;
+    padding: 5px 12px;
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
     max-width: 300px;
@@ -216,13 +362,15 @@
   }
 
   .table-pager button {
-    padding: 4px 10px;
+    padding: 3px 10px;
     border: 1px solid var(--border);
     border-radius: 4px;
     background: var(--bg);
+    color: var(--text);
     cursor: pointer;
     font-size: 12px;
     font-family: var(--font);
+    transition: background 0.15s;
   }
 
   .table-pager button:hover { background: var(--bg-header); }
@@ -303,6 +451,8 @@
     letter-spacing: 0.5px;
   }
 
+  .section-divider.hidden-by-filter { display: none; }
+
   .section-divider::before,
   .section-divider::after {
     content: '';
@@ -317,25 +467,48 @@
     bottom: 0;
     background: var(--bg);
     border-top: 1px solid var(--border);
-    padding: 8px 24px;
+    padding: 6px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted);
+    transition: background 0.2s, border-color 0.2s;
   }
 
   .status-dot {
     display: inline-block;
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    margin-right: 6px;
+    margin-right: 5px;
   }
 
   .status-connected { background: var(--success); }
   .status-disconnected { background: var(--error); }
-  .status-connecting { background: #ffc107; }
+  .status-connecting { background: var(--warning); }
+
+  /* Copy toast */
+  .copy-toast {
+    position: fixed;
+    bottom: 48px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 200;
+  }
+
+  .copy-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 </style>
 </head>
 <body>
@@ -343,8 +516,12 @@
 <div class="header">
   <div class="header-left">
     <h1>M4 Display</h1>
+    <select class="run-filter" id="run-filter" title="Filter by run">
+      <option value="">All runs</option>
+    </select>
   </div>
   <div class="header-actions">
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme">&#9789;</button>
     <button class="btn btn-danger" onclick="clearCards()">Clear</button>
   </div>
 </div>
@@ -366,30 +543,107 @@
   <div id="card-count">0 cards</div>
 </div>
 
+<div class="copy-toast" id="copy-toast">Copied to clipboard</div>
+
 <script>
 (function() {
   'use strict';
 
   // --- State ---
-  const state = {
+  var state = {
     ws: null,
     cards: [],
     connected: false,
     reconnectDelay: 1000,
+    reconnectTimer: null,
     markedLoaded: false,
+    runIds: [],
+    activeRunFilter: '',
   };
 
   // --- Elements ---
-  const feed = document.getElementById('feed');
-  const emptyState = document.getElementById('empty-state');
-  const statusEl = document.getElementById('status');
-  const sessionInfoEl = document.getElementById('session-info');
-  const cardCountEl = document.getElementById('card-count');
+  var feed = document.getElementById('feed');
+  var emptyState = document.getElementById('empty-state');
+  var statusEl = document.getElementById('status');
+  var sessionInfoEl = document.getElementById('session-info');
+  var cardCountEl = document.getElementById('card-count');
+  var runFilterEl = document.getElementById('run-filter');
+  var themeToggleEl = document.getElementById('theme-toggle');
+  var copyToastEl = document.getElementById('copy-toast');
+
+  // --- Theme ---
+  function initTheme() {
+    var saved = localStorage.getItem('m4-display-theme');
+    if (saved === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      themeToggleEl.innerHTML = '&#9788;';
+    }
+  }
+
+  themeToggleEl.onclick = function() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('m4-display-theme', 'light');
+      themeToggleEl.innerHTML = '&#9789;';
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('m4-display-theme', 'dark');
+      themeToggleEl.innerHTML = '&#9788;';
+    }
+  };
+
+  initTheme();
+
+  // --- Run Filter ---
+  runFilterEl.onchange = function() {
+    state.activeRunFilter = runFilterEl.value;
+    applyRunFilter();
+  };
+
+  function trackRunId(runId) {
+    if (!runId || state.runIds.indexOf(runId) !== -1) return;
+    state.runIds.push(runId);
+    var opt = document.createElement('option');
+    opt.value = runId;
+    opt.textContent = runId;
+    runFilterEl.appendChild(opt);
+  }
+
+  function applyRunFilter() {
+    var filter = state.activeRunFilter;
+    var items = feed.querySelectorAll('.card, .section-divider');
+    items.forEach(function(el) {
+      if (!filter) {
+        el.classList.remove('hidden-by-filter');
+      } else {
+        var elRun = el.dataset.runId || '';
+        if (elRun === filter || !elRun) {
+          el.classList.remove('hidden-by-filter');
+        } else {
+          el.classList.add('hidden-by-filter');
+        }
+      }
+    });
+    updateCardCount();
+  }
 
   // --- WebSocket ---
   function connect() {
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${location.host}/ws`);
+    if (state.reconnectTimer) {
+      clearTimeout(state.reconnectTimer);
+      state.reconnectTimer = null;
+    }
+    updateStatus('connecting');
+
+    var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var ws;
+    try {
+      ws = new WebSocket(protocol + '//' + location.host + '/ws');
+    } catch (e) {
+      scheduleReconnect();
+      return;
+    }
 
     ws.onopen = function() {
       state.ws = ws;
@@ -401,7 +655,7 @@
 
     ws.onmessage = function(event) {
       try {
-        const msg = JSON.parse(event.data);
+        var msg = JSON.parse(event.data);
         handleMessage(msg);
       } catch (e) {
         console.error('Failed to parse message:', e);
@@ -412,14 +666,17 @@
       state.connected = false;
       state.ws = null;
       updateStatus('disconnected');
-      // Reconnect with backoff
-      setTimeout(connect, state.reconnectDelay);
-      state.reconnectDelay = Math.min(state.reconnectDelay * 1.5, 10000);
+      scheduleReconnect();
     };
 
     ws.onerror = function() {
       ws.close();
     };
+  }
+
+  function scheduleReconnect() {
+    state.reconnectTimer = setTimeout(connect, state.reconnectDelay);
+    state.reconnectDelay = Math.min(state.reconnectDelay * 2, 15000);
   }
 
   function handleMessage(msg) {
@@ -442,36 +699,93 @@
   // --- Card Rendering ---
   function addCard(cardData) {
     // Remove empty state if present
-    if (emptyState && emptyState.parentNode) {
-      emptyState.remove();
+    var empty = document.getElementById('empty-state');
+    if (empty && empty.parentNode) {
+      empty.remove();
     }
 
-    state.cards.push(cardData);
+    // Deduplicate on reconnect replay
+    var existing = document.getElementById('card-' + cardData.card_id);
+    if (existing) return;
 
-    const el = document.createElement('div');
+    state.cards.push(cardData);
+    trackRunId(cardData.run_id);
+
+    var el = document.createElement('div');
     el.className = 'card';
-    el.id = `card-${cardData.card_id}`;
+    if (cardData.pinned) el.className += ' pinned';
+    el.id = 'card-' + cardData.card_id;
     el.dataset.runId = cardData.run_id || '';
+    el.dataset.cardId = cardData.card_id;
 
     // Header
-    const header = document.createElement('div');
+    var header = document.createElement('div');
     header.className = 'card-header';
 
-    const title = document.createElement('span');
+    // Collapse toggle
+    var collapseBtn = document.createElement('button');
+    collapseBtn.className = 'card-collapse-btn';
+    collapseBtn.innerHTML = '&#9660;';
+    collapseBtn.title = 'Collapse';
+    collapseBtn.onclick = function() {
+      var body = el.querySelector('.card-body');
+      var prov = el.querySelector('.card-provenance');
+      var isCollapsed = collapseBtn.classList.toggle('collapsed');
+      if (body) body.classList.toggle('collapsed', isCollapsed);
+      if (prov) prov.classList.toggle('collapsed', isCollapsed);
+      collapseBtn.title = isCollapsed ? 'Expand' : 'Collapse';
+    };
+    header.appendChild(collapseBtn);
+
+    // Title
+    var title = document.createElement('span');
     title.className = 'card-title';
     title.textContent = cardData.title || cardData.card_type;
-
-    const meta = document.createElement('span');
-    meta.className = 'card-meta';
-    const time = cardData.timestamp ? new Date(cardData.timestamp).toLocaleTimeString() : '';
-    meta.textContent = time;
-
     header.appendChild(title);
+
+    // Timestamp
+    var meta = document.createElement('span');
+    meta.className = 'card-meta';
+    if (cardData.timestamp) {
+      meta.textContent = new Date(cardData.timestamp).toLocaleTimeString();
+    }
     header.appendChild(meta);
+
+    // Action buttons
+    var actions = document.createElement('div');
+    actions.className = 'card-actions';
+
+    // Copy button
+    var copyBtn = document.createElement('button');
+    copyBtn.className = 'card-action-btn';
+    copyBtn.innerHTML = '&#128203;';
+    copyBtn.title = 'Copy content';
+    copyBtn.onclick = function(e) {
+      e.stopPropagation();
+      copyCardContent(cardData, copyBtn);
+    };
+    actions.appendChild(copyBtn);
+
+    // Pin button
+    var pinBtn = document.createElement('button');
+    pinBtn.className = 'card-action-btn' + (cardData.pinned ? ' pinned' : '');
+    pinBtn.innerHTML = '&#128204;';
+    pinBtn.title = cardData.pinned ? 'Unpin' : 'Pin (survives clear)';
+    pinBtn.onclick = function(e) {
+      e.stopPropagation();
+      cardData.pinned = !cardData.pinned;
+      pinBtn.classList.toggle('pinned', cardData.pinned);
+      el.classList.toggle('pinned', cardData.pinned);
+      el.dataset.pinned = cardData.pinned ? 'true' : 'false';
+      pinBtn.title = cardData.pinned ? 'Unpin' : 'Pin (survives clear)';
+    };
+    actions.appendChild(pinBtn);
+
+    header.appendChild(actions);
     el.appendChild(header);
 
     // Body
-    const body = document.createElement('div');
+    var body = document.createElement('div');
     body.className = 'card-body';
 
     switch (cardData.card_type) {
@@ -485,9 +799,8 @@
         renderKeyValue(body, cardData);
         break;
       case 'section':
-        // Sections are rendered differently
         el.remove();
-        addSection(cardData.title || cardData.preview.title);
+        addSection(cardData.title || (cardData.preview && cardData.preview.title) || '');
         return;
       default:
         body.textContent = JSON.stringify(cardData.preview);
@@ -496,51 +809,176 @@
     el.appendChild(body);
 
     // Provenance
-    if (cardData.provenance && cardData.provenance.source) {
-      const prov = document.createElement('div');
+    if (cardData.provenance) {
+      var prov = document.createElement('div');
       prov.className = 'card-provenance';
-      prov.textContent = cardData.provenance.source;
+      var parts = [];
+      if (cardData.provenance.source) parts.push(cardData.provenance.source);
+      if (cardData.provenance.dataset) parts.push(cardData.provenance.dataset);
       if (cardData.provenance.timestamp) {
-        prov.textContent += ' \u00b7 ' + new Date(cardData.provenance.timestamp).toLocaleString();
+        parts.push(new Date(cardData.provenance.timestamp).toLocaleString());
       }
-      el.appendChild(prov);
+      prov.textContent = parts.join(' \u00b7 ');
+      if (parts.length > 0) el.appendChild(prov);
     }
 
     feed.appendChild(el);
+
+    // Apply run filter to the new card
+    if (state.activeRunFilter) {
+      var cardRun = cardData.run_id || '';
+      if (cardRun !== state.activeRunFilter && cardRun) {
+        el.classList.add('hidden-by-filter');
+      }
+    }
+
     updateCardCount();
     scrollToBottom();
   }
 
+  function copyCardContent(cardData, btn) {
+    var text = '';
+    if (cardData.card_type === 'markdown') {
+      text = (cardData.preview && cardData.preview.text) || '';
+    } else if (cardData.card_type === 'keyvalue') {
+      var items = (cardData.preview && cardData.preview.items) || {};
+      text = Object.keys(items).map(function(k) { return k + ': ' + items[k]; }).join('\n');
+    } else if (cardData.card_type === 'table') {
+      var p = cardData.preview;
+      if (p && p.columns) {
+        text = p.columns.join('\t') + '\n';
+        (p.preview_rows || []).forEach(function(row) {
+          text += row.map(function(v) { return v === null ? '' : String(v); }).join('\t') + '\n';
+        });
+      }
+    } else {
+      text = JSON.stringify(cardData.preview, null, 2);
+    }
+
+    navigator.clipboard.writeText(text).then(function() {
+      btn.classList.add('copied');
+      btn.innerHTML = '&#10003;';
+      showToast('Copied to clipboard');
+      setTimeout(function() {
+        btn.classList.remove('copied');
+        btn.innerHTML = '&#128203;';
+      }, 1500);
+    }).catch(function() {});
+  }
+
+  function showToast(msg) {
+    copyToastEl.textContent = msg;
+    copyToastEl.classList.add('visible');
+    setTimeout(function() {
+      copyToastEl.classList.remove('visible');
+    }, 1500);
+  }
+
   function renderTable(container, cardData) {
-    const preview = cardData.preview;
+    var preview = cardData.preview;
     if (!preview || !preview.columns) return;
 
-    const wrapper = document.createElement('div');
+    var wrapper = document.createElement('div');
     wrapper.className = 'table-wrapper';
 
-    const table = document.createElement('table');
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
+    var table = document.createElement('table');
+    var thead = document.createElement('thead');
+    var headerRow = document.createElement('tr');
+
+    // Sort state for this table
+    var sortState = { col: null, asc: true };
 
     preview.columns.forEach(function(col) {
-      const th = document.createElement('th');
-      th.textContent = col;
+      var th = document.createElement('th');
+      var isNumeric = false;
+      if (preview.dtypes) {
+        var dtype = preview.dtypes[col] || '';
+        if (dtype.match(/int|float|num/i)) {
+          th.style.textAlign = 'right';
+          isNumeric = true;
+        }
+      }
+
+      var label = document.createTextNode(col);
+      th.appendChild(label);
+
+      var indicator = document.createElement('span');
+      indicator.className = 'sort-indicator';
+      indicator.textContent = '\u2195';
+      th.appendChild(indicator);
+
+      // Only enable server-side sort if there's an artifact to query
+      if (cardData.artifact_id) {
+        th.onclick = function() {
+          if (sortState.col === col) {
+            sortState.asc = !sortState.asc;
+          } else {
+            sortState.col = col;
+            sortState.asc = true;
+          }
+          // Update indicators
+          headerRow.querySelectorAll('.sort-indicator').forEach(function(ind) {
+            ind.classList.remove('active');
+            ind.textContent = '\u2195';
+          });
+          indicator.classList.add('active');
+          indicator.textContent = sortState.asc ? '\u25b2' : '\u25bc';
+          // Reload from server with sort
+          loadSortedPage(cardData.artifact_id, 0, 50, sortState.col, sortState.asc, wrapper, preview.columns, preview.dtypes, preview.shape ? preview.shape[0] : 0, rowInfoEl, pagerState);
+        };
+      }
+
       headerRow.appendChild(th);
     });
 
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
-    const tbody = document.createElement('tbody');
-    const rows = preview.preview_rows || [];
+    var tbody = document.createElement('tbody');
+    var rows = preview.preview_rows || [];
+    renderTableRows(tbody, rows, preview.columns, preview.dtypes);
+
+    table.appendChild(tbody);
+    wrapper.appendChild(table);
+
+    // Table info & pagination
+    var shape = preview.shape || [0, 0];
+    var totalRows = shape[0];
+    var previewCount = rows.length;
+
+    var info = document.createElement('div');
+    info.className = 'table-info';
+
+    var rowInfoEl = document.createElement('span');
+    var rowInfoText = shape[1] + ' columns \u00b7 ' + totalRows.toLocaleString() + ' rows';
+    if (previewCount < totalRows) {
+      rowInfoText += ' (showing 1\u2013' + previewCount + ')';
+    }
+    rowInfoEl.textContent = rowInfoText;
+    info.appendChild(rowInfoEl);
+
+    // Pager state object for sharing between sort and pagination
+    var pagerState = { offset: 0, limit: 50 };
+
+    // Pager (only if more rows exist)
+    if (totalRows > previewCount && cardData.artifact_id) {
+      var pager = createPager(cardData.artifact_id, totalRows, preview.columns, preview.dtypes, wrapper, rowInfoEl, pagerState, sortState);
+      info.appendChild(pager);
+    }
+
+    container.appendChild(wrapper);
+    container.appendChild(info);
+  }
+
+  function renderTableRows(tbody, rows, columns, dtypes) {
+    tbody.innerHTML = '';
     rows.forEach(function(row) {
-      const tr = document.createElement('tr');
+      var tr = document.createElement('tr');
       row.forEach(function(val, i) {
-        const td = document.createElement('td');
+        var td = document.createElement('td');
         td.textContent = val === null ? '\u2014' : String(val);
-        // Right-align numeric columns
-        if (preview.dtypes) {
-          const dtype = preview.dtypes[preview.columns[i]] || '';
+        if (dtypes) {
+          var dtype = dtypes[columns[i]] || '';
           if (dtype.match(/int|float|num/i)) {
             td.style.textAlign = 'right';
           }
@@ -549,89 +987,69 @@
       });
       tbody.appendChild(tr);
     });
-
-    table.appendChild(tbody);
-    wrapper.appendChild(table);
-
-    // Table info & pagination
-    const shape = preview.shape || [0, 0];
-    const totalRows = shape[0];
-    const previewCount = rows.length;
-
-    const info = document.createElement('div');
-    info.className = 'table-info';
-
-    const rowInfo = document.createElement('span');
-    rowInfo.textContent = `${shape[1]} columns \u00b7 ${totalRows.toLocaleString()} rows`;
-    if (previewCount < totalRows) {
-      rowInfo.textContent += ` (showing 1\u2013${previewCount})`;
-    }
-    info.appendChild(rowInfo);
-
-    // Pager (only if more rows exist)
-    if (totalRows > previewCount && cardData.artifact_id) {
-      const pager = createPager(cardData.artifact_id, totalRows, preview.columns, preview.dtypes, wrapper);
-      info.appendChild(pager);
-    }
-
-    container.appendChild(wrapper);
-    container.appendChild(info);
   }
 
-  function createPager(artifactId, totalRows, columns, dtypes, wrapper) {
-    let currentOffset = 0;
-    const limit = 50;
+  function loadSortedPage(artifactId, offset, limit, sortCol, sortAsc, wrapper, columns, dtypes, totalRows, rowInfoEl, pagerState) {
+    var url = '/api/table/' + artifactId + '?offset=' + offset + '&limit=' + limit;
+    if (sortCol) {
+      url += '&sort=' + encodeURIComponent(sortCol) + '&asc=' + sortAsc;
+    }
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var tbody = wrapper.querySelector('tbody');
+        renderTableRows(tbody, data.rows, columns, dtypes);
+        if (pagerState) pagerState.offset = offset;
+        var end = Math.min(offset + limit, totalRows);
+        rowInfoEl.textContent = columns.length + ' columns \u00b7 ' + totalRows.toLocaleString() + ' rows (showing ' + (offset + 1) + '\u2013' + end + ')';
+      });
+  }
 
-    const pager = document.createElement('div');
+  function createPager(artifactId, totalRows, columns, dtypes, wrapper, rowInfoEl, pagerState, sortState) {
+    var limit = pagerState.limit;
+
+    var pager = document.createElement('div');
     pager.className = 'table-pager';
 
-    const prevBtn = document.createElement('button');
+    var prevBtn = document.createElement('button');
     prevBtn.textContent = '\u2190 Prev';
     prevBtn.disabled = true;
 
-    const pageInfo = document.createElement('span');
+    var pageInfo = document.createElement('span');
 
-    const nextBtn = document.createElement('button');
+    var nextBtn = document.createElement('button');
     nextBtn.textContent = 'Next \u2192';
 
     function updatePage() {
-      pageInfo.textContent = `${currentOffset + 1}\u2013${Math.min(currentOffset + limit, totalRows)} of ${totalRows.toLocaleString()}`;
-      prevBtn.disabled = currentOffset === 0;
-      nextBtn.disabled = currentOffset + limit >= totalRows;
+      var start = pagerState.offset + 1;
+      var end = Math.min(pagerState.offset + limit, totalRows);
+      pageInfo.textContent = start + '\u2013' + end + ' of ' + totalRows.toLocaleString();
+      prevBtn.disabled = pagerState.offset === 0;
+      nextBtn.disabled = pagerState.offset + limit >= totalRows;
+      rowInfoEl.textContent = columns.length + ' columns \u00b7 ' + totalRows.toLocaleString() + ' rows (showing ' + start + '\u2013' + end + ')';
     }
 
     function loadPage() {
-      fetch(`/api/table/${artifactId}?offset=${currentOffset}&limit=${limit}`)
+      var url = '/api/table/' + artifactId + '?offset=' + pagerState.offset + '&limit=' + limit;
+      if (sortState && sortState.col) {
+        url += '&sort=' + encodeURIComponent(sortState.col) + '&asc=' + sortState.asc;
+      }
+      fetch(url)
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          const tbody = wrapper.querySelector('tbody');
-          tbody.innerHTML = '';
-          data.rows.forEach(function(row) {
-            const tr = document.createElement('tr');
-            row.forEach(function(val, i) {
-              const td = document.createElement('td');
-              td.textContent = val === null ? '\u2014' : String(val);
-              if (dtypes) {
-                const dtype = dtypes[columns[i]] || '';
-                if (dtype.match(/int|float|num/i)) {
-                  td.style.textAlign = 'right';
-                }
-              }
-              tr.appendChild(td);
-            });
-            tbody.appendChild(tr);
-          });
+          var tbody = wrapper.querySelector('tbody');
+          renderTableRows(tbody, data.rows, columns, dtypes);
           updatePage();
         });
     }
 
     prevBtn.onclick = function() {
-      currentOffset = Math.max(0, currentOffset - limit);
+      pagerState.offset = Math.max(0, pagerState.offset - limit);
       loadPage();
     };
 
     nextBtn.onclick = function() {
-      currentOffset = currentOffset + limit;
+      pagerState.offset = pagerState.offset + limit;
       loadPage();
     };
 
@@ -644,15 +1062,13 @@
   }
 
   function renderMarkdown(container, cardData) {
-    const text = (cardData.preview && cardData.preview.text) || '';
+    var text = (cardData.preview && cardData.preview.text) || '';
     container.className += ' markdown-body';
 
-    // Try to use marked.js if loaded, otherwise use basic rendering
     if (window.marked) {
       container.innerHTML = window.marked.parse(text);
     } else {
       container.innerHTML = basicMarkdown(text);
-      // Try loading marked.js asynchronously
       loadMarked(function() {
         container.innerHTML = window.marked.parse(text);
       });
@@ -660,7 +1076,6 @@
   }
 
   function basicMarkdown(text) {
-    // Basic markdown rendering without marked.js
     return text
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -682,7 +1097,7 @@
     if (state.markedLoaded) return;
     state.markedLoaded = true;
 
-    const script = document.createElement('script');
+    var script = document.createElement('script');
     script.src = '/static/vendor/marked.min.js';
     script.onload = function() {
       if (window.marked) {
@@ -691,23 +1106,22 @@
       }
     };
     script.onerror = function() {
-      // marked.js not available, basic rendering is fine
       state.markedLoaded = false;
     };
     document.head.appendChild(script);
   }
 
   function renderKeyValue(container, cardData) {
-    const items = (cardData.preview && cardData.preview.items) || {};
-    const dl = document.createElement('div');
+    var items = (cardData.preview && cardData.preview.items) || {};
+    var dl = document.createElement('div');
     dl.className = 'kv-list';
 
     Object.keys(items).forEach(function(key) {
-      const keyEl = document.createElement('div');
+      var keyEl = document.createElement('div');
       keyEl.className = 'kv-key';
       keyEl.textContent = key;
 
-      const valEl = document.createElement('div');
+      var valEl = document.createElement('div');
       valEl.className = 'kv-value';
       valEl.textContent = items[key];
 
@@ -718,22 +1132,34 @@
     container.appendChild(dl);
   }
 
-  function addSection(title) {
-    if (emptyState && emptyState.parentNode) {
-      emptyState.remove();
+  function addSection(title, runId) {
+    var empty = document.getElementById('empty-state');
+    if (empty && empty.parentNode) {
+      empty.remove();
     }
 
-    const div = document.createElement('div');
+    if (runId) trackRunId(runId);
+
+    var div = document.createElement('div');
     div.className = 'section-divider';
     div.textContent = title;
+    div.dataset.runId = runId || '';
     feed.appendChild(div);
+
+    if (state.activeRunFilter) {
+      applyRunFilter();
+    }
+
     scrollToBottom();
   }
 
+  function updateCard(cardId, changes) {
+    // Future: handle card updates (replace=)
+  }
+
   function handleClear(keepPinned) {
-    // Remove all card elements
-    const cards = feed.querySelectorAll('.card, .section-divider');
-    cards.forEach(function(el) {
+    var items = feed.querySelectorAll('.card, .section-divider');
+    items.forEach(function(el) {
       if (keepPinned && el.dataset && el.dataset.pinned === 'true') return;
       el.remove();
     });
@@ -742,19 +1168,44 @@
       ? state.cards.filter(function(c) { return c.pinned; })
       : [];
 
+    // Rebuild run filter
+    rebuildRunFilter();
     updateCardCount();
 
-    // Show empty state if no cards
     if (state.cards.length === 0) {
       showEmptyState();
     }
   }
 
+  function rebuildRunFilter() {
+    var runs = [];
+    state.cards.forEach(function(c) {
+      if (c.run_id && runs.indexOf(c.run_id) === -1) runs.push(c.run_id);
+    });
+    state.runIds = runs;
+
+    var currentFilter = runFilterEl.value;
+    runFilterEl.innerHTML = '<option value="">All runs</option>';
+    runs.forEach(function(rid) {
+      var opt = document.createElement('option');
+      opt.value = rid;
+      opt.textContent = rid;
+      runFilterEl.appendChild(opt);
+    });
+
+    if (runs.indexOf(currentFilter) !== -1) {
+      runFilterEl.value = currentFilter;
+    } else {
+      runFilterEl.value = '';
+      state.activeRunFilter = '';
+    }
+  }
+
   function showEmptyState() {
-    const existing = document.getElementById('empty-state');
+    var existing = document.getElementById('empty-state');
     if (existing) return;
 
-    const empty = document.createElement('div');
+    var empty = document.createElement('div');
     empty.className = 'empty-state';
     empty.id = 'empty-state';
     empty.innerHTML = '<div style="font-size: 32px; opacity: 0.3;">&#9671;</div>'
@@ -774,24 +1225,32 @@
 
   // --- UI Helpers ---
   function updateStatus(status) {
-    const dotClass = status === 'connected' ? 'status-connected'
+    var dotClass = status === 'connected' ? 'status-connected'
       : status === 'disconnected' ? 'status-disconnected'
       : 'status-connecting';
-    const label = status.charAt(0).toUpperCase() + status.slice(1);
-    statusEl.innerHTML = `<span class="status-dot ${dotClass}"></span> ${label}`;
+    var label = status.charAt(0).toUpperCase() + status.slice(1);
+    statusEl.innerHTML = '<span class="status-dot ' + dotClass + '"></span> ' + label;
   }
 
   function updateCardCount() {
-    const count = feed.querySelectorAll('.card').length;
-    cardCountEl.textContent = `${count} card${count !== 1 ? 's' : ''}`;
+    var all = feed.querySelectorAll('.card');
+    var visible = 0;
+    all.forEach(function(el) {
+      if (!el.classList.contains('hidden-by-filter')) visible++;
+    });
+    var text = visible + ' card' + (visible !== 1 ? 's' : '');
+    if (visible !== all.length) {
+      text += ' (of ' + all.length + ')';
+    }
+    cardCountEl.textContent = text;
   }
 
   function loadSessionInfo() {
     fetch('/api/session')
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        const sid = (data.session_id || '').substring(0, 8);
-        sessionInfoEl.textContent = sid ? `session: ${sid}` : '';
+        var sid = (data.session_id || '').substring(0, 8);
+        sessionInfoEl.textContent = sid ? 'session: ' + sid : '';
       })
       .catch(function() {});
   }
