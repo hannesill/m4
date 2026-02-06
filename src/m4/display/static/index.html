@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M4 Display</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-card: #f8f9fa;
+    --bg-header: #f0f1f3;
+    --text: #1a1a2e;
+    --text-muted: #6c757d;
+    --border: #dee2e6;
+    --accent: #4361ee;
+    --accent-hover: #3a56d4;
+    --success: #2ec4b6;
+    --error: #e63946;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    --mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* Header */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: background 0.15s;
+  }
+
+  .btn:hover { background: var(--bg-header); }
+
+  .btn-danger {
+    color: var(--error);
+    border-color: var(--error);
+  }
+
+  .btn-danger:hover {
+    background: var(--error);
+    color: white;
+  }
+
+  /* Card feed */
+  .feed {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: calc(100vh - 120px);
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--text-muted);
+    gap: 8px;
+    padding: 80px 0;
+  }
+
+  .empty-state code {
+    font-family: var(--mono);
+    background: var(--bg-card);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  /* Cards */
+  .card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .card-title {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .card-meta {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .card-body {
+    padding: 16px;
+  }
+
+  .card-provenance {
+    padding: 6px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+
+  /* Table cards */
+  .table-wrapper {
+    overflow-x: auto;
+    font-size: 13px;
+  }
+
+  .table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .table-wrapper th {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--border);
+    font-weight: 600;
+    white-space: nowrap;
+    background: var(--bg-card);
+    position: sticky;
+    top: 0;
+  }
+
+  .table-wrapper td {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .table-wrapper tr:hover td {
+    background: var(--bg-card);
+  }
+
+  .table-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .table-pager {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .table-pager button {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--font);
+  }
+
+  .table-pager button:hover { background: var(--bg-header); }
+  .table-pager button:disabled { opacity: 0.4; cursor: default; }
+
+  /* Markdown cards */
+  .markdown-body {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+    margin: 16px 0 8px;
+    font-weight: 600;
+  }
+
+  .markdown-body h1 { font-size: 20px; }
+  .markdown-body h2 { font-size: 17px; }
+  .markdown-body h3 { font-size: 15px; }
+  .markdown-body p { margin: 8px 0; }
+  .markdown-body strong { font-weight: 600; }
+
+  .markdown-body code {
+    font-family: var(--mono);
+    background: var(--bg-card);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+
+  .markdown-body pre {
+    background: var(--bg-card);
+    padding: 12px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 8px 0;
+  }
+
+  .markdown-body pre code {
+    background: none;
+    padding: 0;
+  }
+
+  .markdown-body ul, .markdown-body ol {
+    padding-left: 24px;
+    margin: 8px 0;
+  }
+
+  /* Key-value cards */
+  .kv-list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 16px;
+    font-size: 13px;
+  }
+
+  .kv-key {
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: right;
+    font-family: var(--mono);
+  }
+
+  .kv-value {
+    font-family: var(--mono);
+  }
+
+  /* Section dividers */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Footer */
+  .footer {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 8px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+
+  .status-connected { background: var(--success); }
+  .status-disconnected { background: var(--error); }
+  .status-connecting { background: #ffc107; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>M4 Display</h1>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-danger" onclick="clearCards()">Clear</button>
+  </div>
+</div>
+
+<div class="feed" id="feed">
+  <div class="empty-state" id="empty-state">
+    <div style="font-size: 32px; opacity: 0.3;">&#9671;</div>
+    <div>Waiting for data...</div>
+    <div><code>from m4.display import show</code></div>
+  </div>
+</div>
+
+<div class="footer">
+  <div id="status">
+    <span class="status-dot status-connecting"></span>
+    Connecting...
+  </div>
+  <div id="session-info"></div>
+  <div id="card-count">0 cards</div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // --- State ---
+  const state = {
+    ws: null,
+    cards: [],
+    connected: false,
+    reconnectDelay: 1000,
+    markedLoaded: false,
+  };
+
+  // --- Elements ---
+  const feed = document.getElementById('feed');
+  const emptyState = document.getElementById('empty-state');
+  const statusEl = document.getElementById('status');
+  const sessionInfoEl = document.getElementById('session-info');
+  const cardCountEl = document.getElementById('card-count');
+
+  // --- WebSocket ---
+  function connect() {
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${location.host}/ws`);
+
+    ws.onopen = function() {
+      state.ws = ws;
+      state.connected = true;
+      state.reconnectDelay = 1000;
+      updateStatus('connected');
+      loadSessionInfo();
+    };
+
+    ws.onmessage = function(event) {
+      try {
+        const msg = JSON.parse(event.data);
+        handleMessage(msg);
+      } catch (e) {
+        console.error('Failed to parse message:', e);
+      }
+    };
+
+    ws.onclose = function() {
+      state.connected = false;
+      state.ws = null;
+      updateStatus('disconnected');
+      // Reconnect with backoff
+      setTimeout(connect, state.reconnectDelay);
+      state.reconnectDelay = Math.min(state.reconnectDelay * 1.5, 10000);
+    };
+
+    ws.onerror = function() {
+      ws.close();
+    };
+  }
+
+  function handleMessage(msg) {
+    switch (msg.type) {
+      case 'display.add':
+        addCard(msg.card);
+        break;
+      case 'display.clear':
+        handleClear(msg.keep_pinned);
+        break;
+      case 'display.section':
+        addSection(msg.title, msg.run_id);
+        break;
+      case 'display.update':
+        updateCard(msg.card_id, msg.changes);
+        break;
+    }
+  }
+
+  // --- Card Rendering ---
+  function addCard(cardData) {
+    // Remove empty state if present
+    if (emptyState && emptyState.parentNode) {
+      emptyState.remove();
+    }
+
+    state.cards.push(cardData);
+
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.id = `card-${cardData.card_id}`;
+    el.dataset.runId = cardData.run_id || '';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'card-header';
+
+    const title = document.createElement('span');
+    title.className = 'card-title';
+    title.textContent = cardData.title || cardData.card_type;
+
+    const meta = document.createElement('span');
+    meta.className = 'card-meta';
+    const time = cardData.timestamp ? new Date(cardData.timestamp).toLocaleTimeString() : '';
+    meta.textContent = time;
+
+    header.appendChild(title);
+    header.appendChild(meta);
+    el.appendChild(header);
+
+    // Body
+    const body = document.createElement('div');
+    body.className = 'card-body';
+
+    switch (cardData.card_type) {
+      case 'table':
+        renderTable(body, cardData);
+        break;
+      case 'markdown':
+        renderMarkdown(body, cardData);
+        break;
+      case 'keyvalue':
+        renderKeyValue(body, cardData);
+        break;
+      case 'section':
+        // Sections are rendered differently
+        el.remove();
+        addSection(cardData.title || cardData.preview.title);
+        return;
+      default:
+        body.textContent = JSON.stringify(cardData.preview);
+    }
+
+    el.appendChild(body);
+
+    // Provenance
+    if (cardData.provenance && cardData.provenance.source) {
+      const prov = document.createElement('div');
+      prov.className = 'card-provenance';
+      prov.textContent = cardData.provenance.source;
+      if (cardData.provenance.timestamp) {
+        prov.textContent += ' \u00b7 ' + new Date(cardData.provenance.timestamp).toLocaleString();
+      }
+      el.appendChild(prov);
+    }
+
+    feed.appendChild(el);
+    updateCardCount();
+    scrollToBottom();
+  }
+
+  function renderTable(container, cardData) {
+    const preview = cardData.preview;
+    if (!preview || !preview.columns) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'table-wrapper';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+
+    preview.columns.forEach(function(col) {
+      const th = document.createElement('th');
+      th.textContent = col;
+      headerRow.appendChild(th);
+    });
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    const rows = preview.preview_rows || [];
+    rows.forEach(function(row) {
+      const tr = document.createElement('tr');
+      row.forEach(function(val, i) {
+        const td = document.createElement('td');
+        td.textContent = val === null ? '\u2014' : String(val);
+        // Right-align numeric columns
+        if (preview.dtypes) {
+          const dtype = preview.dtypes[preview.columns[i]] || '';
+          if (dtype.match(/int|float|num/i)) {
+            td.style.textAlign = 'right';
+          }
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    wrapper.appendChild(table);
+
+    // Table info & pagination
+    const shape = preview.shape || [0, 0];
+    const totalRows = shape[0];
+    const previewCount = rows.length;
+
+    const info = document.createElement('div');
+    info.className = 'table-info';
+
+    const rowInfo = document.createElement('span');
+    rowInfo.textContent = `${shape[1]} columns \u00b7 ${totalRows.toLocaleString()} rows`;
+    if (previewCount < totalRows) {
+      rowInfo.textContent += ` (showing 1\u2013${previewCount})`;
+    }
+    info.appendChild(rowInfo);
+
+    // Pager (only if more rows exist)
+    if (totalRows > previewCount && cardData.artifact_id) {
+      const pager = createPager(cardData.artifact_id, totalRows, preview.columns, preview.dtypes, wrapper);
+      info.appendChild(pager);
+    }
+
+    container.appendChild(wrapper);
+    container.appendChild(info);
+  }
+
+  function createPager(artifactId, totalRows, columns, dtypes, wrapper) {
+    let currentOffset = 0;
+    const limit = 50;
+
+    const pager = document.createElement('div');
+    pager.className = 'table-pager';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '\u2190 Prev';
+    prevBtn.disabled = true;
+
+    const pageInfo = document.createElement('span');
+
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = 'Next \u2192';
+
+    function updatePage() {
+      pageInfo.textContent = `${currentOffset + 1}\u2013${Math.min(currentOffset + limit, totalRows)} of ${totalRows.toLocaleString()}`;
+      prevBtn.disabled = currentOffset === 0;
+      nextBtn.disabled = currentOffset + limit >= totalRows;
+    }
+
+    function loadPage() {
+      fetch(`/api/table/${artifactId}?offset=${currentOffset}&limit=${limit}`)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          const tbody = wrapper.querySelector('tbody');
+          tbody.innerHTML = '';
+          data.rows.forEach(function(row) {
+            const tr = document.createElement('tr');
+            row.forEach(function(val, i) {
+              const td = document.createElement('td');
+              td.textContent = val === null ? '\u2014' : String(val);
+              if (dtypes) {
+                const dtype = dtypes[columns[i]] || '';
+                if (dtype.match(/int|float|num/i)) {
+                  td.style.textAlign = 'right';
+                }
+              }
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+          updatePage();
+        });
+    }
+
+    prevBtn.onclick = function() {
+      currentOffset = Math.max(0, currentOffset - limit);
+      loadPage();
+    };
+
+    nextBtn.onclick = function() {
+      currentOffset = currentOffset + limit;
+      loadPage();
+    };
+
+    pager.appendChild(prevBtn);
+    pager.appendChild(pageInfo);
+    pager.appendChild(nextBtn);
+    updatePage();
+
+    return pager;
+  }
+
+  function renderMarkdown(container, cardData) {
+    const text = (cardData.preview && cardData.preview.text) || '';
+    container.className += ' markdown-body';
+
+    // Try to use marked.js if loaded, otherwise use basic rendering
+    if (window.marked) {
+      container.innerHTML = window.marked.parse(text);
+    } else {
+      container.innerHTML = basicMarkdown(text);
+      // Try loading marked.js asynchronously
+      loadMarked(function() {
+        container.innerHTML = window.marked.parse(text);
+      });
+    }
+  }
+
+  function basicMarkdown(text) {
+    // Basic markdown rendering without marked.js
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>')
+      .replace(/^/, '<p>')
+      .replace(/$/, '</p>');
+  }
+
+  function loadMarked(callback) {
+    if (state.markedLoaded) return;
+    state.markedLoaded = true;
+
+    const script = document.createElement('script');
+    script.src = '/static/vendor/marked.min.js';
+    script.onload = function() {
+      if (window.marked) {
+        window.marked.setOptions({ breaks: true, gfm: true });
+        if (callback) callback();
+      }
+    };
+    script.onerror = function() {
+      // marked.js not available, basic rendering is fine
+      state.markedLoaded = false;
+    };
+    document.head.appendChild(script);
+  }
+
+  function renderKeyValue(container, cardData) {
+    const items = (cardData.preview && cardData.preview.items) || {};
+    const dl = document.createElement('div');
+    dl.className = 'kv-list';
+
+    Object.keys(items).forEach(function(key) {
+      const keyEl = document.createElement('div');
+      keyEl.className = 'kv-key';
+      keyEl.textContent = key;
+
+      const valEl = document.createElement('div');
+      valEl.className = 'kv-value';
+      valEl.textContent = items[key];
+
+      dl.appendChild(keyEl);
+      dl.appendChild(valEl);
+    });
+
+    container.appendChild(dl);
+  }
+
+  function addSection(title) {
+    if (emptyState && emptyState.parentNode) {
+      emptyState.remove();
+    }
+
+    const div = document.createElement('div');
+    div.className = 'section-divider';
+    div.textContent = title;
+    feed.appendChild(div);
+    scrollToBottom();
+  }
+
+  function handleClear(keepPinned) {
+    // Remove all card elements
+    const cards = feed.querySelectorAll('.card, .section-divider');
+    cards.forEach(function(el) {
+      if (keepPinned && el.dataset && el.dataset.pinned === 'true') return;
+      el.remove();
+    });
+
+    state.cards = keepPinned
+      ? state.cards.filter(function(c) { return c.pinned; })
+      : [];
+
+    updateCardCount();
+
+    // Show empty state if no cards
+    if (state.cards.length === 0) {
+      showEmptyState();
+    }
+  }
+
+  function showEmptyState() {
+    const existing = document.getElementById('empty-state');
+    if (existing) return;
+
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.id = 'empty-state';
+    empty.innerHTML = '<div style="font-size: 32px; opacity: 0.3;">&#9671;</div>'
+      + '<div>Waiting for data...</div>'
+      + '<div><code>from m4.display import show</code></div>';
+    feed.appendChild(empty);
+  }
+
+  // --- Actions ---
+  window.clearCards = function() {
+    fetch('/api/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keep_pinned: true }),
+    });
+  };
+
+  // --- UI Helpers ---
+  function updateStatus(status) {
+    const dotClass = status === 'connected' ? 'status-connected'
+      : status === 'disconnected' ? 'status-disconnected'
+      : 'status-connecting';
+    const label = status.charAt(0).toUpperCase() + status.slice(1);
+    statusEl.innerHTML = `<span class="status-dot ${dotClass}"></span> ${label}`;
+  }
+
+  function updateCardCount() {
+    const count = feed.querySelectorAll('.card').length;
+    cardCountEl.textContent = `${count} card${count !== 1 ? 's' : ''}`;
+  }
+
+  function loadSessionInfo() {
+    fetch('/api/session')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        const sid = (data.session_id || '').substring(0, 8);
+        sessionInfoEl.textContent = sid ? `session: ${sid}` : '';
+      })
+      .catch(function() {});
+  }
+
+  function scrollToBottom() {
+    requestAnimationFrame(function() {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    });
+  }
+
+  // --- Init ---
+  connect();
+})();
+</script>
+</body>
+</html>
