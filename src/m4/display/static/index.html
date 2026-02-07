@@ -209,6 +209,102 @@
   .run-dropdown-entry:hover .run-delete-btn { opacity: 1; }
   .run-delete-btn:hover { color: var(--error); }
 
+  /* Confirm modal */
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.12s ease;
+  }
+  .confirm-dialog {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    padding: 20px 24px;
+    min-width: 320px;
+    max-width: 400px;
+    font-family: var(--font);
+  }
+  .confirm-dialog h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .confirm-dialog p {
+    margin: 0 0 18px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .confirm-actions button {
+    padding: 6px 14px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-family: var(--font);
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .confirm-cancel {
+    background: var(--bg);
+    color: var(--text);
+  }
+  .confirm-cancel:hover { background: var(--bg-header); }
+  .confirm-danger {
+    background: var(--error);
+    color: #fff;
+    border-color: var(--error);
+  }
+  .confirm-danger:hover { opacity: 0.85; }
+
+  /* Inline run name editing (metadata bar) */
+  .run-meta-label {
+    cursor: text;
+  }
+  .run-meta-label:hover {
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--text-muted);
+  }
+  .run-meta-edit-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+  }
+  .run-meta-edit-input {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font);
+    padding: 2px 6px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    min-width: 160px;
+  }
+  .run-meta-edit-input.invalid {
+    border-color: var(--error);
+  }
+  .run-meta-edit-hint {
+    font-size: 11px;
+    color: var(--error);
+    white-space: nowrap;
+  }
+
   /* Run metadata bar */
   .run-metadata-bar {
     max-width: 960px;
@@ -1361,42 +1457,171 @@
     runMetaBar.classList.add('visible');
   }
 
-  function deleteRun(label) {
-    if (!confirm('Delete run "' + label + '"? This cannot be undone.')) return;
-    closeDropdown();
-    fetch('/api/runs/' + encodeURIComponent(label), { method: 'DELETE' })
-      .then(function(r) {
-        if (!r.ok) throw new Error('Server returned ' + r.status);
-        return r.json();
-      })
-      .then(function(data) {
-        if (data.status === 'ok') {
-          // Remove from local state
-          state.runs = state.runs.filter(function(r) { return r.label !== label; });
-          state.runIds = state.runIds.filter(function(id) { return id !== label; });
-          // Remove cards from DOM
-          var cards = feed.querySelectorAll('.card[data-run-id="' + label + '"], .section-divider[data-run-id="' + label + '"], .run-separator[data-run-separator="' + label + '"]');
-          cards.forEach(function(el) { el.remove(); });
-          state.cards = state.cards.filter(function(c) { return c.run_id !== label; });
-          // If this was the selected run, switch to "All runs"
-          if (state.activeRunFilter === label) {
-            selectRun('');
-          } else {
-            renderDropdown();
-          }
-          updateCardCount();
-          showToast('Run deleted');
-          // Show empty state if no cards left
-          if (state.cards.length === 0) showEmptyState();
-        } else {
-          showToast(data.error || 'Delete failed');
-        }
-      })
-      .catch(function(err) {
-        console.error('Delete run error:', err);
-        showToast('Failed to delete run');
-      });
+  function showConfirmModal(title, message, confirmLabel, onConfirm) {
+    var overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    var dialog = document.createElement('div');
+    dialog.className = 'confirm-dialog';
+    dialog.innerHTML = '<h3></h3><p></p><div class="confirm-actions"><button class="confirm-cancel">Cancel</button><button class="confirm-danger"></button></div>';
+    dialog.querySelector('h3').textContent = title;
+    dialog.querySelector('p').textContent = message;
+    dialog.querySelector('.confirm-danger').textContent = confirmLabel;
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    function dismiss() { overlay.remove(); }
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) dismiss(); });
+    dialog.querySelector('.confirm-cancel').onclick = dismiss;
+    dialog.querySelector('.confirm-danger').onclick = function() { dismiss(); onConfirm(); };
+    dialog.querySelector('.confirm-danger').focus();
+
+    // Esc to cancel
+    function onKey(e) { if (e.key === 'Escape') { dismiss(); document.removeEventListener('keydown', onKey); } }
+    document.addEventListener('keydown', onKey);
   }
+
+  function deleteRun(label) {
+    showConfirmModal(
+      'Delete run',
+      'Delete "' + label + '"? This cannot be undone.',
+      'Delete',
+      function() {
+        closeDropdown();
+        fetch('/api/runs/' + encodeURIComponent(label), { method: 'DELETE' })
+          .then(function(r) {
+            if (!r.ok) throw new Error('Server returned ' + r.status);
+            return r.json();
+          })
+          .then(function(data) {
+            if (data.status === 'ok') {
+              state.runs = state.runs.filter(function(r) { return r.label !== label; });
+              state.runIds = state.runIds.filter(function(id) { return id !== label; });
+              var cards = feed.querySelectorAll('.card[data-run-id="' + label + '"], .section-divider[data-run-id="' + label + '"], .run-separator[data-run-separator="' + label + '"]');
+              cards.forEach(function(el) { el.remove(); });
+              state.cards = state.cards.filter(function(c) { return c.run_id !== label; });
+              if (state.activeRunFilter === label) {
+                selectRun('');
+              } else {
+                renderDropdown();
+              }
+              updateCardCount();
+              showToast('Run deleted');
+              if (state.cards.length === 0) showEmptyState();
+            } else {
+              showToast(data.error || 'Delete failed');
+            }
+          })
+          .catch(function(err) {
+            console.error('Delete run error:', err);
+            showToast('Failed to delete run');
+          });
+      }
+    );
+  }
+
+  function startEditRunName() {
+    // Only works when a specific run is selected
+    if (!state.activeRunFilter) return;
+    // Prevent double-edit
+    if (runMetaBar.querySelector('.run-meta-edit-wrap')) return;
+
+    var run = null;
+    for (var i = 0; i < state.runs.length; i++) {
+      if (state.runs[i].label === state.activeRunFilter) { run = state.runs[i]; break; }
+    }
+    if (!run) return;
+
+    var originalLabel = run.label;
+    runMetaLabel.style.display = 'none';
+
+    var wrap = document.createElement('span');
+    wrap.className = 'run-meta-edit-wrap';
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'run-meta-edit-input';
+    input.value = originalLabel;
+    wrap.appendChild(input);
+
+    var hintEl = document.createElement('span');
+    hintEl.className = 'run-meta-edit-hint';
+    wrap.appendChild(hintEl);
+
+    runMetaLabel.parentNode.insertBefore(wrap, runMetaLabel);
+    input.focus();
+    input.select();
+
+    function validate(val) {
+      val = val.trim();
+      if (!val) return 'Name cannot be empty';
+      if (val === originalLabel) return '';
+      for (var i = 0; i < state.runs.length; i++) {
+        if (state.runs[i].label === val) return 'Name already in use';
+      }
+      return '';
+    }
+
+    input.addEventListener('input', function() {
+      var err = validate(input.value);
+      if (err) {
+        input.classList.add('invalid');
+        hintEl.textContent = err;
+      } else {
+        input.classList.remove('invalid');
+        hintEl.textContent = '';
+      }
+    });
+
+    var committed = false;
+    function commit() {
+      if (committed) return;
+      committed = true;
+      var newLabel = input.value.trim();
+      var err = validate(newLabel);
+      if (err && newLabel !== originalLabel) { cleanup(); return; }
+      if (!newLabel || newLabel === originalLabel) { cleanup(); return; }
+
+      fetch('/api/runs/' + encodeURIComponent(originalLabel) + '/rename', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_label: newLabel })
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.status === 'ok') {
+            run.label = newLabel;
+            state.runIds = state.runIds.map(function(id) { return id === originalLabel ? newLabel : id; });
+            state.cards.forEach(function(c) { if (c.run_id === originalLabel) c.run_id = newLabel; });
+            var els = feed.querySelectorAll('[data-run-id="' + originalLabel + '"]');
+            els.forEach(function(el) { el.setAttribute('data-run-id', newLabel); });
+            var seps = feed.querySelectorAll('[data-run-separator="' + originalLabel + '"]');
+            seps.forEach(function(el) { el.setAttribute('data-run-separator', newLabel); });
+            state.activeRunFilter = newLabel;
+            updateDropdownTrigger();
+            showToast('Run renamed');
+          } else {
+            showToast(data.error || 'Rename failed');
+          }
+          cleanup();
+        })
+        .catch(function() { showToast('Failed to rename run'); cleanup(); });
+    }
+
+    function cleanup() {
+      if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+      runMetaLabel.style.display = '';
+      runMetaLabel.textContent = run.label;
+    }
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      if (e.key === 'Escape') { e.preventDefault(); cleanup(); }
+    });
+    input.addEventListener('blur', function() { setTimeout(commit, 100); });
+  }
+
+  // Click the run title in the metadata bar to rename
+  runMetaLabel.addEventListener('click', startEditRunName);
 
   function trackRunId(runId) {
     if (!runId || state.runIds.indexOf(runId) !== -1) return;

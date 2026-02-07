@@ -198,6 +198,51 @@ class RunManager:
         logger.debug(f"Deleted run '{run_id}' ({dir_name})")
         return True
 
+    def rename_run(self, old_label: str, new_label: str) -> bool:
+        """Rename a run by changing its label.
+
+        Args:
+            old_label: Current run label.
+            new_label: New run label (must not already exist).
+
+        Returns:
+            True if renamed, False if old_label not found or new_label taken.
+        """
+        if old_label not in self._label_to_dir:
+            return False
+        if new_label in self._label_to_dir:
+            return False
+        if not new_label.strip():
+            return False
+
+        dir_name = self._label_to_dir[old_label]
+
+        # Update in-memory mapping
+        del self._label_to_dir[old_label]
+        self._label_to_dir[new_label] = dir_name
+
+        # Update meta.json on disk
+        run_dir = self._runs_dir / dir_name
+        meta_path = run_dir / "meta.json"
+        if meta_path.exists():
+            try:
+                meta = json.loads(meta_path.read_text())
+                meta["label"] = new_label
+                meta_path.write_text(json.dumps(meta, indent=2))
+            except (json.JSONDecodeError, OSError):
+                pass
+
+        # Update registry
+        registry = self._read_registry()
+        for entry in registry:
+            if entry.get("dir_name") == dir_name:
+                entry["label"] = new_label
+                break
+        self._write_registry(registry)
+
+        logger.debug(f"Renamed run '{old_label}' -> '{new_label}' ({dir_name})")
+        return True
+
     def clean_runs(self, older_than: str = "7d") -> int:
         """Remove runs older than a given age.
 

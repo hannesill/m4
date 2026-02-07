@@ -191,6 +191,11 @@ class DisplayServer:
             Route("/api/events", self._api_events, methods=["GET"]),
             Route("/api/runs", self._api_runs, methods=["GET"]),
             Route(
+                "/api/runs/{run_id:path}/rename",
+                self._api_run_rename,
+                methods=["PATCH"],
+            ),
+            Route(
                 "/api/runs/{run_id:path}",
                 self._api_run_delete,
                 methods=["DELETE"],
@@ -570,6 +575,28 @@ class DisplayServer:
             self.run_manager.refresh()
             return JSONResponse(self.run_manager.list_runs())
         return JSONResponse([])
+
+    async def _api_run_rename(self, request: Request) -> JSONResponse:
+        """Rename a run by label."""
+        run_id = request.path_params["run_id"]
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+        new_label = body.get("new_label", "").strip()
+        if not new_label:
+            return JSONResponse({"error": "new_label is required"}, status_code=400)
+        if self.run_manager:
+            renamed = self.run_manager.rename_run(run_id, new_label)
+            if renamed:
+                return JSONResponse({"status": "ok"})
+            return JSONResponse(
+                {
+                    "error": f"Cannot rename: '{run_id}' not found or '{new_label}' already exists"
+                },
+                status_code=409,
+            )
+        return JSONResponse({"error": "No run manager"}, status_code=400)
 
     async def _api_run_delete(self, request: Request) -> JSONResponse:
         """Delete a run by label.
