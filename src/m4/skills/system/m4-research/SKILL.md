@@ -86,7 +86,11 @@ Ask: "Which dataset should we use?"
 
 ## Phase 2: Draft Research Protocol
 
-After the interview, produce a structured research plan:
+After the interview, produce a structured research plan. Show the protocol to the researcher for review before proceeding:
+
+```python
+show(protocol_md, title="Research Protocol — Review", wait=True, prompt="Approve this protocol?", run_id=RUN)
+```
 
 ```markdown
 ## Research Protocol: [Title]
@@ -135,7 +139,12 @@ After the interview, produce a structured research plan:
 
 ## Phase 3: Scientific Integrity Guardrails
 
-**Apply these checks throughout the analysis:**
+**Apply these checks throughout the analysis.** At each analysis step, save results to files first, then show key tables and charts to the researcher:
+
+```python
+cohort_df.to_csv("output/cohort.csv", index=False)
+show(cohort_df, title=f"Cohort (N={len(cohort_df)})", run_id=RUN)
+```
 
 ### Bias Prevention
 
@@ -268,29 +277,29 @@ Use for complex analyses:
 
 ### Pattern: Mortality Risk Factors
 ```
-1. Define cohort (first-icu-stay)
-2. Extract baseline characteristics
+1. Define cohort (first-icu-stay) → save CSV, show(cohort_df)
+2. Extract baseline characteristics → save CSV, show(table1_df)
 3. Calculate severity (sofa-score or apsiii-score)
 4. Define mortality outcome
-5. Multivariable regression
+5. Multivariable regression → save CSV, show(results_df)
 ```
 
 ### Pattern: Treatment Effect
 ```
-1. Define cohort and time zero
+1. Define cohort and time zero → save CSV, show(cohort_df)
 2. Define exposure window (fixed time)
 3. Extract confounders at baseline
-4. Propensity score matching
-5. Compare outcomes
+4. Propensity score matching → show(balance_fig)
+5. Compare outcomes → save CSV, show(results_df)
 ```
 
 ### Pattern: Cohort Description
 ```
-1. Define cohort
-2. Demographics, comorbidities
+1. Define cohort → save CSV, show(cohort_df)
+2. Demographics, comorbidities → show(table1_df)
 3. Severity scores
 4. Treatments received
-5. Outcomes (mortality, LOS, complications)
+5. Outcomes (mortality, LOS, complications) → show(outcomes_df)
 ```
 
 ---
@@ -309,6 +318,13 @@ Stop and reconsider if you see:
 ---
 
 ## After Analysis Completion
+
+Use a section divider and summary card to close the analysis:
+
+```python
+section("Summary", run_id=RUN)
+show("## Findings\n- ...\n\n## Limitations\n- ...", title="Study Summary", run_id=RUN)
+```
 
 1. **Summarize findings** with effect sizes and confidence intervals
 2. **Acknowledge limitations** explicitly

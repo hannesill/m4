@@ -1,0 +1,23 @@
+sources:
+  - url: https://github.com/TODO/m4/tree/main/src/m4/display
+    description: M4 display module public API (show, section, pending_requests, etc.)
+    license: Apache 2.0
+
+created:
+  by: Claude Opus 4.6 (AI Assistant)
+  role: authoring
+  date: 2026-02-07
+
+reviews:
+  - by: Hannes Ill (M4 Project Lead)
+    date: 2026-02-07
+    scope: technical-accuracy
+    notes: Review for alignment with M4 skill format requirements and clinical workflow integration
+
+references:
+  - M4 display module source code (src/m4/display/__init__.py)
+
+changelog:
+  - version: "1.0"
+    date: 2026-02-07
+    summary: Initial creation documenting the m4.display public API — show(), section(), interaction patterns, run management, and the save-then-show principle

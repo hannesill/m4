@@ -1,0 +1,29 @@
+sources:
+  - url: https://github.com/TODO/m4/tree/main/src/m4/skills/system/m4-research
+    description: M4 structured clinical research workflow skill
+    license: Apache 2.0
+
+created:
+  by: Claude Opus 4.6 (AI Assistant)
+  role: authoring
+  date: 2026-01-17
+
+reviews:
+  - by: Hannes Ill (M4 Project Lead)
+    date: 2026-02-07
+    scope: technical-accuracy
+    notes: Review for alignment with M4 skill format requirements and clinical workflow integration
+
+references:
+  - M4 clinical research workflow documentation
+
+changelog:
+  - version: "1.0"
+    date: 2026-01-17
+    summary: Initial creation with interview-driven research protocol, scientific integrity guardrails, and skill-matching guidance
+  - version: "2.0"
+    date: 2026-02-04
+    summary: Standardized to 4-field frontmatter and reorganized into category subdirectories
+  - version: "2.1"
+    date: 2026-02-07
+    summary: Integrate display into research phases — show protocol for review (Phase 2), save-then-show at each analysis step (Phase 3), section divider and summary card (After Analysis), and display annotations in common research patterns
