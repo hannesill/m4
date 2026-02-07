@@ -714,14 +714,41 @@ def clean_runs(older_than: str = "7d") -> int:
     return 0
 
 
-def export(path: str, format: str = "html") -> None:
-    """Export current session as a self-contained artifact.
+def export(
+    path: str,
+    format: str = "html",
+    run_id: str | None = None,
+) -> str:
+    """Export a run (or all runs) as a self-contained artifact.
 
     Args:
         path: Output file path.
-        format: "html" (self-contained) or "json" (card index + artifacts).
+        format: "html" (self-contained) or "json" (card index + artifacts zip).
+        run_id: Specific run label to export, or None for all runs.
+
+    Returns:
+        Path to the written file.
+
+    Raises:
+        ValueError: If format is not "html" or "json".
     """
-    raise NotImplementedError("Export is planned for Phase 5")
+    if format not in ("html", "json"):
+        raise ValueError(
+            f"Unsupported export format: {format!r} (use 'html' or 'json')"
+        )
+
+    _ensure_run_manager()
+    if _run_manager is None:
+        raise RuntimeError("No run manager available for export")
+
+    from m4.display.export import export_html, export_json
+
+    if format == "html":
+        result = export_html(_run_manager, path, run_id=run_id)
+    else:
+        result = export_json(_run_manager, path, run_id=run_id)
+
+    return str(result)
 
 
 def on_event(callback: Any) -> None:

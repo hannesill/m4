@@ -196,10 +196,16 @@ class DisplayServer:
                 methods=["PATCH"],
             ),
             Route(
+                "/api/runs/{run_id:path}/export",
+                self._api_run_export,
+                methods=["GET"],
+            ),
+            Route(
                 "/api/runs/{run_id:path}",
                 self._api_run_delete,
                 methods=["DELETE"],
             ),
+            Route("/api/export", self._api_export, methods=["GET"]),
             WebSocketRoute("/ws", self._ws_endpoint),
         ]
 
@@ -611,6 +617,76 @@ class DisplayServer:
                 return JSONResponse({"status": "ok"})
             return JSONResponse({"error": f"Run '{run_id}' not found"}, status_code=404)
         return JSONResponse({"error": "No run manager"}, status_code=400)
+
+    async def _api_run_export(self, request: Request) -> Response:
+        """Export a specific run as HTML or JSON.
+
+        GET /api/runs/{run_id}/export?format=html|json
+        """
+        run_id = request.path_params["run_id"]
+        fmt = request.query_params.get("format", "html")
+
+        if not self.run_manager:
+            return JSONResponse({"error": "No run manager"}, status_code=400)
+
+        from m4.display.export import export_html_string, export_json_bytes
+
+        self.run_manager.refresh()
+
+        if fmt == "json":
+            data = export_json_bytes(self.run_manager, run_id=run_id)
+            filename = f"m4-export-{run_id}.zip"
+            return Response(
+                content=data,
+                media_type="application/zip",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}"',
+                },
+            )
+
+        # Default: HTML
+        html = export_html_string(self.run_manager, run_id=run_id)
+        filename = f"m4-export-{run_id}.html"
+        return Response(
+            content=html,
+            media_type="text/html",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+            },
+        )
+
+    async def _api_export(self, request: Request) -> Response:
+        """Export all runs as HTML or JSON.
+
+        GET /api/export?format=html|json
+        """
+        fmt = request.query_params.get("format", "html")
+
+        if not self.run_manager:
+            return JSONResponse({"error": "No run manager"}, status_code=400)
+
+        from m4.display.export import export_html_string, export_json_bytes
+
+        self.run_manager.refresh()
+
+        if fmt == "json":
+            data = export_json_bytes(self.run_manager)
+            return Response(
+                content=data,
+                media_type="application/zip",
+                headers={
+                    "Content-Disposition": 'attachment; filename="m4-export-all.zip"',
+                },
+            )
+
+        html = export_html_string(self.run_manager)
+        return Response(
+            content=html,
+            media_type="text/html",
+            headers={
+                "Content-Disposition": 'attachment; filename="m4-export-all.html"',
+            },
+        )
 
     # --- WebSocket ---
 

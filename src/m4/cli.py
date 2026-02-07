@@ -1501,6 +1501,28 @@ def display_cmd(
             help="Remove runs older than duration (e.g., '7d', '24h', '0d' for all).",
         ),
     ] = None,
+    export_path: Annotated[
+        str | None,
+        typer.Option(
+            "--export",
+            help="Export run(s) to file. Use with --run to specify a run.",
+        ),
+    ] = None,
+    export_format: Annotated[
+        str,
+        typer.Option(
+            "--format",
+            "-f",
+            help="Export format: 'html' or 'json'.",
+        ),
+    ] = "html",
+    run: Annotated[
+        str | None,
+        typer.Option(
+            "--run",
+            help="Run label for export (default: all runs).",
+        ),
+    ] = None,
 ):
     """Start, stop, or check the M4 display server.
 
@@ -1516,9 +1538,24 @@ def display_cmd(
     • m4 display --stop             # Stop running server
     • m4 display --list             # List all display runs
     • m4 display --clean 7d         # Remove runs older than 7 days
+    • m4 display --export out.html  # Export all runs as HTML
+    • m4 display --export out.html --run my-analysis  # Export specific run
+    • m4 display --export out.zip --format json       # Export as JSON zip
     """
     from m4.display import server_status as get_status
     from m4.display import stop_server as do_stop
+
+    if export_path is not None:
+        from m4.display import export as do_export
+
+        try:
+            result = do_export(export_path, format=export_format, run_id=run)
+            success(f"Exported to {result}")
+        except ValueError as e:
+            error(str(e))
+        except Exception as e:
+            error(f"Export failed: {e}")
+        return
 
     if list_runs:
         from m4.display import list_runs as do_list_runs

@@ -348,6 +348,73 @@
 
   .run-separator.hidden-by-filter { display: none; }
 
+  /* Export dropdown */
+  .export-dropdown {
+    position: relative;
+    display: inline-block;
+  }
+
+  .export-dropdown-panel {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 110;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    min-width: 180px;
+    animation: fadeIn 0.15s ease;
+  }
+
+  .export-dropdown-item {
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--font);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s;
+    border: none;
+    background: none;
+    color: var(--text);
+    width: 100%;
+    text-align: left;
+  }
+
+  .export-dropdown-item:hover { background: var(--bg-header); }
+
+  .export-dropdown-item .export-icon {
+    font-size: 13px;
+    opacity: 0.6;
+    width: 18px;
+    text-align: center;
+  }
+
+  .export-dropdown-sep {
+    height: 1px;
+    background: var(--border);
+    margin: 2px 0;
+  }
+
+  /* Run dropdown export button */
+  .run-export-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 0 2px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .run-dropdown-entry:hover .run-export-btn { opacity: 1; }
+  .run-export-btn:hover { color: var(--accent); }
+
   .header-actions {
     display: flex;
     gap: 6px;
@@ -1173,6 +1240,96 @@
     font-weight: 500;
     padding: 2px 6px;
   }
+  /* Print-optimized styles */
+  @media print {
+    body {
+      background: white;
+      color: black;
+    }
+
+    .header {
+      position: static;
+      background: white;
+      border-bottom: 2px solid #333;
+      padding: 8px 0;
+    }
+
+    .header-actions,
+    .run-dropdown,
+    .export-dropdown,
+    .run-metadata-bar,
+    .footer,
+    .copy-toast,
+    .confirm-overlay,
+    .prompt-popover,
+    .request-badge {
+      display: none !important;
+    }
+
+    .feed {
+      max-width: none;
+      padding: 8px 0;
+      min-height: auto;
+    }
+
+    .card {
+      box-shadow: none;
+      border: 1px solid #999;
+      margin-bottom: 8px;
+      animation: none;
+      page-break-inside: avoid;
+    }
+
+    .card-header {
+      background: #f5f5f5;
+    }
+
+    .card-body {
+      padding: 8px 12px;
+    }
+
+    .table-scroll-cap {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+
+    .table-toolbar {
+      display: none;
+    }
+
+    table {
+      font-size: 9pt;
+    }
+
+    th, td {
+      padding: 3px 6px;
+    }
+
+    .card-actions,
+    .send-to-agent-btn,
+    .response-actions {
+      display: none;
+    }
+
+    .plotly-container {
+      page-break-inside: avoid;
+    }
+
+    .card-provenance {
+      font-size: 9pt;
+      color: #666;
+    }
+
+    .run-separator {
+      page-break-before: always;
+      font-size: 10pt;
+      font-weight: bold;
+    }
+
+    .run-separator:first-child {
+      page-break-before: auto;
+    }
+  }
 </style>
 </head>
 <body>
@@ -1190,6 +1347,10 @@
   </div>
   <div class="header-actions">
     <span class="request-badge hidden" id="request-badge" title="Pending agent requests">0</span>
+    <div class="export-dropdown" id="export-dropdown">
+      <button class="btn" id="export-btn" title="Export run">&#8615; Export</button>
+      <div class="export-dropdown-panel" id="export-dropdown-panel" style="display: none;"></div>
+    </div>
     <button class="btn-icon" id="theme-toggle" title="Toggle theme">&#9789;</button>
   </div>
 </div>
@@ -1396,6 +1557,19 @@
         if (run.start_time) meta.textContent += '  ' + formatRunTime(run.start_time);
         entry.appendChild(meta);
 
+        var expBtn = document.createElement('button');
+        expBtn.type = 'button';
+        expBtn.className = 'run-export-btn';
+        expBtn.innerHTML = '&#8615;';
+        expBtn.title = 'Export run';
+        expBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          exportRun(run.label, 'html');
+          closeDropdown();
+        });
+        entry.appendChild(expBtn);
+
         var delBtn = document.createElement('button');
         delBtn.type = 'button';
         delBtn.className = 'run-delete-btn';
@@ -1517,6 +1691,104 @@
           });
       }
     );
+  }
+
+  // --- Export ---
+  var exportBtn = document.getElementById('export-btn');
+  var exportDropdownPanel = document.getElementById('export-dropdown-panel');
+  var exportDropdownOpen = false;
+
+  exportBtn.onclick = function(e) {
+    e.stopPropagation();
+    if (exportDropdownOpen) {
+      closeExportDropdown();
+    } else {
+      openExportDropdown();
+    }
+  };
+
+  function openExportDropdown() {
+    exportDropdownOpen = true;
+    renderExportDropdown();
+    exportDropdownPanel.style.display = '';
+    setTimeout(function() {
+      document.addEventListener('mousedown', _closeExportOutside);
+    }, 0);
+  }
+
+  function closeExportDropdown() {
+    exportDropdownOpen = false;
+    exportDropdownPanel.style.display = 'none';
+    document.removeEventListener('mousedown', _closeExportOutside);
+  }
+
+  function _closeExportOutside(e) {
+    var dd = document.getElementById('export-dropdown');
+    if (dd && !dd.contains(e.target)) {
+      closeExportDropdown();
+    }
+  }
+
+  function renderExportDropdown() {
+    exportDropdownPanel.innerHTML = '';
+
+    var runLabel = state.activeRunFilter || null;
+    var label = runLabel ? runLabel : 'all runs';
+
+    // HTML export
+    var htmlItem = document.createElement('button');
+    htmlItem.className = 'export-dropdown-item';
+    htmlItem.innerHTML = '<span class="export-icon">&#128196;</span> Export as HTML';
+    htmlItem.onclick = function(e) {
+      e.stopPropagation();
+      closeExportDropdown();
+      exportRun(runLabel, 'html');
+    };
+    exportDropdownPanel.appendChild(htmlItem);
+
+    // JSON export
+    var jsonItem = document.createElement('button');
+    jsonItem.className = 'export-dropdown-item';
+    jsonItem.innerHTML = '<span class="export-icon">&#128230;</span> Export as JSON';
+    jsonItem.onclick = function(e) {
+      e.stopPropagation();
+      closeExportDropdown();
+      exportRun(runLabel, 'json');
+    };
+    exportDropdownPanel.appendChild(jsonItem);
+
+    // Separator
+    var sep = document.createElement('div');
+    sep.className = 'export-dropdown-sep';
+    exportDropdownPanel.appendChild(sep);
+
+    // Print
+    var printItem = document.createElement('button');
+    printItem.className = 'export-dropdown-item';
+    printItem.innerHTML = '<span class="export-icon">&#128424;</span> Print (Ctrl+P)';
+    printItem.onclick = function(e) {
+      e.stopPropagation();
+      closeExportDropdown();
+      window.print();
+    };
+    exportDropdownPanel.appendChild(printItem);
+  }
+
+  function exportRun(runLabel, format) {
+    var url;
+    if (runLabel) {
+      url = '/api/runs/' + encodeURIComponent(runLabel) + '/export?format=' + format;
+    } else {
+      url = '/api/export?format=' + format;
+    }
+    // Trigger download
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Export started');
   }
 
   function startEditRunName() {
