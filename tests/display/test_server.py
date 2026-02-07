@@ -874,14 +874,16 @@ class TestRunManagerServer:
         )
         assert resp.status_code == 404
 
-    def test_api_run_delete_requires_auth(self, app, run_mgr):
+    def test_api_run_delete_no_auth_required(self, app, run_mgr):
+        """Run delete is accessible without auth (localhost-only, UI confirmation)."""
         from starlette.testclient import TestClient
 
-        run_mgr.get_or_create_run("protected")
+        run_mgr.get_or_create_run("deletable")
 
         client = TestClient(app)
-        resp = client.delete("/api/runs/protected")
-        assert resp.status_code == 401
+        resp = client.delete("/api/runs/deletable")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
 
     def test_api_cards_via_run_manager(self, app, run_mgr):
         from starlette.testclient import TestClient

@@ -572,10 +572,11 @@ class DisplayServer:
         return JSONResponse([])
 
     async def _api_run_delete(self, request: Request) -> JSONResponse:
-        """Delete a run by label. Requires auth."""
-        if not self._check_auth(request):
-            return JSONResponse({"error": "unauthorized"}, status_code=401)
+        """Delete a run by label.
 
+        No auth required — server is localhost-only and the browser UI
+        shows a confirmation dialog before calling this endpoint.
+        """
         run_id = request.path_params["run_id"]
         if self.run_manager:
             deleted = self.run_manager.delete_run(run_id)
