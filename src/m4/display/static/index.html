@@ -76,7 +76,13 @@
     letter-spacing: -0.3px;
   }
 
-  .run-filter {
+  /* Run History Dropdown */
+  .run-dropdown {
+    position: relative;
+    display: inline-block;
+  }
+
+  .run-dropdown-trigger {
     padding: 5px 10px;
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -86,10 +92,165 @@
     font-family: var(--font);
     cursor: pointer;
     outline: none;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  .run-filter:focus { border-color: var(--accent); }
+  .run-dropdown-trigger:hover { border-color: var(--accent); }
+  .run-dropdown-trigger.open { border-color: var(--accent); background: var(--bg-card); }
+
+  .run-dropdown-trigger .dd-arrow {
+    font-size: 10px;
+    color: var(--text-muted);
+    transition: transform 0.15s;
+  }
+
+  .run-dropdown-trigger.open .dd-arrow { transform: rotate(180deg); }
+
+  .run-dropdown-panel {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 110;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    min-width: 300px;
+    max-width: 380px;
+    max-height: 420px;
+    overflow-y: auto;
+    animation: fadeIn 0.15s ease;
+  }
+
+  .run-dropdown-all {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .run-dropdown-all:hover { background: var(--bg-header); }
+  .run-dropdown-all.selected { font-weight: 600; color: var(--accent); }
+
+  .run-dropdown-group-label {
+    padding: 8px 12px 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+  }
+
+  .run-dropdown-entry {
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s;
+  }
+
+  .run-dropdown-entry:hover { background: var(--bg-header); }
+  .run-dropdown-entry.selected { background: var(--bg-card); }
+
+  .run-dropdown-empty {
+    padding: 16px 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .run-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .run-dot.active { background: var(--success); }
+  .run-dot.inactive { background: transparent; border: 1px solid var(--border); }
+
+  .run-entry-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .run-entry-meta {
+    color: var(--text-muted);
+    font-size: 11px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .run-delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 0 2px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .run-dropdown-entry:hover .run-delete-btn { opacity: 1; }
+  .run-delete-btn:hover { color: var(--error); }
+
+  /* Run metadata bar */
+  .run-metadata-bar {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 12px 24px 0;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .run-metadata-bar.visible { display: flex; }
+
+  .run-meta-label {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .run-meta-sep {
+    color: var(--border);
+  }
+
+  /* Run separator in feed (All runs view) */
+  .run-separator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .run-separator::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .run-separator.hidden-by-filter { display: none; }
 
   .header-actions {
     display: flex;
@@ -923,9 +1084,13 @@
 <div class="header">
   <div class="header-left">
     <h1>M4 Display</h1>
-    <select class="run-filter" id="run-filter" title="Filter by run">
-      <option value="">All runs</option>
-    </select>
+    <div class="run-dropdown" id="run-dropdown">
+      <button class="run-dropdown-trigger" id="run-dropdown-trigger" title="Browse runs">
+        <span id="run-dropdown-label">All runs</span>
+        <span class="dd-arrow">&#9662;</span>
+      </button>
+      <div class="run-dropdown-panel" id="run-dropdown-panel" style="display: none;"></div>
+    </div>
   </div>
   <div class="header-actions">
     <span class="request-badge hidden" id="request-badge" title="Pending agent requests">0</span>
@@ -933,10 +1098,17 @@
   </div>
 </div>
 
+<div class="run-metadata-bar" id="run-metadata-bar">
+  <span class="run-meta-label" id="run-meta-label"></span>
+  <span class="run-meta-sep">&middot;</span>
+  <span id="run-meta-detail"></span>
+</div>
+
 <div class="feed" id="feed">
   <div class="empty-state" id="empty-state">
     <div style="font-size: 32px; opacity: 0.3;">&#9671;</div>
-    <div>Waiting for data...</div>
+    <div style="font-size: 15px; font-weight: 500;">No analyses yet</div>
+    <div style="font-size: 13px;">Run an agent to get started</div>
     <div><code>from m4.display import show</code></div>
   </div>
 </div>
@@ -968,6 +1140,11 @@
     plotlyCallbacks: [],
     runIds: [],
     activeRunFilter: '',
+    runs: [],
+    activeRunId: null,
+    dropdownOpen: false,
+    liveMode: false,
+    _autoSelectPending: false,
   };
 
   // --- Elements ---
@@ -976,9 +1153,14 @@
   var statusEl = document.getElementById('status');
   var sessionInfoEl = document.getElementById('session-info');
   var cardCountEl = document.getElementById('card-count');
-  var runFilterEl = document.getElementById('run-filter');
   var themeToggleEl = document.getElementById('theme-toggle');
   var copyToastEl = document.getElementById('copy-toast');
+  var runDropdownTrigger = document.getElementById('run-dropdown-trigger');
+  var runDropdownPanel = document.getElementById('run-dropdown-panel');
+  var runDropdownLabel = document.getElementById('run-dropdown-label');
+  var runMetaBar = document.getElementById('run-metadata-bar');
+  var runMetaLabel = document.getElementById('run-meta-label');
+  var runMetaDetail = document.getElementById('run-meta-detail');
 
   // --- Theme ---
   function initTheme() {
@@ -1004,36 +1186,276 @@
 
   initTheme();
 
-  // --- Run Filter ---
-  runFilterEl.onchange = function() {
-    state.activeRunFilter = runFilterEl.value;
-    applyRunFilter();
+  // --- Run History Dropdown ---
+  runDropdownTrigger.onclick = function(e) {
+    e.stopPropagation();
+    if (state.dropdownOpen) {
+      closeDropdown();
+    } else {
+      openDropdown();
+    }
   };
+
+  function openDropdown() {
+    state.dropdownOpen = true;
+    runDropdownTrigger.classList.add('open');
+    renderDropdown();
+    runDropdownPanel.style.display = '';
+    // Close on outside click
+    setTimeout(function() {
+      document.addEventListener('mousedown', _closeDropdownOutside);
+    }, 0);
+  }
+
+  function closeDropdown() {
+    state.dropdownOpen = false;
+    runDropdownTrigger.classList.remove('open');
+    runDropdownPanel.style.display = 'none';
+    document.removeEventListener('mousedown', _closeDropdownOutside);
+  }
+
+  function _closeDropdownOutside(e) {
+    var dd = document.getElementById('run-dropdown');
+    if (dd && !dd.contains(e.target)) {
+      closeDropdown();
+    }
+  }
+
+  function dateGroupLabel(isoStr) {
+    if (!isoStr) return 'Unknown';
+    var d = new Date(isoStr);
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    var dDate = new Date(d);
+    dDate.setHours(0, 0, 0, 0);
+
+    if (dDate.getTime() === today.getTime()) return 'Today';
+    if (dDate.getTime() === yesterday.getTime()) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  function formatRunTime(isoStr) {
+    if (!isoStr) return '';
+    var d = new Date(isoStr);
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderDropdown() {
+    runDropdownPanel.innerHTML = '';
+
+    // "All runs" option
+    var allOpt = document.createElement('div');
+    allOpt.className = 'run-dropdown-all' + (!state.activeRunFilter ? ' selected' : '');
+    allOpt.textContent = 'All runs';
+    allOpt.onclick = function(e) {
+      e.stopPropagation();
+      selectRun('');
+    };
+    runDropdownPanel.appendChild(allOpt);
+
+    if (state.runs.length === 0) {
+      var emptyMsg = document.createElement('div');
+      emptyMsg.className = 'run-dropdown-empty';
+      emptyMsg.textContent = 'No runs yet';
+      runDropdownPanel.appendChild(emptyMsg);
+      return;
+    }
+
+    // Group runs by date
+    var groupOrder = [];
+    var groups = {};
+    state.runs.forEach(function(run) {
+      var gl = dateGroupLabel(run.start_time);
+      if (!groups[gl]) {
+        groups[gl] = [];
+        groupOrder.push(gl);
+      }
+      groups[gl].push(run);
+    });
+
+    groupOrder.forEach(function(groupLabel) {
+      var gh = document.createElement('div');
+      gh.className = 'run-dropdown-group-label';
+      gh.textContent = groupLabel;
+      runDropdownPanel.appendChild(gh);
+
+      groups[groupLabel].forEach(function(run) {
+        var entry = document.createElement('div');
+        entry.className = 'run-dropdown-entry' + (state.activeRunFilter === run.label ? ' selected' : '');
+
+        var dot = document.createElement('span');
+        dot.className = 'run-dot ' + (state.activeRunId === run.label ? 'active' : 'inactive');
+        entry.appendChild(dot);
+
+        var labelEl = document.createElement('span');
+        labelEl.className = 'run-entry-label';
+        labelEl.textContent = run.label;
+        entry.appendChild(labelEl);
+
+        var meta = document.createElement('span');
+        meta.className = 'run-entry-meta';
+        meta.textContent = (run.card_count || 0) + ' cards';
+        if (run.start_time) meta.textContent += '  ' + formatRunTime(run.start_time);
+        entry.appendChild(meta);
+
+        var delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'run-delete-btn';
+        delBtn.innerHTML = '&times;';
+        delBtn.title = 'Delete run';
+        delBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          deleteRun(run.label);
+        });
+        entry.appendChild(delBtn);
+
+        entry.onclick = function(e) {
+          e.stopPropagation();
+          selectRun(run.label);
+        };
+        runDropdownPanel.appendChild(entry);
+      });
+    });
+  }
+
+  function selectRun(label) {
+    state.activeRunFilter = label;
+    closeDropdown();
+    updateDropdownTrigger();
+    applyRunFilter();
+    updateRunMetadataBar();
+  }
+
+  function updateDropdownTrigger() {
+    if (state.activeRunFilter) {
+      runDropdownLabel.textContent = state.activeRunFilter;
+    } else {
+      runDropdownLabel.textContent = 'All runs';
+    }
+  }
+
+  function updateRunMetadataBar() {
+    if (!state.activeRunFilter) {
+      runMetaBar.classList.remove('visible');
+      return;
+    }
+    var run = null;
+    for (var i = 0; i < state.runs.length; i++) {
+      if (state.runs[i].label === state.activeRunFilter) {
+        run = state.runs[i];
+        break;
+      }
+    }
+    if (!run) {
+      runMetaBar.classList.remove('visible');
+      return;
+    }
+    runMetaLabel.textContent = run.label;
+    var parts = [];
+    if (run.card_count !== undefined) parts.push(run.card_count + ' card' + (run.card_count !== 1 ? 's' : ''));
+    if (run.start_time) parts.push(new Date(run.start_time).toLocaleDateString());
+    runMetaDetail.textContent = parts.join(' \u00b7 ');
+    runMetaBar.classList.add('visible');
+  }
+
+  function deleteRun(label) {
+    if (!confirm('Delete run "' + label + '"? This cannot be undone.')) return;
+    closeDropdown();
+    fetch('/api/runs/' + encodeURIComponent(label), { method: 'DELETE' })
+      .then(function(r) {
+        if (!r.ok) throw new Error('Server returned ' + r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        if (data.status === 'ok') {
+          // Remove from local state
+          state.runs = state.runs.filter(function(r) { return r.label !== label; });
+          state.runIds = state.runIds.filter(function(id) { return id !== label; });
+          // Remove cards from DOM
+          var cards = feed.querySelectorAll('.card[data-run-id="' + label + '"], .section-divider[data-run-id="' + label + '"], .run-separator[data-run-separator="' + label + '"]');
+          cards.forEach(function(el) { el.remove(); });
+          state.cards = state.cards.filter(function(c) { return c.run_id !== label; });
+          // If this was the selected run, switch to "All runs"
+          if (state.activeRunFilter === label) {
+            selectRun('');
+          } else {
+            renderDropdown();
+          }
+          updateCardCount();
+          showToast('Run deleted');
+          // Show empty state if no cards left
+          if (state.cards.length === 0) showEmptyState();
+        } else {
+          showToast(data.error || 'Delete failed');
+        }
+      })
+      .catch(function(err) {
+        console.error('Delete run error:', err);
+        showToast('Failed to delete run');
+      });
+  }
 
   function trackRunId(runId) {
     if (!runId || state.runIds.indexOf(runId) !== -1) return;
     state.runIds.push(runId);
-    var opt = document.createElement('option');
-    opt.value = runId;
-    opt.textContent = runId;
-    runFilterEl.appendChild(opt);
+  }
+
+  function insertRunSeparators() {
+    // Remove existing separators
+    feed.querySelectorAll('.run-separator').forEach(function(el) { el.remove(); });
+
+    var items = feed.querySelectorAll('.card, .section-divider');
+    var lastRunId = null;
+
+    items.forEach(function(el) {
+      var runId = el.dataset.runId || '';
+      if (runId && runId !== lastRunId) {
+        var run = null;
+        for (var i = 0; i < state.runs.length; i++) {
+          if (state.runs[i].label === runId) { run = state.runs[i]; break; }
+        }
+        var sep = document.createElement('div');
+        sep.className = 'run-separator';
+        sep.dataset.runSeparator = runId;
+        var text = runId;
+        if (run && run.start_time) text += ' \u00b7 ' + dateGroupLabel(run.start_time) + ' ' + formatRunTime(run.start_time);
+        if (run && run.card_count) text += ' \u00b7 ' + run.card_count + ' cards';
+        sep.textContent = text;
+        el.parentNode.insertBefore(sep, el);
+        lastRunId = runId;
+      } else if (runId) {
+        lastRunId = runId;
+      }
+    });
   }
 
   function applyRunFilter() {
     var filter = state.activeRunFilter;
+
+    // Remove existing run separators first
+    feed.querySelectorAll('.run-separator').forEach(function(el) { el.remove(); });
+
     var items = feed.querySelectorAll('.card, .section-divider');
-    items.forEach(function(el) {
-      if (!filter) {
-        el.classList.remove('hidden-by-filter');
-      } else {
+
+    if (!filter) {
+      // "All runs" mode: show everything, add run separators
+      items.forEach(function(el) { el.classList.remove('hidden-by-filter'); });
+      if (items.length > 0) insertRunSeparators();
+    } else {
+      // Specific run: show matching cards only
+      items.forEach(function(el) {
         var elRun = el.dataset.runId || '';
         if (elRun === filter || !elRun) {
           el.classList.remove('hidden-by-filter');
         } else {
           el.classList.add('hidden-by-filter');
         }
-      }
-    });
+      });
+    }
+
     updateCardCount();
   }
 
@@ -1058,9 +1480,12 @@
       state.ws = ws;
       state.connected = true;
       state.reconnectDelay = 1000;
+      state.liveMode = false;
       updateStatus('connected');
       loadSessionInfo();
       loadRuns();
+      // After replay completes (~500ms), enable live auto-switching
+      setTimeout(function() { state.liveMode = true; }, 500);
     };
 
     ws.onmessage = function(event) {
@@ -1117,6 +1542,27 @@
 
     state.cards.push(cardData);
     trackRunId(cardData.run_id);
+
+    // Track active run and auto-switch
+    if (cardData.run_id) {
+      state.activeRunId = cardData.run_id;
+      if (state.liveMode && state.activeRunFilter !== cardData.run_id) {
+        // Auto-switch to the new card's run
+        state.activeRunFilter = cardData.run_id;
+        updateDropdownTrigger();
+        // Defer full filter update to batch rapid arrivals
+        if (!state._autoSelectPending) {
+          state._autoSelectPending = true;
+          requestAnimationFrame(function() {
+            state._autoSelectPending = false;
+            applyRunFilter();
+            updateRunMetadataBar();
+            // Refresh run list to get updated card counts
+            loadRuns();
+          });
+        }
+      }
+    }
 
     var el = document.createElement('div');
     el.className = 'card';
@@ -2259,26 +2705,17 @@
   }
 
   function rebuildRunFilter() {
+    // Rebuild runIds from cards (used as fallback)
     var runs = [];
     state.cards.forEach(function(c) {
       if (c.run_id && runs.indexOf(c.run_id) === -1) runs.push(c.run_id);
     });
     state.runIds = runs;
 
-    var currentFilter = runFilterEl.value;
-    runFilterEl.innerHTML = '<option value="">All runs</option>';
-    runs.forEach(function(rid) {
-      var opt = document.createElement('option');
-      opt.value = rid;
-      opt.textContent = rid;
-      runFilterEl.appendChild(opt);
-    });
-
-    if (runs.indexOf(currentFilter) !== -1) {
-      runFilterEl.value = currentFilter;
-    } else {
-      runFilterEl.value = '';
+    // If the current filter no longer exists, switch to "All runs"
+    if (state.activeRunFilter && runs.indexOf(state.activeRunFilter) === -1) {
       state.activeRunFilter = '';
+      updateDropdownTrigger();
     }
   }
 
@@ -2290,7 +2727,8 @@
     empty.className = 'empty-state';
     empty.id = 'empty-state';
     empty.innerHTML = '<div style="font-size: 32px; opacity: 0.3;">&#9671;</div>'
-      + '<div>Waiting for data...</div>'
+      + '<div style="font-size: 15px; font-weight: 500;">No analyses yet</div>'
+      + '<div style="font-size: 13px;">Run an agent to get started</div>'
       + '<div><code>from m4.display import show</code></div>';
     feed.appendChild(empty);
   }
@@ -2315,6 +2753,22 @@
       text += ' (of ' + all.length + ')';
     }
     cardCountEl.textContent = text;
+
+    // Footer: show run label or run count
+    if (state.activeRunFilter) {
+      var run = null;
+      for (var i = 0; i < state.runs.length; i++) {
+        if (state.runs[i].label === state.activeRunFilter) { run = state.runs[i]; break; }
+      }
+      if (run && run.start_time) {
+        sessionInfoEl.textContent = state.activeRunFilter + ' \u00b7 ' + dateGroupLabel(run.start_time);
+      } else {
+        sessionInfoEl.textContent = state.activeRunFilter;
+      }
+    } else {
+      var totalRuns = state.runs.length;
+      sessionInfoEl.textContent = totalRuns > 0 ? totalRuns + ' run' + (totalRuns !== 1 ? 's' : '') : '';
+    }
   }
 
   function loadSessionInfo() {
@@ -2332,31 +2786,32 @@
       .then(function(r) { return r.json(); })
       .then(function(runs) {
         if (!Array.isArray(runs)) return;
-        // Rebuild run filter dropdown with API data
-        var currentFilter = runFilterEl.value;
-        runFilterEl.innerHTML = '<option value="">All runs</option>';
+        state.runs = runs;
         state.runIds = [];
         runs.forEach(function(run) {
           var label = run.label || run.dir_name || '';
-          if (!label) return;
-          if (state.runIds.indexOf(label) === -1) state.runIds.push(label);
-          var opt = document.createElement('option');
-          opt.value = label;
-          var cardCount = run.card_count || 0;
-          opt.textContent = label + ' (' + cardCount + ')';
-          runFilterEl.appendChild(opt);
+          if (label && state.runIds.indexOf(label) === -1) state.runIds.push(label);
         });
-        // Restore previous filter if still valid
-        if (state.runIds.indexOf(currentFilter) !== -1) {
-          runFilterEl.value = currentFilter;
-        } else {
-          runFilterEl.value = '';
+
+        // Validate current filter still exists
+        if (state.activeRunFilter && state.runIds.indexOf(state.activeRunFilter) === -1) {
           state.activeRunFilter = '';
+          updateDropdownTrigger();
         }
-        // Update footer with run count
-        var totalRuns = runs.length;
-        if (totalRuns > 0) {
-          sessionInfoEl.textContent = totalRuns + ' run' + (totalRuns !== 1 ? 's' : '');
+
+        // Auto-select most recent run on first load
+        if (!state.liveMode && !state.activeRunFilter && runs.length > 0) {
+          state.activeRunFilter = runs[0].label;
+          updateDropdownTrigger();
+          applyRunFilter();
+          updateRunMetadataBar();
+        }
+
+        updateCardCount();
+
+        // Update empty state
+        if (runs.length === 0 && state.cards.length === 0) {
+          showEmptyState();
         }
       })
       .catch(function() {});
