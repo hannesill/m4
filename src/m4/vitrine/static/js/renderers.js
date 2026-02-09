@@ -72,6 +72,7 @@ function renderKeyValue(container, cardData) {
   });
 
   container.appendChild(dl);
+}
 
 function renderImage(container, cardData) {
   var preview = cardData.preview || {};

@@ -19,6 +19,45 @@ var _FILE_TYPE_LETTERS = {
   other: '?',
 };
 
+// Map file types to highlight.js language identifiers
+var _HLJS_LANG_MAP = {
+  python: 'python',
+  sql: 'sql',
+  r: 'r',
+  data: 'json',
+};
+
+// Load highlight.js on demand (CDN)
+var _hljsLoading = false;
+function loadHighlightJs(callback) {
+  if (window.hljs) { callback(); return; }
+  if (_hljsLoading) {
+    // Poll until loaded
+    var poll = setInterval(function() {
+      if (window.hljs) { clearInterval(poll); callback(); }
+    }, 50);
+    return;
+  }
+  _hljsLoading = true;
+
+  // Pick theme based on current mode
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  var cssHref = isDark
+    ? 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css'
+    : 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css';
+
+  var link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = cssHref;
+  link.id = 'hljs-theme';
+  document.head.appendChild(link);
+
+  var script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js';
+  script.onload = function() { if (window.hljs && callback) callback(); };
+  document.head.appendChild(script);
+}
+
 // State
 state.filesVisible = false;
 state.files = [];
@@ -129,13 +168,12 @@ function renderFilesPanel(studyLabel) {
     }
     groups[dir].forEach(function(f) {
       var letter = _FILE_TYPE_LETTERS[f.type] || '?';
-      html += '<li class="files-list-item">';
+      html += '<li class="files-list-item" onclick="previewFile(\'' + escapeAttr(study) + '\', \'' + escapeAttr(f.path) + '\', \'' + escapeAttr(f.type) + '\', \'' + escapeAttr(f.name) + '\')">';
       html += '<span class="file-type-icon" data-type="' + f.type + '">' + letter + '</span>';
       html += '<span class="file-name">' + escapeHtml(f.name) + '</span>';
       html += '<span class="file-size">' + formatFileSize(f.size) + '</span>';
       html += '<span class="file-actions">';
-      html += '<button class="file-action-btn" onclick="previewFile(\'' + escapeAttr(study) + '\', \'' + escapeAttr(f.path) + '\', \'' + escapeAttr(f.type) + '\', \'' + escapeAttr(f.name) + '\')">Preview</button>';
-      html += '<button class="file-action-btn" onclick="downloadFile(\'' + escapeAttr(study) + '\', \'' + escapeAttr(f.path) + '\', \'' + escapeAttr(f.name) + '\')">Download</button>';
+      html += '<button class="file-action-btn" onclick="event.stopPropagation(); downloadFile(\'' + escapeAttr(study) + '\', \'' + escapeAttr(f.path) + '\', \'' + escapeAttr(f.name) + '\')">Download</button>';
       html += '</span>';
       html += '</li>';
     });
@@ -275,9 +313,15 @@ function previewFile(study, filepath, fileType, filename) {
         body.innerHTML = '';
         var div = document.createElement('div');
         div.className = 'file-preview-markdown';
-        if (typeof marked !== 'undefined') {
-          div.innerHTML = marked.parse(text);
+        if (window.marked) {
+          div.innerHTML = window.marked.parse(text);
+          _highlightCodeBlocks(div);
         } else {
+          loadMarked(function() {
+            div.innerHTML = window.marked.parse(text);
+            _highlightCodeBlocks(div);
+          });
+          // Show plain text while loading
           div.textContent = text;
         }
         body.appendChild(div);
@@ -292,17 +336,39 @@ function previewFile(study, filepath, fileType, filename) {
     return;
   }
 
-  // Text/code files
+  // Text/code files — with syntax highlighting
   fetch(url)
     .then(function(r) { return r.text(); })
     .then(function(text) {
       body.innerHTML = '';
       var pre = document.createElement('pre');
       pre.className = 'file-preview-code';
-      pre.textContent = text;
+      var code = document.createElement('code');
+      var lang = _HLJS_LANG_MAP[fileType];
+      if (lang) code.className = 'language-' + lang;
+      code.textContent = text;
+      pre.appendChild(code);
       body.appendChild(pre);
+
+      // Apply syntax highlighting if a language is known
+      if (lang) {
+        loadHighlightJs(function() {
+          if (window.hljs) window.hljs.highlightElement(code);
+        });
+      }
     })
     .catch(function(err) { body.textContent = 'Failed to load: ' + err; });
+}
+
+// Highlight fenced code blocks inside rendered markdown
+function _highlightCodeBlocks(container) {
+  loadHighlightJs(function() {
+    if (!window.hljs) return;
+    var blocks = container.querySelectorAll('pre code');
+    for (var i = 0; i < blocks.length; i++) {
+      window.hljs.highlightElement(blocks[i]);
+    }
+  });
 }
 
 // Wire up toggle button
