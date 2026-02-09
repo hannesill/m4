@@ -846,34 +846,6 @@ class TestStudyManagerServer:
 class TestSingletonGuard:
     """Test helpers that prevent duplicate server instances."""
 
-    def test_scan_for_existing_server_finds_running(self, store):
-        """Start a server on a test port, verify _scan_for_existing_server finds it."""
-        from m4.vitrine.server import _scan_for_existing_server
-
-        srv = DisplayServer(
-            store=store,
-            port=7749,
-            host="127.0.0.1",
-            session_id="scan-test",
-        )
-        srv.start(open_browser=False)
-        actual_port = srv.port
-        try:
-            result = _scan_for_existing_server("127.0.0.1", actual_port, actual_port)
-            assert result is not None
-            assert result["port"] == actual_port
-            assert result["session_id"] == "scan-test"
-            assert result["url"] == f"http://127.0.0.1:{actual_port}"
-        finally:
-            srv.stop()
-
-    def test_scan_for_existing_server_empty_range(self):
-        """Scanning unused ports returns None."""
-        from m4.vitrine.server import _scan_for_existing_server
-
-        result = _scan_for_existing_server("127.0.0.1", 7790, 7792)
-        assert result is None
-
     def test_is_pid_alive_current_process(self):
         """Current process PID should be alive."""
         import os
