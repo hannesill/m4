@@ -9,6 +9,7 @@ This directory contains skills for the M4 framework, covering clinical research 
 | Skill | Description |
 |-------|-------------|
 | [sofa-score](clinical/sofa-score/SKILL.md) | Sequential Organ Failure Assessment score calculation |
+| [apache-iv-score](clinical/apache-iv-score/SKILL.md) | APACHE IV with mortality prediction |
 | [apsiii-score](clinical/apsiii-score/SKILL.md) | APACHE III (Acute Physiology Score III) with mortality prediction |
 | [sapsii-score](clinical/sapsii-score/SKILL.md) | SAPS-II score with mortality prediction |
 | [oasis-score](clinical/oasis-score/SKILL.md) | Oxford Acute Severity of Illness Score (no labs required) |

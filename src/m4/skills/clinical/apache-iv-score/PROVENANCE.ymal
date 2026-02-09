@@ -1,0 +1,20 @@
+sources:
+  - url: https://pubmed.ncbi.nlm.nih.gov/16540951/
+    description: Original APACHE IV publication (Zimmerman et al., 2006)
+    license: CC-BY-NC-4.0
+
+created:
+  by: Ryohei Yamamoto-Kobayashi
+  role: clinical-extraction
+  date: 2026-02-09
+
+reviews: []
+
+references:
+  - Zimmerman JE, Kramer AA, McNair DS, Malila FM. Acute Physiology and Chronic Health Evaluation (APACHE) IV: hospital mortality assessment for today's critically ill patients. Crit Care Med. 2006;34(5):1297-1310. doi:10.1097/01.CCM.0000215112.84523.F0
+  - Knaus WA, Wagner DP, Draper EA, et al. The APACHE III prognostic system. Risk prediction of hospital mortality for critically ill hospitalized adults. Chest. 1991;100(6):1619-1636.
+
+changelog:
+  - version: "1.0"
+    date: 2026-02-09
+    summary: Initial skill creation
