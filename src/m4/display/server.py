@@ -746,6 +746,7 @@ class DisplayServer:
             selected_rows = payload.get("selected_rows")
             columns = payload.get("columns")
             points = payload.get("points")
+            form_values = payload.get("form_values", {})
 
             sel_store = self._resolve_store(card_id)
             artifact_id = None
@@ -774,6 +775,7 @@ class DisplayServer:
                 "message": message,
                 "artifact_id": artifact_id,
                 "summary": summary,
+                "values": form_values,
             }
 
             future = self._pending_responses.get(card_id)

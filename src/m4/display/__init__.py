@@ -22,6 +22,20 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from m4.display._types import (  # noqa: F401
+    Checkbox,
+    DateRange,
+    Dropdown,
+    Form,
+    MultiSelect,
+    NumberInput,
+    RadioGroup,
+    RangeSlider,
+    Slider,
+    TextInput,
+    Toggle,
+)
+
 logger = logging.getLogger(__name__)
 
 # Module-level state (thread-safe via _lock)
@@ -466,6 +480,7 @@ def show(
     prompt: str | None = None,
     timeout: float = 300,
     on_send: str | None = None,
+    controls: list[Any] | None = None,
 ) -> Any:
     """Push any displayable object to the browser.
 
@@ -473,8 +488,11 @@ def show(
 
     Supported types:
     - pd.DataFrame → interactive table (artifact-backed, paged)
+    - plotly Figure → interactive chart
+    - matplotlib Figure → static chart (SVG)
     - str → markdown card
     - dict → formatted key-value card
+    - Form → structured input card (freezes on confirm)
     - Other → repr() fallback
 
     Auto-starts the display server on first call.
@@ -491,6 +509,8 @@ def show(
         prompt: Question shown to the user (requires wait=True).
         timeout: Seconds to wait for response (default 300).
         on_send: Instruction for the agent when user clicks 'Send to Agent'.
+        controls: List of form field primitives to attach as controls to
+            a table or chart card. Creates a hybrid data+controls card.
 
     Returns:
         str (card_id) when wait=False, DisplayResponse when wait=True.
@@ -560,6 +580,11 @@ def show(
         store=store,
     )
 
+    # Attach controls to the card preview for hybrid data+controls cards
+    if controls:
+        card.preview["controls"] = [c.to_dict() for c in controls]
+        store.update_card(card.card_id, preview=card.preview)
+
     # Register the card in RunManager's cross-run index
     if _run_manager is not None and run_id:
         dir_name = _run_manager._label_to_dir.get(run_id)
@@ -598,6 +623,7 @@ def show(
         message=result.get("message"),
         summary=result.get("summary", ""),
         artifact_id=result.get("artifact_id"),
+        values=result.get("values", {}),
         _store=store,
     )
 

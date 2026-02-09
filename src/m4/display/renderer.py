@@ -18,7 +18,7 @@ from typing import Any
 
 import pandas as pd
 
-from m4.display._types import CardDescriptor, CardProvenance, CardType
+from m4.display._types import CardDescriptor, CardProvenance, CardType, Form
 from m4.display.artifacts import ArtifactStore
 from m4.display.redaction import Redactor
 
@@ -297,6 +297,30 @@ def _render_matplotlib(
     return card
 
 
+def _render_form(
+    form: Form,
+    title: str | None,
+    description: str | None,
+    source: str | None,
+    run_id: str | None,
+    store: ArtifactStore,
+) -> CardDescriptor:
+    """Render a Form as a form card (inlined, no artifact)."""
+    card_id = _make_card_id()
+    card = CardDescriptor(
+        card_id=card_id,
+        card_type=CardType.FORM,
+        title=title or "Form",
+        description=description,
+        timestamp=_make_timestamp(),
+        run_id=run_id,
+        preview=form.to_dict(),
+        provenance=_build_provenance(source),
+    )
+    store.store_card(card)
+    return card
+
+
 def _render_repr(
     obj: object,
     title: str | None,
@@ -350,7 +374,9 @@ def render(
     if redactor is None:
         redactor = Redactor()
 
-    if isinstance(obj, pd.DataFrame):
+    if isinstance(obj, Form):
+        return _render_form(obj, title, description, source, run_id, store)
+    elif isinstance(obj, pd.DataFrame):
         return _render_dataframe(
             obj, title, description, source, run_id, store, redactor
         )
