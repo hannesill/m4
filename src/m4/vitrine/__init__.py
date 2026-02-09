@@ -23,10 +23,12 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from m4.vitrine._types import (  # noqa: F401
+from m4.vitrine._types import (
     Checkbox,
     DateRange,
+    DisplayEvent,
     DisplayHandle,
+    DisplayResponse,
     Dropdown,
     Form,
     MultiSelect,
@@ -37,6 +39,38 @@ from m4.vitrine._types import (  # noqa: F401
     TextInput,
     Toggle,
 )
+
+__all__ = [
+    "Checkbox",
+    "DateRange",
+    "DisplayEvent",
+    "DisplayHandle",
+    "DisplayResponse",
+    "Dropdown",
+    "Form",
+    "MultiSelect",
+    "NumberInput",
+    "RadioGroup",
+    "RangeSlider",
+    "Slider",
+    "TextInput",
+    "Toggle",
+    "clean_studies",
+    "delete_study",
+    "export",
+    "get_selection",
+    "list_studies",
+    "on_event",
+    "register_output_dir",
+    "section",
+    "server_status",
+    "set_status",
+    "show",
+    "start",
+    "stop",
+    "stop_server",
+    "study_context",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -564,7 +598,6 @@ def show(
     """
     _ensure_started()
 
-    from m4.vitrine._types import DisplayResponse
     from m4.vitrine.artifacts import _serialize_card
     from m4.vitrine.renderer import render
 
@@ -1002,8 +1035,6 @@ def on_event(callback: Any) -> None:
 def _poll_remote_events() -> None:
     """Background thread that polls a remote server for UI events."""
     import urllib.request
-
-    from m4.vitrine._types import DisplayEvent
 
     while not _event_poll_stop.is_set():
         with _lock:
