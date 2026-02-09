@@ -1,0 +1,623 @@
+/* ================================================================
+   RESPONSE UI & DECISION CARDS
+   ================================================================ */
+.card.waiting {
+  border-left: 3px solid var(--accent);
+}
+
+@keyframes subtlePulse {
+  0%, 100% { box-shadow: var(--shadow); }
+  50% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent), var(--shadow); }
+}
+
+.card.waiting { animation: subtlePulse 3s ease-in-out infinite; }
+
+/* Response UI panel */
+.card-response-ui {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.response-prompt {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.response-message-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font);
+  resize: vertical;
+  min-height: 36px;
+  max-height: 120px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.response-message-input:focus { border-color: var(--accent); }
+
+.response-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.response-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.response-btn-confirm {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.response-btn-confirm:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.response-btn-skip {
+  background: var(--bg);
+  color: var(--text-muted);
+}
+
+.response-btn-skip:hover {
+  background: var(--bg-header);
+  color: var(--text);
+}
+
+.response-timeout {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+}
+
+/* ================================================================
+   FORM FIELDS — dropdown, multiselect, slider, checkbox, etc.
+   ================================================================ */
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.form-field select,
+.form-field input[type="text"],
+.form-field input[type="number"],
+.form-field input[type="date"],
+.form-select-trigger,
+.form-date-trigger {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-field select:focus,
+.form-field input[type="text"]:focus,
+.form-field input[type="number"]:focus,
+.form-field input[type="date"]:focus,
+.form-select-trigger:focus-visible,
+.form-date-trigger:focus-visible {
+  border-color: var(--accent);
+}
+
+.form-field select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236c757d' d='M3 5l3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+.form-hidden-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+}
+
+.form-select,
+.form-date-picker {
+  position: relative;
+  width: 100%;
+}
+
+.form-select-trigger,
+.form-date-trigger {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+}
+
+.form-select-trigger .dd-arrow,
+.form-date-trigger .dd-arrow {
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+
+.form-select-trigger.open .dd-arrow,
+.form-date-trigger.open .dd-arrow {
+  transform: rotate(180deg);
+}
+
+.form-select-value,
+.form-date-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.form-select-value.placeholder,
+.form-date-value.placeholder {
+  color: var(--text-muted);
+}
+
+.form-select-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 125;
+  width: 100%;
+  min-width: 180px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  animation: fadeIn 0.15s ease;
+}
+
+.form-select-option,
+.form-select-empty {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font-head);
+  text-align: left;
+  padding: 8px 12px;
+}
+
+.form-select-option {
+  cursor: pointer;
+}
+
+.form-select-option:hover {
+  background: var(--bg-header);
+}
+
+.form-select-option.selected {
+  background: var(--bg-card);
+  font-weight: 600;
+}
+
+.form-select-empty {
+  color: var(--text-muted);
+}
+
+.form-calendar-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 126;
+  width: min(320px, calc(100vw - 48px));
+  background: var(--card-bg);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 10px;
+  user-select: none;
+}
+
+.form-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.form-calendar-month {
+  font-family: var(--font-head);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.form-calendar-nav-btn {
+  width: 28px;
+  height: 28px;
+  border: var(--border-width) solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-head);
+  cursor: pointer;
+  line-height: 1;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.form-calendar-nav-btn:hover {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-pressed);
+}
+
+.form-calendar-weekdays,
+.form-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.form-calendar-weekday {
+  font-family: var(--font-head);
+  font-size: 10px;
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2px 0;
+}
+
+.form-calendar-day {
+  border: var(--border-width) solid transparent;
+  background: var(--card-bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  min-height: 32px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.1s;
+}
+
+.form-calendar-day:hover {
+  background: var(--highlight);
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-pressed);
+}
+
+.form-calendar-day.other-month {
+  opacity: 0.55;
+}
+
+.form-calendar-day.today {
+  border-color: var(--border);
+}
+
+.form-calendar-day.selected {
+  background: var(--text);
+  color: var(--card-bg);
+  border-color: var(--border);
+}
+
+.form-calendar-day:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--highlight) 80%, transparent);
+  outline-offset: 1px;
+}
+
+/* Multi-select checkboxes */
+.form-multiselect-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-multiselect-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 3px 0;
+}
+
+.form-multiselect-option input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
+}
+
+/* Radio group */
+.form-radio-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-radio-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 3px 0;
+}
+
+.form-radio-option input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: var(--border-width) solid var(--border);
+  border-radius: 50%;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
+}
+
+/* Slider */
+.form-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-slider-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+  cursor: pointer;
+  height: 4px;
+}
+
+.form-slider-value {
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--text-muted);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Range slider (two handles) */
+.form-range-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-range-slider-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+  cursor: pointer;
+  height: 4px;
+}
+
+.form-range-value {
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--text-muted);
+  min-width: 80px;
+  text-align: center;
+}
+
+/* Checkbox / Toggle inline */
+.form-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.form-check-row input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
+}
+
+.form-check-label {
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Toggle switch */
+.form-toggle-switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.form-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.form-toggle-track {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--border);
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+
+.form-toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 2px;
+  bottom: 2px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.form-toggle-switch input:checked + .form-toggle-track {
+  background: var(--accent);
+}
+
+.form-toggle-switch input:checked + .form-toggle-track::after {
+  transform: translateX(16px);
+}
+
+/* Date range */
+.form-date-range-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.form-date-range-sep {
+  font-size: 12px;
+  color: var(--text-muted);
+  align-self: center;
+}
+
+/* Frozen form (confirmed) */
+.form-frozen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13px;
+}
+
+.form-frozen-item {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.form-frozen-item .frozen-label {
+  color: var(--text-muted);
+}
+
+.form-frozen-item .frozen-value {
+  font-weight: 500;
+}
+
+/* Controls bar for hybrid cards */
+.card-controls-bar {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+}
+
+.card-controls-bar .form-fields {
+  gap: 10px;
+}
+
+/* Table row checkboxes for selection */
+.table-wrapper th.select-col,
+.table-wrapper td.select-col {
+  width: 32px;
+  text-align: center;
+  padding: 5px 4px;
+}
+
+.table-wrapper td.select-col input[type="checkbox"],
+.table-wrapper th.select-col input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
+}
+
+.form-multiselect-option input[type="checkbox"]:hover,
+.form-check-row input[type="checkbox"]:hover,
+.table-wrapper td.select-col input[type="checkbox"]:hover,
+.table-wrapper th.select-col input[type="checkbox"]:hover {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-pressed);
+}
+
+.form-radio-option input[type="radio"]:hover {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-pressed);
+}
+
+.form-multiselect-option input[type="checkbox"]:checked,
+.form-check-row input[type="checkbox"]:checked,
+.table-wrapper td.select-col input[type="checkbox"]:checked,
+.table-wrapper th.select-col input[type="checkbox"]:checked {
+  background-color: var(--text);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cpath fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M1 4l2.5 2.5L9 1'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  color: var(--card-bg);
+}
+
+.form-radio-option input[type="radio"]:checked {
+  background: radial-gradient(circle at center, var(--card-bg) 0 34%, var(--text) 40%);
+}
+
+.form-multiselect-option input[type="checkbox"]:focus-visible,
+.form-check-row input[type="checkbox"]:focus-visible,
+.table-wrapper td.select-col input[type="checkbox"]:focus-visible,
+.table-wrapper th.select-col input[type="checkbox"]:focus-visible,
+.form-radio-option input[type="radio"]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--highlight) 75%, transparent);
+  outline-offset: 1px;
+}
