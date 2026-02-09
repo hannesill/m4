@@ -1455,8 +1455,8 @@ def config_cmd(
                 warning(f"Skills installation failed: {e}")
 
 
-@app.command("display")
-def display_cmd(
+@app.command("vitrine")
+def vitrine_cmd(
     port: Annotated[
         int,
         typer.Option(
@@ -1524,29 +1524,29 @@ def display_cmd(
         ),
     ] = None,
 ):
-    """Start, stop, or check the M4 display server.
+    """Start, stop, or check the vitrine server.
 
     Opens a browser tab that renders visualizations pushed from Python via show().
 
     Examples:
 
     \b
-    • m4 display                    # Start persistent display server
-    • m4 display --port 7742        # Custom port
-    • m4 display --no-open          # Start without opening browser
-    • m4 display --status           # Show server status
-    • m4 display --stop             # Stop running server
-    • m4 display --list             # List all display runs
-    • m4 display --clean 7d         # Remove runs older than 7 days
-    • m4 display --export out.html  # Export all runs as HTML
-    • m4 display --export out.html --run my-analysis  # Export specific run
-    • m4 display --export out.zip --format json       # Export as JSON zip
+    • m4 vitrine                    # Start persistent vitrine server
+    • m4 vitrine --port 7742        # Custom port
+    • m4 vitrine --no-open          # Start without opening browser
+    • m4 vitrine --status           # Show server status
+    • m4 vitrine --stop             # Stop running server
+    • m4 vitrine --list             # List all vitrine runs
+    • m4 vitrine --clean 7d         # Remove runs older than 7 days
+    • m4 vitrine --export out.html  # Export all runs as HTML
+    • m4 vitrine --export out.html --run my-analysis  # Export specific run
+    • m4 vitrine --export out.zip --format json       # Export as JSON zip
     """
-    from m4.display import server_status as get_status
-    from m4.display import stop_server as do_stop
+    from m4.vitrine import server_status as get_status
+    from m4.vitrine import stop_server as do_stop
 
     if export_path is not None:
-        from m4.display import export as do_export
+        from m4.vitrine import export as do_export
 
         try:
             result = do_export(export_path, format=export_format, run_id=run)
@@ -1558,7 +1558,7 @@ def display_cmd(
         return
 
     if list_runs:
-        from m4.display import list_runs as do_list_runs
+        from m4.vitrine import list_runs as do_list_runs
 
         runs = do_list_runs()
         if not runs:
@@ -1578,7 +1578,7 @@ def display_cmd(
         return
 
     if clean is not None:
-        from m4.display import clean_runs as do_clean
+        from m4.vitrine import clean_runs as do_clean
 
         removed = do_clean(older_than=clean)
         if removed > 0:
@@ -1608,9 +1608,9 @@ def display_cmd(
         return
 
     # Start persistent foreground server
-    from m4.display.server import _run_standalone
+    from m4.vitrine.server import _run_standalone
 
-    info(f"Starting M4 Display server on port {port}...")
+    info(f"Starting vitrine server on port {port}...")
     _run_standalone(port=port, no_open=no_open)
 
 

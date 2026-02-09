@@ -1,10 +1,10 @@
-"""M4 Display: Visualization backend for code execution agents.
+"""vitrine: Visualization backend for code execution agents.
 
 Provides a local display server that pushes visualizations to a browser tab.
 Agents call show() to render DataFrames, charts, markdown, and more.
 
 Quick Start:
-    from m4.display import show
+    from m4.vitrine import show
 
     show(df, title="Demographics")
     show("## Key Finding\\nMortality is 23%")
@@ -22,7 +22,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from m4.display._types import (  # noqa: F401
+from m4.vitrine._types import (  # noqa: F401
     Checkbox,
     DateRange,
     Dropdown,
@@ -54,26 +54,26 @@ _event_poll_thread: threading.Thread | None = None
 _event_poll_stop = threading.Event()
 
 
-def _get_display_dir() -> Path:
-    """Resolve the display directory under {m4_data}/display/."""
+def _get_vitrine_dir() -> Path:
+    """Resolve the vitrine directory under {m4_data}/vitrine/."""
     try:
         from m4.config import _PROJECT_DATA_DIR
 
-        return _PROJECT_DATA_DIR / "display"
+        return _PROJECT_DATA_DIR / "vitrine"
     except Exception:
         import tempfile
 
-        return Path(tempfile.gettempdir()) / "m4_data" / "display"
+        return Path(tempfile.gettempdir()) / "m4_data" / "vitrine"
 
 
 def _pid_file_path() -> Path:
     """Return the path to the server PID file."""
-    return _get_display_dir() / ".server.json"
+    return _get_vitrine_dir() / ".server.json"
 
 
 def _lock_file_path() -> Path:
     """Return the path to the server lock file."""
-    return _get_display_dir() / ".server.lock"
+    return _get_vitrine_dir() / ".server.lock"
 
 
 def _scan_port_range(
@@ -196,16 +196,16 @@ def _remote_command(url: str, token: str, payload: dict[str, Any]) -> bool:
 
 def _get_session_dir() -> Path:
     """Determine the session directory for artifact storage."""
-    return _get_display_dir()
+    return _get_vitrine_dir()
 
 
 def _ensure_run_manager() -> Any:
     """Ensure a RunManager exists for local artifact storage."""
     global _run_manager
     if _run_manager is None:
-        from m4.display.run_manager import RunManager
+        from m4.vitrine.run_manager import RunManager
 
-        _run_manager = RunManager(_get_display_dir())
+        _run_manager = RunManager(_get_vitrine_dir())
     return _run_manager
 
 
@@ -299,7 +299,7 @@ def _ensure_started(
 
         # Fallback: start in-thread if process discovery failed
         logger.debug("Process discovery failed, falling back to in-thread server")
-        from m4.display.server import DisplayServer
+        from m4.vitrine.server import DisplayServer
 
         if _session_id is None:
             _session_id = uuid.uuid4().hex[:12]
@@ -338,7 +338,7 @@ def _start_process(port: int = 7741, open_browser: bool = True) -> None:
     cmd = [
         sys.executable,
         "-m",
-        "m4.display.server",
+        "m4.vitrine.server",
         "--port",
         str(port),
     ]
@@ -517,9 +517,9 @@ def show(
     """
     _ensure_started()
 
-    from m4.display._types import DisplayResponse
-    from m4.display.artifacts import _serialize_card
-    from m4.display.renderer import render
+    from m4.vitrine._types import DisplayResponse
+    from m4.vitrine.artifacts import _serialize_card
+    from m4.vitrine.renderer import render
 
     # Resolve the store for this card via RunManager
     store = _store  # backwards-compat fallback
@@ -668,8 +668,8 @@ def section(title: str, run_id: str | None = None) -> None:
     """
     _ensure_started()
 
-    from m4.display._types import CardDescriptor, CardType
-    from m4.display.renderer import _make_card_id, _make_timestamp
+    from m4.vitrine._types import CardDescriptor, CardType
+    from m4.vitrine.renderer import _make_card_id, _make_timestamp
 
     # Resolve store via RunManager if available
     store = _store
@@ -767,7 +767,7 @@ def export(
     if _run_manager is None:
         raise RuntimeError("No run manager available for export")
 
-    from m4.display.export import export_html, export_json
+    from m4.vitrine.export import export_html, export_json
 
     if format == "html":
         result = export_html(_run_manager, path, run_id=run_id)
@@ -812,7 +812,7 @@ def _poll_remote_events() -> None:
     """Background thread that polls a remote server for UI events."""
     import urllib.request
 
-    from m4.display._types import DisplayEvent
+    from m4.vitrine._types import DisplayEvent
 
     while not _event_poll_stop.is_set():
         try:
@@ -851,7 +851,7 @@ def pending_requests() -> list:
     Returns:
         List of DisplayRequest objects.
     """
-    from m4.display._types import DisplayRequest
+    from m4.vitrine._types import DisplayRequest
 
     _ensure_started()
 

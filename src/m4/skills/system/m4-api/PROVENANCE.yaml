@@ -29,4 +29,4 @@ changelog:
     summary: Add note about checking table and schema names across backends
   - version: "1.3"
     date: 2026-02-07
-    summary: Add "Displaying Results" section with cross-reference to m4-display skill
+    summary: Add "Displaying Results" section with cross-reference to m4-vitrine skill

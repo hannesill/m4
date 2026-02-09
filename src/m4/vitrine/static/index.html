@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>M4 Display</title>
+<title>vitrine</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -1585,7 +1585,7 @@
 
 <div class="header">
   <div class="header-left">
-    <h1>M4 Display</h1>
+    <h1>vitrine</h1>
     <div class="run-dropdown" id="run-dropdown">
       <button class="run-dropdown-trigger" id="run-dropdown-trigger" title="Browse runs">
         <span id="run-dropdown-label">All runs</span>
@@ -1615,7 +1615,7 @@
     <div style="font-size: 32px; opacity: 0.3;">&#9671;</div>
     <div style="font-size: 15px; font-weight: 500;">No analyses yet</div>
     <div style="font-size: 13px;">Run an agent to get started</div>
-    <div><code>from m4.display import show</code></div>
+    <div><code>from m4.vitrine import show</code></div>
   </div>
 </div>
 
@@ -1670,7 +1670,7 @@
 
   // --- Theme ---
   function initTheme() {
-    var saved = localStorage.getItem('m4-display-theme');
+    var saved = localStorage.getItem('m4-vitrine-theme');
     if (saved === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
       themeToggleEl.innerHTML = '&#9788;';
@@ -1681,11 +1681,11 @@
     var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     if (isDark) {
       document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('m4-display-theme', 'light');
+      localStorage.setItem('m4-vitrine-theme', 'light');
       themeToggleEl.innerHTML = '&#9789;';
     } else {
       document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('m4-display-theme', 'dark');
+      localStorage.setItem('m4-vitrine-theme', 'dark');
       themeToggleEl.innerHTML = '&#9788;';
     }
   };
@@ -2791,7 +2791,7 @@
         // Fire WebSocket event
         if (cardData && state.ws && state.connected) {
           state.ws.send(JSON.stringify({
-            type: 'display.event',
+            type: 'vitrine.event',
             event_type: 'row_click',
             card_id: cardData.card_id,
             payload: { row_index: rowIdx, row: rowObj },
@@ -3042,7 +3042,7 @@
               return { x: pt.x, y: pt.y, pointIndex: pt.pointIndex, curveNumber: pt.curveNumber };
             });
             state.ws.send(JSON.stringify({
-              type: 'display.event',
+              type: 'vitrine.event',
               event_type: 'point_select',
               card_id: cardData.card_id,
               payload: { points: points },
@@ -3056,7 +3056,7 @@
               return { x: pt.x, y: pt.y, pointIndex: pt.pointIndex, curveNumber: pt.curveNumber };
             });
             state.ws.send(JSON.stringify({
-              type: 'display.event',
+              type: 'vitrine.event',
               event_type: 'point_click',
               card_id: cardData.card_id,
               payload: { points: points },
@@ -3672,7 +3672,7 @@
     // Send via WebSocket
     if (state.ws && state.connected) {
       state.ws.send(JSON.stringify({
-        type: 'display.event',
+        type: 'vitrine.event',
         event_type: 'response',
         card_id: cardData.card_id,
         payload: {
@@ -3788,7 +3788,7 @@
     // Send via WebSocket
     if (state.ws && state.connected) {
       state.ws.send(JSON.stringify({
-        type: 'display.event',
+        type: 'vitrine.event',
         event_type: 'send_to_agent',
         card_id: cardData.card_id,
         payload: {
@@ -3926,7 +3926,7 @@
     empty.innerHTML = '<div style="font-size: 32px; opacity: 0.3;">&#9671;</div>'
       + '<div style="font-size: 15px; font-weight: 500;">No analyses yet</div>'
       + '<div style="font-size: 13px;">Run an agent to get started</div>'
-      + '<div><code>from m4.display import show</code></div>';
+      + '<div><code>from m4.vitrine import show</code></div>';
     feed.appendChild(empty);
   }
 

@@ -1,4 +1,4 @@
-"""Tests for m4.display.export.
+"""Tests for m4.vitrine.export.
 
 Tests cover:
 - HTML export produces self-contained file
@@ -16,15 +16,15 @@ import zipfile
 import pandas as pd
 import pytest
 
-from m4.display.export import (
+from m4.vitrine.export import (
     _format_cell,
     export_html,
     export_html_string,
     export_json,
     export_json_bytes,
 )
-from m4.display.renderer import render
-from m4.display.run_manager import RunManager
+from m4.vitrine.renderer import render
+from m4.vitrine.run_manager import RunManager
 
 
 @pytest.fixture
@@ -89,7 +89,7 @@ class TestExportHTML:
         html = out.read_text()
         assert "<!DOCTYPE html>" in html
         assert "<style>" in html
-        assert "M4 Display" in html
+        assert "vitrine" in html
 
     def test_contains_table_data(self, populated_manager, tmp_path):
         out = tmp_path / "export.html"

@@ -20,4 +20,4 @@ references:
 changelog:
   - version: "1.0"
     date: 2026-02-07
-    summary: Initial creation documenting the m4.display public API — show(), section(), interaction patterns, run management, and the save-then-show principle
+    summary: Initial creation documenting the m4.vitrine public API — show(), section(), interaction patterns, run management, and the save-then-show principle

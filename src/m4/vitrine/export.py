@@ -22,9 +22,9 @@ from typing import Any
 
 import duckdb
 
-from m4.display._types import CardDescriptor, CardType
-from m4.display.artifacts import _serialize_card
-from m4.display.run_manager import RunManager
+from m4.vitrine._types import CardDescriptor, CardType
+from m4.vitrine.artifacts import _serialize_card
+from m4.vitrine.run_manager import RunManager
 
 logger = logging.getLogger(__name__)
 
@@ -279,7 +279,7 @@ def _build_html_document(
 
 <div class="export-header">
   <div class="export-header-left">
-    <h1>M4 Display</h1>
+    <h1>vitrine</h1>
     {run_summary}
   </div>
   <div class="export-header-right">
@@ -292,7 +292,7 @@ def _build_html_document(
 </div>
 
 <div class="export-footer">
-  M4 Display Export &middot; {len(cards)} cards &middot; {export_time}
+  vitrine export &middot; {len(cards)} cards &middot; {export_time}
 </div>
 
 <script>

@@ -18,9 +18,9 @@ from typing import Any
 
 import pandas as pd
 
-from m4.display._types import CardDescriptor, CardProvenance, CardType, Form
-from m4.display.artifacts import ArtifactStore
-from m4.display.redaction import Redactor
+from m4.vitrine._types import CardDescriptor, CardProvenance, CardType, Form
+from m4.vitrine.artifacts import ArtifactStore
+from m4.vitrine.redaction import Redactor
 
 logger = logging.getLogger(__name__)
 

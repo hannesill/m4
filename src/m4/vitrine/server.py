@@ -41,9 +41,9 @@ from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from m4.display._types import CardDescriptor
-from m4.display.artifacts import ArtifactStore, _serialize_card
-from m4.display.run_manager import RunManager
+from m4.vitrine._types import CardDescriptor
+from m4.vitrine.artifacts import ArtifactStore, _serialize_card
+from m4.vitrine.run_manager import RunManager
 
 logger = logging.getLogger(__name__)
 
@@ -108,16 +108,16 @@ def _scan_for_existing_server(
     return None
 
 
-def _get_display_dir() -> Path:
-    """Resolve the display directory under {m4_data}/display/."""
+def _get_vitrine_dir() -> Path:
+    """Resolve the vitrine directory under {m4_data}/vitrine/."""
     try:
         from m4.config import _PROJECT_DATA_DIR
 
-        return _PROJECT_DATA_DIR / "display"
+        return _PROJECT_DATA_DIR / "vitrine"
     except Exception:
         import tempfile
 
-        return Path(tempfile.gettempdir()) / "m4_data" / "display"
+        return Path(tempfile.gettempdir()) / "m4_data" / "vitrine"
 
 
 class DisplayServer:
@@ -240,7 +240,7 @@ class DisplayServer:
         """Serve the main index.html page."""
         index_path = _STATIC_DIR / "index.html"
         if not index_path.exists():
-            return HTMLResponse("<h1>M4 Display</h1><p>index.html not found</p>")
+            return HTMLResponse("<h1>vitrine</h1><p>index.html not found</p>")
         return HTMLResponse(index_path.read_text())
 
     async def _api_cards(self, request: Request) -> JSONResponse:
@@ -629,7 +629,7 @@ class DisplayServer:
         if not self.run_manager:
             return JSONResponse({"error": "No run manager"}, status_code=400)
 
-        from m4.display.export import export_html_string, export_json_bytes
+        from m4.vitrine.export import export_html_string, export_json_bytes
 
         self.run_manager.refresh()
 
@@ -665,7 +665,7 @@ class DisplayServer:
         if not self.run_manager:
             return JSONResponse({"error": "No run manager"}, status_code=400)
 
-        from m4.display.export import export_html_string, export_json_bytes
+        from m4.vitrine.export import export_html_string, export_json_bytes
 
         self.run_manager.refresh()
 
@@ -732,7 +732,7 @@ class DisplayServer:
         msg_type = data.get("type")
         logger.debug(f"Received WebSocket message: {msg_type}")
 
-        if msg_type != "display.event":
+        if msg_type != "vitrine.event":
             return
 
         event_type = data.get("event_type")
@@ -829,7 +829,7 @@ class DisplayServer:
 
         else:
             # General events (row_click, point_select, etc.)
-            from m4.display._types import DisplayEvent
+            from m4.vitrine._types import DisplayEvent
 
             event = DisplayEvent(
                 event_type=event_type,
@@ -1019,7 +1019,7 @@ class DisplayServer:
         import sys
 
         print(
-            f"M4 Display: http://{self.host}:{self.port}",
+            f"vitrine: http://{self.host}:{self.port}",
             file=sys.stderr,
         )
 
@@ -1149,7 +1149,7 @@ def _run_standalone(port: int = _DEFAULT_PORT, no_open: bool = False) -> None:
     import fcntl
     import sys
 
-    display_dir = _get_display_dir()
+    display_dir = _get_vitrine_dir()
     display_dir.mkdir(parents=True, exist_ok=True)
 
     lock_path = display_dir / ".server.lock"
@@ -1224,7 +1224,7 @@ def _run_standalone(port: int = _DEFAULT_PORT, no_open: bool = False) -> None:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="M4 Display Server")
+    parser = argparse.ArgumentParser(description="vitrine server")
     parser.add_argument(
         "--port", type=int, default=_DEFAULT_PORT, help="Port to bind to"
     )

@@ -1,4 +1,4 @@
-"""Tests for m4.display.run_manager.
+"""Tests for m4.vitrine.run_manager.
 
 Tests cover:
 - Directory creation and run naming format
@@ -17,7 +17,7 @@ import time
 
 import pytest
 
-from m4.display.run_manager import (
+from m4.vitrine.run_manager import (
     RunManager,
     _make_run_dir_name,
     _parse_age,
@@ -164,7 +164,7 @@ class TestListRuns:
 
     def test_includes_card_count(self, manager):
         _, store = manager.get_or_create_run("count-test")
-        from m4.display.renderer import render
+        from m4.vitrine.renderer import render
 
         render("hello", store=store)
         render("world", store=store)
@@ -220,7 +220,7 @@ class TestListAllCards:
         _, store_a = manager.get_or_create_run("run-a")
         _, store_b = manager.get_or_create_run("run-b")
 
-        from m4.display.renderer import render
+        from m4.vitrine.renderer import render
 
         render("card-a", run_id="run-a", store=store_a)
         render("card-b", run_id="run-b", store=store_b)
@@ -232,7 +232,7 @@ class TestListAllCards:
         _, store_a = manager.get_or_create_run("run-a")
         _, store_b = manager.get_or_create_run("run-b")
 
-        from m4.display.renderer import render
+        from m4.vitrine.renderer import render
 
         render("card-a", run_id="run-a", store=store_a)
         render("card-b", run_id="run-b", store=store_b)
@@ -275,7 +275,7 @@ class TestDiscovery:
         dir_name = mgr1._label_to_dir["persistent-run"]
 
         # Store a card
-        from m4.display.renderer import render
+        from m4.vitrine.renderer import render
 
         card = render("hello world", run_id="persistent-run", store=store)
 
@@ -334,7 +334,7 @@ class TestRefresh:
 
     def test_discovers_cards_in_new_runs(self, display_dir):
         """refresh() indexes cards from newly discovered runs."""
-        from m4.display.renderer import render
+        from m4.vitrine.renderer import render
 
         mgr1 = RunManager(display_dir)
         _, store = mgr1.get_or_create_run("card-run")

@@ -1,4 +1,4 @@
-"""Tests for m4.display public API (show, start, stop, section).
+"""Tests for m4.vitrine public API (show, start, stop, section).
 
 Tests cover:
 - show() returns a card_id
@@ -21,10 +21,10 @@ import json
 import pandas as pd
 import pytest
 
-import m4.display as display
-from m4.display._types import CardType, DisplayRequest, DisplayResponse
-from m4.display.artifacts import ArtifactStore
-from m4.display.run_manager import RunManager
+import m4.vitrine as display
+from m4.vitrine._types import CardType, DisplayRequest, DisplayResponse
+from m4.vitrine.artifacts import ArtifactStore
+from m4.vitrine.run_manager import RunManager
 
 
 @pytest.fixture(autouse=True)
@@ -439,7 +439,7 @@ class TestOnSend:
         assert cards[0].on_send == "Analyze these rows"
 
     def test_on_send_in_serialized_card(self, store, mock_server):
-        from m4.display.artifacts import _serialize_card
+        from m4.vitrine.artifacts import _serialize_card
 
         display.show("hello", on_send="Process data")
         card = store.list_cards()[0]
@@ -666,9 +666,9 @@ class TestFileLocking:
 
     def test_lock_file_path(self, tmp_path, monkeypatch):
         """_lock_file_path returns correct path."""
-        monkeypatch.setattr(display, "_get_display_dir", lambda: tmp_path / "display")
+        monkeypatch.setattr(display, "_get_vitrine_dir", lambda: tmp_path / "vitrine")
         path = display._lock_file_path()
-        assert path == tmp_path / "display" / ".server.lock"
+        assert path == tmp_path / "vitrine" / ".server.lock"
 
     def test_scan_port_range_returns_none_when_empty(self):
         """Scanning unused ports returns None."""

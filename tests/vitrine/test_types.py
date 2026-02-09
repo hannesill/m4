@@ -1,4 +1,4 @@
-"""Tests for m4.display._types.
+"""Tests for m4.vitrine._types.
 
 Tests cover:
 - CardType enum values and string serialization
@@ -9,7 +9,7 @@ Tests cover:
 - DisplayRequest repr and artifact_path
 """
 
-from m4.display._types import (
+from m4.vitrine._types import (
     CardDescriptor,
     CardProvenance,
     CardType,
@@ -185,7 +185,7 @@ class TestDisplayResponse:
         assert "not on disk" in r
 
     def test_artifact_path_with_store(self, tmp_path):
-        from m4.display.artifacts import ArtifactStore
+        from m4.vitrine.artifacts import ArtifactStore
 
         store = ArtifactStore(session_dir=tmp_path, session_id="s1")
         import pandas as pd
@@ -238,7 +238,7 @@ class TestDisplayRequest:
         assert "3 rows" in r
 
     def test_artifact_path_with_store(self, tmp_path):
-        from m4.display.artifacts import ArtifactStore
+        from m4.vitrine.artifacts import ArtifactStore
 
         store = ArtifactStore(session_dir=tmp_path, session_id="s1")
         import pandas as pd

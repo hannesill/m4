@@ -5,10 +5,10 @@ redaction that runs before any data leaves the Python process, ensuring
 columns matching identifier patterns are masked and row counts are capped.
 
 Configuration via environment variables:
-    M4_DISPLAY_REDACT: Enable PHI redaction (default: "1", set "0" to disable)
-    M4_DISPLAY_MAX_ROWS: Max rows stored per artifact (default: 10000)
-    M4_DISPLAY_REDACT_PATTERNS: Custom regex patterns, comma-separated
-    M4_DISPLAY_HASH_IDS: Hash subject_id etc. instead of raw values (default: "0")
+    M4_VITRINE_REDACT: Enable PHI redaction (default: "1", set "0" to disable)
+    M4_VITRINE_MAX_ROWS: Max rows stored per artifact (default: 10000)
+    M4_VITRINE_REDACT_PATTERNS: Custom regex patterns, comma-separated
+    M4_VITRINE_HASH_IDS: Hash subject_id etc. instead of raw values (default: "0")
 """
 
 from __future__ import annotations
@@ -35,15 +35,15 @@ class Redactor:
     """Configurable PHI/PII redaction for display output.
 
     Safe by default: redaction is enabled unless explicitly disabled via
-    M4_DISPLAY_REDACT=0. Researchers working with de-identified datasets
+    M4_VITRINE_REDACT=0. Researchers working with de-identified datasets
     (like MIMIC) can disable it. The opt-out is intentionally explicit —
     forgetting to configure is safe, not unsafe.
 
     Args:
-        enabled: Override the M4_DISPLAY_REDACT env var.
-        max_rows: Override the M4_DISPLAY_MAX_ROWS env var.
+        enabled: Override the M4_VITRINE_REDACT env var.
+        max_rows: Override the M4_VITRINE_MAX_ROWS env var.
         patterns: Override the default identifier patterns.
-        hash_ids: Override the M4_DISPLAY_HASH_IDS env var.
+        hash_ids: Override the M4_VITRINE_HASH_IDS env var.
     """
 
     def __init__(
@@ -56,14 +56,14 @@ class Redactor:
         if enabled is not None:
             self.enabled = enabled
         else:
-            self.enabled = os.getenv("M4_DISPLAY_REDACT", "1") != "0"
+            self.enabled = os.getenv("M4_VITRINE_REDACT", "1") != "0"
 
         if max_rows is not None:
             self.max_rows = max_rows
         else:
             try:
                 self.max_rows = int(
-                    os.getenv("M4_DISPLAY_MAX_ROWS", str(_DEFAULT_MAX_ROWS))
+                    os.getenv("M4_VITRINE_MAX_ROWS", str(_DEFAULT_MAX_ROWS))
                 )
             except ValueError:
                 self.max_rows = _DEFAULT_MAX_ROWS
@@ -71,7 +71,7 @@ class Redactor:
         if patterns is not None:
             self._patterns = [re.compile(p) for p in patterns]
         else:
-            env_patterns = os.getenv("M4_DISPLAY_REDACT_PATTERNS")
+            env_patterns = os.getenv("M4_VITRINE_REDACT_PATTERNS")
             if env_patterns:
                 self._patterns = [
                     re.compile(p.strip()) for p in env_patterns.split(",") if p.strip()
@@ -82,7 +82,7 @@ class Redactor:
         if hash_ids is not None:
             self.hash_ids = hash_ids
         else:
-            self.hash_ids = os.getenv("M4_DISPLAY_HASH_IDS", "0") != "0"
+            self.hash_ids = os.getenv("M4_VITRINE_HASH_IDS", "0") != "0"
 
     def redact_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """Mask columns matching identifier patterns.

@@ -1,4 +1,4 @@
-"""Tests for m4.display.server.
+"""Tests for m4.vitrine.server.
 
 Tests cover:
 - DisplayServer creation and port finding
@@ -15,10 +15,10 @@ Tests cover:
 import pandas as pd
 import pytest
 
-from m4.display.artifacts import ArtifactStore
-from m4.display.renderer import render
-from m4.display.run_manager import RunManager
-from m4.display.server import DisplayServer
+from m4.vitrine.artifacts import ArtifactStore
+from m4.vitrine.renderer import render
+from m4.vitrine.run_manager import RunManager
+from m4.vitrine.server import DisplayServer
 
 _TEST_TOKEN = "test-secret-token-1234"
 
@@ -213,7 +213,7 @@ class TestStarletteApp:
         client = TestClient(app)
         resp = client.get("/")
         assert resp.status_code == 200
-        assert "M4 Display" in resp.text
+        assert "vitrine" in resp.text
 
     def test_websocket_connection(self, app):
         from starlette.testclient import TestClient
@@ -532,7 +532,7 @@ class TestEventRouting:
         with client.websocket_connect("/ws") as ws:
             ws.send_json(
                 {
-                    "type": "display.event",
+                    "type": "vitrine.event",
                     "event_type": "row_click",
                     "card_id": "c1",
                     "payload": {"row_index": 0},
@@ -555,7 +555,7 @@ class TestEventRouting:
         with client.websocket_connect("/ws") as ws:
             ws.send_json(
                 {
-                    "type": "display.event",
+                    "type": "vitrine.event",
                     "event_type": "row_click",
                     "card_id": "c1",
                     "payload": {"row_index": 3, "row": {"id": 42}},
@@ -598,7 +598,7 @@ class TestEventRouting:
         with client.websocket_connect("/ws") as ws:
             ws.send_json(
                 {
-                    "type": "display.event",
+                    "type": "vitrine.event",
                     "event_type": "send_to_agent",
                     "card_id": "c1",
                     "payload": {
@@ -661,7 +661,7 @@ class TestBlockingResponse:
         with client.websocket_connect("/ws") as ws:
             ws.send_json(
                 {
-                    "type": "display.event",
+                    "type": "vitrine.event",
                     "event_type": "response",
                     "card_id": "test-card",
                     "payload": {
@@ -765,7 +765,7 @@ class TestChartPointSelection:
         with client.websocket_connect("/ws") as ws:
             ws.send_json(
                 {
-                    "type": "display.event",
+                    "type": "vitrine.event",
                     "event_type": "send_to_agent",
                     "card_id": "c1",
                     "payload": {
@@ -972,7 +972,7 @@ class TestSingletonGuard:
 
     def test_scan_for_existing_server_finds_running(self, store):
         """Start a server on a test port, verify _scan_for_existing_server finds it."""
-        from m4.display.server import _scan_for_existing_server
+        from m4.vitrine.server import _scan_for_existing_server
 
         srv = DisplayServer(
             store=store,
@@ -993,7 +993,7 @@ class TestSingletonGuard:
 
     def test_scan_for_existing_server_empty_range(self):
         """Scanning unused ports returns None."""
-        from m4.display.server import _scan_for_existing_server
+        from m4.vitrine.server import _scan_for_existing_server
 
         result = _scan_for_existing_server("127.0.0.1", 7790, 7792)
         assert result is None
@@ -1002,19 +1002,19 @@ class TestSingletonGuard:
         """Current process PID should be alive."""
         import os
 
-        from m4.display.server import _is_pid_alive
+        from m4.vitrine.server import _is_pid_alive
 
         assert _is_pid_alive(os.getpid()) is True
 
     def test_is_pid_alive_dead_pid(self):
         """Non-existent PID should not be alive."""
-        from m4.display.server import _is_pid_alive
+        from m4.vitrine.server import _is_pid_alive
 
         assert _is_pid_alive(999999999) is False
 
     def test_check_health_on_running_server(self, store):
         """_check_health returns True for a running server."""
-        from m4.display.server import _check_health
+        from m4.vitrine.server import _check_health
 
         srv = DisplayServer(
             store=store,
@@ -1036,6 +1036,6 @@ class TestSingletonGuard:
 
     def test_check_health_on_dead_port(self):
         """_check_health returns False for a port with no server."""
-        from m4.display.server import _check_health
+        from m4.vitrine.server import _check_health
 
         assert _check_health("http://127.0.0.1:7790") is False
