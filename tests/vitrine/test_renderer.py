@@ -314,6 +314,31 @@ class TestRenderPlotly:
         assert card.provenance is not None
         assert card.provenance.source == "cohort_analysis"
 
+    def test_plotly_express_customdata_ndarray_serialized(self, store):
+        pytest.importorskip("plotly")
+        import plotly.express as px
+
+        df = pd.DataFrame(
+            {
+                "age": [21, 34, 55, 63],
+                "sofa": [2.1, 4.2, 7.4, 8.0],
+                "cohort": ["control", "sepsis", "sepsis", "control"],
+                "mortality_30d": [False, True, False, True],
+                "patient_id": [1001, 1002, 1003, 1004],
+            }
+        )
+        fig = px.scatter(
+            df,
+            x="age",
+            y="sofa",
+            color="cohort",
+            hover_data=["patient_id", "mortality_30d"],
+        )
+
+        card = render(fig, store=store)
+        assert card.card_type == CardType.PLOTLY
+        assert isinstance(card.preview["spec"]["data"][0].get("customdata"), list)
+
 
 class TestIsPlotlyFigure:
     def test_detects_plotly_figure(self):
