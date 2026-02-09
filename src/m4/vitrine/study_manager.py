@@ -501,6 +501,183 @@ class StudyManager:
         path.write_text(json.dumps(data, indent=2, default=str))
         return path
 
+    # --- Output Directory Management ---
+
+    def register_output_dir(
+        self, study_label: str, path: str | Path | None = None
+    ) -> Path:
+        """Register an output directory for a study.
+
+        If path is None, creates ``{study_dir}/output/`` and stores
+        a relative reference. If path is a string/Path, stores the
+        absolute path as-is.
+
+        Args:
+            study_label: The study label.
+            path: External directory path, or None for self-contained.
+
+        Returns:
+            Path to the output directory (created if needed).
+        """
+        dir_name = self._label_to_dir.get(study_label)
+        if dir_name is None:
+            raise ValueError(f"Study '{study_label}' not found")
+
+        study_dir = self._studies_dir / dir_name
+
+        if path is None:
+            output_dir = study_dir / "output"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            rel = "output"
+        else:
+            output_dir = Path(path).resolve()
+            output_dir.mkdir(parents=True, exist_ok=True)
+            rel = str(output_dir)
+
+        # Persist in meta.json
+        meta_path = study_dir / "meta.json"
+        meta: dict[str, Any] = {}
+        if meta_path.exists():
+            try:
+                meta = json.loads(meta_path.read_text())
+            except (json.JSONDecodeError, OSError):
+                pass
+        meta["output_dir"] = rel
+        meta_path.write_text(json.dumps(meta, indent=2))
+
+        return output_dir
+
+    def get_output_dir(self, study_label: str) -> Path | None:
+        """Get the output directory for a study.
+
+        Args:
+            study_label: The study label.
+
+        Returns:
+            Path to the output directory, or None if not registered.
+        """
+        dir_name = self._label_to_dir.get(study_label)
+        if dir_name is None:
+            return None
+
+        study_dir = self._studies_dir / dir_name
+        meta_path = study_dir / "meta.json"
+        if not meta_path.exists():
+            return None
+
+        try:
+            meta = json.loads(meta_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            return None
+
+        output_ref = meta.get("output_dir")
+        if output_ref is None:
+            return None
+
+        # Relative path → resolve against study dir
+        output_path = Path(output_ref)
+        if not output_path.is_absolute():
+            output_path = study_dir / output_path
+
+        if not output_path.exists():
+            return None
+
+        return output_path
+
+    def list_output_files(self, study_label: str) -> list[dict[str, Any]]:
+        """List files in a study's output directory.
+
+        Args:
+            study_label: The study label.
+
+        Returns:
+            List of dicts with name, path, size, modified, type, is_dir.
+        """
+        output_dir = self.get_output_dir(study_label)
+        if output_dir is None or not output_dir.exists():
+            return []
+
+        _EXT_TYPES = {
+            ".py": "python",
+            ".r": "r",
+            ".sql": "sql",
+            ".md": "markdown",
+            ".csv": "csv",
+            ".parquet": "parquet",
+            ".tsv": "csv",
+            ".json": "data",
+            ".yaml": "data",
+            ".yml": "data",
+            ".toml": "data",
+            ".cfg": "text",
+            ".txt": "text",
+            ".log": "text",
+            ".png": "image",
+            ".jpg": "image",
+            ".jpeg": "image",
+            ".gif": "image",
+            ".svg": "image",
+            ".pdf": "pdf",
+        }
+
+        files: list[dict[str, Any]] = []
+        for item in sorted(output_dir.rglob("*")):
+            if item.name.startswith("."):
+                continue
+            rel = str(item.relative_to(output_dir))
+            ext = item.suffix.lower()
+            ftype = _EXT_TYPES.get(ext, "other")
+            if item.is_dir():
+                ftype = "directory"
+
+            stat = item.stat()
+            files.append(
+                {
+                    "name": item.name,
+                    "path": rel,
+                    "size": stat.st_size if item.is_file() else 0,
+                    "modified": datetime.fromtimestamp(
+                        stat.st_mtime, tz=timezone.utc
+                    ).isoformat(),
+                    "type": ftype,
+                    "is_dir": item.is_dir(),
+                }
+            )
+
+        return files
+
+    def get_output_file_path(self, study_label: str, rel_path: str) -> Path | None:
+        """Resolve and validate a relative path within the output directory.
+
+        Path-traversal safe: rejects paths that escape the output dir.
+
+        Args:
+            study_label: The study label.
+            rel_path: Relative path within the output directory.
+
+        Returns:
+            Absolute Path if valid and exists, None otherwise.
+        """
+        output_dir = self.get_output_dir(study_label)
+        if output_dir is None:
+            return None
+
+        try:
+            resolved = (output_dir / rel_path).resolve()
+        except (ValueError, OSError):
+            return None
+
+        # Path traversal check
+        try:
+            resolved.relative_to(output_dir.resolve())
+        except ValueError:
+            return None
+
+        if not resolved.exists():
+            return None
+
+        return resolved
+
     # --- Internal ---
 
     def refresh(self) -> None:

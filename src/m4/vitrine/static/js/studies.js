@@ -138,6 +138,8 @@ function selectStudy(label) {
   updateDropdownTrigger();
   applyStudyFilter();
   updateStudyMetadataBar();
+  // Load files for the selected study
+  if (typeof loadFiles === 'function') loadFiles(label);
   // Update URL hash for deep linking
   if (label) {
     history.replaceState(null, '', '#study=' + encodeURIComponent(label));

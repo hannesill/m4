@@ -1001,6 +1001,28 @@ def export(
     return str(result)
 
 
+def register_output_dir(
+    path: str | Path | None = None,
+    study: str | None = None,
+) -> Path:
+    """Register an output directory for a study.
+
+    If path is None, creates and returns ``{study_dir}/output/``
+    (self-contained alongside the study's cards). If path is a
+    string/Path, stores it as an external reference and returns it.
+
+    Args:
+        path: External directory path, or None for self-contained.
+        study: Study label. Creates the study if it doesn't exist.
+
+    Returns:
+        Path to the output directory (created if needed).
+    """
+    sm = _ensure_study_manager()
+    label, _store = sm.get_or_create_study(study)
+    return sm.register_output_dir(label, path)
+
+
 def on_event(callback: Any) -> None:
     """Register a callback for UI events (row click, point select, etc.).
 

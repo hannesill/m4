@@ -246,6 +246,21 @@ class DisplayServer:
                 methods=["GET"],
             ),
             Route(
+                "/api/studies/{study:path}/files",
+                self._api_study_files,
+                methods=["GET"],
+            ),
+            Route(
+                "/api/studies/{study:path}/files-archive",
+                self._api_study_files_archive,
+                methods=["GET"],
+            ),
+            Route(
+                "/api/studies/{study:path}/files/{filepath:path}",
+                self._api_study_file,
+                methods=["GET"],
+            ),
+            Route(
                 "/api/studies/{study:path}",
                 self._api_study_delete,
                 methods=["DELETE"],
@@ -731,6 +746,159 @@ class DisplayServer:
         return Response(
             content=html,
             media_type="text/html",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+            },
+        )
+
+    async def _api_study_files(self, request: Request) -> JSONResponse:
+        """List files in a study's output directory."""
+        study = request.path_params["study"]
+        if not self.study_manager:
+            return JSONResponse({"error": "No study manager"}, status_code=400)
+        self.study_manager.refresh()
+        files = self.study_manager.list_output_files(study)
+        return JSONResponse(files)
+
+    async def _api_study_file(self, request: Request) -> Response:
+        """Serve a file from a study's output directory.
+
+        Query param: ?mode=preview (default) or ?mode=download.
+        """
+        study = request.path_params["study"]
+        filepath = request.path_params["filepath"]
+        mode = request.query_params.get("mode", "preview")
+
+        if not self.study_manager:
+            return JSONResponse({"error": "No study manager"}, status_code=400)
+
+        self.study_manager.refresh()
+        resolved = self.study_manager.get_output_file_path(study, filepath)
+        if resolved is None:
+            return JSONResponse({"error": "File not found"}, status_code=404)
+
+        suffix = resolved.suffix.lower()
+
+        # Download mode — always attachment
+        if mode == "download":
+            content = resolved.read_bytes()
+            return Response(
+                content=content,
+                media_type="application/octet-stream",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{resolved.name}"',
+                },
+            )
+
+        # Preview mode — content-type dispatch
+        _TEXT_EXTENSIONS = {
+            ".py",
+            ".sql",
+            ".r",
+            ".json",
+            ".yaml",
+            ".yml",
+            ".toml",
+            ".txt",
+            ".cfg",
+            ".log",
+            ".sh",
+            ".bash",
+            ".ini",
+            ".env",
+        }
+        _IMAGE_MIMES = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".gif": "image/gif",
+            ".svg": "image/svg+xml",
+        }
+
+        if suffix == ".md":
+            text = resolved.read_text(encoding="utf-8", errors="replace")
+            return Response(content=text, media_type="text/plain; charset=utf-8")
+
+        if suffix in _TEXT_EXTENSIONS:
+            text = resolved.read_text(encoding="utf-8", errors="replace")
+            return Response(content=text, media_type="text/plain; charset=utf-8")
+
+        if suffix in (".csv", ".parquet"):
+            return self._preview_tabular_file(resolved, suffix)
+
+        if suffix in _IMAGE_MIMES:
+            content = resolved.read_bytes()
+            return Response(content=content, media_type=_IMAGE_MIMES[suffix])
+
+        if suffix == ".pdf":
+            content = resolved.read_bytes()
+            return Response(content=content, media_type="application/pdf")
+
+        # Fallback — binary download
+        content = resolved.read_bytes()
+        return Response(
+            content=content,
+            media_type="application/octet-stream",
+            headers={
+                "Content-Disposition": f'attachment; filename="{resolved.name}"',
+            },
+        )
+
+    def _preview_tabular_file(self, path: Path, suffix: str) -> Response:
+        """Preview a CSV or Parquet file as JSON table (max 1000 rows)."""
+        try:
+            import duckdb
+
+            con = duckdb.connect(":memory:")
+            try:
+                if suffix == ".csv":
+                    reader = f"read_csv_auto('{path}')"
+                else:
+                    reader = f"read_parquet('{path}')"
+
+                total = con.execute(f"SELECT COUNT(*) FROM {reader}").fetchone()[0]
+                result = con.execute(f"SELECT * FROM {reader} LIMIT 1000")
+                columns = [desc[0] for desc in result.description]
+                rows = [list(row) for row in result.fetchall()]
+            finally:
+                con.close()
+
+            return JSONResponse(
+                {
+                    "columns": columns,
+                    "rows": rows,
+                    "total_rows": total,
+                    "truncated": total > 1000,
+                }
+            )
+        except Exception as e:
+            return JSONResponse({"error": f"Failed to read file: {e}"}, status_code=500)
+
+    async def _api_study_files_archive(self, request: Request) -> Response:
+        """Download all output files as a zip archive."""
+        study = request.path_params["study"]
+        if not self.study_manager:
+            return JSONResponse({"error": "No study manager"}, status_code=400)
+
+        self.study_manager.refresh()
+        output_dir = self.study_manager.get_output_dir(study)
+        if output_dir is None or not output_dir.exists():
+            return JSONResponse({"error": "No output directory"}, status_code=404)
+
+        import io
+        import zipfile
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            for item in sorted(output_dir.rglob("*")):
+                if item.is_file() and not item.name.startswith("."):
+                    arcname = str(item.relative_to(output_dir))
+                    zf.write(item, arcname)
+
+        filename = f"{study}-files.zip"
+        return Response(
+            content=buf.getvalue(),
+            media_type="application/zip",
             headers={
                 "Content-Disposition": f'attachment; filename="{filename}"',
             },
