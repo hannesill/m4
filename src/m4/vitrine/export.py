@@ -271,6 +271,9 @@ def _build_html_document(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{escape(title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 {_EXPORT_CSS}
 {f"<script>{plotly_js}</script>" if plotly_js else ""}
 {f"<script>{marked_js}</script>" if marked_js else ""}
@@ -304,18 +307,27 @@ def _build_html_document(
 
 def _render_card_html(card: CardDescriptor, run_manager: RunManager) -> str:
     """Render a single card as self-contained HTML."""
-    # Card chrome
-    title_html = f"<h3>{escape(card.title)}</h3>" if card.title else ""
+    card_type = card.card_type.value
+    header_type = (
+        "decision" if getattr(card, "response_requested", False) else card_type
+    )
+    type_letters = {
+        "table": "T",
+        "markdown": "M",
+        "plotly": "P",
+        "image": "I",
+        "keyvalue": "K",
+        "form": "F",
+        "decision": "!",
+    }
+    type_letter = type_letters.get(header_type, "?")
+    title_text = escape(card.title or card_type)
     desc_html = (
         f'<div class="card-description">{escape(card.description)}</div>'
         if card.description
         else ""
     )
-    ts_html = (
-        f'<span class="card-timestamp">{_format_timestamp(card.timestamp)}</span>'
-        if card.timestamp
-        else ""
-    )
+    ts_text = _format_timestamp(card.timestamp) if card.timestamp else ""
 
     # Provenance
     prov_html = ""
@@ -337,11 +349,13 @@ def _render_card_html(card: CardDescriptor, run_manager: RunManager) -> str:
     # Body
     body_html = _render_card_body(card, run_manager)
 
-    return f"""<div class="card" data-card-type="{card.card_type.value}">
-  <div class="card-header">
-    <div class="card-header-left">{title_html}{desc_html}</div>
-    <div class="card-header-right">{ts_html}</div>
+    return f"""<div class="card" data-card-type="{card_type}">
+  <div class="card-header" data-type="{header_type}">
+    <div class="card-type-icon" data-type="{header_type}">{type_letter}</div>
+    <span class="card-title">{title_text}</span>
+    <span class="card-meta">{escape(ts_text)}</span>
   </div>
+  {desc_html}
   <div class="card-body">{body_html}</div>
   {prov_html}
 </div>"""
@@ -587,23 +601,38 @@ def _format_cell(value: Any) -> str:
 
 _EXPORT_CSS = """<style>
   :root {
-    --bg: #ffffff;
-    --bg-card: #f8f9fa;
-    --bg-header: #f0f1f3;
-    --text: #1a1a2e;
-    --text-muted: #6c757d;
-    --border: #dee2e6;
-    --accent: #4361ee;
-    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-    --mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
-    --radius: 8px;
-    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --bg: #f7f5f0;
+    --card-bg: #ffffff;
+    --text: #1a1a1a;
+    --text-muted: #888888;
+    --border: #1a1a1a;
+    --border-width: 2px;
+    --table-color: #3b82f6;
+    --table-bg: #dbeafe;
+    --md-color: #8b5cf6;
+    --md-bg: #ede9fe;
+    --chart-color: #10b981;
+    --chart-bg: #d1fae5;
+    --kv-color: #f59e0b;
+    --kv-bg: #fef3c7;
+    --form-color: #ec4899;
+    --form-bg: #fce7f3;
+    --decision-color: #ef4444;
+    --decision-bg: #fee2e2;
+    --image-color: #06b6d4;
+    --image-bg: #cffafe;
+    --shadow: 4px 4px 0 #1a1a1a;
+    --shadow-sm: 2px 2px 0 #1a1a1a;
+    --font-head: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'DM Mono', 'SF Mono', Menlo, Consolas, monospace;
+    --radius: 0px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: var(--font);
+    font-family: var(--font-body);
     background: var(--bg);
     color: var(--text);
     line-height: 1.5;
@@ -614,17 +643,17 @@ _EXPORT_CSS = """<style>
 
   .export-header {
     padding: 20px 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 3px solid var(--border);
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    font-family: var(--font-head);
   }
 
   .export-header h1 {
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: -0.3px;
+    font-size: 18px;
+    font-weight: 700;
   }
 
   .export-run-info {
@@ -643,8 +672,8 @@ _EXPORT_CSS = """<style>
   }
 
   .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
+    background: var(--card-bg);
+    border: var(--border-width) solid var(--border);
     border-radius: var(--radius);
     margin-bottom: 16px;
     box-shadow: var(--shadow);
@@ -653,48 +682,86 @@ _EXPORT_CSS = """<style>
   }
 
   .card-header {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    border-bottom: var(--border-width) solid var(--border);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    background: var(--bg-header);
+    gap: 10px;
   }
 
-  .card-header h3 {
+  .card-header[data-type="table"] { background: var(--table-bg); }
+  .card-header[data-type="markdown"] { background: var(--md-bg); }
+  .card-header[data-type="plotly"] { background: var(--chart-bg); }
+  .card-header[data-type="image"] { background: var(--image-bg); }
+  .card-header[data-type="keyvalue"] { background: var(--kv-bg); }
+  .card-header[data-type="form"] { background: var(--form-bg); }
+  .card-header[data-type="decision"] { background: var(--decision-bg); }
+
+  .card-type-icon {
+    width: 28px;
+    height: 28px;
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-head);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
+    flex-shrink: 0;
   }
 
-  .card-description {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 2px;
+  .card-type-icon[data-type="table"] { background: var(--table-color); color: #fff; }
+  .card-type-icon[data-type="markdown"] { background: var(--md-color); color: #fff; }
+  .card-type-icon[data-type="plotly"] { background: var(--chart-color); color: #fff; }
+  .card-type-icon[data-type="image"] { background: var(--image-color); color: #fff; }
+  .card-type-icon[data-type="keyvalue"] { background: var(--kv-color); color: #fff; }
+  .card-type-icon[data-type="form"] { background: var(--form-color); color: #fff; }
+  .card-type-icon[data-type="decision"] { background: var(--decision-color); color: #fff; }
+
+  .card-title {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 14px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .card-timestamp {
+  .card-meta {
+    font-family: var(--font-mono);
     font-size: 11px;
     color: var(--text-muted);
     white-space: nowrap;
   }
 
+  .card-description {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 6px 14px 0;
+  }
+
   .card-body {
-    padding: 12px 16px;
+    padding: 16px;
   }
 
   .card-provenance {
-    padding: 6px 16px;
-    font-size: 11px;
+    padding: 6px 14px;
+    font-size: 10px;
     color: var(--text-muted);
-    border-top: 1px solid var(--border);
-    background: var(--bg-header);
+    border-top: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+    font-family: var(--font-mono);
   }
 
   /* Tables */
   .table-info {
     font-size: 12px;
+    font-family: var(--font-head);
     color: var(--text-muted);
-    margin-bottom: 8px;
+    padding: 10px 14px;
+    border-top: var(--border-width) solid var(--border);
   }
 
   .table-wrapper {
@@ -703,34 +770,35 @@ _EXPORT_CSS = """<style>
     overflow-y: auto;
   }
 
-  table {
+  .table-wrapper table {
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
-    font-family: var(--mono);
+    font-family: var(--font-mono);
   }
 
-  th {
-    background: var(--bg-header);
+  .table-wrapper th {
+    background: var(--table-bg);
     position: sticky;
     top: 0;
-    padding: 6px 10px;
+    padding: 8px 14px;
     text-align: left;
-    font-weight: 600;
-    border-bottom: 2px solid var(--border);
+    font-family: var(--font-head);
+    font-weight: 700;
+    border-bottom: var(--border-width) solid var(--border);
     white-space: nowrap;
   }
 
-  td {
-    padding: 4px 10px;
-    border-bottom: 1px solid var(--border);
+  .table-wrapper td {
+    padding: 6px 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 20%, transparent);
     white-space: nowrap;
     max-width: 300px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  tr:hover td { background: rgba(67, 97, 238, 0.04); }
+  .table-wrapper tr:hover td { background: var(--table-bg); }
 
   /* Key-Value */
   .kv-table {
@@ -738,14 +806,16 @@ _EXPORT_CSS = """<style>
   }
 
   .kv-key {
-    font-weight: 600;
+    font-family: var(--font-head);
+    font-weight: 700;
     padding-right: 24px;
     white-space: nowrap;
     color: var(--text-muted);
+    font-size: 12px;
   }
 
   .kv-value {
-    font-family: var(--mono);
+    font-family: var(--font-mono);
   }
 
   /* Plotly */
@@ -766,59 +836,80 @@ _EXPORT_CSS = """<style>
 
   /* Markdown */
   .markdown-export {
+    font-family: var(--font-body);
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.7;
   }
 
   .markdown-export h1, .markdown-export h2, .markdown-export h3 {
-    margin: 12px 0 6px;
+    margin: 16px 0 8px;
+    font-family: var(--font-head);
+    font-weight: 700;
   }
 
   .markdown-export p { margin: 6px 0; }
 
   .markdown-export pre {
-    background: var(--bg-header);
-    padding: 10px;
-    border-radius: 4px;
+    background: var(--bg);
+    border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-sm);
+    padding: 12px 16px;
     overflow-x: auto;
-    font-family: var(--mono);
+    font-family: var(--font-mono);
     font-size: 12px;
   }
 
   .markdown-export code {
-    font-family: var(--mono);
+    font-family: var(--font-mono);
     font-size: 0.9em;
-    background: var(--bg-header);
+    background: var(--md-bg);
     padding: 1px 4px;
-    border-radius: 3px;
+    border: 1px solid color-mix(in srgb, var(--border) 20%, transparent);
   }
 
   .markdown-export pre code {
     background: none;
     padding: 0;
+    border: none;
   }
 
   /* Section dividers */
   .section-divider {
-    text-align: center;
     font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    padding: 16px 0 8px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 16px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+  }
+
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 3px;
+    background: var(--border);
   }
 
   /* Run separators */
   .run-separator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     font-size: 12px;
-    font-weight: 600;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    color: var(--text-muted);
     padding: 20px 0 8px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 12px;
+  }
+
+  .run-separator::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: var(--border);
   }
 
   .empty-state {
@@ -831,9 +922,10 @@ _EXPORT_CSS = """<style>
   .export-footer {
     text-align: center;
     font-size: 11px;
+    font-family: var(--font-mono);
     color: var(--text-muted);
     padding: 24px 0;
-    border-top: 1px solid var(--border);
+    border-top: 3px solid var(--border);
   }
 
   /* Print styles */
@@ -851,9 +943,13 @@ _EXPORT_CSS = """<style>
 
     .card {
       box-shadow: none;
-      border: 1px solid #ccc;
+      border: 1px solid #999;
       margin-bottom: 10px;
       page-break-inside: avoid;
+    }
+
+    .card-header {
+      border-bottom: 1px solid #999;
     }
 
     .card-body { padding: 8px 12px; }
