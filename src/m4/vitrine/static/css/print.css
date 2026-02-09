@@ -1,0 +1,89 @@
+/* ================================================================
+   PRINT STYLES
+   ================================================================ */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  .header {
+    position: static;
+    background: white;
+    border-bottom: 2px solid #333;
+    padding: 8px 0;
+  }
+
+  .header-actions,
+  .run-dropdown,
+  .export-dropdown,
+  .run-metadata-bar,
+  .footer,
+  .copy-toast,
+  .confirm-overlay {
+    display: none !important;
+  }
+
+  .feed {
+    max-width: none;
+    padding: 8px 0;
+    min-height: auto;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #999;
+    margin-bottom: 8px;
+    animation: none;
+    page-break-inside: avoid;
+  }
+
+  .card-header {
+    background: #f5f5f5;
+  }
+
+  .card-body {
+    padding: 8px 12px;
+  }
+
+  .table-scroll-cap {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .table-toolbar {
+    display: none;
+  }
+
+  table {
+    font-size: 9pt;
+  }
+
+  th, td {
+    padding: 3px 6px;
+  }
+
+  .card-actions,
+  .response-actions {
+    display: none;
+  }
+
+  .plotly-container {
+    page-break-inside: avoid;
+  }
+
+  .card-provenance {
+    font-size: 9pt;
+    color: #666;
+  }
+
+  .run-separator {
+    page-break-before: always;
+    font-size: 10pt;
+    font-weight: bold;
+  }
+
+  .run-separator:first-child {
+    page-break-before: auto;
+  }
+}
