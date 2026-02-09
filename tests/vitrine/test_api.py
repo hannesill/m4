@@ -37,6 +37,9 @@ def reset_module_state():
     display._session_id = None
     display._remote_url = None
     display._auth_token = None
+    display._event_callbacks.clear()
+    display._event_poll_thread = None
+    display._event_poll_stop.clear()
     yield
     # Clean up
     if display._server is not None:
@@ -51,6 +54,9 @@ def reset_module_state():
     display._session_id = None
     display._remote_url = None
     display._auth_token = None
+    display._event_callbacks.clear()
+    display._event_poll_thread = None
+    display._event_poll_stop.clear()
 
 
 @pytest.fixture
@@ -308,7 +314,123 @@ class TestDiscovery:
         monkeypatch.setattr(
             display, "_pid_file_path", lambda: tmp_path / ".server.json"
         )
+        monkeypatch.setattr(display, "_scan_port_range", lambda *a, **kw: None)
         assert display.server_status() is None
+
+
+class TestServerLifecycle:
+    def test_server_status_falls_back_to_port_scan(self, monkeypatch):
+        """server_status() falls back to health scan when PID metadata is absent."""
+        monkeypatch.setattr(display, "_discover_server", lambda: None)
+        monkeypatch.setattr(
+            display,
+            "_scan_port_range",
+            lambda host, start, end: {
+                "url": "http://127.0.0.1:7742",
+                "host": "127.0.0.1",
+                "port": 7742,
+                "session_id": "scan-session",
+            },
+        )
+
+        info = display.server_status()
+        assert info is not None
+        assert info["url"] == "http://127.0.0.1:7742"
+        assert info["session_id"] == "scan-session"
+        assert info["pid"] is None
+
+    def test_stop_server_keeps_pid_file_when_shutdown_fails(
+        self, monkeypatch, tmp_path
+    ):
+        """stop_server() should not remove PID metadata if server is still healthy."""
+        pid_path = tmp_path / ".server.json"
+        pid_path.write_text("{}")
+        monkeypatch.setattr(display, "_pid_file_path", lambda: pid_path)
+        monkeypatch.setattr(
+            display,
+            "_discover_server",
+            lambda: {
+                "url": "http://127.0.0.1:7741",
+                "session_id": "sess-1",
+                "token": "tok",
+                "pid": None,
+            },
+        )
+        monkeypatch.setattr(display, "_health_check", lambda url, sid: True)
+
+        import urllib.request
+
+        def _raise(*args, **kwargs):
+            raise OSError("network down")
+
+        monkeypatch.setattr(urllib.request, "urlopen", _raise)
+
+        assert display.stop_server() is False
+        assert pid_path.exists()
+
+    def test_stop_server_removes_pid_file_after_success(self, monkeypatch, tmp_path):
+        """stop_server() should clean up PID metadata once server stops."""
+        pid_path = tmp_path / ".server.json"
+        pid_path.write_text("{}")
+        monkeypatch.setattr(display, "_pid_file_path", lambda: pid_path)
+        monkeypatch.setattr(
+            display,
+            "_discover_server",
+            lambda: {
+                "url": "http://127.0.0.1:7741",
+                "session_id": "sess-1",
+                "token": "tok",
+                "pid": None,
+            },
+        )
+        monkeypatch.setattr(display, "_health_check", lambda url, sid: False)
+
+        import urllib.request
+
+        class _Resp:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **kw: _Resp())
+
+        assert display.stop_server() is True
+        assert not pid_path.exists()
+
+    def test_stop_delegates_to_persistent_server_when_remote(self, monkeypatch):
+        """stop() should stop the persistent server when connected remotely."""
+        calls = []
+        display._remote_url = "http://127.0.0.1:7741"
+        monkeypatch.setattr(
+            display,
+            "stop_server",
+            lambda: calls.append("called") or True,
+        )
+        display.stop()
+        assert calls == ["called"]
+
+    def test_start_process_uses_devnull_stderr(self, monkeypatch):
+        """_start_process should not leave stderr pipe unread."""
+        import subprocess
+
+        captured = {}
+
+        def _fake_popen(cmd, stdout=None, stderr=None, start_new_session=None):
+            captured["cmd"] = cmd
+            captured["stdout"] = stdout
+            captured["stderr"] = stderr
+            captured["start_new_session"] = start_new_session
+            return None
+
+        monkeypatch.setattr(subprocess, "Popen", _fake_popen)
+        display._start_process(port=7749, open_browser=False)
+
+        assert captured["stdout"] is subprocess.DEVNULL
+        assert captured["stderr"] is subprocess.DEVNULL
+        assert captured["start_new_session"] is True
+        assert "--no-open" in captured["cmd"]
 
 
 class TestClientMode:

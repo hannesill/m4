@@ -349,13 +349,17 @@ def _start_process(port: int = 7741, open_browser: bool = True) -> None:
     subprocess.Popen(
         cmd,
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
         start_new_session=True,
     )
 
 
 def stop() -> None:
-    """Stop the in-process display server and event polling."""
+    """Stop the display server and event polling.
+
+    Stops an in-process server if present. If no in-process server is active
+    but a persistent server is connected/discoverable, attempts to stop it.
+    """
     global _server, _event_poll_thread
 
     _event_poll_stop.set()
@@ -368,6 +372,12 @@ def stop() -> None:
         if _server is not None:
             _server.stop()
             _server = None
+            return
+
+    # No in-process server. If we have a remote connection hint, try stopping
+    # the persistent server as well.
+    if _remote_url is not None:
+        stop_server()
 
 
 def stop_server() -> bool:
@@ -378,6 +388,7 @@ def stop_server() -> bool:
     Returns True if a server was stopped.
     """
     global _remote_url, _auth_token, _store, _run_manager, _session_id
+    global _event_poll_thread
 
     info = _discover_server()
     if not info:
@@ -386,6 +397,7 @@ def stop_server() -> bool:
     url = info["url"]
     token = info.get("token")
 
+    shutdown_requested = False
     try:
         import urllib.request
 
@@ -401,20 +413,33 @@ def stop_server() -> bool:
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=5):
-            pass
+            shutdown_requested = True
     except Exception:
-        pass
+        logger.debug(f"Failed to request shutdown for {url}")
 
-    # Wait for process to exit
+    # Wait for process to exit if we have a PID; otherwise fall back to health.
     pid = info.get("pid")
+    session_id = info.get("session_id")
+    stopped = False
     if pid:
         deadline = time.monotonic() + 3.0
         while time.monotonic() < deadline:
             if not _is_process_alive(pid):
+                stopped = True
                 break
             time.sleep(0.1)
+        if not stopped:
+            stopped = not _health_check(url, session_id)
+    else:
+        stopped = not _health_check(url, session_id)
 
-    # Clean up PID file only — run data persists
+    # If still alive, keep PID metadata so status/stop can retry later.
+    if not stopped:
+        if shutdown_requested:
+            logger.debug(f"Shutdown requested but server still healthy at {url}")
+        return False
+
+    # Clean up PID file only — run data persists.
     pid_path = _pid_file_path()
     if pid_path.exists():
         try:
@@ -426,10 +451,10 @@ def stop_server() -> bool:
     _event_poll_stop.set()
     if _event_poll_thread is not None:
         _event_poll_thread.join(timeout=2)
+        _event_poll_thread = None
     _event_callbacks.clear()
 
     # Clear module state
-    session_id = info.get("session_id")
     with _lock:
         _remote_url = None
         _auth_token = None
@@ -442,8 +467,24 @@ def stop_server() -> bool:
 
 
 def server_status() -> dict[str, Any] | None:
-    """Return info about a running persistent display server, or None."""
-    return _discover_server()
+    """Return info about a running display server, or None.
+
+    Prefers PID-backed metadata (includes pid/token). Falls back to health
+    scan discovery when PID metadata is unavailable.
+    """
+    info = _discover_server()
+    if info:
+        return info
+
+    found = _scan_port_range("127.0.0.1", 7741, 7750)
+    if not found:
+        return None
+    return {
+        **found,
+        "pid": None,
+        "token": None,
+        "started_at": None,
+    }
 
 
 def _push_remote(card_data: dict[str, Any]) -> bool:
