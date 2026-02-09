@@ -1486,26 +1486,26 @@ def vitrine_cmd(
             help="Show status of running display server.",
         ),
     ] = False,
-    list_runs: Annotated[
+    list_studies: Annotated[
         bool,
         typer.Option(
             "--list",
             "-l",
-            help="List all display runs.",
+            help="List all display studies.",
         ),
     ] = False,
     clean: Annotated[
         str | None,
         typer.Option(
             "--clean",
-            help="Remove runs older than duration (e.g., '7d', '24h', '0d' for all).",
+            help="Remove studies older than duration (e.g., '7d', '24h', '0d' for all).",
         ),
     ] = None,
     export_path: Annotated[
         str | None,
         typer.Option(
             "--export",
-            help="Export run(s) to file. Use with --run to specify a run.",
+            help="Export study/studies to file. Use with --study to specify one.",
         ),
     ] = None,
     export_format: Annotated[
@@ -1516,11 +1516,11 @@ def vitrine_cmd(
             help="Export format: 'html' or 'json'.",
         ),
     ] = "html",
-    run: Annotated[
+    study: Annotated[
         str | None,
         typer.Option(
-            "--run",
-            help="Run label for export (default: all runs).",
+            "--study",
+            help="Study label for export (default: all studies).",
         ),
     ] = None,
 ):
@@ -1536,11 +1536,11 @@ def vitrine_cmd(
     • m4 vitrine --no-open          # Start without opening browser
     • m4 vitrine --status           # Show server status
     • m4 vitrine --stop             # Stop running server
-    • m4 vitrine --list             # List all vitrine runs
-    • m4 vitrine --clean 7d         # Remove runs older than 7 days
-    • m4 vitrine --export out.html  # Export all runs as HTML
-    • m4 vitrine --export out.html --run my-analysis  # Export specific run
-    • m4 vitrine --export out.zip --format json       # Export as JSON zip
+    • m4 vitrine --list             # List all vitrine studies
+    • m4 vitrine --clean 7d         # Remove studies older than 7 days
+    • m4 vitrine --export out.html  # Export all studies as HTML
+    • m4 vitrine --export out.html --study my-analysis  # Export specific study
+    • m4 vitrine --export out.zip --format json         # Export as JSON zip
     """
     from m4.vitrine import server_status as get_status
     from m4.vitrine import stop_server as do_stop
@@ -1549,7 +1549,7 @@ def vitrine_cmd(
         from m4.vitrine import export as do_export
 
         try:
-            result = do_export(export_path, format=export_format, run_id=run)
+            result = do_export(export_path, format=export_format, study=study)
             success(f"Exported to {result}")
         except ValueError as e:
             error(str(e))
@@ -1557,34 +1557,34 @@ def vitrine_cmd(
             error(f"Export failed: {e}")
         return
 
-    if list_runs:
-        from m4.vitrine import list_runs as do_list_runs
+    if list_studies:
+        from m4.vitrine import list_studies as do_list_studies
 
-        runs = do_list_runs()
-        if not runs:
-            info("No display runs found.")
+        studies = do_list_studies()
+        if not studies:
+            info("No display studies found.")
             return
 
         console.print()
-        console.print(f"[bold]Display runs ({len(runs)}):[/bold]")
+        console.print(f"[bold]Display studies ({len(studies)}):[/bold]")
         console.print()
-        for run in runs:
-            label = run.get("label", "?")
-            start = run.get("start_time", "?")
-            cards = run.get("card_count", 0)
+        for s in studies:
+            label = s.get("label", "?")
+            start = s.get("start_time", "?")
+            cards = s.get("card_count", 0)
             console.print(
                 f"  [success]{label:<30s}[/success] {cards:>3d} cards   {start}"
             )
         return
 
     if clean is not None:
-        from m4.vitrine import clean_runs as do_clean
+        from m4.vitrine import clean_studies as do_clean
 
         removed = do_clean(older_than=clean)
         if removed > 0:
-            success(f"Removed {removed} run(s).")
+            success(f"Removed {removed} study/studies.")
         else:
-            info("No runs matched the age filter.")
+            info("No studies matched the age filter.")
         return
 
     if stop_server:

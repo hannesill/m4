@@ -413,8 +413,8 @@ class CardDescriptor:
     timestamp: str = ""
     """ISO-format timestamp when the card was created."""
 
-    run_id: str | None = None
-    """Optional run ID for grouping related cards."""
+    study: str | None = None
+    """Optional study name for grouping related cards."""
 
     pinned: bool = False
     """Whether this card survives clear() operations."""
@@ -569,21 +569,21 @@ class DisplayHandle(str):
     """String-like return value for non-blocking show() calls.
 
     Behaves like the historical card_id string while exposing `url`
-    when a run-scoped deep link is available.
+    when a study-scoped deep link is available.
     """
 
     card_id: str
     url: str | None
-    run_id: str | None
+    study: str | None
 
     def __new__(
         cls,
         card_id: str,
         url: str | None = None,
-        run_id: str | None = None,
+        study: str | None = None,
     ) -> DisplayHandle:
         obj = str.__new__(cls, card_id)
         obj.card_id = card_id
         obj.url = url
-        obj.run_id = run_id
+        obj.study = study
         return obj

@@ -16,8 +16,8 @@ import pytest
 
 from m4.vitrine.artifacts import ArtifactStore
 from m4.vitrine.renderer import render
-from m4.vitrine.run_manager import RunManager
 from m4.vitrine.server import DisplayServer
+from m4.vitrine.study_manager import StudyManager
 
 _TEST_TOKEN = "test-secret-token-1234"
 
@@ -41,18 +41,18 @@ def server(store):
 
 
 @pytest.fixture
-def run_mgr(tmp_path):
-    """Create a RunManager for testing."""
+def study_mgr(tmp_path):
+    """Create a StudyManager for testing."""
     display_dir = tmp_path / "display"
     display_dir.mkdir()
-    return RunManager(display_dir)
+    return StudyManager(display_dir)
 
 
 @pytest.fixture
-def rm_server(run_mgr):
-    """Create a DisplayServer backed by RunManager (no legacy store)."""
+def rm_server(study_mgr):
+    """Create a DisplayServer backed by StudyManager (no legacy store)."""
     srv = DisplayServer(
-        run_manager=run_mgr,
+        study_manager=study_mgr,
         port=7798,
         host="127.0.0.1",
         token=_TEST_TOKEN,
@@ -123,12 +123,12 @@ class TestStarletteApp:
         assert cards[0]["title"] == "Test Table"
         assert cards[0]["card_type"] == "table"
 
-    def test_api_cards_filter_by_run_id(self, app, store):
+    def test_api_cards_filter_by_study(self, app, store):
         from starlette.testclient import TestClient
 
-        render("text1", run_id="run-a", store=store)
-        render("text2", run_id="run-b", store=store)
-        render("text3", run_id="run-a", store=store)
+        render("text1", study="study-a", store=store)
+        render("text2", study="study-b", store=store)
+        render("text3", study="study-a", store=store)
 
         client = TestClient(app)
 
@@ -136,11 +136,11 @@ class TestStarletteApp:
         resp = client.get("/api/cards")
         assert len(resp.json()) == 3
 
-        # Filter by run-a
-        resp = client.get("/api/cards?run_id=run-a")
+        # Filter by study-a
+        resp = client.get("/api/cards?study=study-a")
         cards = resp.json()
         assert len(cards) == 2
-        assert all(c["run_id"] == "run-a" for c in cards)
+        assert all(c["study"] == "study-a" for c in cards)
 
     def test_api_table_paging(self, app, store):
         from starlette.testclient import TestClient
@@ -279,7 +279,7 @@ class TestCommandEndpoint:
         client = TestClient(app)
         resp = client.post(
             "/api/command",
-            json={"type": "section", "title": "Results", "run_id": "r1"},
+            json={"type": "section", "title": "Results", "study": "r1"},
             headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
         )
         assert resp.status_code == 200
@@ -696,81 +696,81 @@ class TestUpdateCommand:
         assert resp.json()["status"] == "ok"
 
 
-class TestRunManagerServer:
-    """Test server endpoints backed by RunManager."""
+class TestStudyManagerServer:
+    """Test server endpoints backed by StudyManager."""
 
     @pytest.fixture
     def app(self, rm_server):
         return rm_server._app
 
-    def test_api_runs_empty(self, app):
+    def test_api_studies_empty(self, app):
         from starlette.testclient import TestClient
 
         client = TestClient(app)
-        resp = client.get("/api/runs")
+        resp = client.get("/api/studies")
         assert resp.status_code == 200
         assert resp.json() == []
 
-    def test_api_runs_lists_runs(self, app, run_mgr):
+    def test_api_studies_lists_studies(self, app, study_mgr):
         from starlette.testclient import TestClient
 
-        run_mgr.get_or_create_run("run-a")
-        run_mgr.get_or_create_run("run-b")
+        study_mgr.get_or_create_study("study-a")
+        study_mgr.get_or_create_study("study-b")
 
         client = TestClient(app)
-        resp = client.get("/api/runs")
+        resp = client.get("/api/studies")
         assert resp.status_code == 200
-        runs = resp.json()
-        assert len(runs) == 2
-        labels = {r["label"] for r in runs}
-        assert labels == {"run-a", "run-b"}
+        studies = resp.json()
+        assert len(studies) == 2
+        labels = {r["label"] for r in studies}
+        assert labels == {"study-a", "study-b"}
 
-    def test_api_run_delete(self, app, run_mgr):
+    def test_api_study_delete(self, app, study_mgr):
         from starlette.testclient import TestClient
 
-        run_mgr.get_or_create_run("to-delete")
+        study_mgr.get_or_create_study("to-delete")
 
         client = TestClient(app)
         resp = client.delete(
-            "/api/runs/to-delete",
+            "/api/studies/to-delete",
             headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
         )
         assert resp.status_code == 200
         assert resp.json()["status"] == "ok"
 
-        # Verify run is gone
-        resp = client.get("/api/runs")
+        # Verify study is gone
+        resp = client.get("/api/studies")
         assert resp.json() == []
 
-    def test_api_run_delete_nonexistent(self, app):
+    def test_api_study_delete_nonexistent(self, app):
         from starlette.testclient import TestClient
 
         client = TestClient(app)
         resp = client.delete(
-            "/api/runs/nonexistent",
+            "/api/studies/nonexistent",
             headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
         )
         assert resp.status_code == 404
 
-    def test_api_run_delete_no_auth_required(self, app, run_mgr):
-        """Run delete is accessible without auth (localhost-only, UI confirmation)."""
+    def test_api_study_delete_no_auth_required(self, app, study_mgr):
+        """Study delete is accessible without auth (localhost-only, UI confirmation)."""
         from starlette.testclient import TestClient
 
-        run_mgr.get_or_create_run("deletable")
+        study_mgr.get_or_create_study("deletable")
 
         client = TestClient(app)
-        resp = client.delete("/api/runs/deletable")
+        resp = client.delete("/api/studies/deletable")
         assert resp.status_code == 200
         assert resp.json()["status"] == "ok"
 
-    def test_api_cards_via_run_manager(self, app, run_mgr):
+    def test_api_cards_via_study_manager(self, app, study_mgr):
         from starlette.testclient import TestClient
 
-        _, store_a = run_mgr.get_or_create_run("run-a")
-        _, store_b = run_mgr.get_or_create_run("run-b")
+        _, store_a = study_mgr.get_or_create_study("study-a")
+        _, store_b = study_mgr.get_or_create_study("study-b")
 
-        render("card-a", run_id="run-a", store=store_a)
-        render("card-b", run_id="run-b", store=store_b)
+        render("card-a", study="study-a", store=store_a)
+        render("card-b", study="study-b", store=store_b)
 
         client = TestClient(app)
 
@@ -778,29 +778,29 @@ class TestRunManagerServer:
         resp = client.get("/api/cards")
         assert len(resp.json()) == 2
 
-        # Filter by run_id
-        resp = client.get("/api/cards?run_id=run-a")
+        # Filter by study
+        resp = client.get("/api/cards?study=study-a")
         cards = resp.json()
         assert len(cards) == 1
-        assert cards[0]["run_id"] == "run-a"
+        assert cards[0]["study"] == "study-a"
 
-    def test_api_session_includes_run_ids(self, app, run_mgr):
+    def test_api_session_includes_study_names(self, app, study_mgr):
         from starlette.testclient import TestClient
 
-        run_mgr.get_or_create_run("session-run")
+        study_mgr.get_or_create_study("session-study")
 
         client = TestClient(app)
         resp = client.get("/api/session")
         assert resp.status_code == 200
         data = resp.json()
-        assert "run_ids" in data
-        assert "session-run" in data["run_ids"]
+        assert "study_names" in data
+        assert "session-study" in data["study_names"]
 
-    def test_api_run_context(self, app, run_mgr, rm_server):
+    def test_api_study_context(self, app, study_mgr, rm_server):
         from starlette.testclient import TestClient
 
-        _, store = run_mgr.get_or_create_run("ctx-run")
-        card = render("hello", title="Card 1", run_id="ctx-run", store=store)
+        _, store = study_mgr.get_or_create_study("ctx-study")
+        card = render("hello", title="Card 1", study="ctx-study", store=store)
         store.update_card(
             card.card_id,
             response_action="Approve",
@@ -810,10 +810,10 @@ class TestRunManagerServer:
         rm_server._selections[card.card_id] = [1, 3]
 
         client = TestClient(app)
-        resp = client.get("/api/runs/ctx-run/context")
+        resp = client.get("/api/studies/ctx-study/context")
         assert resp.status_code == 200
         ctx = resp.json()
-        assert ctx["run_id"] == "ctx-run"
+        assert ctx["study"] == "ctx-study"
         assert ctx["card_count"] == 1
         assert len(ctx["cards"]) == 1
         assert ctx["cards"][0]["title"] == "Card 1"
@@ -821,19 +821,19 @@ class TestRunManagerServer:
         assert ctx["current_selections"][card.card_id] == [1, 3]
         assert ctx["decisions_made"][0]["action"] == "Approve"
 
-    def test_api_run_context_nonexistent(self, app):
+    def test_api_study_context_nonexistent(self, app):
         from starlette.testclient import TestClient
 
         client = TestClient(app)
-        resp = client.get("/api/runs/nonexistent/context")
+        resp = client.get("/api/studies/nonexistent/context")
         assert resp.status_code == 200
         ctx = resp.json()
         assert ctx["card_count"] == 0
 
-    def test_websocket_replays_run_manager_cards(self, app, run_mgr):
+    def test_websocket_replays_study_manager_cards(self, app, study_mgr):
         from starlette.testclient import TestClient
 
-        _, store = run_mgr.get_or_create_run("ws-run")
+        _, store = study_mgr.get_or_create_study("ws-study")
         render("hello", title="WS Card", store=store)
 
         client = TestClient(app)
@@ -924,19 +924,19 @@ class TestSelectionPersistence:
         """Selections are saved to JSON and reloaded on new server."""
         from starlette.testclient import TestClient
 
-        mgr = RunManager(tmp_path / "sel_display")
-        _, store = mgr.get_or_create_run("sel-test")
+        mgr = StudyManager(tmp_path / "sel_display")
+        _, store = mgr.get_or_create_study("sel-test")
         dir_name = mgr._label_to_dir["sel-test"]
 
         srv = DisplayServer(
-            run_manager=mgr,
+            study_manager=mgr,
             port=7796,
             host="127.0.0.1",
             session_id="sel-test",
         )
 
         # Store a card so selection has a target
-        card_desc = render("text", title="T", store=store, run_id="sel-test")
+        card_desc = render("text", title="T", store=store, study="sel-test")
         mgr.register_card(card_desc.card_id, dir_name)
 
         client = TestClient(srv._app)
@@ -962,9 +962,9 @@ class TestSelectionPersistence:
         # Verify file exists
         assert srv._selections_path.exists()
 
-        # Create new server instance — should load persisted selections
+        # Create new server instance -- should load persisted selections
         srv2 = DisplayServer(
-            run_manager=mgr,
+            study_manager=mgr,
             port=7796,
             host="127.0.0.1",
             session_id="sel-test",
@@ -973,9 +973,9 @@ class TestSelectionPersistence:
 
     def test_empty_selections_saved(self, tmp_path):
         """Empty selections are saved as empty dict."""
-        mgr = RunManager(tmp_path / "empty_sel_display")
+        mgr = StudyManager(tmp_path / "empty_sel_display")
         srv = DisplayServer(
-            run_manager=mgr,
+            study_manager=mgr,
             port=7795,
             host="127.0.0.1",
             session_id="empty-sel-test",
@@ -994,14 +994,14 @@ class TestExportEndpoints:
 
     @pytest.fixture
     def export_server(self, tmp_path):
-        mgr = RunManager(tmp_path / "export_display")
-        _, s = mgr.get_or_create_run("export-test")
-        render("# Export content", title="Doc", store=s, run_id="export-test")
+        mgr = StudyManager(tmp_path / "export_display")
+        _, s = mgr.get_or_create_study("export-test")
+        render("# Export content", title="Doc", store=s, study="export-test")
         dir_name = mgr._label_to_dir["export-test"]
         card = s.list_cards()[0]
         mgr.register_card(card.card_id, dir_name)
         srv = DisplayServer(
-            run_manager=mgr,
+            study_manager=mgr,
             port=7794,
             host="127.0.0.1",
             token="export-tok",
@@ -1014,7 +1014,7 @@ class TestExportEndpoints:
 
         client = TestClient(export_server._app)
         resp = client.get(
-            "/api/runs/export-test/export?format=html",
+            "/api/studies/export-test/export?format=html",
         )
         assert resp.status_code == 200
         assert "text/html" in resp.headers["content-type"]
@@ -1025,7 +1025,7 @@ class TestExportEndpoints:
 
         client = TestClient(export_server._app)
         resp = client.get(
-            "/api/runs/export-test/export?format=json",
+            "/api/studies/export-test/export?format=json",
         )
         assert resp.status_code == 200
         assert "application/zip" in resp.headers.get("content-type", "")

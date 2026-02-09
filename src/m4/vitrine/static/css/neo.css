@@ -98,9 +98,9 @@ body {
 }
 
 .btn,
-.run-dropdown-trigger,
+.study-dropdown-trigger,
 .export-dropdown-panel,
-.run-dropdown-panel,
+.study-dropdown-panel,
 .table-search,
 .table-pager button,
 .export-btn,
@@ -121,7 +121,7 @@ body {
 }
 
 .btn,
-.run-dropdown-trigger {
+.study-dropdown-trigger {
   padding: 6px 14px;
   border: var(--border-width) solid var(--border);
   background: var(--card-bg);
@@ -134,7 +134,7 @@ body {
 }
 
 .btn:hover,
-.run-dropdown-trigger:hover {
+.study-dropdown-trigger:hover {
   transform: translate(1px, 1px);
   box-shadow: var(--shadow-pressed);
   border-color: var(--border);
@@ -142,7 +142,7 @@ body {
 }
 
 .btn:active,
-.run-dropdown-trigger:active {
+.study-dropdown-trigger:active {
   transform: translate(2px, 2px);
   box-shadow: none;
 }
@@ -165,32 +165,32 @@ body {
   color: var(--text);
 }
 
-.run-dropdown-panel,
+.study-dropdown-panel,
 .export-dropdown-panel {
   background: var(--card-bg);
   border: var(--border-width) solid var(--border);
   box-shadow: var(--shadow);
 }
 
-.run-dropdown-all:hover,
-.run-dropdown-entry:hover,
+.study-dropdown-all:hover,
+.study-dropdown-entry:hover,
 .export-dropdown-item:hover {
   background: var(--highlight);
 }
 
-.run-dropdown-all,
-.run-dropdown-entry,
-.run-dropdown-group-label,
-.run-entry-meta,
-.run-meta-detail {
+.study-dropdown-all,
+.study-dropdown-entry,
+.study-dropdown-group-label,
+.study-entry-meta,
+.study-meta-detail {
   font-family: var(--font-head);
 }
 
-.run-metadata-bar {
+.study-metadata-bar {
   font-family: var(--font-head);
 }
 
-.run-meta-edit-input {
+.study-meta-edit-input {
   font-family: var(--font-mono);
   border: var(--border-width) solid var(--border);
   border-radius: var(--radius);

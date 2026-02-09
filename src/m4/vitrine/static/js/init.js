@@ -3,11 +3,11 @@
 // ================================================================
 // INIT
 // ================================================================
-var _origLoadRuns = loadRuns;
-loadRuns = function() {
-  _origLoadRuns();
-  // After runs load, check for deep link
-  setTimeout(function() { applyHashRun(); }, 600);
+var _origLoadStudies = loadStudies;
+loadStudies = function() {
+  _origLoadStudies();
+  // After studies load, check for deep link
+  setTimeout(function() { applyHashStudy(); }, 600);
 };
 
 connect();

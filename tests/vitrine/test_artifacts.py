@@ -2,11 +2,11 @@
 
 Tests cover:
 - ArtifactStore creation and directory layout
-- store_dataframe → Parquet on disk
-- store_json → JSON on disk
-- store_image → binary on disk
+- store_dataframe -> Parquet on disk
+- store_json -> JSON on disk
+- store_image -> binary on disk
 - read_table_page with offset, limit, sort
-- list_cards in insertion order, with run_id filter
+- list_cards in insertion order, with study filter
 - update_card
 - clear with and without keep_pinned
 - Serialization/deserialization of CardDescriptor
@@ -69,7 +69,7 @@ class TestArtifactStoreCreation:
         meta = json.loads(meta_path.read_text())
         assert meta["session_id"] == "test-session-123"
         assert "start_time" in meta
-        assert meta["run_ids"] == []
+        assert meta["study_names"] == []
 
 
 class TestStoreDataFrame:
@@ -173,12 +173,12 @@ class TestListCards:
         assert len(cards) == 3
         assert [c.card_id for c in cards] == ["card-0", "card-1", "card-2"]
 
-    def test_filter_by_run_id(self, store):
+    def test_filter_by_study(self, store):
         store.store_card(
             CardDescriptor(
                 card_id="a",
                 card_type=CardType.MARKDOWN,
-                run_id="run-1",
+                study="study-1",
                 preview={"text": "a"},
             )
         )
@@ -186,7 +186,7 @@ class TestListCards:
             CardDescriptor(
                 card_id="b",
                 card_type=CardType.MARKDOWN,
-                run_id="run-2",
+                study="study-2",
                 preview={"text": "b"},
             )
         )
@@ -194,28 +194,28 @@ class TestListCards:
             CardDescriptor(
                 card_id="c",
                 card_type=CardType.MARKDOWN,
-                run_id="run-1",
+                study="study-1",
                 preview={"text": "c"},
             )
         )
 
-        run1 = store.list_cards(run_id="run-1")
-        assert [c.card_id for c in run1] == ["a", "c"]
+        study1 = store.list_cards(study="study-1")
+        assert [c.card_id for c in study1] == ["a", "c"]
 
-        run2 = store.list_cards(run_id="run-2")
-        assert [c.card_id for c in run2] == ["b"]
+        study2 = store.list_cards(study="study-2")
+        assert [c.card_id for c in study2] == ["b"]
 
-    def test_tracks_run_ids_in_meta(self, store):
+    def test_tracks_study_names_in_meta(self, store):
         store.store_card(
             CardDescriptor(
                 card_id="x",
                 card_type=CardType.MARKDOWN,
-                run_id="my-run",
+                study="my-study",
                 preview={},
             )
         )
         meta = json.loads(store._meta_path.read_text())
-        assert "my-run" in meta["run_ids"]
+        assert "my-study" in meta["study_names"]
 
 
 class TestUpdateCard:
@@ -338,7 +338,7 @@ class TestSerialization:
             title="Roundtrip",
             description="Test roundtrip",
             timestamp="2025-06-01T00:00:00Z",
-            run_id="run-rt",
+            study="study-rt",
             pinned=True,
             artifact_id="rt-001",
             artifact_type="parquet",

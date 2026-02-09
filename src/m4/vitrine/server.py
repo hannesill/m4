@@ -8,7 +8,7 @@ Endpoints:
     GET  /                               → index.html
     GET  /static/{path}                  → static files (vendor JS, etc.)
     WS   /ws                             → bidirectional display channel
-    GET  /api/cards?run_id=...           → list card descriptors
+    GET  /api/cards?study=...             → list card descriptors
     GET  /api/table/{card_id}            → table page (offset, limit, sort)
     GET  /api/artifact/{card_id}         → raw artifact
     GET  /api/session                    → session metadata
@@ -44,7 +44,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from m4.vitrine._types import CardDescriptor
 from m4.vitrine.artifacts import ArtifactStore, _serialize_card
-from m4.vitrine.run_manager import RunManager
+from m4.vitrine.study_manager import StudyManager
 
 logger = logging.getLogger(__name__)
 
@@ -110,26 +110,26 @@ def _scan_for_existing_server(
 
 
 def _get_vitrine_dir() -> Path:
-    """Resolve the vitrine directory under {m4_data}/vitrine/."""
+    """Resolve the vitrine directory at {project_root}/.vitrine/."""
     try:
-        from m4.config import _PROJECT_DATA_DIR
+        from m4.config import _PROJECT_ROOT
 
-        return _PROJECT_DATA_DIR / "vitrine"
+        return _PROJECT_ROOT / ".vitrine"
     except Exception:
         import tempfile
 
-        return Path(tempfile.gettempdir()) / "m4_data" / "vitrine"
+        return Path(tempfile.gettempdir()) / ".vitrine"
 
 
 class DisplayServer:
     """WebSocket + REST server for the display pipeline.
 
-    Manages the Starlette app, WebSocket connections, and run manager.
+    Manages the Starlette app, WebSocket connections, and study manager.
     Designed to run in a background thread via ``start()``.
 
     Args:
         store: ArtifactStore for persisting and reading artifacts (legacy).
-        run_manager: RunManager for run-centric storage (preferred).
+        study_manager: StudyManager for study-centric storage (preferred).
         port: Port to bind to (auto-discovers if taken).
         host: Host to bind to (default: 127.0.0.1 for security).
     """
@@ -141,9 +141,9 @@ class DisplayServer:
         host: str = "127.0.0.1",
         token: str | None = None,
         session_id: str | None = None,
-        run_manager: RunManager | None = None,
+        study_manager: StudyManager | None = None,
     ) -> None:
-        self.run_manager = run_manager
+        self.study_manager = study_manager
         # Backwards compat: if only store is passed, wrap it
         self.store = store
         self.host = host
@@ -165,7 +165,7 @@ class DisplayServer:
         self._selections: dict[str, list[int]] = {}  # card_id -> selected indices
 
         # Selection persistence
-        vitrine_dir = run_manager.display_dir if run_manager else None
+        vitrine_dir = study_manager.display_dir if study_manager else None
         self._selections_path: Path | None = (
             vitrine_dir / "selections.json" if vitrine_dir else None
         )
@@ -229,25 +229,25 @@ class DisplayServer:
                 methods=["GET"],
             ),
             Route("/api/events", self._api_events, methods=["GET"]),
-            Route("/api/runs", self._api_runs, methods=["GET"]),
+            Route("/api/studies", self._api_studies, methods=["GET"]),
             Route(
-                "/api/runs/{run_id:path}/rename",
-                self._api_run_rename,
+                "/api/studies/{study:path}/rename",
+                self._api_study_rename,
                 methods=["PATCH"],
             ),
             Route(
-                "/api/runs/{run_id:path}/context",
-                self._api_run_context,
+                "/api/studies/{study:path}/context",
+                self._api_study_context,
                 methods=["GET"],
             ),
             Route(
-                "/api/runs/{run_id:path}/export",
-                self._api_run_export,
+                "/api/studies/{study:path}/export",
+                self._api_study_export,
                 methods=["GET"],
             ),
             Route(
-                "/api/runs/{run_id:path}",
-                self._api_run_delete,
+                "/api/studies/{study:path}",
+                self._api_study_delete,
                 methods=["DELETE"],
             ),
             Route("/api/export", self._api_export, methods=["GET"]),
@@ -265,16 +265,16 @@ class DisplayServer:
     def _resolve_store(self, card_id: str | None = None) -> ArtifactStore | None:
         """Resolve the ArtifactStore for a given card_id.
 
-        If run_manager is available, looks up the card in the cross-run index.
+        If study_manager is available, looks up the card in the cross-study index.
         Falls back to the legacy self.store. Refreshes from disk if not found.
         """
-        if card_id and self.run_manager:
-            store = self.run_manager.get_store_for_card(card_id)
+        if card_id and self.study_manager:
+            store = self.study_manager.get_store_for_card(card_id)
             if store:
                 return store
-            # Card not in index — client may have created a new run
-            self.run_manager.refresh()
-            store = self.run_manager.get_store_for_card(card_id)
+            # Card not in index — client may have created a new study
+            self.study_manager.refresh()
+            store = self.study_manager.get_store_for_card(card_id)
             if store:
                 return store
         return self.store
@@ -289,13 +289,13 @@ class DisplayServer:
         return HTMLResponse(index_path.read_text())
 
     async def _api_cards(self, request: Request) -> JSONResponse:
-        """List card descriptors, optionally filtered by run_id."""
-        run_id = request.query_params.get("run_id")
-        if self.run_manager:
-            self.run_manager.refresh()
-            cards = self.run_manager.list_all_cards(run_id=run_id)
+        """List card descriptors, optionally filtered by study."""
+        study = request.query_params.get("study")
+        if self.study_manager:
+            self.study_manager.refresh()
+            cards = self.study_manager.list_all_cards(study=study)
         elif self.store:
-            cards = self.store.list_cards(run_id=run_id)
+            cards = self.store.list_cards(study=study)
         else:
             cards = []
         return JSONResponse([_serialize_card(c) for c in cards])
@@ -460,29 +460,35 @@ class DisplayServer:
 
     async def _api_session(self, request: Request) -> JSONResponse:
         """Return session metadata."""
-        if self.run_manager:
-            runs = self.run_manager.list_runs()
-            run_labels = [r["label"] for r in runs]
-            return JSONResponse({"session_id": self.session_id, "run_ids": run_labels})
+        if self.study_manager:
+            studies = self.study_manager.list_studies()
+            study_labels = [s["label"] for s in studies]
+            return JSONResponse(
+                {"session_id": self.session_id, "study_names": study_labels}
+            )
         if self.store:
             meta_path = self.store._meta_path
             if meta_path.exists():
                 meta = json.loads(meta_path.read_text())
                 return JSONResponse(meta)
-            return JSONResponse({"session_id": self.store.session_id, "run_ids": []})
-        return JSONResponse({"session_id": self.session_id, "run_ids": []})
+            return JSONResponse(
+                {"session_id": self.store.session_id, "study_names": []}
+            )
+        return JSONResponse({"session_id": self.session_id, "study_names": []})
 
     async def _api_health(self, request: Request) -> JSONResponse:
         """Health check endpoint. No auth required."""
         uptime_seconds = (datetime.now(timezone.utc) - self._started_at).total_seconds()
-        run_count = len(self.run_manager.list_runs()) if self.run_manager else 0
+        study_count = (
+            len(self.study_manager.list_studies()) if self.study_manager else 0
+        )
         return JSONResponse(
             {
                 "status": "ok",
                 "session_id": self.session_id,
                 "uptime": round(uptime_seconds, 1),
                 "version": "1.0",
-                "run_count": run_count,
+                "study_count": study_count,
             }
         )
 
@@ -498,7 +504,7 @@ class DisplayServer:
 
         Requires Bearer token auth. Accepts JSON body with "type" field:
         - {"type": "card", "card": {...}}
-        - {"type": "section", "title": "...", "run_id": "..."}
+        - {"type": "section", "title": "...", "study": "..."}
         """
         if not self._check_auth(request):
             return JSONResponse({"error": "unauthorized"}, status_code=401)
@@ -513,27 +519,27 @@ class DisplayServer:
         if cmd_type == "card":
             card_data = body.get("card", {})
             message = {"type": "display.add", "card": card_data}
-            # Register card in run_manager's card index if available
+            # Register card in study_manager's card index if available
             card_id = card_data.get("card_id")
-            run_id = card_data.get("run_id")
-            if card_id and self.run_manager and run_id:
-                dir_name = self.run_manager._label_to_dir.get(run_id)
+            study = card_data.get("study")
+            if card_id and self.study_manager and study:
+                dir_name = self.study_manager._label_to_dir.get(study)
                 if not dir_name:
-                    # Client may have created the run — pick it up from disk
-                    self.run_manager.refresh()
-                    dir_name = self.run_manager._label_to_dir.get(run_id)
+                    # Client may have created the study — pick it up from disk
+                    self.study_manager.refresh()
+                    dir_name = self.study_manager._label_to_dir.get(study)
                 if dir_name:
-                    self.run_manager.register_card(card_id, dir_name)
+                    self.study_manager.register_card(card_id, dir_name)
             await self._broadcast(message)
             return JSONResponse({"status": "ok"})
 
         elif cmd_type == "section":
             title = body.get("title", "")
-            run_id = body.get("run_id")
+            study = body.get("study")
             message = {
                 "type": "display.section",
                 "title": title,
-                "run_id": run_id,
+                "study": study,
             }
             await self._broadcast(message)
             return JSONResponse({"status": "ok"})
@@ -599,18 +605,18 @@ class DisplayServer:
             self._event_queue.clear()
         return JSONResponse(events)
 
-    # --- Run Endpoints ---
+    # --- Study Endpoints ---
 
-    async def _api_runs(self, request: Request) -> JSONResponse:
-        """List all runs with metadata and card counts."""
-        if self.run_manager:
-            self.run_manager.refresh()
-            return JSONResponse(self.run_manager.list_runs())
+    async def _api_studies(self, request: Request) -> JSONResponse:
+        """List all studies with metadata and card counts."""
+        if self.study_manager:
+            self.study_manager.refresh()
+            return JSONResponse(self.study_manager.list_studies())
         return JSONResponse([])
 
-    async def _api_run_rename(self, request: Request) -> JSONResponse:
-        """Rename a run by label."""
-        run_id = request.path_params["run_id"]
+    async def _api_study_rename(self, request: Request) -> JSONResponse:
+        """Rename a study by label."""
+        study = request.path_params["study"]
         try:
             body = await request.json()
         except Exception:
@@ -618,33 +624,33 @@ class DisplayServer:
         new_label = body.get("new_label", "").strip()
         if not new_label:
             return JSONResponse({"error": "new_label is required"}, status_code=400)
-        if self.run_manager:
-            renamed = self.run_manager.rename_run(run_id, new_label)
+        if self.study_manager:
+            renamed = self.study_manager.rename_study(study, new_label)
             if renamed:
                 return JSONResponse({"status": "ok"})
             return JSONResponse(
                 {
-                    "error": f"Cannot rename: '{run_id}' not found or '{new_label}' already exists"
+                    "error": f"Cannot rename: '{study}' not found or '{new_label}' already exists"
                 },
                 status_code=409,
             )
-        return JSONResponse({"error": "No run manager"}, status_code=400)
+        return JSONResponse({"error": "No study manager"}, status_code=400)
 
-    async def _api_run_context(self, request: Request) -> JSONResponse:
-        """Return a structured context summary for a run.
+    async def _api_study_context(self, request: Request) -> JSONResponse:
+        """Return a structured context summary for a study.
 
         Includes card list, pending/resolved decisions, and selection state.
         """
-        run_id = request.path_params["run_id"]
-        if not self.run_manager:
-            return JSONResponse({"error": "No run manager"}, status_code=400)
+        study = request.path_params["study"]
+        if not self.study_manager:
+            return JSONResponse({"error": "No study manager"}, status_code=400)
 
-        self.run_manager.refresh()
-        ctx = self.run_manager.build_context(run_id)
+        self.study_manager.refresh()
+        ctx = self.study_manager.build_context(study)
         cards = ctx.get("cards", [])
         card_ids = [c.get("card_id", "") for c in cards]
 
-        # Current selections for cards in this run
+        # Current selections for cards in this study
         current_selections = {}
         for cid in card_ids:
             sel = self._selections.get(cid, [])
@@ -677,38 +683,40 @@ class DisplayServer:
         ctx["decisions"] = ctx.get("pending_responses", [])
         return JSONResponse(ctx)
 
-    async def _api_run_delete(self, request: Request) -> JSONResponse:
-        """Delete a run by label.
+    async def _api_study_delete(self, request: Request) -> JSONResponse:
+        """Delete a study by label.
 
         No auth required — server is localhost-only and the browser UI
         shows a confirmation dialog before calling this endpoint.
         """
-        run_id = request.path_params["run_id"]
-        if self.run_manager:
-            deleted = self.run_manager.delete_run(run_id)
+        study = request.path_params["study"]
+        if self.study_manager:
+            deleted = self.study_manager.delete_study(study)
             if deleted:
                 return JSONResponse({"status": "ok"})
-            return JSONResponse({"error": f"Run '{run_id}' not found"}, status_code=404)
-        return JSONResponse({"error": "No run manager"}, status_code=400)
+            return JSONResponse(
+                {"error": f"Study '{study}' not found"}, status_code=404
+            )
+        return JSONResponse({"error": "No study manager"}, status_code=400)
 
-    async def _api_run_export(self, request: Request) -> Response:
-        """Export a specific run as HTML or JSON.
+    async def _api_study_export(self, request: Request) -> Response:
+        """Export a specific study as HTML or JSON.
 
-        GET /api/runs/{run_id}/export?format=html|json
+        GET /api/studies/{study}/export?format=html|json
         """
-        run_id = request.path_params["run_id"]
+        study = request.path_params["study"]
         fmt = request.query_params.get("format", "html")
 
-        if not self.run_manager:
-            return JSONResponse({"error": "No run manager"}, status_code=400)
+        if not self.study_manager:
+            return JSONResponse({"error": "No study manager"}, status_code=400)
 
         from m4.vitrine.export import export_html_string, export_json_bytes
 
-        self.run_manager.refresh()
+        self.study_manager.refresh()
 
         if fmt == "json":
-            data = export_json_bytes(self.run_manager, run_id=run_id)
-            filename = f"m4-export-{run_id}.zip"
+            data = export_json_bytes(self.study_manager, study=study)
+            filename = f"m4-export-{study}.zip"
             return Response(
                 content=data,
                 media_type="application/zip",
@@ -718,8 +726,8 @@ class DisplayServer:
             )
 
         # Default: HTML
-        html = export_html_string(self.run_manager, run_id=run_id)
-        filename = f"m4-export-{run_id}.html"
+        html = export_html_string(self.study_manager, study=study)
+        filename = f"m4-export-{study}.html"
         return Response(
             content=html,
             media_type="text/html",
@@ -729,21 +737,21 @@ class DisplayServer:
         )
 
     async def _api_export(self, request: Request) -> Response:
-        """Export all runs as HTML or JSON.
+        """Export all studies as HTML or JSON.
 
         GET /api/export?format=html|json
         """
         fmt = request.query_params.get("format", "html")
 
-        if not self.run_manager:
-            return JSONResponse({"error": "No run manager"}, status_code=400)
+        if not self.study_manager:
+            return JSONResponse({"error": "No study manager"}, status_code=400)
 
         from m4.vitrine.export import export_html_string, export_json_bytes
 
-        self.run_manager.refresh()
+        self.study_manager.refresh()
 
         if fmt == "json":
-            data = export_json_bytes(self.run_manager)
+            data = export_json_bytes(self.study_manager)
             return Response(
                 content=data,
                 media_type="application/zip",
@@ -752,7 +760,7 @@ class DisplayServer:
                 },
             )
 
-        html = export_html_string(self.run_manager)
+        html = export_html_string(self.study_manager)
         return Response(
             content=html,
             media_type="text/html",
@@ -772,8 +780,8 @@ class DisplayServer:
 
         # Replay existing cards on connect
         try:
-            if self.run_manager:
-                cards = self.run_manager.list_all_cards()
+            if self.study_manager:
+                cards = self.study_manager.list_all_cards()
             elif self.store:
                 cards = self.store.list_cards()
             else:
@@ -825,16 +833,16 @@ class DisplayServer:
             artifact_id = None
             if selected_rows and columns:
                 artifact_id = f"resp-{card_id}"
-                if self.run_manager:
-                    self.run_manager.store_selection(
+                if self.study_manager:
+                    self.study_manager.store_selection(
                         artifact_id, selected_rows, columns
                     )
                 elif sel_store:
                     sel_store.store_selection(artifact_id, selected_rows, columns)
             elif points:
                 artifact_id = f"resp-{card_id}"
-                if self.run_manager:
-                    self.run_manager.store_selection_json(
+                if self.study_manager:
+                    self.study_manager.store_selection_json(
                         artifact_id, {"points": points}
                     )
                 elif sel_store:
@@ -851,7 +859,7 @@ class DisplayServer:
                 "values": form_values,
             }
 
-            # Persist response metadata for run_context() and export provenance
+            # Persist response metadata for study_context() and export provenance
             if sel_store is not None:
                 sel_store.update_card(
                     card_id,
@@ -912,8 +920,8 @@ class DisplayServer:
         # Look up card title from store
         card_title = ""
         try:
-            if self.run_manager:
-                cards = self.run_manager.list_all_cards()
+            if self.study_manager:
+                cards = self.study_manager.list_all_cards()
             elif self.store:
                 cards = self.store.list_cards()
             else:
@@ -1165,12 +1173,12 @@ class DisplayServer:
         }
         self._broadcast_from_thread(message)
 
-    def push_section(self, title: str, run_id: str | None = None) -> None:
+    def push_section(self, title: str, study: str | None = None) -> None:
         """Push a section divider to all connected clients."""
         message = {
             "type": "display.section",
             "title": title,
-            "run_id": run_id,
+            "study": study,
         }
         self._broadcast_from_thread(message)
 
@@ -1242,9 +1250,9 @@ def _run_standalone(port: int = _DEFAULT_PORT, no_open: bool = False) -> None:
         session_id = uuid.uuid4().hex[:12]
         token = secrets.token_hex(16)
 
-        run_manager = RunManager(display_dir)
+        study_manager = StudyManager(display_dir)
         server = DisplayServer(
-            run_manager=run_manager,
+            study_manager=study_manager,
             port=port,
             host="127.0.0.1",
             token=token,

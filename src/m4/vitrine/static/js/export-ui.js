@@ -41,8 +41,8 @@ function _closeExportOutside(e) {
 function renderExportDropdown() {
   exportDropdownPanel.innerHTML = '';
 
-  var runLabel = state.activeRunFilter || null;
-  var label = runLabel ? runLabel : 'all runs';
+  var studyLabel = state.activeStudyFilter || null;
+  var label = studyLabel ? studyLabel : 'all studies';
 
   // HTML export
   var htmlItem = document.createElement('button');
@@ -51,7 +51,7 @@ function renderExportDropdown() {
   htmlItem.onclick = function(e) {
     e.stopPropagation();
     closeExportDropdown();
-    exportRun(runLabel, 'html');
+    exportStudy(studyLabel, 'html');
   };
   exportDropdownPanel.appendChild(htmlItem);
 
@@ -62,7 +62,7 @@ function renderExportDropdown() {
   jsonItem.onclick = function(e) {
     e.stopPropagation();
     closeExportDropdown();
-    exportRun(runLabel, 'json');
+    exportStudy(studyLabel, 'json');
   };
   exportDropdownPanel.appendChild(jsonItem);
 
@@ -83,10 +83,10 @@ function renderExportDropdown() {
   exportDropdownPanel.appendChild(printItem);
 }
 
-function exportRun(runLabel, format) {
+function exportStudy(studyLabel, format) {
   var url;
-  if (runLabel) {
-    url = '/api/runs/' + encodeURIComponent(runLabel) + '/export?format=' + format;
+  if (studyLabel) {
+    url = '/api/studies/' + encodeURIComponent(studyLabel) + '/export?format=' + format;
   } else {
     url = '/api/export?format=' + format;
   }

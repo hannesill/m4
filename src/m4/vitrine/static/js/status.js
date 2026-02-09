@@ -23,20 +23,20 @@ function updateCardCount() {
   }
   cardCountEl.textContent = text;
 
-  // Footer: show run label or run count
-  if (state.activeRunFilter) {
-    var run = null;
-    for (var i = 0; i < state.runs.length; i++) {
-      if (state.runs[i].label === state.activeRunFilter) { run = state.runs[i]; break; }
+  // Footer: show study label or study count
+  if (state.activeStudyFilter) {
+    var study = null;
+    for (var i = 0; i < state.studies.length; i++) {
+      if (state.studies[i].label === state.activeStudyFilter) { study = state.studies[i]; break; }
     }
-    if (run && run.start_time) {
-      sessionInfoEl.textContent = state.activeRunFilter + ' \u00b7 ' + dateGroupLabel(run.start_time);
+    if (study && study.start_time) {
+      sessionInfoEl.textContent = state.activeStudyFilter + ' \u00b7 ' + dateGroupLabel(study.start_time);
     } else {
-      sessionInfoEl.textContent = state.activeRunFilter;
+      sessionInfoEl.textContent = state.activeStudyFilter;
     }
   } else {
-    var totalRuns = state.runs.length;
-    sessionInfoEl.textContent = totalRuns > 0 ? totalRuns + ' run' + (totalRuns !== 1 ? 's' : '') : '';
+    var totalStudies = state.studies.length;
+    sessionInfoEl.textContent = totalStudies > 0 ? totalStudies + ' stud' + (totalStudies !== 1 ? 'ies' : 'y') : '';
   }
 }
 
@@ -50,36 +50,36 @@ function loadSessionInfo() {
     .catch(function() {});
 }
 
-function loadRuns() {
-  fetch('/api/runs')
+function loadStudies() {
+  fetch('/api/studies')
     .then(function(r) { return r.json(); })
-    .then(function(runs) {
-      if (!Array.isArray(runs)) return;
-      state.runs = runs;
-      state.runIds = [];
-      runs.forEach(function(run) {
-        var label = run.label || run.dir_name || '';
-        if (label && state.runIds.indexOf(label) === -1) state.runIds.push(label);
+    .then(function(studies) {
+      if (!Array.isArray(studies)) return;
+      state.studies = studies;
+      state.studyNames = [];
+      studies.forEach(function(study) {
+        var label = study.label || study.dir_name || '';
+        if (label && state.studyNames.indexOf(label) === -1) state.studyNames.push(label);
       });
 
       // Validate current filter still exists
-      if (state.activeRunFilter && state.runIds.indexOf(state.activeRunFilter) === -1) {
-        state.activeRunFilter = '';
+      if (state.activeStudyFilter && state.studyNames.indexOf(state.activeStudyFilter) === -1) {
+        state.activeStudyFilter = '';
         updateDropdownTrigger();
       }
 
-      // Auto-select most recent run on first load
-      if (!state.liveMode && !state.activeRunFilter && runs.length > 0) {
-        state.activeRunFilter = runs[0].label;
+      // Auto-select most recent study on first load
+      if (!state.liveMode && !state.activeStudyFilter && studies.length > 0) {
+        state.activeStudyFilter = studies[0].label;
         updateDropdownTrigger();
-        applyRunFilter();
-        updateRunMetadataBar();
+        applyStudyFilter();
+        updateStudyMetadataBar();
       }
 
       updateCardCount();
 
       // Update empty state
-      if (runs.length === 0 && state.cards.length === 0) {
+      if (studies.length === 0 && state.cards.length === 0) {
         showEmptyState();
       }
     })

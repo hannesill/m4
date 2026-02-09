@@ -1,10 +1,10 @@
 """Tests for form field primitives, form rendering, blocking flow, and validation.
 
 Tests cover:
-- All 10 field types: construct → to_dict() → assert keys/values
-- Form rendering → CardType.FORM, preview structure
+- All 10 field types: construct -> to_dict() -> assert keys/values
+- Form rendering -> CardType.FORM, preview structure
 - Form blocking flow (response_requested + form_values)
-- Controls parameter on show() → hybrid data+controls cards
+- Controls parameter on show() -> hybrid data+controls cards
 - Form export in HTML and JSON
 - Form field validation (__post_init__ checks)
 - Form field name uniqueness
@@ -33,7 +33,7 @@ from m4.vitrine._types import (
 )
 from m4.vitrine.artifacts import ArtifactStore
 from m4.vitrine.renderer import render
-from m4.vitrine.run_manager import RunManager
+from m4.vitrine.study_manager import StudyManager
 
 # ================================================================
 # Fixtures
@@ -47,10 +47,10 @@ def store(tmp_path):
 
 
 @pytest.fixture
-def run_manager(tmp_path):
+def study_manager(tmp_path):
     display_dir = tmp_path / "display"
     display_dir.mkdir()
-    return RunManager(display_dir)
+    return StudyManager(display_dir)
 
 
 @pytest.fixture(autouse=True)
@@ -58,8 +58,8 @@ def reset_module_state():
     """Reset module-level state before each test."""
     display._server = None
     display._store = None
-    display._run_manager = None
-    display._current_run_id = None
+    display._study_manager = None
+    display._current_study = None
     display._session_id = None
     display._remote_url = None
     display._auth_token = None
@@ -74,8 +74,8 @@ def reset_module_state():
             pass
     display._server = None
     display._store = None
-    display._run_manager = None
-    display._current_run_id = None
+    display._study_manager = None
+    display._current_study = None
     display._session_id = None
     display._remote_url = None
     display._auth_token = None
@@ -106,7 +106,7 @@ def mock_server(store):
         def push_update(self, card_id, card):
             self.pushed_cards.append(card)
 
-        def push_section(self, title, run_id=None):
+        def push_section(self, title, study=None):
             pass
 
         def wait_for_response_sync(self, card_id, timeout):
@@ -123,7 +123,7 @@ def mock_server(store):
 
 
 # ================================================================
-# TestFormFieldSerialization — all 10 field types
+# TestFormFieldSerialization -- all 10 field types
 # ================================================================
 
 
@@ -340,8 +340,8 @@ class TestFormExport:
     def test_html_export_contains_form(self, tmp_path):
         from m4.vitrine.export import export_html
 
-        mgr = RunManager(tmp_path / "display")
-        _, store = mgr.get_or_create_run("form-export")
+        mgr = StudyManager(tmp_path / "display")
+        _, store = mgr.get_or_create_study("form-export")
         dir_name = mgr._label_to_dir["form-export"]
 
         form = Form(
@@ -350,11 +350,11 @@ class TestFormExport:
                 Slider(name="age", range=(0, 100), default=50),
             ]
         )
-        card = render(form, title="Form Card", store=store, run_id="form-export")
+        card = render(form, title="Form Card", store=store, study="form-export")
         mgr.register_card(card.card_id, dir_name)
 
         out = tmp_path / "export.html"
-        export_html(mgr, out, run_id="form-export")
+        export_html(mgr, out, study="form-export")
         html = out.read_text()
         assert "Form Card" in html
         assert "sex" in html
@@ -364,16 +364,16 @@ class TestFormExport:
 
         from m4.vitrine.export import export_json
 
-        mgr = RunManager(tmp_path / "display2")
-        _, store = mgr.get_or_create_run("form-json")
+        mgr = StudyManager(tmp_path / "display2")
+        _, store = mgr.get_or_create_study("form-json")
         dir_name = mgr._label_to_dir["form-json"]
 
         form = Form(fields=[Checkbox(name="active", default=True)])
-        card = render(form, title="Check", store=store, run_id="form-json")
+        card = render(form, title="Check", store=store, study="form-json")
         mgr.register_card(card.card_id, dir_name)
 
         out = tmp_path / "export.zip"
-        export_json(mgr, out, run_id="form-json")
+        export_json(mgr, out, study="form-json")
         with zipfile.ZipFile(out) as zf:
             cards = json.loads(zf.read("cards.json"))
             assert len(cards) == 1
@@ -570,16 +570,16 @@ class TestDisplayResponseConstants:
 
 
 # ================================================================
-# TestDisplayHandleRunId
+# TestDisplayHandleStudy
 # ================================================================
 
 
-class TestDisplayHandleRunId:
-    def test_run_id_attached(self, store, mock_server):
-        handle = display.show("hello", run_id="my-run")
-        assert handle.run_id == "my-run"
+class TestDisplayHandleStudy:
+    def test_study_attached(self, store, mock_server):
+        handle = display.show("hello", study="my-study")
+        assert handle.study == "my-study"
 
-    def test_run_id_none_when_no_run(self, store, mock_server):
+    def test_study_none_when_no_study(self, store, mock_server):
         handle = display.show("hello")
-        # Without run_manager, run_id is None
-        assert handle.run_id is None
+        # Without study_manager, study is None
+        assert handle.study is None

@@ -73,7 +73,7 @@ class TestCardDescriptor:
         assert card.card_type == CardType.MARKDOWN
         assert card.title is None
         assert card.description is None
-        assert card.run_id is None
+        assert card.study is None
         assert card.pinned is False
         assert card.artifact_id is None
         assert card.artifact_type is None
@@ -97,7 +97,7 @@ class TestCardDescriptor:
             title="Test Table",
             description="A test",
             timestamp="2025-01-01T00:00:00Z",
-            run_id="run-1",
+            study="study-1",
             pinned=True,
             artifact_id="xyz789",
             artifact_type="parquet",
@@ -227,6 +227,6 @@ class TestDisplayHandle:
         assert handle.url is None
 
     def test_url_attached(self):
-        handle = DisplayHandle("c2", "http://127.0.0.1:7741/#run=r1")
+        handle = DisplayHandle("c2", "http://127.0.0.1:7741/#study=r1")
         assert handle.card_id == "c2"
-        assert handle.url.endswith("#run=r1")
+        assert handle.url.endswith("#study=r1")

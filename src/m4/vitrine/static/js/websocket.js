@@ -26,7 +26,7 @@ function connect() {
     state.liveMode = false;
     updateStatus('connected');
     loadSessionInfo();
-    loadRuns();
+    loadStudies();
     // After replay completes (~500ms), enable live auto-switching
     setTimeout(function() { state.liveMode = true; }, 500);
   };
@@ -65,7 +65,7 @@ function handleMessage(msg) {
       addCard(msg.card);
       break;
     case 'display.section':
-      addSection(msg.title, msg.run_id);
+      addSection(msg.title, msg.study);
       break;
     case 'display.update':
       updateCard(msg.card_id, msg.card);

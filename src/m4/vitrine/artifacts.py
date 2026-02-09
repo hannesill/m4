@@ -39,7 +39,7 @@ def _serialize_card(card: CardDescriptor) -> dict[str, Any]:
         "title": card.title,
         "description": card.description,
         "timestamp": card.timestamp,
-        "run_id": card.run_id,
+        "study": card.study,
         "pinned": card.pinned,
         "artifact_id": card.artifact_id,
         "artifact_type": card.artifact_type,
@@ -86,7 +86,7 @@ def _deserialize_card(d: dict[str, Any]) -> CardDescriptor:
         title=d.get("title"),
         description=d.get("description"),
         timestamp=d.get("timestamp", ""),
-        run_id=d.get("run_id"),
+        study=d.get("study"),
         pinned=d.get("pinned", False),
         artifact_id=d.get("artifact_id"),
         artifact_type=d.get("artifact_type"),
@@ -136,7 +136,7 @@ class ArtifactStore:
             meta = {
                 "session_id": session_id,
                 "start_time": datetime.now(timezone.utc).isoformat(),
-                "run_ids": [],
+                "study_names": [],
             }
             self._meta_path.write_text(json.dumps(meta, indent=2))
 
@@ -157,16 +157,17 @@ class ArtifactStore:
         cards.append(card_dict)
         self._write_index(cards)
 
-    def _track_run_id(self, run_id: str | None) -> None:
-        """Track a run_id in session metadata."""
-        if not run_id:
+    def _track_study(self, study: str | None) -> None:
+        """Track a study name in session metadata."""
+        if not study:
             return
         try:
             meta = json.loads(self._meta_path.read_text())
         except (json.JSONDecodeError, FileNotFoundError):
-            meta = {"session_id": self.session_id, "run_ids": []}
-        if run_id not in meta.get("run_ids", []):
-            meta.setdefault("run_ids", []).append(run_id)
+            meta = {"session_id": self.session_id, "study_names": []}
+        names = meta.get("study_names", [])
+        if study not in names:
+            meta["study_names"] = [*names, study]
             self._meta_path.write_text(json.dumps(meta, indent=2))
 
     def store_card(self, card: CardDescriptor) -> None:
@@ -176,7 +177,7 @@ class ArtifactStore:
             card: The card descriptor to store.
         """
         self._append_to_index(_serialize_card(card))
-        self._track_run_id(card.run_id)
+        self._track_study(card.study)
 
     def store_dataframe(self, card_id: str, df: pd.DataFrame) -> Path:
         """Store a DataFrame as a Parquet artifact.
@@ -487,18 +488,18 @@ class ArtifactStore:
                 return path.read_bytes()
         raise FileNotFoundError(f"No artifact found for card {card_id}")
 
-    def list_cards(self, run_id: str | None = None) -> list[CardDescriptor]:
+    def list_cards(self, study: str | None = None) -> list[CardDescriptor]:
         """List all card descriptors in insertion order.
 
         Args:
-            run_id: If provided, filter to cards with this run_id.
+            study: If provided, filter to cards with this study name.
 
         Returns:
             List of CardDescriptors in the order they were added.
         """
         cards = [_deserialize_card(d) for d in self._read_index()]
-        if run_id is not None:
-            cards = [c for c in cards if c.run_id == run_id]
+        if study is not None:
+            cards = [c for c in cards if c.study == study]
         return cards
 
     def update_card(self, card_id: str, **changes: Any) -> CardDescriptor | None:

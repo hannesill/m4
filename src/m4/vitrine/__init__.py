@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import shutil
 import threading
 import time
 import uuid
@@ -42,9 +43,9 @@ logger = logging.getLogger(__name__)
 # Module-level state (thread-safe via _lock)
 _lock = threading.Lock()
 _server: Any = None  # DisplayServer | None
-_store: Any = None  # ArtifactStore | None (backwards-compat, resolves to current run)
-_run_manager: Any = None  # RunManager | None
-_current_run_id: str | None = None
+_store: Any = None  # ArtifactStore | None (backwards-compat)
+_study_manager: Any = None  # StudyManager | None
+_current_study: str | None = None
 _session_id: str | None = None
 _remote_url: str | None = None
 _auth_token: str | None = None
@@ -56,15 +57,63 @@ _event_poll_stop = threading.Event()
 
 
 def _get_vitrine_dir() -> Path:
-    """Resolve the vitrine directory under {m4_data}/vitrine/."""
-    try:
-        from m4.config import _PROJECT_DATA_DIR
+    """Resolve the vitrine directory at {project_root}/.vitrine/.
 
-        return _PROJECT_DATA_DIR / "vitrine"
+    Performs one-time migration from the old m4_data/vitrine/ location.
+    """
+    try:
+        from m4.config import _PROJECT_ROOT
+
+        vitrine_dir = _PROJECT_ROOT / ".vitrine"
     except Exception:
         import tempfile
 
-        return Path(tempfile.gettempdir()) / "m4_data" / "vitrine"
+        vitrine_dir = Path(tempfile.gettempdir()) / ".vitrine"
+
+    _migrate_if_needed(vitrine_dir)
+    return vitrine_dir
+
+
+def _migrate_if_needed(vitrine_dir: Path) -> None:
+    """Migrate storage from old layout to new layout if needed."""
+    # 1. Move m4_data/vitrine/ → .vitrine/ (same parent)
+    try:
+        from m4.config import _PROJECT_DATA_DIR
+
+        old_dir = _PROJECT_DATA_DIR / "vitrine"
+    except Exception:
+        old_dir = None
+
+    if old_dir and old_dir.exists() and not vitrine_dir.exists():
+        try:
+            shutil.move(str(old_dir), str(vitrine_dir))
+            logger.debug(f"Migrated {old_dir} → {vitrine_dir}")
+        except OSError:
+            logger.debug(f"Failed to migrate {old_dir} → {vitrine_dir}")
+            return
+
+    if not vitrine_dir.exists():
+        return
+
+    # 2. Rename runs/ → studies/
+    old_runs_dir = vitrine_dir / "runs"
+    new_studies_dir = vitrine_dir / "studies"
+    if old_runs_dir.exists() and not new_studies_dir.exists():
+        try:
+            old_runs_dir.rename(new_studies_dir)
+            logger.debug("Migrated runs/ → studies/")
+        except OSError:
+            pass
+
+    # 3. Rename runs.json → studies.json
+    old_registry = vitrine_dir / "runs.json"
+    new_registry = vitrine_dir / "studies.json"
+    if old_registry.exists() and not new_registry.exists():
+        try:
+            old_registry.rename(new_registry)
+            logger.debug("Migrated runs.json → studies.json")
+        except OSError:
+            pass
 
 
 def _pid_file_path() -> Path:
@@ -200,14 +249,14 @@ def _get_session_dir() -> Path:
     return _get_vitrine_dir()
 
 
-def _ensure_run_manager() -> Any:
-    """Ensure a RunManager exists for local artifact storage."""
-    global _run_manager
-    if _run_manager is None:
-        from m4.vitrine.run_manager import RunManager
+def _ensure_study_manager() -> Any:
+    """Ensure a StudyManager exists for local artifact storage."""
+    global _study_manager
+    if _study_manager is None:
+        from m4.vitrine.study_manager import StudyManager
 
-        _run_manager = RunManager(_get_vitrine_dir())
-    return _run_manager
+        _study_manager = StudyManager(_get_vitrine_dir())
+    return _study_manager
 
 
 def _ensure_started(
@@ -217,16 +266,16 @@ def _ensure_started(
     """Ensure the display server is running, starting it if needed.
 
     Discovery flow:
-    1. If _remote_url set → health check → if healthy, return
-    2. If in-process _server running → return
+    1. If _remote_url set -> health check -> if healthy, return
+    2. If in-process _server running -> return
     3. Acquire file lock
-    4. Inside lock: _discover_server() → _scan_port_range() → _start_process()
+    4. Inside lock: _discover_server() -> _scan_port_range() -> _start_process()
     5. Release lock
     6. Fallback in-thread server if polling fails
     """
     import fcntl
 
-    global _server, _store, _run_manager, _session_id, _remote_url, _auth_token
+    global _server, _store, _study_manager, _session_id, _remote_url, _auth_token
 
     with _lock:
         # Fast path: already connected to remote
@@ -242,8 +291,8 @@ def _ensure_started(
         if _server is not None and _server.is_running:
             return
 
-        # Ensure run manager exists for local artifact storage
-        _ensure_run_manager()
+        # Ensure study manager exists for local artifact storage
+        _ensure_study_manager()
 
         # Acquire cross-process file lock before discovery + start
         lock_path = _lock_file_path()
@@ -266,21 +315,21 @@ def _ensure_started(
             # if we have a usable connection.
             found = _scan_port_range("127.0.0.1", 7741, 7750)
             if found:
-                # Re-read PID file — it may have appeared after the scan
+                # Re-read PID file -- it may have appeared after the scan
                 pid_info = _discover_server()
                 if pid_info and pid_info.get("url") == found["url"]:
                     _remote_url = pid_info["url"]
                     _auth_token = pid_info.get("token")
                     _session_id = pid_info["session_id"]
                     return
-                # Server exists but no token — log and let _start_process
+                # Server exists but no token -- log and let _start_process
                 # pick the next available port
                 logger.debug(
                     f"Found server at {found['url']} but no auth token; "
                     "starting new server on next available port"
                 )
 
-            # No server found → start a new persistent process
+            # No server found -> start a new persistent process
             _start_process(port=port, open_browser=open_browser)
 
         finally:
@@ -306,7 +355,7 @@ def _ensure_started(
             _session_id = uuid.uuid4().hex[:12]
 
         _server = DisplayServer(
-            run_manager=_run_manager, port=port, session_id=_session_id
+            study_manager=_study_manager, port=port, session_id=_session_id
         )
         _server.start(open_browser=open_browser)
 
@@ -386,11 +435,11 @@ def stop() -> None:
 def stop_server() -> bool:
     """Stop a running persistent display server via POST /api/shutdown.
 
-    Run data persists on disk. Only the PID file is cleaned up.
+    Study data persists on disk. Only the PID file is cleaned up.
 
     Returns True if a server was stopped.
     """
-    global _remote_url, _auth_token, _store, _run_manager, _session_id
+    global _remote_url, _auth_token, _store, _study_manager, _session_id
     global _event_poll_thread
 
     info = _discover_server()
@@ -442,7 +491,7 @@ def stop_server() -> bool:
             logger.debug(f"Shutdown requested but server still healthy at {url}")
         return False
 
-    # Clean up PID file only — run data persists.
+    # Clean up PID file only -- study data persists.
     pid_path = _pid_file_path()
     if pid_path.exists():
         try:
@@ -463,7 +512,7 @@ def stop_server() -> bool:
         _auth_token = None
         if _session_id == session_id:
             _store = None
-            _run_manager = None
+            _study_manager = None
             _session_id = None
 
     return True
@@ -525,7 +574,7 @@ def show(
     title: str | None = None,
     description: str | None = None,
     *,
-    run_id: str | None = None,
+    study: str | None = None,
     source: str | None = None,
     replace: str | None = None,
     position: str | None = None,
@@ -541,13 +590,13 @@ def show(
     wait=True.
 
     Supported types:
-    - pd.DataFrame → interactive table (artifact-backed, paged)
-    - plotly Figure → interactive chart
-    - matplotlib Figure → static chart (SVG)
-    - str → markdown card
-    - dict → formatted key-value card
-    - Form → structured input card (freezes on confirm)
-    - Other → repr() fallback
+    - pd.DataFrame -> interactive table (artifact-backed, paged)
+    - plotly Figure -> interactive chart
+    - matplotlib Figure -> static chart (SVG)
+    - str -> markdown card
+    - dict -> formatted key-value card
+    - Form -> structured input card (freezes on confirm)
+    - Other -> repr() fallback
 
     Auto-starts the display server on first call.
 
@@ -555,7 +604,7 @@ def show(
         obj: Python object to display.
         title: Card title shown in header.
         description: Subtitle or context line.
-        run_id: Group cards into a named run (for filtering).
+        study: Group cards into a named study (for filtering).
         source: Provenance string (e.g., table name, query).
         replace: Card ID to update instead of appending.
         position: "top" to prepend instead of append.
@@ -577,19 +626,19 @@ def show(
     from m4.vitrine.artifacts import _serialize_card
     from m4.vitrine.renderer import render
 
-    # Resolve the store for this card via RunManager
+    # Resolve the store for this card via StudyManager
     store = _store  # backwards-compat fallback
-    if _run_manager is not None:
-        _label, store = _run_manager.get_or_create_run(run_id)
-        # Use the resolved label for the card's run_id
-        run_id = _label
+    if _study_manager is not None:
+        _label, store = _study_manager.get_or_create_study(study)
+        # Use the resolved label for the card's study
+        study = _label
 
     if replace is not None:
         # Update an existing card in place
         # Resolve store for the card being replaced
         replace_store = store
-        if _run_manager is not None:
-            rs = _run_manager.get_store_for_card(replace)
+        if _study_manager is not None:
+            rs = _study_manager.get_store_for_card(replace)
             if rs:
                 replace_store = rs
         card = render(
@@ -597,7 +646,7 @@ def show(
             title=title,
             description=description,
             source=source,
-            run_id=run_id,
+            study=study,
             store=replace_store,
         )
         # Update the old card's entry in the store
@@ -632,7 +681,7 @@ def show(
         title=title,
         description=description,
         source=source,
-        run_id=run_id,
+        study=study,
         store=store,
     )
 
@@ -641,11 +690,11 @@ def show(
         card.preview["controls"] = [c.to_dict() for c in controls]
         store.update_card(card.card_id, preview=card.preview)
 
-    # Register the card in RunManager's cross-run index
-    if _run_manager is not None and run_id:
-        dir_name = _run_manager._label_to_dir.get(run_id)
+    # Register the card in StudyManager's cross-study index
+    if _study_manager is not None and study:
+        dir_name = _study_manager._label_to_dir.get(study)
         if dir_name:
-            _run_manager.register_card(card.card_id, dir_name)
+            _study_manager.register_card(card.card_id, dir_name)
 
     # Set interaction fields and update the stored card
     interaction_updates = {}
@@ -669,7 +718,7 @@ def show(
         _server.push_card(card)
 
     if not wait:
-        return DisplayHandle(card.card_id, url=_run_url(run_id), run_id=run_id)
+        return DisplayHandle(card.card_id, url=_study_url(study), study=study)
 
     # Blocking flow: wait for user response
     result = _wait_for_card_response(card.card_id, timeout)
@@ -701,9 +750,9 @@ def _wait_for_card_response(card_id: str, timeout: float) -> dict[str, Any]:
     return {"action": "timeout", "card_id": card_id}
 
 
-def _run_url(run_id: str | None) -> str | None:
-    """Build a browser URL deep link for a run, when available."""
-    if not run_id:
+def _study_url(study: str | None) -> str | None:
+    """Build a browser URL deep link for a study, when available."""
+    if not study:
         return None
     from urllib.parse import quote
 
@@ -711,11 +760,11 @@ def _run_url(run_id: str | None) -> str | None:
         url, server = _remote_url, _server
 
     if url:
-        return f"{url}/#run={quote(run_id, safe='')}"
+        return f"{url}/#study={quote(study, safe='')}"
     if server is not None:
         host = getattr(server, "host", "127.0.0.1")
         port = getattr(server, "port", 7741)
-        return f"http://{host}:{port}/#run={quote(run_id, safe='')}"
+        return f"http://{host}:{port}/#study={quote(study, safe='')}"
     return None
 
 
@@ -746,30 +795,30 @@ def _poll_remote_response(card_id: str, timeout: float) -> dict[str, Any]:
         return {"action": "timeout", "card_id": card_id}
 
 
-def section(title: str, run_id: str | None = None) -> None:
+def section(title: str, study: str | None = None) -> None:
     """Insert a section divider in the display feed.
 
     Args:
         title: Section title.
-        run_id: Optional run ID for grouping.
+        study: Optional study name for grouping.
     """
     _ensure_started()
 
     from m4.vitrine._types import CardDescriptor, CardType
     from m4.vitrine.renderer import _make_card_id, _make_timestamp
 
-    # Resolve store via RunManager if available
+    # Resolve store via StudyManager if available
     store = _store
-    if _run_manager is not None:
-        _label, store = _run_manager.get_or_create_run(run_id)
-        run_id = _label
+    if _study_manager is not None:
+        _label, store = _study_manager.get_or_create_study(study)
+        study = _label
 
     card = CardDescriptor(
         card_id=_make_card_id(),
         card_type=CardType.SECTION,
         title=title,
         timestamp=_make_timestamp(),
-        run_id=run_id,
+        study=study,
         preview={"title": title},
     )
 
@@ -779,10 +828,10 @@ def section(title: str, run_id: str | None = None) -> None:
         _remote_command(
             _remote_url,
             _auth_token,
-            {"type": "section", "title": title, "run_id": run_id},
+            {"type": "section", "title": title, "study": study},
         )
     elif _server is not None:
-        _server.push_section(title, run_id=run_id)
+        _server.push_section(title, study=study)
 
 
 def set_status(message: str) -> None:
@@ -805,23 +854,23 @@ def set_status(message: str) -> None:
         _server.push_status(message)
 
 
-def run_context(run_id: str) -> dict[str, Any]:
+def study_context(study: str) -> dict[str, Any]:
     """Get a structured context summary for agent re-orientation.
 
-    Returns run metadata, cards, decisions made, pending responses,
+    Returns study metadata, cards, decisions made, pending responses,
     and current selections. Useful at the start of a new conversation
     turn to understand what has happened so far.
 
     Args:
-        run_id: The run label to summarize.
+        study: The study label to summarize.
 
     Returns:
-        Dict with run_id, card_count, cards, decisions_made,
+        Dict with study, card_count, cards, decisions_made,
         pending_responses, and current_selections.
     """
-    _ensure_run_manager()
-    if _run_manager is not None:
-        ctx = _run_manager.build_context(run_id)
+    _ensure_study_manager()
+    if _study_manager is not None:
+        ctx = _study_manager.build_context(study)
         # In-process enrichment with live selection + pending response state
         if _server is not None:
             card_ids = [c.get("card_id", "") for c in ctx.get("cards", [])]
@@ -854,7 +903,7 @@ def run_context(run_id: str) -> dict[str, Any]:
             try:
                 import urllib.request
 
-                ctx_url = f"{url}/api/runs/{run_id}/context"
+                ctx_url = f"{url}/api/studies/{study}/context"
                 req = urllib.request.Request(ctx_url, method="GET")
                 with urllib.request.urlopen(req, timeout=5) as resp:
                     return json.loads(resp.read())
@@ -863,7 +912,7 @@ def run_context(run_id: str) -> dict[str, Any]:
 
         return ctx
     return {
-        "run_id": run_id,
+        "study": study,
         "card_count": 0,
         "cards": [],
         "decisions": [],
@@ -873,59 +922,59 @@ def run_context(run_id: str) -> dict[str, Any]:
     }
 
 
-def list_runs() -> list[dict[str, Any]]:
-    """List all display runs with metadata and card counts.
+def list_studies() -> list[dict[str, Any]]:
+    """List all studies with metadata and card counts.
 
     Returns:
         List of dicts with label, dir_name, start_time, card_count.
     """
-    _ensure_run_manager()
-    if _run_manager is not None:
-        return _run_manager.list_runs()
+    _ensure_study_manager()
+    if _study_manager is not None:
+        return _study_manager.list_studies()
     return []
 
 
-def delete_run(run_id: str) -> bool:
-    """Delete a display run by label.
+def delete_study(study: str) -> bool:
+    """Delete a study by label.
 
     Args:
-        run_id: The run label to delete.
+        study: The study label to delete.
 
     Returns:
-        True if the run was deleted, False if not found.
+        True if the study was deleted, False if not found.
     """
-    _ensure_run_manager()
-    if _run_manager is not None:
-        return _run_manager.delete_run(run_id)
+    _ensure_study_manager()
+    if _study_manager is not None:
+        return _study_manager.delete_study(study)
     return False
 
 
-def clean_runs(older_than: str = "7d") -> int:
-    """Remove display runs older than a given age.
+def clean_studies(older_than: str = "7d") -> int:
+    """Remove studies older than a given age.
 
     Args:
         older_than: Age string (e.g., '7d', '24h', '0d' for all).
 
     Returns:
-        Number of runs removed.
+        Number of studies removed.
     """
-    _ensure_run_manager()
-    if _run_manager is not None:
-        return _run_manager.clean_runs(older_than)
+    _ensure_study_manager()
+    if _study_manager is not None:
+        return _study_manager.clean_studies(older_than)
     return 0
 
 
 def export(
     path: str,
     format: str = "html",
-    run_id: str | None = None,
+    study: str | None = None,
 ) -> str:
-    """Export a run (or all runs) as a self-contained artifact.
+    """Export a study (or all studies) as a self-contained artifact.
 
     Args:
         path: Output file path.
         format: "html" (self-contained) or "json" (card index + artifacts zip).
-        run_id: Specific run label to export, or None for all runs.
+        study: Specific study label to export, or None for all studies.
 
     Returns:
         Path to the written file.
@@ -938,16 +987,16 @@ def export(
             f"Unsupported export format: {format!r} (use 'html' or 'json')"
         )
 
-    _ensure_run_manager()
-    if _run_manager is None:
-        raise RuntimeError("No run manager available for export")
+    _ensure_study_manager()
+    if _study_manager is None:
+        raise RuntimeError("No study manager available for export")
 
     from m4.vitrine.export import export_html, export_json
 
     if format == "html":
-        result = export_html(_run_manager, path, run_id=run_id)
+        result = export_html(_study_manager, path, study=study)
     else:
-        result = export_json(_run_manager, path, run_id=run_id)
+        result = export_json(_study_manager, path, study=study)
 
     return str(result)
 
@@ -1049,8 +1098,8 @@ def get_selection(card_id: str) -> Any:
             return pd.DataFrame()
         # Find the store that holds this card's parquet
         store = None
-        if _run_manager is not None:
-            store = _run_manager.get_store_for_card(card_id)
+        if _study_manager is not None:
+            store = _study_manager.get_store_for_card(card_id)
         if store is None:
             store = _store
         if store is None:

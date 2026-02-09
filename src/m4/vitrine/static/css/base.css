@@ -75,14 +75,14 @@ body {
 }
 
 /* ================================================================
-   RUN MANAGEMENT — dropdown, metadata bar, separators, rename
+   STUDY MANAGEMENT — dropdown, metadata bar, separators, rename
    ================================================================ */
-.run-dropdown {
+.study-dropdown {
   position: relative;
   display: inline-block;
 }
 
-.run-dropdown-trigger {
+.study-dropdown-trigger {
   padding: 5px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -98,18 +98,18 @@ body {
   gap: 6px;
 }
 
-.run-dropdown-trigger:hover { border-color: var(--accent); }
-.run-dropdown-trigger.open { border-color: var(--accent); background: var(--bg-card); }
+.study-dropdown-trigger:hover { border-color: var(--accent); }
+.study-dropdown-trigger.open { border-color: var(--accent); background: var(--bg-card); }
 
-.run-dropdown-trigger .dd-arrow {
+.study-dropdown-trigger .dd-arrow {
   font-size: 10px;
   color: var(--text-muted);
   transition: transform 0.15s;
 }
 
-.run-dropdown-trigger.open .dd-arrow { transform: rotate(180deg); }
+.study-dropdown-trigger.open .dd-arrow { transform: rotate(180deg); }
 
-.run-dropdown-panel {
+.study-dropdown-panel {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
@@ -125,7 +125,7 @@ body {
   animation: fadeIn 0.15s ease;
 }
 
-.run-dropdown-all {
+.study-dropdown-all {
   padding: 8px 12px;
   cursor: pointer;
   font-size: 12px;
@@ -136,10 +136,10 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
-.run-dropdown-all:hover { background: var(--bg-header); }
-.run-dropdown-all.selected { font-weight: 600; color: var(--accent); }
+.study-dropdown-all:hover { background: var(--bg-header); }
+.study-dropdown-all.selected { font-weight: 600; color: var(--accent); }
 
-.run-dropdown-group-label {
+.study-dropdown-group-label {
   padding: 8px 12px 4px;
   font-size: 10px;
   font-weight: 600;
@@ -148,7 +148,7 @@ body {
   color: var(--text-muted);
 }
 
-.run-dropdown-entry {
+.study-dropdown-entry {
   padding: 6px 12px;
   cursor: pointer;
   font-size: 12px;
@@ -158,27 +158,27 @@ body {
   transition: background 0.15s;
 }
 
-.run-dropdown-entry:hover { background: var(--bg-header); }
-.run-dropdown-entry.selected { background: var(--bg-card); }
+.study-dropdown-entry:hover { background: var(--bg-header); }
+.study-dropdown-entry.selected { background: var(--bg-card); }
 
-.run-dropdown-empty {
+.study-dropdown-empty {
   padding: 16px 12px;
   font-size: 12px;
   color: var(--text-muted);
   text-align: center;
 }
 
-.run-dot {
+.study-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.run-dot.active { background: var(--success); }
-.run-dot.inactive { background: transparent; border: 1px solid var(--border); }
+.study-dot.active { background: var(--success); }
+.study-dot.inactive { background: transparent; border: 1px solid var(--border); }
 
-.run-entry-label {
+.study-entry-label {
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -186,14 +186,14 @@ body {
   white-space: nowrap;
 }
 
-.run-entry-meta {
+.study-entry-meta {
   color: var(--text-muted);
   font-size: 11px;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.run-delete-btn {
+.study-delete-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -206,8 +206,8 @@ body {
   flex-shrink: 0;
 }
 
-.run-dropdown-entry:hover .run-delete-btn { opacity: 1; }
-.run-delete-btn:hover { color: var(--error); }
+.study-dropdown-entry:hover .study-delete-btn { opacity: 1; }
+.study-delete-btn:hover { color: var(--error); }
 
 /* Confirm modal */
 .confirm-overlay {
@@ -268,23 +268,23 @@ body {
 }
 .confirm-danger:hover { opacity: 0.85; }
 
-/* Inline run name editing (metadata bar) */
-.run-meta-label {
+/* Inline study name editing (metadata bar) */
+.study-meta-label {
   cursor: text;
 }
-.run-meta-label:hover {
+.study-meta-label:hover {
   text-decoration: underline;
   text-decoration-style: dashed;
   text-underline-offset: 3px;
   text-decoration-color: var(--text-muted);
 }
-.run-meta-edit-wrap {
+.study-meta-edit-wrap {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   position: relative;
 }
-.run-meta-edit-input {
+.study-meta-edit-input {
   font-size: 13px;
   font-weight: 600;
   font-family: var(--font);
@@ -296,17 +296,17 @@ body {
   outline: none;
   min-width: 160px;
 }
-.run-meta-edit-input.invalid {
+.study-meta-edit-input.invalid {
   border-color: var(--error);
 }
-.run-meta-edit-hint {
+.study-meta-edit-hint {
   font-size: 11px;
   color: var(--error);
   white-space: nowrap;
 }
 
-/* Run metadata bar */
-.run-metadata-bar {
+/* Study metadata bar */
+.study-metadata-bar {
   max-width: 960px;
   margin: 0 auto;
   padding: 12px 24px 0;
@@ -317,19 +317,19 @@ body {
   color: var(--text-muted);
 }
 
-.run-metadata-bar.visible { display: flex; }
+.study-metadata-bar.visible { display: flex; }
 
-.run-meta-label {
+.study-meta-label {
   font-weight: 600;
   color: var(--text);
 }
 
-.run-meta-sep {
+.study-meta-sep {
   color: var(--border);
 }
 
-/* Run separator in feed (All runs view) */
-.run-separator {
+/* Study separator in feed (All studies view) */
+.study-separator {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -339,14 +339,14 @@ body {
   color: var(--text-muted);
 }
 
-.run-separator::after {
+.study-separator::after {
   content: '';
   flex: 1;
   height: 1px;
   background: var(--border);
 }
 
-.run-separator.hidden-by-filter { display: none; }
+.study-separator.hidden-by-filter { display: none; }
 
 /* ================================================================
    EXPORT DROPDOWN
@@ -400,8 +400,8 @@ body {
   margin: 2px 0;
 }
 
-/* Run dropdown export button */
-.run-export-btn {
+/* Study dropdown export button */
+.study-export-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -414,8 +414,8 @@ body {
   flex-shrink: 0;
 }
 
-.run-dropdown-entry:hover .run-export-btn { opacity: 1; }
-.run-export-btn:hover { color: var(--accent); }
+.study-dropdown-entry:hover .study-export-btn { opacity: 1; }
+.study-export-btn:hover { color: var(--accent); }
 
 .header-actions {
   display: flex;

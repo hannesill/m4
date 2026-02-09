@@ -10,10 +10,10 @@ Tests cover:
 - Blocking show (wait=True)
 - get_selection()
 - on_event() callback registration
-- RunManager integration: list_runs, delete_run, clean_runs
-- Multi-run show() calls
-- Auto-run creation
-- stop_server() preserves run data
+- StudyManager integration: list_studies, delete_study, clean_studies
+- Multi-study show() calls
+- Auto-study creation
+- stop_server() preserves study data
 """
 
 import json
@@ -24,7 +24,7 @@ import pytest
 import m4.vitrine as display
 from m4.vitrine._types import CardType, DisplayResponse
 from m4.vitrine.artifacts import ArtifactStore
-from m4.vitrine.run_manager import RunManager
+from m4.vitrine.study_manager import StudyManager
 
 
 @pytest.fixture(autouse=True)
@@ -32,8 +32,8 @@ def reset_module_state():
     """Reset module-level state before each test."""
     display._server = None
     display._store = None
-    display._run_manager = None
-    display._current_run_id = None
+    display._study_manager = None
+    display._current_study = None
     display._session_id = None
     display._remote_url = None
     display._auth_token = None
@@ -49,8 +49,8 @@ def reset_module_state():
             pass
     display._server = None
     display._store = None
-    display._run_manager = None
-    display._current_run_id = None
+    display._study_manager = None
+    display._current_study = None
     display._session_id = None
     display._remote_url = None
     display._auth_token = None
@@ -70,12 +70,12 @@ def store(tmp_path):
 
 
 @pytest.fixture
-def run_manager(tmp_path):
-    """Create a RunManager and inject it into module state."""
+def study_manager(tmp_path):
+    """Create a StudyManager and inject it into module state."""
     display_dir = tmp_path / "display"
     display_dir.mkdir()
-    mgr = RunManager(display_dir)
-    display._run_manager = mgr
+    mgr = StudyManager(display_dir)
+    display._study_manager = mgr
     display._session_id = "rm-test"
     return mgr
 
@@ -106,8 +106,8 @@ def mock_server(store, monkeypatch):
         def push_update(self, card_id, card):
             self.pushed_cards.append(card)
 
-        def push_section(self, title, run_id=None):
-            self.pushed_sections.append((title, run_id))
+        def push_section(self, title, study=None):
+            self.pushed_sections.append((title, study))
 
         def wait_for_response_sync(self, card_id, timeout):
             return self._mock_response
@@ -151,12 +151,12 @@ class TestShow:
         cards = store.list_cards()
         assert cards[0].title == "Finding"
 
-    def test_with_run_id(self, store, mock_server):
-        handle = display.show("text", run_id="my-run")
+    def test_with_study(self, store, mock_server):
+        handle = display.show("text", study="my-study")
         cards = store.list_cards()
-        assert cards[0].run_id == "my-run"
+        assert cards[0].study == "my-study"
         assert getattr(handle, "url", None) is not None
-        assert "#run=my-run" in handle.url
+        assert "#study=my-study" in handle.url
 
     def test_with_source(self, store, mock_server):
         display.show("text", source="mimiciv_hosp.patients")
@@ -184,10 +184,10 @@ class TestSection:
         assert cards[0].card_type == CardType.SECTION
         assert cards[0].title == "Results"
 
-    def test_section_with_run_id(self, store, mock_server):
-        display.section("Analysis", run_id="run-1")
+    def test_section_with_study(self, store, mock_server):
+        display.section("Analysis", study="study-1")
         cards = store.list_cards()
-        assert cards[0].run_id == "run-1"
+        assert cards[0].study == "study-1"
 
     def test_pushes_to_server(self, store, mock_server):
         display.section("Title")
@@ -473,11 +473,11 @@ class TestClientMode:
         monkeypatch.setattr(display, "_ensure_started", lambda **kw: None)
         monkeypatch.setattr(display, "_remote_command", mock_remote_command)
 
-        display.section("Results", run_id="r1")
+        display.section("Results", study="r1")
         assert len(commands_sent) == 1
         assert commands_sent[0]["type"] == "section"
         assert commands_sent[0]["title"] == "Results"
-        assert commands_sent[0]["run_id"] == "r1"
+        assert commands_sent[0]["study"] == "r1"
 
 
 class TestBlockingShow:
@@ -625,36 +625,36 @@ class TestOnEvent:
         assert len(mock_server.event_callbacks) == 2
 
 
-class TestListRuns:
-    def test_list_runs_empty(self, run_manager):
-        assert display.list_runs() == []
+class TestListStudies:
+    def test_list_studies_empty(self, study_manager):
+        assert display.list_studies() == []
 
-    def test_list_runs_after_show(self, run_manager, mock_server):
-        display.show("hello", run_id="test-run")
-        runs = display.list_runs()
-        assert len(runs) == 1
-        assert runs[0]["label"] == "test-run"
-        assert runs[0]["card_count"] == 1
+    def test_list_studies_after_show(self, study_manager, mock_server):
+        display.show("hello", study="test-study")
+        studies = display.list_studies()
+        assert len(studies) == 1
+        assert studies[0]["label"] == "test-study"
+        assert studies[0]["card_count"] == 1
 
-    def test_list_runs_multiple(self, run_manager, mock_server):
-        display.show("card-a", run_id="run-a")
-        display.show("card-b", run_id="run-b")
-        runs = display.list_runs()
-        assert len(runs) == 2
-        labels = {r["label"] for r in runs}
-        assert labels == {"run-a", "run-b"}
+    def test_list_studies_multiple(self, study_manager, mock_server):
+        display.show("card-a", study="study-a")
+        display.show("card-b", study="study-b")
+        studies = display.list_studies()
+        assert len(studies) == 2
+        labels = {r["label"] for r in studies}
+        assert labels == {"study-a", "study-b"}
 
 
-class TestDeleteRun:
-    def test_delete_existing_run(self, run_manager, mock_server):
-        display.show("hello", run_id="to-delete")
-        assert len(display.list_runs()) == 1
-        result = display.delete_run("to-delete")
+class TestDeleteStudy:
+    def test_delete_existing_study(self, study_manager, mock_server):
+        display.show("hello", study="to-delete")
+        assert len(display.list_studies()) == 1
+        result = display.delete_study("to-delete")
         assert result is True
-        assert display.list_runs() == []
+        assert display.list_studies() == []
 
-    def test_delete_nonexistent_run(self, run_manager):
-        assert display.delete_run("nope") is False
+    def test_delete_nonexistent_study(self, study_manager):
+        assert display.delete_study("nope") is False
 
 
 class TestSetStatus:
@@ -683,11 +683,11 @@ class TestSetStatus:
         assert commands_sent[0]["message"] == "Working..."
 
 
-class TestRunContext:
-    def test_run_context_with_cards(self, run_manager, mock_server):
-        display.show("hello", run_id="ctx-test", title="Card 1")
-        ctx = display.run_context("ctx-test")
-        assert ctx["run_id"] == "ctx-test"
+class TestStudyContext:
+    def test_study_context_with_cards(self, study_manager, mock_server):
+        display.show("hello", study="ctx-test", title="Card 1")
+        ctx = display.study_context("ctx-test")
+        assert ctx["study"] == "ctx-test"
         assert ctx["card_count"] == 1
         assert len(ctx["cards"]) == 1
         assert ctx["cards"][0]["title"] == "Card 1"
@@ -695,85 +695,87 @@ class TestRunContext:
         assert "decisions_made" in ctx
         assert "current_selections" in ctx
 
-    def test_run_context_nonexistent(self, run_manager):
-        ctx = display.run_context("nonexistent")
+    def test_study_context_nonexistent(self, study_manager):
+        ctx = display.study_context("nonexistent")
         assert ctx["card_count"] == 0
         assert ctx["cards"] == []
 
 
-class TestCleanRuns:
-    def test_clean_removes_all(self, run_manager, mock_server):
-        display.show("card-a", run_id="old-a")
-        display.show("card-b", run_id="old-b")
-        removed = display.clean_runs("0d")
+class TestCleanStudies:
+    def test_clean_removes_all(self, study_manager, mock_server):
+        display.show("card-a", study="old-a")
+        display.show("card-b", study="old-b")
+        removed = display.clean_studies("0d")
         assert removed == 2
-        assert display.list_runs() == []
+        assert display.list_studies() == []
 
-    def test_clean_keeps_recent(self, run_manager, mock_server):
-        display.show("card", run_id="recent")
-        removed = display.clean_runs("1d")
+    def test_clean_keeps_recent(self, study_manager, mock_server):
+        display.show("card", study="recent")
+        removed = display.clean_studies("1d")
         assert removed == 0
-        assert len(display.list_runs()) == 1
+        assert len(display.list_studies()) == 1
 
 
-class TestAutoRun:
-    def test_show_without_run_id_creates_auto(self, run_manager, mock_server):
+class TestAutoStudy:
+    def test_show_without_study_creates_auto(self, study_manager, mock_server):
         display.show("hello")
-        runs = display.list_runs()
-        assert len(runs) == 1
-        assert runs[0]["label"].startswith("auto-")
+        studies = display.list_studies()
+        assert len(studies) == 1
+        assert studies[0]["label"].startswith("auto-")
 
-    def test_multiple_shows_without_run_id(self, run_manager, mock_server):
-        """Multiple show() calls without run_id reuse the same auto-run."""
+    def test_multiple_shows_without_study(self, study_manager, mock_server):
+        """Multiple show() calls without study reuse the same auto-study."""
         display.show("card 1")
         display.show("card 2")
-        runs = display.list_runs()
-        # Both cards go into the same auto-run (same timestamp within test)
-        assert len(runs) == 1
-        assert runs[0]["card_count"] == 2
+        studies = display.list_studies()
+        # Both cards go into the same auto-study (same timestamp within test)
+        assert len(studies) == 1
+        assert studies[0]["card_count"] == 2
 
 
-class TestMultiRunShow:
-    def test_different_run_ids_create_separate_runs(self, run_manager, mock_server):
-        display.show("card-a", run_id="run-a")
-        display.show("card-b", run_id="run-b")
-        display.show("card-a2", run_id="run-a")
+class TestMultiStudyShow:
+    def test_different_studies_create_separate_studies(
+        self, study_manager, mock_server
+    ):
+        display.show("card-a", study="study-a")
+        display.show("card-b", study="study-b")
+        display.show("card-a2", study="study-a")
 
-        runs = display.list_runs()
-        assert len(runs) == 2
+        studies = display.list_studies()
+        assert len(studies) == 2
 
-        # run-a should have 2 cards
-        run_a = next(r for r in runs if r["label"] == "run-a")
-        assert run_a["card_count"] == 2
+        # study-a should have 2 cards
+        study_a = next(r for r in studies if r["label"] == "study-a")
+        assert study_a["card_count"] == 2
 
-        # run-b should have 1 card
-        run_b = next(r for r in runs if r["label"] == "run-b")
-        assert run_b["card_count"] == 1
+        # study-b should have 1 card
+        study_b = next(r for r in studies if r["label"] == "study-b")
+        assert study_b["card_count"] == 1
 
 
 class TestStopServerPreservesData:
-    def test_stop_preserves_run_data(self, run_manager, mock_server, tmp_path):
-        """stop_server() should not delete run data."""
-        display.show("persistent", run_id="keep-me")
-        runs_before = display.list_runs()
-        assert len(runs_before) == 1
+    def test_stop_preserves_study_data(self, study_manager, mock_server, tmp_path):
+        """stop_server() should not delete study data."""
+        display.show("persistent", study="keep-me")
+        studies_before = display.list_studies()
+        assert len(studies_before) == 1
 
-        # Verify the run directory exists
-        run_dir = run_manager._runs_dir / run_manager._label_to_dir["keep-me"]
-        assert run_dir.exists()
+        # Verify the study directory exists
+        study_dir = study_manager._studies_dir / study_manager._label_to_dir["keep-me"]
+        assert study_dir.exists()
 
         # Simulate stop (stop the mock server)
         display.stop()
 
-        # Run directory should still exist on disk
-        assert run_dir.exists()
+        # Study directory should still exist on disk
+        assert study_dir.exists()
 
-        # Create a new RunManager (simulates restart) — data should be discovered
-        mgr2 = RunManager(run_manager.display_dir)
+        # Create a new StudyManager (simulates restart) — data should be discovered
+        mgr2 = StudyManager(study_manager.display_dir)
         assert "keep-me" in mgr2._label_to_dir
-        runs_after = mgr2.list_runs()
-        assert len(runs_after) == 1
-        assert runs_after[0]["label"] == "keep-me"
+        studies_after = mgr2.list_studies()
+        assert len(studies_after) == 1
+        assert studies_after[0]["label"] == "keep-me"
 
 
 class TestErrorLogging:

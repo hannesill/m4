@@ -1,4 +1,4 @@
-"""Export display runs as self-contained HTML or JSON artifacts.
+"""Export display studies as self-contained HTML or JSON artifacts.
 
 Produces reproducible research artifacts that can be shared, archived,
 or opened without a running display server.
@@ -24,7 +24,7 @@ import duckdb
 
 from m4.vitrine._types import CardDescriptor, CardType
 from m4.vitrine.artifacts import _serialize_card
-from m4.vitrine.run_manager import RunManager
+from m4.vitrine.study_manager import StudyManager
 
 logger = logging.getLogger(__name__)
 
@@ -35,19 +35,19 @@ _STATIC_DIR = Path(__file__).parent / "static"
 
 
 def export_html(
-    run_manager: RunManager,
+    study_manager: StudyManager,
     output_path: str | Path,
-    run_id: str | None = None,
+    study: str | None = None,
 ) -> Path:
-    """Export a run (or all runs) as a self-contained HTML file.
+    """Export a study (or all studies) as a self-contained HTML file.
 
     The exported file includes inlined CSS, vendored JS (Plotly, marked),
     and all artifact data. It opens in any browser without a server.
 
     Args:
-        run_manager: The RunManager containing run data.
+        study_manager: The StudyManager containing study data.
         output_path: Path to write the HTML file.
-        run_id: Specific run label to export, or None for all runs.
+        study: Specific study label to export, or None for all studies.
 
     Returns:
         Path to the written file.
@@ -56,14 +56,14 @@ def export_html(
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Gather cards and metadata
-    cards = run_manager.list_all_cards(run_id=run_id)
-    runs = run_manager.list_runs()
+    cards = study_manager.list_all_cards(study=study)
+    studies = study_manager.list_studies()
 
-    if run_id:
-        runs = [r for r in runs if r["label"] == run_id]
+    if study:
+        studies = [s for s in studies if s["label"] == study]
 
     # Build the HTML document
-    html = _build_html_document(cards, runs, run_manager, run_id)
+    html = _build_html_document(cards, studies, study_manager, study)
     output_path.write_text(html, encoding="utf-8")
 
     logger.debug(f"Exported HTML: {output_path} ({len(cards)} cards)")
@@ -71,21 +71,21 @@ def export_html(
 
 
 def export_json(
-    run_manager: RunManager,
+    study_manager: StudyManager,
     output_path: str | Path,
-    run_id: str | None = None,
+    study: str | None = None,
 ) -> Path:
-    """Export a run (or all runs) as a JSON zip archive.
+    """Export a study (or all studies) as a JSON zip archive.
 
     The archive contains:
-    - meta.json: Export metadata (timestamp, run info)
+    - meta.json: Export metadata (timestamp, study info)
     - cards.json: All card descriptors
     - artifacts/: Raw artifact files (parquet, json, svg, png)
 
     Args:
-        run_manager: The RunManager containing run data.
+        study_manager: The StudyManager containing study data.
         output_path: Path to write the zip file.
-        run_id: Specific run label to export, or None for all runs.
+        study: Specific study label to export, or None for all studies.
 
     Returns:
         Path to the written file.
@@ -95,18 +95,18 @@ def export_json(
         output_path = output_path.with_suffix(".zip")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    cards = run_manager.list_all_cards(run_id=run_id)
-    runs = run_manager.list_runs()
-    if run_id:
-        runs = [r for r in runs if r["label"] == run_id]
+    cards = study_manager.list_all_cards(study=study)
+    studies = study_manager.list_studies()
+    if study:
+        studies = [s for s in studies if s["label"] == study]
 
     with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
         # Export metadata
         meta = {
             "exported_at": datetime.now(timezone.utc).isoformat(),
             "format_version": "1.0",
-            "run_id": run_id,
-            "runs": runs,
+            "study": study,
+            "studies": studies,
             "card_count": len(cards),
         }
         zf.writestr("meta.json", json.dumps(meta, indent=2, default=str))
@@ -122,7 +122,7 @@ def export_json(
                 continue
             seen_artifacts.add(card.artifact_id)
 
-            store = run_manager.get_store_for_card(card.card_id)
+            store = study_manager.get_store_for_card(card.card_id)
             if not store:
                 continue
 
@@ -137,50 +137,50 @@ def export_json(
 
 
 def export_html_string(
-    run_manager: RunManager,
-    run_id: str | None = None,
+    study_manager: StudyManager,
+    study: str | None = None,
 ) -> str:
     """Export as HTML and return the string (for server endpoint streaming).
 
     Args:
-        run_manager: The RunManager containing run data.
-        run_id: Specific run label to export, or None for all runs.
+        study_manager: The StudyManager containing study data.
+        study: Specific study label to export, or None for all studies.
 
     Returns:
         HTML string.
     """
-    cards = run_manager.list_all_cards(run_id=run_id)
-    runs = run_manager.list_runs()
-    if run_id:
-        runs = [r for r in runs if r["label"] == run_id]
-    return _build_html_document(cards, runs, run_manager, run_id)
+    cards = study_manager.list_all_cards(study=study)
+    studies = study_manager.list_studies()
+    if study:
+        studies = [s for s in studies if s["label"] == study]
+    return _build_html_document(cards, studies, study_manager, study)
 
 
 def export_json_bytes(
-    run_manager: RunManager,
-    run_id: str | None = None,
+    study_manager: StudyManager,
+    study: str | None = None,
 ) -> bytes:
     """Export as JSON zip and return bytes (for server endpoint streaming).
 
     Args:
-        run_manager: The RunManager containing run data.
-        run_id: Specific run label to export, or None for all runs.
+        study_manager: The StudyManager containing study data.
+        study: Specific study label to export, or None for all studies.
 
     Returns:
         Zip file bytes.
     """
-    cards = run_manager.list_all_cards(run_id=run_id)
-    runs = run_manager.list_runs()
-    if run_id:
-        runs = [r for r in runs if r["label"] == run_id]
+    cards = study_manager.list_all_cards(study=study)
+    studies = study_manager.list_studies()
+    if study:
+        studies = [s for s in studies if s["label"] == study]
 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         meta = {
             "exported_at": datetime.now(timezone.utc).isoformat(),
             "format_version": "1.0",
-            "run_id": run_id,
-            "runs": runs,
+            "study": study,
+            "studies": studies,
             "card_count": len(cards),
         }
         zf.writestr("meta.json", json.dumps(meta, indent=2, default=str))
@@ -194,7 +194,7 @@ def export_json_bytes(
                 continue
             seen_artifacts.add(card.artifact_id)
 
-            store = run_manager.get_store_for_card(card.card_id)
+            store = study_manager.get_store_for_card(card.card_id)
             if not store:
                 continue
 
@@ -212,12 +212,12 @@ def export_json_bytes(
 
 def _build_html_document(
     cards: list[CardDescriptor],
-    runs: list[dict[str, Any]],
-    run_manager: RunManager,
-    run_id: str | None,
+    studies: list[dict[str, Any]],
+    study_manager: StudyManager,
+    study: str | None,
 ) -> str:
     """Build a self-contained HTML document with all cards inlined."""
-    title = f"M4 Export — {run_id}" if run_id else "M4 Export — All Runs"
+    title = f"M4 Export — {study}" if study else "M4 Export — All Studies"
     export_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     # Load vendored JS
@@ -226,42 +226,42 @@ def _build_html_document(
 
     # Build card HTML
     cards_html = []
-    current_run = None
+    current_study = None
     for card in cards:
-        # Insert run separator if run changed (in "all runs" mode)
-        if not run_id and card.run_id and card.run_id != current_run:
-            current_run = card.run_id
-            run_meta = _find_run(runs, card.run_id)
-            sep_label = card.run_id
-            if run_meta and run_meta.get("start_time"):
-                sep_label += f" &middot; {_format_date(run_meta['start_time'])}"
-            cards_html.append(f'<div class="run-separator">{escape(sep_label)}</div>')
+        # Insert study separator if study changed (in "all studies" mode)
+        if not study and card.study and card.study != current_study:
+            current_study = card.study
+            study_meta = _find_study(studies, card.study)
+            sep_label = card.study
+            if study_meta and study_meta.get("start_time"):
+                sep_label += f" &middot; {_format_date(study_meta['start_time'])}"
+            cards_html.append(f'<div class="study-separator">{escape(sep_label)}</div>')
 
         if card.card_type == CardType.SECTION:
             cards_html.append(
                 f'<div class="section-divider">{escape(card.title or "")}</div>'
             )
         else:
-            cards_html.append(_render_card_html(card, run_manager))
+            cards_html.append(_render_card_html(card, study_manager))
 
     cards_block = "\n".join(cards_html)
 
-    # Run summary for header
-    run_summary = ""
-    if run_id:
-        run_meta = _find_run(runs, run_id)
-        if run_meta:
-            run_summary = (
-                f'<div class="export-run-info">'
-                f"<strong>{escape(run_id)}</strong>"
+    # Study summary for header
+    study_summary = ""
+    if study:
+        study_meta = _find_study(studies, study)
+        if study_meta:
+            study_summary = (
+                f'<div class="export-study-info">'
+                f"<strong>{escape(study)}</strong>"
                 f" &middot; {len(cards)} cards"
-                f" &middot; {_format_date(run_meta.get('start_time', ''))}"
+                f" &middot; {_format_date(study_meta.get('start_time', ''))}"
                 f"</div>"
             )
     else:
-        run_summary = (
-            f'<div class="export-run-info">'
-            f"{len(runs)} runs &middot; {len(cards)} cards"
+        study_summary = (
+            f'<div class="export-study-info">'
+            f"{len(studies)} studies &middot; {len(cards)} cards"
             f"</div>"
         )
 
@@ -283,7 +283,7 @@ def _build_html_document(
 <div class="export-header">
   <div class="export-header-left">
     <h1>vitrine</h1>
-    {run_summary}
+    {study_summary}
   </div>
   <div class="export-header-right">
     <span class="export-timestamp">Exported {export_time}</span>
@@ -305,7 +305,7 @@ def _build_html_document(
 </html>"""
 
 
-def _render_card_html(card: CardDescriptor, run_manager: RunManager) -> str:
+def _render_card_html(card: CardDescriptor, study_manager: StudyManager) -> str:
     """Render a single card as self-contained HTML."""
     card_type = card.card_type.value
     header_type = (
@@ -348,7 +348,7 @@ def _render_card_html(card: CardDescriptor, run_manager: RunManager) -> str:
             )
 
     # Body
-    body_html = _render_card_body(card, run_manager)
+    body_html = _render_card_body(card, study_manager)
 
     return f"""<div class="card" data-card-type="{card_type}">
   <div class="card-header" data-type="{header_type}">
@@ -362,10 +362,10 @@ def _render_card_html(card: CardDescriptor, run_manager: RunManager) -> str:
 </div>"""
 
 
-def _render_card_body(card: CardDescriptor, run_manager: RunManager) -> str:
+def _render_card_body(card: CardDescriptor, study_manager: StudyManager) -> str:
     """Render card body content based on card type."""
     if card.card_type == CardType.TABLE:
-        return _render_table_html(card, run_manager)
+        return _render_table_html(card, study_manager)
     elif card.card_type == CardType.PLOTLY:
         return _render_plotly_html(card)
     elif card.card_type == CardType.IMAGE:
@@ -380,9 +380,9 @@ def _render_card_body(card: CardDescriptor, run_manager: RunManager) -> str:
         return f"<pre>{escape(json.dumps(card.preview, indent=2, default=str))}</pre>"
 
 
-def _render_table_html(card: CardDescriptor, run_manager: RunManager) -> str:
+def _render_table_html(card: CardDescriptor, study_manager: StudyManager) -> str:
     """Render a table card as full HTML table from Parquet artifact."""
-    store = run_manager.get_store_for_card(card.card_id)
+    store = study_manager.get_store_for_card(card.card_id)
     if not store or not card.artifact_id:
         # Fall back to preview data
         return _render_table_from_preview(card)
@@ -555,11 +555,11 @@ def _load_vendored_js(filename: str) -> str:
     return ""
 
 
-def _find_run(runs: list[dict[str, Any]], label: str) -> dict[str, Any] | None:
-    """Find a run by label in a list of run dicts."""
-    for r in runs:
-        if r.get("label") == label:
-            return r
+def _find_study(studies: list[dict[str, Any]], label: str) -> dict[str, Any] | None:
+    """Find a study by label in a list of study dicts."""
+    for s in studies:
+        if s.get("label") == label:
+            return s
     return None
 
 
@@ -657,7 +657,7 @@ _EXPORT_CSS = """<style>
     font-weight: 700;
   }
 
-  .export-run-info {
+  .export-study-info {
     font-size: 13px;
     color: var(--text-muted);
     margin-top: 4px;
@@ -894,8 +894,8 @@ _EXPORT_CSS = """<style>
     background: var(--border);
   }
 
-  /* Run separators */
-  .run-separator {
+  /* Study separators */
+  .study-separator {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -906,7 +906,7 @@ _EXPORT_CSS = """<style>
     padding: 20px 0 8px;
   }
 
-  .run-separator::after {
+  .study-separator::after {
     content: '';
     flex: 1;
     height: 2px;

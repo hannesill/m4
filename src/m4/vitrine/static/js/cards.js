@@ -15,24 +15,24 @@ function addCard(cardData) {
   if (existing) return;
 
   state.cards.push(cardData);
-  trackRunId(cardData.run_id);
+  trackStudy(cardData.study);
 
   // Track active run and auto-switch
-  if (cardData.run_id) {
-    state.activeRunId = cardData.run_id;
-    if (state.liveMode && state.activeRunFilter !== cardData.run_id) {
+  if (cardData.study) {
+    state.activeStudy = cardData.study;
+    if (state.liveMode && state.activeStudyFilter !== cardData.study) {
       // Auto-switch to the new card's run
-      state.activeRunFilter = cardData.run_id;
+      state.activeStudyFilter = cardData.study;
       updateDropdownTrigger();
       // Defer full filter update to batch rapid arrivals
       if (!state._autoSelectPending) {
         state._autoSelectPending = true;
         requestAnimationFrame(function() {
           state._autoSelectPending = false;
-          applyRunFilter();
-          updateRunMetadataBar();
+          applyStudyFilter();
+          updateStudyMetadataBar();
           // Refresh run list to get updated card counts
-          loadRuns();
+          loadStudies();
         });
       }
     }
@@ -42,7 +42,7 @@ function addCard(cardData) {
   el.className = 'card';
   if (cardData.pinned) el.className += ' pinned';
   el.id = 'card-' + cardData.card_id;
-  el.dataset.runId = cardData.run_id || '';
+  el.dataset.study = cardData.study || '';
   el.dataset.cardId = cardData.card_id;
 
   // Header
@@ -193,10 +193,10 @@ function addCard(cardData) {
 
   feed.appendChild(el);
 
-  // Apply run filter to the new card
-  if (state.activeRunFilter) {
-    var cardRun = cardData.run_id || '';
-    if (cardRun !== state.activeRunFilter && cardRun) {
+  // Apply study filter to the new card
+  if (state.activeStudyFilter) {
+    var cardRun = cardData.study || '';
+    if (cardRun !== state.activeStudyFilter && cardRun) {
       el.classList.add('hidden-by-filter');
     }
   }
@@ -258,24 +258,24 @@ function showToast(msg, type) {
 }
 
 // ================================================================
-// SECTIONS, CARD UPDATES & RUN FILTERING
+// SECTIONS, CARD UPDATES & STUDY FILTERING
 // ================================================================
-function addSection(title, runId) {
+function addSection(title, study) {
   var empty = document.getElementById('empty-state');
   if (empty && empty.parentNode) {
     empty.remove();
   }
 
-  if (runId) trackRunId(runId);
+  if (study) trackStudy(study);
 
   var div = document.createElement('div');
   div.className = 'section-divider';
   div.textContent = title;
-  div.dataset.runId = runId || '';
+  div.dataset.study = study || '';
   feed.appendChild(div);
 
-  if (state.activeRunFilter) {
-    applyRunFilter();
+  if (state.activeStudyFilter) {
+    applyStudyFilter();
   }
 
   scrollToBottom();
@@ -347,17 +347,17 @@ function updateCard(cardId, newCardData) {
   setTimeout(function() { el.classList.remove('flash'); }, 600);
 }
 
-function rebuildRunFilter() {
-  // Rebuild runIds from cards (used as fallback)
-  var runs = [];
+function rebuildStudyFilter() {
+  // Rebuild studyNames from cards (used as fallback)
+  var names = [];
   state.cards.forEach(function(c) {
-    if (c.run_id && runs.indexOf(c.run_id) === -1) runs.push(c.run_id);
+    if (c.study && names.indexOf(c.study) === -1) names.push(c.study);
   });
-  state.runIds = runs;
+  state.studyNames = names;
 
-  // If the current filter no longer exists, switch to "All runs"
-  if (state.activeRunFilter && runs.indexOf(state.activeRunFilter) === -1) {
-    state.activeRunFilter = '';
+  // If the current filter no longer exists, switch to "All studies"
+  if (state.activeStudyFilter && names.indexOf(state.activeStudyFilter) === -1) {
+    state.activeStudyFilter = '';
     updateDropdownTrigger();
   }
 }

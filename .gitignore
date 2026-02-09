@@ -84,6 +84,9 @@ Desktop.ini
 # Datasets and other large files
 m4_data/
 
+# Vitrine session data
+.vitrine/
+
 notes/
 
 # Agents

@@ -110,7 +110,7 @@ def _render_dataframe(
     title: str | None,
     description: str | None,
     source: str | None,
-    run_id: str | None,
+    study: str | None,
     store: ArtifactStore,
     redactor: Redactor,
 ) -> CardDescriptor:
@@ -136,7 +136,7 @@ def _render_dataframe(
         title=title or "Table",
         description=description,
         timestamp=_make_timestamp(),
-        run_id=run_id,
+        study=study,
         artifact_id=card_id,
         artifact_type="parquet",
         preview={
@@ -156,7 +156,7 @@ def _render_markdown(
     title: str | None,
     description: str | None,
     source: str | None,
-    run_id: str | None,
+    study: str | None,
     store: ArtifactStore,
 ) -> CardDescriptor:
     """Render a string as a markdown card (inlined, no artifact)."""
@@ -167,7 +167,7 @@ def _render_markdown(
         title=title,
         description=description,
         timestamp=_make_timestamp(),
-        run_id=run_id,
+        study=study,
         preview={"text": text},
         provenance=_build_provenance(source),
     )
@@ -180,7 +180,7 @@ def _render_dict(
     title: str | None,
     description: str | None,
     source: str | None,
-    run_id: str | None,
+    study: str | None,
     store: ArtifactStore,
 ) -> CardDescriptor:
     """Render a dict as a key-value card (inlined, no artifact)."""
@@ -195,7 +195,7 @@ def _render_dict(
         title=title or "Key-Value",
         description=description,
         timestamp=_make_timestamp(),
-        run_id=run_id,
+        study=study,
         preview={"items": items},
         provenance=_build_provenance(source),
     )
@@ -208,7 +208,7 @@ def _render_plotly(
     title: str | None,
     description: str | None,
     source: str | None,
-    run_id: str | None,
+    study: str | None,
     store: ArtifactStore,
 ) -> CardDescriptor:
     """Render a Plotly figure as a chart card with JSON artifact.
@@ -260,7 +260,7 @@ def _render_plotly(
         title=title or "Chart",
         description=description,
         timestamp=_make_timestamp(),
-        run_id=run_id,
+        study=study,
         artifact_id=card_id,
         artifact_type="json",
         preview={"spec": spec},
@@ -275,7 +275,7 @@ def _render_matplotlib(
     title: str | None,
     description: str | None,
     source: str | None,
-    run_id: str | None,
+    study: str | None,
     store: ArtifactStore,
 ) -> CardDescriptor:
     """Render a matplotlib Figure as an SVG image card.
@@ -312,7 +312,7 @@ def _render_matplotlib(
         title=title or "Figure",
         description=description,
         timestamp=_make_timestamp(),
-        run_id=run_id,
+        study=study,
         artifact_id=card_id,
         artifact_type="svg",
         preview={
@@ -331,7 +331,7 @@ def _render_form(
     title: str | None,
     description: str | None,
     source: str | None,
-    run_id: str | None,
+    study: str | None,
     store: ArtifactStore,
 ) -> CardDescriptor:
     """Render a Form as a form card (inlined, no artifact)."""
@@ -342,7 +342,7 @@ def _render_form(
         title=title or "Form",
         description=description,
         timestamp=_make_timestamp(),
-        run_id=run_id,
+        study=study,
         preview=form.to_dict(),
         provenance=_build_provenance(source),
     )
@@ -355,12 +355,12 @@ def _render_repr(
     title: str | None,
     description: str | None,
     source: str | None,
-    run_id: str | None,
+    study: str | None,
     store: ArtifactStore,
 ) -> CardDescriptor:
     """Fallback: render any object via repr() as a markdown code block."""
     text = f"```\n{obj!r}\n```"
-    return _render_markdown(text, title, description, source, run_id, store)
+    return _render_markdown(text, title, description, source, study, store)
 
 
 def render(
@@ -368,7 +368,7 @@ def render(
     title: str | None = None,
     description: str | None = None,
     source: str | None = None,
-    run_id: str | None = None,
+    study: str | None = None,
     store: ArtifactStore | None = None,
     redactor: Redactor | None = None,
 ) -> CardDescriptor:
@@ -387,7 +387,7 @@ def render(
         title: Card title shown in header.
         description: Subtitle or context line.
         source: Provenance string (e.g., table name).
-        run_id: Group cards into a named run.
+        study: Group cards into a named study.
         store: ArtifactStore for persisting large objects.
         redactor: Redactor instance for PHI/PII masking.
 
@@ -404,18 +404,18 @@ def render(
         redactor = Redactor()
 
     if isinstance(obj, Form):
-        return _render_form(obj, title, description, source, run_id, store)
+        return _render_form(obj, title, description, source, study, store)
     elif isinstance(obj, pd.DataFrame):
         return _render_dataframe(
-            obj, title, description, source, run_id, store, redactor
+            obj, title, description, source, study, store, redactor
         )
     elif _is_plotly_figure(obj):
-        return _render_plotly(obj, title, description, source, run_id, store)
+        return _render_plotly(obj, title, description, source, study, store)
     elif _is_matplotlib_figure(obj):
-        return _render_matplotlib(obj, title, description, source, run_id, store)
+        return _render_matplotlib(obj, title, description, source, study, store)
     elif isinstance(obj, str):
-        return _render_markdown(obj, title, description, source, run_id, store)
+        return _render_markdown(obj, title, description, source, study, store)
     elif isinstance(obj, dict):
-        return _render_dict(obj, title, description, source, run_id, store)
+        return _render_dict(obj, title, description, source, study, store)
     else:
-        return _render_repr(obj, title, description, source, run_id, store)
+        return _render_repr(obj, title, description, source, study, store)

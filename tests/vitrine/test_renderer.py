@@ -1,12 +1,12 @@
 """Tests for m4.vitrine.renderer.
 
 Tests cover:
-- DataFrame → table CardDescriptor with Parquet artifact on disk
-- Plotly Figure → chart CardDescriptor with JSON artifact
-- matplotlib Figure → image CardDescriptor with SVG artifact
-- str → inline markdown CardDescriptor
-- dict → inline key-value CardDescriptor
-- Unknown type → repr() fallback as markdown
+- DataFrame -> table CardDescriptor with Parquet artifact on disk
+- Plotly Figure -> chart CardDescriptor with JSON artifact
+- matplotlib Figure -> image CardDescriptor with SVG artifact
+- str -> inline markdown CardDescriptor
+- dict -> inline key-value CardDescriptor
+- Unknown type -> repr() fallback as markdown
 - Renderer calls Redactor (pass-through for now)
 - Error when no store provided
 - SVG sanitization (script stripping, size limits)
@@ -108,9 +108,9 @@ class TestRenderDataFrame:
         assert card.provenance is not None
         assert card.provenance.source == "mimiciv_hosp.patients"
 
-    def test_run_id_propagated(self, store, redactor, sample_df):
-        card = render(sample_df, run_id="my-run", store=store, redactor=redactor)
-        assert card.run_id == "my-run"
+    def test_study_propagated(self, store, redactor, sample_df):
+        card = render(sample_df, study="my-study", store=store, redactor=redactor)
+        assert card.study == "my-study"
 
     def test_paging_works_on_stored_artifact(self, store, redactor):
         df = pd.DataFrame({"val": range(100)})
@@ -305,9 +305,9 @@ class TestRenderPlotly:
         assert len(cards) == 1
         assert cards[0].card_type == CardType.PLOTLY
 
-    def test_run_id_propagated(self, store, plotly_fig):
-        card = render(plotly_fig, run_id="analysis-1", store=store)
-        assert card.run_id == "analysis-1"
+    def test_study_propagated(self, store, plotly_fig):
+        card = render(plotly_fig, study="analysis-1", store=store)
+        assert card.study == "analysis-1"
 
     def test_provenance_with_source(self, store, plotly_fig):
         card = render(plotly_fig, source="cohort_analysis", store=store)
@@ -424,9 +424,9 @@ class TestRenderMatplotlib:
         assert len(cards) == 1
         assert cards[0].card_type == CardType.IMAGE
 
-    def test_run_id_propagated(self, store, mpl_fig):
-        card = render(mpl_fig, run_id="plot-run", store=store)
-        assert card.run_id == "plot-run"
+    def test_study_propagated(self, store, mpl_fig):
+        card = render(mpl_fig, study="plot-study", store=store)
+        assert card.study == "plot-study"
 
 
 class TestIsMatplotlibFigure:

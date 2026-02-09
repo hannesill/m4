@@ -19,28 +19,28 @@
 <div class="header">
   <div class="header-left">
     <h1>vitrine</h1>
-    <div class="run-dropdown" id="run-dropdown">
-      <button class="run-dropdown-trigger" id="run-dropdown-trigger" title="Browse runs" aria-label="Browse runs" aria-haspopup="listbox" aria-expanded="false">
-        <span id="run-dropdown-label">All runs</span>
+    <div class="study-dropdown" id="study-dropdown">
+      <button class="study-dropdown-trigger" id="study-dropdown-trigger" title="Browse studies" aria-label="Browse studies" aria-haspopup="listbox" aria-expanded="false">
+        <span id="study-dropdown-label">All studies</span>
         <span class="dd-arrow">&#9662;</span>
       </button>
-      <div class="run-dropdown-panel" id="run-dropdown-panel" role="listbox" style="display: none;"></div>
+      <div class="study-dropdown-panel" id="study-dropdown-panel" role="listbox" style="display: none;"></div>
     </div>
   </div>
   <div class="header-actions">
     <span id="agent-status"></span>
     <div class="export-dropdown" id="export-dropdown">
-      <button class="btn" id="export-btn" title="Export run" aria-label="Export run">&#8615; Export</button>
+      <button class="btn" id="export-btn" title="Export study" aria-label="Export study">&#8615; Export</button>
       <div class="export-dropdown-panel" id="export-dropdown-panel" style="display: none;"></div>
     </div>
     <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">&#9789;</button>
   </div>
 </div>
 
-<div class="run-metadata-bar" id="run-metadata-bar">
-  <span class="run-meta-label" id="run-meta-label"></span>
-  <span class="run-meta-sep">&middot;</span>
-  <span id="run-meta-detail"></span>
+<div class="study-metadata-bar" id="study-metadata-bar">
+  <span class="study-meta-label" id="study-meta-label"></span>
+  <span class="study-meta-sep">&middot;</span>
+  <span id="study-meta-detail"></span>
 </div>
 
 <div class="feed" id="feed">
@@ -66,7 +66,7 @@
 <script defer src="/static/js/state.js"></script>
 <script defer src="/static/js/theme.js"></script>
 <script defer src="/static/js/status.js"></script>
-<script defer src="/static/js/runs.js"></script>
+<script defer src="/static/js/studies.js"></script>
 <script defer src="/static/js/export-ui.js"></script>
 <script defer src="/static/js/renderers.js"></script>
 <script defer src="/static/js/plotly.js"></script>

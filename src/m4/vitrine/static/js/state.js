@@ -25,10 +25,10 @@ var state = {
   markedLoaded: false,
   plotlyLoaded: false,
   plotlyCallbacks: [],
-  runIds: [],
-  activeRunFilter: '',
-  runs: [],
-  activeRunId: null,
+  studyNames: [],
+  activeStudyFilter: '',
+  studies: [],
+  activeStudy: null,
   dropdownOpen: false,
   liveMode: false,
   _autoSelectPending: false,
@@ -53,12 +53,12 @@ var sessionInfoEl = document.getElementById('session-info');
 var cardCountEl = document.getElementById('card-count');
 var themeToggleEl = document.getElementById('theme-toggle');
 var copyToastEl = document.getElementById('copy-toast');
-var runDropdownTrigger = document.getElementById('run-dropdown-trigger');
-var runDropdownPanel = document.getElementById('run-dropdown-panel');
-var runDropdownLabel = document.getElementById('run-dropdown-label');
-var runMetaBar = document.getElementById('run-metadata-bar');
-var runMetaLabel = document.getElementById('run-meta-label');
-var runMetaDetail = document.getElementById('run-meta-detail');
+var studyDropdownTrigger = document.getElementById('study-dropdown-trigger');
+var studyDropdownPanel = document.getElementById('study-dropdown-panel');
+var studyDropdownLabel = document.getElementById('study-dropdown-label');
+var studyMetaBar = document.getElementById('study-metadata-bar');
+var studyMetaLabel = document.getElementById('study-meta-label');
+var studyMetaDetail = document.getElementById('study-meta-detail');
 
 function dateGroupLabel(isoStr) {
   if (!isoStr) return 'Unknown';
@@ -75,7 +75,7 @@ function dateGroupLabel(isoStr) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function formatRunTime(isoStr) {
+function formatStudyTime(isoStr) {
   if (!isoStr) return '';
   var d = new Date(isoStr);
   return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });

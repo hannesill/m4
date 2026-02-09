@@ -1,14 +1,14 @@
-"""Tests for m4.vitrine.run_manager.
+"""Tests for m4.vitrine.study_manager.
 
 Tests cover:
-- Directory creation and run naming format
-- get_or_create_run() creates new / returns existing
+- Directory creation and study naming format
+- get_or_create_study() creates new / returns existing
 - Label reuse across calls
 - get_store_for_card() lookups
-- list_runs() metadata and sort order
-- delete_run() removes dir and updates registry
-- clean_runs() age-based removal
-- Startup discovery from existing run directories
+- list_studies() metadata and sort order
+- delete_study() removes dir and updates registry
+- clean_studies() age-based removal
+- Startup discovery from existing study directories
 """
 
 import json
@@ -16,9 +16,9 @@ import time
 
 import pytest
 
-from m4.vitrine.run_manager import (
-    RunManager,
-    _make_run_dir_name,
+from m4.vitrine.study_manager import (
+    StudyManager,
+    _make_study_dir_name,
     _parse_age,
     _sanitize_label,
 )
@@ -34,8 +34,8 @@ def display_dir(tmp_path):
 
 @pytest.fixture
 def manager(display_dir):
-    """Create a RunManager instance."""
-    return RunManager(display_dir)
+    """Create a StudyManager instance."""
+    return StudyManager(display_dir)
 
 
 class TestSanitizeLabel:
@@ -56,15 +56,15 @@ class TestSanitizeLabel:
         assert _sanitize_label("!!!") == "unnamed"
 
 
-class TestMakeRunDirName:
+class TestMakeStudyDirName:
     def test_format(self):
-        name = _make_run_dir_name("test-run")
+        name = _make_study_dir_name("test-study")
         # Should match YYYY-MM-DD_HHMMSS_label pattern
         parts = name.split("_", 2)
         assert len(parts) == 3
         assert len(parts[0]) == 10  # YYYY-MM-DD
         assert len(parts[1]) == 6  # HHMMSS
-        assert parts[2] == "test-run"
+        assert parts[2] == "test-study"
 
 
 class TestParseAge:
@@ -91,40 +91,40 @@ class TestParseAge:
             _parse_age("abc")
 
 
-class TestGetOrCreateRun:
-    def test_creates_new_run(self, manager):
-        label, store = manager.get_or_create_run("test-run")
-        assert label == "test-run"
+class TestGetOrCreateStudy:
+    def test_creates_new_study(self, manager):
+        label, store = manager.get_or_create_study("test-study")
+        assert label == "test-study"
         assert store is not None
-        assert (manager._runs_dir / manager._label_to_dir["test-run"]).exists()
+        assert (manager._studies_dir / manager._label_to_dir["test-study"]).exists()
 
-    def test_returns_existing_run(self, manager):
-        label1, store1 = manager.get_or_create_run("my-run")
-        label2, store2 = manager.get_or_create_run("my-run")
+    def test_returns_existing_study(self, manager):
+        label1, store1 = manager.get_or_create_study("my-study")
+        label2, store2 = manager.get_or_create_study("my-study")
         assert label1 == label2
         assert store1 is store2
 
     def test_auto_label(self, manager):
-        label, store = manager.get_or_create_run(None)
+        label, store = manager.get_or_create_study(None)
         assert label.startswith("auto-")
         assert store is not None
 
-    def test_different_labels_different_runs(self, manager):
-        _, store1 = manager.get_or_create_run("run-a")
-        _, store2 = manager.get_or_create_run("run-b")
+    def test_different_labels_different_studies(self, manager):
+        _, store1 = manager.get_or_create_study("study-a")
+        _, store2 = manager.get_or_create_study("study-b")
         assert store1 is not store2
 
     def test_creates_meta_json(self, manager):
-        label, _ = manager.get_or_create_run("meta-test")
+        label, _ = manager.get_or_create_study("meta-test")
         dir_name = manager._label_to_dir[label]
-        meta_path = manager._runs_dir / dir_name / "meta.json"
+        meta_path = manager._studies_dir / dir_name / "meta.json"
         assert meta_path.exists()
         meta = json.loads(meta_path.read_text())
         assert meta["label"] == "meta-test"
         assert "start_time" in meta
 
     def test_updates_registry(self, manager):
-        manager.get_or_create_run("reg-test")
+        manager.get_or_create_study("reg-test")
         registry = manager._read_registry()
         assert len(registry) == 1
         assert registry[0]["label"] == "reg-test"
@@ -132,7 +132,7 @@ class TestGetOrCreateRun:
 
 class TestStoreForCard:
     def test_lookup_registered_card(self, manager):
-        _, store = manager.get_or_create_run("lookup-test")
+        _, store = manager.get_or_create_study("lookup-test")
         dir_name = manager._label_to_dir["lookup-test"]
         manager.register_card("card-123", dir_name)
         assert manager.get_store_for_card("card-123") is store
@@ -141,113 +141,113 @@ class TestStoreForCard:
         assert manager.get_store_for_card("nonexistent") is None
 
 
-class TestListRuns:
+class TestListStudies:
     def test_empty(self, manager):
-        assert manager.list_runs() == []
+        assert manager.list_studies() == []
 
-    def test_lists_created_runs(self, manager):
-        manager.get_or_create_run("run-a")
-        manager.get_or_create_run("run-b")
-        runs = manager.list_runs()
-        assert len(runs) == 2
-        labels = {r["label"] for r in runs}
-        assert labels == {"run-a", "run-b"}
+    def test_lists_created_studies(self, manager):
+        manager.get_or_create_study("study-a")
+        manager.get_or_create_study("study-b")
+        studies = manager.list_studies()
+        assert len(studies) == 2
+        labels = {r["label"] for r in studies}
+        assert labels == {"study-a", "study-b"}
 
     def test_sorted_newest_first(self, manager):
-        manager.get_or_create_run("first")
+        manager.get_or_create_study("first")
         time.sleep(0.01)
-        manager.get_or_create_run("second")
-        runs = manager.list_runs()
-        assert runs[0]["label"] == "second"
-        assert runs[1]["label"] == "first"
+        manager.get_or_create_study("second")
+        studies = manager.list_studies()
+        assert studies[0]["label"] == "second"
+        assert studies[1]["label"] == "first"
 
     def test_includes_card_count(self, manager):
-        _, store = manager.get_or_create_run("count-test")
+        _, store = manager.get_or_create_study("count-test")
         from m4.vitrine.renderer import render
 
         render("hello", store=store)
         render("world", store=store)
-        runs = manager.list_runs()
-        assert runs[0]["card_count"] == 2
+        studies = manager.list_studies()
+        assert studies[0]["card_count"] == 2
 
 
-class TestDeleteRun:
+class TestDeleteStudy:
     def test_deletes_existing(self, manager):
-        manager.get_or_create_run("to-delete")
+        manager.get_or_create_study("to-delete")
         dir_name = manager._label_to_dir["to-delete"]
-        run_dir = manager._runs_dir / dir_name
-        assert run_dir.exists()
+        study_dir = manager._studies_dir / dir_name
+        assert study_dir.exists()
 
-        result = manager.delete_run("to-delete")
+        result = manager.delete_study("to-delete")
         assert result is True
-        assert not run_dir.exists()
+        assert not study_dir.exists()
         assert "to-delete" not in manager._label_to_dir
         assert manager._read_registry() == []
 
     def test_delete_nonexistent(self, manager):
-        assert manager.delete_run("nonexistent") is False
+        assert manager.delete_study("nonexistent") is False
 
     def test_removes_card_index_entries(self, manager):
-        _, _store = manager.get_or_create_run("idx-test")
+        _, _store = manager.get_or_create_study("idx-test")
         dir_name = manager._label_to_dir["idx-test"]
         manager.register_card("c1", dir_name)
         manager.register_card("c2", dir_name)
         assert manager.get_store_for_card("c1") is not None
 
-        manager.delete_run("idx-test")
+        manager.delete_study("idx-test")
         assert manager.get_store_for_card("c1") is None
         assert manager.get_store_for_card("c2") is None
 
 
-class TestCleanRuns:
+class TestCleanStudies:
     def test_removes_all_with_zero(self, manager):
-        manager.get_or_create_run("old-a")
-        manager.get_or_create_run("old-b")
-        removed = manager.clean_runs("0d")
+        manager.get_or_create_study("old-a")
+        manager.get_or_create_study("old-b")
+        removed = manager.clean_studies("0d")
         assert removed == 2
-        assert manager.list_runs() == []
+        assert manager.list_studies() == []
 
-    def test_keeps_recent_runs(self, manager):
-        manager.get_or_create_run("recent")
-        removed = manager.clean_runs("1d")
+    def test_keeps_recent_studies(self, manager):
+        manager.get_or_create_study("recent")
+        removed = manager.clean_studies("1d")
         assert removed == 0
-        assert len(manager.list_runs()) == 1
+        assert len(manager.list_studies()) == 1
 
 
 class TestListAllCards:
-    def test_all_cards_across_runs(self, manager):
-        _, store_a = manager.get_or_create_run("run-a")
-        _, store_b = manager.get_or_create_run("run-b")
+    def test_all_cards_across_studies(self, manager):
+        _, store_a = manager.get_or_create_study("study-a")
+        _, store_b = manager.get_or_create_study("study-b")
 
         from m4.vitrine.renderer import render
 
-        render("card-a", run_id="run-a", store=store_a)
-        render("card-b", run_id="run-b", store=store_b)
+        render("card-a", study="study-a", store=store_a)
+        render("card-b", study="study-b", store=store_b)
 
         all_cards = manager.list_all_cards()
         assert len(all_cards) == 2
 
-    def test_filter_by_run_id(self, manager):
-        _, store_a = manager.get_or_create_run("run-a")
-        _, store_b = manager.get_or_create_run("run-b")
+    def test_filter_by_study(self, manager):
+        _, store_a = manager.get_or_create_study("study-a")
+        _, store_b = manager.get_or_create_study("study-b")
 
         from m4.vitrine.renderer import render
 
-        render("card-a", run_id="run-a", store=store_a)
-        render("card-b", run_id="run-b", store=store_b)
+        render("card-a", study="study-a", store=store_a)
+        render("card-b", study="study-b", store=store_b)
 
-        cards_a = manager.list_all_cards(run_id="run-a")
+        cards_a = manager.list_all_cards(study="study-a")
         assert len(cards_a) == 1
 
-    def test_filter_nonexistent_run(self, manager):
-        assert manager.list_all_cards(run_id="nonexistent") == []
+    def test_filter_nonexistent_study(self, manager):
+        assert manager.list_all_cards(study="nonexistent") == []
 
 
 class TestBuildContext:
-    def test_empty_run(self, manager):
-        manager.get_or_create_run("empty")
+    def test_empty_study(self, manager):
+        manager.get_or_create_study("empty")
         ctx = manager.build_context("empty")
-        assert ctx["run_id"] == "empty"
+        assert ctx["study"] == "empty"
         assert ctx["card_count"] == 0
         assert ctx["cards"] == []
         assert ctx["decisions"] == []
@@ -258,9 +258,9 @@ class TestBuildContext:
     def test_with_cards(self, manager):
         from m4.vitrine.renderer import render
 
-        _, store = manager.get_or_create_run("ctx-test")
-        render("hello", title="Card 1", run_id="ctx-test", store=store)
-        render("world", title="Card 2", run_id="ctx-test", store=store)
+        _, store = manager.get_or_create_study("ctx-test")
+        render("hello", title="Card 1", study="ctx-test", store=store)
+        render("world", title="Card 2", study="ctx-test", store=store)
 
         ctx = manager.build_context("ctx-test")
         assert ctx["card_count"] == 2
@@ -272,8 +272,8 @@ class TestBuildContext:
     def test_with_decision_cards(self, manager):
         from m4.vitrine.renderer import render
 
-        _, store = manager.get_or_create_run("decision-test")
-        card = render("check this", title="Review", run_id="decision-test", store=store)
+        _, store = manager.get_or_create_study("decision-test")
+        card = render("check this", title="Review", study="decision-test", store=store)
         store.update_card(card.card_id, response_requested=True, prompt="Approve?")
 
         ctx = manager.build_context("decision-test")
@@ -285,8 +285,8 @@ class TestBuildContext:
     def test_with_resolved_response(self, manager):
         from m4.vitrine.renderer import render
 
-        _, store = manager.get_or_create_run("resolved-test")
-        card = render("check this", title="Review", run_id="resolved-test", store=store)
+        _, store = manager.get_or_create_study("resolved-test")
+        card = render("check this", title="Review", study="resolved-test", store=store)
         store.update_card(
             card.card_id,
             response_action="Approve",
@@ -303,34 +303,34 @@ class TestBuildContext:
         assert ctx["decisions_made"][0]["message"] == "Looks good"
         assert ctx["decisions_made"][0]["values"] == {"threshold": 0.2}
 
-    def test_nonexistent_run(self, manager):
+    def test_nonexistent_study(self, manager):
         ctx = manager.build_context("nonexistent")
-        assert ctx["run_id"] == "nonexistent"
+        assert ctx["study"] == "nonexistent"
         assert ctx["card_count"] == 0
 
 
 class TestDiscovery:
-    def test_discovers_existing_runs(self, display_dir):
-        """RunManager discovers runs created by a previous instance."""
-        # Create a run with the first manager
-        mgr1 = RunManager(display_dir)
-        _label, store = mgr1.get_or_create_run("persistent-run")
-        dir_name = mgr1._label_to_dir["persistent-run"]
+    def test_discovers_existing_studies(self, display_dir):
+        """StudyManager discovers studies created by a previous instance."""
+        # Create a study with the first manager
+        mgr1 = StudyManager(display_dir)
+        _label, store = mgr1.get_or_create_study("persistent-study")
+        dir_name = mgr1._label_to_dir["persistent-study"]
 
         # Store a card
         from m4.vitrine.renderer import render
 
-        card = render("hello world", run_id="persistent-run", store=store)
+        card = render("hello world", study="persistent-study", store=store)
 
         # Create a new manager (simulates server restart)
-        mgr2 = RunManager(display_dir)
+        mgr2 = StudyManager(display_dir)
 
-        # Should discover the existing run
-        assert "persistent-run" in mgr2._label_to_dir
-        assert mgr2._label_to_dir["persistent-run"] == dir_name
+        # Should discover the existing study
+        assert "persistent-study" in mgr2._label_to_dir
+        assert mgr2._label_to_dir["persistent-study"] == dir_name
 
-        # Should be able to list cards from the discovered run
-        cards = mgr2.list_all_cards(run_id="persistent-run")
+        # Should be able to list cards from the discovered study
+        cards = mgr2.list_all_cards(study="persistent-study")
         assert len(cards) == 1
         assert cards[0].card_id == card.card_id
 
@@ -338,58 +338,58 @@ class TestDiscovery:
         assert mgr2.get_store_for_card(card.card_id) is not None
 
 
-class TestEnsureRunLoaded:
+class TestEnsureStudyLoaded:
     def test_loads_existing_dir(self, manager):
-        _, _store = manager.get_or_create_run("load-test")
+        _, _store = manager.get_or_create_study("load-test")
         dir_name = manager._label_to_dir["load-test"]
 
         # Remove from in-memory stores to simulate lazy loading
         del manager._stores[dir_name]
 
-        loaded = manager.ensure_run_loaded(dir_name)
+        loaded = manager.ensure_study_loaded(dir_name)
         assert loaded is not None
 
     def test_returns_none_for_missing(self, manager):
-        assert manager.ensure_run_loaded("nonexistent-dir") is None
+        assert manager.ensure_study_loaded("nonexistent-dir") is None
 
 
 class TestRefresh:
-    def test_picks_up_new_runs(self, display_dir):
-        """refresh() discovers runs created by another RunManager instance."""
-        mgr1 = RunManager(display_dir)
-        mgr2 = RunManager(display_dir)
+    def test_picks_up_new_studies(self, display_dir):
+        """refresh() discovers studies created by another StudyManager instance."""
+        mgr1 = StudyManager(display_dir)
+        mgr2 = StudyManager(display_dir)
 
-        # mgr1 creates a run — mgr2 doesn't know about it yet
-        mgr1.get_or_create_run("new-run")
-        assert "new-run" not in mgr2._label_to_dir
+        # mgr1 creates a study — mgr2 doesn't know about it yet
+        mgr1.get_or_create_study("new-study")
+        assert "new-study" not in mgr2._label_to_dir
 
         # After refresh, mgr2 should discover it
         mgr2.refresh()
-        assert "new-run" in mgr2._label_to_dir
+        assert "new-study" in mgr2._label_to_dir
         assert mgr2.get_store_for_card is not None
 
     def test_skips_already_known(self, manager):
-        """refresh() doesn't reload runs already in memory."""
-        _, store = manager.get_or_create_run("existing")
+        """refresh() doesn't reload studies already in memory."""
+        _, store = manager.get_or_create_study("existing")
         manager.refresh()
         # Same store object — not reloaded
         assert manager._stores[manager._label_to_dir["existing"]] is store
 
-    def test_discovers_cards_in_new_runs(self, display_dir):
-        """refresh() indexes cards from newly discovered runs."""
+    def test_discovers_cards_in_new_studies(self, display_dir):
+        """refresh() indexes cards from newly discovered studies."""
         from m4.vitrine.renderer import render
 
-        mgr1 = RunManager(display_dir)
-        _, store = mgr1.get_or_create_run("card-run")
-        card = render("hello", run_id="card-run", store=store)
+        mgr1 = StudyManager(display_dir)
+        _, store = mgr1.get_or_create_study("card-study")
+        card = render("hello", study="card-study", store=store)
 
-        mgr2 = RunManager(display_dir)
+        mgr2 = StudyManager(display_dir)
         # Card was indexed at construction via _discover_runs
         assert mgr2.get_store_for_card(card.card_id) is not None
 
-        # Now test refresh path: create another run after mgr2 init
-        _, store2 = mgr1.get_or_create_run("card-run-2")
-        card2 = render("world", run_id="card-run-2", store=store2)
+        # Now test refresh path: create another study after mgr2 init
+        _, store2 = mgr1.get_or_create_study("card-study-2")
+        card2 = render("world", study="card-study-2", store=store2)
 
         assert mgr2.get_store_for_card(card2.card_id) is None
         mgr2.refresh()

@@ -1,16 +1,16 @@
-"""Run-centric persistence manager for the display pipeline.
+"""Study-centric persistence manager for the vitrine pipeline.
 
-Manages multiple ArtifactStore instances (one per run), with runs persisting
-across server restarts. Provides cross-run queries and age-based cleanup.
+Manages multiple ArtifactStore instances (one per study), with studies persisting
+across server restarts. Provides cross-study queries and age-based cleanup.
 
 Storage layout:
-    {m4_data}/display/
-    ├── runs.json              # Global registry
-    ├── .server.json           # PID file (transient)
-    └── runs/
+    {project_root}/.vitrine/
+    ├── studies.json            # Global registry
+    ├── .server.json            # PID file (transient)
+    └── studies/
         ├── 2025-06-09_103045_sepsis-mortality/
-        │   ├── index.json     # Cards for this run
-        │   ├── meta.json      # Run metadata (label, start_time)
+        │   ├── index.json     # Cards for this study
+        │   ├── meta.json      # Study metadata (label, start_time)
         │   └── artifacts/     # Parquet, JSON, SVG files
         └── ...
 """
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 def _sanitize_label(label: str) -> str:
-    """Sanitize a run label for use in directory names.
+    """Sanitize a study label for use in directory names.
 
     Converts to lowercase, replaces non-alphanumeric chars with hyphens,
     collapses runs, strips leading/trailing hyphens, and truncates to 64 chars.
@@ -44,8 +44,8 @@ def _sanitize_label(label: str) -> str:
     return s[:64] or "unnamed"
 
 
-def _make_run_dir_name(label: str) -> str:
-    """Generate a directory name for a run: {YYYY-MM-DD}_{HHMMSS}_{sanitized_label}."""
+def _make_study_dir_name(label: str) -> str:
+    """Generate a directory name for a study: {YYYY-MM-DD}_{HHMMSS}_{sanitized_label}."""
     now = datetime.now(timezone.utc)
     ts = now.strftime("%Y-%m-%d_%H%M%S")
     return f"{ts}_{_sanitize_label(label)}"
@@ -67,85 +67,87 @@ def _parse_age(age_str: str) -> float:
     return value * multipliers[unit]
 
 
-class RunManager:
-    """Manages multiple runs, each backed by an ArtifactStore.
+class StudyManager:
+    """Manages multiple studies, each backed by an ArtifactStore.
 
     Args:
-        display_dir: Root display directory ({m4_data}/display/).
+        vitrine_dir: Root vitrine directory ({project_root}/.vitrine/).
     """
 
-    def __init__(self, display_dir: Path) -> None:
-        self.display_dir = display_dir
-        self._runs_dir = display_dir / "runs"
-        self._registry_path = display_dir / "runs.json"
+    def __init__(self, vitrine_dir: Path) -> None:
+        self.display_dir = vitrine_dir
+        self._studies_dir = vitrine_dir / "studies"
+        self._registry_path = vitrine_dir / "studies.json"
         # Ensure directories exist
-        self._runs_dir.mkdir(parents=True, exist_ok=True)
+        self._studies_dir.mkdir(parents=True, exist_ok=True)
 
         # In-memory state
         self._stores: dict[str, ArtifactStore] = {}  # dir_name -> ArtifactStore
         self._label_to_dir: dict[str, str] = {}  # user_label -> dir_name
         self._card_index: dict[str, str] = {}  # card_id -> dir_name
 
-        # Discover existing runs from disk
-        self._discover_runs()
+        # Discover existing studies from disk
+        self._discover_studies()
 
-    # --- Run Lifecycle ---
+    # --- Study Lifecycle ---
 
-    def get_or_create_run(self, run_id: str | None = None) -> tuple[str, ArtifactStore]:
-        """Get or create a run by label.
+    def get_or_create_study(
+        self, study: str | None = None
+    ) -> tuple[str, ArtifactStore]:
+        """Get or create a study by label.
 
-        If run_id is None, generates an auto-label from the current timestamp.
-        If a run with the same label already exists (within RunManager lifetime),
-        returns the existing run.
+        If study is None, generates an auto-label from the current timestamp.
+        If a study with the same label already exists (within StudyManager lifetime),
+        returns the existing study.
 
         Args:
-            run_id: User-provided run label, or None for auto.
+            study: User-provided study label, or None for auto.
 
         Returns:
-            Tuple of (run_id_label, ArtifactStore).
+            Tuple of (study_label, ArtifactStore).
         """
-        if run_id is None:
-            run_id = datetime.now(timezone.utc).strftime("auto-%Y%m%d-%H%M%S")
+        if study is None:
+            study = datetime.now(timezone.utc).strftime("auto-%Y%m%d-%H%M%S")
 
-        # Return existing run if label matches
-        if run_id in self._label_to_dir:
-            dir_name = self._label_to_dir[run_id]
+        # Return existing study if label matches
+        if study in self._label_to_dir:
+            dir_name = self._label_to_dir[study]
             if dir_name in self._stores:
-                return run_id, self._stores[dir_name]
+                return study, self._stores[dir_name]
             # Rebuild store if somehow evicted
-            return run_id, self._load_run(dir_name)
+            return study, self._load_study(dir_name)
 
-        # Create new run
-        dir_name = _make_run_dir_name(run_id)
-        run_dir = self._runs_dir / dir_name
-        run_dir.mkdir(parents=True, exist_ok=True)
+        # Create new study
+        dir_name = _make_study_dir_name(study)
+        study_dir = self._studies_dir / dir_name
+        study_dir.mkdir(parents=True, exist_ok=True)
 
-        # Write run metadata
+        # Write study metadata
         meta = {
-            "label": run_id,
+            "label": study,
             "dir_name": dir_name,
             "start_time": datetime.now(timezone.utc).isoformat(),
         }
-        (run_dir / "meta.json").write_text(json.dumps(meta, indent=2))
+        (study_dir / "meta.json").write_text(json.dumps(meta, indent=2))
 
         # Create ArtifactStore
-        store = ArtifactStore(session_dir=run_dir, session_id=dir_name)
+        store = ArtifactStore(session_dir=study_dir, session_id=dir_name)
         self._stores[dir_name] = store
-        self._label_to_dir[run_id] = dir_name
+        self._label_to_dir[study] = dir_name
 
         # Update registry
-        self._add_to_registry(run_id, dir_name, meta["start_time"])
+        self._add_to_registry(study, dir_name, meta["start_time"])
 
-        logger.debug(f"Created run '{run_id}' -> {dir_name}")
-        return run_id, store
+        logger.debug(f"Created study '{study}' -> {dir_name}")
+        return study, store
 
-    def ensure_run_loaded(self, dir_name: str) -> ArtifactStore | None:
-        """Ensure a run directory is loaded into memory.
+    def ensure_study_loaded(self, dir_name: str) -> ArtifactStore | None:
+        """Ensure a study directory is loaded into memory.
 
-        Used by the server to lazily discover run dirs created by clients.
+        Used by the server to lazily discover study dirs created by clients.
 
         Args:
-            dir_name: Run directory name.
+            dir_name: Study directory name.
 
         Returns:
             ArtifactStore if the directory exists, None otherwise.
@@ -153,37 +155,37 @@ class RunManager:
         if dir_name in self._stores:
             return self._stores[dir_name]
 
-        run_dir = self._runs_dir / dir_name
-        if not run_dir.exists():
+        study_dir = self._studies_dir / dir_name
+        if not study_dir.exists():
             return None
 
-        return self._load_run(dir_name)
+        return self._load_study(dir_name)
 
-    def delete_run(self, run_id: str) -> bool:
-        """Delete a run by label.
+    def delete_study(self, study: str) -> bool:
+        """Delete a study by label.
 
-        Removes the run directory and updates the registry.
+        Removes the study directory and updates the registry.
 
         Args:
-            run_id: The run label to delete.
+            study: The study label to delete.
 
         Returns:
-            True if the run was deleted, False if not found.
+            True if the study was deleted, False if not found.
         """
-        dir_name = self._label_to_dir.get(run_id)
+        dir_name = self._label_to_dir.get(study)
         if dir_name is None:
             return False
 
         # Remove from disk
-        run_dir = self._runs_dir / dir_name
-        if run_dir.exists():
-            shutil.rmtree(run_dir)
+        study_dir = self._studies_dir / dir_name
+        if study_dir.exists():
+            shutil.rmtree(study_dir)
 
         # Clean up in-memory state
         self._stores.pop(dir_name, None)
-        self._label_to_dir.pop(run_id, None)
+        self._label_to_dir.pop(study, None)
 
-        # Remove card index entries for this run
+        # Remove card index entries for this study
         to_remove = [cid for cid, dn in self._card_index.items() if dn == dir_name]
         for cid in to_remove:
             del self._card_index[cid]
@@ -191,15 +193,15 @@ class RunManager:
         # Update registry
         self._remove_from_registry(dir_name)
 
-        logger.debug(f"Deleted run '{run_id}' ({dir_name})")
+        logger.debug(f"Deleted study '{study}' ({dir_name})")
         return True
 
-    def rename_run(self, old_label: str, new_label: str) -> bool:
-        """Rename a run by changing its label.
+    def rename_study(self, old_label: str, new_label: str) -> bool:
+        """Rename a study by changing its label.
 
         Args:
-            old_label: Current run label.
-            new_label: New run label (must not already exist).
+            old_label: Current study label.
+            new_label: New study label (must not already exist).
 
         Returns:
             True if renamed, False if old_label not found or new_label taken.
@@ -218,8 +220,8 @@ class RunManager:
         self._label_to_dir[new_label] = dir_name
 
         # Update meta.json on disk
-        run_dir = self._runs_dir / dir_name
-        meta_path = run_dir / "meta.json"
+        study_dir = self._studies_dir / dir_name
+        meta_path = study_dir / "meta.json"
         if meta_path.exists():
             try:
                 meta = json.loads(meta_path.read_text())
@@ -236,17 +238,17 @@ class RunManager:
                 break
         self._write_registry(registry)
 
-        logger.debug(f"Renamed run '{old_label}' -> '{new_label}' ({dir_name})")
+        logger.debug(f"Renamed study '{old_label}' -> '{new_label}' ({dir_name})")
         return True
 
-    def clean_runs(self, older_than: str = "7d") -> int:
-        """Remove runs older than a given age.
+    def clean_studies(self, older_than: str = "7d") -> int:
+        """Remove studies older than a given age.
 
         Args:
             older_than: Age string (e.g., '7d', '24h', '0d' for all).
 
         Returns:
-            Number of runs removed.
+            Number of studies removed.
         """
         max_age_secs = _parse_age(older_than)
         now = time.time()
@@ -256,8 +258,8 @@ class RunManager:
         labels = list(self._label_to_dir.keys())
         for label in labels:
             dir_name = self._label_to_dir[label]
-            run_dir = self._runs_dir / dir_name
-            meta_path = run_dir / "meta.json"
+            study_dir = self._studies_dir / dir_name
+            meta_path = study_dir / "meta.json"
 
             start_time = None
             if meta_path.exists():
@@ -277,24 +279,24 @@ class RunManager:
                 except (ValueError, TypeError):
                     pass
 
-            if self.delete_run(label):
+            if self.delete_study(label):
                 removed += 1
 
         return removed
 
-    # --- Cross-Run Queries ---
+    # --- Cross-Study Queries ---
 
-    def list_runs(self) -> list[dict[str, Any]]:
-        """List all runs with metadata and card counts.
+    def list_studies(self) -> list[dict[str, Any]]:
+        """List all studies with metadata and card counts.
 
         Returns:
             List of dicts with label, dir_name, start_time, card_count,
             sorted newest first.
         """
-        runs = []
+        studies = []
         for label, dir_name in self._label_to_dir.items():
-            run_dir = self._runs_dir / dir_name
-            meta_path = run_dir / "meta.json"
+            study_dir = self._studies_dir / dir_name
+            meta_path = study_dir / "meta.json"
 
             start_time = None
             if meta_path.exists():
@@ -309,7 +311,7 @@ class RunManager:
             if dir_name in self._stores:
                 card_count = len(self._stores[dir_name].list_cards())
             else:
-                index_path = run_dir / "index.json"
+                index_path = study_dir / "index.json"
                 if index_path.exists():
                     try:
                         cards = json.loads(index_path.read_text())
@@ -317,7 +319,7 @@ class RunManager:
                     except (json.JSONDecodeError, OSError):
                         pass
 
-            runs.append(
+            studies.append(
                 {
                     "label": label,
                     "dir_name": dir_name,
@@ -327,20 +329,20 @@ class RunManager:
             )
 
         # Sort newest first
-        runs.sort(key=lambda r: r.get("start_time") or "", reverse=True)
-        return runs
+        studies.sort(key=lambda r: r.get("start_time") or "", reverse=True)
+        return studies
 
-    def list_all_cards(self, run_id: str | None = None) -> list[CardDescriptor]:
-        """List cards across all runs, or filtered by run label.
+    def list_all_cards(self, study: str | None = None) -> list[CardDescriptor]:
+        """List cards across all studies, or filtered by study label.
 
         Args:
-            run_id: If provided, filter to cards from this run label.
+            study: If provided, filter to cards from this study label.
 
         Returns:
             List of CardDescriptors.
         """
-        if run_id is not None:
-            dir_name = self._label_to_dir.get(run_id)
+        if study is not None:
+            dir_name = self._label_to_dir.get(study)
             if dir_name is None:
                 return []
             store = self._stores.get(dir_name)
@@ -348,7 +350,7 @@ class RunManager:
                 return []
             return store.list_cards()
 
-        # All cards from all runs
+        # All cards from all studies
         all_cards: list[CardDescriptor] = []
         for dir_name in self._label_to_dir.values():
             store = self._stores.get(dir_name)
@@ -373,25 +375,25 @@ class RunManager:
             return self._stores.get(dir_name)
         return None
 
-    def build_context(self, run_id: str) -> dict[str, Any]:
+    def build_context(self, study: str) -> dict[str, Any]:
         """Build a structured context summary for agent re-orientation.
 
-        Returns run metadata, card list, resolved responses, and
+        Returns study metadata, card list, resolved responses, and
         pending decision cards.
 
         Args:
-            run_id: The run label to summarize.
+            study: The study label to summarize.
 
         Returns:
-            Dict with run_id, card_count, cards, decisions (back-compat),
+            Dict with study, card_count, cards, decisions (back-compat),
             pending_responses, decisions_made, and current_selections
             (filled by server when available). Returns empty context if
-            run not found.
+            study not found.
         """
-        dir_name = self._label_to_dir.get(run_id)
+        dir_name = self._label_to_dir.get(study)
         if dir_name is None:
             return {
-                "run_id": run_id,
+                "study": study,
                 "card_count": 0,
                 "cards": [],
                 "decisions": [],
@@ -403,7 +405,7 @@ class RunManager:
         store = self._stores.get(dir_name)
         if store is None:
             return {
-                "run_id": run_id,
+                "study": study,
                 "card_count": 0,
                 "cards": [],
                 "decisions": [],
@@ -451,7 +453,7 @@ class RunManager:
                 )
 
         return {
-            "run_id": run_id,
+            "study": study,
             "card_count": len(cards),
             "cards": card_summaries,
             "decisions": pending_responses,  # backwards-compat alias
@@ -461,24 +463,24 @@ class RunManager:
         }
 
     def register_card(self, card_id: str, dir_name: str) -> None:
-        """Register a card in the cross-run card index.
+        """Register a card in the cross-study card index.
 
         Args:
             card_id: The card's unique ID.
-            dir_name: The run directory name containing this card.
+            dir_name: The study directory name containing this card.
         """
         self._card_index[card_id] = dir_name
 
     def store_selection(self, selection_id: str, rows: list, columns: list) -> Path:
-        """Store a selection as a Parquet artifact in the display-level dir.
+        """Store a selection as a Parquet artifact in the vitrine-level dir.
 
-        Used for cross-run selections where no specific run is appropriate.
+        Used for cross-study selections where no specific study is appropriate.
         Falls back to the first available store.
         """
         # Use the first available store (or create a temp one)
         for store in self._stores.values():
             return store.store_selection(selection_id, rows, columns)
-        # Fallback: create an artifacts dir at display level
+        # Fallback: create an artifacts dir at vitrine level
         artifacts_dir = self.display_dir / "artifacts"
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         import pandas as pd
@@ -489,7 +491,7 @@ class RunManager:
         return path
 
     def store_selection_json(self, selection_id: str, data: dict[str, Any]) -> Path:
-        """Store a chart point selection as JSON at display level."""
+        """Store a chart point selection as JSON at vitrine level."""
         for store in self._stores.values():
             return store.store_selection_json(selection_id, data)
         # Fallback
@@ -502,23 +504,23 @@ class RunManager:
     # --- Internal ---
 
     def refresh(self) -> None:
-        """Scan for new run directories created since the last discovery.
+        """Scan for new study directories created since the last discovery.
 
-        Only loads runs not already known in memory. Safe to call frequently
-        (e.g. before listing runs) since it skips known directories.
+        Only loads studies not already known in memory. Safe to call frequently
+        (e.g. before listing studies) since it skips known directories.
         """
-        if not self._runs_dir.exists():
+        if not self._studies_dir.exists():
             return
 
-        for run_dir in self._runs_dir.iterdir():
-            if not run_dir.is_dir():
+        for study_dir in self._studies_dir.iterdir():
+            if not study_dir.is_dir():
                 continue
 
-            dir_name = run_dir.name
+            dir_name = study_dir.name
             if dir_name in self._stores:
                 continue  # Already known
 
-            meta_path = run_dir / "meta.json"
+            meta_path = study_dir / "meta.json"
             label = dir_name  # fallback
             if meta_path.exists():
                 try:
@@ -528,19 +530,19 @@ class RunManager:
                     pass
 
             self._label_to_dir[label] = dir_name
-            self._load_run(dir_name)
+            self._load_study(dir_name)
 
-    def _discover_runs(self) -> None:
-        """Scan existing run directories and rebuild in-memory state."""
-        if not self._runs_dir.exists():
+    def _discover_studies(self) -> None:
+        """Scan existing study directories and rebuild in-memory state."""
+        if not self._studies_dir.exists():
             return
 
-        for run_dir in sorted(self._runs_dir.iterdir()):
-            if not run_dir.is_dir():
+        for study_dir in sorted(self._studies_dir.iterdir()):
+            if not study_dir.is_dir():
                 continue
 
-            dir_name = run_dir.name
-            meta_path = run_dir / "meta.json"
+            dir_name = study_dir.name
+            meta_path = study_dir / "meta.json"
 
             # Read label from meta.json
             label = dir_name  # fallback
@@ -552,12 +554,12 @@ class RunManager:
                     pass
 
             self._label_to_dir[label] = dir_name
-            self._load_run(dir_name)
+            self._load_study(dir_name)
 
-    def _load_run(self, dir_name: str) -> ArtifactStore:
-        """Load a run directory into memory and index its cards."""
-        run_dir = self._runs_dir / dir_name
-        store = ArtifactStore(session_dir=run_dir, session_id=dir_name)
+    def _load_study(self, dir_name: str) -> ArtifactStore:
+        """Load a study directory into memory and index its cards."""
+        study_dir = self._studies_dir / dir_name
+        store = ArtifactStore(session_dir=study_dir, session_id=dir_name)
         self._stores[dir_name] = store
 
         # Index cards
@@ -567,7 +569,7 @@ class RunManager:
         return store
 
     def _read_registry(self) -> list[dict[str, Any]]:
-        """Read the global runs registry from disk."""
+        """Read the global studies registry from disk."""
         if not self._registry_path.exists():
             return []
         try:
@@ -575,12 +577,12 @@ class RunManager:
         except (json.JSONDecodeError, FileNotFoundError):
             return []
 
-    def _write_registry(self, runs: list[dict[str, Any]]) -> None:
-        """Write the global runs registry to disk."""
-        self._registry_path.write_text(json.dumps(runs, indent=2))
+    def _write_registry(self, studies: list[dict[str, Any]]) -> None:
+        """Write the global studies registry to disk."""
+        self._registry_path.write_text(json.dumps(studies, indent=2))
 
     def _add_to_registry(self, label: str, dir_name: str, start_time: str) -> None:
-        """Add a run entry to the registry."""
+        """Add a study entry to the registry."""
         registry = self._read_registry()
         registry.append(
             {
@@ -592,7 +594,7 @@ class RunManager:
         self._write_registry(registry)
 
     def _remove_from_registry(self, dir_name: str) -> None:
-        """Remove a run entry from the registry by dir_name."""
+        """Remove a study entry from the registry by dir_name."""
         registry = self._read_registry()
         registry = [r for r in registry if r.get("dir_name") != dir_name]
         self._write_registry(registry)

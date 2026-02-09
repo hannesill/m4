@@ -15,9 +15,9 @@
   }
 
   .header-actions,
-  .run-dropdown,
+  .study-dropdown,
   .export-dropdown,
-  .run-metadata-bar,
+  .study-metadata-bar,
   .footer,
   .copy-toast,
   .confirm-overlay {
@@ -77,13 +77,13 @@
     color: #666;
   }
 
-  .run-separator {
+  .study-separator {
     page-break-before: always;
     font-size: 10pt;
     font-weight: bold;
   }
 
-  .run-separator:first-child {
+  .study-separator:first-child {
     page-break-before: auto;
   }
 }
