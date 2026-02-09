@@ -1,4 +1,4 @@
-"""Tests for m4.display.redaction.
+"""Tests for m4.vitrine.redaction.
 
 Tests cover:
 - Redactor creation with defaults and overrides
@@ -9,7 +9,7 @@ Tests cover:
 
 import pandas as pd
 
-from m4.display.redaction import Redactor
+from m4.vitrine.redaction import Redactor
 
 
 class TestRedactorDefaults:
@@ -50,32 +50,32 @@ class TestRedactorOverrides:
 
 class TestRedactorEnvConfig:
     def test_disabled_via_env(self, monkeypatch):
-        monkeypatch.setenv("M4_DISPLAY_REDACT", "0")
+        monkeypatch.setenv("M4_VITRINE_REDACT", "0")
         r = Redactor()
         assert r.enabled is False
 
     def test_enabled_via_env(self, monkeypatch):
-        monkeypatch.setenv("M4_DISPLAY_REDACT", "1")
+        monkeypatch.setenv("M4_VITRINE_REDACT", "1")
         r = Redactor()
         assert r.enabled is True
 
     def test_max_rows_via_env(self, monkeypatch):
-        monkeypatch.setenv("M4_DISPLAY_MAX_ROWS", "2000")
+        monkeypatch.setenv("M4_VITRINE_MAX_ROWS", "2000")
         r = Redactor()
         assert r.max_rows == 2000
 
     def test_invalid_max_rows_env(self, monkeypatch):
-        monkeypatch.setenv("M4_DISPLAY_MAX_ROWS", "not_a_number")
+        monkeypatch.setenv("M4_VITRINE_MAX_ROWS", "not_a_number")
         r = Redactor()
         assert r.max_rows == 10_000
 
     def test_hash_ids_via_env(self, monkeypatch):
-        monkeypatch.setenv("M4_DISPLAY_HASH_IDS", "1")
+        monkeypatch.setenv("M4_VITRINE_HASH_IDS", "1")
         r = Redactor()
         assert r.hash_ids is True
 
     def test_custom_patterns_via_env(self, monkeypatch):
-        monkeypatch.setenv("M4_DISPLAY_REDACT_PATTERNS", r"(?i)foo,(?i)bar")
+        monkeypatch.setenv("M4_VITRINE_REDACT_PATTERNS", r"(?i)foo,(?i)bar")
         r = Redactor()
         assert len(r._patterns) == 2
 

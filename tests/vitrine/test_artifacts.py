@@ -1,4 +1,4 @@
-"""Tests for m4.display.artifacts.
+"""Tests for m4.vitrine.artifacts.
 
 Tests cover:
 - ArtifactStore creation and directory layout
@@ -17,8 +17,8 @@ import json
 import pandas as pd
 import pytest
 
-from m4.display._types import CardDescriptor, CardProvenance, CardType
-from m4.display.artifacts import ArtifactStore
+from m4.vitrine._types import CardDescriptor, CardProvenance, CardType
+from m4.vitrine.artifacts import ArtifactStore
 
 
 @pytest.fixture

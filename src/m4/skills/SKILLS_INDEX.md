@@ -72,7 +72,7 @@ This directory contains skills for the M4 framework, covering clinical research 
 | Skill | Description |
 |-------|-------------|
 | [m4-api](system/m4-api/SKILL.md) | Python API for M4 clinical data queries |
-| [m4-display](system/m4-display/SKILL.md) | Display server API for presenting results to researchers |
+| [m4-vitrine](system/m4-vitrine/SKILL.md) | Visualization API for presenting results to researchers |
 | [m4-research](system/m4-research/SKILL.md) | Structured clinical research workflow and protocol drafting |
 | [create-m4-skill](system/create-m4-skill/SKILL.md) | Guide for creating new M4 skills |
 

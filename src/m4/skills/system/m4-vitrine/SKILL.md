@@ -1,13 +1,13 @@
 ---
-name: m4-display
-description: Present analysis results to the researcher via the M4 display server. Use when showing DataFrames, charts, markdown findings, or interactive decision points during code execution.
+name: m4-vitrine
+description: Present analysis results to the researcher via the vitrine server. Use when showing DataFrames, charts, markdown findings, or interactive decision points during code execution.
 tier: community
 category: system
 ---
 
-# M4 Display API
+# vitrine API
 
-The M4 display server pushes interactive visualizations to a live browser tab during code execution sessions. Agents call `show()` to render DataFrames, charts, markdown, and key-value summaries.
+The vitrine server pushes interactive visualizations to a live browser tab during code execution sessions. Agents call `show()` to render DataFrames, charts, markdown, and key-value summaries.
 
 ## When to Use This Skill
 
@@ -35,7 +35,7 @@ show(fig, title="Figure 1", run_id="sepsis-v2")
 ## Quick Start
 
 ```python
-from m4.display import show, section
+from m4.vitrine import show, section
 
 # DataFrame → interactive table with paging/sorting
 show(df, title="Patient Demographics")
@@ -142,7 +142,7 @@ Return info dict about a running persistent server, or `None`.
 ### Blocking: Wait for Researcher Review
 
 ```python
-from m4.display import show
+from m4.vitrine import show
 
 response = show(
     cohort_df,
@@ -165,7 +165,7 @@ elif response.action == "timeout":
 ### Async: Poll for User Requests
 
 ```python
-from m4.display import show, pending_requests
+from m4.vitrine import show, pending_requests
 
 show(results_df, title="Results", on_send="Re-run analysis with selected subset")
 
@@ -179,7 +179,7 @@ for req in pending_requests():
 ### Events: React to UI Interactions
 
 ```python
-from m4.display import show, on_event
+from m4.vitrine import show, on_event
 
 def handle(event):
     if event.event_type == "row_click":
@@ -195,7 +195,7 @@ show(df, title="Click a patient")
 Use `run_id` and `section()` to structure a multi-step analysis:
 
 ```python
-from m4.display import show, section
+from m4.vitrine import show, section
 
 RUN = "sepsis-mortality-v1"
 

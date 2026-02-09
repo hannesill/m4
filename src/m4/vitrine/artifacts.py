@@ -26,7 +26,7 @@ from typing import Any
 import duckdb
 import pandas as pd
 
-from m4.display._types import CardDescriptor, CardProvenance, CardType
+from m4.vitrine._types import CardDescriptor, CardProvenance, CardType
 
 logger = logging.getLogger(__name__)
 

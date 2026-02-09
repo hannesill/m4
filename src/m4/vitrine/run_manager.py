@@ -28,8 +28,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from m4.display._types import CardDescriptor
-from m4.display.artifacts import ArtifactStore
+from m4.vitrine._types import CardDescriptor
+from m4.vitrine.artifacts import ArtifactStore
 
 logger = logging.getLogger(__name__)
 

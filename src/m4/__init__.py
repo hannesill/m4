@@ -35,7 +35,7 @@ from m4.api import (
     search_notes,
     set_dataset,
 )
-from m4.display import show
+from m4.vitrine import show
 
 __all__ = [
     "DatasetError",

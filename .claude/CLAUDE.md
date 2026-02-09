@@ -2,39 +2,39 @@
 
 ## Project Description & Vision
 
-M4 provides infrastructure for AI-assisted clinical research. It offers a natural language interface for LLMs and autonomous agents to interact with EHR data, making clinical datasets accessible to researchers regardless of SQL expertise.
+M4 is infrastructure for AI agents doing clinical research. It gives AI agents clinical intelligence — curated concept mappings, validated scoring algorithms, and deep schema knowledge — alongside structured access to EHR datasets (MIMIC-IV, eICU, custom datasets) via MCP and a Python API. The goal is enabling AI agents to conduct rigorous, reproducible clinical research autonomously or in collaboration with human researchers.
 
-Who it's for: Clinical researchers who want to screen hypotheses and characterize cohorts without writing SQL, data scientists who want faster iteration across datasets, and AI engineers building research agents that need structured access to clinical data. The project prioritizes accessibility — advanced features are available through flags but never complicate the default experience.
+Who it's for: Clinical researchers who want to screen hypotheses and characterize cohorts without writing SQL, data scientists who want faster iteration across datasets, and AI engineers building clinical research agents. The project prioritizes accessibility — advanced features are available through flags but never complicate the default experience.
 
-How it works: Install via pip, point to a m4_data directory, and M4 initializes a local DuckDB database exposed through an MCP server. This local-first approach respects data governance requirements inherent to clinical research. BigQuery is available for users with cloud access to full datasets.
+How it works: Install via pip, run `m4 init`, and M4 sets up a local DuckDB database. AI agents connect via MCP (Claude Desktop, Cursor, etc.) or import the Python API directly for programmatic analysis. BigQuery is available for cloud access to full datasets. The local-first approach respects data governance requirements inherent to clinical research.
 
-The vision: Clinical data exploration with LLMs fails most often due to clinical semantics — the LLM doesn't understand what "sepsis" maps to in ICD codes, or which lab values indicate kidney function. M4 addresses this through curated concept mappings, rich schema documentation, and few-shot examples that encode clinical knowledge. The goal is making LLM-assisted research reliable enough for real clinical workflows.
+### Vision
+
+**Short-term — Paper:** Demonstrate that M4's architecture (modality-based tool system, agent skills, cross-dataset portability) enables AI agents to conduct clinically accurate research across heterogeneous EHR datasets. Building on M3's 94% accuracy on MIMIC-IV, the paper will show how clinical semantics encoded as agent skills and concept mappings generalize across MIMIC-IV and eICU.
+
+**Mid/long-term — Clinical research infrastructure for AI agents:** M4 becomes the standard infrastructure layer for AI agents conducting clinical research. This means: agents that can autonomously design studies, select cohorts, run analyses, and produce reproducible results — with guardrails that enforce scientific integrity. The platform expands to cover more datasets, modalities (waveforms, imaging), and research patterns, making it possible for AI agents to tackle increasingly complex clinical questions.
+
+### What's Built
+
+1. **Agent Skills**: 20+ skills that teach AI agents clinical research patterns — severity scores (SOFA, APACHE III, SAPS-II, OASIS, LODS, SIRS), sepsis identification (Sepsis-3, suspected infection), organ failure staging (KDIGO AKI), measurements (GCS, baseline creatinine, vasopressor equivalents), cohort selection, and research methodology. Skills activate automatically when relevant.
+2. **Python API / Code Execution**: `from m4 import execute_query, set_dataset, get_schema` — returns DataFrames for multi-step analyses, statistical computation, and reproducible notebooks. Same tools as MCP but returns Python types.
+3. **Cross-dataset portability**: AI agents switch between datasets at runtime (`m4 use mimic-iv`, `set_dataset("eicu")`). Same clinical questions work across MIMIC-IV and eICU.
+4. **M4 Apps**: Interactive UIs rendered directly in AI clients (e.g., Cohort Builder with live filtering). For hosts supporting the MCP Apps protocol.
+5. **Display system (vitrine)**: `from m4.vitrine import show` — real-time interactive tables, charts, and markdown in a live browser tab for researcher-in-the-loop workflows.
+6. **Derived tables**: 63 pre-computed clinical concept tables materialized from vendored mimic-code SQL.
+7. **Custom datasets**: Any PhysioNet or custom dataset can be added following documented conventions.
 
 ### Current Focus
 
-1. **Clinical semantics**: Curated concept mappings (e.g., "sepsis" → ICD codes, "kidney function" → creatinine/GFR), schema documentation with clinical meaning, and Claude Skills / few-shot query examples for common questions / processes
-2. **Deeper notes support**: Semantic search over clinical notes (beyond keyword matching) and entity extraction (medications, diagnoses, procedures from unstructured text)
-3. **Cross-dataset portability**: Same natural language queries working across MIMIC-IV and eICU without dataset-specific code
-4. **Code Execution**: Allow LLMs with sandbox access (e.g. Claude Code) to use the tools in code rather than through MCP. This should save context and allows for more extensive data analysis.
+1. **More clinical semantics**: Expanding concept mappings (comorbidity indices, medication classes) and agent skills
+2. **Semantic search over clinical notes**: Beyond keyword matching — entity extraction and deeper NLP
+3. **New modalities**: Waveforms (ECG, arterial blood pressure) and imaging (chest X-rays)
+4. **Research agent guardrails**: Skills and checks that enforce scientific integrity, documentation standards, and best practices
+5. **Provenance**: Query logging, session export/replay, result fingerprints for reproducible and auditable research
 
 ### Datasets & Modalities
 
-We currently support tabular data and clinical notes across MIMIC-IV, MIMIC-IV-Note, and eICU. Future versions will add waveforms and imaging. The modality-based architecture allows tools to be dynamically filtered based on what each dataset supports.
-
-### Future
-
-Full provenance tracking (query logging, session export/replay, result fingerprints) for reproducible research is on the roadmap but not yet implemented.
-
-## Near-Term Paper
-
-Title: M4: Multi-Dataset Infrastructure for LLM-Assisted Clinical Research
-
-The paper will demonstrate:
-- Modality-based architecture that generalizes across heterogeneous clinical datasets
-- Cross-dataset portability: equivalent clinical questions working on both MIMIC-IV and eICU
-- How the abstraction layer maintains accuracy while eliminating per-dataset engineering
-
-Building on M3's demonstration of 94% accuracy on MIMIC-IV.
+We support tabular data and clinical notes across MIMIC-IV, MIMIC-IV-Note, eICU, and custom datasets. Future versions will add waveforms and imaging. The modality-based architecture dynamically filters tools based on what each dataset supports.
 
 ## Quick Reference
 
@@ -107,8 +107,8 @@ When executing Python analysis, always save outputs to files for reproducibility
 - Figures → PNG/SVG files
 - Reports → Markdown/HTML files
 
-Use `from m4.display import show` to present key results to the researcher in real-time.
-The display renders interactive tables, charts, and markdown in a live browser tab.
+Use `from m4.vitrine import show` to present key results to the researcher in real-time.
+Vitrine renders interactive tables, charts, and markdown in a live browser tab.
 
 Show what matters for the conversation — not everything:
 - Cohort summaries the researcher needs to review before proceeding
@@ -126,4 +126,4 @@ Quick reference:
 - `section("Phase 2")` — visual divider
 - `run_id="study-name"` — group related outputs
 - `show(df, wait=True, prompt="Proceed?")` — block until researcher responds
-- For the full API, invoke the `/m4-display` skill
+- For the full API, invoke the `/m4-vitrine` skill

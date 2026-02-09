@@ -1,4 +1,4 @@
-"""Tests for m4.display.renderer.
+"""Tests for m4.vitrine.renderer.
 
 Tests cover:
 - DataFrame → table CardDescriptor with Parquet artifact on disk
@@ -17,10 +17,10 @@ import json
 import pandas as pd
 import pytest
 
-from m4.display._types import CardType
-from m4.display.artifacts import ArtifactStore
-from m4.display.redaction import Redactor
-from m4.display.renderer import (
+from m4.vitrine._types import CardType
+from m4.vitrine.artifacts import ArtifactStore
+from m4.vitrine.redaction import Redactor
+from m4.vitrine.renderer import (
     _is_matplotlib_figure,
     _is_plotly_figure,
     _sanitize_svg,

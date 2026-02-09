@@ -110,18 +110,18 @@ except ModalityError as e:
 
 ## Displaying Results
 
-Use `show()` from the display module to present query results to the researcher in the browser:
+Use `show()` from the vitrine module to present query results to the researcher in the browser:
 
 ```python
 from m4 import execute_query
-from m4.display import show
+from m4.vitrine import show
 
 df = execute_query("SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROUP BY gender")
 df.to_csv("output/demographics.csv", index=False)  # Save for reproducibility
 show(df, title="Demographics", run_id="my-study")   # Show for review
 ```
 
-For blocking review (agent waits for researcher approval), use `show(df, wait=True, prompt="Proceed?")`. For the full display API, invoke the `/m4-display` skill.
+For blocking review (agent waits for researcher approval), use `show(df, wait=True, prompt="Proceed?")`. For the full display API, invoke the `/m4-vitrine` skill.
 
 ## Dataset State
 
