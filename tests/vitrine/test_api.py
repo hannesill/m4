@@ -314,30 +314,14 @@ class TestDiscovery:
         monkeypatch.setattr(
             display, "_pid_file_path", lambda: tmp_path / ".server.json"
         )
-        monkeypatch.setattr(display, "_scan_port_range", lambda *a, **kw: None)
         assert display.server_status() is None
 
 
 class TestServerLifecycle:
-    def test_server_status_falls_back_to_port_scan(self, monkeypatch):
-        """server_status() falls back to health scan when PID metadata is absent."""
+    def test_server_status_returns_none_without_pid_file(self, monkeypatch):
+        """server_status() returns None when PID file is absent (no port scan)."""
         monkeypatch.setattr(display, "_discover_server", lambda: None)
-        monkeypatch.setattr(
-            display,
-            "_scan_port_range",
-            lambda host, start, end: {
-                "url": "http://127.0.0.1:7742",
-                "host": "127.0.0.1",
-                "port": 7742,
-                "session_id": "scan-session",
-            },
-        )
-
-        info = display.server_status()
-        assert info is not None
-        assert info["url"] == "http://127.0.0.1:7742"
-        assert info["session_id"] == "scan-session"
-        assert info["pid"] is None
+        assert display.server_status() is None
 
     def test_stop_server_keeps_pid_file_when_shutdown_fails(
         self, monkeypatch, tmp_path
@@ -896,8 +880,3 @@ class TestFileLocking:
         monkeypatch.setattr(display, "_get_vitrine_dir", lambda: tmp_path / "vitrine")
         path = display._lock_file_path()
         assert path == tmp_path / "vitrine" / ".server.lock"
-
-    def test_scan_port_range_returns_none_when_empty(self):
-        """Scanning unused ports returns None."""
-        result = display._scan_port_range("127.0.0.1", 7790, 7792)
-        assert result is None

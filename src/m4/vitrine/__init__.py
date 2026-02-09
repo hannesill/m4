@@ -126,35 +126,6 @@ def _lock_file_path() -> Path:
     return _get_vitrine_dir() / ".server.lock"
 
 
-def _scan_port_range(
-    host: str = "127.0.0.1",
-    port_start: int = 7741,
-    port_end: int = 7750,
-) -> dict[str, Any] | None:
-    """Probe each port in range for a live M4 display server.
-
-    Returns server info dict if found, None otherwise.
-    """
-    import urllib.request
-
-    for port in range(port_start, port_end + 1):
-        url = f"http://{host}:{port}"
-        try:
-            req = urllib.request.Request(f"{url}/api/health", method="GET")
-            with urllib.request.urlopen(req, timeout=0.5) as resp:
-                data = json.loads(resp.read())
-                if data.get("status") == "ok":
-                    return {
-                        "url": url,
-                        "host": host,
-                        "port": port,
-                        "session_id": data.get("session_id"),
-                    }
-        except Exception:
-            continue
-    return None
-
-
 def _is_process_alive(pid: int) -> bool:
     """Check if a process with the given PID is alive."""
     try:
@@ -269,7 +240,7 @@ def _ensure_started(
     1. If _remote_url set -> health check -> if healthy, return
     2. If in-process _server running -> return
     3. Acquire file lock
-    4. Inside lock: _discover_server() -> _scan_port_range() -> _start_process()
+    4. Inside lock: _discover_server() -> _start_process()
     5. Release lock
     6. Fallback in-thread server if polling fails
     """
@@ -301,33 +272,16 @@ def _ensure_started(
         try:
             fcntl.flock(lock_fd, fcntl.LOCK_EX)
 
-            # Try to discover an existing persistent server (PID file)
+            # Try to discover an existing persistent server (PID file).
+            # The PID file is the sole authority — no port scanning.
+            # Port scanning would risk connecting to a different project's
+            # server when multiple projects run vitrine concurrently.
             info = _discover_server()
             if info:
                 _remote_url = info["url"]
                 _auth_token = info.get("token")
                 _session_id = info["session_id"]
                 return
-
-            # Port-range scan as fallback (catches servers without PID files).
-            # If we find a server, try to get its token from the PID file.
-            # Without a token we can't push cards, so only short-circuit
-            # if we have a usable connection.
-            found = _scan_port_range("127.0.0.1", 7741, 7750)
-            if found:
-                # Re-read PID file -- it may have appeared after the scan
-                pid_info = _discover_server()
-                if pid_info and pid_info.get("url") == found["url"]:
-                    _remote_url = pid_info["url"]
-                    _auth_token = pid_info.get("token")
-                    _session_id = pid_info["session_id"]
-                    return
-                # Server exists but no token -- log and let _start_process
-                # pick the next available port
-                logger.debug(
-                    f"Found server at {found['url']} but no auth token; "
-                    "starting new server on next available port"
-                )
 
             # No server found -> start a new persistent process
             _start_process(port=port, open_browser=open_browser)
@@ -519,24 +473,12 @@ def stop_server() -> bool:
 
 
 def server_status() -> dict[str, Any] | None:
-    """Return info about a running display server, or None.
+    """Return info about a running display server for this project, or None.
 
-    Prefers PID-backed metadata (includes pid/token). Falls back to health
-    scan discovery when PID metadata is unavailable.
+    Uses the PID file as the sole authority. No port scanning — that would
+    risk reporting a different project's server as ours.
     """
-    info = _discover_server()
-    if info:
-        return info
-
-    found = _scan_port_range("127.0.0.1", 7741, 7750)
-    if not found:
-        return None
-    return {
-        **found,
-        "pid": None,
-        "token": None,
-        "started_at": None,
-    }
+    return _discover_server()
 
 
 def _push_remote(card_data: dict[str, Any]) -> bool:

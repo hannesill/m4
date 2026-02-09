@@ -79,36 +79,6 @@ def _check_health(url: str, session_id: str | None = None) -> bool:
         return False
 
 
-def _scan_for_existing_server(
-    host: str = "127.0.0.1",
-    port_start: int = _DEFAULT_PORT,
-    port_end: int = _MAX_PORT,
-) -> dict[str, Any] | None:
-    """Probe each port in range for a live M4 display server.
-
-    Returns server info dict if found, None otherwise.
-    Timeout is 0.5s per port; refused connections are instant.
-    """
-    import urllib.request
-
-    for port in range(port_start, port_end + 1):
-        url = f"http://{host}:{port}"
-        try:
-            req = urllib.request.Request(f"{url}/api/health", method="GET")
-            with urllib.request.urlopen(req, timeout=0.5) as resp:
-                data = json.loads(resp.read())
-                if data.get("status") == "ok":
-                    return {
-                        "url": url,
-                        "host": host,
-                        "port": port,
-                        "session_id": data.get("session_id"),
-                    }
-        except Exception:
-            continue
-    return None
-
-
 def _get_vitrine_dir() -> Path:
     """Resolve the vitrine directory at {project_root}/.vitrine/."""
     try:
@@ -1371,8 +1341,8 @@ class DisplayServer:
 def _run_standalone(port: int = _DEFAULT_PORT, no_open: bool = False) -> None:
     """Run the display server as a standalone persistent process.
 
-    Acquires a file lock to prevent duplicate servers, checks for
-    existing servers (via PID file and port scan), then starts.
+    Acquires a file lock to prevent duplicate servers, checks the
+    PID file for an existing healthy server, then starts.
     """
     import atexit
     import fcntl
@@ -1395,7 +1365,10 @@ def _run_standalone(port: int = _DEFAULT_PORT, no_open: bool = False) -> None:
         sys.exit(0)
 
     try:
-        # Check PID file for an existing healthy server
+        # Check PID file for an existing healthy server.
+        # The PID file is the sole authority — no port scanning.
+        # Port scanning would risk detecting a different project's server
+        # and refusing to start ours.
         if pid_path.exists():
             try:
                 info = json.loads(pid_path.read_text())
@@ -1408,13 +1381,7 @@ def _run_standalone(port: int = _DEFAULT_PORT, no_open: bool = False) -> None:
             except (json.JSONDecodeError, OSError):
                 pass
 
-        # Port-range scan as fallback
-        existing = _scan_for_existing_server("127.0.0.1", _DEFAULT_PORT, _MAX_PORT)
-        if existing:
-            logger.debug(f"Found existing server at {existing['url']}, exiting")
-            sys.exit(0)
-
-        # No server found — start one while holding the lock
+        # No server found for this project — start one while holding the lock
         session_id = uuid.uuid4().hex[:12]
         token = secrets.token_hex(16)
 
