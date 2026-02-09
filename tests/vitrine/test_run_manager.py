@@ -8,7 +8,6 @@ Tests cover:
 - list_runs() metadata and sort order
 - delete_run() removes dir and updates registry
 - clean_runs() age-based removal
-- Request queue methods
 - Startup discovery from existing run directories
 """
 
@@ -244,26 +243,70 @@ class TestListAllCards:
         assert manager.list_all_cards(run_id="nonexistent") == []
 
 
-class TestRequestQueue:
-    def test_store_and_list(self, manager):
-        manager.store_request({"request_id": "r1", "card_id": "c1", "prompt": "test"})
-        requests = manager.list_requests(pending_only=True)
-        assert len(requests) == 1
-        assert requests[0]["request_id"] == "r1"
+class TestBuildContext:
+    def test_empty_run(self, manager):
+        manager.get_or_create_run("empty")
+        ctx = manager.build_context("empty")
+        assert ctx["run_id"] == "empty"
+        assert ctx["card_count"] == 0
+        assert ctx["cards"] == []
+        assert ctx["decisions"] == []
+        assert ctx["pending_responses"] == []
+        assert ctx["decisions_made"] == []
+        assert ctx["current_selections"] == {}
 
-    def test_acknowledge(self, manager):
-        manager.store_request({"request_id": "r1", "card_id": "c1", "prompt": "test"})
-        manager.acknowledge_request("r1")
-        assert manager.list_requests(pending_only=True) == []
+    def test_with_cards(self, manager):
+        from m4.vitrine.renderer import render
 
-    def test_multiple_requests(self, manager):
-        manager.store_request({"request_id": "r1", "card_id": "c1", "prompt": "first"})
-        manager.store_request({"request_id": "r2", "card_id": "c2", "prompt": "second"})
-        assert len(manager.list_requests(pending_only=True)) == 2
-        manager.acknowledge_request("r1")
-        pending = manager.list_requests(pending_only=True)
-        assert len(pending) == 1
-        assert pending[0]["request_id"] == "r2"
+        _, store = manager.get_or_create_run("ctx-test")
+        render("hello", title="Card 1", run_id="ctx-test", store=store)
+        render("world", title="Card 2", run_id="ctx-test", store=store)
+
+        ctx = manager.build_context("ctx-test")
+        assert ctx["card_count"] == 2
+        assert len(ctx["cards"]) == 2
+        assert ctx["cards"][0]["title"] == "Card 1"
+        assert ctx["cards"][1]["title"] == "Card 2"
+        assert ctx["cards"][0]["card_type"] == "markdown"
+
+    def test_with_decision_cards(self, manager):
+        from m4.vitrine.renderer import render
+
+        _, store = manager.get_or_create_run("decision-test")
+        card = render("check this", title="Review", run_id="decision-test", store=store)
+        store.update_card(card.card_id, response_requested=True, prompt="Approve?")
+
+        ctx = manager.build_context("decision-test")
+        assert len(ctx["decisions"]) == 1
+        assert ctx["decisions"][0]["title"] == "Review"
+        assert ctx["decisions"][0]["prompt"] == "Approve?"
+        assert len(ctx["pending_responses"]) == 1
+
+    def test_with_resolved_response(self, manager):
+        from m4.vitrine.renderer import render
+
+        _, store = manager.get_or_create_run("resolved-test")
+        card = render("check this", title="Review", run_id="resolved-test", store=store)
+        store.update_card(
+            card.card_id,
+            response_action="Approve",
+            response_message="Looks good",
+            response_values={"threshold": 0.2},
+            response_summary="3 rows from 'Review'",
+            response_artifact_id="resp-1",
+            response_timestamp="2026-02-09T10:00:00+00:00",
+        )
+
+        ctx = manager.build_context("resolved-test")
+        assert len(ctx["decisions_made"]) == 1
+        assert ctx["decisions_made"][0]["action"] == "Approve"
+        assert ctx["decisions_made"][0]["message"] == "Looks good"
+        assert ctx["decisions_made"][0]["values"] == {"threshold": 0.2}
+
+    def test_nonexistent_run(self, manager):
+        ctx = manager.build_context("nonexistent")
+        assert ctx["run_id"] == "nonexistent"
+        assert ctx["card_count"] == 0
 
 
 class TestDiscovery:

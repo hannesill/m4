@@ -25,6 +25,7 @@ from typing import Any
 from m4.vitrine._types import (  # noqa: F401
     Checkbox,
     DateRange,
+    DisplayHandle,
     Dropdown,
     Form,
     MultiSelect,
@@ -479,12 +480,13 @@ def show(
     wait: bool = False,
     prompt: str | None = None,
     timeout: float = 300,
-    on_send: str | None = None,
+    actions: list[str] | None = None,
     controls: list[Any] | None = None,
 ) -> Any:
     """Push any displayable object to the browser.
 
-    Returns card_id (str) by default, or DisplayResponse when wait=True.
+    Returns a string-like card handle by default, or DisplayResponse when
+    wait=True.
 
     Supported types:
     - pd.DataFrame → interactive table (artifact-backed, paged)
@@ -508,12 +510,14 @@ def show(
         wait: If True, block until user responds in the browser.
         prompt: Question shown to the user (requires wait=True).
         timeout: Seconds to wait for response (default 300).
-        on_send: Instruction for the agent when user clicks 'Send to Agent'.
+        actions: Named action buttons for decision cards. When provided,
+            replaces the default Confirm button (requires wait=True).
         controls: List of form field primitives to attach as controls to
             a table or chart card. Creates a hybrid data+controls card.
 
     Returns:
-        str (card_id) when wait=False, DisplayResponse when wait=True.
+        DisplayHandle (str subclass) when wait=False, DisplayResponse when
+        wait=True.
     """
     _ensure_started()
 
@@ -601,9 +605,9 @@ def show(
     if prompt is not None:
         card.prompt = prompt
         interaction_updates["prompt"] = prompt
-    if on_send is not None:
-        card.on_send = on_send
-        interaction_updates["on_send"] = on_send
+    if actions is not None:
+        card.actions = actions
+        interaction_updates["actions"] = actions
     if interaction_updates:
         store.update_card(card.card_id, **interaction_updates)
 
@@ -613,7 +617,7 @@ def show(
         _server.push_card(card)
 
     if not wait:
-        return card.card_id
+        return DisplayHandle(card.card_id, url=_run_url(run_id))
 
     # Blocking flow: wait for user response
     result = _wait_for_card_response(card.card_id, timeout)
@@ -640,6 +644,21 @@ def _wait_for_card_response(card_id: str, timeout: float) -> dict[str, Any]:
         return _poll_remote_response(card_id, timeout)
 
     return {"action": "timeout", "card_id": card_id}
+
+
+def _run_url(run_id: str | None) -> str | None:
+    """Build a browser URL deep link for a run, when available."""
+    if not run_id:
+        return None
+    from urllib.parse import quote
+
+    if _remote_url:
+        return f"{_remote_url}/#run={quote(run_id, safe='')}"
+    if _server is not None:
+        host = getattr(_server, "host", "127.0.0.1")
+        port = getattr(_server, "port", 7741)
+        return f"http://{host}:{port}/#run={quote(run_id, safe='')}"
+    return None
 
 
 def _poll_remote_response(card_id: str, timeout: float) -> dict[str, Any]:
@@ -696,6 +715,91 @@ def section(title: str, run_id: str | None = None) -> None:
         )
     elif _server is not None:
         _server.push_section(title, run_id=run_id)
+
+
+def set_status(message: str) -> None:
+    """Set the agent status bar message in the browser.
+
+    Displays a short status message (e.g., "Analyzing cohort...",
+    "Waiting for your response") in the vitrine header bar.
+    Pass an empty string to clear the status.
+
+    Args:
+        message: Status text to display.
+    """
+    _ensure_started()
+
+    if _remote_url and _auth_token:
+        _remote_command(
+            _remote_url, _auth_token, {"type": "status", "message": message}
+        )
+    elif _server is not None and hasattr(_server, "push_status"):
+        _server.push_status(message)
+
+
+def run_context(run_id: str) -> dict[str, Any]:
+    """Get a structured context summary for agent re-orientation.
+
+    Returns run metadata, cards, decisions made, pending responses,
+    and current selections. Useful at the start of a new conversation
+    turn to understand what has happened so far.
+
+    Args:
+        run_id: The run label to summarize.
+
+    Returns:
+        Dict with run_id, card_count, cards, decisions_made,
+        pending_responses, and current_selections.
+    """
+    _ensure_run_manager()
+    if _run_manager is not None:
+        ctx = _run_manager.build_context(run_id)
+        # In-process enrichment with live selection + pending response state
+        if _server is not None:
+            card_ids = [c.get("card_id", "") for c in ctx.get("cards", [])]
+            current_selections = {}
+            for cid in card_ids:
+                sel = _server._selections.get(cid, [])
+                if sel:
+                    current_selections[cid] = sel
+            ctx["current_selections"] = current_selections
+
+            pending_ids = {
+                item.get("card_id", "")
+                for item in ctx.get("pending_responses", [])
+                if item.get("card_id")
+            }
+            for cid in card_ids:
+                pending = getattr(_server, "_pending_responses", {})
+                fut = pending.get(cid) if isinstance(pending, dict) else None
+                if fut and not fut.done() and cid not in pending_ids:
+                    ctx.setdefault("pending_responses", []).append(
+                        {"card_id": cid, "title": None, "prompt": None}
+                    )
+            ctx["decisions"] = ctx.get("pending_responses", [])
+
+        # If remote server, try to get enriched version with selection counts
+        if _remote_url:
+            try:
+                import urllib.request
+
+                url = f"{_remote_url}/api/runs/{run_id}/context"
+                req = urllib.request.Request(url, method="GET")
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    return json.loads(resp.read())
+            except Exception:
+                pass
+
+        return ctx
+    return {
+        "run_id": run_id,
+        "card_count": 0,
+        "cards": [],
+        "decisions": [],
+        "pending_responses": [],
+        "decisions_made": [],
+        "current_selections": {},
+    }
 
 
 def list_runs() -> list[dict[str, Any]]:
@@ -840,90 +944,57 @@ def _poll_remote_events() -> None:
         _event_poll_stop.wait(0.5)
 
 
-def pending_requests() -> list:
-    """Poll for user-initiated requests from the browser.
+def get_selection(card_id: str) -> Any:
+    """Get the currently selected rows for a table card.
 
-    Returns a list of DisplayRequest objects. Each request has:
-    - request_id, card_id, prompt, artifact_id, timestamp, instruction
-    - .data() method to load the selected DataFrame
-    - .acknowledge() method to mark as handled
-
-    Returns:
-        List of DisplayRequest objects.
-    """
-    from m4.vitrine._types import DisplayRequest
-
-    _ensure_started()
-
-    if _run_manager is not None:
-        raw = _run_manager.list_requests(pending_only=True)
-        ack_cb = _run_manager.acknowledge_request
-        # Use first available store for artifact loading
-        first_store = _store
-        if first_store is None:
-            stores = list(_run_manager._stores.values())
-            first_store = stores[0] if stores else None
-    elif _store is not None:
-        raw = _store.list_requests(pending_only=True)
-        ack_cb = _store.acknowledge_request
-        first_store = _store
-    else:
-        return []
-
-    requests = []
-    for r in raw:
-        # Try to find the right store for this request's artifact
-        req_store = first_store
-        if _run_manager and r.get("card_id"):
-            card_store = _run_manager.get_store_for_card(r["card_id"])
-            if card_store:
-                req_store = card_store
-
-        req = DisplayRequest(
-            request_id=r["request_id"],
-            card_id=r.get("card_id", ""),
-            prompt=r.get("prompt", ""),
-            summary=r.get("summary", ""),
-            artifact_id=r.get("artifact_id"),
-            timestamp=r.get("timestamp", ""),
-            instruction=r.get("instruction"),
-            _store=req_store,
-            _ack_callback=ack_cb,
-        )
-        requests.append(req)
-    return requests
-
-
-def get_selection(artifact_id: str) -> Any:
-    """Load a selection DataFrame from the artifact store by ID.
-
-    Searches across all run stores and the display-level artifacts dir.
+    Reads the browser's checkbox/chart selection state that is passively
+    synced to the server via WebSocket. Returns the matching rows as a
+    DataFrame.
 
     Args:
-        artifact_id: The artifact ID returned in a DisplayResponse or
-            DisplayRequest.
+        card_id: The card_id of the table or chart card.
 
     Returns:
-        pd.DataFrame if found, None otherwise.
+        pd.DataFrame of selected rows, or empty DataFrame if nothing selected.
     """
     import pandas as pd
 
-    # Search run_manager stores
-    if _run_manager is not None:
-        for store in _run_manager._stores.values():
-            path = store._artifacts_dir / f"{artifact_id}.parquet"
-            if path.exists():
-                return pd.read_parquet(path)
-        # Check display-level artifacts dir
-        display_artifacts = _run_manager.display_dir / "artifacts"
-        path = display_artifacts / f"{artifact_id}.parquet"
-        if path.exists():
-            return pd.read_parquet(path)
+    _ensure_started()
 
-    # Legacy fallback
-    if _store is not None:
-        path = _store._artifacts_dir / f"{artifact_id}.parquet"
-        if path.exists():
-            return pd.read_parquet(path)
+    # In-process server: read directly from memory
+    if _server is not None and hasattr(_server, "_selections"):
+        indices = _server._selections.get(card_id, [])
+        if not indices:
+            return pd.DataFrame()
+        # Find the store that holds this card's parquet
+        store = None
+        if _run_manager is not None:
+            store = _run_manager.get_store_for_card(card_id)
+        if store is None:
+            store = _store
+        if store is None:
+            return pd.DataFrame()
+        path = store._artifacts_dir / f"{card_id}.parquet"
+        if not path.exists():
+            return pd.DataFrame()
+        df = pd.read_parquet(path)
+        valid = [i for i in indices if 0 <= i < len(df)]
+        if not valid:
+            return pd.DataFrame()
+        return df.iloc[valid].reset_index(drop=True)
 
-    return None
+    # Remote server: use REST endpoint
+    if _remote_url:
+        try:
+            import urllib.request
+
+            url = f"{_remote_url}/api/table/{card_id}/selection"
+            req = urllib.request.Request(url, method="GET")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read())
+            if data.get("rows") and data.get("columns"):
+                return pd.DataFrame(data["rows"], columns=data["columns"])
+        except Exception:
+            pass
+
+    return pd.DataFrame()

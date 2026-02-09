@@ -54,10 +54,10 @@ src/m4/vitrine/
 def show(obj, title=None, description=None, *, run_id=None,
          source=None, replace=None, position=None,
          wait=False, prompt=None, timeout=300,
-         actions=None) -> str | DisplayResponse:
+         actions=None) -> DisplayHandle | DisplayResponse:
     """Push any displayable object to the browser.
 
-    Returns card_id (fire-and-forget) or DisplayResponse (blocking).
+    Returns DisplayHandle (fire-and-forget) or DisplayResponse (blocking).
 
     Supported types:
     - pd.DataFrame → interactive table (artifact-backed, paged)
@@ -216,71 +216,71 @@ No new deps — starlette, uvicorn, websockets transitive via fastmcp; pandas, d
 The "Send to Agent" button and `pending_requests()` polling pattern are broken for turn-based CLI agents. The agent has no event loop, so async messages queue silently with no feedback to the researcher. Replace with passive selection tracking and better blocking cards.
 
 **Remove:**
-- [ ] "Send to Agent" button and popover from card headers (frontend)
-- [ ] `pending_requests()` and `DisplayRequest` from Python API
-- [ ] Request queue on disk (`requests.json`), `store_request()` / `list_requests()` / `acknowledge_request()` in RunManager
-- [ ] `GET /api/requests`, `POST /api/request_ack` server endpoints
-- [ ] `on_send` parameter from `show()`
+- [x] "Send to Agent" button and popover from card headers (frontend)
+- [x] `pending_requests()` and `DisplayRequest` from Python API
+- [x] Request queue on disk (`requests.json`), `store_request()` / `list_requests()` / `acknowledge_request()` in RunManager
+- [x] `GET /api/requests`, `POST /api/request_ack` server endpoints
+- [x] `on_send` parameter from `show()`
 
 ### Selection tracker
 
 Researchers naturally select rows and chart points while browsing. Make these selections available to the agent at any time via `get_selection(card_id)`, without requiring a blocking response.
 
-- [ ] Sync row checkbox state from browser to server on every toggle (lightweight WebSocket message: `{type: "vitrine.selection", card_id, selected_indices}`)
-- [ ] Server stores per-card selection state in memory (and optionally in run directory for persistence)
-- [ ] `GET /api/table/{id}/selection` endpoint returns current selection as JSON or Parquet
-- [ ] `get_selection(card_id)` Python API reads current selection without blocking
-- [ ] Plotly point selections feed the same tracker
-- [ ] Selection persists across page changes (cross-page selection for paginated tables)
-- [ ] Visual indicator on cards with active selections (badge or highlight)
+- [x] Sync row checkbox state from browser to server on every toggle (lightweight WebSocket message: `{type: "vitrine.selection", card_id, selected_indices}`)
+- [x] Server stores per-card selection state in memory (and optionally in run directory for persistence)
+- [x] `GET /api/table/{id}/selection` endpoint returns current selection as JSON or Parquet
+- [x] `get_selection(card_id)` Python API reads current selection without blocking
+- [x] Plotly point selections feed the same tracker
+- [x] Selection persists across page changes (cross-page selection for paginated tables)
+- [x] Visual indicator on cards with active selections (badge or highlight)
 
 ### Quick Actions on decision cards
 
 Structured response buttons beyond Confirm/Skip, so the researcher can steer the agent without typing.
 
-- [ ] `actions=` parameter on `show()` — list of named buttons (e.g. `["Approve", "Narrow further", "Show demographics"]`)
-- [ ] Frontend renders action buttons in the decision card footer
-- [ ] Clicked action name returned in `DisplayResponse.action` (instead of just "confirm"/"skip")
-- [ ] Text field remains available alongside actions for free-form steering
+- [x] `actions=` parameter on `show()` — list of named buttons (e.g. `["Approve", "Narrow further", "Show demographics"]`)
+- [x] Frontend renders action buttons in the decision card footer
+- [x] Clicked action name returned in `DisplayResponse.action` (instead of just "confirm"/"skip")
+- [x] Text field remains available alongside actions for free-form steering
 
 ### Run context API
 
 Let the agent re-orient after long blocking calls or at the start of a new turn. A structured summary of everything that's happened in a run.
 
-- [ ] `run_context(run_id)` Python API — returns dict with cards shown, decisions made, current selections, pending responses
-- [ ] `GET /api/runs/{run_id}/context` REST endpoint
-- [ ] Includes: card titles/types/timestamps, response actions/messages/values, selection state, card count
+- [x] `run_context(run_id)` Python API — returns dict with cards shown, decisions made, current selections, pending responses
+- [x] `GET /api/runs/{run_id}/context` REST endpoint
+- [x] Includes: card titles/types/timestamps, response actions/messages/values, selection state, card count
 
 ### Browser notifications
 
 Desktop notifications when the agent pushes a decision card, so the researcher knows to switch to the browser tab.
 
-- [ ] `Notification.requestPermission()` on first decision card
-- [ ] Desktop notification with card title/prompt when decision card arrives
-- [ ] Only fire when browser tab is not focused (respect `document.hidden`)
+- [x] `Notification.requestPermission()` on first decision card
+- [x] Desktop notification with card title/prompt when decision card arrives
+- [x] Only fire when browser tab is not focused (respect `document.hidden`)
 
 ### Agent status bar
 
 Show the agent's current state in the browser header so the researcher knows what's happening.
 
-- [ ] `set_status(message)` Python API — pushes a lightweight status to the browser
-- [ ] Browser header shows status: "Agent is working...", "Waiting for your response", "Idle"
-- [ ] WebSocket message type `vitrine.status` — no persistence, purely ephemeral
-- [ ] Auto-set "Waiting for your response" when a decision card is pushed
+- [x] `set_status(message)` Python API — pushes a lightweight status to the browser
+- [x] Browser header shows status: "Agent is working...", "Waiting for your response", "Idle"
+- [x] WebSocket message type `vitrine.status` — no persistence, purely ephemeral
+- [x] Auto-set "Waiting for your response" when a decision card is pushed
 
 ### Deep-link URLs
 
 Let the agent output clickable links to specific runs.
 
-- [ ] `http://localhost:7741/#run=sepsis-v1` auto-selects the run in the dropdown
-- [ ] Frontend reads `location.hash` on load and on hashchange
-- [ ] `show()` return value includes URL with fragment when a run_id is set
+- [x] `http://localhost:7741/#run=sepsis-v1` auto-selects the run in the dropdown
+- [x] Frontend reads `location.hash` on load and on hashchange
+- [x] `show()` return value includes URL with fragment when a run_id is set
 
 ### Skill and prompt improvements
 
 Teach the agent optimal patterns for using the display in a CLI context.
 
-- [ ] Update m4-vitrine skill: remove `pending_requests()` references, document selection tracker and Quick Actions
-- [ ] Add context-saving patterns: "Use `show()` instead of `print()` for DataFrames — the browser handles rendering, keep terminal output minimal"
-- [ ] Add guidance on blocking vs. fire-and-forget: when to use `wait=True`, how to batch results before blocking
-- [ ] Instruct agent to call `run_context()` at the start of each research phase to re-orient
+- [x] Update m4-vitrine skill: remove `pending_requests()` references, document selection tracker and Quick Actions
+- [x] Add context-saving patterns: "Use `show()` instead of `print()` for DataFrames — the browser handles rendering, keep terminal output minimal"
+- [x] Add guidance on blocking vs. fire-and-forget: when to use `wait=True`, how to batch results before blocking
+- [x] Instruct agent to call `run_context()` at the start of each research phase to re-orient

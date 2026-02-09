@@ -1362,74 +1362,6 @@
     accent-color: var(--accent);
   }
 
-  /* Send to Agent button */
-  .send-to-agent-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-muted);
-    font-size: 12px;
-    padding: 3px 5px;
-    border-radius: 3px;
-    line-height: 1;
-    transition: color 0.15s, background 0.15s;
-  }
-
-  .send-to-agent-btn:hover {
-    color: var(--accent);
-    background: var(--bg-card);
-  }
-
-  /* Prompt popover */
-  .prompt-popover {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    z-index: 50;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    padding: 12px;
-    width: 280px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    animation: fadeIn 0.15s ease;
-  }
-
-  .prompt-popover textarea {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 12px;
-    font-family: var(--font);
-    resize: vertical;
-    min-height: 60px;
-    max-height: 120px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .prompt-popover textarea:focus { border-color: var(--accent); }
-
-  .prompt-popover .send-btn {
-    align-self: flex-end;
-    padding: 5px 14px;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 12px;
-    font-family: var(--font);
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .prompt-popover .send-btn:hover { background: var(--accent-hover); }
 
   /* Card flash animation on update */
   @keyframes flashHighlight {
@@ -1439,23 +1371,6 @@
 
   .card.flash { animation: flashHighlight 0.6s ease; }
 
-  /* Pending request badge */
-  .request-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    border-radius: 9px;
-    background: var(--accent);
-    color: white;
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 1;
-  }
-
-  .request-badge.hidden { display: none; }
 
   /* Card updating overlay */
   .card-updating-overlay {
@@ -1481,13 +1396,45 @@
 
   .card { position: relative; }
 
-  /* Sent confirmation */
+  /* Action badge (Confirmed/Skipped) */
   .sent-badge {
     display: inline-block;
     font-size: 11px;
     color: var(--success);
     font-weight: 500;
     padding: 2px 6px;
+  }
+
+  /* Selection badge */
+  .selection-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 9px;
+    background: var(--accent);
+    color: white;
+    margin-left: 4px;
+  }
+
+  /* Agent status */
+  #agent-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* Quick action buttons (secondary) */
+  .response-btn-action {
+    background: var(--bg-header);
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  .response-btn-action:hover {
+    background: var(--bg-card);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   /* Print-optimized styles */
   @media print {
@@ -1509,9 +1456,7 @@
     .run-metadata-bar,
     .footer,
     .copy-toast,
-    .confirm-overlay,
-    .prompt-popover,
-    .request-badge {
+    .confirm-overlay {
       display: none !important;
     }
 
@@ -1555,7 +1500,6 @@
     }
 
     .card-actions,
-    .send-to-agent-btn,
     .response-actions {
       display: none;
     }
@@ -1595,7 +1539,7 @@
     </div>
   </div>
   <div class="header-actions">
-    <span class="request-badge hidden" id="request-badge" title="Pending agent requests">0</span>
+    <span id="agent-status"></span>
     <div class="export-dropdown" id="export-dropdown">
       <button class="btn" id="export-btn" title="Export run">&#8615; Export</button>
       <div class="export-dropdown-panel" id="export-dropdown-panel" style="display: none;"></div>
@@ -1651,6 +1595,7 @@
     dropdownOpen: false,
     liveMode: false,
     _autoSelectPending: false,
+    selections: {},
   };
 
   // --- Elements ---
@@ -2271,6 +2216,10 @@
       case 'display.update':
         updateCard(msg.card_id, msg.card);
         break;
+      case 'vitrine.status':
+      case 'display.status':
+        updateAgentStatus(msg.text || msg.status || '');
+        break;
     }
   }
 
@@ -2365,17 +2314,6 @@
     };
     actions.appendChild(copyBtn);
 
-    // Send to Agent button
-    var sendBtn = document.createElement('button');
-    sendBtn.className = 'send-to-agent-btn';
-    sendBtn.innerHTML = '&#9993;';
-    sendBtn.title = 'Send to Agent';
-    sendBtn.onclick = function(e) {
-      e.stopPropagation();
-      togglePromptPopover(sendBtn, cardData, el);
-    };
-    actions.appendChild(sendBtn);
-
     // Pin button
     var pinBtn = document.createElement('button');
     pinBtn.className = 'card-action-btn' + (cardData.pinned ? ' pinned' : '');
@@ -2441,6 +2379,9 @@
       el.classList.add('waiting');
       var responseUI = buildResponseUI(cardData, el);
       el.appendChild(responseUI);
+      // Update agent status and send browser notification
+      updateAgentStatus('Waiting for your response');
+      notifyDecisionCard(cardData);
     }
 
     // Provenance
@@ -2591,7 +2532,7 @@
       copyTsvBtn.textContent = 'Copy TSV';
       copyTsvBtn.onclick = function() {
         var tbody = wrapper.querySelector('tbody');
-        var headerCells = wrapper.querySelectorAll('thead th');
+        var headerCells = wrapper.querySelectorAll('thead th:not(.select-col)');
         var headers = [];
         headerCells.forEach(function(th) {
           // Get just the column name text (not the sort indicator or type badge)
@@ -2601,7 +2542,7 @@
         var bodyRows = tbody.querySelectorAll('tr');
         bodyRows.forEach(function(tr) {
           var cells = [];
-          tr.querySelectorAll('td').forEach(function(td) { cells.push(td.textContent); });
+          tr.querySelectorAll('td:not(.select-col)').forEach(function(td) { cells.push(td.textContent); });
           lines.push(cells.join('\t'));
         });
         navigator.clipboard.writeText(lines.join('\n')).then(function() {
@@ -2621,20 +2562,22 @@
     var thead = document.createElement('thead');
     var headerRow = document.createElement('tr');
 
-    // Add select-all checkbox column for waiting cards
-    if (cardData.response_requested) {
-      var selectAllTh = document.createElement('th');
-      selectAllTh.className = 'select-col';
-      var selectAllCb = document.createElement('input');
-      selectAllCb.type = 'checkbox';
-      selectAllCb.title = 'Select all';
-      selectAllCb.onchange = function() {
-        var cbs = wrapper.querySelectorAll('tbody .select-col input[type="checkbox"]');
-        cbs.forEach(function(cb) { cb.checked = selectAllCb.checked; });
-      };
-      selectAllTh.appendChild(selectAllCb);
-      headerRow.appendChild(selectAllTh);
-    }
+    // Add select-all checkbox column for all table cards
+    var selectAllTh = document.createElement('th');
+    selectAllTh.className = 'select-col';
+    var selectAllCb = document.createElement('input');
+    selectAllCb.type = 'checkbox';
+    selectAllCb.title = 'Select all on this page';
+    selectAllCb.onchange = function() {
+      var cbs = wrapper.querySelectorAll('tbody .select-col input[type="checkbox"]');
+      cbs.forEach(function(cb) {
+        cb.checked = selectAllCb.checked;
+        // Fire the onchange to update selection state
+        if (cb.onchange) cb.onchange();
+      });
+    };
+    selectAllTh.appendChild(selectAllCb);
+    headerRow.appendChild(selectAllTh);
 
     preview.columns.forEach(function(col) {
       var th = document.createElement('th');
@@ -2738,7 +2681,7 @@
           var cardId = cardEl.dataset.cardId;
           cardData = state.cards.find(function(c) { return c.card_id === cardId; });
         }
-        renderTableRows(tbody, data.rows, columns, dtypes, cardData);
+        renderTableRows(tbody, data.rows, columns, dtypes, cardData, pagerState.offset);
         if (updateRowInfo) updateRowInfo();
 
         // Rebuild pager if needed
@@ -2757,21 +2700,39 @@
       });
   }
 
-  function renderTableRows(tbody, rows, columns, dtypes, cardData) {
+  function renderTableRows(tbody, rows, columns, dtypes, cardData, pageOffset) {
     tbody.innerHTML = '';
-    var hasCheckboxes = cardData && cardData.response_requested;
+    var cardId = cardData ? cardData.card_id : null;
+    pageOffset = pageOffset || 0;
+    // Ensure selection set exists for this card
+    if (cardId && !state.selections[cardId]) {
+      state.selections[cardId] = new Set();
+    }
     rows.forEach(function(row, rowIdx) {
       var tr = document.createElement('tr');
-      // Add selection checkbox for waiting cards
-      if (hasCheckboxes) {
-        var selTd = document.createElement('td');
-        selTd.className = 'select-col';
-        var cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.onclick = function(e) { e.stopPropagation(); };
-        selTd.appendChild(cb);
-        tr.appendChild(selTd);
+      var absIdx = pageOffset + rowIdx;
+      // Add selection checkbox for all table cards
+      var selTd = document.createElement('td');
+      selTd.className = 'select-col';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      if (cardId && state.selections[cardId] && state.selections[cardId].has(absIdx)) {
+        cb.checked = true;
       }
+      cb.onclick = function(e) { e.stopPropagation(); };
+      cb.onchange = function() {
+        if (!cardId) return;
+        if (!state.selections[cardId]) state.selections[cardId] = new Set();
+        if (cb.checked) {
+          state.selections[cardId].add(absIdx);
+        } else {
+          state.selections[cardId].delete(absIdx);
+        }
+        updateSelectionBadge(cardId);
+        sendSelectionEvent(cardId);
+      };
+      selTd.appendChild(cb);
+      tr.appendChild(selTd);
       row.forEach(function(val, i) {
         var td = document.createElement('td');
         td.textContent = val === null ? '\u2014' : String(val);
@@ -2915,7 +2876,7 @@
         .then(function(data) {
           totalRowsRef.value = data.total_rows;
           var tbody = wrapper.querySelector('tbody');
-          renderTableRows(tbody, data.rows, columns, dtypes, cardData);
+          renderTableRows(tbody, data.rows, columns, dtypes, cardData, pagerState.offset);
           updatePage();
         });
     }
@@ -3041,11 +3002,12 @@
             var points = (eventData.points || []).map(function(pt) {
               return { x: pt.x, y: pt.y, pointIndex: pt.pointIndex, curveNumber: pt.curveNumber };
             });
+            var indices = points.map(function(pt) { return pt.pointIndex; });
             state.ws.send(JSON.stringify({
               type: 'vitrine.event',
-              event_type: 'point_select',
+              event_type: 'selection',
               card_id: cardData.card_id,
-              payload: { points: points },
+              payload: { selected_indices: indices, points: points },
             }));
           }
         });
@@ -3164,6 +3126,46 @@
     img.style.maxWidth = '100%';
     imgContainer.appendChild(img);
     container.appendChild(imgContainer);
+  }
+
+  // --- Selection tracking ---
+
+  function sendSelectionEvent(cardId) {
+    if (!state.ws || !state.connected) return;
+    var sel = state.selections[cardId];
+    if (!sel) return;
+    state.ws.send(JSON.stringify({
+      type: 'vitrine.event',
+      event_type: 'selection',
+      card_id: cardId,
+      payload: { selected_indices: Array.from(sel).sort(function(a, b) { return a - b; }) },
+    }));
+  }
+
+  function updateSelectionBadge(cardId) {
+    var cardEl = document.getElementById('card-' + cardId);
+    if (!cardEl) return;
+    var header = cardEl.querySelector('.card-header');
+    if (!header) return;
+    var badge = header.querySelector('.selection-badge');
+    var sel = state.selections[cardId];
+    var count = sel ? sel.size : 0;
+    if (count > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'selection-badge';
+        // Insert before card-actions
+        var actions = header.querySelector('.card-actions');
+        if (actions) {
+          header.insertBefore(badge, actions);
+        } else {
+          header.appendChild(badge);
+        }
+      }
+      badge.textContent = count + ' selected';
+    } else if (badge) {
+      badge.remove();
+    }
   }
 
   // --- Response UI for waiting cards ---
@@ -3599,13 +3601,27 @@
     var actionsRow = document.createElement('div');
     actionsRow.className = 'response-actions';
 
-    var confirmBtn = document.createElement('button');
-    confirmBtn.className = 'response-btn response-btn-confirm';
-    confirmBtn.textContent = 'Confirm';
-    confirmBtn.onclick = function() {
-      sendResponse(cardData, cardEl, 'confirm', msgInput.value);
-    };
-    actionsRow.appendChild(confirmBtn);
+    // Quick actions: if cardData.actions is a non-empty array, render action buttons
+    // instead of the default Confirm button
+    if (cardData.actions && Array.isArray(cardData.actions) && cardData.actions.length > 0) {
+      cardData.actions.forEach(function(actionName) {
+        var actionBtn = document.createElement('button');
+        actionBtn.className = 'response-btn response-btn-action';
+        actionBtn.textContent = actionName;
+        actionBtn.onclick = function() {
+          sendResponse(cardData, cardEl, actionName, msgInput.value);
+        };
+        actionsRow.appendChild(actionBtn);
+      });
+    } else {
+      var confirmBtn = document.createElement('button');
+      confirmBtn.className = 'response-btn response-btn-confirm';
+      confirmBtn.textContent = 'Confirm';
+      confirmBtn.onclick = function() {
+        sendResponse(cardData, cardEl, 'confirm', msgInput.value);
+      };
+      actionsRow.appendChild(confirmBtn);
+    }
 
     var skipBtn = document.createElement('button');
     skipBtn.className = 'response-btn response-btn-skip';
@@ -3642,23 +3658,29 @@
   }
 
   function sendResponse(cardData, cardEl, action, message) {
-    // Gather selected rows if this is a table card with selection checkboxes
+    // Gather selected indices from selection state
     var selectedRows = null;
     var columns = null;
-    var tbody = cardEl.querySelector('tbody');
-    if (cardData.card_type === 'table' && tbody) {
-      var checkboxes = tbody.querySelectorAll('input[type="checkbox"]:checked');
-      if (checkboxes.length > 0) {
-        columns = cardData.preview.columns;
-        selectedRows = [];
-        checkboxes.forEach(function(cb) {
-          var tr = cb.closest('tr');
-          var cells = [];
-          tr.querySelectorAll('td:not(.select-col)').forEach(function(td) {
-            cells.push(td.textContent === '\u2014' ? null : td.textContent);
+    var selectedIndices = null;
+    var sel = state.selections[cardData.card_id];
+    if (cardData.card_type === 'table' && sel && sel.size > 0) {
+      columns = cardData.preview.columns;
+      selectedIndices = Array.from(sel).sort(function(a, b) { return a - b; });
+      // Also gather currently visible checked rows for backward compat
+      var tbody = cardEl.querySelector('tbody');
+      if (tbody) {
+        var checkboxes = tbody.querySelectorAll('input[type="checkbox"]:checked');
+        if (checkboxes.length > 0) {
+          selectedRows = [];
+          checkboxes.forEach(function(cb) {
+            var tr = cb.closest('tr');
+            var cells = [];
+            tr.querySelectorAll('td:not(.select-col)').forEach(function(td) {
+              cells.push(td.textContent === '\u2014' ? null : td.textContent);
+            });
+            selectedRows.push(cells);
           });
-          selectedRows.push(cells);
-        });
+        }
       }
     }
 
@@ -3679,6 +3701,7 @@
           action: action,
           message: message,
           selected_rows: selectedRows,
+          selected_indices: selectedIndices,
           columns: columns,
           form_values: formValues,
         },
@@ -3692,6 +3715,8 @@
       responseUI.remove();
     }
     cardEl.classList.remove('waiting');
+    // Clear agent status
+    updateAgentStatus('');
 
     // Freeze form: replace interactive fields with compact frozen display
     if (action === 'confirm' && hasFormFields && Object.keys(formValues).length > 0) {
@@ -3714,115 +3739,6 @@
     badge.textContent = action === 'confirm' ? 'Confirmed' : 'Skipped';
     var header = cardEl.querySelector('.card-header');
     if (header) header.appendChild(badge);
-  }
-
-  // --- Send to Agent popover ---
-
-  function togglePromptPopover(btn, cardData, cardEl) {
-    // Close any existing popover
-    var existing = document.querySelector('.prompt-popover');
-    if (existing) {
-      existing.remove();
-      return;
-    }
-
-    var popover = document.createElement('div');
-    popover.className = 'prompt-popover';
-
-    var textarea = document.createElement('textarea');
-    textarea.placeholder = 'Message for the agent...';
-    popover.appendChild(textarea);
-
-    var sendBtnEl = document.createElement('button');
-    sendBtnEl.className = 'send-btn';
-    sendBtnEl.textContent = 'Send';
-    sendBtnEl.onclick = function() {
-      var promptText = textarea.value.trim();
-      if (!promptText) return;
-      submitSendToAgent(cardData, cardEl, promptText);
-      popover.remove();
-    };
-    popover.appendChild(sendBtnEl);
-
-    // Position relative to the button's parent header
-    var header = btn.closest('.card-header');
-    if (header) header.style.position = 'relative';
-    header.appendChild(popover);
-
-    textarea.focus();
-
-    // Close on click outside
-    function closeOnOutside(e) {
-      if (!popover.contains(e.target) && e.target !== btn) {
-        popover.remove();
-        document.removeEventListener('mousedown', closeOnOutside);
-      }
-    }
-    setTimeout(function() {
-      document.addEventListener('mousedown', closeOnOutside);
-    }, 0);
-  }
-
-  function submitSendToAgent(cardData, cardEl, promptText) {
-    // Gather selected/visible rows for table cards
-    var selectedRows = null;
-    var columns = null;
-    var tbody = cardEl.querySelector('tbody');
-    if (cardData.card_type === 'table' && tbody) {
-      columns = cardData.preview.columns;
-      // Try checked rows first, fall back to all visible rows
-      var checkboxes = tbody.querySelectorAll('input[type="checkbox"]:checked');
-      if (checkboxes.length > 0) {
-        selectedRows = [];
-        checkboxes.forEach(function(cb) {
-          var tr = cb.closest('tr');
-          var cells = [];
-          tr.querySelectorAll('td:not(.select-col)').forEach(function(td) {
-            cells.push(td.textContent === '\u2014' ? null : td.textContent);
-          });
-          selectedRows.push(cells);
-        });
-      }
-    }
-
-    // Send via WebSocket
-    if (state.ws && state.connected) {
-      state.ws.send(JSON.stringify({
-        type: 'vitrine.event',
-        event_type: 'send_to_agent',
-        card_id: cardData.card_id,
-        payload: {
-          prompt: promptText,
-          selected_rows: selectedRows,
-          columns: columns,
-          instruction: cardData.on_send || null,
-        },
-      }));
-    }
-
-    // Submit via REST only if WebSocket is not connected (fallback)
-    if (!state.ws || !state.connected) {
-      fetch('/api/requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          card_id: cardData.card_id,
-          prompt: promptText,
-          selected_rows: selectedRows,
-          columns: columns,
-          instruction: cardData.on_send || null,
-        }),
-      }).catch(function() {});
-    }
-
-    // Show "Sent" confirmation and update badge
-    incrementRequestBadge();
-    showToast('Sent to agent');
-
-    // Copy formatted snippet to clipboard
-    var snippet = 'Agent Request: ' + promptText;
-    if (cardData.title) snippet = '[' + cardData.title + '] ' + snippet;
-    navigator.clipboard.writeText(snippet).catch(function() {});
   }
 
   function addSection(title, runId) {
@@ -4020,41 +3936,75 @@
     });
   }
 
-  // --- Pending Request Badge ---
-  var requestBadgeEl = document.getElementById('request-badge');
+  // --- Agent Status ---
+  var agentStatusEl = document.getElementById('agent-status');
 
-  function pollRequestCount() {
-    fetch('/api/requests', {
-      headers: { 'Content-Type': 'application/json' },
-    })
-      .then(function(r) {
-        // 401 means auth required (no token from browser), which is expected.
-        // The badge shows based on the count of queued requests the server knows about.
-        // Use the public POST count instead — track locally.
-        return null;
-      })
-      .catch(function() {});
+  function updateAgentStatus(text) {
+    if (agentStatusEl) agentStatusEl.textContent = text;
   }
 
-  // Track pending request count client-side (incremented on send, no server poll needed)
-  var pendingRequestCount = 0;
-
-  function incrementRequestBadge() {
-    pendingRequestCount++;
-    requestBadgeEl.textContent = pendingRequestCount;
-    requestBadgeEl.classList.remove('hidden');
-  }
-
-  function decrementRequestBadge() {
-    pendingRequestCount = Math.max(0, pendingRequestCount - 1);
-    if (pendingRequestCount === 0) {
-      requestBadgeEl.classList.add('hidden');
-    } else {
-      requestBadgeEl.textContent = pendingRequestCount;
+  // --- Browser Notifications ---
+  function notifyDecisionCard(cardData) {
+    if (!document.hidden) return;
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      var title = cardData.title || 'Decision needed';
+      var body = cardData.prompt || 'A card is waiting for your response.';
+      new Notification(title, { body: body, icon: '/static/favicon.ico' });
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(function(perm) {
+        if (perm === 'granted') {
+          var title = cardData.title || 'Decision needed';
+          var body = cardData.prompt || 'A card is waiting for your response.';
+          new Notification(title, { body: body, icon: '/static/favicon.ico' });
+        }
+      });
     }
   }
 
+  // --- Deep-Link URLs ---
+  function parseHashRun() {
+    var hash = location.hash || '';
+    var m = hash.match(/^#run=(.+)$/);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  function applyHashRun() {
+    var label = parseHashRun();
+    if (label) {
+      // Check if this run exists
+      var exists = state.runs.some(function(r) { return r.label === label; }) ||
+                   state.runIds.indexOf(label) !== -1;
+      if (exists && state.activeRunFilter !== label) {
+        selectRun(label);
+      }
+    }
+  }
+
+  window.addEventListener('hashchange', function() {
+    applyHashRun();
+  });
+
+  // Patch selectRun to update hash
+  var _origSelectRun = selectRun;
+  selectRun = function(label) {
+    _origSelectRun(label);
+    if (label) {
+      history.replaceState(null, '', '#run=' + encodeURIComponent(label));
+    } else {
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+  };
+
   // --- Init ---
+  // Apply hash-based run selection after runs load
+  var _origLoadRuns = loadRuns;
+  loadRuns = function() {
+    _origLoadRuns();
+    // After runs load, check for deep link
+    setTimeout(function() { applyHashRun(); }, 600);
+  };
+
   connect();
 })();
 </script>

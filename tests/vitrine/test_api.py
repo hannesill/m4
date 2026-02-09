@@ -8,7 +8,7 @@ Tests cover:
 - Module state management
 - Server discovery and client mode
 - Blocking show (wait=True)
-- pending_requests() and get_selection()
+- get_selection()
 - on_event() callback registration
 - RunManager integration: list_runs, delete_run, clean_runs
 - Multi-run show() calls
@@ -22,7 +22,7 @@ import pandas as pd
 import pytest
 
 import m4.vitrine as display
-from m4.vitrine._types import CardType, DisplayRequest, DisplayResponse
+from m4.vitrine._types import CardType, DisplayResponse
 from m4.vitrine.artifacts import ArtifactStore
 from m4.vitrine.run_manager import RunManager
 
@@ -86,6 +86,7 @@ def mock_server(store, monkeypatch):
             self.pushed_sections = []
             self.event_callbacks = []
             self._mock_response = {"action": "timeout", "card_id": ""}
+            self._selections = {}
 
         def start(self, open_browser=True):
             pass
@@ -145,9 +146,11 @@ class TestShow:
         assert cards[0].title == "Finding"
 
     def test_with_run_id(self, store, mock_server):
-        display.show("text", run_id="my-run")
+        handle = display.show("text", run_id="my-run")
         cards = store.list_cards()
         assert cards[0].run_id == "my-run"
+        assert getattr(handle, "url", None) is not None
+        assert "#run=my-run" in handle.url
 
     def test_with_source(self, store, mock_server):
         display.show("text", source="mimiciv_hosp.patients")
@@ -431,112 +434,58 @@ class TestBlockingShow:
         assert isinstance(result, str)
 
 
-class TestOnSend:
-    def test_on_send_stored_in_card(self, store, mock_server):
-        display.show("hello", on_send="Analyze these rows")
+class TestActions:
+    def test_actions_stored_in_card(self, store, mock_server):
+        mock_server._mock_response = {"action": "Approve", "card_id": "x"}
+        display.show("hello", wait=True, actions=["Approve", "Reject"])
         cards = store.list_cards()
         assert len(cards) == 1
-        assert cards[0].on_send == "Analyze these rows"
+        assert cards[0].actions == ["Approve", "Reject"]
 
-    def test_on_send_in_serialized_card(self, store, mock_server):
+    def test_actions_in_serialized_card(self, store, mock_server):
         from m4.vitrine.artifacts import _serialize_card
 
-        display.show("hello", on_send="Process data")
+        mock_server._mock_response = {"action": "Run", "card_id": "x"}
+        display.show("hello", wait=True, actions=["Run", "Skip"])
         card = store.list_cards()[0]
         serialized = _serialize_card(card)
-        assert serialized["on_send"] == "Process data"
+        assert serialized["actions"] == ["Run", "Skip"]
 
-
-class TestPendingRequests:
-    def test_pending_requests_empty(self, store, mock_server):
-        requests = display.pending_requests()
-        assert requests == []
-
-    def test_pending_requests_returns_queued(self, store, mock_server):
-        store.store_request(
-            {
-                "request_id": "req-1",
-                "card_id": "c1",
-                "prompt": "Analyze this",
-                "artifact_id": None,
-                "timestamp": "2025-01-01T00:00:00Z",
-            }
-        )
-        requests = display.pending_requests()
-        assert len(requests) == 1
-        assert isinstance(requests[0], DisplayRequest)
-        assert requests[0].request_id == "req-1"
-        assert requests[0].prompt == "Analyze this"
-
-    def test_pending_requests_excludes_acknowledged(self, store, mock_server):
-        store.store_request(
-            {
-                "request_id": "req-1",
-                "card_id": "c1",
-                "prompt": "First",
-            }
-        )
-        store.store_request(
-            {
-                "request_id": "req-2",
-                "card_id": "c2",
-                "prompt": "Second",
-            }
-        )
-        store.acknowledge_request("req-1")
-        requests = display.pending_requests()
-        assert len(requests) == 1
-        assert requests[0].request_id == "req-2"
-
-    def test_request_acknowledge(self, store, mock_server):
-        store.store_request(
-            {
-                "request_id": "req-1",
-                "card_id": "c1",
-                "prompt": "Test",
-            }
-        )
-        requests = display.pending_requests()
-        assert len(requests) == 1
-        requests[0].acknowledge()
-        # After acknowledge, no pending
-        requests = display.pending_requests()
-        assert len(requests) == 0
-
-    def test_request_data_accessor(self, store, mock_server):
-        df = pd.DataFrame({"x": [10, 20]})
-        store.store_dataframe("sel-req-1", df)
-        store.store_request(
-            {
-                "request_id": "req-1",
-                "card_id": "c1",
-                "prompt": "Check this",
-                "artifact_id": "sel-req-1",
-            }
-        )
-        requests = display.pending_requests()
-        loaded = requests[0].data()
-        assert loaded is not None
-        assert len(loaded) == 2
+    def test_actions_response_carries_action_name(self, store, mock_server):
+        mock_server._mock_response = {
+            "action": "Reject",
+            "card_id": "test",
+        }
+        result = display.show("hello", wait=True, actions=["Approve", "Reject"])
+        assert isinstance(result, DisplayResponse)
+        assert result.action == "Reject"
 
 
 class TestGetSelection:
-    def test_get_selection_loads_dataframe(self, store, mock_server):
-        df = pd.DataFrame({"a": [1, 2, 3]})
-        store.store_dataframe("sel-test", df)
-        result = display.get_selection("sel-test")
-        assert result is not None
-        assert len(result) == 3
-        assert list(result.columns) == ["a"]
+    def test_get_selection_returns_selected_rows(self, store, mock_server):
+        """get_selection returns selected rows from in-process server."""
+        df = pd.DataFrame({"a": [10, 20, 30]})
+        card_id = "sel-card"
+        store.store_dataframe(card_id, df)
+        # Simulate selection state on mock server
+        mock_server._selections = {card_id: [0, 2]}
+        result = display.get_selection(card_id)
+        assert isinstance(result, pd.DataFrame)
+        assert len(result) == 2
+        assert list(result["a"]) == [10, 30]
 
-    def test_get_selection_returns_none_for_missing(self, store, mock_server):
-        result = display.get_selection("nonexistent")
-        assert result is None
+    def test_get_selection_empty_when_no_selection(self, store, mock_server):
+        mock_server._selections = {}
+        result = display.get_selection("any-card")
+        assert isinstance(result, pd.DataFrame)
+        assert len(result) == 0
 
-    def test_get_selection_returns_none_without_store(self, mock_server):
-        display._store = None
+    def test_get_selection_empty_without_server(self, monkeypatch):
+        """get_selection returns empty DataFrame when no server available."""
+        monkeypatch.setattr(display, "_ensure_started", lambda **kw: None)
         result = display.get_selection("anything")
-        assert result is None
+        assert isinstance(result, pd.DataFrame)
+        assert len(result) == 0
 
 
 class TestOnEvent:
@@ -584,6 +533,50 @@ class TestDeleteRun:
 
     def test_delete_nonexistent_run(self, run_manager):
         assert display.delete_run("nope") is False
+
+
+class TestSetStatus:
+    def test_set_status_in_process(self, store, mock_server):
+        """set_status pushes to in-process server."""
+        mock_server.push_status = lambda msg: None  # Add method to mock
+        display.set_status("Analyzing...")
+        # Should not raise
+
+    def test_set_status_remote(self, store, monkeypatch):
+        """set_status pushes via remote command when remote."""
+        commands_sent = []
+
+        def mock_remote_command(url, token, payload):
+            commands_sent.append(payload)
+            return True
+
+        display._remote_url = "http://127.0.0.1:7741"
+        display._auth_token = "test-token"
+        monkeypatch.setattr(display, "_ensure_started", lambda **kw: None)
+        monkeypatch.setattr(display, "_remote_command", mock_remote_command)
+
+        display.set_status("Working...")
+        assert len(commands_sent) == 1
+        assert commands_sent[0]["type"] == "status"
+        assert commands_sent[0]["message"] == "Working..."
+
+
+class TestRunContext:
+    def test_run_context_with_cards(self, run_manager, mock_server):
+        display.show("hello", run_id="ctx-test", title="Card 1")
+        ctx = display.run_context("ctx-test")
+        assert ctx["run_id"] == "ctx-test"
+        assert ctx["card_count"] == 1
+        assert len(ctx["cards"]) == 1
+        assert ctx["cards"][0]["title"] == "Card 1"
+        assert "pending_responses" in ctx
+        assert "decisions_made" in ctx
+        assert "current_selections" in ctx
+
+    def test_run_context_nonexistent(self, run_manager):
+        ctx = display.run_context("nonexistent")
+        assert ctx["card_count"] == 0
+        assert ctx["cards"] == []
 
 
 class TestCleanRuns:

@@ -46,8 +46,14 @@ def _serialize_card(card: CardDescriptor) -> dict[str, Any]:
         "preview": card.preview,
         "response_requested": card.response_requested,
         "prompt": card.prompt,
-        "on_send": card.on_send,
         "timeout": card.timeout,
+        "actions": card.actions,
+        "response_action": card.response_action,
+        "response_message": card.response_message,
+        "response_values": card.response_values,
+        "response_summary": card.response_summary,
+        "response_artifact_id": card.response_artifact_id,
+        "response_timestamp": card.response_timestamp,
     }
     if card.provenance:
         d["provenance"] = {
@@ -88,8 +94,14 @@ def _deserialize_card(d: dict[str, Any]) -> CardDescriptor:
         provenance=provenance,
         response_requested=d.get("response_requested", False),
         prompt=d.get("prompt"),
-        on_send=d.get("on_send"),
         timeout=d.get("timeout"),
+        actions=d.get("actions"),
+        response_action=d.get("response_action"),
+        response_message=d.get("response_message"),
+        response_values=d.get("response_values", {}),
+        response_summary=d.get("response_summary"),
+        response_artifact_id=d.get("response_artifact_id"),
+        response_timestamp=d.get("response_timestamp"),
     )
 
 
@@ -562,58 +574,6 @@ class ArtifactStore:
             Path to the stored JSON file.
         """
         return self.store_json(selection_id, data)
-
-    @property
-    def _requests_path(self) -> Path:
-        """Path to the requests queue file."""
-        return self.session_dir / "requests.json"
-
-    def store_request(self, request: dict[str, Any]) -> None:
-        """Append a request to the request queue.
-
-        Args:
-            request: Request dict with request_id, card_id, prompt, etc.
-        """
-        requests = self._read_requests()
-        request.setdefault("acknowledged", False)
-        requests.append(request)
-        self._requests_path.write_text(json.dumps(requests, indent=2))
-
-    def _read_requests(self) -> list[dict[str, Any]]:
-        """Read the request queue from disk."""
-        if not self._requests_path.exists():
-            return []
-        try:
-            return json.loads(self._requests_path.read_text())
-        except (json.JSONDecodeError, FileNotFoundError):
-            return []
-
-    def list_requests(self, pending_only: bool = True) -> list[dict[str, Any]]:
-        """List requests from the queue.
-
-        Args:
-            pending_only: If True, only return unacknowledged requests.
-
-        Returns:
-            List of request dicts.
-        """
-        requests = self._read_requests()
-        if pending_only:
-            requests = [r for r in requests if not r.get("acknowledged", False)]
-        return requests
-
-    def acknowledge_request(self, request_id: str) -> None:
-        """Mark a request as acknowledged in the queue.
-
-        Args:
-            request_id: ID of the request to acknowledge.
-        """
-        requests = self._read_requests()
-        for r in requests:
-            if r.get("request_id") == request_id:
-                r["acknowledged"] = True
-                break
-        self._requests_path.write_text(json.dumps(requests, indent=2))
 
     def delete_session(self) -> None:
         """Delete the entire session directory."""
