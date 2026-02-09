@@ -1099,6 +1099,255 @@
     font-family: var(--mono);
   }
 
+  /* Form card fields */
+  .form-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 0;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .form-field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .form-field select,
+  .form-field input[type="text"],
+  .form-field input[type="number"],
+  .form-field input[type="date"] {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .form-field select:focus,
+  .form-field input[type="text"]:focus,
+  .form-field input[type="number"]:focus,
+  .form-field input[type="date"]:focus {
+    border-color: var(--accent);
+  }
+
+  .form-field select {
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236c757d' d='M3 5l3 3 3-3'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+
+  /* Multi-select checkboxes */
+  .form-multiselect-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .form-multiselect-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 3px 0;
+  }
+
+  .form-multiselect-option input[type="checkbox"] {
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  /* Radio group */
+  .form-radio-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .form-radio-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 3px 0;
+  }
+
+  .form-radio-option input[type="radio"] {
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  /* Slider */
+  .form-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .form-slider-row input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent);
+    cursor: pointer;
+    height: 4px;
+  }
+
+  .form-slider-value {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    min-width: 40px;
+    text-align: right;
+  }
+
+  /* Range slider (two handles) */
+  .form-range-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-range-slider-row input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent);
+    cursor: pointer;
+    height: 4px;
+  }
+
+  .form-range-value {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    min-width: 80px;
+    text-align: center;
+  }
+
+  /* Checkbox / Toggle inline */
+  .form-check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+  }
+
+  .form-check-row input[type="checkbox"] {
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .form-check-label {
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* Toggle switch */
+  .form-toggle-switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .form-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .form-toggle-track {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--border);
+    border-radius: 20px;
+    transition: background 0.2s;
+  }
+
+  .form-toggle-track::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 2px;
+    bottom: 2px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+
+  .form-toggle-switch input:checked + .form-toggle-track {
+    background: var(--accent);
+  }
+
+  .form-toggle-switch input:checked + .form-toggle-track::after {
+    transform: translateX(16px);
+  }
+
+  /* Date range */
+  .form-date-range-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-date-range-row input[type="date"] {
+    flex: 1;
+  }
+
+  .form-date-range-sep {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Frozen form (confirmed) */
+  .form-frozen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    font-size: 13px;
+  }
+
+  .form-frozen-item {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .form-frozen-item .frozen-label {
+    color: var(--text-muted);
+  }
+
+  .form-frozen-item .frozen-value {
+    font-weight: 500;
+  }
+
+  /* Controls bar for hybrid cards */
+  .card-controls-bar {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+
+  .card-controls-bar .form-fields {
+    gap: 10px;
+  }
+
   /* Table row checkboxes for selection */
   .table-wrapper th.select-col,
   .table-wrapper td.select-col {
@@ -2165,6 +2414,9 @@
       case 'keyvalue':
         renderKeyValue(body, cardData);
         break;
+      case 'form':
+        renderForm(body, cardData);
+        break;
       case 'section':
         el.remove();
         addSection(cardData.title || (cardData.preview && cardData.preview.title) || '');
@@ -2174,6 +2426,15 @@
     }
 
     el.appendChild(body);
+
+    // Controls bar for hybrid data+controls cards (table/chart with controls)
+    if (cardData.preview && cardData.preview.controls && cardData.preview.controls.length > 0
+        && cardData.card_type !== 'form') {
+      var controlsBar = document.createElement('div');
+      controlsBar.className = 'card-controls-bar';
+      renderFormFields(controlsBar, cardData.preview.controls);
+      el.appendChild(controlsBar);
+    }
 
     // Waiting card: response UI
     if (cardData.response_requested) {
@@ -2232,6 +2493,11 @@
       text = cardData.artifact_id
         ? location.origin + '/api/artifact/' + cardData.artifact_id
         : '(no artifact)';
+    } else if (cardData.card_type === 'form') {
+      var fields = (cardData.preview && cardData.preview.fields) || [];
+      text = fields.map(function(f) {
+        return (f.label || f.name) + ': ' + (f.default != null ? String(f.default) : '');
+      }).join('\n');
     } else {
       text = JSON.stringify(cardData.preview, null, 2);
     }
@@ -2902,6 +3168,414 @@
 
   // --- Response UI for waiting cards ---
 
+  // --- Form card rendering ---
+
+  function renderForm(container, cardData) {
+    var preview = cardData.preview;
+    if (!preview || !preview.fields) return;
+    renderFormFields(container, preview.fields);
+  }
+
+  function renderFormFields(container, fields) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'form-fields';
+
+    fields.forEach(function(field) {
+      var fieldEl = document.createElement('div');
+      fieldEl.className = 'form-field';
+      fieldEl.dataset.fieldName = field.name;
+      fieldEl.dataset.fieldType = field.type;
+
+      switch (field.type) {
+        case 'dropdown':
+          renderDropdownField(fieldEl, field);
+          break;
+        case 'multiselect':
+          renderMultiSelectField(fieldEl, field);
+          break;
+        case 'slider':
+          renderSliderField(fieldEl, field);
+          break;
+        case 'range_slider':
+          renderRangeSliderField(fieldEl, field);
+          break;
+        case 'checkbox':
+          renderCheckboxField(fieldEl, field);
+          break;
+        case 'toggle':
+          renderToggleField(fieldEl, field);
+          break;
+        case 'radio':
+          renderRadioField(fieldEl, field);
+          break;
+        case 'text':
+          renderTextField(fieldEl, field);
+          break;
+        case 'date_range':
+          renderDateRangeField(fieldEl, field);
+          break;
+        case 'number':
+          renderNumberField(fieldEl, field);
+          break;
+        default:
+          fieldEl.textContent = 'Unknown field type: ' + field.type;
+      }
+
+      wrapper.appendChild(fieldEl);
+    });
+
+    container.appendChild(wrapper);
+  }
+
+  function renderDropdownField(container, field) {
+    if (field.label) {
+      var label = document.createElement('div');
+      label.className = 'form-field-label';
+      label.textContent = field.label;
+      container.appendChild(label);
+    }
+    var select = document.createElement('select');
+    select.dataset.fieldInput = field.name;
+    (field.options || []).forEach(function(opt) {
+      var option = document.createElement('option');
+      option.value = opt;
+      option.textContent = opt;
+      if (field.default === opt) option.selected = true;
+      select.appendChild(option);
+    });
+    container.appendChild(select);
+  }
+
+  function renderMultiSelectField(container, field) {
+    if (field.label) {
+      var label = document.createElement('div');
+      label.className = 'form-field-label';
+      label.textContent = field.label;
+      container.appendChild(label);
+    }
+    var optionsDiv = document.createElement('div');
+    optionsDiv.className = 'form-multiselect-options';
+    var defaults = field.default || [];
+    (field.options || []).forEach(function(opt) {
+      var optLabel = document.createElement('label');
+      optLabel.className = 'form-multiselect-option';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = opt;
+      cb.dataset.fieldInput = field.name;
+      if (defaults.indexOf(opt) !== -1) cb.checked = true;
+      optLabel.appendChild(cb);
+      optLabel.appendChild(document.createTextNode(opt));
+      optionsDiv.appendChild(optLabel);
+    });
+    container.appendChild(optionsDiv);
+  }
+
+  function renderSliderField(container, field) {
+    if (field.label) {
+      var label = document.createElement('div');
+      label.className = 'form-field-label';
+      label.textContent = field.label;
+      container.appendChild(label);
+    }
+    var row = document.createElement('div');
+    row.className = 'form-slider-row';
+    var slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = field.min != null ? field.min : 0;
+    slider.max = field.max != null ? field.max : 100;
+    slider.step = field.step != null ? field.step : ((field.max - field.min) <= 1 ? 0.01 : 1);
+    slider.value = field.default != null ? field.default : field.min;
+    slider.dataset.fieldInput = field.name;
+    var valueEl = document.createElement('span');
+    valueEl.className = 'form-slider-value';
+    valueEl.textContent = slider.value;
+    slider.oninput = function() { valueEl.textContent = slider.value; };
+    row.appendChild(slider);
+    row.appendChild(valueEl);
+    container.appendChild(row);
+  }
+
+  function renderRangeSliderField(container, field) {
+    if (field.label) {
+      var label = document.createElement('div');
+      label.className = 'form-field-label';
+      label.textContent = field.label;
+      container.appendChild(label);
+    }
+    var row = document.createElement('div');
+    row.className = 'form-range-slider-row';
+    var defaults = field.default || [field.min, field.max];
+    var step = field.step != null ? field.step : ((field.max - field.min) <= 1 ? 0.01 : 1);
+
+    var sliderLow = document.createElement('input');
+    sliderLow.type = 'range';
+    sliderLow.min = field.min != null ? field.min : 0;
+    sliderLow.max = field.max != null ? field.max : 100;
+    sliderLow.step = step;
+    sliderLow.value = defaults[0];
+    sliderLow.dataset.fieldInput = field.name;
+    sliderLow.dataset.rangeEnd = 'low';
+
+    var sliderHigh = document.createElement('input');
+    sliderHigh.type = 'range';
+    sliderHigh.min = field.min != null ? field.min : 0;
+    sliderHigh.max = field.max != null ? field.max : 100;
+    sliderHigh.step = step;
+    sliderHigh.value = defaults[1];
+    sliderHigh.dataset.fieldInput = field.name;
+    sliderHigh.dataset.rangeEnd = 'high';
+
+    var valueEl = document.createElement('span');
+    valueEl.className = 'form-range-value';
+    valueEl.textContent = sliderLow.value + ' \u2013 ' + sliderHigh.value;
+
+    function updateRange() {
+      var lo = parseFloat(sliderLow.value);
+      var hi = parseFloat(sliderHigh.value);
+      if (lo > hi) { sliderLow.value = hi; lo = hi; }
+      if (hi < lo) { sliderHigh.value = lo; hi = lo; }
+      valueEl.textContent = lo + ' \u2013 ' + hi;
+    }
+    sliderLow.oninput = updateRange;
+    sliderHigh.oninput = updateRange;
+
+    row.appendChild(sliderLow);
+    row.appendChild(valueEl);
+    row.appendChild(sliderHigh);
+    container.appendChild(row);
+  }
+
+  function renderCheckboxField(container, field) {
+    var row = document.createElement('div');
+    row.className = 'form-check-row';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!field.default;
+    cb.dataset.fieldInput = field.name;
+    cb.id = 'form-cb-' + field.name;
+    row.appendChild(cb);
+    if (field.label) {
+      var label = document.createElement('label');
+      label.className = 'form-check-label';
+      label.htmlFor = cb.id;
+      label.textContent = field.label;
+      row.appendChild(label);
+    }
+    container.appendChild(row);
+  }
+
+  function renderToggleField(container, field) {
+    var row = document.createElement('div');
+    row.className = 'form-check-row';
+    var toggle = document.createElement('label');
+    toggle.className = 'form-toggle-switch';
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = !!field.default;
+    input.dataset.fieldInput = field.name;
+    var track = document.createElement('span');
+    track.className = 'form-toggle-track';
+    toggle.appendChild(input);
+    toggle.appendChild(track);
+    row.appendChild(toggle);
+    if (field.label) {
+      var label = document.createElement('span');
+      label.className = 'form-check-label';
+      label.textContent = field.label;
+      row.appendChild(label);
+    }
+    container.appendChild(row);
+  }
+
+  function renderRadioField(container, field) {
+    if (field.label) {
+      var label = document.createElement('div');
+      label.className = 'form-field-label';
+      label.textContent = field.label;
+      container.appendChild(label);
+    }
+    var optionsDiv = document.createElement('div');
+    optionsDiv.className = 'form-radio-options';
+    var groupName = 'radio-' + field.name + '-' + Math.random().toString(36).slice(2, 8);
+    (field.options || []).forEach(function(opt) {
+      var optLabel = document.createElement('label');
+      optLabel.className = 'form-radio-option';
+      var radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = groupName;
+      radio.value = opt;
+      radio.dataset.fieldInput = field.name;
+      if (field.default === opt) radio.checked = true;
+      optLabel.appendChild(radio);
+      optLabel.appendChild(document.createTextNode(opt));
+      optionsDiv.appendChild(optLabel);
+    });
+    container.appendChild(optionsDiv);
+  }
+
+  function renderTextField(container, field) {
+    if (field.label) {
+      var label = document.createElement('div');
+      label.className = 'form-field-label';
+      label.textContent = field.label;
+      container.appendChild(label);
+    }
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = field.default || '';
+    input.placeholder = field.placeholder || '';
+    input.dataset.fieldInput = field.name;
+    container.appendChild(input);
+  }
+
+  function renderDateRangeField(container, field) {
+    if (field.label) {
+      var label = document.createElement('div');
+      label.className = 'form-field-label';
+      label.textContent = field.label;
+      container.appendChild(label);
+    }
+    var row = document.createElement('div');
+    row.className = 'form-date-range-row';
+    var defaults = field.default || ['', ''];
+
+    var startInput = document.createElement('input');
+    startInput.type = 'date';
+    startInput.value = defaults[0] || '';
+    startInput.dataset.fieldInput = field.name;
+    startInput.dataset.rangeEnd = 'start';
+
+    var sep = document.createElement('span');
+    sep.className = 'form-date-range-sep';
+    sep.textContent = 'to';
+
+    var endInput = document.createElement('input');
+    endInput.type = 'date';
+    endInput.value = defaults[1] || '';
+    endInput.dataset.fieldInput = field.name;
+    endInput.dataset.rangeEnd = 'end';
+
+    row.appendChild(startInput);
+    row.appendChild(sep);
+    row.appendChild(endInput);
+    container.appendChild(row);
+  }
+
+  function renderNumberField(container, field) {
+    if (field.label) {
+      var label = document.createElement('div');
+      label.className = 'form-field-label';
+      label.textContent = field.label;
+      container.appendChild(label);
+    }
+    var input = document.createElement('input');
+    input.type = 'number';
+    if (field.default != null) input.value = field.default;
+    if (field.min != null) input.min = field.min;
+    if (field.max != null) input.max = field.max;
+    if (field.step != null) input.step = field.step;
+    input.dataset.fieldInput = field.name;
+    container.appendChild(input);
+  }
+
+  function collectFormValues(cardEl) {
+    var values = {};
+    var fields = cardEl.querySelectorAll('.form-field');
+    fields.forEach(function(fieldEl) {
+      var name = fieldEl.dataset.fieldName;
+      var type = fieldEl.dataset.fieldType;
+
+      switch (type) {
+        case 'dropdown': {
+          var sel = fieldEl.querySelector('select');
+          if (sel) values[name] = sel.value;
+          break;
+        }
+        case 'multiselect': {
+          var checked = fieldEl.querySelectorAll('input[type="checkbox"]:checked');
+          values[name] = Array.prototype.map.call(checked, function(cb) { return cb.value; });
+          break;
+        }
+        case 'slider': {
+          var sl = fieldEl.querySelector('input[type="range"]');
+          if (sl) values[name] = parseFloat(sl.value);
+          break;
+        }
+        case 'range_slider': {
+          var lo = fieldEl.querySelector('input[data-range-end="low"]');
+          var hi = fieldEl.querySelector('input[data-range-end="high"]');
+          if (lo && hi) values[name] = [parseFloat(lo.value), parseFloat(hi.value)];
+          break;
+        }
+        case 'checkbox':
+        case 'toggle': {
+          var cb = fieldEl.querySelector('input[type="checkbox"]');
+          if (cb) values[name] = cb.checked;
+          break;
+        }
+        case 'radio': {
+          var selected = fieldEl.querySelector('input[type="radio"]:checked');
+          values[name] = selected ? selected.value : null;
+          break;
+        }
+        case 'text': {
+          var txt = fieldEl.querySelector('input[type="text"]');
+          if (txt) values[name] = txt.value;
+          break;
+        }
+        case 'date_range': {
+          var s = fieldEl.querySelector('input[data-range-end="start"]');
+          var e = fieldEl.querySelector('input[data-range-end="end"]');
+          if (s && e) values[name] = [s.value, e.value];
+          break;
+        }
+        case 'number': {
+          var num = fieldEl.querySelector('input[type="number"]');
+          if (num) values[name] = num.value !== '' ? parseFloat(num.value) : null;
+          break;
+        }
+      }
+    });
+    return values;
+  }
+
+  function renderFrozenForm(container, values, fields) {
+    var frozen = document.createElement('div');
+    frozen.className = 'form-frozen';
+
+    // Build a map of field names to labels
+    var labelMap = {};
+    (fields || []).forEach(function(f) {
+      labelMap[f.name] = f.label || f.name;
+    });
+
+    Object.keys(values).forEach(function(key) {
+      var val = values[key];
+      var item = document.createElement('span');
+      item.className = 'form-frozen-item';
+
+      var labelSpan = document.createElement('span');
+      labelSpan.className = 'frozen-label';
+      labelSpan.textContent = (labelMap[key] || key) + ':';
+      item.appendChild(labelSpan);
+
+      var valueSpan = document.createElement('span');
+      valueSpan.className = 'frozen-value';
+      if (typeof val === 'boolean') {
+        valueSpan.textContent = val ? 'yes' : 'no';
+      } else if (Array.isArray(val)) {
+        valueSpan.textContent = val.join(' \u2013 ');
+      } else {
+        valueSpan.textContent = String(val);
+      }
+      item.appendChild(valueSpan);
+      frozen.appendChild(item);
+    });
+
+    container.appendChild(frozen);
+  }
+
   function buildResponseUI(cardData, cardEl) {
     var container = document.createElement('div');
     container.className = 'card-response-ui';
@@ -2988,6 +3662,13 @@
       }
     }
 
+    // Collect form values from form card body or controls bar
+    var formValues = {};
+    var hasFormFields = cardEl.querySelector('.form-field');
+    if (hasFormFields) {
+      formValues = collectFormValues(cardEl);
+    }
+
     // Send via WebSocket
     if (state.ws && state.connected) {
       state.ws.send(JSON.stringify({
@@ -2999,6 +3680,7 @@
           message: message,
           selected_rows: selectedRows,
           columns: columns,
+          form_values: formValues,
         },
       }));
     }
@@ -3010,6 +3692,21 @@
       responseUI.remove();
     }
     cardEl.classList.remove('waiting');
+
+    // Freeze form: replace interactive fields with compact frozen display
+    if (action === 'confirm' && hasFormFields && Object.keys(formValues).length > 0) {
+      var formBody = cardEl.querySelector('.card-body');
+      var controlsBar = cardEl.querySelector('.card-controls-bar');
+      var fields = (cardData.preview && cardData.preview.fields) || (cardData.preview && cardData.preview.controls) || [];
+      if (cardData.card_type === 'form' && formBody) {
+        formBody.innerHTML = '';
+        renderFrozenForm(formBody, formValues, fields);
+      }
+      if (controlsBar) {
+        controlsBar.innerHTML = '';
+        renderFrozenForm(controlsBar, formValues, fields);
+      }
+    }
 
     // Show confirmation badge
     var badge = document.createElement('span');
@@ -3187,6 +3884,9 @@
             break;
           case 'keyvalue':
             renderKeyValue(body, newCardData);
+            break;
+          case 'form':
+            renderForm(body, newCardData);
             break;
           default:
             body.textContent = JSON.stringify(newCardData.preview);

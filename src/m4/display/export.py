@@ -359,6 +359,8 @@ def _render_card_body(card: CardDescriptor, run_manager: RunManager) -> str:
         return _render_markdown_html(card)
     elif card.card_type == CardType.KEYVALUE:
         return _render_keyvalue_html(card)
+    elif card.card_type == CardType.FORM:
+        return _render_form_html(card)
     else:
         return f"<pre>{escape(json.dumps(card.preview, indent=2, default=str))}</pre>"
 
@@ -502,6 +504,29 @@ def _render_keyvalue_html(card: CardDescriptor) -> str:
         for k, v in items.items()
     )
     return f'<table class="kv-table"><tbody>{rows}</tbody></table>'
+
+
+def _render_form_html(card: CardDescriptor) -> str:
+    """Render a form card as a frozen key-value summary."""
+    fields = card.preview.get("fields", [])
+    items = []
+    for f in fields:
+        label = escape(str(f.get("label") or f.get("name", "")))
+        default = f.get("default")
+        if default is None:
+            val = ""
+        elif isinstance(default, bool):
+            val = "yes" if default else "no"
+        elif isinstance(default, list):
+            val = escape(" \u2013 ".join(str(v) for v in default))
+        else:
+            val = escape(str(default))
+        items.append(
+            f"<span class='form-frozen-item'>"
+            f"<span class='frozen-label'>{label}:</span> "
+            f"<span class='frozen-value'>{val}</span></span>"
+        )
+    return f'<div class="form-frozen">{"".join(items)}</div>'
 
 
 # --- Helpers ---

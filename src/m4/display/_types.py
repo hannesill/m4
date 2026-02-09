@@ -20,6 +20,269 @@ class CardType(str, Enum):
     SECTION = "section"
     PLOTLY = "plotly"
     IMAGE = "image"
+    FORM = "form"
+
+
+# ---------------------------------------------------------------------------
+# Form field primitives
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class Dropdown:
+    """Single-select dropdown."""
+
+    name: str
+    options: list[str]
+    label: str | None = None
+    default: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "type": "dropdown",
+            "name": self.name,
+            "options": self.options,
+        }
+        if self.label:
+            d["label"] = self.label
+        if self.default is not None:
+            d["default"] = self.default
+        return d
+
+
+@dataclass
+class MultiSelect:
+    """Multi-select list."""
+
+    name: str
+    options: list[str]
+    label: str | None = None
+    default: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "type": "multiselect",
+            "name": self.name,
+            "options": self.options,
+        }
+        if self.label:
+            d["label"] = self.label
+        if self.default:
+            d["default"] = self.default
+        return d
+
+
+@dataclass
+class Slider:
+    """Single-value slider."""
+
+    name: str
+    range: tuple[float, float]
+    label: str | None = None
+    default: float | None = None
+    step: float | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "type": "slider",
+            "name": self.name,
+            "min": self.range[0],
+            "max": self.range[1],
+        }
+        if self.label:
+            d["label"] = self.label
+        if self.default is not None:
+            d["default"] = self.default
+        if self.step is not None:
+            d["step"] = self.step
+        return d
+
+
+@dataclass
+class RangeSlider:
+    """Two-handle range slider."""
+
+    name: str
+    range: tuple[float, float]
+    label: str | None = None
+    default: tuple[float, float] | None = None
+    step: float | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "type": "range_slider",
+            "name": self.name,
+            "min": self.range[0],
+            "max": self.range[1],
+        }
+        if self.label:
+            d["label"] = self.label
+        if self.default is not None:
+            d["default"] = list(self.default)
+        if self.step is not None:
+            d["step"] = self.step
+        return d
+
+
+@dataclass
+class Checkbox:
+    """Boolean checkbox."""
+
+    name: str
+    label: str | None = None
+    default: bool = False
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "type": "checkbox",
+            "name": self.name,
+            "default": self.default,
+        }
+        if self.label:
+            d["label"] = self.label
+        return d
+
+
+@dataclass
+class Toggle:
+    """Boolean toggle switch."""
+
+    name: str
+    label: str | None = None
+    default: bool = False
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "type": "toggle",
+            "name": self.name,
+            "default": self.default,
+        }
+        if self.label:
+            d["label"] = self.label
+        return d
+
+
+@dataclass
+class RadioGroup:
+    """Single-select radio button group."""
+
+    name: str
+    options: list[str]
+    label: str | None = None
+    default: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "type": "radio",
+            "name": self.name,
+            "options": self.options,
+        }
+        if self.label:
+            d["label"] = self.label
+        if self.default is not None:
+            d["default"] = self.default
+        return d
+
+
+@dataclass
+class TextInput:
+    """Single-line text input."""
+
+    name: str
+    label: str | None = None
+    default: str = ""
+    placeholder: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "type": "text",
+            "name": self.name,
+        }
+        if self.label:
+            d["label"] = self.label
+        if self.default:
+            d["default"] = self.default
+        if self.placeholder:
+            d["placeholder"] = self.placeholder
+        return d
+
+
+@dataclass
+class DateRange:
+    """Date range picker (two date inputs)."""
+
+    name: str
+    label: str | None = None
+    default: tuple[str, str] | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "type": "date_range",
+            "name": self.name,
+        }
+        if self.label:
+            d["label"] = self.label
+        if self.default is not None:
+            d["default"] = list(self.default)
+        return d
+
+
+@dataclass
+class NumberInput:
+    """Numeric input with optional min/max/step."""
+
+    name: str
+    label: str | None = None
+    default: float | None = None
+    min: float | None = None
+    max: float | None = None
+    step: float | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "type": "number",
+            "name": self.name,
+        }
+        if self.label:
+            d["label"] = self.label
+        if self.default is not None:
+            d["default"] = self.default
+        if self.min is not None:
+            d["min"] = self.min
+        if self.max is not None:
+            d["max"] = self.max
+        if self.step is not None:
+            d["step"] = self.step
+        return d
+
+
+# Union of all field primitives
+FormField = (
+    Dropdown
+    | MultiSelect
+    | Slider
+    | RangeSlider
+    | Checkbox
+    | Toggle
+    | RadioGroup
+    | TextInput
+    | DateRange
+    | NumberInput
+)
+
+
+@dataclass
+class Form:
+    """A group of form field primitives rendered as a single card.
+
+    No nesting, no layout grid, no conditional visibility.
+    Fields stack vertically within the card.
+    """
+
+    fields: list[FormField]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"fields": [f.to_dict() for f in self.fields]}
 
 
 @dataclass
@@ -156,6 +419,9 @@ class DisplayResponse:
 
     artifact_id: str | None = None
     """Artifact ID for the selected data (if any rows were selected)."""
+
+    values: dict[str, Any] = field(default_factory=dict)
+    """Form field values (populated when the card is a form or has controls)."""
 
     _store: Any = field(default=None, repr=False)
     """Reference to artifact store (internal, for lazy data loading)."""

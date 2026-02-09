@@ -33,7 +33,15 @@ class TestCardType:
         assert CardType("table") is CardType.TABLE
 
     def test_all_types_present(self):
-        expected = {"table", "markdown", "keyvalue", "section", "plotly", "image"}
+        expected = {
+            "table",
+            "markdown",
+            "keyvalue",
+            "section",
+            "plotly",
+            "image",
+            "form",
+        }
         actual = {ct.value for ct in CardType}
         assert actual == expected
 
