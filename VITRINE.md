@@ -92,7 +92,7 @@ def on_event(callback) -> None                    # Register callback for UI eve
 def run_context(run_id) -> dict                   # Structured summary of run state for agent re-orientation
 ```
 
-Auto-start: `show()` calls `start()` if the server isn't running. Default mode is background thread; `mode="process"` for notebook/sandbox environments.
+Auto-start: `show()` calls `start()` if the server isn't running. It prefers a persistent background process (cross-process safe), with in-thread fallback if process startup/discovery fails. Use `mode="process"` to explicitly launch a standalone daemon.
 
 ## Server
 
@@ -175,7 +175,7 @@ No async message queue, no polling, no "Send to Agent" button. Every interaction
 - **Artifact store from day 1** — enables server-side paging, trivial export, reproducible runs, and safe large DataFrames. Retrofitting would be painful.
 - **WebSocket over SSE** — bidirectional event channel (UI → agent). Starlette makes it trivial.
 - **Offline-first / vendored JS / single HTML** — hospital networks block CDNs. Vendored Plotly.js + marked.js guarantee it works anywhere. No npm/build step needed.
-- **Thread + process modes** — background thread by default; `mode="process"` for notebooks (event loop conflicts), sandboxes, and long-running sessions.
+- **Thread + process modes** — process-first auto-start for cross-process reliability, with in-thread fallback when needed; `mode="process"` is explicit daemon launch for notebooks (event loop conflicts), sandboxes, and long-running sessions.
 - **Runs over sessions** — researchers think in research questions, not server processes. Persistent `run_id` directories make the display a research journal that survives restarts.
 - **Freeze-on-confirm** — interactive elements serve decision-making, the journal records the decision. Without freeze: stale widgets, dashboard creep, broken provenance.
 - **Form primitives over iframes** — JSON spec is simpler, faster, more reliable for structured inputs. ~10 primitives cover 90% of agent-researcher interaction patterns.
