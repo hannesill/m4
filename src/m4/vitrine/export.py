@@ -11,6 +11,7 @@ Export formats:
 
 from __future__ import annotations
 
+import base64
 import io
 import json
 import logging
@@ -132,6 +133,9 @@ def export_json(
                     arcname = f"artifacts/{card.artifact_id}.{ext}"
                     zf.write(artifact_path, arcname)
 
+        # Output files
+        _add_output_files_to_zip(zf, study_manager, study, studies)
+
     logger.debug(f"Exported JSON zip: {output_path} ({len(cards)} cards)")
     return output_path
 
@@ -204,7 +208,42 @@ def export_json_bytes(
                     arcname = f"artifacts/{card.artifact_id}.{ext}"
                     zf.write(artifact_path, arcname)
 
+        # Output files
+        _add_output_files_to_zip(zf, study_manager, study, studies)
+
     return buf.getvalue()
+
+
+# --- Output Files in ZIP ---
+
+_MAX_OUTPUT_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+
+
+def _add_output_files_to_zip(
+    zf: zipfile.ZipFile,
+    study_manager: StudyManager,
+    study: str | None,
+    studies: list[dict[str, Any]],
+) -> None:
+    """Add output directory files to a zip archive.
+
+    Skips files larger than 50MB.
+    """
+    labels = [study] if study else [s["label"] for s in studies]
+    for label in labels:
+        output_dir = study_manager.get_output_dir(label)
+        if output_dir is None or not output_dir.exists():
+            continue
+
+        prefix = f"output/{label}/" if not study else "output/"
+        for item in sorted(output_dir.rglob("*")):
+            if not item.is_file() or item.name.startswith("."):
+                continue
+            if item.stat().st_size > _MAX_OUTPUT_FILE_SIZE:
+                continue
+            rel = str(item.relative_to(output_dir))
+            arcname = prefix + rel
+            zf.write(item, arcname)
 
 
 # --- HTML Generation ---
@@ -245,6 +284,19 @@ def _build_html_document(
             cards_html.append(_render_card_html(card, study_manager))
 
     cards_block = "\n".join(cards_html)
+
+    # Build files section if the study has an output dir
+    files_block = ""
+    if study:
+        files_block = _render_files_section(study, study_manager)
+    else:
+        # For "all studies" export, render files for each study
+        files_parts = []
+        for s in studies:
+            part = _render_files_section(s["label"], study_manager)
+            if part:
+                files_parts.append(part)
+        files_block = "\n".join(files_parts)
 
     # Study summary for header
     study_summary = ""
@@ -293,6 +345,8 @@ def _build_html_document(
 <div class="feed">
 {cards_block if cards_block else '<div class="empty-state">No cards to export</div>'}
 </div>
+
+{files_block}
 
 <div class="export-footer">
   vitrine export &middot; {len(cards)} cards &middot; {export_time}
@@ -542,6 +596,177 @@ def _render_form_html(card: CardDescriptor) -> str:
             f"<span class='frozen-value'>{val}</span></span>"
         )
     return f'<div class="form-frozen">{"".join(items)}</div>'
+
+
+# --- Files Section for Export ---
+
+
+def _render_files_section(study_label: str, study_manager: StudyManager) -> str:
+    """Render output files as a card-like section for HTML export."""
+    output_dir = study_manager.get_output_dir(study_label)
+    if output_dir is None or not output_dir.exists():
+        return ""
+
+    files = study_manager.list_output_files(study_label)
+    # Filter to actual files (not directories)
+    files = [f for f in files if not f.get("is_dir")]
+    if not files:
+        return ""
+
+    _IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg"}
+    _TEXT_EXTS = {
+        ".py",
+        ".sql",
+        ".r",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".toml",
+        ".txt",
+        ".cfg",
+        ".log",
+        ".sh",
+        ".ini",
+    }
+    _TABULAR_EXTS = {".csv", ".parquet"}
+    _MAX_INLINE_SIZE = 50 * 1024 * 1024  # 50MB
+
+    items_html = []
+    for f in files:
+        fpath = study_manager.get_output_file_path(study_label, f["path"])
+        if fpath is None:
+            continue
+
+        size_str = _format_file_size(f.get("size", 0))
+        suffix = fpath.suffix.lower()
+        name = escape(f["name"])
+
+        if fpath.stat().st_size > _MAX_INLINE_SIZE:
+            items_html.append(
+                f'<div class="export-file-entry">'
+                f'<div class="export-file-name">{name}'
+                f'<span class="export-file-meta">{size_str} (too large to embed)</span>'
+                f"</div></div>"
+            )
+            continue
+
+        if suffix in _IMAGE_EXTS:
+            mime = {"svg": "image/svg+xml"}.get(
+                suffix.lstrip("."), f"image/{suffix.lstrip('.')}"
+            )
+            try:
+                data_b64 = base64.b64encode(fpath.read_bytes()).decode()
+                items_html.append(
+                    f'<div class="export-file-entry">'
+                    f'<div class="export-file-name">{name}'
+                    f'<span class="export-file-meta">{size_str}</span></div>'
+                    f'<img src="data:{mime};base64,{data_b64}" '
+                    f'alt="{name}" style="max-width:100%;height:auto;margin:8px 0;" />'
+                    f"</div>"
+                )
+            except Exception:
+                items_html.append(
+                    f'<div class="export-file-entry">'
+                    f'<div class="export-file-name">{name}'
+                    f'<span class="export-file-meta">{size_str}</span></div>'
+                    f"</div>"
+                )
+
+        elif suffix in _TEXT_EXTS:
+            try:
+                text = fpath.read_text(encoding="utf-8", errors="replace")
+                items_html.append(
+                    f'<div class="export-file-entry">'
+                    f'<div class="export-file-name">{name}'
+                    f'<span class="export-file-meta">{size_str}</span></div>'
+                    f'<pre class="export-file-code">{escape(text)}</pre>'
+                    f"</div>"
+                )
+            except Exception:
+                items_html.append(
+                    f'<div class="export-file-entry">'
+                    f'<div class="export-file-name">{name}'
+                    f'<span class="export-file-meta">{size_str}</span></div>'
+                    f"</div>"
+                )
+
+        elif suffix in _TABULAR_EXTS:
+            try:
+                con = duckdb.connect(":memory:")
+                try:
+                    reader = (
+                        f"read_csv_auto('{fpath}')"
+                        if suffix == ".csv"
+                        else f"read_parquet('{fpath}')"
+                    )
+                    total = con.execute(f"SELECT COUNT(*) FROM {reader}").fetchone()[0]
+                    result = con.execute(f"SELECT * FROM {reader} LIMIT 100")
+                    columns = [desc[0] for desc in result.description]
+                    rows = result.fetchall()
+                finally:
+                    con.close()
+
+                header = "".join(f"<th>{escape(str(c))}</th>" for c in columns)
+                body_rows = []
+                for row in rows:
+                    cells = "".join(f"<td>{escape(_format_cell(v))}</td>" for v in row)
+                    body_rows.append(f"<tr>{cells}</tr>")
+
+                info = f"{total} rows"
+                if total > 100:
+                    info += " (showing first 100)"
+
+                items_html.append(
+                    f'<div class="export-file-entry">'
+                    f'<div class="export-file-name">{name}'
+                    f'<span class="export-file-meta">{size_str} &middot; {info}</span></div>'
+                    f'<div class="table-wrapper">'
+                    f"<table><thead><tr>{header}</tr></thead>"
+                    f"<tbody>{''.join(body_rows)}</tbody></table></div>"
+                    f"</div>"
+                )
+            except Exception:
+                items_html.append(
+                    f'<div class="export-file-entry">'
+                    f'<div class="export-file-name">{name}'
+                    f'<span class="export-file-meta">{size_str}</span></div>'
+                    f"</div>"
+                )
+        else:
+            items_html.append(
+                f'<div class="export-file-entry">'
+                f'<div class="export-file-name">{name}'
+                f'<span class="export-file-meta">{size_str}</span></div>'
+                f"</div>"
+            )
+
+    if not items_html:
+        return ""
+
+    return f"""<div class="card" data-card-type="files">
+  <div class="card-header" data-type="files" style="background: #f0f1f3;">
+    <div class="card-type-icon" data-type="files" style="background: #6b7280; color: #fff;">F</div>
+    <span class="card-title">Research Files — {escape(study_label)}</span>
+    <span class="card-meta">{len(files)} file{"s" if len(files) != 1 else ""}</span>
+  </div>
+  <div class="card-body">
+    {"".join(items_html)}
+  </div>
+</div>"""
+
+
+def _format_file_size(size: int) -> str:
+    """Format a file size in bytes to a human-readable string."""
+    if size == 0:
+        return "0 B"
+    units = ["B", "KB", "MB", "GB"]
+    i = 0
+    s = float(size)
+    while s >= 1024 and i < len(units) - 1:
+        s /= 1024
+        i += 1
+    return f"{s:.1f} {units[i]}" if i > 0 else f"{int(s)} {units[i]}"
 
 
 # --- Helpers ---
@@ -911,6 +1136,44 @@ _EXPORT_CSS = """<style>
     flex: 1;
     height: 2px;
     background: var(--border);
+  }
+
+  /* Research files section */
+  .export-file-entry {
+    padding: 8px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 20%, transparent);
+  }
+
+  .export-file-entry:last-child {
+    border-bottom: none;
+  }
+
+  .export-file-name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .export-file-meta {
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .export-file-code {
+    background: var(--bg);
+    border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-sm);
+    padding: 10px 14px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 4px 0;
   }
 
   .empty-state {

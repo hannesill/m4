@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="/static/css/tables.css">
 <link rel="stylesheet" href="/static/css/forms.css">
 <link rel="stylesheet" href="/static/css/neo.css">
+<link rel="stylesheet" href="/static/css/files.css">
 <link rel="stylesheet" href="/static/css/print.css">
 </head>
 <body>
@@ -41,7 +42,10 @@
   <span class="study-meta-label" id="study-meta-label"></span>
   <span class="study-meta-sep">&middot;</span>
   <span id="study-meta-detail"></span>
+  <button class="files-toggle-btn" id="files-toggle-btn" style="display:none"></button>
 </div>
+
+<div class="files-panel" id="files-panel"></div>
 
 <div class="feed" id="feed">
   <div class="empty-state" id="empty-state">
@@ -72,6 +76,7 @@
 <script defer src="/static/js/plotly.js"></script>
 <script defer src="/static/js/tables.js"></script>
 <script defer src="/static/js/forms.js"></script>
+<script defer src="/static/js/files.js"></script>
 <script defer src="/static/js/responses.js"></script>
 <script defer src="/static/js/cards.js"></script>
 <script defer src="/static/js/websocket.js"></script>
