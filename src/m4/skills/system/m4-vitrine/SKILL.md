@@ -59,9 +59,17 @@ show({"patients": 4238, "mortality": "23%", "median_age": 67}, title="Summary")
 section("Phase 2: Subgroup Analysis")
 ```
 
+## Agent Usage Patterns
+
+- Use `show()` instead of `print()` for large DataFrames and charts so terminal output stays minimal.
+- Batch related outputs, then use a single blocking card (`wait=True`) for the decision point.
+- Use fire-and-forget (`wait=False`) for exploratory intermediate results.
+- Use quick actions (`actions=[...]`) when you need fast steering choices.
+- Call `run_context(run_id)` at the start of each research phase to re-orient after long waits or turn boundaries.
+
 ## Full API Reference
 
-### `show(obj, title, description, *, run_id, source, replace, position, wait, prompt, timeout, on_send)`
+### `show(obj, title, description, *, run_id, source, replace, position, wait, prompt, timeout, actions, controls)`
 
 Push any displayable object to the browser. Auto-starts the server on first call.
 
@@ -77,9 +85,10 @@ Push any displayable object to the browser. Auto-starts the server on first call
 | `wait` | `bool` | `False` | Block until user responds in browser |
 | `prompt` | `str \| None` | `None` | Question shown to user (requires `wait=True`) |
 | `timeout` | `float` | `300` | Seconds to wait for response |
-| `on_send` | `str \| None` | `None` | Instruction for agent when user clicks "Send to Agent" |
+| `actions` | `list[str] \| None` | `None` | Named quick-action buttons for decision cards |
+| `controls` | `list[FormField] \| None` | `None` | Optional structured controls attached to table/chart cards |
 
-**Returns:** `str` (card_id) when `wait=False`, `DisplayResponse` when `wait=True`.
+**Returns:** `DisplayHandle` (string-like card id + `.url`) when `wait=False`, `DisplayResponse` when `wait=True`.
 
 ### `section(title, run_id=None)`
 
@@ -123,8 +132,8 @@ Return info dict about a running persistent server, or `None`.
 | Function | Description |
 |----------|-------------|
 | `on_event(callback)` | Register callback for UI events (`DisplayEvent` with `event_type`, `card_id`, `payload`) |
-| `pending_requests()` | Poll for user-initiated "Send to Agent" requests. Returns list of `DisplayRequest`. |
-| `get_selection(artifact_id)` | Load a selection DataFrame by artifact ID. Returns `DataFrame` or `None`. |
+| `get_selection(card_id)` | Read current table/chart selection state for a card. Returns selected rows as `DataFrame`. |
+| `run_context(run_id)` | Structured run summary for agent re-orientation (cards, decisions, selections, pending responses). |
 
 ## Supported Types
 
@@ -162,18 +171,17 @@ elif response.action == "timeout":
     print("No response within timeout")
 ```
 
-### Async: Poll for User Requests
+### Pull: Read Passive Selections
 
 ```python
-from m4.vitrine import show, pending_requests
+from m4.vitrine import show, get_selection
 
-show(results_df, title="Results", on_send="Re-run analysis with selected subset")
+card_id = show(results_df, title="Results")
 
-# Later — poll for user actions
-for req in pending_requests():
-    print(f"User says: {req.prompt}")
-    subset = req.data()  # DataFrame of selected rows
-    req.acknowledge()    # Mark as handled
+# Later — read current browser selection at any point
+subset_df = get_selection(card_id)
+if not subset_df.empty:
+    print(f"Selected rows: {len(subset_df)}")
 ```
 
 ### Events: React to UI Interactions
@@ -188,6 +196,17 @@ def handle(event):
 
 on_event(handle)
 show(df, title="Click a patient")
+```
+
+### Re-orient Each Phase with `run_context()`
+
+```python
+from m4.vitrine import run_context
+
+ctx = run_context("sepsis-mortality-v1")
+print("Cards:", ctx["card_count"])
+print("Pending:", len(ctx["pending_responses"]))
+print("Decisions made:", len(ctx["decisions_made"]))
 ```
 
 ## Research Session Pattern
@@ -220,24 +239,9 @@ Returned by `show(..., wait=True)`:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `action` | `str` | `"confirm"`, `"skip"`, or `"timeout"` |
+| `action` | `str` | `"confirm"`, `"skip"`, `"timeout"`, or a named quick action (e.g. `"Approve"`) |
 | `card_id` | `str` | ID of the card |
 | `message` | `str \| None` | Optional text message from the user |
 | `summary` | `str` | Brief summary of selected data |
 | `artifact_id` | `str \| None` | Artifact ID for selected data |
 | `.data()` | `DataFrame \| None` | Load the selected rows |
-
-## DisplayRequest Reference
-
-Returned by `pending_requests()`:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `request_id` | `str` | Unique request ID |
-| `card_id` | `str` | Originating card ID |
-| `prompt` | `str` | User's message |
-| `summary` | `str` | Summary of selected data |
-| `artifact_id` | `str \| None` | Artifact ID for selected data |
-| `instruction` | `str \| None` | The card's `on_send` instruction |
-| `.data()` | `DataFrame \| None` | Load the selected rows |
-| `.acknowledge()` | `None` | Mark as handled |

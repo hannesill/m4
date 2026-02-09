@@ -157,10 +157,11 @@ class DisplayServer:
         self._started = threading.Event()
         self._loop: asyncio.AbstractEventLoop | None = None
 
-        # Phase 4: Agent-human interaction state
+        # Agent-human interaction state
         self._pending_responses: dict[str, asyncio.Future] = {}
         self._event_callbacks: list[Callable] = []
         self._event_queue: list[dict[str, Any]] = []
+        self._selections: dict[str, list[int]] = {}  # card_id -> selected indices
 
         self._app = self._build_app()
 
@@ -170,6 +171,7 @@ class DisplayServer:
             Route("/", self._index),
             Route("/api/health", self._api_health),
             Route("/api/cards", self._api_cards),
+            Route("/api/table/{card_id}/selection", self._api_table_selection),
             Route("/api/table/{card_id}/stats", self._api_table_stats),
             Route("/api/table/{card_id}/export", self._api_table_export),
             Route("/api/table/{card_id}", self._api_table),
@@ -177,12 +179,6 @@ class DisplayServer:
             Route("/api/session", self._api_session),
             Route("/api/command", self._api_command, methods=["POST"]),
             Route("/api/shutdown", self._api_shutdown, methods=["POST"]),
-            Route("/api/requests", self._api_requests, methods=["GET", "POST"]),
-            Route(
-                "/api/requests/{request_id}/ack",
-                self._api_request_ack,
-                methods=["POST"],
-            ),
             Route(
                 "/api/response/{card_id}",
                 self._api_response,
@@ -194,6 +190,11 @@ class DisplayServer:
                 "/api/runs/{run_id:path}/rename",
                 self._api_run_rename,
                 methods=["PATCH"],
+            ),
+            Route(
+                "/api/runs/{run_id:path}/context",
+                self._api_run_context,
+                methods=["GET"],
             ),
             Route(
                 "/api/runs/{run_id:path}/export",
@@ -283,6 +284,59 @@ class DisplayServer:
         except FileNotFoundError:
             return JSONResponse(
                 {"error": f"No table artifact for card {card_id}"}, status_code=404
+            )
+
+    async def _api_table_selection(self, request: Request) -> JSONResponse:
+        """Return selected rows for a table card.
+
+        Uses the in-memory selection state synced from the browser
+        via WebSocket ``display.selection`` events.
+        """
+        card_id = request.path_params["card_id"]
+        indices = self._selections.get(card_id, [])
+        if not indices:
+            return JSONResponse({"selected_indices": [], "columns": [], "rows": []})
+
+        store = self._resolve_store(card_id)
+        if store is None:
+            return JSONResponse(
+                {"selected_indices": indices, "columns": [], "rows": []}
+            )
+
+        path = store._artifacts_dir / f"{card_id}.parquet"
+        if not path.exists():
+            return JSONResponse(
+                {"selected_indices": indices, "columns": [], "rows": []}
+            )
+
+        try:
+            import duckdb
+
+            con = duckdb.connect(":memory:")
+            try:
+                # Use ROW_NUMBER to select by 0-based index
+                idx_list = ", ".join(str(int(i)) for i in indices)
+                query = (
+                    f"SELECT * FROM ("
+                    f"  SELECT *, ROW_NUMBER() OVER () - 1 AS _rn "
+                    f"  FROM read_parquet('{path}')"
+                    f") WHERE _rn IN ({idx_list})"
+                )
+                result = con.execute(query)
+                columns = [desc[0] for desc in result.description if desc[0] != "_rn"]
+                rows = [
+                    [v for v, d in zip(row, result.description) if d[0] != "_rn"]
+                    for row in result.fetchall()
+                ]
+            finally:
+                con.close()
+
+            return JSONResponse(
+                {"selected_indices": indices, "columns": columns, "rows": rows}
+            )
+        except Exception:
+            return JSONResponse(
+                {"selected_indices": indices, "columns": [], "rows": []}
             )
 
     async def _api_table_stats(self, request: Request) -> JSONResponse:
@@ -441,6 +495,11 @@ class DisplayServer:
             await self._broadcast(message)
             return JSONResponse({"status": "ok"})
 
+        elif cmd_type == "status":
+            status_msg = body.get("message", "")
+            await self._broadcast({"type": "vitrine.status", "message": status_msg})
+            return JSONResponse({"status": "ok"})
+
         return JSONResponse(
             {"error": f"unknown command type: {cmd_type}"}, status_code=400
         )
@@ -454,93 +513,6 @@ class DisplayServer:
         if self._server:
             self._server.should_exit = True
         return JSONResponse({"status": "shutting_down"})
-
-    # --- Request Endpoints ---
-
-    async def _api_requests(self, request: Request) -> JSONResponse:
-        """Handle request queue: POST to submit, GET to poll.
-
-        POST (from browser, no auth): Submit a new request.
-        GET (from agent, auth required): List pending requests.
-        """
-        if request.method == "POST":
-            try:
-                body = await request.json()
-            except Exception:
-                return JSONResponse({"error": "invalid JSON"}, status_code=400)
-
-            request_id = body.get("request_id") or uuid.uuid4().hex[:12]
-            card_id = body.get("card_id", "")
-            prompt = body.get("prompt", "")
-            selected_rows = body.get("selected_rows")
-            columns = body.get("columns")
-            points = body.get("points")
-            instruction = body.get("instruction")
-
-            # Resolve store for selection storage
-            sel_store = self._resolve_store(card_id)
-
-            # Store selection as artifact if data was provided
-            artifact_id = None
-            if selected_rows and columns:
-                artifact_id = f"sel-{request_id}"
-                if self.run_manager:
-                    self.run_manager.store_selection(
-                        artifact_id, selected_rows, columns
-                    )
-                elif sel_store:
-                    sel_store.store_selection(artifact_id, selected_rows, columns)
-            elif points:
-                artifact_id = f"sel-{request_id}"
-                if self.run_manager:
-                    self.run_manager.store_selection_json(
-                        artifact_id, {"points": points}
-                    )
-                elif sel_store:
-                    sel_store.store_selection_json(artifact_id, {"points": points})
-
-            summary = self._build_summary(card_id, selected_rows, points, columns)
-
-            req_dict = {
-                "request_id": request_id,
-                "card_id": card_id,
-                "prompt": prompt,
-                "summary": summary,
-                "artifact_id": artifact_id,
-                "instruction": instruction,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "acknowledged": False,
-            }
-            if self.run_manager:
-                self.run_manager.store_request(req_dict)
-            elif self.store:
-                self.store.store_request(req_dict)
-
-            return JSONResponse({"status": "ok", "request_id": request_id})
-
-        # GET — requires auth
-        if not self._check_auth(request):
-            return JSONResponse({"error": "unauthorized"}, status_code=401)
-
-        if self.run_manager:
-            pending = self.run_manager.list_requests(pending_only=True)
-        elif self.store:
-            pending = self.store.list_requests(pending_only=True)
-        else:
-            pending = []
-        return JSONResponse(pending)
-
-    async def _api_request_ack(self, request: Request) -> JSONResponse:
-        """Acknowledge (consume) a request. Requires auth."""
-        if not self._check_auth(request):
-            return JSONResponse({"error": "unauthorized"}, status_code=401)
-
-        request_id = request.path_params["request_id"]
-        if self.run_manager:
-            self.run_manager.acknowledge_request(request_id)
-        elif self.store:
-            self.store.acknowledge_request(request_id)
-        return JSONResponse({"status": "ok"})
 
     async def _api_response(self, request: Request) -> JSONResponse:
         """Long-poll endpoint for blocking show() responses.
@@ -603,6 +575,53 @@ class DisplayServer:
                 status_code=409,
             )
         return JSONResponse({"error": "No run manager"}, status_code=400)
+
+    async def _api_run_context(self, request: Request) -> JSONResponse:
+        """Return a structured context summary for a run.
+
+        Includes card list, pending/resolved decisions, and selection state.
+        """
+        run_id = request.path_params["run_id"]
+        if not self.run_manager:
+            return JSONResponse({"error": "No run manager"}, status_code=400)
+
+        self.run_manager.refresh()
+        ctx = self.run_manager.build_context(run_id)
+        cards = ctx.get("cards", [])
+        card_ids = [c.get("card_id", "") for c in cards]
+
+        # Current selections for cards in this run
+        current_selections = {}
+        for cid in card_ids:
+            sel = self._selections.get(cid, [])
+            if sel:
+                current_selections[cid] = sel
+
+        # Enrich card summaries with selection details
+        for card_summary in cards:
+            cid = card_summary.get("card_id", "")
+            sel = self._selections.get(cid, [])
+            if sel:
+                card_summary["selection_count"] = len(sel)
+                card_summary["selected_indices"] = sel
+
+        # Ensure pending responses includes unresolved in-memory futures
+        pending_ids = {
+            item.get("card_id", "")
+            for item in ctx.get("pending_responses", [])
+            if item.get("card_id")
+        }
+        for cid in card_ids:
+            fut = self._pending_responses.get(cid)
+            if fut and not fut.done() and cid not in pending_ids:
+                pending_ids.add(cid)
+                ctx.setdefault("pending_responses", []).append(
+                    {"card_id": cid, "title": None, "prompt": None}
+                )
+
+        ctx["current_selections"] = current_selections
+        ctx["decisions"] = ctx.get("pending_responses", [])
+        return JSONResponse(ctx)
 
     async def _api_run_delete(self, request: Request) -> JSONResponse:
         """Delete a run by label.
@@ -778,54 +797,26 @@ class DisplayServer:
                 "values": form_values,
             }
 
+            # Persist response metadata for run_context() and export provenance
+            if sel_store is not None:
+                sel_store.update_card(
+                    card_id,
+                    response_requested=False,
+                    response_action=action,
+                    response_message=message,
+                    response_values=form_values,
+                    response_summary=summary,
+                    response_artifact_id=artifact_id,
+                    response_timestamp=datetime.now(timezone.utc).isoformat(),
+                )
+
             future = self._pending_responses.get(card_id)
             if future and not future.done():
                 future.set_result(result)
 
-        elif event_type == "send_to_agent":
-            # Queue a user-initiated request
-            request_id = uuid.uuid4().hex[:12]
-            prompt = payload.get("prompt", "")
-            selected_rows = payload.get("selected_rows")
-            columns = payload.get("columns")
-            points = payload.get("points")
-            instruction = payload.get("instruction")
-
-            sel_store = self._resolve_store(card_id)
-            artifact_id = None
-            if selected_rows and columns:
-                artifact_id = f"sel-{request_id}"
-                if self.run_manager:
-                    self.run_manager.store_selection(
-                        artifact_id, selected_rows, columns
-                    )
-                elif sel_store:
-                    sel_store.store_selection(artifact_id, selected_rows, columns)
-            elif points:
-                artifact_id = f"sel-{request_id}"
-                if self.run_manager:
-                    self.run_manager.store_selection_json(
-                        artifact_id, {"points": points}
-                    )
-                elif sel_store:
-                    sel_store.store_selection_json(artifact_id, {"points": points})
-
-            summary = self._build_summary(card_id, selected_rows, points, columns)
-
-            req_dict = {
-                "request_id": request_id,
-                "card_id": card_id,
-                "prompt": prompt,
-                "summary": summary,
-                "artifact_id": artifact_id,
-                "instruction": instruction,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "acknowledged": False,
-            }
-            if self.run_manager:
-                self.run_manager.store_request(req_dict)
-            elif self.store:
-                self.store.store_request(req_dict)
+        elif event_type == "selection":
+            # Passive selection tracking from browser checkboxes / chart selection
+            self._selections[card_id] = payload.get("selected_indices", [])
 
         else:
             # General events (row_click, point_select, etc.)
@@ -1124,6 +1115,10 @@ class DisplayServer:
             "run_id": run_id,
         }
         self._broadcast_from_thread(message)
+
+    def push_status(self, message: str) -> None:
+        """Push a status bar message to all connected clients."""
+        self._broadcast_from_thread({"type": "vitrine.status", "message": message})
 
     def _broadcast_from_thread(self, message: dict[str, Any]) -> None:
         """Broadcast a message from a sync context (called from Python API thread)."""

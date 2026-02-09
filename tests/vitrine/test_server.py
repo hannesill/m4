@@ -7,7 +7,6 @@ Tests cover:
 - Static file serving
 - Health, command, and shutdown endpoints
 - Auth token enforcement
-- Request endpoints (POST/GET/ACK)
 - Event routing via WebSocket
 - Blocking response flow
 """
@@ -320,6 +319,41 @@ class TestCommandEndpoint:
         assert resp.status_code == 400
 
 
+class TestStatusCommand:
+    @pytest.fixture
+    def app(self, server):
+        return server._app
+
+    def test_status_command(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        resp = client.post(
+            "/api/command",
+            json={"type": "status", "message": "Analyzing cohort..."},
+            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+
+    def test_status_broadcast_via_websocket(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        with client.websocket_connect("/ws"):
+            # Send status command
+            client.post(
+                "/api/command",
+                json={"type": "status", "message": "Working..."},
+                headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+            )
+            import time
+
+            time.sleep(0.1)
+            # The WS should have received the status message
+            # (after replay of any existing cards)
+
+
 class TestShutdownEndpoint:
     @pytest.fixture
     def app(self, server):
@@ -368,151 +402,91 @@ class TestPidFile:
         assert not pid_path.exists()
 
 
-class TestRequestEndpoints:
-    """Test POST/GET/ACK request queue via REST."""
+class TestSelectionTracker:
+    """Test passive selection tracking via WebSocket and REST API."""
 
     @pytest.fixture
     def app(self, server):
         return server._app
 
-    def test_post_request(self, app):
+    def test_ws_selection_updates_state(self, app, server):
         from starlette.testclient import TestClient
 
         client = TestClient(app)
-        resp = client.post(
-            "/api/requests",
-            json={
-                "card_id": "c1",
-                "prompt": "Analyze these rows",
-            },
-        )
+        with client.websocket_connect("/ws") as ws:
+            ws.send_json(
+                {
+                    "type": "vitrine.event",
+                    "event_type": "selection",
+                    "card_id": "c1",
+                    "payload": {"selected_indices": [0, 2, 5]},
+                }
+            )
+            import time
+
+            time.sleep(0.1)
+
+        assert server._selections.get("c1") == [0, 2, 5]
+
+    def test_selection_api_returns_rows(self, app, server, store):
+        from starlette.testclient import TestClient
+
+        df = pd.DataFrame({"x": [10, 20, 30, 40]})
+        card_id = "sel-card"
+        store.store_dataframe(card_id, df)
+
+        # Set selection state
+        server._selections[card_id] = [1, 3]
+
+        client = TestClient(app)
+        resp = client.get(f"/api/table/{card_id}/selection")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] == "ok"
-        assert "request_id" in data
+        assert data["selected_indices"] == [1, 3]
+        assert data["columns"] == ["x"]
+        assert len(data["rows"]) == 2
+        # Rows at index 1 and 3
+        vals = [row[0] for row in data["rows"]]
+        assert 20 in vals
+        assert 40 in vals
 
-    def test_get_requests_requires_auth(self, app):
+    def test_selection_api_empty_when_no_selection(self, app, server):
         from starlette.testclient import TestClient
 
         client = TestClient(app)
-        resp = client.get("/api/requests")
-        assert resp.status_code == 401
-
-    def test_get_requests_returns_pending(self, app, store):
-        from starlette.testclient import TestClient
-
-        # Submit a request
-        client = TestClient(app)
-        client.post(
-            "/api/requests",
-            json={"card_id": "c1", "prompt": "Test request"},
-        )
-
-        # Poll with auth
-        resp = client.get(
-            "/api/requests",
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
+        resp = client.get("/api/table/no-card/selection")
         assert resp.status_code == 200
-        requests = resp.json()
-        assert len(requests) == 1
-        assert requests[0]["prompt"] == "Test request"
-        assert requests[0]["card_id"] == "c1"
+        data = resp.json()
+        assert data["selected_indices"] == []
+        assert data["rows"] == []
 
-    def test_ack_request(self, app, store):
+    def test_selection_overwrites_previous(self, app, server):
         from starlette.testclient import TestClient
 
         client = TestClient(app)
-        # Submit
-        resp = client.post(
-            "/api/requests",
-            json={"card_id": "c1", "prompt": "To ack"},
-        )
-        request_id = resp.json()["request_id"]
+        with client.websocket_connect("/ws") as ws:
+            ws.send_json(
+                {
+                    "type": "vitrine.event",
+                    "event_type": "selection",
+                    "card_id": "c1",
+                    "payload": {"selected_indices": [0, 1]},
+                }
+            )
+            import time
 
-        # Acknowledge
-        resp = client.post(
-            f"/api/requests/{request_id}/ack",
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
-        assert resp.status_code == 200
+            time.sleep(0.1)
+            ws.send_json(
+                {
+                    "type": "vitrine.event",
+                    "event_type": "selection",
+                    "card_id": "c1",
+                    "payload": {"selected_indices": [3]},
+                }
+            )
+            time.sleep(0.1)
 
-        # Verify it's no longer pending
-        resp = client.get(
-            "/api/requests",
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
-        assert resp.json() == []
-
-    def test_ack_requires_auth(self, app):
-        from starlette.testclient import TestClient
-
-        client = TestClient(app)
-        resp = client.post("/api/requests/some-id/ack")
-        assert resp.status_code == 401
-
-    def test_post_request_with_selection(self, app, store):
-        from starlette.testclient import TestClient
-
-        client = TestClient(app)
-        resp = client.post(
-            "/api/requests",
-            json={
-                "card_id": "c1",
-                "prompt": "Check these",
-                "selected_rows": [[1, "Alice"], [2, "Bob"]],
-                "columns": ["id", "name"],
-            },
-        )
-        assert resp.status_code == 200
-        assert "request_id" in resp.json()
-
-        # Verify selection was stored as artifact
-        resp = client.get(
-            "/api/requests",
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
-        requests = resp.json()
-        assert len(requests) == 1
-        assert requests[0]["artifact_id"] is not None
-        assert requests[0]["artifact_id"].startswith("sel-")
-
-    def test_full_request_cycle(self, app, store):
-        """Submit → poll → acknowledge cycle."""
-        from starlette.testclient import TestClient
-
-        client = TestClient(app)
-
-        # Submit 2 requests
-        r1 = client.post(
-            "/api/requests",
-            json={"card_id": "c1", "prompt": "First"},
-        ).json()
-        r2 = client.post(
-            "/api/requests",
-            json={"card_id": "c2", "prompt": "Second"},
-        ).json()
-
-        # Poll: should see 2
-        pending = client.get(
-            "/api/requests",
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        ).json()
-        assert len(pending) == 2
-
-        # Ack first
-        client.post(
-            f"/api/requests/{r1['request_id']}/ack",
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
-
-        # Poll: should see 1
-        pending = client.get(
-            "/api/requests",
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        ).json()
-        assert len(pending) == 1
-        assert pending[0]["request_id"] == r2["request_id"]
+        assert server._selections.get("c1") == [3]
 
 
 class TestEventRouting:
@@ -590,32 +564,6 @@ class TestEventRouting:
         client = TestClient(app)
         resp = client.get("/api/events")
         assert resp.status_code == 401
-
-    def test_ws_send_to_agent_queues_request(self, app, server, store):
-        from starlette.testclient import TestClient
-
-        client = TestClient(app)
-        with client.websocket_connect("/ws") as ws:
-            ws.send_json(
-                {
-                    "type": "vitrine.event",
-                    "event_type": "send_to_agent",
-                    "card_id": "c1",
-                    "payload": {
-                        "prompt": "Analyze rows",
-                        "selected_rows": [[1, "a"]],
-                        "columns": ["id", "name"],
-                    },
-                }
-            )
-            import time
-
-            time.sleep(0.1)
-
-        requests = store.list_requests(pending_only=True)
-        assert len(requests) == 1
-        assert requests[0]["prompt"] == "Analyze rows"
-        assert requests[0]["artifact_id"] is not None
 
 
 class TestBlockingResponse:
@@ -722,76 +670,6 @@ class TestSummaryGeneration:
     def test_summary_no_selection(self, server):
         summary = server._build_summary("nonexistent", None, None)
         assert summary == ""
-
-    def test_request_includes_summary(self, app, store):
-        from starlette.testclient import TestClient
-
-        render("text", title="Test Card", store=store)
-        card = store.list_cards()[0]
-
-        client = TestClient(app)
-        client.post(
-            "/api/requests",
-            json={
-                "card_id": card.card_id,
-                "prompt": "Check these",
-                "selected_rows": [[1, "a"], [2, "b"]],
-                "columns": ["id", "name"],
-            },
-        )
-        resp = client.get(
-            "/api/requests",
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
-        requests = resp.json()
-        assert len(requests) == 1
-        assert "2 rows" in requests[0]["summary"]
-        assert "2 cols" in requests[0]["summary"]
-        assert "id, name" in requests[0]["summary"]
-        assert "Test Card" in requests[0]["summary"]
-
-
-class TestChartPointSelection:
-    """Test JSON artifact storage for chart point selections."""
-
-    @pytest.fixture
-    def app(self, server):
-        return server._app
-
-    def test_ws_chart_selection_stores_json(self, app, server, store):
-        from starlette.testclient import TestClient
-
-        client = TestClient(app)
-        with client.websocket_connect("/ws") as ws:
-            ws.send_json(
-                {
-                    "type": "vitrine.event",
-                    "event_type": "send_to_agent",
-                    "card_id": "c1",
-                    "payload": {
-                        "prompt": "Analyze points",
-                        "points": [
-                            {"x": 1, "y": 2, "pointIndex": 0},
-                            {"x": 3, "y": 4, "pointIndex": 1},
-                        ],
-                    },
-                }
-            )
-            import time
-
-            time.sleep(0.1)
-
-        requests = store.list_requests(pending_only=True)
-        assert len(requests) == 1
-        assert requests[0]["artifact_id"] is not None
-        # Verify the artifact is stored as JSON
-        import json
-
-        json_path = store._artifacts_dir / f"{requests[0]['artifact_id']}.json"
-        assert json_path.exists()
-        data = json.loads(json_path.read_text())
-        assert "points" in data
-        assert len(data["points"]) == 2
 
 
 class TestUpdateCommand:
@@ -918,6 +796,40 @@ class TestRunManagerServer:
         assert "run_ids" in data
         assert "session-run" in data["run_ids"]
 
+    def test_api_run_context(self, app, run_mgr, rm_server):
+        from starlette.testclient import TestClient
+
+        _, store = run_mgr.get_or_create_run("ctx-run")
+        card = render("hello", title="Card 1", run_id="ctx-run", store=store)
+        store.update_card(
+            card.card_id,
+            response_action="Approve",
+            response_message="ok",
+            response_values={"k": 1},
+        )
+        rm_server._selections[card.card_id] = [1, 3]
+
+        client = TestClient(app)
+        resp = client.get("/api/runs/ctx-run/context")
+        assert resp.status_code == 200
+        ctx = resp.json()
+        assert ctx["run_id"] == "ctx-run"
+        assert ctx["card_count"] == 1
+        assert len(ctx["cards"]) == 1
+        assert ctx["cards"][0]["title"] == "Card 1"
+        assert ctx["cards"][0]["selection_count"] == 2
+        assert ctx["current_selections"][card.card_id] == [1, 3]
+        assert ctx["decisions_made"][0]["action"] == "Approve"
+
+    def test_api_run_context_nonexistent(self, app):
+        from starlette.testclient import TestClient
+
+        client = TestClient(app)
+        resp = client.get("/api/runs/nonexistent/context")
+        assert resp.status_code == 200
+        ctx = resp.json()
+        assert ctx["card_count"] == 0
+
     def test_websocket_replays_run_manager_cards(self, app, run_mgr):
         from starlette.testclient import TestClient
 
@@ -929,42 +841,6 @@ class TestRunManagerServer:
             msg = ws.receive_json()
             assert msg["type"] == "display.add"
             assert msg["card"]["title"] == "WS Card"
-
-    def test_request_queue_via_run_manager(self, app, run_mgr):
-        from starlette.testclient import TestClient
-
-        client = TestClient(app)
-
-        # Submit a request
-        resp = client.post(
-            "/api/requests",
-            json={"card_id": "c1", "prompt": "Test via RM"},
-        )
-        assert resp.status_code == 200
-
-        # Poll
-        resp = client.get(
-            "/api/requests",
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
-        requests = resp.json()
-        assert len(requests) == 1
-        assert requests[0]["prompt"] == "Test via RM"
-
-        # Ack
-        request_id = requests[0]["request_id"]
-        resp = client.post(
-            f"/api/requests/{request_id}/ack",
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
-        assert resp.status_code == 200
-
-        # Verify drained
-        resp = client.get(
-            "/api/requests",
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
-        assert resp.json() == []
 
 
 class TestSingletonGuard:

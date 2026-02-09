@@ -6,7 +6,6 @@ Tests cover:
 - CardProvenance creation
 - DisplayEvent creation and repr
 - DisplayResponse repr and artifact_path
-- DisplayRequest repr and artifact_path
 """
 
 from m4.vitrine._types import (
@@ -14,7 +13,7 @@ from m4.vitrine._types import (
     CardProvenance,
     CardType,
     DisplayEvent,
-    DisplayRequest,
+    DisplayHandle,
     DisplayResponse,
 )
 
@@ -80,6 +79,15 @@ class TestCardDescriptor:
         assert card.artifact_type is None
         assert card.preview == {}
         assert card.provenance is None
+        assert card.actions is None
+
+    def test_with_actions(self):
+        card = CardDescriptor(
+            card_id="act1",
+            card_type=CardType.MARKDOWN,
+            actions=["Approve", "Reject", "Revise"],
+        )
+        assert card.actions == ["Approve", "Reject", "Revise"]
 
     def test_full(self):
         prov = CardProvenance(source="test_table")
@@ -210,54 +218,15 @@ class TestDisplayResponse:
         assert resp.artifact_path is None
 
 
-class TestDisplayRequest:
-    def test_repr_basic(self):
-        req = DisplayRequest(request_id="r1", card_id="c1", prompt="Analyze this")
-        r = repr(req)
-        assert "Analyze this" in r
+class TestDisplayHandle:
+    def test_string_compat(self):
+        handle = DisplayHandle("c1")
+        assert isinstance(handle, str)
+        assert str(handle) == "c1"
+        assert handle.card_id == "c1"
+        assert handle.url is None
 
-    def test_repr_with_instruction(self):
-        req = DisplayRequest(
-            request_id="r1",
-            card_id="c1",
-            prompt="Check data",
-            instruction="Summarize findings",
-        )
-        r = repr(req)
-        assert "Summarize findings" in r
-
-    def test_repr_with_summary(self):
-        req = DisplayRequest(
-            request_id="r1",
-            card_id="c1",
-            prompt="Check",
-            summary="3 rows \u00d7 2 cols (id, name)",
-        )
-        r = repr(req)
-        assert "Selection:" in r
-        assert "3 rows" in r
-
-    def test_artifact_path_with_store(self, tmp_path):
-        from m4.vitrine.artifacts import ArtifactStore
-
-        store = ArtifactStore(session_dir=tmp_path, session_id="s1")
-        import pandas as pd
-
-        df = pd.DataFrame({"a": [1]})
-        store.store_dataframe("sel-r1", df)
-
-        req = DisplayRequest(
-            request_id="r1",
-            card_id="c1",
-            prompt="Test",
-            artifact_id="sel-r1",
-            _store=store,
-        )
-        assert req.artifact_path is not None
-        assert "sel-r1.parquet" in req.artifact_path
-        r = repr(req)
-        assert "sel-r1.parquet" in r
-
-    def test_artifact_path_none_without_store(self):
-        req = DisplayRequest(request_id="r1", card_id="c1", prompt="Test")
-        assert req.artifact_path is None
+    def test_url_attached(self):
+        handle = DisplayHandle("c2", "http://127.0.0.1:7741/#run=r1")
+        assert handle.card_id == "c2"
+        assert handle.url.endswith("#run=r1")

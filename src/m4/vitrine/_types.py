@@ -357,23 +357,40 @@ class CardDescriptor:
     prompt: str | None = None
     """Question shown to the user when response_requested is True."""
 
-    on_send: str | None = None
-    """Instruction for the agent when user clicks 'Send to Agent'."""
-
     timeout: float | None = None
     """Timeout in seconds for blocking show() cards (sent to frontend for countdown)."""
+
+    actions: list[str] | None = None
+    """Named action buttons for decision cards (replaces default Confirm button)."""
+
+    response_action: str | None = None
+    """Resolved action from the researcher (e.g. 'confirm', 'skip', 'Approve')."""
+
+    response_message: str | None = None
+    """Optional free-form text entered with the response."""
+
+    response_values: dict[str, Any] = field(default_factory=dict)
+    """Submitted form/control values captured at response time."""
+
+    response_summary: str | None = None
+    """Human-readable summary of any selected rows/points."""
+
+    response_artifact_id: str | None = None
+    """Artifact ID for response-backed selection data, if present."""
+
+    response_timestamp: str | None = None
+    """ISO timestamp of when the response was submitted."""
 
 
 @dataclass
 class DisplayEvent:
     """An event sent from the browser UI to the Python client.
 
-    Used for lightweight interactivity — row clicks, point selections,
-    and "send to agent" actions.
+    Used for lightweight interactivity — row clicks and point selections.
     """
 
     event_type: str
-    """Event type (e.g., 'row_click', 'point_select', 'send_to_agent')."""
+    """Event type (e.g., 'row_click', 'point_select')."""
 
     card_id: str
     """ID of the card that generated the event."""
@@ -463,77 +480,18 @@ class DisplayResponse:
         return "\n".join(lines)
 
 
-@dataclass
-class DisplayRequest:
-    """A user-initiated request from the browser ('Send to Agent').
+class DisplayHandle(str):
+    """String-like return value for non-blocking show() calls.
 
-    Agents poll for these via pending_requests().
+    Behaves like the historical card_id string while exposing `url`
+    when a run-scoped deep link is available.
     """
 
-    request_id: str
-    """Unique identifier for this request."""
-
     card_id: str
-    """ID of the card the request originated from."""
+    url: str | None
 
-    prompt: str
-    """User's message/question."""
-
-    summary: str = ""
-    """Brief summary of the selected data."""
-
-    artifact_id: str | None = None
-    """Artifact ID for the selected data (if any)."""
-
-    timestamp: str = ""
-    """ISO-format timestamp when the request was created."""
-
-    instruction: str | None = None
-    """The card's on_send instruction for the agent."""
-
-    _store: Any = field(default=None, repr=False)
-    """Reference to artifact store (internal, for lazy data loading)."""
-
-    _ack_callback: Any = field(default=None, repr=False)
-    """Callback to acknowledge/consume this request (internal)."""
-
-    def data(self) -> Any:
-        """Load the selected DataFrame from the artifact store.
-
-        Returns None if no selection was made.
-        """
-        if self.artifact_id and self._store:
-            path = self._store._artifacts_dir / f"{self.artifact_id}.parquet"
-            if path.exists():
-                import pandas as pd
-
-                return pd.read_parquet(path)
-        return None
-
-    @property
-    def artifact_path(self) -> str | None:
-        """Resolved path to the selection artifact on disk, or None."""
-        if self.artifact_id and self._store:
-            path = self._store._artifacts_dir / f"{self.artifact_id}.parquet"
-            if path.exists():
-                return str(path)
-        return None
-
-    def acknowledge(self) -> None:
-        """Mark this request as handled so it won't appear in future polls."""
-        if self._ack_callback:
-            self._ack_callback(self.request_id)
-
-    def __repr__(self) -> str:
-        lines = [f"DisplayRequest(prompt={self.prompt!r}"]
-        if self.instruction:
-            lines[0] += f", instruction={self.instruction!r}"
-        lines[0] += ")"
-        if self.summary:
-            lines.append(f"  Selection: {self.summary}")
-        path = self.artifact_path
-        if path:
-            lines.append(f"  Artifact:  {path}")
-        elif self.artifact_id:
-            lines.append(f"  Artifact:  {self.artifact_id} (not on disk)")
-        return "\n".join(lines)
+    def __new__(cls, card_id: str, url: str | None = None) -> DisplayHandle:
+        obj = str.__new__(cls, card_id)
+        obj.card_id = card_id
+        obj.url = url
+        return obj

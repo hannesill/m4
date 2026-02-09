@@ -1,13 +1,11 @@
 """Run-centric persistence manager for the display pipeline.
 
 Manages multiple ArtifactStore instances (one per run), with runs persisting
-across server restarts. Provides cross-run queries, request queue management,
-and age-based cleanup.
+across server restarts. Provides cross-run queries and age-based cleanup.
 
 Storage layout:
     {m4_data}/display/
     ├── runs.json              # Global registry
-    ├── requests.json          # Request queue (display-level)
     ├── .server.json           # PID file (transient)
     └── runs/
         ├── 2025-06-09_103045_sepsis-mortality/
@@ -80,8 +78,6 @@ class RunManager:
         self.display_dir = display_dir
         self._runs_dir = display_dir / "runs"
         self._registry_path = display_dir / "runs.json"
-        self._requests_path = display_dir / "requests.json"
-
         # Ensure directories exist
         self._runs_dir.mkdir(parents=True, exist_ok=True)
 
@@ -377,6 +373,93 @@ class RunManager:
             return self._stores.get(dir_name)
         return None
 
+    def build_context(self, run_id: str) -> dict[str, Any]:
+        """Build a structured context summary for agent re-orientation.
+
+        Returns run metadata, card list, resolved responses, and
+        pending decision cards.
+
+        Args:
+            run_id: The run label to summarize.
+
+        Returns:
+            Dict with run_id, card_count, cards, decisions (back-compat),
+            pending_responses, decisions_made, and current_selections
+            (filled by server when available). Returns empty context if
+            run not found.
+        """
+        dir_name = self._label_to_dir.get(run_id)
+        if dir_name is None:
+            return {
+                "run_id": run_id,
+                "card_count": 0,
+                "cards": [],
+                "decisions": [],
+                "pending_responses": [],
+                "decisions_made": [],
+                "current_selections": {},
+            }
+
+        store = self._stores.get(dir_name)
+        if store is None:
+            return {
+                "run_id": run_id,
+                "card_count": 0,
+                "cards": [],
+                "decisions": [],
+                "pending_responses": [],
+                "decisions_made": [],
+                "current_selections": {},
+            }
+
+        cards = store.list_cards()
+        card_summaries = []
+        pending_responses = []
+        decisions_made = []
+
+        for c in cards:
+            summary = {
+                "card_id": c.card_id,
+                "card_type": c.card_type.value,
+                "title": c.title,
+                "timestamp": c.timestamp,
+                "response_requested": c.response_requested,
+            }
+            card_summaries.append(summary)
+
+            if c.response_action:
+                decisions_made.append(
+                    {
+                        "card_id": c.card_id,
+                        "title": c.title,
+                        "action": c.response_action,
+                        "message": c.response_message,
+                        "values": c.response_values or {},
+                        "summary": c.response_summary,
+                        "artifact_id": c.response_artifact_id,
+                        "timestamp": c.response_timestamp,
+                    }
+                )
+
+            if c.response_requested:
+                pending_responses.append(
+                    {
+                        "card_id": c.card_id,
+                        "title": c.title,
+                        "prompt": c.prompt,
+                    }
+                )
+
+        return {
+            "run_id": run_id,
+            "card_count": len(cards),
+            "cards": card_summaries,
+            "decisions": pending_responses,  # backwards-compat alias
+            "pending_responses": pending_responses,
+            "decisions_made": decisions_made,
+            "current_selections": {},
+        }
+
     def register_card(self, card_id: str, dir_name: str) -> None:
         """Register a card in the cross-run card index.
 
@@ -385,44 +468,6 @@ class RunManager:
             dir_name: The run directory name containing this card.
         """
         self._card_index[card_id] = dir_name
-
-    # --- Request Queue (display-level) ---
-
-    def store_request(self, request: dict[str, Any]) -> None:
-        """Append a request to the display-level request queue."""
-        requests = self._read_requests()
-        request.setdefault("acknowledged", False)
-        requests.append(request)
-        self._requests_path.write_text(json.dumps(requests, indent=2))
-
-    def _read_requests(self) -> list[dict[str, Any]]:
-        """Read the request queue from disk."""
-        if not self._requests_path.exists():
-            return []
-        try:
-            return json.loads(self._requests_path.read_text())
-        except (json.JSONDecodeError, FileNotFoundError):
-            return []
-
-    def list_requests(self, pending_only: bool = True) -> list[dict[str, Any]]:
-        """List requests from the queue.
-
-        Args:
-            pending_only: If True, only return unacknowledged requests.
-        """
-        requests = self._read_requests()
-        if pending_only:
-            requests = [r for r in requests if not r.get("acknowledged", False)]
-        return requests
-
-    def acknowledge_request(self, request_id: str) -> None:
-        """Mark a request as acknowledged."""
-        requests = self._read_requests()
-        for r in requests:
-            if r.get("request_id") == request_id:
-                r["acknowledged"] = True
-                break
-        self._requests_path.write_text(json.dumps(requests, indent=2))
 
     def store_selection(self, selection_id: str, rows: list, columns: list) -> Path:
         """Store a selection as a Parquet artifact in the display-level dir.
