@@ -318,6 +318,7 @@ def _render_card_html(card: CardDescriptor, run_manager: RunManager) -> str:
         "image": "I",
         "keyvalue": "K",
         "form": "F",
+        "section": "S",
         "decision": "!",
     }
     type_letter = type_letters.get(header_type, "?")

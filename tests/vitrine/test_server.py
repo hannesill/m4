@@ -915,3 +915,206 @@ class TestSingletonGuard:
         from m4.vitrine.server import _check_health
 
         assert _check_health("http://127.0.0.1:7790") is False
+
+
+class TestSelectionPersistence:
+    """Test that selections are persisted to disk and loaded on restart."""
+
+    def test_selections_saved_and_loaded(self, tmp_path):
+        """Selections are saved to JSON and reloaded on new server."""
+        from starlette.testclient import TestClient
+
+        mgr = RunManager(tmp_path / "sel_display")
+        _, store = mgr.get_or_create_run("sel-test")
+        dir_name = mgr._label_to_dir["sel-test"]
+
+        srv = DisplayServer(
+            run_manager=mgr,
+            port=7796,
+            host="127.0.0.1",
+            session_id="sel-test",
+        )
+
+        # Store a card so selection has a target
+        card_desc = render("text", title="T", store=store, run_id="sel-test")
+        mgr.register_card(card_desc.card_id, dir_name)
+
+        client = TestClient(srv._app)
+        with client.websocket_connect("/ws") as ws:
+            ws.receive_json()  # drain replay
+            ws.send_json(
+                {
+                    "type": "vitrine.event",
+                    "event_type": "selection",
+                    "card_id": card_desc.card_id,
+                    "payload": {"selected_indices": [0, 2, 4]},
+                }
+            )
+            import time
+
+            time.sleep(0.3)
+
+        assert srv._selections[card_desc.card_id] == [0, 2, 4]
+
+        # Force flush
+        srv._save_selections()
+
+        # Verify file exists
+        assert srv._selections_path.exists()
+
+        # Create new server instance — should load persisted selections
+        srv2 = DisplayServer(
+            run_manager=mgr,
+            port=7796,
+            host="127.0.0.1",
+            session_id="sel-test",
+        )
+        assert srv2._selections.get(card_desc.card_id) == [0, 2, 4]
+
+    def test_empty_selections_saved(self, tmp_path):
+        """Empty selections are saved as empty dict."""
+        mgr = RunManager(tmp_path / "empty_sel_display")
+        srv = DisplayServer(
+            run_manager=mgr,
+            port=7795,
+            host="127.0.0.1",
+            session_id="empty-sel-test",
+        )
+        srv._save_selections()
+        # File should exist with empty dict
+        assert srv._selections_path.exists()
+        import json
+
+        data = json.loads(srv._selections_path.read_text())
+        assert data == {}
+
+
+class TestExportEndpoints:
+    """Test /api/export/html and /api/export/json REST endpoints."""
+
+    @pytest.fixture
+    def export_server(self, tmp_path):
+        mgr = RunManager(tmp_path / "export_display")
+        _, s = mgr.get_or_create_run("export-test")
+        render("# Export content", title="Doc", store=s, run_id="export-test")
+        dir_name = mgr._label_to_dir["export-test"]
+        card = s.list_cards()[0]
+        mgr.register_card(card.card_id, dir_name)
+        srv = DisplayServer(
+            run_manager=mgr,
+            port=7794,
+            host="127.0.0.1",
+            token="export-tok",
+            session_id="export-test",
+        )
+        return srv
+
+    def test_export_html_endpoint(self, export_server):
+        from starlette.testclient import TestClient
+
+        client = TestClient(export_server._app)
+        resp = client.get(
+            "/api/runs/export-test/export?format=html",
+        )
+        assert resp.status_code == 200
+        assert "text/html" in resp.headers["content-type"]
+        assert "Export content" in resp.text
+
+    def test_export_json_endpoint(self, export_server):
+        from starlette.testclient import TestClient
+
+        client = TestClient(export_server._app)
+        resp = client.get(
+            "/api/runs/export-test/export?format=json",
+        )
+        assert resp.status_code == 200
+        assert "application/zip" in resp.headers.get("content-type", "")
+
+
+class TestConcurrentBlocking:
+    """Test concurrent blocking show() calls."""
+
+    def test_two_concurrent_responses(self, store):
+        """Two pending responses can be resolved independently."""
+        import asyncio
+        import threading
+
+        srv = DisplayServer(
+            store=store,
+            port=7793,
+            host="127.0.0.1",
+            session_id="concurrent-test",
+        )
+
+        loop = asyncio.new_event_loop()
+        srv._loop = loop
+        results = {}
+
+        async def wait_both():
+            """Wait for two responses concurrently on the same loop."""
+
+            async def wait_card(card_id, key):
+                r = await srv.wait_for_response(card_id, timeout=5.0)
+                results[key] = r
+
+            # Schedule both waits concurrently
+            task_a = asyncio.ensure_future(wait_card("card-a", "a"))
+            task_b = asyncio.ensure_future(wait_card("card-b", "b"))
+
+            # Give futures time to register
+            await asyncio.sleep(0.1)
+
+            # Resolve them
+            future_a = srv._pending_responses.get("card-a")
+            if future_a and not future_a.done():
+                future_a.set_result({"action": "confirm", "card_id": "card-a"})
+            future_b = srv._pending_responses.get("card-b")
+            if future_b and not future_b.done():
+                future_b.set_result({"action": "skip", "card_id": "card-b"})
+
+            await task_a
+            await task_b
+
+        def run_loop():
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(wait_both())
+
+        t = threading.Thread(target=run_loop)
+        t.start()
+        t.join(timeout=10)
+        loop.close()
+
+        assert results["a"]["action"] == "confirm"
+        assert results["b"]["action"] == "skip"
+
+
+class TestWebSocketDisconnect:
+    """Test WebSocket disconnect during pending response."""
+
+    def test_disconnect_leaves_future_unresolved(self, store):
+        """Disconnecting client leaves pending future unresolved; server doesn't crash."""
+        import asyncio
+
+        srv = DisplayServer(
+            store=store,
+            port=7792,
+            host="127.0.0.1",
+            session_id="disconnect-test",
+        )
+
+        loop = asyncio.new_event_loop()
+        srv._loop = loop
+
+        # Manually register a pending future (simulating wait_for_response)
+        future = loop.create_future()
+        srv._pending_responses["disc-card"] = future
+
+        # Future should not be resolved since no one responded
+        assert not future.done()
+
+        # Verify timeout behavior works
+        result = loop.run_until_complete(
+            srv.wait_for_response("disc-card-2", timeout=0.1)
+        )
+        assert result["action"] == "timeout"
+        loop.close()

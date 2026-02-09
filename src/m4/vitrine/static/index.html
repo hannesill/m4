@@ -891,6 +891,11 @@
     transform: translateX(-50%) translateY(0);
   }
 
+  .copy-toast.toast-error {
+    background: var(--error);
+    color: #fff;
+  }
+
   /* ================================================================
      TABLE TOOLBAR, ROW DETAIL & INTERACTIONS
      ================================================================ */
@@ -1654,6 +1659,22 @@
     outline-offset: 1px;
   }
 
+
+  /* Select-all banner */
+  .select-all-banner {
+    padding: 6px 14px;
+    font-size: 12px;
+    background: color-mix(in srgb, var(--accent) 10%, var(--card-bg));
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .select-all-banner a {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+  }
 
   /* Card flash animation on update */
   @keyframes flashHighlight {
@@ -2533,20 +2554,20 @@
   <div class="header-left">
     <h1>vitrine</h1>
     <div class="run-dropdown" id="run-dropdown">
-      <button class="run-dropdown-trigger" id="run-dropdown-trigger" title="Browse runs">
+      <button class="run-dropdown-trigger" id="run-dropdown-trigger" title="Browse runs" aria-label="Browse runs" aria-haspopup="listbox" aria-expanded="false">
         <span id="run-dropdown-label">All runs</span>
         <span class="dd-arrow">&#9662;</span>
       </button>
-      <div class="run-dropdown-panel" id="run-dropdown-panel" style="display: none;"></div>
+      <div class="run-dropdown-panel" id="run-dropdown-panel" role="listbox" style="display: none;"></div>
     </div>
   </div>
   <div class="header-actions">
     <span id="agent-status"></span>
     <div class="export-dropdown" id="export-dropdown">
-      <button class="btn" id="export-btn" title="Export run">&#8615; Export</button>
+      <button class="btn" id="export-btn" title="Export run" aria-label="Export run">&#8615; Export</button>
       <div class="export-dropdown-panel" id="export-dropdown-panel" style="display: none;"></div>
     </div>
-    <button class="btn-icon" id="theme-toggle" title="Toggle theme">&#9789;</button>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">&#9789;</button>
   </div>
 </div>
 
@@ -2566,7 +2587,7 @@
 </div>
 
 <div class="footer">
-  <div id="status">
+  <div id="status" aria-live="polite">
     <span class="status-dot status-connecting"></span>
     Connecting...
   </div>
@@ -2579,6 +2600,19 @@
 <script>
 (function() {
   'use strict';
+
+  // Constants
+  var CONSTANTS = {
+    RECONNECT_DELAY_INITIAL: 1000,
+    RECONNECT_DELAY_MAX: 15000,
+    LIVE_MODE_DELAY: 500,
+    TABLE_PAGE_SIZE: 50,
+    TOAST_DURATION: 1500,
+    TOAST_ERROR_DURATION: 3000,
+    PLOTLY_RESIZE_DEBOUNCE: 150,
+    EVENT_QUEUE_MAX: 1000,
+    DEFAULT_TIMEOUT: 300,
+  };
 
   // ================================================================
   // STATE & DOM REFERENCES
@@ -2609,6 +2643,7 @@
     image: 'I',
     keyvalue: 'K',
     form: 'F',
+    section: 'S',
     decision: '!',
   };
 
@@ -2667,6 +2702,7 @@
   function openDropdown() {
     state.dropdownOpen = true;
     runDropdownTrigger.classList.add('open');
+    runDropdownTrigger.setAttribute('aria-expanded', 'true');
     renderDropdown();
     runDropdownPanel.style.display = '';
     // Close on outside click
@@ -2678,6 +2714,7 @@
   function closeDropdown() {
     state.dropdownOpen = false;
     runDropdownTrigger.classList.remove('open');
+    runDropdownTrigger.setAttribute('aria-expanded', 'false');
     runDropdownPanel.style.display = 'none';
     document.removeEventListener('mousedown', _closeDropdownOutside);
   }
@@ -3098,11 +3135,12 @@
       runMetaLabel.textContent = run.label;
     }
 
+    var _blurTimeout = null;
     input.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') { e.preventDefault(); commit(); }
-      if (e.key === 'Escape') { e.preventDefault(); cleanup(); }
+      if (e.key === 'Enter') { e.preventDefault(); if (_blurTimeout) { clearTimeout(_blurTimeout); _blurTimeout = null; } commit(); }
+      if (e.key === 'Escape') { e.preventDefault(); if (_blurTimeout) { clearTimeout(_blurTimeout); _blurTimeout = null; } cleanup(); }
     });
-    input.addEventListener('blur', function() { setTimeout(commit, 100); });
+    input.addEventListener('blur', function() { _blurTimeout = setTimeout(commit, 100); });
   }
 
   // Click the run title in the metadata bar to rename
@@ -3213,10 +3251,12 @@
       state.connected = false;
       state.ws = null;
       updateStatus('disconnected');
+      showToast('Connection lost, reconnecting...', 'error');
       scheduleReconnect();
     };
 
     ws.onerror = function() {
+      showToast('WebSocket error', 'error');
       ws.close();
     };
   }
@@ -3300,6 +3340,7 @@
     collapseBtn.className = 'card-collapse-btn';
     collapseBtn.innerHTML = '&#9660;';
     collapseBtn.title = 'Collapse';
+    collapseBtn.setAttribute('aria-label', 'Collapse card');
     collapseBtn.onclick = function() {
       var body = el.querySelector('.card-body');
       var prov = el.querySelector('.card-provenance');
@@ -3307,6 +3348,7 @@
       if (body) body.classList.toggle('collapsed', isCollapsed);
       if (prov) prov.classList.toggle('collapsed', isCollapsed);
       collapseBtn.title = isCollapsed ? 'Expand' : 'Collapse';
+      collapseBtn.setAttribute('aria-label', isCollapsed ? 'Expand card' : 'Collapse card');
     };
     header.appendChild(collapseBtn);
 
@@ -3340,6 +3382,7 @@
     copyBtn.className = 'card-action-btn';
     copyBtn.innerHTML = '&#128203;';
     copyBtn.title = 'Copy content';
+    copyBtn.setAttribute('aria-label', 'Copy content');
     copyBtn.onclick = function(e) {
       e.stopPropagation();
       copyCardContent(cardData, copyBtn);
@@ -3351,6 +3394,7 @@
     pinBtn.className = 'card-action-btn' + (cardData.pinned ? ' pinned' : '');
     pinBtn.innerHTML = '&#128204;';
     pinBtn.title = cardData.pinned ? 'Unpin' : 'Pin';
+    pinBtn.setAttribute('aria-label', cardData.pinned ? 'Unpin card' : 'Pin card');
     pinBtn.onclick = function(e) {
       e.stopPropagation();
       cardData.pinned = !cardData.pinned;
@@ -3358,6 +3402,7 @@
       el.classList.toggle('pinned', cardData.pinned);
       el.dataset.pinned = cardData.pinned ? 'true' : 'false';
       pinBtn.title = cardData.pinned ? 'Unpin' : 'Pin';
+      pinBtn.setAttribute('aria-label', cardData.pinned ? 'Unpin card' : 'Pin card');
     };
     actions.appendChild(pinBtn);
 
@@ -3486,12 +3531,14 @@
     }).catch(function() {});
   }
 
-  function showToast(msg) {
+  function showToast(msg, type) {
     copyToastEl.textContent = msg;
+    copyToastEl.classList.remove('toast-error');
+    if (type === 'error') copyToastEl.classList.add('toast-error');
     copyToastEl.classList.add('visible');
     setTimeout(function() {
       copyToastEl.classList.remove('visible');
-    }, 1500);
+    }, type === 'error' ? 3000 : 1500);
   }
 
   // ================================================================
@@ -3603,6 +3650,7 @@
     var selectAllCb = document.createElement('input');
     selectAllCb.type = 'checkbox';
     selectAllCb.title = 'Select all on this page';
+    selectAllCb.setAttribute('aria-label', 'Select all rows on this page');
     selectAllCb.onchange = function() {
       var cbs = wrapper.querySelectorAll('tbody .select-col input[type="checkbox"]');
       cbs.forEach(function(cb) {
@@ -3610,6 +3658,28 @@
         // Fire the onchange to update selection state
         if (cb.onchange) cb.onchange();
       });
+      // Show "Select all N rows" banner when total exceeds visible
+      var totalRows = (preview.shape && preview.shape[0]) || 0;
+      var visibleRows = cbs.length;
+      var existing = container.querySelector('.select-all-banner');
+      if (selectAllCb.checked && totalRows > visibleRows) {
+        if (!existing) {
+          var banner = document.createElement('div');
+          banner.className = 'select-all-banner';
+          banner.textContent = 'All ' + visibleRows + ' rows on this page selected. ';
+          var selectAllLink = document.createElement('a');
+          selectAllLink.href = '#';
+          selectAllLink.textContent = 'Select all ' + totalRows + ' rows';
+          selectAllLink.onclick = function(e) {
+            e.preventDefault();
+            banner.textContent = 'All ' + totalRows + ' rows selected.';
+          };
+          banner.appendChild(selectAllLink);
+          wrapper.parentNode.insertBefore(banner, wrapper);
+        }
+      } else if (existing) {
+        existing.remove();
+      }
     };
     selectAllTh.appendChild(selectAllCb);
     headerRow.appendChild(selectAllTh);
@@ -4112,13 +4182,18 @@
     document.head.appendChild(script);
   }
 
-  // Resize Plotly charts on window resize
+  // Resize Plotly charts on window resize (debounced 150ms)
+  var _plotlyResizeTimer = null;
   window.addEventListener('resize', function() {
-    if (!window.Plotly) return;
-    var plots = document.querySelectorAll('.plotly-container .js-plotly-plot');
-    plots.forEach(function(plot) {
-      window.Plotly.Plots.resize(plot);
-    });
+    if (_plotlyResizeTimer) clearTimeout(_plotlyResizeTimer);
+    _plotlyResizeTimer = setTimeout(function() {
+      _plotlyResizeTimer = null;
+      if (!window.Plotly) return;
+      var plots = document.querySelectorAll('.plotly-container .js-plotly-plot');
+      plots.forEach(function(plot) {
+        window.Plotly.Plots.resize(plot);
+      });
+    }, 150);
   });
 
   // Re-color Plotly charts on theme change
@@ -4428,6 +4503,8 @@
 
     var panel = document.createElement('div');
     panel.className = 'form-calendar-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-label', 'Date picker');
     panel.style.display = 'none';
 
     var header = document.createElement('div');

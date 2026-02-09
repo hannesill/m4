@@ -191,7 +191,7 @@ def _remote_command(url: str, token: str, payload: dict[str, Any]) -> bool:
         with urllib.request.urlopen(req, timeout=5) as resp:
             return resp.status == 200
     except Exception:
-        logger.debug(f"Remote command failed for {url}")
+        logger.warning(f"Remote command failed for {url}")
         return False
 
 
@@ -376,7 +376,10 @@ def stop() -> None:
 
     # No in-process server. If we have a remote connection hint, try stopping
     # the persistent server as well.
-    if _remote_url is not None:
+    with _lock:
+        url = _remote_url
+
+    if url is not None:
         stop_server()
 
 
@@ -491,21 +494,29 @@ def _push_remote(card_data: dict[str, Any]) -> bool:
     """Push a card to the remote server. Returns True on success."""
     global _remote_url, _auth_token
 
-    if _remote_url is None or _auth_token is None:
+    with _lock:
+        url, token = _remote_url, _auth_token
+
+    if url is None or token is None:
         return False
 
-    ok = _remote_command(_remote_url, _auth_token, {"type": "card", "card": card_data})
+    ok = _remote_command(url, token, {"type": "card", "card": card_data})
     if not ok:
         # Retry once after re-discovery
-        _remote_url = None
-        _auth_token = None
+        with _lock:
+            _remote_url = None
+            _auth_token = None
         info = _discover_server()
         if info:
-            _remote_url = info["url"]
-            _auth_token = info.get("token")
-            return _remote_command(
-                _remote_url, _auth_token, {"type": "card", "card": card_data}
-            )
+            with _lock:
+                _remote_url = info["url"]
+                _auth_token = info.get("token")
+                url, token = _remote_url, _auth_token
+            ok = _remote_command(url, token, {"type": "card", "card": card_data})
+            if not ok:
+                logger.warning("Remote card push failed after re-discovery")
+        else:
+            logger.warning("Remote card push failed and server re-discovery failed")
     return ok
 
 
@@ -658,7 +669,7 @@ def show(
         _server.push_card(card)
 
     if not wait:
-        return DisplayHandle(card.card_id, url=_run_url(run_id))
+        return DisplayHandle(card.card_id, url=_run_url(run_id), run_id=run_id)
 
     # Blocking flow: wait for user response
     result = _wait_for_card_response(card.card_id, timeout)
@@ -678,10 +689,13 @@ def _wait_for_card_response(card_id: str, timeout: float) -> dict[str, Any]:
 
     Uses in-process server if available, otherwise polls remote endpoint.
     """
-    if _server is not None and hasattr(_server, "wait_for_response_sync"):
-        return _server.wait_for_response_sync(card_id, timeout)
+    with _lock:
+        server, url, token = _server, _remote_url, _auth_token
 
-    if _remote_url and _auth_token:
+    if server is not None and hasattr(server, "wait_for_response_sync"):
+        return server.wait_for_response_sync(card_id, timeout)
+
+    if url and token:
         return _poll_remote_response(card_id, timeout)
 
     return {"action": "timeout", "card_id": card_id}
@@ -693,28 +707,41 @@ def _run_url(run_id: str | None) -> str | None:
         return None
     from urllib.parse import quote
 
-    if _remote_url:
-        return f"{_remote_url}/#run={quote(run_id, safe='')}"
-    if _server is not None:
-        host = getattr(_server, "host", "127.0.0.1")
-        port = getattr(_server, "port", 7741)
+    with _lock:
+        url, server = _remote_url, _server
+
+    if url:
+        return f"{url}/#run={quote(run_id, safe='')}"
+    if server is not None:
+        host = getattr(server, "host", "127.0.0.1")
+        port = getattr(server, "port", 7741)
         return f"http://{host}:{port}/#run={quote(run_id, safe='')}"
     return None
 
 
 def _poll_remote_response(card_id: str, timeout: float) -> dict[str, Any]:
     """Poll the remote server for a blocking response via long-poll."""
+    import urllib.error
     import urllib.request
 
-    url = f"{_remote_url}/api/response/{card_id}?timeout={timeout}"
+    with _lock:
+        url, token = _remote_url, _auth_token
+
+    poll_url = f"{url}/api/response/{card_id}?timeout={timeout}"
     try:
         req = urllib.request.Request(
-            url,
-            headers={"Authorization": f"Bearer {_auth_token}"},
+            poll_url,
+            headers={"Authorization": f"Bearer {token}"},
             method="GET",
         )
         with urllib.request.urlopen(req, timeout=timeout + 5) as resp:
             return json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        logger.warning(f"Remote response poll HTTP error {e.code} for card {card_id}")
+        return {"action": "error", "card_id": card_id}
+    except urllib.error.URLError as e:
+        logger.warning(f"Remote response poll connection error for card {card_id}: {e}")
+        return {"action": "timeout", "card_id": card_id}
     except Exception:
         return {"action": "timeout", "card_id": card_id}
 
@@ -820,12 +847,15 @@ def run_context(run_id: str) -> dict[str, Any]:
             ctx["decisions"] = ctx.get("pending_responses", [])
 
         # If remote server, try to get enriched version with selection counts
-        if _remote_url:
+        with _lock:
+            url = _remote_url
+
+        if url:
             try:
                 import urllib.request
 
-                url = f"{_remote_url}/api/runs/{run_id}/context"
-                req = urllib.request.Request(url, method="GET")
+                ctx_url = f"{url}/api/runs/{run_id}/context"
+                req = urllib.request.Request(ctx_url, method="GET")
                 with urllib.request.urlopen(req, timeout=5) as resp:
                     return json.loads(resp.read())
             except Exception:
@@ -940,10 +970,13 @@ def on_event(callback: Any) -> None:
     _ensure_started()
     _event_callbacks.append(callback)
 
-    if _server is not None and hasattr(_server, "register_event_callback"):
+    with _lock:
+        server, url = _server, _remote_url
+
+    if server is not None and hasattr(server, "register_event_callback"):
         # In-process server: register directly
-        _server.register_event_callback(callback)
-    elif _remote_url is not None:
+        server.register_event_callback(callback)
+    elif url is not None:
         # Remote server: start polling thread if not already running
         if _event_poll_thread is None or not _event_poll_thread.is_alive():
             _event_poll_stop.clear()
@@ -960,11 +993,18 @@ def _poll_remote_events() -> None:
     from m4.vitrine._types import DisplayEvent
 
     while not _event_poll_stop.is_set():
+        with _lock:
+            url, token = _remote_url, _auth_token
+
+        if not url or not token:
+            _event_poll_stop.wait(0.5)
+            continue
+
         try:
-            url = f"{_remote_url}/api/events"
+            events_url = f"{url}/api/events"
             req = urllib.request.Request(
-                url,
-                headers={"Authorization": f"Bearer {_auth_token}"},
+                events_url,
+                headers={"Authorization": f"Bearer {token}"},
                 method="GET",
             )
             with urllib.request.urlopen(req, timeout=5) as resp:
@@ -1025,17 +1065,20 @@ def get_selection(card_id: str) -> Any:
         return df.iloc[valid].reset_index(drop=True)
 
     # Remote server: use REST endpoint
-    if _remote_url:
+    with _lock:
+        url = _remote_url
+
+    if url:
         try:
             import urllib.request
 
-            url = f"{_remote_url}/api/table/{card_id}/selection"
-            req = urllib.request.Request(url, method="GET")
+            sel_url = f"{url}/api/table/{card_id}/selection"
+            req = urllib.request.Request(sel_url, method="GET")
             with urllib.request.urlopen(req, timeout=5) as resp:
                 data = json.loads(resp.read())
             if data.get("rows") and data.get("columns"):
                 return pd.DataFrame(data["rows"], columns=data["columns"])
         except Exception:
-            pass
+            logger.warning(f"Failed to fetch selection for card {card_id} from remote")
 
     return pd.DataFrame()

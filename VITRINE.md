@@ -1,6 +1,6 @@
 # vitrine Server
 
-A local display server that acts as a visualization backend for code execution agents. When an agent (Claude Code, Cursor, etc.) runs analysis in Python, it calls `show()` to push visualizations to a browser tab — no file juggling, no CLI limitations.
+The agent's research journal and live display. Every `show()` call adds a card to a persistent, browsable record of the research process — decisions made, data reviewed, parameters chosen, findings documented. The researcher can open the browser at any time to see where the analysis stands, review past decisions, and understand the agent's reasoning. Runs persist on disk, survive restarts, and export as self-contained HTML.
 
 ## How It Works
 
@@ -11,15 +11,16 @@ Agent writes Python    →    show(obj)    →    Artifact Store    →    Brows
 from m4.vitrine import show
 
 df = execute_query("SELECT age, gender, COUNT(*) ...")
-show(df)                          # interactive table
+show(df, title="Demographics", source="mimiciv_hosp.patients")  # journal entry + interactive table
 
 fig = px.histogram(df, x="age")
-show(fig)                         # plotly chart
+show(fig, title="Age Distribution")                              # journal entry + plotly chart
 
-show("## Key Finding\nMortality is 23% in this cohort")  # markdown card
+show("## Exclusion Decision\nRemoving patients with ICU stay < 24h — "
+     "insufficient observation window for SOFA trending.")        # document reasoning
 ```
 
-Each `show()` call appends a card to a persistent browser canvas. Large objects (DataFrames, charts) are persisted in an artifact store on disk; the WebSocket sends lightweight references. Tables are paged server-side — no browser crashes, no data size limits.
+Each `show()` call appends a card to a persistent browser canvas — the research journal. Large objects (DataFrames, charts) are persisted in an artifact store on disk; the WebSocket sends lightweight references. Tables are paged server-side — no browser crashes, no data size limits. The journal records what happened and why; files record what was produced.
 
 ## Architecture
 
@@ -40,13 +41,13 @@ src/m4/vitrine/
 
 **Artifact Store**: Large objects are written to disk as Parquet/JSON/SVG. The WebSocket sends a card descriptor (artifact ID, schema, preview rows). The frontend requests pages via REST. Storage layout: `{m4_data}/vitrine/runs/{YYYY-MM-DD}_{HHMMSS}_{label}/` with `index.json` (card descriptors), `meta.json` (run metadata), and `artifacts/` directory.
 
-**Runs**: The primary organizational unit — each run represents a research question or analysis. Agents tag cards with `run_id` to group outputs. Runs persist on disk across server restarts and sessions. The frontend browses all historical runs grouped by date.
+**Runs**: The primary organizational unit — each run represents a research question or analysis session. Agents tag cards with `run_id` to group outputs into a coherent research narrative. Runs persist on disk across server restarts and sessions, forming a provenance trail that the researcher can revisit, share, and export. The frontend browses all historical runs grouped by date.
 
 **PHI Guardrails**: On by default. Columns matching identifier patterns (names, addresses, SSN, etc.) are masked, row counts are capped. Configurable via `M4_VITRINE_REDACT`, `M4_VITRINE_MAX_ROWS`, `M4_VITRINE_HASH_IDS` env vars. Disable for de-identified datasets.
 
 **Selections**: Researchers select table rows (checkboxes) and chart points while browsing. Selections sync to the server in real time. The agent reads them via `get_selection(card_id)` whenever it needs — no blocking, no polling.
 
-**Decision Cards & Freeze Mechanic**: Cards pushed with `wait=True` are decision cards — they ask the researcher to make a choice. The card shows Confirm/Skip buttons, an optional text field for steering, and optional Quick Action buttons. Once confirmed, the card freezes into a static journal entry recording the decision. The frozen card becomes a permanent provenance record.
+**Decision Cards & Freeze Mechanic**: Cards pushed with `wait=True` are decision cards — they ask the researcher to make a choice. The card shows Confirm/Skip buttons, an optional text field for steering, optional Quick Action buttons (`actions=["SOFA", "APACHE III"]`), and optional form controls (`controls=[Slider(...), Dropdown(...)]`). Once confirmed, the card freezes into a static journal entry recording the decision, chosen parameters, and any researcher notes. The frozen card becomes a permanent provenance record — the journal shows exactly what was decided and when.
 
 ## Python API
 
@@ -54,7 +55,7 @@ src/m4/vitrine/
 def show(obj, title=None, description=None, *, run_id=None,
          source=None, replace=None, position=None,
          wait=False, prompt=None, timeout=300,
-         actions=None) -> DisplayHandle | DisplayResponse:
+         actions=None, controls=None) -> DisplayHandle | DisplayResponse:
     """Push any displayable object to the browser.
 
     Returns DisplayHandle (fire-and-forget) or DisplayResponse (blocking).
@@ -70,15 +71,19 @@ def show(obj, title=None, description=None, *, run_id=None,
 
     Key args:
         run_id: Group cards into a named run.
+        source: Provenance string (table name, query, dataset).
+        description: Context line shown under title (e.g. "N=4238 after exclusions").
         replace: Card ID to update instead of appending.
         wait: Block until user responds in the browser.
         prompt: Question shown to user when wait=True.
         actions: Named response buttons for blocking cards (e.g. ["Approve", "Narrow further"]).
+        controls: Form fields attached to data cards (e.g. [Slider(...), Dropdown(...)]).
     """
 
 def start(port=7741, open_browser=True, mode="thread") -> None
 def stop() -> None
 def section(title, run_id=None) -> None
+def set_status(message) -> None       # Ephemeral agent status bar in browser header
 def export(path, format="html", run_id=None) -> None
 
 # Run management
@@ -116,6 +121,18 @@ POST /api/shutdown                  → graceful shutdown (bearer auth)
 ```
 
 Frontend: single self-contained HTML file, no build step, vendored JS (Plotly.js, marked.js) for offline use in hospital networks. Cards stack chronologically with collapse/pin/copy controls, server-side table paging, dark/light theme, run history dropdown, export controls. The browser is a passive visualization surface — researchers view results and make selections, but all instructions go through the terminal.
+
+## UI Design
+
+**"Color Block" neobrutalism** inspired by [RetroUI](https://www.retroui.dev/). Use RetroUI as the reference for templates, components, and design language.
+
+Core principles: thick black borders (`2px`), offset box-shadows (`4px 4px 0 #1a1a1a`), zero border-radius, geometric sans-serif + monospace fonts (Space Grotesk, Inter, DM Mono), colored card headers per card type for instant visual scanning. Feels like a research terminal, not a SaaS dashboard.
+
+Card type colors: Table (blue `#3b82f6`), Markdown (purple `#8b5cf6`), Chart (green `#10b981`), Key-Value (amber `#f59e0b`), Form (pink `#ec4899`), Decision (red `#ef4444`), Image (cyan `#06b6d4`). Each card header gets a tinted background and a single-letter icon badge (T, M, P, K, F, !, I).
+
+All interactive elements (buttons, inputs, dropdowns) use the same brutalist treatment: 2px borders, offset shadows, press-down effect on hover (`translate(1px, 1px)` + reduced shadow). Dark theme inverts backgrounds and softens shadows. Print styles strip shadows for ink economy.
+
+The refactoring touches two files: `src/m4/vitrine/static/index.html` (all CSS + HTML + JS) and `src/m4/vitrine/export.py` (inlined CSS for self-contained HTML exports).
 
 ## CLI
 

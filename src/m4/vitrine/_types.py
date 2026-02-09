@@ -37,6 +37,14 @@ class Dropdown:
     label: str | None = None
     default: str | None = None
 
+    def __post_init__(self) -> None:
+        if not self.options:
+            raise ValueError("Dropdown options must be non-empty")
+        if self.default is not None and self.default not in self.options:
+            raise ValueError(
+                f"Dropdown default {self.default!r} not in options {self.options}"
+            )
+
     def to_dict(self) -> dict[str, Any]:
         d: dict[str, Any] = {
             "type": "dropdown",
@@ -58,6 +66,15 @@ class MultiSelect:
     options: list[str]
     label: str | None = None
     default: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if not self.options:
+            raise ValueError("MultiSelect options must be non-empty")
+        for d in self.default:
+            if d not in self.options:
+                raise ValueError(
+                    f"MultiSelect default {d!r} not in options {self.options}"
+                )
 
     def to_dict(self) -> dict[str, Any]:
         d: dict[str, Any] = {
@@ -81,6 +98,17 @@ class Slider:
     label: str | None = None
     default: float | None = None
     step: float | None = None
+
+    def __post_init__(self) -> None:
+        if self.range[0] > self.range[1]:
+            raise ValueError(
+                f"Slider range min ({self.range[0]}) must be <= max ({self.range[1]})"
+            )
+        if self.default is not None:
+            if self.default < self.range[0] or self.default > self.range[1]:
+                raise ValueError(
+                    f"Slider default {self.default} not in range {self.range}"
+                )
 
     def to_dict(self) -> dict[str, Any]:
         d: dict[str, Any] = {
@@ -107,6 +135,21 @@ class RangeSlider:
     label: str | None = None
     default: tuple[float, float] | None = None
     step: float | None = None
+
+    def __post_init__(self) -> None:
+        if self.range[0] > self.range[1]:
+            raise ValueError(
+                f"RangeSlider range min ({self.range[0]}) must be <= max ({self.range[1]})"
+            )
+        if self.default is not None:
+            if self.default[0] > self.default[1]:
+                raise ValueError(
+                    f"RangeSlider default min ({self.default[0]}) must be <= max ({self.default[1]})"
+                )
+            if self.default[0] < self.range[0] or self.default[1] > self.range[1]:
+                raise ValueError(
+                    f"RangeSlider default {self.default} not within range {self.range}"
+                )
 
     def to_dict(self) -> dict[str, Any]:
         d: dict[str, Any] = {
@@ -171,6 +214,14 @@ class RadioGroup:
     label: str | None = None
     default: str | None = None
 
+    def __post_init__(self) -> None:
+        if not self.options:
+            raise ValueError("RadioGroup options must be non-empty")
+        if self.default is not None and self.default not in self.options:
+            raise ValueError(
+                f"RadioGroup default {self.default!r} not in options {self.options}"
+            )
+
     def to_dict(self) -> dict[str, Any]:
         d: dict[str, Any] = {
             "type": "radio",
@@ -215,6 +266,12 @@ class DateRange:
     label: str | None = None
     default: tuple[str, str] | None = None
 
+    def __post_init__(self) -> None:
+        if self.default is not None and self.default[0] > self.default[1]:
+            raise ValueError(
+                f"DateRange default start ({self.default[0]}) must be <= end ({self.default[1]})"
+            )
+
     def to_dict(self) -> dict[str, Any]:
         d: dict[str, Any] = {
             "type": "date_range",
@@ -237,6 +294,21 @@ class NumberInput:
     min: float | None = None
     max: float | None = None
     step: float | None = None
+
+    def __post_init__(self) -> None:
+        if self.min is not None and self.max is not None and self.min > self.max:
+            raise ValueError(
+                f"NumberInput min ({self.min}) must be <= max ({self.max})"
+            )
+        if self.default is not None:
+            if self.min is not None and self.default < self.min:
+                raise ValueError(
+                    f"NumberInput default {self.default} is less than min {self.min}"
+                )
+            if self.max is not None and self.default > self.max:
+                raise ValueError(
+                    f"NumberInput default {self.default} is greater than max {self.max}"
+                )
 
     def to_dict(self) -> dict[str, Any]:
         d: dict[str, Any] = {
@@ -280,6 +352,14 @@ class Form:
     """
 
     fields: list[FormField]
+
+    def __post_init__(self) -> None:
+        names = [f.name for f in self.fields]
+        seen: set[str] = set()
+        for name in names:
+            if name in seen:
+                raise ValueError(f"Duplicate form field name: {name!r}")
+            seen.add(name)
 
     def to_dict(self) -> dict[str, Any]:
         return {"fields": [f.to_dict() for f in self.fields]}
@@ -422,8 +502,13 @@ class DisplayResponse:
     Contains the user's action and optional selected data (artifact-backed).
     """
 
+    CONFIRM = "confirm"
+    SKIP = "skip"
+    TIMEOUT = "timeout"
+    ERROR = "error"
+
     action: str
-    """User action: 'confirm', 'skip', or 'timeout'."""
+    """User action: 'confirm', 'skip', 'timeout', or 'error'."""
 
     card_id: str
     """ID of the card the response is for."""
@@ -489,9 +574,16 @@ class DisplayHandle(str):
 
     card_id: str
     url: str | None
+    run_id: str | None
 
-    def __new__(cls, card_id: str, url: str | None = None) -> DisplayHandle:
+    def __new__(
+        cls,
+        card_id: str,
+        url: str | None = None,
+        run_id: str | None = None,
+    ) -> DisplayHandle:
         obj = str.__new__(cls, card_id)
         obj.card_id = card_id
         obj.url = url
+        obj.run_id = run_id
         return obj

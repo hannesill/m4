@@ -776,6 +776,116 @@ class TestStopServerPreservesData:
         assert runs_after[0]["label"] == "keep-me"
 
 
+class TestErrorLogging:
+    """Test that error/warning logs are emitted for failure scenarios."""
+
+    def test_push_remote_logs_on_rediscovery_failure(
+        self, store, mock_server, monkeypatch, caplog
+    ):
+        """_push_remote logs warning when re-discovery fails."""
+        import logging
+
+        # Set up remote mode
+        display._remote_url = "http://127.0.0.1:9999"
+        display._auth_token = "fake-token"
+
+        # _remote_command always fails
+        monkeypatch.setattr(display, "_remote_command", lambda *a: False)
+        # _discover_server returns None (can't find server)
+        monkeypatch.setattr(display, "_discover_server", lambda: None)
+
+        with caplog.at_level(logging.WARNING, logger="m4.vitrine"):
+            result = display._push_remote({"card_type": "markdown"})
+
+        assert result is False
+        assert "re-discovery failed" in caplog.text
+
+    def test_push_remote_logs_on_retry_failure(
+        self, store, mock_server, monkeypatch, caplog
+    ):
+        """_push_remote logs warning when retry after re-discovery fails."""
+        import logging
+
+        display._remote_url = "http://127.0.0.1:9999"
+        display._auth_token = "fake-token"
+
+        monkeypatch.setattr(display, "_remote_command", lambda *a: False)
+        monkeypatch.setattr(
+            display,
+            "_discover_server",
+            lambda: {"url": "http://127.0.0.1:9998", "token": "t"},
+        )
+
+        with caplog.at_level(logging.WARNING, logger="m4.vitrine"):
+            result = display._push_remote({"card_type": "markdown"})
+
+        assert result is False
+        assert "failed after re-discovery" in caplog.text
+
+    def test_poll_remote_response_http_error(self, monkeypatch, caplog):
+        """_poll_remote_response returns error action on HTTPError."""
+        import logging
+        import urllib.error
+
+        display._remote_url = "http://127.0.0.1:9999"
+        display._auth_token = "fake-token"
+
+        def mock_urlopen(*a, **kw):
+            raise urllib.error.HTTPError("http://x", 403, "Forbidden", {}, None)
+
+        monkeypatch.setattr("urllib.request.urlopen", mock_urlopen)
+
+        with caplog.at_level(logging.WARNING, logger="m4.vitrine"):
+            result = display._poll_remote_response("card-123", timeout=1.0)
+
+        assert result["action"] == "error"
+        assert result["card_id"] == "card-123"
+        assert "HTTP error 403" in caplog.text
+
+    def test_poll_remote_response_url_error(self, monkeypatch, caplog):
+        """_poll_remote_response returns timeout action on URLError."""
+        import logging
+        import urllib.error
+
+        display._remote_url = "http://127.0.0.1:9999"
+        display._auth_token = "fake-token"
+
+        def mock_urlopen(*a, **kw):
+            raise urllib.error.URLError("Connection refused")
+
+        monkeypatch.setattr("urllib.request.urlopen", mock_urlopen)
+
+        with caplog.at_level(logging.WARNING, logger="m4.vitrine"):
+            result = display._poll_remote_response("card-456", timeout=1.0)
+
+        assert result["action"] == "timeout"
+        assert result["card_id"] == "card-456"
+        assert "connection error" in caplog.text
+
+    def test_get_selection_remote_logs_on_failure(self, store, monkeypatch, caplog):
+        """get_selection logs warning when remote fetch fails."""
+        import logging
+
+        # Bypass _ensure_started and force remote path
+        monkeypatch.setattr(display, "_ensure_started", lambda **kw: None)
+        display._server = None
+        display._remote_url = "http://127.0.0.1:9999"
+
+        def mock_urlopen(*a, **kw):
+            raise ConnectionError("refused")
+
+        monkeypatch.setattr("urllib.request.urlopen", mock_urlopen)
+
+        with caplog.at_level(logging.WARNING, logger="m4.vitrine"):
+            result = display.get_selection("card-789")
+
+        import pandas as pd
+
+        assert isinstance(result, pd.DataFrame)
+        assert len(result) == 0
+        assert "Failed to fetch selection" in caplog.text
+
+
 class TestFileLocking:
     """Test file lock and port scan helpers in the display module."""
 

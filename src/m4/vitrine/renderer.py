@@ -31,6 +31,12 @@ _PREVIEW_ROWS = 20
 # Maximum SVG size (2 MB)
 _MAX_SVG_BYTES = 2 * 1024 * 1024
 
+# Maximum Plotly spec size (5 MB)
+_MAX_PLOTLY_SPEC_BYTES = 5_000_000
+
+# Maximum data array elements before truncation
+_MAX_PLOTLY_DATA_ELEMENTS = 10_000
+
 # Regex to strip <script> tags from SVG output
 _SCRIPT_TAG_RE = re.compile(r"<script[\s>].*?</script>", re.IGNORECASE | re.DOTALL)
 
@@ -223,6 +229,19 @@ def _render_plotly(
     except Exception:
         # Fallback for unusual Plotly setups.
         spec = json.loads(json.dumps(spec, default=str))
+
+    # Cap spec size: truncate data arrays if over limit
+    spec_bytes = len(json.dumps(spec).encode())
+    if spec_bytes > _MAX_PLOTLY_SPEC_BYTES:
+        logger.warning(
+            f"Plotly spec size ({spec_bytes} bytes) exceeds {_MAX_PLOTLY_SPEC_BYTES} "
+            f"byte limit, truncating data arrays to {_MAX_PLOTLY_DATA_ELEMENTS} elements"
+        )
+        for trace in spec.get("data", []):
+            for key in list(trace.keys()):
+                val = trace[key]
+                if isinstance(val, list) and len(val) > _MAX_PLOTLY_DATA_ELEMENTS:
+                    trace[key] = val[:_MAX_PLOTLY_DATA_ELEMENTS]
 
     # Store as JSON artifact
     store.store_json(card_id, spec)

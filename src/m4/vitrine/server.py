@@ -27,6 +27,7 @@ import secrets
 import signal
 import socket
 import threading
+import time
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timezone
@@ -163,7 +164,50 @@ class DisplayServer:
         self._event_queue: list[dict[str, Any]] = []
         self._selections: dict[str, list[int]] = {}  # card_id -> selected indices
 
+        # Selection persistence
+        vitrine_dir = run_manager.display_dir if run_manager else None
+        self._selections_path: Path | None = (
+            vitrine_dir / "selections.json" if vitrine_dir else None
+        )
+        self._load_selections()
+        self._selection_save_timer: threading.Timer | None = None
+
+        # Selection rate-limiting: per-connection cooldown
+        self._selection_cooldowns: dict[int, float] = {}  # ws id -> last timestamp
+        _SELECTION_COOLDOWN_SEC = 0.1  # 100ms min between selection events per client
+        self._selection_cooldown_sec = _SELECTION_COOLDOWN_SEC
+
+        # Server start time for health endpoint
+        self._started_at = datetime.now(timezone.utc)
+
         self._app = self._build_app()
+
+    def _load_selections(self) -> None:
+        """Load persisted selections from disk."""
+        if self._selections_path and self._selections_path.exists():
+            try:
+                data = json.loads(self._selections_path.read_text())
+                if isinstance(data, dict):
+                    self._selections = data
+            except (json.JSONDecodeError, OSError):
+                pass
+
+    def _save_selections(self) -> None:
+        """Save selections to disk (debounced — max 1 write/sec)."""
+        if not self._selections_path:
+            return
+        try:
+            self._selections_path.write_text(json.dumps(self._selections, default=str))
+        except OSError:
+            logger.debug("Failed to persist selections to disk")
+
+    def _schedule_save_selections(self) -> None:
+        """Schedule a debounced selection save (max 1 write/sec)."""
+        if self._selection_save_timer is not None:
+            self._selection_save_timer.cancel()
+        self._selection_save_timer = threading.Timer(1.0, self._save_selections)
+        self._selection_save_timer.daemon = True
+        self._selection_save_timer.start()
 
     def _build_app(self) -> Starlette:
         """Build the Starlette application with all routes."""
@@ -430,7 +474,17 @@ class DisplayServer:
 
     async def _api_health(self, request: Request) -> JSONResponse:
         """Health check endpoint. No auth required."""
-        return JSONResponse({"status": "ok", "session_id": self.session_id})
+        uptime_seconds = (datetime.now(timezone.utc) - self._started_at).total_seconds()
+        run_count = len(self.run_manager.list_runs()) if self.run_manager else 0
+        return JSONResponse(
+            {
+                "status": "ok",
+                "session_id": self.session_id,
+                "uptime": round(uptime_seconds, 1),
+                "version": "1.0",
+                "run_count": run_count,
+            }
+        )
 
     def _check_auth(self, request: Request) -> bool:
         """Check Bearer token authorization."""
@@ -817,6 +871,7 @@ class DisplayServer:
         elif event_type == "selection":
             # Passive selection tracking from browser checkboxes / chart selection
             self._selections[card_id] = payload.get("selected_indices", [])
+            self._schedule_save_selections()
 
         else:
             # General events (row_click, point_select, etc.)
@@ -1024,8 +1079,6 @@ class DisplayServer:
 
     def _wait_for_server(self, timeout: float = 3.0) -> None:
         """Wait for the server to accept connections."""
-        import time
-
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             try:
@@ -1039,6 +1092,11 @@ class DisplayServer:
     def stop(self) -> None:
         """Stop the server and remove PID file if set."""
         self._remove_pid_file()
+        # Flush pending selection save
+        if self._selection_save_timer is not None:
+            self._selection_save_timer.cancel()
+            self._selection_save_timer = None
+        self._save_selections()
         if self._server:
             self._server.should_exit = True
         if self._thread:
