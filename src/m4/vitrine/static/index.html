@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ================================================================
+     THEME VARIABLES & RESET
+     ================================================================ */
   :root {
     --bg: #ffffff;
     --bg-card: #f8f9fa;
@@ -53,7 +56,9 @@
     transition: background 0.2s, color 0.2s;
   }
 
-  /* Header */
+  /* ================================================================
+     LAYOUT & HEADER
+     ================================================================ */
   .header {
     position: sticky;
     top: 0;
@@ -79,7 +84,9 @@
     letter-spacing: -0.3px;
   }
 
-  /* Run History Dropdown */
+  /* ================================================================
+     RUN MANAGEMENT — dropdown, metadata bar, separators, rename
+     ================================================================ */
   .run-dropdown {
     position: relative;
     display: inline-block;
@@ -351,7 +358,9 @@
 
   .run-separator.hidden-by-filter { display: none; }
 
-  /* Export dropdown */
+  /* ================================================================
+     EXPORT DROPDOWN
+     ================================================================ */
   .export-dropdown {
     position: relative;
     display: inline-block;
@@ -458,7 +467,9 @@
     background: var(--bg-header);
   }
 
-  /* Card feed */
+  /* ================================================================
+     CARD FEED & BASE CARD STYLES
+     ================================================================ */
   .feed {
     max-width: 960px;
     margin: 0 auto;
@@ -606,6 +617,10 @@
   .card-provenance.collapsed {
     display: none;
   }
+
+  /* ================================================================
+     CARD TYPE STYLES — table, markdown, key-value, plotly, image
+     ================================================================ */
 
   /* Table cards */
   .table-wrapper {
@@ -876,12 +891,15 @@
     transform: translateX(-50%) translateY(0);
   }
 
-  /* Table toolbar (search + export) */
+  /* ================================================================
+     TABLE TOOLBAR, ROW DETAIL & INTERACTIONS
+     ================================================================ */
   .table-toolbar {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 0 4px;
+    padding: 8px 0 0;
+    margin-bottom: 8px;
   }
 
   .table-search {
@@ -1012,7 +1030,9 @@
 
   .table-wrapper tr { cursor: pointer; }
 
-  /* Waiting card (response_requested) */
+  /* ================================================================
+     RESPONSE UI & DECISION CARDS
+     ================================================================ */
   .card.waiting {
     border-left: 3px solid var(--accent);
   }
@@ -1102,7 +1122,9 @@
     font-family: var(--mono);
   }
 
-  /* Form card fields */
+  /* ================================================================
+     FORM FIELDS — dropdown, multiselect, slider, checkbox, etc.
+     ================================================================ */
   .form-fields {
     display: flex;
     flex-direction: column;
@@ -1125,7 +1147,9 @@
   .form-field select,
   .form-field input[type="text"],
   .form-field input[type="number"],
-  .form-field input[type="date"] {
+  .form-field input[type="date"],
+  .form-select-trigger,
+  .form-date-trigger {
     width: 100%;
     padding: 7px 10px;
     border: 1px solid var(--border);
@@ -1141,7 +1165,9 @@
   .form-field select:focus,
   .form-field input[type="text"]:focus,
   .form-field input[type="number"]:focus,
-  .form-field input[type="date"]:focus {
+  .form-field input[type="date"]:focus,
+  .form-select-trigger:focus-visible,
+  .form-date-trigger:focus-visible {
     border-color: var(--accent);
   }
 
@@ -1153,6 +1179,199 @@
     background-repeat: no-repeat;
     background-position: right 10px center;
     padding-right: 28px;
+  }
+
+  .form-hidden-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+  }
+
+  .form-select,
+  .form-date-picker {
+    position: relative;
+    width: 100%;
+  }
+
+  .form-select-trigger,
+  .form-date-trigger {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    text-align: left;
+  }
+
+  .form-select-trigger .dd-arrow,
+  .form-date-trigger .dd-arrow {
+    font-size: 10px;
+    color: var(--text-muted);
+    transition: transform 0.15s;
+    flex-shrink: 0;
+  }
+
+  .form-select-trigger.open .dd-arrow,
+  .form-date-trigger.open .dd-arrow {
+    transform: rotate(180deg);
+  }
+
+  .form-select-value,
+  .form-date-value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .form-select-value.placeholder,
+  .form-date-value.placeholder {
+    color: var(--text-muted);
+  }
+
+  .form-select-panel {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 125;
+    width: 100%;
+    min-width: 180px;
+    max-height: 260px;
+    overflow-y: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    animation: fadeIn 0.15s ease;
+  }
+
+  .form-select-option,
+  .form-select-empty {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+    font-family: var(--font-head);
+    text-align: left;
+    padding: 8px 12px;
+  }
+
+  .form-select-option {
+    cursor: pointer;
+  }
+
+  .form-select-option:hover {
+    background: var(--bg-header);
+  }
+
+  .form-select-option.selected {
+    background: var(--bg-card);
+    font-weight: 600;
+  }
+
+  .form-select-empty {
+    color: var(--text-muted);
+  }
+
+  .form-calendar-panel {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 126;
+    width: min(320px, calc(100vw - 48px));
+    background: var(--card-bg);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 10px;
+    user-select: none;
+  }
+
+  .form-calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .form-calendar-month {
+    font-family: var(--font-head);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .form-calendar-nav-btn {
+    width: 28px;
+    height: 28px;
+    border: var(--border-width) solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+    font-family: var(--font-head);
+    cursor: pointer;
+    line-height: 1;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .form-calendar-nav-btn:hover {
+    transform: translate(1px, 1px);
+    box-shadow: var(--shadow-pressed);
+  }
+
+  .form-calendar-weekdays,
+  .form-calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  .form-calendar-weekday {
+    font-family: var(--font-head);
+    font-size: 10px;
+    text-align: center;
+    color: var(--text-muted);
+    padding: 2px 0;
+  }
+
+  .form-calendar-day {
+    border: var(--border-width) solid transparent;
+    background: var(--card-bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    min-height: 32px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s, background-color 0.1s;
+  }
+
+  .form-calendar-day:hover {
+    background: var(--highlight);
+    transform: translate(1px, 1px);
+    box-shadow: var(--shadow-pressed);
+  }
+
+  .form-calendar-day.other-month {
+    opacity: 0.55;
+  }
+
+  .form-calendar-day.today {
+    border-color: var(--border);
+  }
+
+  .form-calendar-day.selected {
+    background: var(--text);
+    color: var(--card-bg);
+    border-color: var(--border);
+  }
+
+  .form-calendar-day:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--highlight) 80%, transparent);
+    outline-offset: 1px;
   }
 
   /* Multi-select checkboxes */
@@ -1172,8 +1391,17 @@
   }
 
   .form-multiselect-option input[type="checkbox"] {
-    accent-color: var(--accent);
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
   }
 
   /* Radio group */
@@ -1193,8 +1421,17 @@
   }
 
   .form-radio-option input[type="radio"] {
-    accent-color: var(--accent);
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: var(--border-width) solid var(--border);
+    border-radius: 50%;
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
   }
 
   /* Slider */
@@ -1250,8 +1487,17 @@
   }
 
   .form-check-row input[type="checkbox"] {
-    accent-color: var(--accent);
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
   }
 
   .form-check-label {
@@ -1306,17 +1552,14 @@
   /* Date range */
   .form-date-range-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
-  }
-
-  .form-date-range-row input[type="date"] {
-    flex: 1;
   }
 
   .form-date-range-sep {
     font-size: 12px;
     color: var(--text-muted);
+    align-self: center;
   }
 
   /* Frozen form (confirmed) */
@@ -1361,8 +1604,54 @@
 
   .table-wrapper td.select-col input[type="checkbox"],
   .table-wrapper th.select-col input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
-    accent-color: var(--accent);
+    transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
+  }
+
+  .form-multiselect-option input[type="checkbox"]:hover,
+  .form-check-row input[type="checkbox"]:hover,
+  .table-wrapper td.select-col input[type="checkbox"]:hover,
+  .table-wrapper th.select-col input[type="checkbox"]:hover {
+    transform: translate(1px, 1px);
+    box-shadow: var(--shadow-pressed);
+  }
+
+  .form-radio-option input[type="radio"]:hover {
+    transform: translate(1px, 1px);
+    box-shadow: var(--shadow-pressed);
+  }
+
+  .form-multiselect-option input[type="checkbox"]:checked,
+  .form-check-row input[type="checkbox"]:checked,
+  .table-wrapper td.select-col input[type="checkbox"]:checked,
+  .table-wrapper th.select-col input[type="checkbox"]:checked {
+    background-color: var(--text);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cpath fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M1 4l2.5 2.5L9 1'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    color: var(--card-bg);
+  }
+
+  .form-radio-option input[type="radio"]:checked {
+    background: radial-gradient(circle at center, var(--card-bg) 0 34%, var(--text) 40%);
+  }
+
+  .form-multiselect-option input[type="checkbox"]:focus-visible,
+  .form-check-row input[type="checkbox"]:focus-visible,
+  .table-wrapper td.select-col input[type="checkbox"]:focus-visible,
+  .table-wrapper th.select-col input[type="checkbox"]:focus-visible,
+  .form-radio-option input[type="radio"]:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--highlight) 75%, transparent);
+    outline-offset: 1px;
   }
 
 
@@ -1440,7 +1729,9 @@
     color: var(--accent);
   }
 
-  /* Neobrutalist refactor overrides */
+  /* ================================================================
+     NEOBRUTALIST DESIGN OVERRIDES
+     ================================================================ */
   :root {
     --bg: #f7f5f0;
     --card-bg: #ffffff;
@@ -1551,6 +1842,11 @@
   .form-field input[type="text"],
   .form-field input[type="number"],
   .form-field input[type="date"],
+  .form-select-trigger,
+  .form-date-trigger,
+  .form-select-panel,
+  .form-calendar-panel,
+  .form-calendar-nav-btn,
   .response-message-input {
     border-radius: var(--radius);
   }
@@ -1722,11 +2018,15 @@
   }
 
   .table-toolbar {
-    padding: 8px 14px 4px;
+    padding: 8px 0 0;
+    margin-bottom: 8px;
   }
 
   .table-wrapper table {
     font-family: var(--font-mono);
+    border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-sm);
+    background: var(--card-bg);
   }
 
   .table-wrapper th {
@@ -1779,7 +2079,9 @@
   .form-field select,
   .form-field input[type="text"],
   .form-field input[type="number"],
-  .form-field input[type="date"] {
+  .form-field input[type="date"],
+  .form-select-trigger,
+  .form-date-trigger {
     border: var(--border-width) solid var(--border);
     background: var(--card-bg);
     font-family: var(--font-mono);
@@ -1791,7 +2093,9 @@
   .form-field select:focus,
   .form-field input[type="text"]:focus,
   .form-field input[type="number"]:focus,
-  .form-field input[type="date"]:focus {
+  .form-field input[type="date"]:focus,
+  .form-select-trigger:focus-visible,
+  .form-date-trigger:focus-visible {
     box-shadow: var(--shadow-pressed);
     border-color: var(--border);
   }
@@ -1925,22 +2229,73 @@
   .form-toggle-track {
     border-radius: 0;
     border: var(--border-width) solid var(--border);
+    background: var(--card-bg);
   }
 
   .form-toggle-track::after {
-    width: 14px;
-    height: 14px;
-    bottom: 1px;
+    width: 12px;
+    height: 12px;
+    bottom: 0;
+    left: 0;
     border-radius: 0;
+    border: var(--border-width) solid var(--border);
+    background: var(--text);
   }
 
   .form-toggle-switch input:checked + .form-toggle-track {
     background: var(--text);
   }
 
+  .form-toggle-switch input:checked + .form-toggle-track::after {
+    background: var(--card-bg);
+  }
+
   .form-slider-row input[type="range"],
   .form-range-slider-row input[type="range"] {
-    accent-color: var(--text);
+    -webkit-appearance: none;
+    appearance: none;
+    height: 12px;
+    background: var(--card-bg);
+    border: var(--border-width) solid var(--border);
+    border-radius: 0;
+  }
+
+  .form-slider-row input[type="range"]::-webkit-slider-thumb,
+  .form-range-slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: var(--border-width) solid var(--border);
+    border-radius: 0;
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .form-slider-row input[type="range"]::-webkit-slider-thumb:hover,
+  .form-range-slider-row input[type="range"]::-webkit-slider-thumb:hover {
+    transform: translate(1px, 1px);
+    box-shadow: var(--shadow-pressed);
+  }
+
+  .form-slider-row input[type="range"]::-moz-range-track,
+  .form-range-slider-row input[type="range"]::-moz-range-track {
+    height: 12px;
+    border: var(--border-width) solid var(--border);
+    border-radius: 0;
+    background: var(--card-bg);
+  }
+
+  .form-slider-row input[type="range"]::-moz-range-thumb,
+  .form-range-slider-row input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: var(--border-width) solid var(--border);
+    border-radius: 0;
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
   }
 
   .form-frozen-item .frozen-label {
@@ -2058,7 +2413,32 @@
     padding: 6px 4px;
   }
 
-  /* Print-optimized styles */
+  .form-multiselect-option input[type="checkbox"],
+  .form-check-row input[type="checkbox"],
+  .table-wrapper td.select-col input[type="checkbox"],
+  .table-wrapper th.select-col input[type="checkbox"] {
+    border-radius: 4px;
+  }
+
+  @media (max-width: 720px) {
+    .form-date-range-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .form-date-range-sep {
+      align-self: flex-start;
+      margin: -2px 0 2px;
+    }
+
+    .form-calendar-panel {
+      width: min(320px, calc(100vw - 32px));
+    }
+  }
+
+  /* ================================================================
+     PRINT STYLES
+     ================================================================ */
   @media print {
     body {
       background: white;
@@ -2200,7 +2580,9 @@
 (function() {
   'use strict';
 
-  // --- State ---
+  // ================================================================
+  // STATE & DOM REFERENCES
+  // ================================================================
   var state = {
     ws: null,
     cards: [],
@@ -2230,7 +2612,6 @@
     decision: '!',
   };
 
-  // --- Elements ---
   var feed = document.getElementById('feed');
   var emptyState = document.getElementById('empty-state');
   var statusEl = document.getElementById('status');
@@ -2245,7 +2626,9 @@
   var runMetaLabel = document.getElementById('run-meta-label');
   var runMetaDetail = document.getElementById('run-meta-detail');
 
-  // --- Theme ---
+  // ================================================================
+  // THEME
+  // ================================================================
   function initTheme() {
     var saved = localStorage.getItem('m4-vitrine-theme');
     if (saved === 'dark') {
@@ -2269,7 +2652,9 @@
 
   initTheme();
 
-  // --- Run History Dropdown ---
+  // ================================================================
+  // RUN MANAGEMENT — dropdown, selection, metadata, rename, delete
+  // ================================================================
   runDropdownTrigger.onclick = function(e) {
     e.stopPropagation();
     if (state.dropdownOpen) {
@@ -2519,7 +2904,9 @@
     );
   }
 
-  // --- Export ---
+  // ================================================================
+  // EXPORT
+  // ================================================================
   var exportBtn = document.getElementById('export-btn');
   var exportDropdownPanel = document.getElementById('export-dropdown-panel');
   var exportDropdownOpen = false;
@@ -2782,7 +3169,9 @@
     updateCardCount();
   }
 
-  // --- WebSocket ---
+  // ================================================================
+  // WEBSOCKET — connect, reconnect, message dispatch
+  // ================================================================
   function connect() {
     if (state.reconnectTimer) {
       clearTimeout(state.reconnectTimer);
@@ -2855,7 +3244,9 @@
     }
   }
 
-  // --- Card Rendering ---
+  // ================================================================
+  // CARD RENDERING — addCard, updateCard, copy, toast
+  // ================================================================
   function addCard(cardData) {
     // Remove empty state if present
     var empty = document.getElementById('empty-state');
@@ -3103,6 +3494,9 @@
     }, 1500);
   }
 
+  // ================================================================
+  // TABLE RENDERING — headers, rows, sorting, paging, row detail
+  // ================================================================
   function mapDtypeLabel(dtype) {
     if (!dtype) return '';
     var d = dtype.toLowerCase();
@@ -3540,6 +3934,9 @@
     return pager;
   }
 
+  // ================================================================
+  // CONTENT RENDERERS — markdown, key-value, plotly, image
+  // ================================================================
   function renderMarkdown(container, cardData) {
     var text = (cardData.preview && cardData.preview.text) || '';
     container.className += ' markdown-body';
@@ -3610,8 +4007,6 @@
 
     container.appendChild(dl);
   }
-
-  // --- Plotly Charts ---
 
   function renderPlotly(container, cardData) {
     var spec = cardData.preview && cardData.preview.spec;
@@ -3742,8 +4137,6 @@
     });
   };
 
-  // --- Image Cards (matplotlib SVG) ---
-
   function renderImage(container, cardData) {
     var preview = cardData.preview || {};
     var imgContainer = document.createElement('div');
@@ -3769,8 +4162,9 @@
     container.appendChild(imgContainer);
   }
 
-  // --- Selection tracking ---
-
+  // ================================================================
+  // SELECTION TRACKING
+  // ================================================================
   function sendSelectionEvent(cardId) {
     if (!state.ws || !state.connected) return;
     var sel = state.selections[cardId];
@@ -3809,10 +4203,9 @@
     }
   }
 
-  // --- Response UI for waiting cards ---
-
-  // --- Form card rendering ---
-
+  // ================================================================
+  // FORM FIELDS — render, collect values, freeze confirmed state
+  // ================================================================
   function renderForm(container, cardData) {
     var preview = cardData.preview;
     if (!preview || !preview.fields) return;
@@ -3877,16 +4270,316 @@
       label.textContent = field.label;
       container.appendChild(label);
     }
-    var select = document.createElement('select');
-    select.dataset.fieldInput = field.name;
-    (field.options || []).forEach(function(opt) {
-      var option = document.createElement('option');
-      option.value = opt;
-      option.textContent = opt;
-      if (field.default === opt) option.selected = true;
-      select.appendChild(option);
+
+    var options = Array.isArray(field.options) ? field.options.map(function(opt) { return String(opt); }) : [];
+    var defaultValue = field.default != null ? String(field.default) : '';
+    var currentValue = '';
+    if (options.length > 0) {
+      currentValue = options.indexOf(defaultValue) !== -1 ? defaultValue : options[0];
+    }
+
+    var wrap = document.createElement('div');
+    wrap.className = 'form-select';
+
+    var hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.className = 'form-hidden-input';
+    hiddenInput.dataset.fieldInput = field.name;
+    hiddenInput.value = currentValue;
+    wrap.appendChild(hiddenInput);
+
+    var trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'form-select-trigger';
+
+    var triggerValue = document.createElement('span');
+    triggerValue.className = 'form-select-value';
+    trigger.appendChild(triggerValue);
+
+    var arrow = document.createElement('span');
+    arrow.className = 'dd-arrow';
+    arrow.innerHTML = '&#9662;';
+    trigger.appendChild(arrow);
+    wrap.appendChild(trigger);
+
+    var panel = document.createElement('div');
+    panel.className = 'form-select-panel';
+    panel.style.display = 'none';
+    wrap.appendChild(panel);
+
+    function syncTrigger() {
+      var val = hiddenInput.value || '';
+      triggerValue.textContent = val || 'Select option';
+      triggerValue.classList.toggle('placeholder', !val);
+      var btns = panel.querySelectorAll('.form-select-option');
+      btns.forEach(function(btn) {
+        btn.classList.toggle('selected', btn.dataset.value === val);
+      });
+    }
+
+    if (options.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'form-select-empty';
+      empty.textContent = 'No options';
+      panel.appendChild(empty);
+    } else {
+      options.forEach(function(opt) {
+        var optionBtn = document.createElement('button');
+        optionBtn.type = 'button';
+        optionBtn.className = 'form-select-option';
+        optionBtn.textContent = opt;
+        optionBtn.dataset.value = opt;
+        optionBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          hiddenInput.value = opt;
+          syncTrigger();
+          closePanel();
+        });
+        panel.appendChild(optionBtn);
+      });
+    }
+
+    var outsideListener = null;
+    function openPanel() {
+      panel.style.display = '';
+      trigger.classList.add('open');
+      setTimeout(function() {
+        outsideListener = function(e) {
+          if (!wrap.contains(e.target)) closePanel();
+        };
+        document.addEventListener('mousedown', outsideListener);
+      }, 0);
+    }
+
+    function closePanel() {
+      panel.style.display = 'none';
+      trigger.classList.remove('open');
+      if (outsideListener) {
+        document.removeEventListener('mousedown', outsideListener);
+        outsideListener = null;
+      }
+    }
+
+    trigger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (panel.style.display === 'none') {
+        openPanel();
+      } else {
+        closePanel();
+      }
     });
-    container.appendChild(select);
+
+    trigger.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closePanel();
+      }
+    });
+
+    syncTrigger();
+    container.appendChild(wrap);
+  }
+
+  function toIsoDate(dateObj) {
+    if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return '';
+    var y = String(dateObj.getFullYear());
+    var m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    var d = String(dateObj.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + d;
+  }
+
+  function parseIsoDate(isoStr) {
+    if (!isoStr || !/^\d{4}-\d{2}-\d{2}$/.test(isoStr)) return null;
+    var parts = isoStr.split('-');
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+
+  function formatIsoDate(isoStr) {
+    var parsed = parseIsoDate(isoStr);
+    if (!parsed) return '';
+    return parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function createDatePicker(fieldName, rangeEnd, initialValue) {
+    var picker = document.createElement('div');
+    picker.className = 'form-date-picker';
+
+    var hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.className = 'form-hidden-input';
+    hiddenInput.dataset.fieldInput = fieldName;
+    hiddenInput.dataset.rangeEnd = rangeEnd;
+    hiddenInput.value = initialValue || '';
+    picker.appendChild(hiddenInput);
+
+    var trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'form-date-trigger';
+
+    var valueEl = document.createElement('span');
+    valueEl.className = 'form-date-value';
+    trigger.appendChild(valueEl);
+
+    var arrow = document.createElement('span');
+    arrow.className = 'dd-arrow';
+    arrow.innerHTML = '&#9662;';
+    trigger.appendChild(arrow);
+    picker.appendChild(trigger);
+
+    var panel = document.createElement('div');
+    panel.className = 'form-calendar-panel';
+    panel.style.display = 'none';
+
+    var header = document.createElement('div');
+    header.className = 'form-calendar-header';
+
+    var prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = 'form-calendar-nav-btn';
+    prevBtn.innerHTML = '&#9664;';
+
+    var monthLabel = document.createElement('div');
+    monthLabel.className = 'form-calendar-month';
+
+    var nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'form-calendar-nav-btn';
+    nextBtn.innerHTML = '&#9654;';
+
+    header.appendChild(prevBtn);
+    header.appendChild(monthLabel);
+    header.appendChild(nextBtn);
+    panel.appendChild(header);
+
+    var weekdays = document.createElement('div');
+    weekdays.className = 'form-calendar-weekdays';
+    ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].forEach(function(label) {
+      var weekday = document.createElement('div');
+      weekday.className = 'form-calendar-weekday';
+      weekday.textContent = label;
+      weekdays.appendChild(weekday);
+    });
+    panel.appendChild(weekdays);
+
+    var daysGrid = document.createElement('div');
+    daysGrid.className = 'form-calendar-days';
+    panel.appendChild(daysGrid);
+    picker.appendChild(panel);
+
+    var selectedDate = parseIsoDate(hiddenInput.value);
+    var visibleMonth = selectedDate || new Date();
+    visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+
+    function updateValueLabel() {
+      var text = formatIsoDate(hiddenInput.value);
+      valueEl.textContent = text || 'Select date';
+      valueEl.classList.toggle('placeholder', !text);
+    }
+
+    function renderCalendar() {
+      monthLabel.textContent = visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+      daysGrid.innerHTML = '';
+
+      var firstOfMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+      var gridStart = new Date(firstOfMonth);
+      gridStart.setDate(1 - firstOfMonth.getDay());
+      var todayIso = toIsoDate(new Date());
+      var selectedIso = hiddenInput.value || '';
+
+      for (var i = 0; i < 42; i++) {
+        var cellDate = new Date(gridStart);
+        cellDate.setDate(gridStart.getDate() + i);
+        var iso = toIsoDate(cellDate);
+        var dayBtn = document.createElement('button');
+        dayBtn.type = 'button';
+        dayBtn.className = 'form-calendar-day';
+        dayBtn.textContent = String(cellDate.getDate());
+        dayBtn.dataset.value = iso;
+
+        if (cellDate.getMonth() !== visibleMonth.getMonth()) {
+          dayBtn.classList.add('other-month');
+        }
+        if (iso === todayIso) {
+          dayBtn.classList.add('today');
+        }
+        if (iso === selectedIso) {
+          dayBtn.classList.add('selected');
+        }
+
+        dayBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          hiddenInput.value = this.dataset.value || '';
+          updateValueLabel();
+          visibleMonth = parseIsoDate(hiddenInput.value) || visibleMonth;
+          visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+          closePanel();
+        });
+
+        daysGrid.appendChild(dayBtn);
+      }
+    }
+
+    prevBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+      renderCalendar();
+    });
+
+    nextBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+      renderCalendar();
+    });
+
+    var outsideListener = null;
+    function openPanel() {
+      var selected = parseIsoDate(hiddenInput.value);
+      if (selected) {
+        visibleMonth = new Date(selected.getFullYear(), selected.getMonth(), 1);
+      }
+      renderCalendar();
+      panel.style.display = '';
+      trigger.classList.add('open');
+      setTimeout(function() {
+        outsideListener = function(e) {
+          if (!picker.contains(e.target)) closePanel();
+        };
+        document.addEventListener('mousedown', outsideListener);
+      }, 0);
+    }
+
+    function closePanel() {
+      panel.style.display = 'none';
+      trigger.classList.remove('open');
+      if (outsideListener) {
+        document.removeEventListener('mousedown', outsideListener);
+        outsideListener = null;
+      }
+    }
+
+    trigger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (panel.style.display === 'none') {
+        openPanel();
+      } else {
+        closePanel();
+      }
+    });
+
+    trigger.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closePanel();
+      }
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        hiddenInput.value = '';
+        updateValueLabel();
+      }
+    });
+
+    updateValueLabel();
+    return picker;
   }
 
   function renderMultiSelectField(container, field) {
@@ -4082,26 +4775,17 @@
     var row = document.createElement('div');
     row.className = 'form-date-range-row';
     var defaults = field.default || ['', ''];
-
-    var startInput = document.createElement('input');
-    startInput.type = 'date';
-    startInput.value = defaults[0] || '';
-    startInput.dataset.fieldInput = field.name;
-    startInput.dataset.rangeEnd = 'start';
+    var startPicker = createDatePicker(field.name, 'start', defaults[0] || '');
 
     var sep = document.createElement('span');
     sep.className = 'form-date-range-sep';
     sep.textContent = 'to';
 
-    var endInput = document.createElement('input');
-    endInput.type = 'date';
-    endInput.value = defaults[1] || '';
-    endInput.dataset.fieldInput = field.name;
-    endInput.dataset.rangeEnd = 'end';
+    var endPicker = createDatePicker(field.name, 'end', defaults[1] || '');
 
-    row.appendChild(startInput);
+    row.appendChild(startPicker);
     row.appendChild(sep);
-    row.appendChild(endInput);
+    row.appendChild(endPicker);
     container.appendChild(row);
   }
 
@@ -4131,6 +4815,11 @@
 
       switch (type) {
         case 'dropdown': {
+          var hidden = fieldEl.querySelector('input.form-hidden-input[data-field-input]');
+          if (hidden) {
+            values[name] = hidden.value;
+            break;
+          }
           var sel = fieldEl.querySelector('select');
           if (sel) values[name] = sel.value;
           break;
@@ -4219,6 +4908,9 @@
     container.appendChild(frozen);
   }
 
+  // ================================================================
+  // RESPONSE UI — confirm/skip, countdown, sendResponse
+  // ================================================================
   function buildResponseUI(cardData, cardEl) {
     var container = document.createElement('div');
     container.className = 'card-response-ui';
@@ -4391,6 +5083,9 @@
     if (header) header.appendChild(badge);
   }
 
+  // ================================================================
+  // SECTIONS, CARD UPDATES & RUN FILTERING
+  // ================================================================
   function addSection(title, runId) {
     var empty = document.getElementById('empty-state');
     if (empty && empty.parentNode) {
@@ -4507,7 +5202,9 @@
     feed.appendChild(empty);
   }
 
-  // --- UI Helpers ---
+  // ================================================================
+  // UI HELPERS — status, card count, session info, scroll
+  // ================================================================
   function updateStatus(status) {
     var dotClass = status === 'connected' ? 'status-connected'
       : status === 'disconnected' ? 'status-disconnected'
@@ -4597,14 +5294,15 @@
     });
   }
 
-  // --- Agent Status ---
+  // ================================================================
+  // AGENT STATUS & BROWSER NOTIFICATIONS
+  // ================================================================
   var agentStatusEl = document.getElementById('agent-status');
 
   function updateAgentStatus(text) {
     if (agentStatusEl) agentStatusEl.textContent = text;
   }
 
-  // --- Browser Notifications ---
   function notifyDecisionCard(cardData) {
     if (!document.hidden) return;
     if (!('Notification' in window)) return;
@@ -4623,7 +5321,9 @@
     }
   }
 
-  // --- Deep-Link URLs ---
+  // ================================================================
+  // DEEP-LINK URLs
+  // ================================================================
   function parseHashRun() {
     var hash = location.hash || '';
     var m = hash.match(/^#run=(.+)$/);
@@ -4657,8 +5357,9 @@
     }
   };
 
-  // --- Init ---
-  // Apply hash-based run selection after runs load
+  // ================================================================
+  // INIT
+  // ================================================================
   var _origLoadRuns = loadRuns;
   loadRuns = function() {
     _origLoadRuns();

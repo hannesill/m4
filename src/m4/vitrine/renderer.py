@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import io
+import json
 import logging
 import re
 import uuid
@@ -211,8 +212,17 @@ def _render_plotly(
     """
     card_id = _make_card_id()
 
-    # Get the Plotly JSON spec
+    # Get a JSON-safe Plotly spec.
+    # Plotly Express can emit numpy arrays in fields like `customdata`,
+    # which are not directly serializable by the card index writer.
     spec = fig.to_plotly_json()
+    try:
+        from plotly.utils import PlotlyJSONEncoder
+
+        spec = json.loads(json.dumps(spec, cls=PlotlyJSONEncoder))
+    except Exception:
+        # Fallback for unusual Plotly setups.
+        spec = json.loads(json.dumps(spec, default=str))
 
     # Store as JSON artifact
     store.store_json(card_id, spec)
