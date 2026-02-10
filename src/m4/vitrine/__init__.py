@@ -206,6 +206,8 @@ def _discover_server() -> dict[str, Any] | None:
     pid = info.get("pid")
     session_id = info.get("session_id")
     url = info.get("url")
+    host = info.get("host", "127.0.0.1")
+    port = info.get("port")
 
     if not all([pid, session_id, url]):
         return None
@@ -219,15 +221,19 @@ def _discover_server() -> dict[str, Any] | None:
             pass
         return None
 
-    # Validate health endpoint matches session_id
-    if not _health_check(url, session_id):
-        logger.debug(f"Health check failed for {url}, removing stale PID file")
+    # Build an API-safe URL from host:port.  The "url" field uses
+    # vitrine.localhost which Python's urllib can't always resolve,
+    # so all programmatic access must go through 127.0.0.1.
+    api_url = f"http://{host}:{port}" if port else url
+    if not _health_check(api_url, session_id):
+        logger.debug(f"Health check failed for {api_url}, removing stale PID file")
         try:
             pid_path.unlink()
         except OSError:
             pass
         return None
 
+    info["api_url"] = api_url
     return info
 
 
@@ -335,7 +341,7 @@ def _ensure_started(
             # server when multiple projects run vitrine concurrently.
             info = _discover_server()
             if info:
-                _remote_url = info["url"]
+                _remote_url = info.get("api_url", info["url"])
                 _auth_token = info.get("token")
                 _session_id = info["session_id"]
                 return
@@ -352,7 +358,7 @@ def _ensure_started(
         while time.monotonic() < deadline:
             info = _discover_server()
             if info:
-                _remote_url = info["url"]
+                _remote_url = info.get("api_url", info["url"])
                 _auth_token = info.get("token")
                 _session_id = info["session_id"]
                 return
@@ -457,7 +463,7 @@ def stop_server() -> bool:
     if not info:
         return False
 
-    url = info["url"]
+    url = info.get("api_url", info["url"])
     token = info.get("token")
 
     shutdown_requested = False
@@ -557,7 +563,7 @@ def _push_remote(card_data: dict[str, Any]) -> bool:
         info = _discover_server()
         if info:
             with _lock:
-                _remote_url = info["url"]
+                _remote_url = info.get("api_url", info["url"])
                 _auth_token = info.get("token")
                 url, token = _remote_url, _auth_token
             ok = _remote_command(url, token, {"type": "card", "card": card_data})
