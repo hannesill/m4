@@ -109,6 +109,10 @@
   background: var(--bg-card);
 }
 
+.copy-prompt-btn svg {
+  display: block;
+}
+
 .card-meta {
   color: var(--text-muted);
   font-size: 11px;

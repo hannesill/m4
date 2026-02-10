@@ -415,6 +415,29 @@ body {
 .study-dropdown-entry:hover .study-export-btn { opacity: 1; }
 .study-export-btn:hover { color: var(--accent); }
 
+/* Study dropdown action button (session prompt, resume) */
+.study-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.study-dropdown-entry:hover .study-action-btn {
+  opacity: 1;
+}
+
+.study-action-btn:hover {
+  color: var(--text);
+  background: var(--bg-card);
+}
+
 .header-actions {
   display: flex;
   gap: 6px;

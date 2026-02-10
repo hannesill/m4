@@ -65,6 +65,7 @@ __all__ = [
     "list_studies",
     "on_event",
     "register_output_dir",
+    "register_session",
     "section",
     "server_status",
     "set_status",
@@ -265,6 +266,25 @@ def _ensure_study_manager() -> Any:
 
         _study_manager = StudyManager(_get_vitrine_dir())
     return _study_manager
+
+
+def register_session(study: str | None = None) -> None:
+    """Associate the current Claude Code session with a study.
+
+    If CLAUDE_SESSION_ID is in the environment, stores it in the
+    study's meta.json. Called automatically on first show() for a study.
+    No-op if the env var is not set.
+    """
+    session_id = os.environ.get("CLAUDE_SESSION_ID")
+    if not session_id:
+        return
+    sm = _ensure_study_manager()
+    if sm is None:
+        return
+    label = study or _current_study
+    if label is None:
+        return
+    sm.set_session_id(label, session_id)
 
 
 def _ensure_started(
@@ -618,6 +638,8 @@ def show(
         _label, store = _study_manager.get_or_create_study(study)
         # Use the resolved label for the card's study
         study = _label
+        # Auto-register Claude session ID with this study
+        register_session(study)
 
     if replace is not None:
         # Update an existing card in place

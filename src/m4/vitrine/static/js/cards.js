@@ -92,6 +92,25 @@ function addCard(cardData) {
   var actions = document.createElement('div');
   actions.className = 'card-actions';
 
+  // Copy prompt button
+  var promptBtn = document.createElement('button');
+  promptBtn.className = 'card-action-btn copy-prompt-btn';
+  promptBtn.title = 'Copy prompt for agent';
+  promptBtn.setAttribute('aria-label', 'Copy prompt for agent');
+  promptBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="8" height="10" rx="1"/><path d="M3 6v7a1 1 0 001 1h7"/></svg>';
+  promptBtn.onclick = function(e) {
+    e.stopPropagation();
+    var prompt = buildCardPrompt(cardData);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(prompt).then(function() {
+        showToast('Prompt copied');
+      }, function() {
+        showToast('Failed to copy', 'error');
+      });
+    }
+  };
+  actions.appendChild(promptBtn);
+
   // Link / copy deep-link button
   var linkBtn = document.createElement('button');
   linkBtn.className = 'card-action-btn';
@@ -571,4 +590,21 @@ function showEmptyState() {
     + '<div style="font-size: 13px;">Run an agent to get started</div>'
     + '<div><code>from m4.vitrine import show</code></div>';
   feed.appendChild(empty);
+}
+
+function buildCardPrompt(card) {
+  var prompt = 'Re: "' + (card.title || 'Untitled') + '" [card:' + card.card_id + (card.study ? ', study:' + card.study : '') + ']\n';
+  if (card.card_type === 'table' && card.preview && card.preview.columns) {
+    var cols = card.preview.columns.join(', ');
+    var rows = card.preview.row_count || (card.preview.rows ? card.preview.rows.length : '?');
+    prompt += 'Preview: ' + rows + ' rows \u00d7 ' + card.preview.columns.length + ' cols (' + cols + ')\n';
+  } else if (card.card_type === 'plotly') {
+    prompt += 'Type: plotly chart\n';
+  } else if (card.card_type === 'keyvalue') {
+    prompt += 'Type: key-value\n';
+  } else if (card.card_type === 'image') {
+    prompt += 'Type: image\n';
+  }
+  prompt += '/m4-vitrine\n\n';
+  return prompt;
 }

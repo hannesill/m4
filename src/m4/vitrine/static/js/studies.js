@@ -98,6 +98,50 @@ function renderDropdown() {
       if (study.start_time) meta.textContent += '  ' + formatStudyTime(study.start_time);
       entry.appendChild(meta);
 
+      // Copy "new session" prompt
+      var sessionBtn = document.createElement('button');
+      sessionBtn.type = 'button';
+      sessionBtn.className = 'study-action-btn';
+      sessionBtn.innerHTML = '&#9654;';
+      sessionBtn.title = 'Copy session prompt';
+      sessionBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        var prompt = buildStudyPrompt(study.label);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(prompt).then(function() {
+            showToast('Session prompt copied');
+          }, function() {
+            showToast('Failed to copy', 'error');
+          });
+        }
+        closeDropdown();
+      });
+      entry.appendChild(sessionBtn);
+
+      // Copy "resume" button (only if session_id exists)
+      if (study.session_id) {
+        var resumeBtn = document.createElement('button');
+        resumeBtn.type = 'button';
+        resumeBtn.className = 'study-action-btn';
+        resumeBtn.innerHTML = '&#8634;';
+        resumeBtn.title = 'Copy resume command';
+        resumeBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          var cmd = 'claude --resume ' + study.session_id;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(cmd).then(function() {
+              showToast('Resume command copied');
+            }, function() {
+              showToast('Failed to copy', 'error');
+            });
+          }
+          closeDropdown();
+        });
+        entry.appendChild(resumeBtn);
+      }
+
       var expBtn = document.createElement('button');
       expBtn.type = 'button';
       expBtn.className = 'study-export-btn';
@@ -471,3 +515,7 @@ function applyHash() {
 window.addEventListener('hashchange', function() {
   applyHash();
 });
+
+function buildStudyPrompt(studyLabel) {
+  return 'claude -p "$(cat <<\'EOF\'\n/m4-vitrine\nResume research study "' + studyLabel + '". Use study_context("' + studyLabel + '") to review prior work.\nUse show(..., study="' + studyLabel + '") for all output.\n\n\nEOF\n)"';
+}

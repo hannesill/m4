@@ -299,10 +299,12 @@ class StudyManager:
             meta_path = study_dir / "meta.json"
 
             start_time = None
+            session_id = None
             if meta_path.exists():
                 try:
                     meta = json.loads(meta_path.read_text())
                     start_time = meta.get("start_time")
+                    session_id = meta.get("session_id")
                 except (json.JSONDecodeError, OSError):
                     pass
 
@@ -325,6 +327,7 @@ class StudyManager:
                     "dir_name": dir_name,
                     "start_time": start_time,
                     "card_count": card_count,
+                    "session_id": session_id,
                 }
             )
 
@@ -429,7 +432,14 @@ class StudyManager:
             }
             if c.annotations:
                 summary["annotations"] = [
-                    {"id": a["id"], "text": a["text"], "timestamp": a.get("timestamp")}
+                    {
+                        "id": a["id"],
+                        "text": a["text"],
+                        "timestamp": a.get("timestamp"),
+                        "card_title": c.title,
+                        "card_id": c.card_id,
+                        "card_type": c.card_type.value,
+                    }
                     for a in c.annotations
                 ]
             card_summaries.append(summary)
@@ -588,6 +598,35 @@ class StudyManager:
             return None
 
         return output_path
+
+    def set_session_id(self, label: str, session_id: str) -> None:
+        """Store agent session ID in study meta.json."""
+        dir_name = self._label_to_dir.get(label)
+        if dir_name is None:
+            return
+        meta_path = self._studies_dir / dir_name / "meta.json"
+        if not meta_path.exists():
+            return
+        try:
+            meta = json.loads(meta_path.read_text())
+            meta["session_id"] = session_id
+            meta_path.write_text(json.dumps(meta, indent=2))
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    def get_session_id(self, label: str) -> str | None:
+        """Retrieve agent session ID for a study."""
+        dir_name = self._label_to_dir.get(label)
+        if dir_name is None:
+            return None
+        meta_path = self._studies_dir / dir_name / "meta.json"
+        if not meta_path.exists():
+            return None
+        try:
+            meta = json.loads(meta_path.read_text())
+            return meta.get("session_id")
+        except (json.JSONDecodeError, OSError):
+            return None
 
     def list_output_files(self, study_label: str) -> list[dict[str, Any]]:
         """List files in a study's output directory.
