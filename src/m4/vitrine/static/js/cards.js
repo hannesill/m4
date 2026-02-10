@@ -188,6 +188,11 @@ function addCard(cardData) {
 
   feed.appendChild(el);
 
+  // Hide card if it lands inside a collapsed section
+  if (isInCollapsedSection(el)) {
+    el.classList.add('hidden-by-section');
+  }
+
   // Apply study filter to the new card
   if (state.activeStudyFilter) {
     var cardRun = cardData.study || '';
@@ -231,8 +236,24 @@ function addSection(title, study) {
 
   var div = document.createElement('div');
   div.className = 'section-divider';
-  div.textContent = title;
   div.dataset.study = study || '';
+
+  var chevron = document.createElement('span');
+  chevron.className = 'section-chevron';
+  chevron.innerHTML = '&#9660;';
+  div.appendChild(chevron);
+
+  var titleSpan = document.createElement('span');
+  titleSpan.className = 'section-title';
+  titleSpan.textContent = title;
+  div.appendChild(titleSpan);
+
+  div.addEventListener('click', function() {
+    var isCollapsed = div.classList.toggle('section-collapsed');
+    toggleSectionCards(div, isCollapsed);
+    if (typeof tocNotifyChange === 'function') tocNotifyChange();
+  });
+
   feed.appendChild(div);
 
   if (state.activeStudyFilter) {
@@ -241,6 +262,29 @@ function addSection(title, study) {
 
   scrollToBottom();
   if (typeof tocNotifyChange === 'function') tocNotifyChange();
+}
+
+function toggleSectionCards(sectionEl, collapsed) {
+  var next = sectionEl.nextElementSibling;
+  while (next && !next.classList.contains('section-divider')) {
+    if (collapsed) {
+      next.classList.add('hidden-by-section');
+    } else {
+      next.classList.remove('hidden-by-section');
+    }
+    next = next.nextElementSibling;
+  }
+}
+
+function isInCollapsedSection(el) {
+  var prev = el.previousElementSibling;
+  while (prev) {
+    if (prev.classList.contains('section-divider')) {
+      return prev.classList.contains('section-collapsed');
+    }
+    prev = prev.previousElementSibling;
+  }
+  return false;
 }
 
 function updateCard(cardId, newCardData) {

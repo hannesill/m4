@@ -78,9 +78,20 @@
         // Section header
         var secEl = document.createElement('div');
         secEl.className = 'toc-section-header';
-        secEl.textContent = el.textContent;
+        var secTitleEl = el.querySelector('.section-title');
+        secEl.textContent = secTitleEl ? secTitleEl.textContent : el.textContent;
+        if (el.classList.contains('section-collapsed')) {
+          secEl.textContent += ' (collapsed)';
+        }
         (function(target) {
           secEl.onclick = function() {
+            // Expand section if collapsed
+            if (target.classList.contains('section-collapsed')) {
+              target.classList.remove('section-collapsed');
+              if (typeof toggleSectionCards === 'function') {
+                toggleSectionCards(target, false);
+              }
+            }
             target.scrollIntoView({ behavior: 'smooth', block: 'start' });
           };
         })(el);

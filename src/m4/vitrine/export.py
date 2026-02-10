@@ -278,7 +278,10 @@ def _build_html_document(
 
         if card.card_type == CardType.SECTION:
             cards_html.append(
-                f'<div class="section-divider">{escape(card.title or "")}</div>'
+                f'<div class="section-divider" onclick="toggleExportSection(this)">'
+                f'<span class="section-chevron">&#9660;</span>'
+                f'<span class="section-title">{escape(card.title or "")}</span>'
+                f"</div>"
             )
         else:
             cards_html.append(_render_card_html(card, study_manager))
@@ -1106,7 +1109,24 @@ _EXPORT_CSS = """<style>
     align-items: center;
     gap: 12px;
     padding: 8px 0;
+    cursor: pointer;
+    user-select: none;
   }
+
+  .section-divider:hover { opacity: 0.7; }
+
+  .section-chevron {
+    font-size: 9px;
+    transition: transform 0.15s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .section-collapsed .section-chevron {
+    transform: rotate(-90deg);
+  }
+
+  .hidden-by-section { display: none; }
 
   .section-divider::before,
   .section-divider::after {
@@ -1246,4 +1266,18 @@ document.addEventListener('DOMContentLoaded', function() {
   // Plotly init scripts are already inline — they self-execute.
   // Marked.js init scripts are already inline — they self-execute.
 });
+
+// Collapsible sections
+function toggleExportSection(sectionEl) {
+  var isCollapsed = sectionEl.classList.toggle('section-collapsed');
+  var next = sectionEl.nextElementSibling;
+  while (next && !next.classList.contains('section-divider')) {
+    if (isCollapsed) {
+      next.classList.add('hidden-by-section');
+    } else {
+      next.classList.remove('hidden-by-section');
+    }
+    next = next.nextElementSibling;
+  }
+}
 """
