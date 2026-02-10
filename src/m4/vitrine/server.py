@@ -1369,14 +1369,30 @@ class DisplayServer:
         logger.debug(f"PID file written: {pid_path}")
 
     def _remove_pid_file(self) -> None:
-        """Remove the PID file if it exists and was written by this server."""
-        if self._pid_path and self._pid_path.exists():
-            try:
-                self._pid_path.unlink()
-                logger.debug(f"PID file removed: {self._pid_path}")
-            except OSError:
-                pass
+        """Remove the PID file only if it still belongs to this server.
+
+        Another server may have overwritten the PID file after we started.
+        Blindly deleting it would orphan that newer server, so we verify
+        our own PID is still recorded before unlinking.
+        """
+        if not self._pid_path or not self._pid_path.exists():
             self._pid_path = None
+            return
+        try:
+            info = json.loads(self._pid_path.read_text())
+            if info.get("pid") != os.getpid():
+                logger.debug(
+                    "PID file belongs to pid=%s, not us (%s); leaving it",
+                    info.get("pid"),
+                    os.getpid(),
+                )
+                self._pid_path = None
+                return
+            self._pid_path.unlink()
+            logger.debug(f"PID file removed: {self._pid_path}")
+        except (json.JSONDecodeError, OSError):
+            pass
+        self._pid_path = None
 
     @property
     def is_running(self) -> bool:
@@ -1439,6 +1455,67 @@ class DisplayServer:
             logger.debug("Could not broadcast message")
 
 
+def _kill_orphaned_servers(host: str, port_lo: int, port_hi: int) -> None:
+    """Kill any vitrine servers lingering on our port range without a PID file.
+
+    These are servers whose PID file was lost (e.g. the process crashed
+    before cleanup ran).  Without a PID file they are undiscoverable and
+    block port allocation, so new servers keep bumping to higher ports.
+
+    Strategy: probe each port for a vitrine health endpoint.  If found,
+    use ``lsof`` to resolve the PID and send SIGTERM.
+    """
+    import subprocess
+    import urllib.request
+
+    for port in range(port_lo, port_hi + 1):
+        # Quick probe — unoccupied ports fail instantly
+        try:
+            hreq = urllib.request.Request(
+                f"http://{host}:{port}/api/health", method="GET"
+            )
+            with urllib.request.urlopen(hreq, timeout=0.5) as resp:
+                data = json.loads(resp.read())
+            if data.get("status") != "ok":
+                continue
+        except Exception:
+            continue
+
+        logger.debug(f"Found orphaned vitrine server on port {port}")
+
+        # Resolve the PID owning this port via lsof
+        try:
+            out = subprocess.check_output(
+                ["lsof", f"-iTCP:{port}", "-sTCP:LISTEN", "-t"],
+                text=True,
+                timeout=2,
+            ).strip()
+        except Exception:
+            logger.debug(f"Could not resolve PID for port {port}")
+            continue
+
+        for pid_str in out.splitlines():
+            try:
+                pid = int(pid_str)
+            except ValueError:
+                continue
+            logger.debug(f"Sending SIGTERM to orphaned vitrine pid={pid}")
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except OSError:
+                pass
+
+        # Wait for port to free up
+        deadline = time.monotonic() + 2.0
+        while time.monotonic() < deadline:
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind((host, port))
+                break
+            except OSError:
+                time.sleep(0.1)
+
+
 def _run_standalone(port: int = _DEFAULT_PORT, no_open: bool = False) -> None:
     """Run the display server as a standalone persistent process.
 
@@ -1466,21 +1543,31 @@ def _run_standalone(port: int = _DEFAULT_PORT, no_open: bool = False) -> None:
         sys.exit(0)
 
     try:
-        # Check PID file for an existing healthy server.
-        # The PID file is the sole authority — no port scanning.
-        # Port scanning would risk detecting a different project's server
-        # and refusing to start ours.
+        # Check PID file for an existing healthy server
         if pid_path.exists():
             try:
                 info = json.loads(pid_path.read_text())
                 pid = info.get("pid")
-                url = info.get("url")
+                host = info.get("host", "127.0.0.1")
+                port_num = info.get("port")
                 sid = info.get("session_id")
-                if pid and url and _is_pid_alive(pid) and _check_health(url, sid):
+                api_url = f"http://{host}:{port_num}" if port_num else info.get("url")
+                if (
+                    pid
+                    and api_url
+                    and _is_pid_alive(pid)
+                    and _check_health(api_url, sid)
+                ):
                     logger.debug(f"Healthy server already running (pid={pid}), exiting")
                     sys.exit(0)
             except (json.JSONDecodeError, OSError):
                 pass
+
+        # Kill any orphaned servers occupying our port range.
+        # These are leftovers from crashed sessions whose PID file was
+        # lost — without this they'd force us onto a higher port and
+        # accumulate indefinitely.
+        _kill_orphaned_servers("127.0.0.1", port, _MAX_PORT)
 
         # No server found for this project — start one while holding the lock
         session_id = uuid.uuid4().hex[:12]
