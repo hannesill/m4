@@ -40,6 +40,7 @@
   overflow: hidden;
   animation: fadeIn 0.2s ease;
   transition: border-color 0.15s, box-shadow 0.15s, background 0.2s;
+  scroll-margin-top: 60px;
 }
 
 .card.hidden-by-filter { display: none; }
@@ -313,6 +314,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   cursor: pointer;
+  scroll-margin-top: 60px;
   user-select: none;
 }
 

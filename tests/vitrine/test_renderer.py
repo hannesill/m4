@@ -446,31 +446,31 @@ class TestIsMatplotlibFigure:
 
 class TestRenderForm:
     def test_form_renders_as_form_card(self, store):
-        from m4.vitrine._types import Dropdown, Form
+        from m4.vitrine._types import Form, Question
 
-        form = Form([Dropdown("method", ["logistic", "cox"])])
+        form = Form([Question("method", "Which method?", ["logistic", "cox"])])
         card = render(form, store=store)
-        assert card.card_type == CardType.FORM
+        assert card.card_type == CardType.DECISION
 
     def test_form_preview_has_fields(self, store):
-        from m4.vitrine._types import Dropdown, Form
+        from m4.vitrine._types import Form, Question
 
-        form = Form([Dropdown("method", ["logistic", "cox"])])
+        form = Form([Question("method", "Which method?", ["logistic", "cox"])])
         card = render(form, store=store)
         assert "fields" in card.preview
         assert len(card.preview["fields"]) == 1
         assert card.preview["fields"][0]["name"] == "method"
 
     def test_form_default_title(self, store):
-        from m4.vitrine._types import Dropdown, Form
+        from m4.vitrine._types import Form, Question
 
-        form = Form([Dropdown("method", ["logistic", "cox"])])
+        form = Form([Question("method", "Which method?", ["logistic", "cox"])])
         card = render(form, store=store)
-        assert card.title == "Form"
+        assert card.title == "Decision"
 
     def test_form_custom_title(self, store):
-        from m4.vitrine._types import Dropdown, Form
+        from m4.vitrine._types import Form, Question
 
-        form = Form([Dropdown("method", ["logistic", "cox"])])
+        form = Form([Question("method", "Which method?", ["logistic", "cox"])])
         card = render(form, title="Choose Method", store=store)
         assert card.title == "Choose Method"

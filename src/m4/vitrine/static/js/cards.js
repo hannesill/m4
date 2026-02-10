@@ -153,7 +153,7 @@ function addCard(cardData) {
     case 'markdown':
       renderMarkdown(body, cardData);
       break;
-    case 'form':
+    case 'decision':
       renderForm(body, cardData);
       break;
     case 'keyvalue':
@@ -599,7 +599,7 @@ function showEmptyState() {
   empty.className = 'empty-state';
   empty.id = 'empty-state';
   empty.innerHTML = '<div style="font-size: 32px; opacity: 0.3;">&#9671;</div>'
-    + '<div style="font-size: 15px; font-weight: 500;">No analyses yet</div>'
+    + '<div style="font-size: 15px; font-weight: 500;">No studies yet</div>'
     + '<div style="font-size: 13px;">Run an agent to get started</div>'
     + '<div><code>from m4.vitrine import show</code></div>';
   feed.appendChild(empty);

@@ -326,7 +326,7 @@ def _render_matplotlib(
     return card
 
 
-def _render_form(
+def _render_decision(
     form: Form,
     title: str | None,
     description: str | None,
@@ -334,15 +334,15 @@ def _render_form(
     study: str | None,
     store: ArtifactStore,
 ) -> CardDescriptor:
-    """Render a Form as a form card with field specs in preview.
+    """Render a Form as a decision card with field specs in preview.
 
     Forms are always decision cards (wait=True is forced by show()).
     """
     card_id = _make_card_id()
     card = CardDescriptor(
         card_id=card_id,
-        card_type=CardType.FORM,
-        title=title or "Form",
+        card_type=CardType.DECISION,
+        title=title or "Decision",
         description=description,
         timestamp=_make_timestamp(),
         study=study,
@@ -407,7 +407,7 @@ def render(
         redactor = Redactor()
 
     if isinstance(obj, Form):
-        return _render_form(obj, title, description, source, study, store)
+        return _render_decision(obj, title, description, source, study, store)
     elif isinstance(obj, pd.DataFrame):
         return _render_dataframe(
             obj, title, description, source, study, store, redactor

@@ -1,8 +1,8 @@
-"""Tests for form field primitives, form rendering, blocking flow, and validation.
+"""Tests for Question field, form rendering, blocking flow, and validation.
 
 Tests cover:
-- All 10 field types: construct -> to_dict() -> assert keys/values
-- Form rendering -> CardType.FORM with preview.fields
+- Question field: construct -> to_dict() -> assert keys/values
+- Form rendering -> CardType.DECISION with preview.fields
 - Form blocking flow (auto wait=True + form_values)
 - Controls parameter on show() -> hybrid data+controls cards (auto wait=True)
 - Form export in HTML and JSON
@@ -18,19 +18,9 @@ import pytest
 import m4.vitrine as display
 from m4.vitrine._types import (
     CardType,
-    Checkbox,
-    DateRange,
     DisplayResponse,
-    Dropdown,
     Form,
-    MultiSelect,
-    NumberInput,
     Question,
-    RadioGroup,
-    RangeSlider,
-    Slider,
-    TextInput,
-    Toggle,
 )
 from m4.vitrine.artifacts import ArtifactStore
 from m4.vitrine.renderer import render
@@ -124,115 +114,6 @@ def mock_server(store):
 
 
 # ================================================================
-# TestFormFieldSerialization -- all 10 field types
-# ================================================================
-
-
-class TestFormFieldSerialization:
-    def test_dropdown(self):
-        f = Dropdown(name="gender", options=["M", "F"], default="M", label="Gender")
-        d = f.to_dict()
-        assert d["type"] == "dropdown"
-        assert d["name"] == "gender"
-        assert d["options"] == ["M", "F"]
-        assert d["default"] == "M"
-        assert d["label"] == "Gender"
-
-    def test_dropdown_no_default(self):
-        f = Dropdown(name="x", options=["a", "b"])
-        d = f.to_dict()
-        assert "default" not in d
-
-    def test_multiselect(self):
-        f = MultiSelect(
-            name="comorbidities",
-            options=["HTN", "DM", "CKD"],
-            default=["HTN"],
-            label="Comorbidities",
-        )
-        d = f.to_dict()
-        assert d["type"] == "multiselect"
-        assert d["name"] == "comorbidities"
-        assert d["options"] == ["HTN", "DM", "CKD"]
-        assert d["default"] == ["HTN"]
-
-    def test_multiselect_empty_default(self):
-        f = MultiSelect(name="x", options=["a"])
-        d = f.to_dict()
-        assert "default" not in d
-
-    def test_slider(self):
-        f = Slider(name="age", range=(18, 100), default=65, step=1, label="Age")
-        d = f.to_dict()
-        assert d["type"] == "slider"
-        assert d["min"] == 18
-        assert d["max"] == 100
-        assert d["default"] == 65
-        assert d["step"] == 1
-
-    def test_range_slider(self):
-        f = RangeSlider(
-            name="age_range", range=(0, 120), default=(18, 65), label="Age Range"
-        )
-        d = f.to_dict()
-        assert d["type"] == "range_slider"
-        assert d["min"] == 0
-        assert d["max"] == 120
-        assert d["default"] == [18, 65]
-
-    def test_checkbox(self):
-        f = Checkbox(
-            name="exclude_readmits", label="Exclude readmissions", default=True
-        )
-        d = f.to_dict()
-        assert d["type"] == "checkbox"
-        assert d["default"] is True
-        assert d["label"] == "Exclude readmissions"
-
-    def test_toggle(self):
-        f = Toggle(name="active", label="Active only", default=False)
-        d = f.to_dict()
-        assert d["type"] == "toggle"
-        assert d["default"] is False
-
-    def test_radio_group(self):
-        f = RadioGroup(
-            name="severity", options=["mild", "moderate", "severe"], default="moderate"
-        )
-        d = f.to_dict()
-        assert d["type"] == "radio"
-        assert d["options"] == ["mild", "moderate", "severe"]
-        assert d["default"] == "moderate"
-
-    def test_text_input(self):
-        f = TextInput(
-            name="notes", label="Notes", default="", placeholder="Enter notes..."
-        )
-        d = f.to_dict()
-        assert d["type"] == "text"
-        assert d["placeholder"] == "Enter notes..."
-
-    def test_date_range(self):
-        f = DateRange(
-            name="period", label="Study Period", default=("2020-01-01", "2020-12-31")
-        )
-        d = f.to_dict()
-        assert d["type"] == "date_range"
-        assert d["default"] == ["2020-01-01", "2020-12-31"]
-
-    def test_number_input(self):
-        f = NumberInput(
-            name="threshold", label="Threshold", default=0.5, min=0, max=1, step=0.1
-        )
-        d = f.to_dict()
-        assert d["type"] == "number"
-        assert d["default"] == 0.5
-        assert d["min"] == 0
-        assert d["max"] == 1
-        assert d["step"] == 0.1
-
-
-# ================================================================
 # TestFormRendering
 # ================================================================
 
@@ -241,38 +122,62 @@ class TestFormRendering:
     def test_renders_form_card(self, store):
         form = Form(
             fields=[
-                Slider(name="age", range=(0, 100)),
-                Dropdown(name="sex", options=["M", "F"]),
+                Question(
+                    name="score",
+                    question="Which score?",
+                    options=["SOFA", "APACHE"],
+                ),
+                Question(
+                    name="method",
+                    question="Which method?",
+                    options=["Logistic", "Cox"],
+                ),
             ]
         )
         card = render(form, title="Cohort Filter", store=store)
-        assert card.card_type == CardType.FORM
+        assert card.card_type == CardType.DECISION
         assert card.title == "Cohort Filter"
 
     def test_preview_has_fields(self, store):
         form = Form(
             fields=[
-                Checkbox(name="active", default=True),
-                TextInput(name="query"),
+                Question(
+                    name="q1",
+                    question="Pick one",
+                    options=["A", "B"],
+                ),
+                Question(
+                    name="q2",
+                    question="Pick another",
+                    options=["X", "Y"],
+                ),
             ]
         )
         card = render(form, store=store)
         assert "fields" in card.preview
         assert len(card.preview["fields"]) == 2
-        assert card.preview["fields"][0]["type"] == "checkbox"
+        assert card.preview["fields"][0]["type"] == "question"
 
     def test_no_artifact(self, store):
-        form = Form(fields=[Toggle(name="x")])
+        form = Form(
+            fields=[
+                Question(name="q", question="Yes?", options=["Yes", "No"]),
+            ]
+        )
         card = render(form, store=store)
         assert card.artifact_id is None
         assert card.artifact_type is None
 
     def test_stored_in_index(self, store):
-        form = Form(fields=[Toggle(name="x")])
+        form = Form(
+            fields=[
+                Question(name="q", question="Yes?", options=["Yes", "No"]),
+            ]
+        )
         render(form, store=store)
         cards = store.list_cards()
         assert len(cards) == 1
-        assert cards[0].card_type == CardType.FORM
+        assert cards[0].card_type == CardType.DECISION
 
 
 # ================================================================
@@ -285,22 +190,34 @@ class TestFormBlockingFlow:
         mock_server._mock_response = {
             "action": "confirm",
             "card_id": "test",
-            "values": {"age": 65, "sex": "M"},
+            "values": {"score": "SOFA", "method": "Logistic"},
         }
         form = Form(
             fields=[
-                Slider(name="age", range=(0, 100), default=50),
-                Dropdown(name="sex", options=["M", "F"]),
+                Question(
+                    name="score",
+                    question="Which score?",
+                    options=[("SOFA", "6 organ systems"), ("APACHE", "More variables")],
+                ),
+                Question(
+                    name="method",
+                    question="Which method?",
+                    options=["Logistic", "Cox"],
+                ),
             ]
         )
         result = display.show(form, wait=True, title="Filter")
         assert isinstance(result, DisplayResponse)
         assert result.action == "confirm"
-        assert result.values == {"age": 65, "sex": "M"}
+        assert result.values == {"score": "SOFA", "method": "Logistic"}
 
     def test_form_response_requested_set(self, store, mock_server):
         mock_server._mock_response = {"action": "confirm", "card_id": "x"}
-        form = Form(fields=[Toggle(name="active")])
+        form = Form(
+            fields=[
+                Question(name="q", question="Active?", options=["Yes", "No"]),
+            ]
+        )
         display.show(form, wait=True)
         cards = store.list_cards()
         assert cards[0].response_requested is True
@@ -315,20 +232,34 @@ class TestControlsParameter:
     def test_controls_attached_to_table(self, store, mock_server):
         mock_server._mock_response = {"action": "confirm", "card_id": "x"}
         df = pd.DataFrame({"x": [1, 2, 3]})
-        controls = [Slider(name="threshold", range=(0, 10), default=5)]
+        controls = [
+            Question(
+                name="threshold",
+                question="Which threshold?",
+                options=["Low", "Medium", "High"],
+            ),
+        ]
         result = display.show(df, title="Table", controls=controls)
         assert isinstance(result, DisplayResponse)
         cards = store.list_cards()
         assert "controls" in cards[0].preview
         assert len(cards[0].preview["controls"]) == 1
-        assert cards[0].preview["controls"][0]["type"] == "slider"
+        assert cards[0].preview["controls"][0]["type"] == "question"
 
     def test_controls_multiple_fields(self, store, mock_server):
         mock_server._mock_response = {"action": "confirm", "card_id": "x"}
         df = pd.DataFrame({"val": [1]})
         controls = [
-            Slider(name="min_age", range=(0, 120)),
-            Dropdown(name="unit", options=["ICU", "Ward"]),
+            Question(
+                name="age_group",
+                question="Age group?",
+                options=["Young", "Middle", "Old"],
+            ),
+            Question(
+                name="unit",
+                question="Which unit?",
+                options=["ICU", "Ward"],
+            ),
         ]
         result = display.show(df, controls=controls)
         assert isinstance(result, DisplayResponse)
@@ -351,8 +282,11 @@ class TestFormExport:
 
         form = Form(
             fields=[
-                Dropdown(name="sex", options=["M", "F"], default="M"),
-                Slider(name="age", range=(0, 100), default=50),
+                Question(
+                    name="score",
+                    question="Which severity score?",
+                    options=[("SOFA", "Standard"), ("APACHE", "Advanced")],
+                ),
             ]
         )
         card = render(form, title="Form Card", store=store, study="form-export")
@@ -362,7 +296,7 @@ class TestFormExport:
         export_html(mgr, out, study="form-export")
         html = out.read_text()
         assert "Form Card" in html
-        assert "sex" in html
+        assert "score" in html
 
     def test_json_export_contains_form(self, tmp_path):
         import zipfile
@@ -373,7 +307,15 @@ class TestFormExport:
         _, store = mgr.get_or_create_study("form-json")
         dir_name = mgr._label_to_dir["form-json"]
 
-        form = Form(fields=[Checkbox(name="active", default=True)])
+        form = Form(
+            fields=[
+                Question(
+                    name="active",
+                    question="Include active only?",
+                    options=["Yes", "No"],
+                ),
+            ]
+        )
         card = render(form, title="Check", store=store, study="form-json")
         mgr.register_card(card.card_id, dir_name)
 
@@ -382,7 +324,7 @@ class TestFormExport:
         with zipfile.ZipFile(out) as zf:
             cards = json.loads(zf.read("cards.json"))
             assert len(cards) == 1
-            assert cards[0]["card_type"] == "form"
+            assert cards[0]["card_type"] == "decision"
 
 
 # ================================================================
@@ -444,112 +386,44 @@ class TestFormWebSocket:
 
 
 class TestFormFieldValidation:
-    # Slider
-    def test_slider_invalid_range(self):
-        with pytest.raises(ValueError, match="range min"):
-            Slider(name="x", range=(100, 0))
-
-    def test_slider_default_out_of_range(self):
-        with pytest.raises(ValueError, match="not in range"):
-            Slider(name="x", range=(0, 10), default=20)
-
-    def test_slider_valid(self):
-        s = Slider(name="x", range=(0, 10), default=5)
-        assert s.default == 5
-
-    # RangeSlider
-    def test_range_slider_invalid_range(self):
-        with pytest.raises(ValueError, match="range min"):
-            RangeSlider(name="x", range=(100, 0))
-
-    def test_range_slider_default_reversed(self):
-        with pytest.raises(ValueError, match="default min"):
-            RangeSlider(name="x", range=(0, 100), default=(80, 20))
-
-    def test_range_slider_default_out_of_range(self):
-        with pytest.raises(ValueError, match="not within range"):
-            RangeSlider(name="x", range=(10, 50), default=(5, 30))
-
-    def test_range_slider_valid(self):
-        rs = RangeSlider(name="x", range=(0, 100), default=(20, 80))
-        assert rs.default == (20, 80)
-
-    # Dropdown
-    def test_dropdown_empty_options(self):
+    # Question
+    def test_question_empty_options(self):
         with pytest.raises(ValueError, match="non-empty"):
-            Dropdown(name="x", options=[])
+            Question(name="q", question="Pick one", options=[])
 
-    def test_dropdown_invalid_default(self):
-        with pytest.raises(ValueError, match="not in options"):
-            Dropdown(name="x", options=["a", "b"], default="c")
+    def test_question_invalid_default(self):
+        with pytest.raises(ValueError, match="not in option labels"):
+            Question(name="q", question="Pick one", options=["A", "B"], default="C")
 
-    def test_dropdown_valid_default(self):
-        d = Dropdown(name="x", options=["a", "b"], default="a")
-        assert d.default == "a"
+    def test_question_valid_default(self):
+        q = Question(name="q", question="Pick one", options=["A", "B"], default="A")
+        assert q.default == "A"
 
-    # MultiSelect
-    def test_multiselect_empty_options(self):
-        with pytest.raises(ValueError, match="non-empty"):
-            MultiSelect(name="x", options=[])
-
-    def test_multiselect_invalid_default(self):
-        with pytest.raises(ValueError, match="not in options"):
-            MultiSelect(name="x", options=["a", "b"], default=["c"])
-
-    def test_multiselect_valid(self):
-        ms = MultiSelect(name="x", options=["a", "b"], default=["a"])
-        assert ms.default == ["a"]
-
-    # RadioGroup
-    def test_radio_empty_options(self):
-        with pytest.raises(ValueError, match="non-empty"):
-            RadioGroup(name="x", options=[])
-
-    def test_radio_invalid_default(self):
-        with pytest.raises(ValueError, match="not in options"):
-            RadioGroup(name="x", options=["a", "b"], default="c")
-
-    # NumberInput
-    def test_number_min_gt_max(self):
-        with pytest.raises(ValueError, match=r"min.*max"):
-            NumberInput(name="x", min=10, max=5)
-
-    def test_number_default_below_min(self):
-        with pytest.raises(ValueError, match="less than min"):
-            NumberInput(name="x", min=0, max=10, default=-1)
-
-    def test_number_default_above_max(self):
-        with pytest.raises(ValueError, match="greater than max"):
-            NumberInput(name="x", min=0, max=10, default=20)
-
-    def test_number_valid(self):
-        n = NumberInput(name="x", min=0, max=10, default=5)
-        assert n.default == 5
-
-    # DateRange
-    def test_date_range_reversed(self):
-        with pytest.raises(ValueError, match=r"start.*end"):
-            DateRange(name="x", default=("2025-12-31", "2025-01-01"))
-
-    def test_date_range_valid(self):
-        dr = DateRange(name="x", default=("2025-01-01", "2025-12-31"))
-        assert dr.default == ("2025-01-01", "2025-12-31")
+    def test_question_multi_select_invalid_default(self):
+        with pytest.raises(ValueError, match="not in option labels"):
+            Question(
+                name="q",
+                question="Pick",
+                options=["A", "B"],
+                multi_select=True,
+                default=["C"],
+            )
 
     # Form name uniqueness
     def test_form_duplicate_names(self):
         with pytest.raises(ValueError, match="Duplicate"):
             Form(
                 fields=[
-                    Slider(name="age", range=(0, 100)),
-                    Slider(name="age", range=(0, 50)),
+                    Question(name="q", question="First?", options=["A", "B"]),
+                    Question(name="q", question="Second?", options=["X", "Y"]),
                 ]
             )
 
     def test_form_unique_names(self):
         f = Form(
             fields=[
-                Slider(name="age", range=(0, 100)),
-                Slider(name="weight", range=(0, 200)),
+                Question(name="q1", question="First?", options=["A", "B"]),
+                Question(name="q2", question="Second?", options=["X", "Y"]),
             ]
         )
         assert len(f.fields) == 2
@@ -637,7 +511,7 @@ class TestQuestionIntegration:
             ]
         )
         card = render(form, title="Interview", store=store)
-        assert card.card_type == CardType.FORM
+        assert card.card_type == CardType.DECISION
         assert "fields" in card.preview
         assert card.preview["fields"][0]["type"] == "question"
         assert len(card.preview["fields"][0]["options"]) == 2

@@ -491,7 +491,7 @@ function applyHashCard(cardParam) {
     state.pendingCardScroll = idPrefix;
     return;
   }
-  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   el.classList.remove('card-highlight');
   void el.offsetWidth;
   el.classList.add('card-highlight');

@@ -281,42 +281,64 @@ elif response.action == "Both":
 ### Form Controls: Structured Input
 
 ```python
-from m4.vitrine import show, Form, Dropdown, Slider, RangeSlider, Checkbox, RadioGroup, NumberInput
+from m4.vitrine import show, Form, Question
 
 # Standalone form — collect parameters before analysis
 response = show(
     Form([
-        Dropdown("score", ["SOFA", "APACHE III", "SAPS-II"], label="Severity Score"),
-        RangeSlider("age_range", (18, 100), label="Age Range", default=(18, 90)),
-        RadioGroup("outcome", ["30-day mortality", "In-hospital mortality", "ICU mortality"],
-                   label="Primary Outcome"),
-        Checkbox("exclude_readmissions", label="Exclude readmissions", default=True),
-        NumberInput("min_los", label="Minimum ICU stay (hours)", default=24, min=0, max=720),
+        Question(
+            name="score",
+            question="Which severity score should we use?",
+            options=[
+                ("SOFA", "Sequential Organ Failure Assessment — 6 organ systems"),
+                ("APACHE III", "Acute Physiology — more variables, mortality prediction"),
+                ("SAPS-II", "Simplified Acute Physiology — international benchmarking"),
+            ],
+            header="Score",
+        ),
+        Question(
+            name="outcome",
+            question="Which primary outcome?",
+            options=["30-day mortality", "In-hospital mortality", "ICU mortality"],
+        ),
+        Question(
+            name="exclusions",
+            question="Which exclusion criteria should we apply?",
+            options=[
+                ("Readmissions", "Exclude repeat ICU admissions"),
+                ("Short stays", "Exclude ICU stays < 24 hours"),
+                ("Pediatric", "Exclude patients < 18 years"),
+            ],
+            multi_select=True,
+            default=["Readmissions", "Pediatric"],
+        ),
     ]),
     title="Analysis Parameters",
     wait=True,
     study=RUN,
 )
 
-score = response.values["score"]                # "SOFA"
-age_lo, age_hi = response.values["age_range"]   # (18, 90)
-outcome = response.values["outcome"]            # "30-day mortality"
+score = response.values["score"]          # "SOFA"
+outcome = response.values["outcome"]      # "30-day mortality"
+exclusions = response.values["exclusions"]  # ["Readmissions", "Pediatric"]
 ```
 
-All 10 form field types:
+`Question` constructor:
 
-| Field | Constructor | Value Type |
-|-------|-------------|------------|
-| `Dropdown` | `(name, options, label, default)` | `str` |
-| `MultiSelect` | `(name, options, label, default)` | `list[str]` |
-| `Slider` | `(name, range, label, default, step)` | `number` |
-| `RangeSlider` | `(name, range, label, default, step)` | `(number, number)` |
-| `Checkbox` | `(name, label, default)` | `bool` |
-| `Toggle` | `(name, label, default)` | `bool` |
-| `RadioGroup` | `(name, options, label, default)` | `str` |
-| `TextInput` | `(name, label, default, placeholder)` | `str` |
-| `DateRange` | `(name, label, default)` | `(str, str)` |
-| `NumberInput` | `(name, label, default, min, max, step)` | `number` |
+```python
+Question(
+    name="field_name",           # unique key in response.values
+    question="Question text?",   # shown to the researcher
+    options=[                    # plain strings or (label, description) tuples
+        ("Label", "Description shown below"),
+        "Plain option",
+    ],
+    header="Chip",               # optional short tag displayed above question
+    multi_select=False,          # True → checkboxes, False → radio buttons
+    allow_other=True,            # show "Other: ___" free-text option
+    default="Label",             # pre-selected option (str or list[str])
+)
+```
 
 ### Hybrid Data + Controls
 
@@ -328,15 +350,17 @@ response = show(
     cohort_df,
     title="Cohort Preview",
     controls=[
-        Slider("sofa_threshold", (0, 24), label="Min SOFA", default=2),
-        Dropdown("icu_type", ["All", "MICU", "SICU", "CCU"], label="ICU Type"),
+        Question(
+            name="icu_type",
+            question="Filter by ICU type?",
+            options=["All", "MICU", "SICU", "CCU"],
+        ),
     ],
     wait=True,
-    prompt="Adjust filters and confirm to proceed.",
+    prompt="Review the cohort and confirm to proceed.",
     study=RUN,
 )
 
-threshold = response.values["sofa_threshold"]
 icu_type = response.values["icu_type"]
 ```
 

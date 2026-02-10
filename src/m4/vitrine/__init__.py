@@ -25,39 +25,19 @@ from typing import Any
 
 from m4.vitrine._types import (
     CardDescriptor,
-    Checkbox,
-    DateRange,
     DisplayEvent,
     DisplayHandle,
     DisplayResponse,
-    Dropdown,
     Form,
-    MultiSelect,
-    NumberInput,
     Question,
-    RadioGroup,
-    RangeSlider,
-    Slider,
-    TextInput,
-    Toggle,
 )
 
 __all__ = [
-    "Checkbox",
-    "DateRange",
     "DisplayEvent",
     "DisplayHandle",
     "DisplayResponse",
-    "Dropdown",
     "Form",
-    "MultiSelect",
-    "NumberInput",
     "Question",
-    "RadioGroup",
-    "RangeSlider",
-    "Slider",
-    "TextInput",
-    "Toggle",
     "clean_studies",
     "delete_study",
     "export",
@@ -627,21 +607,8 @@ def show(
         DisplayHandle (str subclass) when wait=False, DisplayResponse when
         wait=True.
     """
-    # Wrap bare field primitives in a Form automatically
-    _field_types = (
-        Checkbox,
-        DateRange,
-        Dropdown,
-        MultiSelect,
-        NumberInput,
-        Question,
-        RadioGroup,
-        RangeSlider,
-        Slider,
-        TextInput,
-        Toggle,
-    )
-    if isinstance(obj, _field_types):
+    # Wrap bare Question in a Form automatically
+    if isinstance(obj, Question):
         obj = Form([obj])
 
     # Forms are always decision cards — force wait=True

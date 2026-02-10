@@ -91,8 +91,18 @@ function loadStudies() {
 }
 
 function scrollToBottom() {
+  scrollToLatestCard();
+}
+
+function scrollToLatestCard() {
   requestAnimationFrame(function() {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    var cards = feed.querySelectorAll('.card:not(.hidden-by-filter):not(.hidden-by-dismiss), .section-divider:not(.hidden-by-filter)');
+    var last = cards.length ? cards[cards.length - 1] : null;
+    if (last) {
+      last.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
   });
 }
 

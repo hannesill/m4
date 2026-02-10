@@ -207,6 +207,7 @@ body {
 
 .study-metadata-bar {
   font-family: var(--font-head);
+  width: 100%;
   max-width: 1040px;
   padding: 28px 24px 0;
 }

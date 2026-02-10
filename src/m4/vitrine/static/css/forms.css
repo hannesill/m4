@@ -26,8 +26,6 @@
 .card.responded .form-field input,
 .card.responded .form-field select,
 .card.responded .form-field textarea,
-.card.responded .form-select-trigger,
-.card.responded .form-toggle-track,
 .card.responded .question-option,
 .card.responded .question-other-input {
   pointer-events: none;
@@ -113,7 +111,7 @@
 }
 
 /* ================================================================
-   FORM FIELDS — dropdown, multiselect, slider, checkbox, etc.
+   FORM FIELDS — generic container styles
    ================================================================ */
 .form-fields {
   display: flex;
@@ -134,12 +132,7 @@
   color: var(--text);
 }
 
-.form-field select,
-.form-field input[type="text"],
-.form-field input[type="number"],
-.form-field input[type="date"],
-.form-select-trigger,
-.form-date-trigger {
+.form-field input[type="text"] {
   width: 100%;
   padding: 7px 10px;
   border: 1px solid var(--border);
@@ -152,277 +145,8 @@
   transition: border-color 0.15s;
 }
 
-.form-field select:focus,
-.form-field input[type="text"]:focus,
-.form-field input[type="number"]:focus,
-.form-field input[type="date"]:focus,
-.form-select-trigger:focus-visible,
-.form-date-trigger:focus-visible {
+.form-field input[type="text"]:focus {
   border-color: var(--accent);
-}
-
-.form-field select {
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236c757d' d='M3 5l3 3 3-3'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 28px;
-}
-
-.form-hidden-input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-  width: 1px;
-  height: 1px;
-}
-
-.form-select,
-.form-date-picker {
-  position: relative;
-  width: 100%;
-}
-
-.form-select-trigger,
-.form-date-trigger {
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  text-align: left;
-}
-
-.form-select-trigger .dd-arrow,
-.form-date-trigger .dd-arrow {
-  font-size: 10px;
-  color: var(--text-muted);
-  transition: transform 0.15s;
-  flex-shrink: 0;
-}
-
-.form-select-trigger.open .dd-arrow,
-.form-date-trigger.open .dd-arrow {
-  transform: rotate(180deg);
-}
-
-.form-select-value,
-.form-date-value {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.form-select-value.placeholder,
-.form-date-value.placeholder {
-  color: var(--text-muted);
-}
-
-.form-select-panel {
-  position: fixed;
-  z-index: 9999;
-  width: max-content;
-  min-width: 180px;
-  max-height: 260px;
-  overflow-y: auto;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  animation: fadeIn 0.15s ease;
-}
-
-.form-select-option,
-.form-select-empty {
-  width: 100%;
-  border: none;
-  background: transparent;
-  color: var(--text);
-  font-size: 12px;
-  font-family: var(--font-head);
-  text-align: left;
-  padding: 8px 12px;
-}
-
-.form-select-option {
-  cursor: pointer;
-}
-
-.form-select-option:hover {
-  background: var(--bg-header);
-}
-
-.form-select-option.selected {
-  background: var(--bg-card);
-  font-weight: 600;
-}
-
-.form-select-empty {
-  color: var(--text-muted);
-}
-
-.form-calendar-panel {
-  position: fixed;
-  z-index: 9999;
-  left: 0;
-  top: 0;
-  width: min(320px, calc(100vw - 48px));
-  background: var(--card-bg);
-  border: var(--border-width) solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 10px;
-  user-select: none;
-}
-
-.form-calendar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.form-calendar-month {
-  font-family: var(--font-head);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.form-calendar-nav-btn {
-  width: 28px;
-  height: 28px;
-  border: var(--border-width) solid var(--border);
-  background: var(--card-bg);
-  color: var(--text);
-  box-shadow: var(--shadow-sm);
-  font-family: var(--font-head);
-  cursor: pointer;
-  line-height: 1;
-  transition: transform 0.1s, box-shadow 0.1s;
-}
-
-.form-calendar-nav-btn:hover {
-  transform: translate(1px, 1px);
-  box-shadow: var(--shadow-pressed);
-}
-
-.form-calendar-weekdays,
-.form-calendar-days {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 2px;
-}
-
-.form-calendar-weekday {
-  font-family: var(--font-head);
-  font-size: 10px;
-  text-align: center;
-  color: var(--text-muted);
-  padding: 2px 0;
-}
-
-.form-calendar-day {
-  border: var(--border-width) solid transparent;
-  background: var(--card-bg);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  min-height: 32px;
-  cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s, background-color 0.1s;
-}
-
-.form-calendar-day:hover {
-  background: var(--highlight);
-  transform: translate(1px, 1px);
-  box-shadow: var(--shadow-pressed);
-}
-
-.form-calendar-day.other-month {
-  opacity: 0.55;
-}
-
-.form-calendar-day.today {
-  border-color: var(--border);
-}
-
-.form-calendar-day.selected {
-  background: var(--text);
-  color: var(--card-bg);
-  border-color: var(--border);
-}
-
-.form-calendar-day:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--highlight) 80%, transparent);
-  outline-offset: 1px;
-}
-
-/* Multi-select checkboxes */
-.form-multiselect-options {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.form-multiselect-option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  cursor: pointer;
-  padding: 3px 0;
-}
-
-.form-multiselect-option input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  border: 2px solid var(--border);
-  border-radius: 0;
-  background: var(--card-bg);
-  box-shadow: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.15s;
-}
-
-/* Radio group */
-.form-radio-options {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.form-radio-option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  cursor: pointer;
-  padding: 3px 0;
-}
-
-.form-radio-option input[type="radio"] {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  border: var(--border-width) solid var(--border);
-  border-radius: 50%;
-  background: var(--card-bg);
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
 }
 
 /* Question field */
@@ -590,208 +314,6 @@
   color: color-mix(in srgb, var(--card-bg) 50%, transparent);
 }
 
-/* Slider */
-.form-slider-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.form-slider-row input[type="range"],
-.form-range-slider-row input[type="range"] {
-  --fill: 0%;
-  flex: 1;
-  -webkit-appearance: none;
-  appearance: none;
-  cursor: pointer;
-  height: 12px;
-  background: transparent;
-  margin: 0 -2px;
-}
-
-/* Track — WebKit */
-.form-slider-row input[type="range"]::-webkit-slider-runnable-track,
-.form-range-slider-row input[type="range"]::-webkit-slider-runnable-track {
-  height: 12px;
-  border: var(--border-width) solid var(--border);
-  background: linear-gradient(to right, var(--text) var(--fill), var(--card-bg) var(--fill));
-}
-
-/* Track — Firefox */
-.form-slider-row input[type="range"]::-moz-range-track,
-.form-range-slider-row input[type="range"]::-moz-range-track {
-  height: 12px;
-  border: var(--border-width) solid var(--border);
-  background: var(--card-bg);
-}
-
-/* Firefox uses ::-moz-range-progress for the filled portion */
-.form-slider-row input[type="range"]::-moz-range-progress,
-.form-range-slider-row input[type="range"]::-moz-range-progress {
-  height: 12px;
-  background: var(--text);
-  border: var(--border-width) solid var(--border);
-}
-
-/* Thumb — WebKit */
-.form-slider-row input[type="range"]::-webkit-slider-thumb,
-.form-range-slider-row input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
-  margin-top: -4px;
-  background: var(--card-bg);
-  border: var(--border-width) solid var(--border);
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s;
-}
-
-.form-slider-row input[type="range"]::-webkit-slider-thumb:hover,
-.form-range-slider-row input[type="range"]::-webkit-slider-thumb:hover {
-  transform: translate(1px, 1px);
-  box-shadow: var(--shadow-pressed);
-}
-
-/* Thumb — Firefox */
-.form-slider-row input[type="range"]::-moz-range-thumb,
-.form-range-slider-row input[type="range"]::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  background: var(--card-bg);
-  border: var(--border-width) solid var(--border);
-  border-radius: 0;
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s;
-}
-
-.form-slider-row input[type="range"]::-moz-range-thumb:hover,
-.form-range-slider-row input[type="range"]::-moz-range-thumb:hover {
-  transform: translate(1px, 1px);
-  box-shadow: var(--shadow-pressed);
-}
-
-.form-slider-row input[type="range"]:focus-visible,
-.form-range-slider-row input[type="range"]:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--highlight) 75%, transparent);
-  outline-offset: 2px;
-}
-
-.form-slider-value {
-  font-size: 12px;
-  font-family: var(--mono);
-  color: var(--text-muted);
-  min-width: 40px;
-  text-align: right;
-}
-
-/* Range slider (two handles) */
-.form-range-slider-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.form-range-value {
-  font-size: 12px;
-  font-family: var(--mono);
-  color: var(--text-muted);
-  min-width: 80px;
-  text-align: center;
-}
-
-/* Checkbox / Toggle inline */
-.form-check-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 2px 0;
-}
-
-.form-check-row input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  border: 2px solid var(--border);
-  border-radius: 0;
-  background: var(--card-bg);
-  box-shadow: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.15s;
-}
-
-.form-check-label {
-  font-size: 13px;
-  cursor: pointer;
-}
-
-/* Toggle switch */
-.form-toggle-switch {
-  position: relative;
-  width: 44px;
-  height: 24px;
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-
-.form-toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-  position: absolute;
-}
-
-.form-toggle-track {
-  position: absolute;
-  cursor: pointer;
-  inset: 0;
-  border: 2px solid var(--border);
-  background: var(--card-bg);
-  transition: background 0.2s;
-}
-
-.form-toggle-track::after {
-  content: '';
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  left: 4px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--text);
-  transition: transform 0.2s;
-}
-
-.form-toggle-switch input:checked + .form-toggle-track {
-  background: var(--text);
-}
-
-.form-toggle-switch input:checked + .form-toggle-track::after {
-  transform: translateY(-50%) translateX(20px);
-  background: var(--card-bg);
-}
-
-/* Date range */
-.form-date-range-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.form-date-range-sep {
-  font-size: 12px;
-  color: var(--text-muted);
-  align-self: center;
-}
-
 /* Frozen form (confirmed) */
 .form-frozen {
   display: flex;
@@ -860,28 +382,17 @@
   transition: background-color 0.15s;
 }
 
-.form-multiselect-option input[type="checkbox"]:hover,
-.form-check-row input[type="checkbox"]:hover,
 .table-wrapper td.select-col input[type="checkbox"]:hover,
 .table-wrapper th.select-col input[type="checkbox"]:hover {
   border-color: var(--text);
 }
 
-.form-radio-option input[type="radio"]:hover {
-  transform: translate(1px, 1px);
-  box-shadow: var(--shadow-pressed);
-}
-
-.form-multiselect-option input[type="checkbox"]:checked,
-.form-check-row input[type="checkbox"]:checked,
 .table-wrapper td.select-col input[type="checkbox"]:checked,
 .table-wrapper th.select-col input[type="checkbox"]:checked {
   background-color: var(--text);
   box-shadow: none;
 }
 
-.form-multiselect-option input[type="checkbox"]:checked::after,
-.form-check-row input[type="checkbox"]:checked::after,
 .table-wrapper td.select-col input[type="checkbox"]:checked::after,
 .table-wrapper th.select-col input[type="checkbox"]:checked::after {
   content: '';
@@ -893,15 +404,8 @@
   margin-bottom: 2px;
 }
 
-.form-radio-option input[type="radio"]:checked {
-  background: radial-gradient(circle at center, var(--card-bg) 0 34%, var(--text) 40%);
-}
-
-.form-multiselect-option input[type="checkbox"]:focus-visible,
-.form-check-row input[type="checkbox"]:focus-visible,
 .table-wrapper td.select-col input[type="checkbox"]:focus-visible,
-.table-wrapper th.select-col input[type="checkbox"]:focus-visible,
-.form-radio-option input[type="radio"]:focus-visible {
+.table-wrapper th.select-col input[type="checkbox"]:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--highlight) 75%, transparent);
   outline-offset: 1px;
 }

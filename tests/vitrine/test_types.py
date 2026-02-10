@@ -19,7 +19,6 @@ from m4.vitrine._types import (
     DisplayResponse,
     Form,
     Question,
-    Slider,
 )
 
 
@@ -44,7 +43,7 @@ class TestCardType:
             "section",
             "plotly",
             "image",
-            "form",
+            "decision",
         }
         actual = {ct.value for ct in CardType}
         assert actual == expected
@@ -351,13 +350,13 @@ class TestQuestion:
         form = Form(
             fields=[
                 Question(name="score", question="Which?", options=["SOFA", "APACHE"]),
-                Slider(name="threshold", range=(0, 100)),
+                Question(name="method", question="How?", options=["logistic", "cox"]),
             ]
         )
         assert len(form.fields) == 2
         d = form.to_dict()
         assert d["fields"][0]["type"] == "question"
-        assert d["fields"][1]["type"] == "slider"
+        assert d["fields"][1]["type"] == "question"
 
     def test_question_duplicate_name_in_form(self):
         with pytest.raises(ValueError, match="Duplicate"):

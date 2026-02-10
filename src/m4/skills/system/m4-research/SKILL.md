@@ -98,69 +98,221 @@ The `show()` function prints a waiting message automatically, but your narration
 
 ## Phase 1: Research Interview
 
-**Collect study parameters through a vitrine form.** This captures the researcher's intent in the study journal from the start.
+**Collect study parameters through one or more vitrine forms.** This captures the researcher's intent in the study journal from the start.
 
-Tell the researcher what you've posted before the blocking call:
+The interview is **adaptive, not fixed**. Compose forms from the question library below based on what you already know from the user's initial description. If the user said "I want to study mortality in septic shock patients," you already know the population and can skip that question. If the study design is ambiguous, add a follow-up form. You may use a single form or several rounds — just like the old AskUserQuestion flow, but rendered in vitrine.
 
-> "I've posted the study parameters form in vitrine. Please fill in your research question, study design, and key parameters — I'll review everything and discuss refinements before we proceed."
+**Guidelines for composing forms:**
+- **`Question`** is the only field type. It gives premade options with an "Other" freeform fallback. Use it for everything.
+- **Skip questions** the user already answered in their prompt. Don't re-ask what you already know.
+- **Add questions** not in the library if the research question demands it (e.g., specific time windows, subgroup definitions, clustering method preferences).
+- **Split into multiple forms** when it makes sense — e.g., a quick first form for the basics, then a targeted follow-up after you've processed the answers.
+
+Tell the researcher what you've posted before each blocking call.
+
+### Question Library
+
+Use `from m4.vitrine import Form, Question` and compose from these:
+
+**Research question** — Use `Question` with `allow_other=True` so the researcher can refine freely:
+```python
+Question("question", question="Research Question",
+         options=[
+             ("Association study", "Is variable X associated with outcome Y?"),
+             ("Prediction model", "Can we predict outcome Y from variables X?"),
+             ("Cohort characterization", "What are the characteristics of population P?"),
+         ],
+         allow_other=True)
+```
+
+**Study design:**
+```python
+Question("design", question="Study Design",
+         options=[
+             ("Descriptive", "Characterize a cohort — demographics, severity, outcomes"),
+             ("Comparative", "Compare groups — treatment vs control, exposed vs unexposed"),
+             ("Predictive", "Build or validate a prediction model"),
+             ("Exploratory", "Hypothesis-generating — clustering, pattern discovery, subgroup search"),
+         ])
+```
+
+**Primary outcome:**
+```python
+Question("outcome", question="Primary Outcome",
+         options=[
+             ("In-hospital mortality", "hospital_expire_flag in admissions"),
+             ("28-day mortality", "dod relative to admission or ICU entry"),
+             ("90-day mortality", "dod relative to admission or ICU entry"),
+             ("ICU length of stay", "los in icustays — beware survivor bias"),
+             ("Hospital length of stay", "dischtime minus admittime — beware survivor bias"),
+             ("Ventilator-free days", "28 minus days on mechanical ventilation"),
+             ("Vasopressor-free days", "28 minus days on vasopressors"),
+             ("Organ-failure-free days", "28 minus days with SOFA sub-score >= 3"),
+             ("ICU readmission", "Subsequent ICU stay within same hospitalization"),
+             ("AKI incidence", "KDIGO stage 2+ after exposure window"),
+             ("Delirium incidence", "CAM-ICU positive or antipsychotic use"),
+             ("Composite endpoint", "Combine multiple outcomes — specify in notes"),
+         ])
+```
+
+**Exposure / intervention:**
+```python
+Question("exposure", question="Exposure / Intervention",
+         options=[
+             ("Treatment timing", "Early vs late initiation of a therapy"),
+             ("Treatment dose / intensity", "High vs low dose, or dose trajectory over time"),
+             ("Treatment received vs not", "Binary: any use within a defined window"),
+             ("Severity score / biomarker", "Continuous or categorical exposure variable"),
+             ("Trajectory / pattern", "Time-series clustering or phenotyping of a variable"),
+             ("None (descriptive study)", "No exposure — cohort characterization only"),
+         ])
+```
+
+**Population:**
+```python
+Question("population", question="Base Population",
+         options=[
+             ("Sepsis (Sepsis-3)", "SOFA >= 2 + suspected infection"),
+             ("Septic shock", "Sepsis-3 + vasopressor + lactate > 2 mmol/L"),
+             ("ARDS / respiratory failure", "Berlin criteria or P/F ratio-based"),
+             ("Cardiac arrest / post-resuscitation", "In- or out-of-hospital cardiac arrest"),
+             ("Heart failure / cardiogenic shock", "Acute decompensated HF or cardiogenic shock"),
+             ("Acute kidney injury", "KDIGO criteria — creatinine and/or urine output"),
+             ("Traumatic brain injury", "GCS-based or ICD-based TBI identification"),
+             ("Stroke", "Ischemic or hemorrhagic — ICD-based"),
+             ("Post-cardiac surgery", "CABG, valve replacement, or other cardiac procedures"),
+             ("Post-major surgery (non-cardiac)", "Major abdominal, thoracic, vascular, etc."),
+             ("Liver failure / cirrhosis", "Acute liver failure or decompensated cirrhosis"),
+             ("General ICU", "All ICU admissions, no disease-specific filter"),
+         ])
+```
+
+**Exclusion criteria:**
+```python
+Question("exclusions", question="Exclusion Criteria (select all that apply)",
+         multi_select=True,
+         options=[
+             ("First ICU stay only", "Exclude readmissions — one observation per patient"),
+             ("Age < 18", "Exclude pediatric patients"),
+             ("ICU stay < 24h", "Minimum observation window — watch for immortal time bias"),
+             ("ICU stay < 48h", "Longer minimum window for trajectory studies"),
+             ("Early death", "Exclude death within N hours of admission — specify N"),
+             ("DNR / comfort care on admission", "Exclude patients with treatment limitations"),
+             ("Chronic dialysis / ESRD", "Exclude pre-existing end-stage renal disease"),
+             ("Chronic ventilator dependence", "Exclude long-term ventilator patients"),
+             ("Transferred from another hospital", "Unclear illness onset and prior treatment"),
+             ("Missing key variables", "Exclude if critical data points are absent"),
+         ])
+```
+
+**Confounders:**
+```python
+Question("confounders", question="Key Confounders to Adjust For (select all that apply)",
+         multi_select=True,
+         options=[
+             ("Age, sex", "Basic demographics"),
+             ("BMI / weight", "Body habitus — available in chartevents"),
+             ("Race / ethnicity", "Use with caution — document rationale for inclusion"),
+             ("Illness severity (SOFA)", "Organ dysfunction at baseline"),
+             ("Illness severity (APACHE III / SAPS-II)", "Composite severity scores"),
+             ("Charlson / Elixhauser comorbidities", "Pre-existing chronic conditions"),
+             ("Admission type", "Medical vs surgical vs trauma"),
+             ("Admission source", "ED, floor, OR, outside transfer"),
+             ("Baseline labs", "Lactate, creatinine, bilirubin, platelets, etc."),
+             ("Fluid balance / resuscitation volume", "Cumulative input minus output"),
+             ("Mechanical ventilation status", "On/off MV at baseline"),
+             ("Vasopressor use at baseline", "Already on vasopressors at time zero"),
+             ("Prior hospitalizations", "Number or recency of prior admissions"),
+         ])
+```
+
+**Dataset:**
+```python
+Question("dataset", question="Primary Dataset",
+         options=[
+             ("mimic-iv", "Full MIMIC-IV (requires access)"),
+             ("mimic-iv-demo", "100 patients, good for testing queries"),
+             ("eicu", "Multi-center ICU database"),
+             ("mimic-iv-note", "Clinical notes from MIMIC-IV"),
+         ],
+         allow_other=False)
+```
+
+### Composing the Form
+
+Pick the questions you need and assemble them. Example for a study where the user already specified the population:
 
 ```python
-from m4.vitrine import Form, TextInput, RadioGroup, Dropdown
-
 response = show(
     Form([
-        TextInput("question", label="Research Question",
-                  placeholder="e.g., Is day-1 SOFA independently associated with 30-day mortality in sepsis?"),
-        RadioGroup("design", ["Descriptive", "Comparative", "Predictive", "Exploratory"],
-                   label="Study Design"),
-        TextInput("outcome", label="Primary Outcome",
-                  placeholder="e.g., 30-day mortality, in-hospital mortality, ICU LOS"),
-        TextInput("exposure", label="Exposure / Intervention",
-                  placeholder="e.g., Vasopressor within 6h of sepsis onset (blank for descriptive studies)"),
-        TextInput("population", label="Population & Exclusions",
-                  placeholder="e.g., Adult, first ICU stay, Sepsis-3, exclude death <6h"),
-        TextInput("confounders", label="Key Confounders",
-                  placeholder="e.g., Age, SOFA, admission source, comorbidities"),
-        Dropdown("dataset", ["mimic-iv", "mimic-iv-demo", "eicu", "mimic-iv-note"],
-                 label="Dataset"),
+        Question("question", question="Research Question", options=[...], allow_other=True),
+        Question("design", question="Study Design", options=[...]),
+        Question("outcome", question="Primary Outcome", options=[...]),
+        Question("exposure", question="Exposure / Intervention", options=[...]),
+        # population already known — skip it
+        Question("exclusions", question="Exclusion Criteria", multi_select=True, options=[...]),
+        Question("dataset", question="Primary Dataset",
+                 options=[("mimic-iv", "Full"), ("mimic-iv-demo", "Demo"), ("eicu", "Multi-center")],
+                 allow_other=False),
     ]),
     title="Study Parameters",
     prompt="Define your research study",
     study=STUDY,
 )
-
 params = response.values
+```
+
+If you need follow-up details after the first form (e.g., specific time windows, method preferences), show a second form:
+
+```python
+response2 = show(
+    Form([
+        Question("time_window", question="Exposure time window",
+                 options=[
+                     ("First 6 hours", "From ICU admission or vasopressor start"),
+                     ("First 24 hours", "Full first day"),
+                     ("First 48 hours", "Two-day window"),
+                 ]),
+        Question("method", question="Preferred analysis method",
+                 options=[...]),
+    ]),
+    title="Follow-up — Study Details",
+    prompt="A few more details to finalize the protocol",
+    study=STUDY,
+)
 ```
 
 ### Reviewing the Response
 
-After the researcher submits the form, review each parameter in the terminal and discuss refinements before proceeding to the protocol.
+After each form submission, review the answers in the terminal and discuss refinements before proceeding to the protocol. Pay attention to "Other" entries — these need the most help getting precise.
 
 **Research Question** — Should be specific and answerable with available data. Help refine vague questions:
 - "Are sicker patients dying more?" → "Is day-1 SOFA score independently associated with 30-day mortality in sepsis patients?"
 
-**Outcome** — Common outcomes and how to define them:
+**Outcome** — Confirm operationalization. Key considerations:
 - **In-hospital mortality**: `hospital_expire_flag` in admissions table
-- **30-day mortality**: Compare `dod` to discharge time + 30 days
-- **ICU length of stay**: `los` in icustays, be wary of survivor bias
-- **Readmission**: Subsequent `hadm_id` for same `subject_id`
+- **28/90-day mortality**: Compare `dod` to admission/discharge + N days — requires `dod` availability
+- **ICU/hospital LOS**: Beware survivor bias — sicker patients who die early have shorter LOS
+- **Ventilator/vasopressor/organ-failure-free days**: Require 28-day follow-up window definition
+- **Composite endpoints**: Specify components and how they combine
+- Custom outcomes via "Other" need precise operationalization
 
-**Exposure** — For treatment comparisons, check:
-- How is treatment defined? (any use vs duration vs dose)
-- When is exposure status determined? (admission, 24h, 48h)
-- What's the comparator? (no treatment, alternative treatment)
+**Exposure** — Nail down specifics:
+- What's the exact time window? (admission, 6h, 24h, 48h)
+- What's the comparator? (no treatment, late treatment, alternative treatment)
+- Is immortal time bias a concern with this exposure definition?
+- For trajectory/pattern studies: what variable, what time resolution, what clustering approach?
 
-**Population** — Standard considerations:
-- First ICU stay only? (avoid correlated observations)
-- Age restrictions? (pediatric exclusion common)
-- Minimum ICU stay? (be careful of immortal time bias)
-- Specific diagnoses? (ICD codes are assigned at discharge — information leakage risk)
+**Population & Exclusions** — Review whether:
+- Selected exclusions are appropriate (e.g., "ICU stay < 24h" introduces immortal time bias for some designs)
+- Additional exclusions are needed based on the research question
+- ICD-based diagnoses risk information leakage (codes assigned at discharge)
 
-**Confounders** — Common in ICU research:
-- Age, sex, comorbidities
-- Illness severity (SOFA, APACHE, SAPS)
-- Admission type (medical vs surgical vs trauma)
-- Hospital/unit effects
+**Confounders** — Check whether:
+- Selected confounders are sufficient for the study design
+- For treatment comparisons, consider propensity scores over simple regression adjustment
+- Any selected confounder is actually a mediator (on the causal path — should NOT be adjusted for)
+- Race/ethnicity inclusion is justified and documented
 
 **Dataset**:
 - **mimic-iv**: Full MIMIC-IV (requires access)
@@ -345,35 +497,51 @@ Use for complex analyses:
 
 **User**: "I want to study if early vasopressor use affects mortality in sepsis"
 
-**Agent creates the study and shows the interview form:**
+**Agent creates the study.** The user already told us: comparative design, sepsis population, vasopressor exposure, mortality-related. So the agent skips questions it can infer and asks only what's missing:
 
 ```python
 STUDY = "early-vasopressors-sepsis-v1"
 output_dir = register_output_dir(study=STUDY)
 ```
 
-> "I've posted the study parameters form in vitrine. Please fill in your research question and key study parameters — I'll review everything and we can refine before proceeding."
+> "I've posted a few questions in vitrine to pin down the details — outcome definition, exclusion criteria, and dataset. I already know this is a comparative study in sepsis looking at vasopressor timing."
 
 ```python
+from m4.vitrine import Form, Question
+
 response = show(
     Form([
-        TextInput("question", label="Research Question",
-                  placeholder="e.g., Is early vasopressor use associated with lower mortality in sepsis?"),
-        RadioGroup("design", ["Descriptive", "Comparative", "Predictive", "Exploratory"],
-                   label="Study Design"),
-        TextInput("outcome", label="Primary Outcome",
-                  placeholder="e.g., 28-day mortality"),
-        TextInput("exposure", label="Exposure / Intervention",
-                  placeholder="e.g., Vasopressor within 6h of sepsis onset"),
-        TextInput("population", label="Population & Exclusions",
-                  placeholder="e.g., Adult, first ICU stay, Sepsis-3"),
-        TextInput("confounders", label="Key Confounders",
-                  placeholder="e.g., Age, SOFA, admission source, comorbidities"),
-        Dropdown("dataset", ["mimic-iv", "mimic-iv-demo", "eicu", "mimic-iv-note"],
-                 label="Dataset"),
+        Question("outcome", question="Primary Outcome",
+                 options=[
+                     ("In-hospital mortality", "hospital_expire_flag in admissions"),
+                     ("28-day mortality", "dod relative to admission or ICU entry"),
+                     ("90-day mortality", "dod relative to admission or ICU entry"),
+                 ]),
+        Question("early_window", question="How do you define 'early' vasopressor use?",
+                 options=[
+                     ("Within 1 hour of sepsis onset", "Aggressive early resuscitation"),
+                     ("Within 3 hours", "Per Surviving Sepsis Campaign bundles"),
+                     ("Within 6 hours", "Broader early window"),
+                 ]),
+        Question("exclusions", question="Exclusion Criteria (select all that apply)",
+                 multi_select=True,
+                 options=[
+                     ("First ICU stay only", "Exclude readmissions"),
+                     ("Age < 18", "Adults only"),
+                     ("Early death", "Exclude death within N hours — avoids immortal time bias"),
+                     ("DNR / comfort care on admission", "Exclude treatment limitations"),
+                     ("Already on vasopressors at admission", "Unclear time-zero"),
+                 ]),
+        Question("dataset", question="Primary Dataset",
+                 options=[
+                     ("mimic-iv", "Full MIMIC-IV (requires access)"),
+                     ("mimic-iv-demo", "100 patients, good for testing queries"),
+                     ("eicu", "Multi-center ICU database"),
+                 ],
+                 allow_other=False),
     ]),
-    title="Study Parameters",
-    prompt="Define your research study",
+    title="Study Parameters — Early Vasopressors in Sepsis",
+    prompt="Confirm these details so I can draft the protocol",
     study=STUDY,
 )
 params = response.values
@@ -381,13 +549,32 @@ params = response.values
 
 **Agent reviews the form response and refines in the terminal:**
 
-> "Good parameters. A few refinements I'd suggest:
+> "Good choices. A few refinements:
 >
-> Your question says 'early vasopressor use' — I'd recommend defining 'early' as within 6 hours of suspected infection onset, using the suspicion-of-infection skill. The comparator would be vasopressor >6h or never.
+> You selected 'within 6 hours' — I'd anchor that to suspected infection onset using the suspicion-of-infection skill, not ICU admission. The comparator would be vasopressor started >6h after infection onset, or never.
 >
-> For population, we should also exclude patients who died within 6 hours (immortal time bias) and those already on vasopressors at admission.
+> For the 'early death' exclusion — I'd recommend excluding death within the same window (6 hours) to avoid immortal time bias.
 >
-> For confounders, given this is a treatment comparison, I'd recommend propensity score matching rather than just regression adjustment."
+> For confounders, given this is a treatment comparison, I'd recommend propensity score matching on age, SOFA, admission source, comorbidities, and lactate rather than just regression adjustment. Does that sound right?"
+
+**Agent may show a short follow-up form if needed:**
+
+```python
+response2 = show(
+    Form([
+        Question("matching", question="Adjustment method for confounding",
+                 options=[
+                     ("Propensity score matching", "1:1 or 1:N nearest-neighbor matching"),
+                     ("Inverse probability weighting", "Weight by propensity score"),
+                     ("Multivariable regression", "Covariate adjustment in outcome model"),
+                     ("All of the above as sensitivity analyses", "Primary + sensitivity"),
+                 ]),
+    ]),
+    title="Analysis Method",
+    prompt="How should we handle confounding?",
+    study=STUDY,
+)
+```
 
 **Agent drafts protocol and asks for approval:**
 

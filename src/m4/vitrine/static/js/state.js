@@ -47,7 +47,6 @@ var TYPE_LETTERS = {
   image: 'I',
   keyvalue: 'K',
   section: 'S',
-  form: 'F',
   decision: '!',
 };
 
