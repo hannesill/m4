@@ -88,6 +88,11 @@ body {
   padding: 10px 0;
 }
 
+body {
+  padding-top: 51px;
+  padding-bottom: 33px;
+}
+
 .header-inner {
   max-width: 1040px;
   padding: 0 24px;

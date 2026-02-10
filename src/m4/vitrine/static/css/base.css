@@ -42,14 +42,21 @@ body {
   color: var(--text);
   line-height: 1.5;
   transition: background 0.2s, color 0.2s;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-top: 49px;
+  padding-bottom: 31px;
 }
 
 /* ================================================================
    LAYOUT & HEADER
    ================================================================ */
 .header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
