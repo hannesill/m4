@@ -1,7 +1,7 @@
 'use strict';
 
 // ================================================================
-// CARD RENDERING — addCard, updateCard, copy, toast
+// CARD RENDERING — addCard, updateCard, toast
 // ================================================================
 function addCard(cardData) {
   // Remove empty state if present
@@ -40,7 +40,6 @@ function addCard(cardData) {
 
   var el = document.createElement('div');
   el.className = 'card';
-  if (cardData.pinned) el.className += ' pinned';
   el.id = 'card-' + cardData.card_id;
   el.dataset.study = cardData.study || '';
   el.dataset.cardId = cardData.card_id;
@@ -92,35 +91,6 @@ function addCard(cardData) {
   // Action buttons
   var actions = document.createElement('div');
   actions.className = 'card-actions';
-
-  // Copy button
-  var copyBtn = document.createElement('button');
-  copyBtn.className = 'card-action-btn';
-  copyBtn.innerHTML = '&#128203;';
-  copyBtn.title = 'Copy content';
-  copyBtn.setAttribute('aria-label', 'Copy content');
-  copyBtn.onclick = function(e) {
-    e.stopPropagation();
-    copyCardContent(cardData, copyBtn);
-  };
-  actions.appendChild(copyBtn);
-
-  // Pin button
-  var pinBtn = document.createElement('button');
-  pinBtn.className = 'card-action-btn' + (cardData.pinned ? ' pinned' : '');
-  pinBtn.innerHTML = '&#128204;';
-  pinBtn.title = cardData.pinned ? 'Unpin' : 'Pin';
-  pinBtn.setAttribute('aria-label', cardData.pinned ? 'Unpin card' : 'Pin card');
-  pinBtn.onclick = function(e) {
-    e.stopPropagation();
-    cardData.pinned = !cardData.pinned;
-    pinBtn.classList.toggle('pinned', cardData.pinned);
-    el.classList.toggle('pinned', cardData.pinned);
-    el.dataset.pinned = cardData.pinned ? 'true' : 'false';
-    pinBtn.title = cardData.pinned ? 'Unpin' : 'Pin';
-    pinBtn.setAttribute('aria-label', cardData.pinned ? 'Unpin card' : 'Pin card');
-  };
-  actions.appendChild(pinBtn);
 
   header.appendChild(actions);
   el.appendChild(header);
@@ -204,48 +174,6 @@ function addCard(cardData) {
 
   updateCardCount();
   scrollToBottom();
-}
-
-function copyCardContent(cardData, btn) {
-  var text = '';
-  if (cardData.card_type === 'markdown') {
-    text = (cardData.preview && cardData.preview.text) || '';
-  } else if (cardData.card_type === 'keyvalue') {
-    var items = (cardData.preview && cardData.preview.items) || {};
-    text = Object.keys(items).map(function(k) { return k + ': ' + items[k]; }).join('\n');
-  } else if (cardData.card_type === 'table') {
-    var p = cardData.preview;
-    if (p && p.columns) {
-      text = p.columns.join('\t') + '\n';
-      (p.preview_rows || []).forEach(function(row) {
-        text += row.map(function(v) { return v === null ? '' : String(v); }).join('\t') + '\n';
-      });
-    }
-  } else if (cardData.card_type === 'plotly') {
-    text = JSON.stringify(cardData.preview && cardData.preview.spec, null, 2);
-  } else if (cardData.card_type === 'image') {
-    // For images, copy the artifact URL so it can be opened/embedded
-    text = cardData.artifact_id
-      ? location.origin + '/api/artifact/' + cardData.artifact_id
-      : '(no artifact)';
-  } else if (cardData.preview && cardData.preview.fields) {
-    var fields = cardData.preview.fields;
-    text = fields.map(function(f) {
-      return (f.label || f.name) + ': ' + (f.default != null ? String(f.default) : '');
-    }).join('\n');
-  } else {
-    text = JSON.stringify(cardData.preview, null, 2);
-  }
-
-  navigator.clipboard.writeText(text).then(function() {
-    btn.classList.add('copied');
-    btn.innerHTML = '&#10003;';
-    showToast('Copied to clipboard');
-    setTimeout(function() {
-      btn.classList.remove('copied');
-      btn.innerHTML = '&#128203;';
-    }, 1500);
-  }).catch(function() {});
 }
 
 function showToast(msg, type) {

@@ -68,29 +68,6 @@ function renderTable(container, cardData) {
     };
     toolbar.appendChild(exportCsvBtn);
 
-    var copyTsvBtn = document.createElement('button');
-    copyTsvBtn.className = 'export-btn';
-    copyTsvBtn.textContent = 'Copy TSV';
-    copyTsvBtn.onclick = function() {
-      var tbody = wrapper.querySelector('tbody');
-      var headerCells = wrapper.querySelectorAll('thead th:not(.select-col)');
-      var headers = [];
-      headerCells.forEach(function(th) {
-        // Get just the column name text (not the sort indicator or type badge)
-        headers.push(th.firstChild.textContent);
-      });
-      var lines = [headers.join('\t')];
-      var bodyRows = tbody.querySelectorAll('tr');
-      bodyRows.forEach(function(tr) {
-        var cells = [];
-        tr.querySelectorAll('td:not(.select-col)').forEach(function(td) { cells.push(td.textContent); });
-        lines.push(cells.join('\t'));
-      });
-      navigator.clipboard.writeText(lines.join('\n')).then(function() {
-        showToast('Copied TSV to clipboard');
-      }).catch(function() {});
-    };
-    toolbar.appendChild(copyTsvBtn);
   }
 
   container.appendChild(toolbar);
