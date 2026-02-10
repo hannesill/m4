@@ -133,31 +133,23 @@ function sendResponse(cardData, cardEl, action, message) {
     }));
   }
 
-  // Update UI: remove response panel, remove waiting style
+  // Update UI: remove response panel, keep decision branding
   var responseUI = cardEl.querySelector('.card-response-ui');
   if (responseUI) {
     if (responseUI._timer) clearInterval(responseUI._timer);
     responseUI.remove();
   }
   cardEl.classList.remove('waiting');
-  var headerEl = cardEl.querySelector('.card-header');
-  if (headerEl) {
-    headerEl.setAttribute('data-type', cardData.card_type);
-    var iconEl = headerEl.querySelector('.card-type-icon');
-    if (iconEl) {
-      iconEl.setAttribute('data-type', cardData.card_type);
-      iconEl.textContent = TYPE_LETTERS[cardData.card_type] || '?';
-    }
-  }
+  cardEl.classList.add('responded');
   // Clear agent status
   updateAgentStatus('');
 
   // Freeze form: replace interactive fields with compact frozen display
-  if (action === 'confirm' && hasFormFields && Object.keys(formValues).length > 0) {
+  if (hasFormFields && Object.keys(formValues).length > 0) {
     var formBody = cardEl.querySelector('.card-body');
     var controlsBar = cardEl.querySelector('.card-controls-bar');
     var fields = (cardData.preview && cardData.preview.fields) || (cardData.preview && cardData.preview.controls) || [];
-    if (cardData.card_type === 'form' && formBody) {
+    if (cardData.preview && cardData.preview.fields && formBody) {
       formBody.innerHTML = '';
       renderFrozenForm(formBody, formValues, fields);
     }
@@ -167,10 +159,16 @@ function sendResponse(cardData, cardEl, action, message) {
     }
   }
 
-  // Show confirmation badge
+  // Show response badge
   var badge = document.createElement('span');
   badge.className = 'sent-badge';
-  badge.textContent = action === 'confirm' ? 'Confirmed' : 'Skipped';
+  if (action === 'confirm') {
+    badge.textContent = 'Confirmed';
+  } else if (action === 'skip') {
+    badge.textContent = 'Skipped';
+  } else {
+    badge.textContent = action;
+  }
   var header = cardEl.querySelector('.card-header');
   if (header) header.appendChild(badge);
 }

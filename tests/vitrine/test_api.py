@@ -540,6 +540,64 @@ class TestBlockingShow:
         assert isinstance(result, str)
 
 
+class TestFormAutoWait:
+    def test_form_auto_blocks(self, store, mock_server):
+        """show(Form(...)) auto-sets wait=True and returns DisplayResponse."""
+        from m4.vitrine._types import Dropdown, Form
+
+        mock_server._mock_response = {
+            "action": "confirm",
+            "card_id": "test",
+            "values": {"method": "logistic"},
+        }
+        result = display.show(Form([Dropdown("method", ["logistic", "cox"])]))
+        assert isinstance(result, DisplayResponse)
+        assert result.action == "confirm"
+
+    def test_form_explicit_wait_false_still_blocks(self, store, mock_server):
+        """show(Form(...), wait=False) still blocks because forms force wait=True."""
+        from m4.vitrine._types import Dropdown, Form
+
+        mock_server._mock_response = {"action": "skip", "card_id": "test"}
+        result = display.show(
+            Form([Dropdown("method", ["logistic", "cox"])]), wait=False
+        )
+        assert isinstance(result, DisplayResponse)
+        assert result.action == "skip"
+
+    def test_form_renders_as_markdown_card(self, store, mock_server):
+        """Form cards are stored as MARKDOWN with preview.fields."""
+        from m4.vitrine._types import Dropdown, Form
+
+        mock_server._mock_response = {"action": "confirm", "card_id": "test"}
+        display.show(Form([Dropdown("method", ["logistic", "cox"])]))
+        cards = store.list_cards()
+        assert len(cards) == 1
+        assert cards[0].card_type == CardType.MARKDOWN
+        assert "fields" in cards[0].preview
+
+    def test_form_sets_response_requested(self, store, mock_server):
+        """Form cards always have response_requested=True."""
+        from m4.vitrine._types import Dropdown, Form
+
+        mock_server._mock_response = {"action": "confirm", "card_id": "test"}
+        display.show(Form([Dropdown("method", ["logistic", "cox"])]))
+        cards = store.list_cards()
+        assert cards[0].response_requested is True
+
+    def test_controls_auto_blocks(self, store, mock_server):
+        """show(df, controls=[...]) auto-sets wait=True."""
+        from m4.vitrine._types import Dropdown
+
+        mock_server._mock_response = {"action": "confirm", "card_id": "test"}
+        import pandas as pd
+
+        df = pd.DataFrame({"x": [1, 2]})
+        result = display.show(df, controls=[Dropdown("method", ["a", "b"])])
+        assert isinstance(result, DisplayResponse)
+        assert result.action == "confirm"
+
+
 class TestActions:
     def test_actions_stored_in_card(self, store, mock_server):
         mock_server._mock_response = {"action": "Approve", "card_id": "x"}

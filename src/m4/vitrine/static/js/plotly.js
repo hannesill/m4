@@ -24,35 +24,37 @@ function renderPlotly(container, cardData) {
     var config = { responsive: true, displayModeBar: true, displaylogo: false };
 
     window.Plotly.newPlot(plotDiv, data, layout, config).then(function() {
-      // Attach point selection event
-      plotDiv.on('plotly_selected', function(eventData) {
-        if (eventData && state.ws && state.connected) {
-          var points = (eventData.points || []).map(function(pt) {
-            return { x: pt.x, y: pt.y, pointIndex: pt.pointIndex, curveNumber: pt.curveNumber };
-          });
-          var indices = points.map(function(pt) { return pt.pointIndex; });
-          state.ws.send(JSON.stringify({
-            type: 'vitrine.event',
-            event_type: 'selection',
-            card_id: cardData.card_id,
-            payload: { selected_indices: indices, points: points },
-          }));
-        }
-      });
+      // Attach point selection event (guard against missing .on method)
+      if (typeof plotDiv.on === 'function') {
+        plotDiv.on('plotly_selected', function(eventData) {
+          if (eventData && state.ws && state.connected) {
+            var points = (eventData.points || []).map(function(pt) {
+              return { x: pt.x, y: pt.y, pointIndex: pt.pointIndex, curveNumber: pt.curveNumber };
+            });
+            var indices = points.map(function(pt) { return pt.pointIndex; });
+            state.ws.send(JSON.stringify({
+              type: 'vitrine.event',
+              event_type: 'selection',
+              card_id: cardData.card_id,
+              payload: { selected_indices: indices, points: points },
+            }));
+          }
+        });
 
-      plotDiv.on('plotly_click', function(eventData) {
-        if (eventData && state.ws && state.connected) {
-          var points = (eventData.points || []).map(function(pt) {
-            return { x: pt.x, y: pt.y, pointIndex: pt.pointIndex, curveNumber: pt.curveNumber };
-          });
-          state.ws.send(JSON.stringify({
-            type: 'vitrine.event',
-            event_type: 'point_click',
-            card_id: cardData.card_id,
-            payload: { points: points },
-          }));
-        }
-      });
+        plotDiv.on('plotly_click', function(eventData) {
+          if (eventData && state.ws && state.connected) {
+            var points = (eventData.points || []).map(function(pt) {
+              return { x: pt.x, y: pt.y, pointIndex: pt.pointIndex, curveNumber: pt.curveNumber };
+            });
+            state.ws.send(JSON.stringify({
+              type: 'vitrine.event',
+              event_type: 'point_click',
+              card_id: cardData.card_id,
+              payload: { points: points },
+            }));
+          }
+        });
+      }
     });
   }
 
@@ -97,9 +99,14 @@ function loadPlotly(callback) {
     state.plotlyLoaded = false;
     var cbs = state.plotlyCallbacks;
     state.plotlyCallbacks = [];
-    cbs.forEach(function(cb) {
-      // Attempt fallback: render as static image if artifact exists
+    // Show error in any pending plot containers
+    var containers = document.querySelectorAll('.plotly-container');
+    containers.forEach(function(el) {
+      if (!el.querySelector('.js-plotly-plot')) {
+        el.innerHTML = '<div class="chart-loading" style="color:var(--text-muted)">Failed to load chart library</div>';
+      }
     });
+    cbs.forEach(function(cb) { if (cb) cb(); });
   };
   document.head.appendChild(script);
 }

@@ -12,6 +12,26 @@
 
 .card.waiting { animation: subtlePulse 3s ease-in-out infinite; }
 
+/* Responded: keep decision border, stop animation, freeze inputs */
+.card.responded {
+  border-left: 3px solid var(--accent);
+  animation: none;
+}
+
+.card.responded .select-col input[type="checkbox"] {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.card.responded .form-field input,
+.card.responded .form-field select,
+.card.responded .form-field textarea,
+.card.responded .form-select-trigger,
+.card.responded .form-toggle-track {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
 /* Response UI panel */
 .card-response-ui {
   padding: 12px 16px;
@@ -200,11 +220,9 @@
 }
 
 .form-select-panel {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  z-index: 125;
-  width: 100%;
+  position: fixed;
+  z-index: 9999;
+  width: max-content;
   min-width: 180px;
   max-height: 260px;
   overflow-y: auto;
@@ -245,10 +263,10 @@
 }
 
 .form-calendar-panel {
-  position: absolute;
-  top: calc(100% + 4px);
+  position: fixed;
+  z-index: 9999;
   left: 0;
-  z-index: 126;
+  top: 0;
   width: min(320px, calc(100vw - 48px));
   background: var(--card-bg);
   border: var(--border-width) solid var(--border);
@@ -364,12 +382,15 @@
   width: 16px;
   height: 16px;
   margin: 0;
-  border: var(--border-width) solid var(--border);
-  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  border-radius: 0;
   background: var(--card-bg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s;
 }
 
 /* Radio group */
@@ -409,11 +430,85 @@
   gap: 10px;
 }
 
-.form-slider-row input[type="range"] {
+.form-slider-row input[type="range"],
+.form-range-slider-row input[type="range"] {
+  --fill: 0%;
   flex: 1;
-  accent-color: var(--accent);
+  -webkit-appearance: none;
+  appearance: none;
   cursor: pointer;
-  height: 4px;
+  height: 12px;
+  background: transparent;
+  margin: 0 -2px;
+}
+
+/* Track — WebKit */
+.form-slider-row input[type="range"]::-webkit-slider-runnable-track,
+.form-range-slider-row input[type="range"]::-webkit-slider-runnable-track {
+  height: 12px;
+  border: var(--border-width) solid var(--border);
+  background: linear-gradient(to right, var(--text) var(--fill), var(--card-bg) var(--fill));
+}
+
+/* Track — Firefox */
+.form-slider-row input[type="range"]::-moz-range-track,
+.form-range-slider-row input[type="range"]::-moz-range-track {
+  height: 12px;
+  border: var(--border-width) solid var(--border);
+  background: var(--card-bg);
+}
+
+/* Firefox uses ::-moz-range-progress for the filled portion */
+.form-slider-row input[type="range"]::-moz-range-progress,
+.form-range-slider-row input[type="range"]::-moz-range-progress {
+  height: 12px;
+  background: var(--text);
+  border: var(--border-width) solid var(--border);
+}
+
+/* Thumb — WebKit */
+.form-slider-row input[type="range"]::-webkit-slider-thumb,
+.form-range-slider-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -4px;
+  background: var(--card-bg);
+  border: var(--border-width) solid var(--border);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.form-slider-row input[type="range"]::-webkit-slider-thumb:hover,
+.form-range-slider-row input[type="range"]::-webkit-slider-thumb:hover {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-pressed);
+}
+
+/* Thumb — Firefox */
+.form-slider-row input[type="range"]::-moz-range-thumb,
+.form-range-slider-row input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--card-bg);
+  border: var(--border-width) solid var(--border);
+  border-radius: 0;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.form-slider-row input[type="range"]::-moz-range-thumb:hover,
+.form-range-slider-row input[type="range"]::-moz-range-thumb:hover {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-pressed);
+}
+
+.form-slider-row input[type="range"]:focus-visible,
+.form-range-slider-row input[type="range"]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--highlight) 75%, transparent);
+  outline-offset: 2px;
 }
 
 .form-slider-value {
@@ -429,13 +524,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.form-range-slider-row input[type="range"] {
-  flex: 1;
-  accent-color: var(--accent);
-  cursor: pointer;
-  height: 4px;
 }
 
 .form-range-value {
@@ -460,12 +548,15 @@
   width: 16px;
   height: 16px;
   margin: 0;
-  border: var(--border-width) solid var(--border);
-  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  border-radius: 0;
   background: var(--card-bg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s;
 }
 
 .form-check-label {
@@ -476,45 +567,49 @@
 /* Toggle switch */
 .form-toggle-switch {
   position: relative;
-  width: 36px;
-  height: 20px;
-  display: inline-block;
+  width: 44px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .form-toggle-switch input {
   opacity: 0;
   width: 0;
   height: 0;
+  position: absolute;
 }
 
 .form-toggle-track {
   position: absolute;
   cursor: pointer;
   inset: 0;
-  background: var(--border);
-  border-radius: 20px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
   transition: background 0.2s;
 }
 
 .form-toggle-track::after {
   content: '';
   position: absolute;
-  width: 16px;
-  height: 16px;
-  left: 2px;
-  bottom: 2px;
-  background: white;
-  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--text);
   transition: transform 0.2s;
 }
 
 .form-toggle-switch input:checked + .form-toggle-track {
-  background: var(--accent);
+  background: var(--text);
 }
 
 .form-toggle-switch input:checked + .form-toggle-track::after {
-  transform: translateX(16px);
+  transform: translateY(-50%) translateX(20px);
+  background: var(--card-bg);
 }
 
 /* Date range */
@@ -577,20 +672,22 @@
   width: 16px;
   height: 16px;
   margin: 0;
-  border: var(--border-width) solid var(--border);
-  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  border-radius: 0;
   background: var(--card-bg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s;
 }
 
 .form-multiselect-option input[type="checkbox"]:hover,
 .form-check-row input[type="checkbox"]:hover,
 .table-wrapper td.select-col input[type="checkbox"]:hover,
 .table-wrapper th.select-col input[type="checkbox"]:hover {
-  transform: translate(1px, 1px);
-  box-shadow: var(--shadow-pressed);
+  border-color: var(--text);
 }
 
 .form-radio-option input[type="radio"]:hover {
@@ -603,10 +700,20 @@
 .table-wrapper td.select-col input[type="checkbox"]:checked,
 .table-wrapper th.select-col input[type="checkbox"]:checked {
   background-color: var(--text);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cpath fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M1 4l2.5 2.5L9 1'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  color: var(--card-bg);
+  box-shadow: none;
+}
+
+.form-multiselect-option input[type="checkbox"]:checked::after,
+.form-check-row input[type="checkbox"]:checked::after,
+.table-wrapper td.select-col input[type="checkbox"]:checked::after,
+.table-wrapper th.select-col input[type="checkbox"]:checked::after {
+  content: '';
+  width: 4px;
+  height: 8px;
+  border: solid var(--card-bg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-bottom: 2px;
 }
 
 .form-radio-option input[type="radio"]:checked {

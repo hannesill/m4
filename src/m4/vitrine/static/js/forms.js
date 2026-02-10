@@ -102,7 +102,7 @@ function renderDropdownField(container, field) {
   var panel = document.createElement('div');
   panel.className = 'form-select-panel';
   panel.style.display = 'none';
-  wrap.appendChild(panel);
+  document.body.appendChild(panel);
 
   function syncTrigger() {
     var val = hiddenInput.value || '';
@@ -137,12 +137,33 @@ function renderDropdownField(container, field) {
   }
 
   var outsideListener = null;
+  function positionPanel() {
+    var rect = trigger.getBoundingClientRect();
+    var panelHeight = panel.offsetHeight || 260;
+    var top = rect.bottom + 4;
+    var left = rect.left;
+    var width = rect.width;
+    // Flip above if it would overflow the viewport bottom
+    if (top + panelHeight > window.innerHeight - 8) {
+      top = rect.top - panelHeight - 4;
+    }
+    // Clamp horizontal position
+    if (left + width > window.innerWidth - 8) {
+      left = window.innerWidth - width - 8;
+    }
+    if (left < 8) left = 8;
+    panel.style.top = top + 'px';
+    panel.style.left = left + 'px';
+    panel.style.width = Math.max(width, 180) + 'px';
+  }
+
   function openPanel() {
     panel.style.display = '';
+    positionPanel();
     trigger.classList.add('open');
     setTimeout(function() {
       outsideListener = function(e) {
-        if (!wrap.contains(e.target)) closePanel();
+        if (!wrap.contains(e.target) && !panel.contains(e.target)) closePanel();
       };
       document.addEventListener('mousedown', outsideListener);
     }, 0);
@@ -263,7 +284,7 @@ function createDatePicker(fieldName, rangeEnd, initialValue) {
   var daysGrid = document.createElement('div');
   daysGrid.className = 'form-calendar-days';
   panel.appendChild(daysGrid);
-  picker.appendChild(panel);
+  document.body.appendChild(panel);
 
   var selectedDate = parseIsoDate(hiddenInput.value);
   var visibleMonth = selectedDate || new Date();
@@ -331,6 +352,25 @@ function createDatePicker(fieldName, rangeEnd, initialValue) {
   });
 
   var outsideListener = null;
+  function positionPanel() {
+    var rect = trigger.getBoundingClientRect();
+    var panelWidth = 320;
+    var panelHeight = panel.offsetHeight || 300;
+    var top = rect.bottom + 4;
+    var left = rect.left;
+    // Flip above if it would overflow the viewport bottom
+    if (top + panelHeight > window.innerHeight - 8) {
+      top = rect.top - panelHeight - 4;
+    }
+    // Clamp horizontal position
+    if (left + panelWidth > window.innerWidth - 8) {
+      left = window.innerWidth - panelWidth - 8;
+    }
+    if (left < 8) left = 8;
+    panel.style.top = top + 'px';
+    panel.style.left = left + 'px';
+  }
+
   function openPanel() {
     var selected = parseIsoDate(hiddenInput.value);
     if (selected) {
@@ -338,10 +378,11 @@ function createDatePicker(fieldName, rangeEnd, initialValue) {
     }
     renderCalendar();
     panel.style.display = '';
+    positionPanel();
     trigger.classList.add('open');
     setTimeout(function() {
       outsideListener = function(e) {
-        if (!picker.contains(e.target)) closePanel();
+        if (!picker.contains(e.target) && !panel.contains(e.target)) closePanel();
       };
       document.addEventListener('mousedown', outsideListener);
     }, 0);
@@ -406,6 +447,14 @@ function renderMultiSelectField(container, field) {
   container.appendChild(optionsDiv);
 }
 
+function updateSliderFill(slider) {
+  var min = parseFloat(slider.min) || 0;
+  var max = parseFloat(slider.max) || 100;
+  var val = parseFloat(slider.value) || 0;
+  var pct = ((val - min) / (max - min)) * 100;
+  slider.style.setProperty('--fill', pct + '%');
+}
+
 function renderSliderField(container, field) {
   if (field.label) {
     var label = document.createElement('div');
@@ -425,7 +474,11 @@ function renderSliderField(container, field) {
   var valueEl = document.createElement('span');
   valueEl.className = 'form-slider-value';
   valueEl.textContent = slider.value;
-  slider.oninput = function() { valueEl.textContent = slider.value; };
+  updateSliderFill(slider);
+  slider.oninput = function() {
+    valueEl.textContent = slider.value;
+    updateSliderFill(slider);
+  };
   row.appendChild(slider);
   row.appendChild(valueEl);
   container.appendChild(row);
@@ -471,9 +524,13 @@ function renderRangeSliderField(container, field) {
     if (lo > hi) { sliderLow.value = hi; lo = hi; }
     if (hi < lo) { sliderHigh.value = lo; hi = lo; }
     valueEl.textContent = lo + ' \u2013 ' + hi;
+    updateSliderFill(sliderLow);
+    updateSliderFill(sliderHigh);
   }
   sliderLow.oninput = updateRange;
   sliderHigh.oninput = updateRange;
+  updateSliderFill(sliderLow);
+  updateSliderFill(sliderHigh);
 
   row.appendChild(sliderLow);
   row.appendChild(valueEl);

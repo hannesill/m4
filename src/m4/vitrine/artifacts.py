@@ -248,7 +248,7 @@ class ArtifactStore:
     ) -> list[tuple[str, str]]:
         """Return list of (column_name, column_type) for a Parquet file."""
         rows = con.execute(
-            f"SELECT name, type FROM parquet_schema('{path}') WHERE name != 'duckdb_schema'"
+            f"SELECT name, type FROM parquet_schema('{path}') WHERE type IS NOT NULL"
         ).fetchall()
         return [(r[0], r[1]) for r in rows]
 

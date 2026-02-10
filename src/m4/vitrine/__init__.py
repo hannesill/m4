@@ -596,6 +596,14 @@ def show(
         DisplayHandle (str subclass) when wait=False, DisplayResponse when
         wait=True.
     """
+    # Forms are always decision cards — force wait=True
+    if isinstance(obj, Form):
+        wait = True
+        if prompt is None:
+            prompt = title
+    if controls:
+        wait = True
+
     _ensure_started()
 
     from m4.vitrine.artifacts import _serialize_card

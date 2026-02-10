@@ -371,7 +371,6 @@ def _render_card_html(card: CardDescriptor, study_manager: StudyManager) -> str:
         "plotly": "P",
         "image": "I",
         "keyvalue": "K",
-        "form": "F",
         "section": "S",
         "decision": "!",
     }
@@ -425,11 +424,11 @@ def _render_card_body(card: CardDescriptor, study_manager: StudyManager) -> str:
     elif card.card_type == CardType.IMAGE:
         return _render_image_html(card)
     elif card.card_type == CardType.MARKDOWN:
+        if card.preview.get("fields"):
+            return _render_form_html(card)
         return _render_markdown_html(card)
     elif card.card_type == CardType.KEYVALUE:
         return _render_keyvalue_html(card)
-    elif card.card_type == CardType.FORM:
-        return _render_form_html(card)
     else:
         return f"<pre>{escape(json.dumps(card.preview, indent=2, default=str))}</pre>"
 
@@ -920,7 +919,6 @@ _EXPORT_CSS = """<style>
   .card-header[data-type="plotly"] { background: var(--chart-bg); }
   .card-header[data-type="image"] { background: var(--image-bg); }
   .card-header[data-type="keyvalue"] { background: var(--kv-bg); }
-  .card-header[data-type="form"] { background: var(--form-bg); }
   .card-header[data-type="decision"] { background: var(--decision-bg); }
 
   .card-type-icon {
@@ -942,7 +940,6 @@ _EXPORT_CSS = """<style>
   .card-type-icon[data-type="plotly"] { background: var(--chart-color); color: #fff; }
   .card-type-icon[data-type="image"] { background: var(--image-color); color: #fff; }
   .card-type-icon[data-type="keyvalue"] { background: var(--kv-color); color: #fff; }
-  .card-type-icon[data-type="form"] { background: var(--form-color); color: #fff; }
   .card-type-icon[data-type="decision"] { background: var(--decision-color); color: #fff; }
 
   .card-title {

@@ -140,13 +140,14 @@ function addCard(cardData) {
       renderImage(body, cardData);
       break;
     case 'markdown':
-      renderMarkdown(body, cardData);
+      if (cardData.preview && cardData.preview.fields) {
+        renderForm(body, cardData);
+      } else {
+        renderMarkdown(body, cardData);
+      }
       break;
     case 'keyvalue':
       renderKeyValue(body, cardData);
-      break;
-    case 'form':
-      renderForm(body, cardData);
       break;
     case 'section':
       el.remove();
@@ -160,7 +161,7 @@ function addCard(cardData) {
 
   // Controls bar for hybrid data+controls cards (table/chart with controls)
   if (cardData.preview && cardData.preview.controls && cardData.preview.controls.length > 0
-      && cardData.card_type !== 'form') {
+      && !cardData.preview.fields) {
     var controlsBar = document.createElement('div');
     controlsBar.className = 'card-controls-bar';
     renderFormFields(controlsBar, cardData.preview.controls);
@@ -227,8 +228,8 @@ function copyCardContent(cardData, btn) {
     text = cardData.artifact_id
       ? location.origin + '/api/artifact/' + cardData.artifact_id
       : '(no artifact)';
-  } else if (cardData.card_type === 'form') {
-    var fields = (cardData.preview && cardData.preview.fields) || [];
+  } else if (cardData.preview && cardData.preview.fields) {
+    var fields = cardData.preview.fields;
     text = fields.map(function(f) {
       return (f.label || f.name) + ': ' + (f.default != null ? String(f.default) : '');
     }).join('\n');
@@ -326,13 +327,14 @@ function updateCard(cardId, newCardData) {
           renderImage(body, newCardData);
           break;
         case 'markdown':
-          renderMarkdown(body, newCardData);
+          if (newCardData.preview && newCardData.preview.fields) {
+            renderForm(body, newCardData);
+          } else {
+            renderMarkdown(body, newCardData);
+          }
           break;
         case 'keyvalue':
           renderKeyValue(body, newCardData);
-          break;
-        case 'form':
-          renderForm(body, newCardData);
           break;
         default:
           body.textContent = JSON.stringify(newCardData.preview);

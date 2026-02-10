@@ -234,8 +234,12 @@ function reloadTable(artifactId, pagerState, sortState, searchState, wrapper, co
     url += '&search=' + encodeURIComponent(searchState.text);
   }
   fetch(url)
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (!r.ok) throw new Error('Server returned ' + r.status);
+      return r.json();
+    })
     .then(function(data) {
+      if (!data.rows) throw new Error('Invalid response');
       totalRowsRef.value = data.total_rows;
       var tbody = wrapper.querySelector('tbody');
       // Find the parent card to get cardData for row click events
@@ -261,6 +265,10 @@ function reloadTable(artifactId, pagerState, sortState, searchState, wrapper, co
         pagerEl.current = newPager;
         infoDiv.appendChild(newPager);
       }
+    })
+    .catch(function(err) {
+      console.error('Table fetch failed:', err);
+      showToast('Search failed', 'error');
     });
 }
 
@@ -436,12 +444,20 @@ function createPager(artifactId, totalRowsRef, columns, dtypes, wrapper, rowInfo
       url += '&search=' + encodeURIComponent(searchState.text);
     }
     fetch(url)
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (!r.ok) throw new Error('Server returned ' + r.status);
+        return r.json();
+      })
       .then(function(data) {
+        if (!data.rows) throw new Error('Invalid response');
         totalRowsRef.value = data.total_rows;
         var tbody = wrapper.querySelector('tbody');
         renderTableRows(tbody, data.rows, columns, dtypes, cardData, pagerState.offset);
         updatePage();
+      })
+      .catch(function(err) {
+        console.error('Table page fetch failed:', err);
+        showToast('Failed to load page', 'error');
       });
   }
 

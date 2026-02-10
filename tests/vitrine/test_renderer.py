@@ -442,3 +442,35 @@ class TestIsMatplotlibFigure:
     def test_rejects_non_matplotlib(self):
         assert _is_matplotlib_figure("not a figure") is False
         assert _is_matplotlib_figure(42) is False
+
+
+class TestRenderForm:
+    def test_form_renders_as_markdown_card(self, store):
+        from m4.vitrine._types import Dropdown, Form
+
+        form = Form([Dropdown("method", ["logistic", "cox"])])
+        card = render(form, store=store)
+        assert card.card_type == CardType.MARKDOWN
+
+    def test_form_preview_has_fields(self, store):
+        from m4.vitrine._types import Dropdown, Form
+
+        form = Form([Dropdown("method", ["logistic", "cox"])])
+        card = render(form, store=store)
+        assert "fields" in card.preview
+        assert len(card.preview["fields"]) == 1
+        assert card.preview["fields"][0]["name"] == "method"
+
+    def test_form_default_title(self, store):
+        from m4.vitrine._types import Dropdown, Form
+
+        form = Form([Dropdown("method", ["logistic", "cox"])])
+        card = render(form, store=store)
+        assert card.title == "Form"
+
+    def test_form_custom_title(self, store):
+        from m4.vitrine._types import Dropdown, Form
+
+        form = Form([Dropdown("method", ["logistic", "cox"])])
+        card = render(form, title="Choose Method", store=store)
+        assert card.title == "Choose Method"

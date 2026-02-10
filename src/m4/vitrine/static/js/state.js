@@ -41,7 +41,6 @@ var TYPE_LETTERS = {
   plotly: 'P',
   image: 'I',
   keyvalue: 'K',
-  form: 'F',
   section: 'S',
   decision: '!',
 };

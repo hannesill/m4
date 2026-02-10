@@ -2,9 +2,9 @@
 
 Tests cover:
 - All 10 field types: construct -> to_dict() -> assert keys/values
-- Form rendering -> CardType.FORM, preview structure
-- Form blocking flow (response_requested + form_values)
-- Controls parameter on show() -> hybrid data+controls cards
+- Form rendering -> CardType.MARKDOWN with preview.fields
+- Form blocking flow (auto wait=True + form_values)
+- Controls parameter on show() -> hybrid data+controls cards (auto wait=True)
 - Form export in HTML and JSON
 - Form field validation (__post_init__ checks)
 - Form field name uniqueness
@@ -245,7 +245,7 @@ class TestFormRendering:
             ]
         )
         card = render(form, title="Cohort Filter", store=store)
-        assert card.card_type == CardType.FORM
+        assert card.card_type == CardType.MARKDOWN
         assert card.title == "Cohort Filter"
 
     def test_preview_has_fields(self, store):
@@ -271,7 +271,7 @@ class TestFormRendering:
         render(form, store=store)
         cards = store.list_cards()
         assert len(cards) == 1
-        assert cards[0].card_type == CardType.FORM
+        assert cards[0].card_type == CardType.MARKDOWN
 
 
 # ================================================================
@@ -312,21 +312,25 @@ class TestFormBlockingFlow:
 
 class TestControlsParameter:
     def test_controls_attached_to_table(self, store, mock_server):
+        mock_server._mock_response = {"action": "confirm", "card_id": "x"}
         df = pd.DataFrame({"x": [1, 2, 3]})
         controls = [Slider(name="threshold", range=(0, 10), default=5)]
-        display.show(df, title="Table", controls=controls)
+        result = display.show(df, title="Table", controls=controls)
+        assert isinstance(result, DisplayResponse)
         cards = store.list_cards()
         assert "controls" in cards[0].preview
         assert len(cards[0].preview["controls"]) == 1
         assert cards[0].preview["controls"][0]["type"] == "slider"
 
     def test_controls_multiple_fields(self, store, mock_server):
+        mock_server._mock_response = {"action": "confirm", "card_id": "x"}
         df = pd.DataFrame({"val": [1]})
         controls = [
             Slider(name="min_age", range=(0, 120)),
             Dropdown(name="unit", options=["ICU", "Ward"]),
         ]
-        display.show(df, controls=controls)
+        result = display.show(df, controls=controls)
+        assert isinstance(result, DisplayResponse)
         cards = store.list_cards()
         assert len(cards[0].preview["controls"]) == 2
 
@@ -377,7 +381,7 @@ class TestFormExport:
         with zipfile.ZipFile(out) as zf:
             cards = json.loads(zf.read("cards.json"))
             assert len(cards) == 1
-            assert cards[0]["card_type"] == "form"
+            assert cards[0]["card_type"] == "markdown"
 
 
 # ================================================================
