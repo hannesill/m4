@@ -565,15 +565,15 @@ class TestFormAutoWait:
         assert isinstance(result, DisplayResponse)
         assert result.action == "skip"
 
-    def test_form_renders_as_markdown_card(self, store, mock_server):
-        """Form cards are stored as MARKDOWN with preview.fields."""
+    def test_form_renders_as_form_card(self, store, mock_server):
+        """Form cards are stored as FORM with preview.fields."""
         from m4.vitrine._types import Dropdown, Form
 
         mock_server._mock_response = {"action": "confirm", "card_id": "test"}
         display.show(Form([Dropdown("method", ["logistic", "cox"])]))
         cards = store.list_cards()
         assert len(cards) == 1
-        assert cards[0].card_type == CardType.MARKDOWN
+        assert cards[0].card_type == CardType.FORM
         assert "fields" in cards[0].preview
 
     def test_form_sets_response_requested(self, store, mock_server):

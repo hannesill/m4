@@ -44,6 +44,7 @@ class TestCardType:
             "section",
             "plotly",
             "image",
+            "form",
         }
         actual = {ct.value for ct in CardType}
         assert actual == expected

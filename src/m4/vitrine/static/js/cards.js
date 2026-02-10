@@ -151,18 +151,17 @@ function addCard(cardData) {
       renderImage(body, cardData);
       break;
     case 'markdown':
-      if (cardData.preview && cardData.preview.fields) {
-        renderForm(body, cardData);
-      } else {
-        renderMarkdown(body, cardData);
-      }
+      renderMarkdown(body, cardData);
+      break;
+    case 'form':
+      renderForm(body, cardData);
       break;
     case 'keyvalue':
       renderKeyValue(body, cardData);
       break;
     case 'section':
       el.remove();
-      addSection(cardData.title || (cardData.preview && cardData.preview.title) || '');
+      addSection(cardData.title || (cardData.preview && cardData.preview.title) || '', cardData.study);
       return;
     default:
       body.textContent = JSON.stringify(cardData.preview);
@@ -228,7 +227,7 @@ function addCard(cardData) {
   // Apply study filter to the new card
   if (state.activeStudyFilter) {
     var cardRun = cardData.study || '';
-    if (cardRun !== state.activeStudyFilter && cardRun) {
+    if (cardRun !== state.activeStudyFilter) {
       el.classList.add('hidden-by-filter');
     }
   }

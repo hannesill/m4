@@ -375,6 +375,7 @@ def _render_card_html(card: CardDescriptor, study_manager: StudyManager) -> str:
         "image": "I",
         "keyvalue": "K",
         "section": "S",
+        "form": "F",
         "decision": "!",
     }
     type_letter = type_letters.get(header_type, "?")
@@ -442,9 +443,9 @@ def _render_card_body(card: CardDescriptor, study_manager: StudyManager) -> str:
         return _render_plotly_html(card)
     elif card.card_type == CardType.IMAGE:
         return _render_image_html(card)
+    elif card.card_type == CardType.FORM:
+        return _render_form_html(card)
     elif card.card_type == CardType.MARKDOWN:
-        if card.preview.get("fields"):
-            return _render_form_html(card)
         return _render_markdown_html(card)
     elif card.card_type == CardType.KEYVALUE:
         return _render_keyvalue_html(card)

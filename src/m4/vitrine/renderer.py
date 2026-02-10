@@ -334,16 +334,14 @@ def _render_form(
     study: str | None,
     store: ArtifactStore,
 ) -> CardDescriptor:
-    """Render a Form as a markdown card with form fields in preview.
+    """Render a Form as a form card with field specs in preview.
 
-    Forms are always decision cards (wait=True is forced by show()),
-    so they render as MARKDOWN with preview.fields for the frontend
-    to dispatch form field rendering.
+    Forms are always decision cards (wait=True is forced by show()).
     """
     card_id = _make_card_id()
     card = CardDescriptor(
         card_id=card_id,
-        card_type=CardType.MARKDOWN,
+        card_type=CardType.FORM,
         title=title or "Form",
         description=description,
         timestamp=_make_timestamp(),

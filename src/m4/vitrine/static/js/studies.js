@@ -446,7 +446,7 @@ function applyStudyFilter() {
     // Specific study: show matching cards only
     items.forEach(function(el) {
       var elStudy = el.dataset.study || '';
-      if (elStudy === filter || !elStudy) {
+      if (elStudy === filter) {
         el.classList.remove('hidden-by-filter');
       } else {
         el.classList.add('hidden-by-filter');

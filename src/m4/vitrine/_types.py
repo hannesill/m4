@@ -20,6 +20,7 @@ class CardType(str, Enum):
     SECTION = "section"
     PLOTLY = "plotly"
     IMAGE = "image"
+    FORM = "form"
 
 
 # ---------------------------------------------------------------------------
