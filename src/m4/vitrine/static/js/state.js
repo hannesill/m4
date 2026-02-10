@@ -33,6 +33,7 @@ var state = {
   liveMode: false,
   _autoSelectPending: false,
   selections: {},
+  pendingCardScroll: null,
 };
 
 var TYPE_LETTERS = {

@@ -92,6 +92,30 @@ function addCard(cardData) {
   var actions = document.createElement('div');
   actions.className = 'card-actions';
 
+  // Link / copy deep-link button
+  var linkBtn = document.createElement('button');
+  linkBtn.className = 'card-action-btn';
+  linkBtn.title = 'Copy card link';
+  linkBtn.setAttribute('aria-label', 'Copy card link');
+  linkBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5a3 3 0 004.2.1l2-2a3 3 0 00-4.2-4.3l-1.2 1.1"/><path d="M9.5 6.5a3 3 0 00-4.2-.1l-2 2a3 3 0 004.2 4.3l1.1-1.1"/></svg>';
+  linkBtn.onclick = function(e) {
+    e.stopPropagation();
+    var slug = (cardData.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 30).replace(/-$/, '');
+    var cardRef = cardData.card_id.substring(0, 6);
+    if (slug) cardRef += '-' + slug;
+    var cardUrl = location.origin + location.pathname + '#card=' + cardRef;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(cardUrl).then(function() {
+        showToast('Copied card link');
+      }, function() {
+        showToast('Failed to copy', 'error');
+      });
+    } else {
+      showToast('Clipboard not available', 'error');
+    }
+  };
+  actions.appendChild(linkBtn);
+
   header.appendChild(actions);
   el.appendChild(header);
 
@@ -173,7 +197,14 @@ function addCard(cardData) {
   }
 
   updateCardCount();
-  scrollToBottom();
+
+  // Check for pending deep-link scroll (prefix match)
+  if (state.pendingCardScroll && cardData.card_id.indexOf(state.pendingCardScroll) === 0) {
+    state.pendingCardScroll = null;
+    setTimeout(function() { applyHashCard(cardData.card_id); }, 100);
+  } else {
+    scrollToBottom();
+  }
 }
 
 function showToast(msg, type) {

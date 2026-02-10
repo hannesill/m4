@@ -140,9 +140,13 @@ function selectStudy(label) {
   updateStudyMetadataBar();
   // Load files for the selected study
   if (typeof loadFiles === 'function') loadFiles(label);
-  // Update URL hash for deep linking
-  if (label) {
-    history.replaceState(null, '', '#study=' + encodeURIComponent(label));
+  // Update URL hash for deep linking (preserve card fragment if present)
+  var h = parseHash();
+  var hashParts = [];
+  if (label) hashParts.push('study=' + encodeURIComponent(label));
+  if (h.card) hashParts.push('card=' + encodeURIComponent(h.card));
+  if (hashParts.length > 0) {
+    history.replaceState(null, '', '#' + hashParts.join('&'));
   } else {
     history.replaceState(null, '', location.pathname + location.search);
   }
@@ -411,24 +415,58 @@ function applyStudyFilter() {
 // ================================================================
 // DEEP-LINK URLs
 // ================================================================
-function parseHashStudy() {
+function parseHash() {
   var hash = location.hash || '';
-  var m = hash.match(/^#study=(.+)$/);
-  return m ? decodeURIComponent(m[1]) : null;
+  if (!hash || hash === '#') return { study: null, card: null };
+  var params = hash.substring(1).split('&');
+  var result = { study: null, card: null };
+  for (var i = 0; i < params.length; i++) {
+    var parts = params[i].split('=');
+    if (parts[0] === 'study' && parts[1]) {
+      result.study = decodeURIComponent(parts[1]);
+    } else if (parts[0] === 'card' && parts[1]) {
+      result.card = decodeURIComponent(parts[1]);
+    }
+  }
+  return result;
 }
 
-function applyHashStudy() {
-  var label = parseHashStudy();
-  if (label) {
-    // Check if this study exists
-    var exists = state.studies.some(function(s) { return s.label === label; }) ||
-                 state.studyNames.indexOf(label) !== -1;
-    if (exists && state.activeStudyFilter !== label) {
-      selectStudy(label);
+function applyHashCard(cardParam) {
+  var idPrefix = cardParam.split('-')[0];
+  var el = null;
+  var cards = feed.querySelectorAll('.card[data-card-id]');
+  for (var i = 0; i < cards.length; i++) {
+    if (cards[i].dataset.cardId.indexOf(idPrefix) === 0) {
+      el = cards[i];
+      break;
     }
+  }
+  if (!el) {
+    state.pendingCardScroll = idPrefix;
+    return;
+  }
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.remove('card-highlight');
+  void el.offsetWidth;
+  el.classList.add('card-highlight');
+  setTimeout(function() { el.classList.remove('card-highlight'); }, 2200);
+}
+
+function applyHash() {
+  var h = parseHash();
+  if (h.study) {
+    var exists = state.studies.some(function(s) { return s.label === h.study; }) ||
+                 state.studyNames.indexOf(h.study) !== -1;
+    if (exists && state.activeStudyFilter !== h.study) {
+      selectStudy(h.study);
+    }
+  }
+  if (h.card) {
+    // Small delay to let study filter settle before scrolling
+    setTimeout(function() { applyHashCard(h.card); }, 200);
   }
 }
 
 window.addEventListener('hashchange', function() {
-  applyHashStudy();
+  applyHash();
 });

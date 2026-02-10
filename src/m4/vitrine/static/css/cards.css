@@ -442,6 +442,14 @@
 
 .card.flash { animation: flashHighlight 0.6s ease; }
 
+/* Deep-link highlight animation */
+@keyframes cardHighlight {
+  0% { box-shadow: 0 0 0 3px var(--accent); }
+  100% { box-shadow: none; }
+}
+
+.card.card-highlight { animation: cardHighlight 2s ease-out; }
+
 
 /* Card updating overlay */
 .card-updating-overlay {

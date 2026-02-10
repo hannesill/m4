@@ -189,6 +189,7 @@ class DisplayServer:
             Route("/api/table/{card_id}/stats", self._api_table_stats),
             Route("/api/table/{card_id}/export", self._api_table_export),
             Route("/api/table/{card_id}", self._api_table),
+            Route("/api/card/{card_id}", self._api_card),
             Route("/api/artifact/{card_id}", self._api_artifact),
             Route("/api/session", self._api_session),
             Route("/api/command", self._api_command, methods=["POST"]),
@@ -284,6 +285,30 @@ class DisplayServer:
         else:
             cards = []
         return JSONResponse([_serialize_card(c) for c in cards])
+
+    async def _api_card(self, request: Request) -> JSONResponse:
+        """Return a single card descriptor by ID or prefix.
+
+        Accepts full 12-char IDs, short prefixes, or slug-suffixed
+        references like ``a1b2c3-my-title``.
+        """
+        raw = request.path_params["card_id"]
+        # Strip slug suffix (everything after first dash)
+        id_prefix = raw.split("-")[0]
+
+        # Collect all cards to search
+        if self.study_manager:
+            self.study_manager.refresh()
+            cards = self.study_manager.list_all_cards()
+        elif self.store:
+            cards = self.store.list_cards()
+        else:
+            cards = []
+
+        for card in cards:
+            if card.card_id.startswith(id_prefix):
+                return JSONResponse(_serialize_card(card))
+        return JSONResponse({"error": f"Card {raw} not found"}, status_code=404)
 
     async def _api_table(self, request: Request) -> JSONResponse:
         """Return a page of table data from a stored Parquet artifact."""

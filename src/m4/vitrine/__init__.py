@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from m4.vitrine._types import (
+    CardDescriptor,
     Checkbox,
     DateRange,
     DisplayEvent,
@@ -58,6 +59,7 @@ __all__ = [
     "clean_studies",
     "delete_study",
     "export",
+    "get_card",
     "get_selection",
     "list_studies",
     "on_event",
@@ -1075,6 +1077,41 @@ def _poll_remote_events() -> None:
         except Exception:
             pass
         _event_poll_stop.wait(0.5)
+
+
+def get_card(card_id: str) -> CardDescriptor | None:
+    """Look up a card descriptor by ID or prefix.
+
+    Accepts full 12-char IDs, short prefixes, or slug-suffixed
+    references like ``a1b2c3-my-title`` (the slug is stripped).
+
+    Args:
+        card_id: Card identifier, prefix, or slug-suffixed reference.
+
+    Returns:
+        CardDescriptor or None.
+    """
+    # Strip slug suffix (everything after first dash)
+    id_prefix = card_id.split("-")[0]
+
+    _ensure_study_manager()
+    if _study_manager is not None:
+        # Try the cross-study index first (exact match)
+        store = _study_manager.get_store_for_card(id_prefix)
+        if store:
+            for card in store.list_cards():
+                if card.card_id.startswith(id_prefix):
+                    return card
+        # Prefix didn't hit the index — scan all cards
+        for card in _study_manager.list_all_cards():
+            if card.card_id.startswith(id_prefix):
+                return card
+    # Fallback to legacy store
+    if _store is not None:
+        for card in _store.list_cards():
+            if card.card_id.startswith(id_prefix):
+                return card
+    return None
 
 
 def get_selection(card_id: str) -> Any:
