@@ -1,6 +1,6 @@
 # vitrine Server
 
-The agent's research journal and live display. Every `show()` call adds a card to a persistent, browsable record of the research process — decisions made, data reviewed, parameters chosen, findings documented. The researcher can open the browser at any time to see where the analysis stands, review past decisions, and understand the agent's reasoning. Runs persist on disk, survive restarts, and export as self-contained HTML.
+The agent's research journal and live display. Every `show()` call adds a card to a persistent, browsable record of the research process — decisions made, data reviewed, parameters chosen, findings documented. The researcher can open the browser at any time to see where the analysis stands, review past decisions, and understand the agent's reasoning. Studies persist on disk, survive restarts, and export as self-contained HTML.
 
 ## How It Works
 
@@ -39,9 +39,9 @@ src/m4/vitrine/
 
 ### Core Concepts
 
-**Artifact Store**: Large objects are written to disk as Parquet/JSON/SVG. The WebSocket sends a card descriptor (artifact ID, schema, preview rows). The frontend requests pages via REST. Storage layout: `{m4_data}/vitrine/runs/{YYYY-MM-DD}_{HHMMSS}_{label}/` with `index.json` (card descriptors), `meta.json` (run metadata), and `artifacts/` directory.
+**Artifact Store**: Large objects are written to disk as Parquet/JSON/SVG. The WebSocket sends a card descriptor (artifact ID, schema, preview rows). The frontend requests pages via REST. Storage layout: `.vitrine/studies/{YYYY-MM-DD}_{HHMMSS}_{label}/` with `index.json` (card descriptors), `meta.json` (study metadata), and `artifacts/` directory.
 
-**Runs**: The primary organizational unit — each run represents a research question or analysis session. Agents tag cards with `run_id` to group outputs into a coherent research narrative. Runs persist on disk across server restarts and sessions, forming a provenance trail that the researcher can revisit, share, and export. The frontend browses all historical runs grouped by date.
+**Studies**: The primary organizational unit — each study represents a research question or analysis session. Agents tag cards with `study` to group outputs into a coherent research narrative. Studies persist on disk across server restarts and sessions, forming a provenance trail that the researcher can revisit, share, and export. The frontend browses all historical studies grouped by date.
 
 **PHI Guardrails**: On by default. Columns matching identifier patterns (names, addresses, SSN, etc.) are masked, row counts are capped. Configurable via `M4_VITRINE_REDACT`, `M4_VITRINE_MAX_ROWS`, `M4_VITRINE_HASH_IDS` env vars. Disable for de-identified datasets.
 
@@ -52,7 +52,7 @@ src/m4/vitrine/
 ## Python API
 
 ```python
-def show(obj, title=None, description=None, *, run_id=None,
+def show(obj, title=None, description=None, *, study=None,
          source=None, replace=None, position=None,
          wait=False, prompt=None, timeout=300,
          actions=None, controls=None) -> DisplayHandle | DisplayResponse:
@@ -70,7 +70,7 @@ def show(obj, title=None, description=None, *, run_id=None,
     - Form → structured input card (freezes on confirm)
 
     Key args:
-        run_id: Group cards into a named run.
+        study: Group cards into a named study.
         source: Provenance string (table name, query, dataset).
         description: Context line shown under title (e.g. "N=4238 after exclusions").
         replace: Card ID to update instead of appending.
@@ -82,19 +82,19 @@ def show(obj, title=None, description=None, *, run_id=None,
 
 def start(port=7741, open_browser=True, mode="thread") -> None
 def stop() -> None
-def section(title, run_id=None) -> None
+def section(title, study=None) -> None
 def set_status(message) -> None       # Ephemeral agent status bar in browser header
-def export(path, format="html", run_id=None) -> None
+def export(path, format="html", study=None) -> None
 
-# Run management
-def list_runs() -> list[dict]
-def delete_run(run_id) -> None
-def clean_runs(older_than="7d") -> int
+# Study management
+def list_studies() -> list[dict]
+def delete_study(study) -> None
+def clean_studies(older_than="7d") -> int
 
 # Selection & interaction
 def get_selection(card_id) -> pd.DataFrame        # Current row/point selection for a card
 def on_event(callback) -> None                    # Register callback for UI events
-def run_context(run_id) -> dict                   # Structured summary of run state for agent re-orientation
+def study_context(study) -> dict                   # Structured summary of study state for agent re-orientation
 ```
 
 Auto-start: `show()` calls `start()` if the server isn't running. It prefers a persistent background process (cross-process safe), with in-thread fallback if process startup/discovery fails. Use `mode="process"` to explicitly launch a standalone daemon.
@@ -106,21 +106,23 @@ Starlette app (WebSocket + REST), binds to `127.0.0.1` only. Port auto-discovery
 ```
 GET  /                              → index.html
 WS   /ws                            → bidirectional display channel
-GET  /api/cards?run_id=...          → card descriptors
+GET  /api/cards?study=...           → card descriptors
 GET  /api/table/{id}?offset&limit&sort&asc → table page
 GET  /api/table/{id}/stats          → column statistics
 GET  /api/table/{id}/export         → CSV export
 GET  /api/table/{id}/selection      → current row selection
 GET  /api/artifact/{id}             → raw artifact
-GET  /api/runs                      → list runs
-DELETE /api/runs/{run_id}           → delete run
-GET  /api/runs/{run_id}/export      → export run
-GET  /api/runs/{run_id}/context     → structured run summary for agent
+GET  /api/studies                    → list studies
+DELETE /api/studies/{study}         → delete study
+GET  /api/studies/{study}/export    → export study
+GET  /api/studies/{study}/context   → structured study summary for agent
+GET  /api/studies/{study}/files     → list study file artifacts
+PATCH /api/studies/{study}/rename   → rename a study
 POST /api/command                   → push card/section (bearer auth)
 POST /api/shutdown                  → graceful shutdown (bearer auth)
 ```
 
-Frontend: single self-contained HTML file, no build step, vendored JS (Plotly.js, marked.js) for offline use in hospital networks. Cards stack chronologically with collapse/pin/copy controls, server-side table paging, dark/light theme, run history dropdown, export controls. The browser is a passive visualization surface — researchers view results and make selections, but all instructions go through the terminal.
+Frontend: single self-contained HTML file, no build step, vendored JS (Plotly.js, marked.js) for offline use in hospital networks. Cards stack chronologically with collapse/pin/copy controls, server-side table paging, dark/light theme, study history dropdown, export controls. The browser is a passive visualization surface — researchers view results and make selections, but all instructions go through the terminal.
 
 ## UI Design
 
@@ -144,7 +146,7 @@ m4 vitrine --status       # Show server status
 m4 vitrine --stop         # Stop server (runs persist on disk)
 m4 vitrine --list         # List all runs
 m4 vitrine --clean 7d     # Remove runs older than 7 days
-m4 vitrine --export path --format html --run <run_id>  # Export
+m4 vitrine --export path --format html --study <study>  # Export
 ```
 
 ## Implementation Status
@@ -157,7 +159,7 @@ All phases are implemented. The display server is a fully functional research jo
 - **Charts**: Plotly (interactive, lazy-loaded) and matplotlib (SVG, sanitized, 2MB cap), Plotly point selection events
 - **Tables**: Server-side sort/filter/search via DuckDB on Parquet, column stats, CSV export, row detail panel, scroll cap with sticky header
 - **Agent-human interaction**: Fire-and-forget, decision cards (`wait=True`), card replacement, row/point selection tracker, timeout/skip handling
-- **Run persistence**: Run directory layout, global registry, `list_runs()`/`delete_run()`/`clean_runs()` API, REST + CLI for run CRUD, date-grouped run history browser with inline renaming, auto-select most recent run
+- **Study persistence**: Study directory layout, global registry, `list_studies()`/`delete_study()`/`clean_studies()` API, REST + CLI for study CRUD, date-grouped study history browser with inline renaming, auto-select most recent study
 - **Export**: Self-contained HTML export (inlined JS, table data, provenance), JSON export (card index + raw artifacts), Python API, REST endpoints, frontend Export dropdown (HTML/JSON/Print), per-run export, print-optimized CSS, CLI flags
 - **Form cards**: 10 field primitives (Dropdown, MultiSelect, Slider, RangeSlider, Checkbox, Toggle, RadioGroup, TextInput, DateRange, NumberInput), `Form([...])` grouping, `.values` dict response, hybrid data+controls cards (`controls=`), freeze rendering, export support
 
@@ -193,7 +195,7 @@ No async message queue, no polling, no "Send to Agent" button. Every interaction
 - **WebSocket over SSE** — bidirectional event channel (UI → agent). Starlette makes it trivial.
 - **Offline-first / vendored JS / single HTML** — hospital networks block CDNs. Vendored Plotly.js + marked.js guarantee it works anywhere. No npm/build step needed.
 - **Thread + process modes** — process-first auto-start for cross-process reliability, with in-thread fallback when needed; `mode="process"` is explicit daemon launch for notebooks (event loop conflicts), sandboxes, and long-running sessions.
-- **Runs over sessions** — researchers think in research questions, not server processes. Persistent `run_id` directories make the display a research journal that survives restarts.
+- **Studies over sessions** — researchers think in research questions, not server processes. Persistent `study` directories make the display a research journal that survives restarts.
 - **Freeze-on-confirm** — interactive elements serve decision-making, the journal records the decision. Without freeze: stale widgets, dashboard creep, broken provenance.
 - **Form primitives over iframes** — JSON spec is simpler, faster, more reliable for structured inputs. ~10 primitives cover 90% of agent-researcher interaction patterns.
 
@@ -264,8 +266,8 @@ Structured response buttons beyond Confirm/Skip, so the researcher can steer the
 
 Let the agent re-orient after long blocking calls or at the start of a new turn. A structured summary of everything that's happened in a run.
 
-- [x] `run_context(run_id)` Python API — returns dict with cards shown, decisions made, current selections, pending responses
-- [x] `GET /api/runs/{run_id}/context` REST endpoint
+- [x] `study_context(study)` Python API — returns dict with cards shown, decisions made, current selections, pending responses
+- [x] `GET /api/studies/{study}/context` REST endpoint
 - [x] Includes: card titles/types/timestamps, response actions/messages/values, selection state, card count
 
 ### Browser notifications
@@ -289,9 +291,9 @@ Show the agent's current state in the browser header so the researcher knows wha
 
 Let the agent output clickable links to specific runs.
 
-- [x] `http://localhost:7741/#run=sepsis-v1` auto-selects the run in the dropdown
+- [x] `http://localhost:7741/#study=sepsis-v1` auto-selects the study in the dropdown
 - [x] Frontend reads `location.hash` on load and on hashchange
-- [x] `show()` return value includes URL with fragment when a run_id is set
+- [x] `show()` return value includes URL with fragment when a study is set
 
 ### Skill and prompt improvements
 
@@ -300,4 +302,4 @@ Teach the agent optimal patterns for using the display in a CLI context.
 - [x] Update m4-vitrine skill: remove `pending_requests()` references, document selection tracker and Quick Actions
 - [x] Add context-saving patterns: "Use `show()` instead of `print()` for DataFrames — the browser handles rendering, keep terminal output minimal"
 - [x] Add guidance on blocking vs. fire-and-forget: when to use `wait=True`, how to batch results before blocking
-- [x] Instruct agent to call `run_context()` at the start of each research phase to re-orient
+- [x] Instruct agent to call `study_context()` at the start of each research phase to re-orient

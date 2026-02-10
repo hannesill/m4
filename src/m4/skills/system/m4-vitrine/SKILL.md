@@ -1,13 +1,13 @@
 ---
 name: m4-vitrine
-description: The agent's research journal and live display. Documents decisions, findings, and rationale as persistent cards; collects structured researcher input; creates an exportable provenance trail across research runs.
+description: The agent's research journal and live display. Documents decisions, findings, and rationale as persistent cards; collects structured researcher input; creates an exportable provenance trail across research studies.
 tier: community
 category: system
 ---
 
 # vitrine API
 
-Vitrine is the agent's research journal and live display. Every `show()` call adds a card to a persistent, browsable record of the research process. The researcher can open the browser at any time to see where the analysis stands, review past decisions, and understand the agent's reasoning. Runs persist on disk, survive restarts, and export as self-contained HTML.
+Vitrine is the agent's research journal and live display. Every `show()` call adds a card to a persistent, browsable record of the research process. The researcher can open the browser at any time to see where the analysis stands, review past decisions, and understand the agent's reasoning. Studies persist on disk, survive restarts, and export as self-contained HTML.
 
 ## When to Use This Skill
 
@@ -15,7 +15,7 @@ Vitrine is the agent's research journal and live display. Every `show()` call ad
 - You need to present results for review (tables, charts, summaries)
 - You need structured input from the researcher (forms, quick actions, approval)
 - You're structuring a multi-step research session with a clear provenance trail
-- You want to export a research run as a shareable document
+- You want to export a research study as a shareable document
 
 ## Core Principles
 
@@ -28,17 +28,17 @@ cohort_df.to_csv("output/cohort.csv", index=False)
 # Journal (understanding — the story)
 show(cohort_df, title="Sepsis Cohort",
      description="N=4238 after excluding readmissions and age < 18",
-     source="mimiciv_derived.icustay_detail", run_id="sepsis-v2")
+     source="mimiciv_derived.icustay_detail", study="sepsis-v2")
 ```
 
 **Document as you go.** Don't just show data — show decisions, rationale, and transitions. The journal should read like a research narrative:
 
 ```python
-section("Cohort Construction", run_id=RUN)
-show("## Inclusion Criteria\n- Adult patients (≥18)\n- First ICU stay only\n- Suspected infection within ±48h of ICU admission", run_id=RUN)
-show(cohort_df, title="Cohort (N=4238)", run_id=RUN)
+section("Cohort Construction", study=RUN)
+show("## Inclusion Criteria\n- Adult patients (≥18)\n- First ICU stay only\n- Suspected infection within ±48h of ICU admission", study=RUN)
+show(cohort_df, title="Cohort (N=4238)", study=RUN)
 
-show("## Exclusion Decision\nRemoving 312 patients with ICU stay < 24h — insufficient observation window for SOFA trending.", run_id=RUN)
+show("## Exclusion Decision\nRemoving 312 patients with ICU stay < 24h — insufficient observation window for SOFA trending.", study=RUN)
 ```
 
 **Show what matters, not everything.** Routine intermediate DataFrames, debugging output, and exhaustive tables belong in files only.
@@ -80,13 +80,13 @@ set_status("Running logistic regression...")
 - **Batch related outputs, then block.** Show several cards, then use a single `wait=True` card for the decision point.
 - **Use `set_status()` during long operations** so the researcher knows the agent is working ("Querying 4.2M rows...", "Running bootstrap...").
 - **Attach provenance with `source=`** when showing query results — it records where data came from.
-- **Use `run_id` consistently** within a research session. Name runs after the research question ("sepsis-mortality-v1").
-- **Call `run_context(run_id)` at the start of each phase** to re-orient after long waits or turn boundaries.
-- **Export at the end** of a research run — `export("output/session.html", run_id=RUN)` creates a shareable record.
+- **Use `study` consistently** within a research session. Name studies after the research question ("sepsis-mortality-v1").
+- **Call `study_context(study)` at the start of each phase** to re-orient after long waits or turn boundaries.
+- **Export at the end** of a research study — `export("output/session.html", study=RUN)` creates a shareable record.
 
 ## Full API Reference
 
-### `show(obj, title, description, *, run_id, source, replace, position, wait, prompt, timeout, actions, controls)`
+### `show(obj, title, description, *, study, source, replace, position, wait, prompt, timeout, actions, controls)`
 
 Push any displayable object to the browser. Auto-starts the server on first call.
 
@@ -95,7 +95,7 @@ Push any displayable object to the browser. Auto-starts the server on first call
 | `obj` | `Any` | required | Object to display (DataFrame, figure, str, dict, Form) |
 | `title` | `str \| None` | `None` | Card title shown in header |
 | `description` | `str \| None` | `None` | Subtitle or context line (e.g., "N=4238 after exclusions") |
-| `run_id` | `str \| None` | `None` | Group cards into a named run |
+| `study` | `str \| None` | `None` | Group cards into a named study |
 | `source` | `str \| None` | `None` | Provenance string (e.g., table name, query, dataset) |
 | `replace` | `str \| None` | `None` | Card ID to update in-place instead of appending |
 | `position` | `str \| None` | `None` | `"top"` to prepend instead of append |
@@ -107,7 +107,7 @@ Push any displayable object to the browser. Auto-starts the server on first call
 
 **Returns:** `DisplayHandle` (string-like card id + `.url`) when `wait=False`, `DisplayResponse` when `wait=True`.
 
-### `section(title, run_id=None)`
+### `section(title, study=None)`
 
 Insert a visual section divider in the display feed.
 
@@ -135,19 +135,71 @@ Stop the in-process display server and event polling.
 
 ### `stop_server()`
 
-Stop a running persistent (process-mode) display server via HTTP. Run data persists on disk. Returns `True` if a server was stopped.
+Stop a running persistent (process-mode) display server via HTTP. Study data persists on disk. Returns `True` if a server was stopped.
 
 ### `server_status()`
 
 Return info dict about a running persistent server, or `None`.
 
-### Run Management
+### Study Management
 
 | Function | Description |
 |----------|-------------|
-| `list_runs()` | List all runs with metadata and card counts |
-| `delete_run(run_id)` | Delete a run by label. Returns `True` if found. |
-| `clean_runs(older_than="7d")` | Remove runs older than age string (e.g., `"7d"`, `"24h"`, `"0d"` for all). Returns count removed. |
+| `list_studies()` | List all studies with metadata and card counts |
+| `delete_study(study)` | Delete a study by label. Returns `True` if found. |
+| `clean_studies(older_than="7d")` | Remove studies older than age string (e.g., `"7d"`, `"24h"`, `"0d"` for all). Returns count removed. |
+
+### `get_card(card_id)`
+
+Look up a card descriptor by ID or prefix. Accepts full 12-char IDs, short prefixes, or slug-suffixed references like `a1b2c3-my-title`.
+
+```python
+from m4.vitrine import get_card
+
+card = get_card("a1b2c3")  # Full ID, prefix, or slug-suffixed reference
+card.title, card.card_type, card.annotations
+```
+
+### `list_annotations(study=None)`
+
+List all researcher annotations, optionally filtered by study. Returns dicts with annotation fields plus `card_id` and `card_title` for context. Newest first.
+
+```python
+from m4.vitrine import list_annotations
+
+# All annotations across all studies
+all_anns = list_annotations()
+
+# Annotations for one study
+anns = list_annotations(study="sepsis-v1")
+# Each: {id, text, timestamp, card_id, card_title}
+```
+
+### `register_session(study=None)`
+
+Associate the current Claude Code session ID with a study. Enables "Resume" in the vitrine study launcher. No-op if `CLAUDE_SESSION_ID` is not set.
+
+```python
+from m4.vitrine import register_session
+
+register_session(study="sepsis-v1")
+# Reads CLAUDE_SESSION_ID env var and stores in study meta.json
+# Auto-called on first show() for a study — usually no need to call directly
+```
+
+### `register_output_dir(path=None, study=None)`
+
+Register an output directory for file artifacts. Appears in vitrine's "Files" panel and is bundled in exports.
+
+```python
+from m4.vitrine import register_output_dir
+
+# Self-contained (creates {study_dir}/output/)
+output_dir = register_output_dir(study="sepsis-v1")
+
+# External path
+output_dir = register_output_dir("./results/sepsis", study="sepsis-v1")
+```
 
 ### Export
 
@@ -155,10 +207,10 @@ Return info dict about a running persistent server, or `None`.
 from m4.vitrine import export
 
 # Self-contained HTML — shareable, opens in any browser
-export("output/sepsis-study.html", format="html", run_id="sepsis-v1")
+export("output/sepsis-study.html", format="html", study="sepsis-v1")
 
 # JSON archive — cards + raw artifacts (Parquet, chart specs)
-export("output/sepsis-study.json", format="json", run_id="sepsis-v1")
+export("output/sepsis-study.json", format="json", study="sepsis-v1")
 ```
 
 ### Interaction
@@ -167,7 +219,7 @@ export("output/sepsis-study.json", format="json", run_id="sepsis-v1")
 |----------|-------------|
 | `on_event(callback)` | Register callback for UI events (`DisplayEvent` with `event_type`, `card_id`, `payload`) |
 | `get_selection(card_id)` | Read current table/chart selection state for a card. Returns selected rows as `DataFrame`. |
-| `run_context(run_id)` | Structured run summary for agent re-orientation (cards, decisions, selections, pending responses). |
+| `study_context(study)` | Structured study summary for agent re-orientation (cards, decisions, selections, pending responses). |
 
 ## Supported Types
 
@@ -212,7 +264,7 @@ response = show(
     title="Severity Score Selection",
     wait=True,
     actions=["SOFA", "APACHE III", "Both"],
-    run_id=RUN,
+    study=RUN,
 )
 
 # response.action matches the button label exactly
@@ -242,7 +294,7 @@ response = show(
     ]),
     title="Analysis Parameters",
     wait=True,
-    run_id=RUN,
+    study=RUN,
 )
 
 score = response.values["score"]                # "SOFA"
@@ -280,7 +332,7 @@ response = show(
     ],
     wait=True,
     prompt="Adjust filters and confirm to proceed.",
-    run_id=RUN,
+    study=RUN,
 )
 
 threshold = response.values["sofa_threshold"]
@@ -325,16 +377,40 @@ on_event(handle)
 show(df, title="Click a patient")
 ```
 
-### Re-orient Each Phase with `run_context()`
+### Re-orient Each Phase with `study_context()`
 
 ```python
-from m4.vitrine import run_context
+from m4.vitrine import study_context
 
-ctx = run_context("sepsis-mortality-v1")
+ctx = study_context("sepsis-mortality-v1")
 print("Cards:", ctx["card_count"])
 print("Pending:", len(ctx["pending_responses"]))
 print("Decisions made:", len(ctx["decisions_made"]))
 ```
+
+## Browser Features
+
+### Card dismiss/hide
+
+Researchers can hide cards in the browser using the eye icon on each card header. Dismissed cards are soft-hidden (provenance preserved, still in exports). A toggle in the header shows/hides dismissed cards.
+
+### Researcher annotations
+
+Researchers can add notes to any card via the annotation button in the card header. Annotations persist with the card, appear in `study_context()` (so agents see researcher feedback on resume), and are included in exports.
+
+### Copy-prompt button
+
+Each card has a clipboard button that copies a contextual prompt reference:
+```
+Re: "Mortality Analysis" [card:a1b2c3d4, study:sepsis-v1]
+Preview: 4238 rows × 12 cols (subject_id, age, ...)
+/m4-vitrine
+```
+Researcher pastes into their AI client to reference specific cards in follow-up questions.
+
+### Study launcher
+
+The study dropdown includes "New session" and "Resume" buttons that copy pre-built `claude -p` / `claude --resume` commands. Enabled by session ID tracking via `register_session()`.
 
 ## Provenance
 
@@ -342,10 +418,10 @@ Attach provenance to every data card so the journal records where results came f
 
 ```python
 show(df, title="ICU Stays",
-     source="mimiciv_derived.icustay_detail", run_id=RUN)
+     source="mimiciv_derived.icustay_detail", study=RUN)
 
 show(df, title="Query Results",
-     source="SELECT * FROM mimiciv_hosp.patients WHERE ...", run_id=RUN)
+     source="SELECT * FROM mimiciv_hosp.patients WHERE ...", study=RUN)
 ```
 
 Provenance appears as a card footer and is included in exports. Use `description=` for context that helps the researcher understand what they're looking at:
@@ -354,12 +430,12 @@ Provenance appears as a card footer and is included in exports. Use `description
 show(df, title="Final Cohort",
      description="After applying all exclusion criteria (readmissions, age < 18, ICU stay < 24h)",
      source="mimiciv_derived.icustay_detail",
-     run_id=RUN)
+     study=RUN)
 ```
 
 ## Research Session Pattern
 
-Use `run_id`, `section()`, and narrative cards to create a self-documenting research journal:
+Use `study`, `section()`, and narrative cards to create a self-documenting research journal:
 
 ```python
 from m4.vitrine import show, section, set_status, export
@@ -367,39 +443,39 @@ from m4.vitrine import show, section, set_status, export
 RUN = "sepsis-mortality-v1"
 
 # Phase 1: Document the research question
-section("Research Question", run_id=RUN)
+section("Research Question", study=RUN)
 show("## Objective\nInvestigate the association between day-1 SOFA score "
-     "and 30-day mortality in adult sepsis patients.", run_id=RUN)
+     "and 30-day mortality in adult sepsis patients.", study=RUN)
 
 # Phase 2: Cohort construction with documented decisions
-section("Cohort Construction", run_id=RUN)
+section("Cohort Construction", study=RUN)
 set_status("Querying MIMIC-IV...")
 show(inclusion_df, title="Inclusion Criteria Applied",
      description="Adult first ICU stays with suspected infection",
-     source="mimiciv_derived.icustay_detail", run_id=RUN)
+     source="mimiciv_derived.icustay_detail", study=RUN)
 
 show("## Exclusion Decision\nRemoving 312 patients with ICU stay < 24h "
-     "— insufficient window for SOFA trending.", run_id=RUN)
+     "— insufficient window for SOFA trending.", study=RUN)
 
 response = show(final_cohort_df,
      title=f"Final Cohort (N={len(final_cohort_df)})",
-     wait=True, prompt="Approve cohort before proceeding?", run_id=RUN)
+     wait=True, prompt="Approve cohort before proceeding?", study=RUN)
 
 # Phase 3: Analysis
-section("Primary Analysis", run_id=RUN)
+section("Primary Analysis", study=RUN)
 show(regression_df, title="Logistic Regression",
-     source="statsmodels GLM", run_id=RUN)
-show(or_fig, title="Forest Plot — Adjusted ORs", run_id=RUN)
+     source="statsmodels GLM", study=RUN)
+show(or_fig, title="Forest Plot — Adjusted ORs", study=RUN)
 
 # Phase 4: Conclusion
-section("Conclusion", run_id=RUN)
+section("Conclusion", study=RUN)
 show("## Finding\nDay-1 SOFA is independently associated with 30-day mortality "
-     "(OR 1.12, 95% CI 1.08–1.16, p<0.001).\n\n"
-     "**Clinical implication:** SOFA ≥ 6 on day 1 identifies patients "
-     "at substantially elevated risk.", run_id=RUN)
+     "(OR 1.12, 95% CI 1.08-1.16, p<0.001).\n\n"
+     "**Clinical implication:** SOFA >= 6 on day 1 identifies patients "
+     "at substantially elevated risk.", study=RUN)
 
 # Export the complete journal
-export("output/sepsis-mortality-v1.html", run_id=RUN)
+export("output/sepsis-mortality-v1.html", study=RUN)
 ```
 
 ## DisplayResponse Reference
