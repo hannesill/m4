@@ -197,7 +197,10 @@ class StudyManager:
         return True
 
     def rename_study(self, old_label: str, new_label: str) -> bool:
-        """Rename a study by changing its label.
+        """Rename a study by changing its label and directory.
+
+        The timestamp prefix of the directory is preserved; only the label
+        suffix is updated to match the new name.
 
         Args:
             old_label: Current study label.
@@ -213,19 +216,46 @@ class StudyManager:
         if not new_label.strip():
             return False
 
-        dir_name = self._label_to_dir[old_label]
+        old_dir_name = self._label_to_dir[old_label]
+        old_dir = self._studies_dir / old_dir_name
 
-        # Update in-memory mapping
+        # Build new dir name: keep timestamp prefix, replace label suffix
+        # Format: YYYY-MM-DD_HHMMSS_sanitized-label
+        parts = old_dir_name.split("_", 2)  # [date, time, old_label]
+        new_dir_name = f"{parts[0]}_{parts[1]}_{_sanitize_label(new_label)}"
+        new_dir = self._studies_dir / new_dir_name
+
+        # Update study label on all cards (while still at old path)
+        store = self._stores.get(old_dir_name)
+        if store:
+            store.rename_study(old_label, new_label)
+
+        # Rename directory on disk
+        if old_dir.exists() and not new_dir.exists():
+            old_dir.rename(new_dir)
+
+        # Point the ArtifactStore at the new directory
+        if store:
+            store.relocate(new_dir, new_dir_name)
+
+        # Update in-memory mappings
         del self._label_to_dir[old_label]
-        self._label_to_dir[new_label] = dir_name
+        self._label_to_dir[new_label] = new_dir_name
+
+        if old_dir_name in self._stores:
+            self._stores[new_dir_name] = self._stores.pop(old_dir_name)
+
+        for card_id, dn in self._card_index.items():
+            if dn == old_dir_name:
+                self._card_index[card_id] = new_dir_name
 
         # Update meta.json on disk
-        study_dir = self._studies_dir / dir_name
-        meta_path = study_dir / "meta.json"
+        meta_path = new_dir / "meta.json"
         if meta_path.exists():
             try:
                 meta = json.loads(meta_path.read_text())
                 meta["label"] = new_label
+                meta["dir_name"] = new_dir_name
                 meta_path.write_text(json.dumps(meta, indent=2))
             except (json.JSONDecodeError, OSError):
                 pass
@@ -233,12 +263,16 @@ class StudyManager:
         # Update registry
         registry = self._read_registry()
         for entry in registry:
-            if entry.get("dir_name") == dir_name:
+            if entry.get("dir_name") == old_dir_name:
                 entry["label"] = new_label
+                entry["dir_name"] = new_dir_name
                 break
         self._write_registry(registry)
 
-        logger.debug(f"Renamed study '{old_label}' -> '{new_label}' ({dir_name})")
+        logger.debug(
+            f"Renamed study '{old_label}' -> '{new_label}' "
+            f"({old_dir_name} -> {new_dir_name})"
+        )
         return True
 
     def clean_studies(self, older_than: str = "7d") -> int:

@@ -528,6 +528,39 @@ class ArtifactStore:
                 return _deserialize_card(d)
         return None
 
+    def rename_study(self, old_label: str, new_label: str) -> int:
+        """Update the study field on all cards matching old_label.
+
+        Args:
+            old_label: Current study label to match.
+            new_label: New study label to set.
+
+        Returns:
+            Number of cards updated.
+        """
+        index = self._read_index()
+        count = 0
+        for d in index:
+            if d.get("study") == old_label:
+                d["study"] = new_label
+                count += 1
+        if count:
+            self._write_index(index)
+        return count
+
+    def relocate(self, new_dir: Path, new_session_id: str) -> None:
+        """Update internal paths after the study directory has been renamed.
+
+        Args:
+            new_dir: The new study directory path (must already exist).
+            new_session_id: New session/directory identifier.
+        """
+        self.session_dir = new_dir
+        self.session_id = new_session_id
+        self._artifacts_dir = new_dir / "artifacts"
+        self._index_path = new_dir / "index.json"
+        self._meta_path = new_dir / "meta.json"
+
     def clear(self, keep_pinned: bool = True) -> None:
         """Clear all cards and artifacts from the session.
 

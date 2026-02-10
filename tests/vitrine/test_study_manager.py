@@ -349,6 +349,131 @@ class TestBuildContext:
         assert ctx["card_count"] == 0
 
 
+class TestRenameStudy:
+    def test_renames_label(self, manager):
+        manager.get_or_create_study("old-name")
+        assert manager.rename_study("old-name", "new-name") is True
+        assert "old-name" not in manager._label_to_dir
+        assert "new-name" in manager._label_to_dir
+
+    def test_renames_directory(self, manager):
+        manager.get_or_create_study("dir-old")
+        old_dir_name = manager._label_to_dir["dir-old"]
+        old_dir = manager._studies_dir / old_dir_name
+
+        manager.rename_study("dir-old", "dir-new")
+
+        new_dir_name = manager._label_to_dir["dir-new"]
+        new_dir = manager._studies_dir / new_dir_name
+
+        # Old directory gone, new directory exists
+        assert not old_dir.exists()
+        assert new_dir.exists()
+
+        # Timestamp prefix preserved, label suffix updated
+        assert new_dir_name.startswith(old_dir_name.rsplit("_", 1)[0])
+        assert new_dir_name.endswith("dir-new")
+
+    def test_updates_meta_json(self, manager):
+        manager.get_or_create_study("before")
+        manager.rename_study("before", "after")
+        new_dir_name = manager._label_to_dir["after"]
+        meta = json.loads(
+            (manager._studies_dir / new_dir_name / "meta.json").read_text()
+        )
+        assert meta["label"] == "after"
+        assert meta["dir_name"] == new_dir_name
+
+    def test_updates_registry(self, manager):
+        manager.get_or_create_study("reg-old")
+        manager.rename_study("reg-old", "reg-new")
+        registry = manager._read_registry()
+        assert registry[0]["label"] == "reg-new"
+        assert "reg-new" in registry[0]["dir_name"]
+
+    def test_updates_card_study_labels(self, manager):
+        from m4.vitrine.renderer import render
+
+        _, store = manager.get_or_create_study("cards-old")
+        render("card 1", study="cards-old", store=store)
+        render("card 2", study="cards-old", store=store)
+
+        manager.rename_study("cards-old", "cards-new")
+
+        # In-memory cards should have the new label
+        cards = manager.list_all_cards(study="cards-new")
+        assert len(cards) == 2
+        assert all(c.study == "cards-new" for c in cards)
+
+        # Old label should return nothing
+        assert manager.list_all_cards(study="cards-old") == []
+
+    def test_card_index_updated(self, manager):
+        from m4.vitrine.renderer import render
+
+        _, store = manager.get_or_create_study("idx-old")
+        old_dir_name = manager._label_to_dir["idx-old"]
+        card = render("hello", study="idx-old", store=store)
+        manager.register_card(card.card_id, old_dir_name)
+
+        manager.rename_study("idx-old", "idx-new")
+
+        # Card index should point to the new dir name
+        assert manager.get_store_for_card(card.card_id) is not None
+        assert manager._card_index[card.card_id] == manager._label_to_dir["idx-new"]
+
+    def test_store_paths_updated(self, manager):
+        from m4.vitrine.renderer import render
+
+        _, store = manager.get_or_create_study("path-old")
+        render("hello", study="path-old", store=store)
+
+        manager.rename_study("path-old", "path-new")
+
+        new_dir_name = manager._label_to_dir["path-new"]
+        new_dir = manager._studies_dir / new_dir_name
+
+        # ArtifactStore should point to the new directory
+        assert store.session_dir == new_dir
+        assert store.session_id == new_dir_name
+
+        # Store should still be functional (can read cards)
+        cards = store.list_cards()
+        assert len(cards) == 1
+
+    def test_cards_survive_restart_after_rename(self, display_dir):
+        """Cards are discoverable under the new label after server restart."""
+        from m4.vitrine.renderer import render
+
+        mgr1 = StudyManager(display_dir)
+        _, store = mgr1.get_or_create_study("pre-rename")
+        render("hello", study="pre-rename", store=store)
+        render("world", study="pre-rename", store=store)
+
+        mgr1.rename_study("pre-rename", "post-rename")
+
+        # Simulate server restart
+        mgr2 = StudyManager(display_dir)
+        assert "post-rename" in mgr2._label_to_dir
+        assert "pre-rename" not in mgr2._label_to_dir
+
+        cards = mgr2.list_all_cards(study="post-rename")
+        assert len(cards) == 2
+        assert all(c.study == "post-rename" for c in cards)
+
+    def test_rename_nonexistent_returns_false(self, manager):
+        assert manager.rename_study("nonexistent", "new") is False
+
+    def test_rename_to_existing_returns_false(self, manager):
+        manager.get_or_create_study("a")
+        manager.get_or_create_study("b")
+        assert manager.rename_study("a", "b") is False
+
+    def test_rename_to_empty_returns_false(self, manager):
+        manager.get_or_create_study("nonempty")
+        assert manager.rename_study("nonempty", "  ") is False
+
+
 class TestDiscovery:
     def test_discovers_existing_studies(self, display_dir):
         """StudyManager discovers studies created by a previous instance."""
