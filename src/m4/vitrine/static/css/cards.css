@@ -307,9 +307,25 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.section-divider:hover { color: var(--text); }
+
+.section-chevron {
+  font-size: 9px;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.section-collapsed .section-chevron {
+  transform: rotate(-90deg);
 }
 
 .section-divider.hidden-by-filter { display: none; }
+.hidden-by-section { display: none; }
 
 .section-divider::before,
 .section-divider::after {
