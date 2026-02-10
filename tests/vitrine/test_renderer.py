@@ -445,12 +445,12 @@ class TestIsMatplotlibFigure:
 
 
 class TestRenderForm:
-    def test_form_renders_as_markdown_card(self, store):
+    def test_form_renders_as_form_card(self, store):
         from m4.vitrine._types import Dropdown, Form
 
         form = Form([Dropdown("method", ["logistic", "cox"])])
         card = render(form, store=store)
-        assert card.card_type == CardType.MARKDOWN
+        assert card.card_type == CardType.FORM
 
     def test_form_preview_has_fields(self, store):
         from m4.vitrine._types import Dropdown, Form

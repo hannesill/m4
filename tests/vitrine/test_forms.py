@@ -2,7 +2,7 @@
 
 Tests cover:
 - All 10 field types: construct -> to_dict() -> assert keys/values
-- Form rendering -> CardType.MARKDOWN with preview.fields
+- Form rendering -> CardType.FORM with preview.fields
 - Form blocking flow (auto wait=True + form_values)
 - Controls parameter on show() -> hybrid data+controls cards (auto wait=True)
 - Form export in HTML and JSON
@@ -246,7 +246,7 @@ class TestFormRendering:
             ]
         )
         card = render(form, title="Cohort Filter", store=store)
-        assert card.card_type == CardType.MARKDOWN
+        assert card.card_type == CardType.FORM
         assert card.title == "Cohort Filter"
 
     def test_preview_has_fields(self, store):
@@ -272,7 +272,7 @@ class TestFormRendering:
         render(form, store=store)
         cards = store.list_cards()
         assert len(cards) == 1
-        assert cards[0].card_type == CardType.MARKDOWN
+        assert cards[0].card_type == CardType.FORM
 
 
 # ================================================================
@@ -382,7 +382,7 @@ class TestFormExport:
         with zipfile.ZipFile(out) as zf:
             cards = json.loads(zf.read("cards.json"))
             assert len(cards) == 1
-            assert cards[0]["card_type"] == "markdown"
+            assert cards[0]["card_type"] == "form"
 
 
 # ================================================================
@@ -637,7 +637,7 @@ class TestQuestionIntegration:
             ]
         )
         card = render(form, title="Interview", store=store)
-        assert card.card_type == CardType.MARKDOWN
+        assert card.card_type == CardType.FORM
         assert "fields" in card.preview
         assert card.preview["fields"][0]["type"] == "question"
         assert len(card.preview["fields"][0]["options"]) == 2
