@@ -345,13 +345,19 @@
   bottom: 0;
   background: var(--bg);
   border-top: 1px solid var(--border);
-  padding: 6px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  padding: 6px 0;
   font-size: 11px;
   color: var(--text-muted);
   transition: background 0.2s, border-color 0.2s;
+}
+
+.footer-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .status-dot {

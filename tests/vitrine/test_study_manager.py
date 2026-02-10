@@ -170,6 +170,26 @@ class TestListStudies:
         studies = manager.list_studies()
         assert studies[0]["card_count"] == 2
 
+    def test_card_count_excludes_sections(self, manager):
+        from m4.vitrine._types import CardDescriptor, CardType
+        from m4.vitrine.renderer import _make_card_id, _make_timestamp, render
+
+        _, store = manager.get_or_create_study("section-test")
+        render("hello", store=store)
+        store.store_card(
+            CardDescriptor(
+                card_id=_make_card_id(),
+                card_type=CardType.SECTION,
+                title="Phase 2",
+                timestamp=_make_timestamp(),
+                preview={"title": "Phase 2"},
+            )
+        )
+        render("world", store=store)
+
+        studies = manager.list_studies()
+        assert studies[0]["card_count"] == 2  # section excluded
+
 
 class TestDeleteStudy:
     def test_deletes_existing(self, manager):
@@ -268,6 +288,26 @@ class TestBuildContext:
         assert ctx["cards"][0]["title"] == "Card 1"
         assert ctx["cards"][1]["title"] == "Card 2"
         assert ctx["cards"][0]["card_type"] == "markdown"
+
+    def test_card_count_excludes_sections(self, manager):
+        from m4.vitrine._types import CardDescriptor, CardType
+        from m4.vitrine.renderer import _make_card_id, _make_timestamp, render
+
+        _, store = manager.get_or_create_study("ctx-section")
+        render("hello", title="Card 1", study="ctx-section", store=store)
+        store.store_card(
+            CardDescriptor(
+                card_id=_make_card_id(),
+                card_type=CardType.SECTION,
+                title="Phase 2",
+                timestamp=_make_timestamp(),
+                preview={"title": "Phase 2"},
+            )
+        )
+        render("world", title="Card 2", study="ctx-section", store=store)
+
+        ctx = manager.build_context("ctx-section")
+        assert ctx["card_count"] == 2  # section excluded from count
 
     def test_with_decision_cards(self, manager):
         from m4.vitrine.renderer import render

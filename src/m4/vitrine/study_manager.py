@@ -26,7 +26,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from m4.vitrine._types import CardDescriptor
+from m4.vitrine._types import CardDescriptor, CardType
 from m4.vitrine.artifacts import ArtifactStore
 
 logger = logging.getLogger(__name__)
@@ -308,16 +308,22 @@ class StudyManager:
                 except (json.JSONDecodeError, OSError):
                     pass
 
-            # Count cards lazily
+            # Count cards lazily (exclude sections — rendered as dividers, not cards)
             card_count = 0
             if dir_name in self._stores:
-                card_count = len(self._stores[dir_name].list_cards())
+                card_count = sum(
+                    1
+                    for c in self._stores[dir_name].list_cards()
+                    if c.card_type != CardType.SECTION
+                )
             else:
                 index_path = study_dir / "index.json"
                 if index_path.exists():
                     try:
                         cards = json.loads(index_path.read_text())
-                        card_count = len(cards)
+                        card_count = sum(
+                            1 for c in cards if c.get("card_type") != "section"
+                        )
                     except (json.JSONDecodeError, OSError):
                         pass
 
@@ -469,7 +475,7 @@ class StudyManager:
 
         return {
             "study": study,
-            "card_count": len(cards),
+            "card_count": sum(1 for c in cards if c.card_type != CardType.SECTION),
             "cards": card_summaries,
             "decisions": pending_responses,  # backwards-compat alias
             "pending_responses": pending_responses,
