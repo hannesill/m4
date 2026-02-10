@@ -7,13 +7,82 @@ category: system
 
 # M4 Clinical Research Workflow
 
-This skill guides you through a structured clinical research session. It ensures scientific rigor from hypothesis formation through analysis execution.
+This skill guides you through a structured clinical research session. It ensures scientific rigor from hypothesis formation through analysis execution. All work is tracked in a **vitrine study** — a persistent, browsable research journal with an integrated file panel.
 
 ## When This Skill Activates
 
 - User invokes `/research` command
 - User describes research intent: "I want to study...", "Can we analyze...", "What's the mortality rate for..."
 - User mentions cohort analysis, hypothesis testing, or comparative studies
+
+## Study Setup
+
+Every research session is organized as a **study** — one study per research question, spanning one or more agent conversations.
+
+### Starting a new study
+
+```python
+from m4.vitrine import show, section, register_output_dir, study_context, list_studies, export, set_status
+
+# Choose a descriptive, versioned study name
+STUDY = "early-vasopressors-sepsis-v1"
+
+# Register the output directory for file artifacts
+output_dir = register_output_dir(study=STUDY)
+# Returns: .vitrine/studies/{timestamp}_{study}/output/
+
+# All show() calls use the study label
+show("## Study: Early vasopressor use in sepsis\n...", title="Study Overview", study=STUDY)
+```
+
+### Continuing an existing study
+
+At the start of each new conversation, check for existing studies:
+
+```python
+from m4.vitrine import list_studies, study_context
+
+# List recent studies and ask the researcher which to continue
+studies = list_studies()
+
+# Re-orient by reading study context
+ctx = study_context("early-vasopressors-sepsis-v1")
+# Returns: card_count, cards, decisions_made, pending_responses
+```
+
+Use `section()` to mark the start of a new conversation within an ongoing study — not a new study.
+
+### Branching a study
+
+When the researcher wants a different approach to the same question, create a new study referencing the original:
+
+```python
+STUDY = "early-vasopressors-sepsis-v2"  # new version
+output_dir = register_output_dir(study=STUDY)
+show("Branched from v1. Changed exposure window from 6h to 3h.", title="Branch Note", study=STUDY)
+```
+
+### File artifacts
+
+Save all reproducible outputs (scripts, data, figures, protocol) to the output directory:
+
+```python
+# Protocol
+(output_dir / "PROTOCOL.md").write_text(protocol_md)
+
+# Numbered analysis scripts
+(output_dir / "01_data_extraction.py").write_text(extraction_code)
+
+# Data files
+(output_dir / "data").mkdir(exist_ok=True)
+cohort_df.to_parquet(output_dir / "data" / "cohort.parquet")
+
+# Figures
+(output_dir / "figures").mkdir(exist_ok=True)
+fig.write_image(str(output_dir / "figures" / "km_curves.png"))
+```
+
+These files appear in the vitrine Files panel alongside the card journal — the researcher sees everything in the browser.
 
 ## Phase 1: Research Interview
 
@@ -86,14 +155,10 @@ Ask: "Which dataset should we use?"
 
 ## Phase 2: Draft Research Protocol
 
-After the interview, produce a structured research plan. Show the protocol to the researcher for review before proceeding:
+After the interview, produce a structured research plan. **Save the protocol as a file and show it as a card for researcher approval:**
 
 ```python
-show(protocol_md, title="Research Protocol — Review", wait=True, prompt="Approve this protocol?", run_id=RUN)
-```
-
-```markdown
-## Research Protocol: [Title]
+protocol_md = """## Research Protocol: [Title]
 
 ### Research Question
 [Specific, answerable question]
@@ -133,18 +198,20 @@ show(protocol_md, title="Research Protocol — Review", wait=True, prompt="Appro
 ### M4 Skills to Use
 - [Relevant skill 1]: [Why]
 - [Relevant skill 2]: [Why]
+"""
+
+# Save to output directory (reproducibility)
+(output_dir / "PROTOCOL.md").write_text(protocol_md)
+
+# Show for researcher review and approval (journal + communication)
+response = show(protocol_md, title="Research Protocol", wait=True, prompt="Approve this protocol?", study=STUDY)
 ```
 
 ---
 
 ## Phase 3: Scientific Integrity Guardrails
 
-**Apply these checks throughout the analysis.** At each analysis step, save results to files first, then show key tables and charts to the researcher:
-
-```python
-cohort_df.to_csv("output/cohort.csv", index=False)
-show(cohort_df, title=f"Cohort (N={len(cohort_df)})", run_id=RUN)
-```
+**Apply these checks throughout the analysis:**
 
 ### Bias Prevention
 
@@ -188,14 +255,20 @@ show(cohort_df, title=f"Cohort (N={len(cohort_df)})", run_id=RUN)
 ### Reproducibility
 
 **Query Documentation**
-- Save all SQL queries with timestamps
+- Save all SQL queries as numbered scripts in `output_dir` (e.g., `01_data_extraction.py`)
 - Document data versions used
 - Note any manual data cleaning steps
 
 **Analysis Trail**
-- Number analyses sequentially
+- Number analyses sequentially — save scripts, show key results as cards
 - Distinguish exploratory from confirmatory
-- Record decision points and rationale
+- Record decision points and rationale using `show()` with `wait=True`
+
+**Vitrine Journal**
+- Use `show()` for key decisions, findings, and rationale (the journal)
+- Use `section()` to mark phase transitions within the study
+- Save files to `output_dir` for reproducibility (scripts, data, figures)
+- Use `set_status()` to keep the researcher informed during long operations
 
 ---
 
@@ -251,11 +324,16 @@ Use for complex analyses:
 
 ---
 
-## Example Interview Flow
+## Example Research Flow
 
 **User**: "I want to study if early vasopressor use affects mortality in sepsis"
 
-**AI Interview**:
+**Agent creates the study and interviews:**
+
+```python
+STUDY = "early-vasopressors-sepsis-v1"
+output_dir = register_output_dir(study=STUDY)
+```
 
 1. **Research Question**: "Let me help refine this. By 'early', do you mean within 1 hour, 6 hours, or 24 hours of sepsis onset? And by 'mortality', do you mean in-hospital, 28-day, or 90-day?"
 
@@ -271,35 +349,77 @@ Use for complex analyses:
 
 7. **Dataset**: "Let's use mimic-iv. The demo dataset is too small for treatment effect studies."
 
+**Agent drafts protocol, saves it, and asks for approval:**
+
+```python
+(output_dir / "PROTOCOL.md").write_text(protocol_md)
+response = show(protocol_md, title="Research Protocol", wait=True, prompt="Approve?", study=STUDY)
+```
+
+**Agent executes analysis with journal + files:**
+
+```python
+section("Phase 1: Cohort Definition", study=STUDY)
+# ... extract cohort ...
+cohort_df.to_parquet(output_dir / "data" / "cohort.parquet")
+(output_dir / "01_cohort_definition.py").write_text(script)
+show(cohort_df, title="Sepsis Cohort", description="N=4,238 after exclusions", study=STUDY)
+
+section("Phase 2: Propensity Matching", study=STUDY)
+# ... match groups ...
+show(balance_table, title="Covariate Balance", study=STUDY)
+
+section("Phase 3: Outcome Analysis", study=STUDY)
+# ... survival analysis ...
+show(km_fig, title="Kaplan-Meier Curves", study=STUDY)
+```
+
+**Agent wraps up:**
+
+```python
+section("Conclusions", study=STUDY)
+(output_dir / "RESULTS.md").write_text(results_md)
+show(results_md, title="Study Results", study=STUDY)
+export("output/early-vasopressors-report.html", study=STUDY)
+```
+
 ---
 
 ## Common Research Patterns
 
 ### Pattern: Mortality Risk Factors
 ```
-1. Define cohort (first-icu-stay) → save CSV, show(cohort_df)
-2. Extract baseline characteristics → save CSV, show(table1_df)
-3. Calculate severity (sofa-score or apsiii-score)
-4. Define mortality outcome
-5. Multivariable regression → save CSV, show(results_df)
+1. section("Phase 1: Cohort Definition", study=STUDY)
+2. Define cohort (first-icu-stay) → save script, show cohort table
+3. Extract baseline characteristics → save to data/
+4. section("Phase 2: Analysis", study=STUDY)
+5. Calculate severity (sofa-score or apsiii-score)
+6. Define mortality outcome
+7. Multivariable regression → save script, show results
+8. section("Phase 3: Results", study=STUDY)
+9. Summary card with effect sizes and CIs
 ```
 
 ### Pattern: Treatment Effect
 ```
-1. Define cohort and time zero → save CSV, show(cohort_df)
-2. Define exposure window (fixed time)
-3. Extract confounders at baseline
-4. Propensity score matching → show(balance_fig)
-5. Compare outcomes → save CSV, show(results_df)
+1. section("Phase 1: Cohort & Exposure", study=STUDY)
+2. Define cohort and time zero → show for approval
+3. Define exposure window (fixed time)
+4. section("Phase 2: Matching & Analysis", study=STUDY)
+5. Extract confounders at baseline
+6. Propensity score matching → show balance table
+7. Compare outcomes → save scripts, show results
 ```
 
 ### Pattern: Cohort Description
 ```
-1. Define cohort → save CSV, show(cohort_df)
-2. Demographics, comorbidities → show(table1_df)
-3. Severity scores
-4. Treatments received
-5. Outcomes (mortality, LOS, complications) → show(outcomes_df)
+1. section("Phase 1: Population", study=STUDY)
+2. Define cohort → show CONSORT-style flow
+3. section("Phase 2: Characterization", study=STUDY)
+4. Demographics, comorbidities → show Table 1
+5. Severity scores, treatments received
+6. section("Phase 3: Outcomes", study=STUDY)
+7. Outcomes (mortality, LOS, complications)
 ```
 
 ---
@@ -319,14 +439,17 @@ Stop and reconsider if you see:
 
 ## After Analysis Completion
 
-Use a section divider and summary card to close the analysis:
-
-```python
-section("Summary", run_id=RUN)
-show("## Findings\n- ...\n\n## Limitations\n- ...", title="Study Summary", run_id=RUN)
-```
-
-1. **Summarize findings** with effect sizes and confidence intervals
-2. **Acknowledge limitations** explicitly
-3. **Suggest validation** on independent data (e.g., eICU if used MIMIC)
-4. **Provide reproducibility info**: queries used, cohort flow, data version
+1. **Write RESULTS.md** to the output directory with findings, effect sizes, and confidence intervals
+2. **Show a summary card** with key findings for the researcher:
+   ```python
+   section("Conclusions", study=STUDY)
+   results_md = "## Key Findings\n..."
+   (output_dir / "RESULTS.md").write_text(results_md)
+   show(results_md, title="Study Results", study=STUDY)
+   ```
+3. **Acknowledge limitations** explicitly — show as a card for the record
+4. **Suggest validation** on independent data (e.g., eICU if used MIMIC)
+5. **Export the complete study** — journal cards + file artifacts in one package:
+   ```python
+   export("output/study-report.html", study=STUDY)
+   ```
