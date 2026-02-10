@@ -27,3 +27,6 @@ changelog:
   - version: "2.1"
     date: 2026-02-07
     summary: Integrate display into research phases — show protocol for review (Phase 2), save-then-show at each analysis step (Phase 3), section divider and summary card (After Analysis), and display annotations in common research patterns
+  - version: "3.0"
+    date: 2026-02-10
+    summary: Move research interview from terminal conversation to vitrine form card. Add Terminal and Vitrine handoff section. Restructure Phase 1 as form + review guidance. Update example flow to show form-first pattern with terminal refinement.

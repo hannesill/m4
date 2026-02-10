@@ -84,72 +84,89 @@ fig.write_image(str(output_dir / "figures" / "km_curves.png"))
 
 These files appear in the vitrine Files panel alongside the card journal — the researcher sees everything in the browser.
 
+## Terminal and Vitrine
+
+The researcher has the terminal and vitrine open side by side. Vitrine is where structured interaction happens — the interview form, data review, approvals. The terminal is where you discuss, explain reasoning, and refine what the researcher entered.
+
+**When blocking for input (`wait=True`), always narrate the handoff in the terminal.** Tell the researcher what you've posted and what you need from them before the `show()` call:
+
+> "I've posted the study parameters form in vitrine — please fill in your research question, outcome, and population criteria."
+
+The `show()` function prints a waiting message automatically, but your narration gives the researcher context for *what* to provide and *why* it matters.
+
+---
+
 ## Phase 1: Research Interview
 
-**Before writing any queries, interview the user to establish:**
+**Collect study parameters through a vitrine form.** This captures the researcher's intent in the study journal from the start.
 
-### 1. Research Question
-Ask: "What specific clinical question are you trying to answer?"
+Tell the researcher what you've posted before the blocking call:
 
-Good questions are:
-- Specific and answerable with available data
-- Clinically meaningful
-- Novel or confirmatory of existing findings
+> "I've posted the study parameters form in vitrine. Please fill in your research question, study design, and key parameters — I'll review everything and discuss refinements before we proceed."
 
-Help refine vague questions:
+```python
+from m4.vitrine import Form, TextInput, RadioGroup, Dropdown
+
+response = show(
+    Form([
+        TextInput("question", label="Research Question",
+                  placeholder="e.g., Is day-1 SOFA independently associated with 30-day mortality in sepsis?"),
+        RadioGroup("design", ["Descriptive", "Comparative", "Predictive", "Exploratory"],
+                   label="Study Design"),
+        TextInput("outcome", label="Primary Outcome",
+                  placeholder="e.g., 30-day mortality, in-hospital mortality, ICU LOS"),
+        TextInput("exposure", label="Exposure / Intervention",
+                  placeholder="e.g., Vasopressor within 6h of sepsis onset (blank for descriptive studies)"),
+        TextInput("population", label="Population & Exclusions",
+                  placeholder="e.g., Adult, first ICU stay, Sepsis-3, exclude death <6h"),
+        TextInput("confounders", label="Key Confounders",
+                  placeholder="e.g., Age, SOFA, admission source, comorbidities"),
+        Dropdown("dataset", ["mimic-iv", "mimic-iv-demo", "eicu", "mimic-iv-note"],
+                 label="Dataset"),
+    ]),
+    title="Study Parameters",
+    prompt="Define your research study",
+    study=STUDY,
+)
+
+params = response.values
+```
+
+### Reviewing the Response
+
+After the researcher submits the form, review each parameter in the terminal and discuss refinements before proceeding to the protocol.
+
+**Research Question** — Should be specific and answerable with available data. Help refine vague questions:
 - "Are sicker patients dying more?" → "Is day-1 SOFA score independently associated with 30-day mortality in sepsis patients?"
 
-### 2. Study Design
-Ask: "What type of study is this?"
-
-- **Descriptive**: Characterize a population (demographics, distributions)
-- **Comparative**: Compare groups (exposed vs unexposed, treatment A vs B)
-- **Predictive**: Build or validate a prediction model
-- **Exploratory**: Hypothesis-generating analysis
-
-### 3. Outcome Variable
-Ask: "What is your primary outcome?"
-
-Common outcomes and how to define them:
+**Outcome** — Common outcomes and how to define them:
 - **In-hospital mortality**: `hospital_expire_flag` in admissions table
 - **30-day mortality**: Compare `dod` to discharge time + 30 days
 - **ICU length of stay**: `los` in icustays, be wary of survivor bias
-- **Ventilation duration**: Requires careful definition (see m4 skills)
 - **Readmission**: Subsequent `hadm_id` for same `subject_id`
 
-### 4. Exposure/Intervention
-Ask: "What exposure or intervention are you studying?"
-
-For treatment comparisons:
+**Exposure** — For treatment comparisons, check:
 - How is treatment defined? (any use vs duration vs dose)
 - When is exposure status determined? (admission, 24h, 48h)
 - What's the comparator? (no treatment, alternative treatment)
 
-### 5. Population (Inclusion/Exclusion)
-Ask: "Who should be included in this study?"
-
-Standard considerations:
+**Population** — Standard considerations:
 - First ICU stay only? (avoid correlated observations)
 - Age restrictions? (pediatric exclusion common)
 - Minimum ICU stay? (be careful of immortal time bias)
-- Specific diagnoses? (how defined - ICD codes have limitations)
+- Specific diagnoses? (ICD codes are assigned at discharge — information leakage risk)
 
-### 6. Confounders
-Ask: "What factors might confound your results?"
-
-Common confounders in ICU research:
+**Confounders** — Common in ICU research:
 - Age, sex, comorbidities
 - Illness severity (SOFA, APACHE, SAPS)
 - Admission type (medical vs surgical vs trauma)
 - Hospital/unit effects
 
-### 7. Dataset Selection
-Ask: "Which dataset should we use?"
-
+**Dataset**:
 - **mimic-iv**: Full MIMIC-IV (requires access)
 - **mimic-iv-demo**: 100 patients, good for testing queries
-- **mimic-iv-note**: MIMIC-IV with clinical notes
 - **eicu**: Multi-center ICU data (different schema)
+- **mimic-iv-note**: MIMIC-IV with clinical notes
 
 ---
 
@@ -328,32 +345,57 @@ Use for complex analyses:
 
 **User**: "I want to study if early vasopressor use affects mortality in sepsis"
 
-**Agent creates the study and interviews:**
+**Agent creates the study and shows the interview form:**
 
 ```python
 STUDY = "early-vasopressors-sepsis-v1"
 output_dir = register_output_dir(study=STUDY)
 ```
 
-1. **Research Question**: "Let me help refine this. By 'early', do you mean within 1 hour, 6 hours, or 24 hours of sepsis onset? And by 'mortality', do you mean in-hospital, 28-day, or 90-day?"
+> "I've posted the study parameters form in vitrine. Please fill in your research question and key study parameters — I'll review everything and we can refine before proceeding."
 
-2. **Study Design**: "This is a comparative study - you're comparing early vs. late/no vasopressor use. We'll need to carefully define the comparison groups to avoid immortal time bias."
+```python
+response = show(
+    Form([
+        TextInput("question", label="Research Question",
+                  placeholder="e.g., Is early vasopressor use associated with lower mortality in sepsis?"),
+        RadioGroup("design", ["Descriptive", "Comparative", "Predictive", "Exploratory"],
+                   label="Study Design"),
+        TextInput("outcome", label="Primary Outcome",
+                  placeholder="e.g., 28-day mortality"),
+        TextInput("exposure", label="Exposure / Intervention",
+                  placeholder="e.g., Vasopressor within 6h of sepsis onset"),
+        TextInput("population", label="Population & Exclusions",
+                  placeholder="e.g., Adult, first ICU stay, Sepsis-3"),
+        TextInput("confounders", label="Key Confounders",
+                  placeholder="e.g., Age, SOFA, admission source, comorbidities"),
+        Dropdown("dataset", ["mimic-iv", "mimic-iv-demo", "eicu", "mimic-iv-note"],
+                 label="Dataset"),
+    ]),
+    title="Study Parameters",
+    prompt="Define your research study",
+    study=STUDY,
+)
+params = response.values
+```
 
-3. **Outcome**: "Let's use 28-day mortality so we capture both in-hospital and post-discharge deaths."
+**Agent reviews the form response and refines in the terminal:**
 
-4. **Exposure**: "I recommend defining 'early' as vasopressor initiation within 6 hours of suspected infection onset (using the suspicion-of-infection skill). The comparison group would be those who received vasopressors >6h or never."
+> "Good parameters. A few refinements I'd suggest:
+>
+> Your question says 'early vasopressor use' — I'd recommend defining 'early' as within 6 hours of suspected infection onset, using the suspicion-of-infection skill. The comparator would be vasopressor >6h or never.
+>
+> For population, we should also exclude patients who died within 6 hours (immortal time bias) and those already on vasopressors at admission.
+>
+> For confounders, given this is a treatment comparison, I'd recommend propensity score matching rather than just regression adjustment."
 
-5. **Population**: "I suggest: adult patients (>=18), first ICU stay, meeting Sepsis-3 criteria. Exclude patients who died within 6 hours (immortal time) and those on vasopressors at admission."
+**Agent drafts protocol and asks for approval:**
 
-6. **Confounders**: "We should adjust for: age, SOFA score at sepsis onset, admission source, comorbidities. I recommend using propensity score matching given this is an observational treatment comparison."
-
-7. **Dataset**: "Let's use mimic-iv. The demo dataset is too small for treatment effect studies."
-
-**Agent drafts protocol, saves it, and asks for approval:**
+> "I've posted the full research protocol in vitrine incorporating these refinements. Please review and approve."
 
 ```python
 (output_dir / "PROTOCOL.md").write_text(protocol_md)
-response = show(protocol_md, title="Research Protocol", wait=True, prompt="Approve?", study=STUDY)
+response = show(protocol_md, title="Research Protocol", wait=True, prompt="Approve this protocol?", study=STUDY)
 ```
 
 **Agent executes analysis with journal + files:**
