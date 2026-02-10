@@ -82,7 +82,7 @@ class TestServerCreation:
         assert not server.is_running
 
     def test_url_property(self, server):
-        assert server.url == "http://127.0.0.1:7799"
+        assert server.url == "http://vitrine.localhost:7799"
 
 
 class TestPortDiscovery:

@@ -51,6 +51,7 @@ logger = logging.getLogger(__name__)
 _STATIC_DIR = Path(__file__).parent / "static"
 _DEFAULT_PORT = 7741
 _MAX_PORT = 7750
+_DISPLAY_HOST = "vitrine.localhost"
 
 
 def _is_pid_alive(pid: int) -> bool:
@@ -1236,7 +1237,7 @@ class DisplayServer:
         import sys
 
         print(
-            f"vitrine: http://{self.host}:{self.port}",
+            f"vitrine: http://{_DISPLAY_HOST}:{self.port}",
             file=sys.stderr,
         )
 
@@ -1244,7 +1245,7 @@ class DisplayServer:
             try:
                 import webbrowser
 
-                webbrowser.open(f"http://{self.host}:{self.port}")
+                webbrowser.open(f"http://{_DISPLAY_HOST}:{self.port}")
             except Exception:
                 pass
 
@@ -1309,8 +1310,8 @@ class DisplayServer:
 
     @property
     def url(self) -> str:
-        """Return the server URL."""
-        return f"http://{self.host}:{self.port}"
+        """Return the server URL (using vitrine.localhost for display)."""
+        return f"http://{_DISPLAY_HOST}:{self.port}"
 
     def push_card(self, card: CardDescriptor) -> None:
         """Push a card to all connected WebSocket clients.

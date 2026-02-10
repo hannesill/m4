@@ -747,9 +747,10 @@ def _study_url(study: str | None) -> str | None:
     if url:
         return f"{url}/#study={quote(study, safe='')}"
     if server is not None:
-        host = getattr(server, "host", "127.0.0.1")
+        from m4.vitrine.server import _DISPLAY_HOST
+
         port = getattr(server, "port", 7741)
-        return f"http://{host}:{port}/#study={quote(study, safe='')}"
+        return f"http://{_DISPLAY_HOST}:{port}/#study={quote(study, safe='')}"
     return None
 
 
