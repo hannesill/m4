@@ -80,6 +80,24 @@ class TestCardDescriptor:
         assert card.provenance is None
         assert card.actions is None
 
+    def test_annotations_default_empty(self):
+        card = CardDescriptor(card_id="ann0", card_type=CardType.MARKDOWN)
+        assert card.annotations == []
+
+    def test_annotations_populated(self):
+        annotations = [
+            {"id": "a1", "text": "Looks off", "timestamp": "2026-02-10T14:00:00Z"},
+            {"id": "a2", "text": "Confirmed", "timestamp": "2026-02-10T15:00:00Z"},
+        ]
+        card = CardDescriptor(
+            card_id="ann1",
+            card_type=CardType.TABLE,
+            annotations=annotations,
+        )
+        assert len(card.annotations) == 2
+        assert card.annotations[0]["text"] == "Looks off"
+        assert card.annotations[1]["id"] == "a2"
+
     def test_with_actions(self):
         card = CardDescriptor(
             card_id="act1",

@@ -61,6 +61,7 @@ __all__ = [
     "export",
     "get_card",
     "get_selection",
+    "list_annotations",
     "list_studies",
     "on_event",
     "register_output_dir",
@@ -1113,6 +1114,42 @@ def get_card(card_id: str) -> CardDescriptor | None:
             if card.card_id.startswith(id_prefix):
                 return card
     return None
+
+
+def list_annotations(
+    study: str | None = None,
+) -> list[dict[str, Any]]:
+    """List all annotations, optionally filtered by study.
+
+    Each returned dict contains the annotation fields (id, text, timestamp)
+    plus ``card_id`` and ``card_title`` for context.
+
+    Args:
+        study: If provided, only include annotations from this study.
+
+    Returns:
+        List of annotation dicts, newest first.
+    """
+    _ensure_study_manager()
+    cards: list[CardDescriptor] = []
+    if _study_manager is not None:
+        cards = _study_manager.list_all_cards(study=study)
+    elif _store is not None:
+        cards = _store.list_cards()
+
+    annotations: list[dict[str, Any]] = []
+    for card in cards:
+        for ann in card.annotations:
+            annotations.append(
+                {
+                    **ann,
+                    "card_id": card.card_id,
+                    "card_title": card.title,
+                }
+            )
+
+    annotations.sort(key=lambda a: a.get("timestamp", ""), reverse=True)
+    return annotations
 
 
 def get_selection(card_id: str) -> Any:

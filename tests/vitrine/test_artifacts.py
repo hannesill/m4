@@ -364,6 +364,42 @@ class TestSerialization:
         assert restored.provenance.query == "SELECT 1"
         assert restored.provenance.dataset == "mimic-iv"
 
+    def test_roundtrip_with_annotations(self, store):
+        annotations = [
+            {
+                "id": "a1",
+                "text": "Mortality seems high",
+                "timestamp": "2026-02-10T14:32:00Z",
+            },
+            {
+                "id": "a2",
+                "text": "Double-check exclusions",
+                "timestamp": "2026-02-10T15:00:00Z",
+            },
+        ]
+        card = CardDescriptor(
+            card_id="rt-ann",
+            card_type=CardType.MARKDOWN,
+            preview={"text": "analysis"},
+            annotations=annotations,
+        )
+        store.store_card(card)
+        restored = store.list_cards()[0]
+        assert len(restored.annotations) == 2
+        assert restored.annotations[0]["id"] == "a1"
+        assert restored.annotations[0]["text"] == "Mortality seems high"
+        assert restored.annotations[1]["id"] == "a2"
+
+    def test_roundtrip_empty_annotations(self, store):
+        card = CardDescriptor(
+            card_id="rt-ann-empty",
+            card_type=CardType.MARKDOWN,
+            preview={"text": "no notes"},
+        )
+        store.store_card(card)
+        restored = store.list_cards()[0]
+        assert restored.annotations == []
+
     def test_roundtrip_without_provenance(self, store):
         card = CardDescriptor(
             card_id="rt-002",

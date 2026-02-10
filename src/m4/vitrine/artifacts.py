@@ -54,6 +54,7 @@ def _serialize_card(card: CardDescriptor) -> dict[str, Any]:
         "response_summary": card.response_summary,
         "response_artifact_id": card.response_artifact_id,
         "response_timestamp": card.response_timestamp,
+        "annotations": card.annotations,
     }
     if card.provenance:
         d["provenance"] = {
@@ -102,6 +103,7 @@ def _deserialize_card(d: dict[str, Any]) -> CardDescriptor:
         response_summary=d.get("response_summary"),
         response_artifact_id=d.get("response_artifact_id"),
         response_timestamp=d.get("response_timestamp"),
+        annotations=d.get("annotations", []),
     )
 
 

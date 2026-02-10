@@ -460,6 +460,9 @@ class CardDescriptor:
     response_timestamp: str | None = None
     """ISO timestamp of when the response was submitted."""
 
+    annotations: list[dict[str, Any]] = field(default_factory=list)
+    """Researcher annotations added via the browser UI."""
+
 
 @dataclass
 class DisplayEvent:

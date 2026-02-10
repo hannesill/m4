@@ -406,6 +406,20 @@ def _render_card_html(card: CardDescriptor, study_manager: StudyManager) -> str:
     # Body
     body_html = _render_card_body(card, study_manager)
 
+    # Annotations
+    annotations_html = ""
+    if card.annotations:
+        ann_items = []
+        for ann in card.annotations:
+            ann_ts = _format_timestamp(ann.get("timestamp", ""))
+            ann_items.append(
+                f'<div class="card-annotation">'
+                f'<div class="annotation-text">{escape(ann.get("text", ""))}</div>'
+                f'<div class="annotation-meta">{escape(ann_ts)}</div>'
+                f"</div>"
+            )
+        annotations_html = f'<div class="card-annotations">{"".join(ann_items)}</div>'
+
     return f"""<div class="card" data-card-type="{card_type}">
   <div class="card-header" data-type="{header_type}">
     <div class="card-type-icon" data-type="{header_type}">{type_letter}</div>
@@ -414,6 +428,7 @@ def _render_card_html(card: CardDescriptor, study_manager: StudyManager) -> str:
   </div>
   {desc_html}
   <div class="card-body">{body_html}</div>
+  {annotations_html}
   {prov_html}
 </div>"""
 
@@ -971,6 +986,33 @@ _EXPORT_CSS = """<style>
 
   .card-body {
     padding: 16px;
+  }
+
+  .card-annotations {
+    border-top: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+  }
+
+  .card-annotation {
+    padding: 8px 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 15%, transparent);
+  }
+
+  .card-annotation:last-child {
+    border-bottom: none;
+  }
+
+  .annotation-text {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  .annotation-meta {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-family: var(--font-mono);
   }
 
   .card-provenance {

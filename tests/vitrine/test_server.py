@@ -489,6 +489,134 @@ class TestSelectionTracker:
         assert server._selections.get("c1") == [3]
 
 
+class TestAnnotations:
+    """Test annotation add/edit/delete via WebSocket events."""
+
+    @pytest.fixture
+    def app(self, rm_server):
+        return rm_server._app
+
+    def test_annotation_add(self, app, study_mgr, rm_server):
+        from starlette.testclient import TestClient
+
+        _, store = study_mgr.get_or_create_study("ann-study")
+        dir_name = study_mgr._label_to_dir["ann-study"]
+        card = render("hello", title="Card 1", study="ann-study", store=store)
+        study_mgr.register_card(card.card_id, dir_name)
+
+        client = TestClient(app)
+        with client.websocket_connect("/ws") as ws:
+            ws.receive_json()  # drain replay
+            ws.send_json(
+                {
+                    "type": "vitrine.event",
+                    "event_type": "annotation",
+                    "card_id": card.card_id,
+                    "payload": {"action": "add", "text": "Looks suspicious"},
+                }
+            )
+            import time
+
+            time.sleep(0.2)
+            # Should receive a display.update broadcast
+            msg = ws.receive_json()
+            assert msg["type"] == "display.update"
+            assert msg["card_id"] == card.card_id
+            annotations = msg["card"]["annotations"]
+            assert len(annotations) == 1
+            assert annotations[0]["text"] == "Looks suspicious"
+            assert "id" in annotations[0]
+            assert "timestamp" in annotations[0]
+
+        # Verify persisted
+        cards = store.list_cards()
+        assert len(cards[0].annotations) == 1
+        assert cards[0].annotations[0]["text"] == "Looks suspicious"
+
+    def test_annotation_edit(self, app, study_mgr, rm_server):
+        from starlette.testclient import TestClient
+
+        _, store = study_mgr.get_or_create_study("ann-edit-study")
+        dir_name = study_mgr._label_to_dir["ann-edit-study"]
+        card = render("text", title="Editable", study="ann-edit-study", store=store)
+        study_mgr.register_card(card.card_id, dir_name)
+
+        # Pre-populate an annotation
+        store.update_card(
+            card.card_id,
+            annotations=[
+                {"id": "e1", "text": "Original", "timestamp": "2026-02-10T00:00:00Z"}
+            ],
+        )
+
+        client = TestClient(app)
+        with client.websocket_connect("/ws") as ws:
+            ws.receive_json()  # drain replay
+            ws.send_json(
+                {
+                    "type": "vitrine.event",
+                    "event_type": "annotation",
+                    "card_id": card.card_id,
+                    "payload": {
+                        "action": "edit",
+                        "annotation_id": "e1",
+                        "text": "Updated",
+                    },
+                }
+            )
+            import time
+
+            time.sleep(0.2)
+            msg = ws.receive_json()
+            assert msg["type"] == "display.update"
+            annotations = msg["card"]["annotations"]
+            assert len(annotations) == 1
+            assert annotations[0]["text"] == "Updated"
+            assert annotations[0]["id"] == "e1"
+
+    def test_annotation_delete(self, app, study_mgr, rm_server):
+        from starlette.testclient import TestClient
+
+        _, store = study_mgr.get_or_create_study("ann-del-study")
+        dir_name = study_mgr._label_to_dir["ann-del-study"]
+        card = render("text", title="Deletable", study="ann-del-study", store=store)
+        study_mgr.register_card(card.card_id, dir_name)
+
+        # Pre-populate two annotations
+        store.update_card(
+            card.card_id,
+            annotations=[
+                {"id": "d1", "text": "Keep this", "timestamp": "2026-02-10T00:00:00Z"},
+                {
+                    "id": "d2",
+                    "text": "Delete this",
+                    "timestamp": "2026-02-10T00:01:00Z",
+                },
+            ],
+        )
+
+        client = TestClient(app)
+        with client.websocket_connect("/ws") as ws:
+            ws.receive_json()  # drain replay
+            ws.send_json(
+                {
+                    "type": "vitrine.event",
+                    "event_type": "annotation",
+                    "card_id": card.card_id,
+                    "payload": {"action": "delete", "annotation_id": "d2"},
+                }
+            )
+            import time
+
+            time.sleep(0.2)
+            msg = ws.receive_json()
+            assert msg["type"] == "display.update"
+            annotations = msg["card"]["annotations"]
+            assert len(annotations) == 1
+            assert annotations[0]["id"] == "d1"
+            assert annotations[0]["text"] == "Keep this"
+
+
 class TestEventRouting:
     """Test WebSocket event routing to callbacks and event queue."""
 

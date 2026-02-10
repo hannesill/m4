@@ -420,13 +420,18 @@ class StudyManager:
         decisions_made = []
 
         for c in cards:
-            summary = {
+            summary: dict[str, Any] = {
                 "card_id": c.card_id,
                 "card_type": c.card_type.value,
                 "title": c.title,
                 "timestamp": c.timestamp,
                 "response_requested": c.response_requested,
             }
+            if c.annotations:
+                summary["annotations"] = [
+                    {"id": a["id"], "text": a["text"], "timestamp": a.get("timestamp")}
+                    for a in c.annotations
+                ]
             card_summaries.append(summary)
 
             if c.response_action:

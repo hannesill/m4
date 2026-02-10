@@ -116,6 +116,18 @@ function addCard(cardData) {
   };
   actions.appendChild(linkBtn);
 
+  // Annotate button
+  var annotateBtn = document.createElement('button');
+  annotateBtn.className = 'card-action-btn';
+  annotateBtn.title = 'Add annotation';
+  annotateBtn.setAttribute('aria-label', 'Add annotation');
+  annotateBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14s1-2 1-3V4a2 2 0 012-2h6a2 2 0 012 2v7c0 1 1 3 1 3"/><path d="M6 6h4"/><path d="M6 9h2"/></svg>';
+  annotateBtn.onclick = function(e) {
+    e.stopPropagation();
+    toggleAnnotationForm(el, cardData);
+  };
+  actions.appendChild(annotateBtn);
+
   header.appendChild(actions);
   el.appendChild(header);
 
@@ -171,6 +183,12 @@ function addCard(cardData) {
     updateAgentStatus('Waiting for your response');
     notifyDecisionCard(cardData);
   }
+
+  // Annotations
+  var annotationsContainer = document.createElement('div');
+  annotationsContainer.className = 'card-annotations';
+  renderAnnotations(annotationsContainer, cardData);
+  el.appendChild(annotationsContainer);
 
   // Provenance
   if (cardData.provenance) {
@@ -347,6 +365,15 @@ function updateCard(cardId, newCardData) {
     }
   }
 
+  // Re-render annotations
+  if (newCardData) {
+    var annotationsContainer = el.querySelector('.card-annotations');
+    if (annotationsContainer) {
+      annotationsContainer.innerHTML = '';
+      renderAnnotations(annotationsContainer, newCardData);
+    }
+  }
+
   // Flash animation to highlight the update
   el.classList.remove('flash');
   void el.offsetWidth; // Force reflow
@@ -368,6 +395,168 @@ function rebuildStudyFilter() {
     state.activeStudyFilter = '';
     updateDropdownTrigger();
   }
+}
+
+// ================================================================
+// ANNOTATIONS
+// ================================================================
+function renderAnnotations(container, cardData) {
+  var annotations = cardData.annotations || [];
+  if (annotations.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = '';
+  annotations.forEach(function(ann) {
+    var annEl = document.createElement('div');
+    annEl.className = 'card-annotation';
+    annEl.dataset.annotationId = ann.id;
+
+    var textEl = document.createElement('div');
+    textEl.className = 'annotation-text';
+    textEl.textContent = ann.text;
+    annEl.appendChild(textEl);
+
+    var metaEl = document.createElement('div');
+    metaEl.className = 'annotation-meta';
+
+    var ts = '';
+    if (ann.timestamp) {
+      try { ts = new Date(ann.timestamp).toLocaleString(); } catch(e) { ts = ann.timestamp; }
+    }
+    var metaText = document.createElement('span');
+    metaText.textContent = ts;
+    metaEl.appendChild(metaText);
+
+    var editBtn = document.createElement('button');
+    editBtn.className = 'annotation-action-btn';
+    editBtn.textContent = 'edit';
+    editBtn.onclick = function(e) {
+      e.stopPropagation();
+      startEditAnnotation(annEl, cardData, ann);
+    };
+    metaEl.appendChild(editBtn);
+
+    var deleteBtn = document.createElement('button');
+    deleteBtn.className = 'annotation-action-btn';
+    deleteBtn.textContent = 'delete';
+    deleteBtn.onclick = function(e) {
+      e.stopPropagation();
+      sendAnnotationEvent(cardData.card_id, 'delete', ann.id, '');
+    };
+    metaEl.appendChild(deleteBtn);
+
+    annEl.appendChild(metaEl);
+    container.appendChild(annEl);
+  });
+}
+
+function startEditAnnotation(annEl, cardData, ann) {
+  // Replace annotation content with edit form
+  annEl.innerHTML = '';
+  var textarea = document.createElement('textarea');
+  textarea.className = 'annotation-textarea';
+  textarea.value = ann.text;
+  textarea.rows = 2;
+  annEl.appendChild(textarea);
+
+  var btns = document.createElement('div');
+  btns.className = 'annotation-form-buttons';
+
+  var saveBtn = document.createElement('button');
+  saveBtn.className = 'response-btn response-btn-confirm';
+  saveBtn.textContent = 'Save';
+  saveBtn.onclick = function(e) {
+    e.stopPropagation();
+    var text = textarea.value.trim();
+    if (text) {
+      sendAnnotationEvent(cardData.card_id, 'edit', ann.id, text);
+    }
+  };
+  btns.appendChild(saveBtn);
+
+  var cancelBtn = document.createElement('button');
+  cancelBtn.className = 'response-btn response-btn-skip';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = function(e) {
+    e.stopPropagation();
+    // Re-render annotations to restore original state
+    var container = annEl.parentElement;
+    if (container) {
+      container.innerHTML = '';
+      renderAnnotations(container, cardData);
+    }
+  };
+  btns.appendChild(cancelBtn);
+  annEl.appendChild(btns);
+
+  textarea.focus();
+}
+
+function toggleAnnotationForm(cardEl, cardData) {
+  var existing = cardEl.querySelector('.annotation-form');
+  if (existing) {
+    existing.remove();
+    return;
+  }
+
+  var form = document.createElement('div');
+  form.className = 'annotation-form';
+
+  var textarea = document.createElement('textarea');
+  textarea.className = 'annotation-textarea';
+  textarea.placeholder = 'Add a note...';
+  textarea.rows = 2;
+  form.appendChild(textarea);
+
+  var btns = document.createElement('div');
+  btns.className = 'annotation-form-buttons';
+
+  var saveBtn = document.createElement('button');
+  saveBtn.className = 'response-btn response-btn-confirm';
+  saveBtn.textContent = 'Save';
+  saveBtn.onclick = function(e) {
+    e.stopPropagation();
+    var text = textarea.value.trim();
+    if (text) {
+      sendAnnotationEvent(cardData.card_id, 'add', '', text);
+      form.remove();
+    }
+  };
+  btns.appendChild(saveBtn);
+
+  var cancelBtn = document.createElement('button');
+  cancelBtn.className = 'response-btn response-btn-skip';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = function(e) {
+    e.stopPropagation();
+    form.remove();
+  };
+  btns.appendChild(cancelBtn);
+  form.appendChild(btns);
+
+  // Insert before annotations container
+  var annotationsContainer = cardEl.querySelector('.card-annotations');
+  if (annotationsContainer) {
+    cardEl.insertBefore(form, annotationsContainer);
+  } else {
+    cardEl.appendChild(form);
+  }
+
+  textarea.focus();
+}
+
+function sendAnnotationEvent(cardId, action, annotationId, text) {
+  if (!state.ws || !state.connected) return;
+  var payload = { action: action };
+  if (annotationId) payload.annotation_id = annotationId;
+  if (text) payload.text = text;
+  state.ws.send(JSON.stringify({
+    type: 'vitrine.event',
+    event_type: 'annotation',
+    card_id: cardId,
+    payload: payload
+  }));
 }
 
 function showEmptyState() {
