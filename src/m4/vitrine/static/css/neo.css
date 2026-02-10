@@ -686,6 +686,47 @@ body {
   border-radius: 0;
 }
 
+/* TOC overrides */
+.toc-panel {
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: var(--card-bg);
+}
+
+.toc-section-header {
+  font-family: var(--font-head);
+  font-weight: 700;
+}
+
+.toc-entry {
+  font-family: var(--font-head);
+}
+
+.toc-entry:hover {
+  background: var(--highlight);
+}
+
+.toc-entry.toc-active {
+  background: var(--highlight);
+  border-left: 3px solid var(--accent);
+}
+
+.toc-type-badge {
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+}
+
+.toc-jump-latest {
+  font-family: var(--font-head);
+  font-weight: 600;
+  border-top: var(--border-width) solid var(--border);
+}
+
+.toc-empty {
+  font-family: var(--font-head);
+}
+
 @media (max-width: 720px) {
   .form-date-range-row {
     flex-direction: column;

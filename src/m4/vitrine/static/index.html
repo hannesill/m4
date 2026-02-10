@@ -30,6 +30,16 @@
   </div>
   <div class="header-actions">
     <span id="agent-status"></span>
+    <div class="toc-dropdown" id="toc-dropdown" style="display: none;">
+      <button class="btn-icon" id="toc-btn" title="Table of contents" aria-label="Table of contents">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+      </button>
+      <div class="toc-panel" id="toc-panel" style="display: none;"></div>
+    </div>
     <div class="export-dropdown" id="export-dropdown">
       <button class="btn" id="export-btn" title="Export study" aria-label="Export study">&#8615; Export</button>
       <div class="export-dropdown-panel" id="export-dropdown-panel" style="display: none;"></div>
@@ -71,6 +81,7 @@
 <script defer src="/static/js/theme.js"></script>
 <script defer src="/static/js/status.js"></script>
 <script defer src="/static/js/studies.js"></script>
+<script defer src="/static/js/toc.js"></script>
 <script defer src="/static/js/export-ui.js"></script>
 <script defer src="/static/js/renderers.js"></script>
 <script defer src="/static/js/plotly.js"></script>

@@ -410,6 +410,7 @@ function applyStudyFilter() {
   }
 
   updateCardCount();
+  if (typeof tocNotifyChange === 'function') tocNotifyChange();
 }
 
 // ================================================================
