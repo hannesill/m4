@@ -1040,6 +1040,81 @@ class DisplayServer:
             if future and not future.done():
                 future.set_result(result)
 
+        elif event_type == "annotation":
+            # Researcher annotations: add, edit, delete
+            action = payload.get("action")
+            store = self._resolve_store(card_id)
+            if store is None:
+                return
+
+            if action == "add":
+                annotation_id = uuid.uuid4().hex[:8]
+                annotation = {
+                    "id": annotation_id,
+                    "text": payload.get("text", ""),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+                # Read current annotations, append, persist
+                cards = store.list_cards()
+                current: list[dict[str, Any]] = []
+                for c in cards:
+                    if c.card_id == card_id:
+                        current = list(c.annotations)
+                        break
+                current.append(annotation)
+                updated = store.update_card(card_id, annotations=current)
+                if updated:
+                    await self._broadcast(
+                        {
+                            "type": "display.update",
+                            "card_id": card_id,
+                            "card": _serialize_card(updated),
+                        }
+                    )
+
+            elif action == "edit":
+                ann_id = payload.get("annotation_id", "")
+                new_text = payload.get("text", "")
+                cards = store.list_cards()
+                current = []
+                for c in cards:
+                    if c.card_id == card_id:
+                        current = list(c.annotations)
+                        break
+                for ann in current:
+                    if ann.get("id") == ann_id:
+                        ann["text"] = new_text
+                        ann["timestamp"] = datetime.now(timezone.utc).isoformat()
+                        break
+                updated = store.update_card(card_id, annotations=current)
+                if updated:
+                    await self._broadcast(
+                        {
+                            "type": "display.update",
+                            "card_id": card_id,
+                            "card": _serialize_card(updated),
+                        }
+                    )
+
+            elif action == "delete":
+                ann_id = payload.get("annotation_id", "")
+                cards = store.list_cards()
+                current = []
+                for c in cards:
+                    if c.card_id == card_id:
+                        current = list(c.annotations)
+                        break
+                current = [a for a in current if a.get("id") != ann_id]
+                updated = store.update_card(card_id, annotations=current)
+                if updated:
+                    await self._broadcast(
+                        {
+                            "type": "display.update",
+                            "card_id": card_id,
+                            "card": _serialize_card(updated),
+                        }
+                    )
+
         elif event_type == "selection":
             # Passive selection tracking from browser checkboxes / chart selection
             self._selections[card_id] = payload.get("selected_indices", [])

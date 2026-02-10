@@ -114,7 +114,8 @@ body {
 .form-select-panel,
 .form-calendar-panel,
 .form-calendar-nav-btn,
-.response-message-input {
+.response-message-input,
+.annotation-textarea {
   border-radius: var(--radius);
 }
 
@@ -351,7 +352,8 @@ body {
 .form-field input[type="number"],
 .form-field input[type="date"],
 .form-select-trigger,
-.form-date-trigger {
+.form-date-trigger,
+.annotation-textarea {
   border: var(--border-width) solid var(--border);
   background: var(--card-bg);
   font-family: var(--font-mono);
@@ -365,7 +367,8 @@ body {
 .form-field input[type="number"]:focus,
 .form-field input[type="date"]:focus,
 .form-select-trigger:focus-visible,
-.form-date-trigger:focus-visible {
+.form-date-trigger:focus-visible,
+.annotation-textarea:focus {
   box-shadow: var(--shadow-pressed);
   border-color: var(--border);
 }

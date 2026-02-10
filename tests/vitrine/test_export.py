@@ -145,6 +145,29 @@ class TestExportHTML:
         result = export_html(populated_manager, out, study="test-study")
         assert result.exists()
 
+    def test_contains_annotations(self, populated_manager, tmp_path):
+        """Annotations on cards appear in the exported HTML."""
+        # Add annotations to the first card
+        _, store = populated_manager.get_or_create_study("test-study")
+        cards = store.list_cards()
+        store.update_card(
+            cards[0].card_id,
+            annotations=[
+                {
+                    "id": "ann1",
+                    "text": "This cohort seems too broad",
+                    "timestamp": "2026-02-10T14:32:00Z",
+                },
+            ],
+        )
+
+        out = tmp_path / "export_ann.html"
+        export_html(populated_manager, out, study="test-study")
+        html = out.read_text()
+        assert "This cohort seems too broad" in html
+        assert "card-annotations" in html
+        assert "annotation-text" in html
+
     def test_empty_study(self, manager, tmp_path):
         """Exporting a study with no cards produces a valid HTML file."""
         manager.get_or_create_study("empty-study")
