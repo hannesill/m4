@@ -74,6 +74,7 @@ class TestCardDescriptor:
         assert card.description is None
         assert card.study is None
         assert card.pinned is False
+        assert card.dismissed is False
         assert card.artifact_id is None
         assert card.artifact_type is None
         assert card.preview == {}
@@ -97,6 +98,12 @@ class TestCardDescriptor:
         assert len(card.annotations) == 2
         assert card.annotations[0]["text"] == "Looks off"
         assert card.annotations[1]["id"] == "a2"
+
+    def test_dismissed(self):
+        card = CardDescriptor(
+            card_id="dis1", card_type=CardType.MARKDOWN, dismissed=True
+        )
+        assert card.dismissed is True
 
     def test_with_actions(self):
         card = CardDescriptor(

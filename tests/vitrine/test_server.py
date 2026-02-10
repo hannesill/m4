@@ -1218,3 +1218,107 @@ class TestWebSocketDisconnect:
         )
         assert result["action"] == "timeout"
         loop.close()
+
+
+class TestDismiss:
+    """Test card dismiss/restore via WebSocket events."""
+
+    @pytest.fixture
+    def app(self, rm_server):
+        return rm_server._app
+
+    def test_dismiss_card(self, app, study_mgr, rm_server):
+        from starlette.testclient import TestClient
+
+        _, store = study_mgr.get_or_create_study("dis-study")
+        dir_name = study_mgr._label_to_dir["dis-study"]
+        card = render("hello", title="Dismissable", study="dis-study", store=store)
+        study_mgr.register_card(card.card_id, dir_name)
+
+        client = TestClient(app)
+        with client.websocket_connect("/ws") as ws:
+            ws.receive_json()  # drain replay
+            ws.send_json(
+                {
+                    "type": "vitrine.event",
+                    "event_type": "dismiss",
+                    "card_id": card.card_id,
+                    "payload": {"dismissed": True},
+                }
+            )
+            import time
+
+            time.sleep(0.2)
+            msg = ws.receive_json()
+            assert msg["type"] == "display.update"
+            assert msg["card_id"] == card.card_id
+            assert msg["card"]["dismissed"] is True
+
+        # Verify persisted
+        cards = store.list_cards()
+        assert cards[0].dismissed is True
+
+    def test_restore_card(self, app, study_mgr, rm_server):
+        from starlette.testclient import TestClient
+
+        _, store = study_mgr.get_or_create_study("restore-study")
+        dir_name = study_mgr._label_to_dir["restore-study"]
+        card = render("hello", title="Restorable", study="restore-study", store=store)
+        study_mgr.register_card(card.card_id, dir_name)
+
+        # Pre-dismiss
+        store.update_card(card.card_id, dismissed=True)
+
+        client = TestClient(app)
+        with client.websocket_connect("/ws") as ws:
+            ws.receive_json()  # drain replay
+            ws.send_json(
+                {
+                    "type": "vitrine.event",
+                    "event_type": "dismiss",
+                    "card_id": card.card_id,
+                    "payload": {"dismissed": False},
+                }
+            )
+            import time
+
+            time.sleep(0.2)
+            msg = ws.receive_json()
+            assert msg["type"] == "display.update"
+            assert msg["card"]["dismissed"] is False
+
+        # Verify persisted
+        cards = store.list_cards()
+        assert cards[0].dismissed is False
+
+    def test_dismiss_persists_across_reload(self, app, study_mgr, rm_server):
+        """Dismissed state persists on disk and survives page reload (WS replay)."""
+        from starlette.testclient import TestClient
+
+        _, store = study_mgr.get_or_create_study("persist-study")
+        dir_name = study_mgr._label_to_dir["persist-study"]
+        card = render("text", title="Persist", study="persist-study", store=store)
+        study_mgr.register_card(card.card_id, dir_name)
+
+        # Dismiss via WebSocket
+        client = TestClient(app)
+        with client.websocket_connect("/ws") as ws:
+            ws.receive_json()  # drain replay
+            ws.send_json(
+                {
+                    "type": "vitrine.event",
+                    "event_type": "dismiss",
+                    "card_id": card.card_id,
+                    "payload": {"dismissed": True},
+                }
+            )
+            import time
+
+            time.sleep(0.2)
+            ws.receive_json()  # drain update
+
+        # Reconnect — replay should include dismissed=True
+        with client.websocket_connect("/ws") as ws:
+            msg = ws.receive_json()
+            assert msg["type"] == "display.add"
+            assert msg["card"]["dismissed"] is True

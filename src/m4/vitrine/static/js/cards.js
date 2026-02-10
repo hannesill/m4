@@ -57,11 +57,8 @@ function addCard(cardData) {
   collapseBtn.title = 'Collapse';
   collapseBtn.setAttribute('aria-label', 'Collapse card');
   collapseBtn.onclick = function() {
-    var body = el.querySelector('.card-body');
-    var prov = el.querySelector('.card-provenance');
     var isCollapsed = collapseBtn.classList.toggle('collapsed');
-    if (body) body.classList.toggle('collapsed', isCollapsed);
-    if (prov) prov.classList.toggle('collapsed', isCollapsed);
+    el.classList.toggle('card-collapsed', isCollapsed);
     collapseBtn.title = isCollapsed ? 'Expand' : 'Collapse';
     collapseBtn.setAttribute('aria-label', isCollapsed ? 'Expand card' : 'Collapse card');
   };
@@ -122,6 +119,19 @@ function addCard(cardData) {
     toggleAnnotationForm(el, cardData);
   };
   actions.appendChild(annotateBtn);
+
+  // Dismiss button
+  var dismissBtn = document.createElement('button');
+  dismissBtn.className = 'card-action-btn dismiss-btn';
+  dismissBtn.title = cardData.dismissed ? 'Show card' : 'Hide card';
+  dismissBtn.setAttribute('aria-label', cardData.dismissed ? 'Show card' : 'Hide card');
+  dismissBtn.innerHTML = cardData.dismissed ? EYE_OFF_SVG : EYE_SVG;
+  dismissBtn.onclick = function(e) {
+    e.stopPropagation();
+    var currentlyDismissed = el.classList.contains('dismissed');
+    sendDismissEvent(cardData.card_id, !currentlyDismissed);
+  };
+  actions.appendChild(dismissBtn);
 
   header.appendChild(actions);
   el.appendChild(header);
@@ -200,6 +210,15 @@ function addCard(cardData) {
   }
 
   feed.appendChild(el);
+
+  // Apply dismissed state
+  if (cardData.dismissed) {
+    el.classList.add('dismissed');
+    if (!state.showDismissed) {
+      el.classList.add('hidden-by-dismiss');
+    }
+    updateDismissToggleVisibility();
+  }
 
   // Hide card if it lands inside a collapsed section
   if (isInCollapsedSection(el)) {
@@ -369,6 +388,25 @@ function updateCard(cardId, newCardData) {
     }
   }
 
+  // Handle dismissed state
+  if (newCardData) {
+    var isDismissed = !!newCardData.dismissed;
+    el.classList.toggle('dismissed', isDismissed);
+    if (isDismissed && !state.showDismissed) {
+      el.classList.add('hidden-by-dismiss');
+    } else {
+      el.classList.remove('hidden-by-dismiss');
+    }
+    var dBtn = el.querySelector('.dismiss-btn');
+    if (dBtn) {
+      dBtn.title = isDismissed ? 'Show card' : 'Hide card';
+      dBtn.setAttribute('aria-label', isDismissed ? 'Show card' : 'Hide card');
+      dBtn.innerHTML = isDismissed ? EYE_OFF_SVG : EYE_SVG;
+    }
+    updateDismissToggleVisibility();
+    updateCardCount();
+  }
+
   // Flash animation to highlight the update
   el.classList.remove('flash');
   void el.offsetWidth; // Force reflow
@@ -530,10 +568,10 @@ function toggleAnnotationForm(cardEl, cardData) {
   btns.appendChild(cancelBtn);
   form.appendChild(btns);
 
-  // Insert before annotations container
+  // Insert after annotations container
   var annotationsContainer = cardEl.querySelector('.card-annotations');
   if (annotationsContainer) {
-    cardEl.insertBefore(form, annotationsContainer);
+    annotationsContainer.parentNode.insertBefore(form, annotationsContainer.nextSibling);
   } else {
     cardEl.appendChild(form);
   }
@@ -567,6 +605,52 @@ function showEmptyState() {
     + '<div><code>from m4.vitrine import show</code></div>';
   feed.appendChild(empty);
 }
+
+// ================================================================
+// DISMISS / HIDE
+// ================================================================
+function sendDismissEvent(cardId, dismissed) {
+  if (!state.ws || !state.connected) return;
+  state.ws.send(JSON.stringify({
+    type: 'vitrine.event',
+    event_type: 'dismiss',
+    card_id: cardId,
+    payload: { dismissed: dismissed }
+  }));
+}
+
+function applyDismissFilter() {
+  var cards = feed.querySelectorAll('.card.dismissed');
+  cards.forEach(function(el) {
+    if (state.showDismissed) {
+      el.classList.remove('hidden-by-dismiss');
+    } else {
+      el.classList.add('hidden-by-dismiss');
+    }
+  });
+  updateCardCount();
+}
+
+function updateDismissToggleVisibility() {
+  var toggle = document.getElementById('dismiss-toggle');
+  if (!toggle) return;
+  var hasDismissed = feed.querySelector('.card.dismissed') !== null;
+  toggle.style.display = hasDismissed ? '' : 'none';
+}
+
+// Toggle click handler — wired up in init.js-compatible IIFE
+(function() {
+  var toggle = document.getElementById('dismiss-toggle');
+  if (toggle) {
+    toggle.addEventListener('click', function() {
+      state.showDismissed = !state.showDismissed;
+      toggle.classList.toggle('active', state.showDismissed);
+      toggle.title = state.showDismissed ? 'Hide hidden cards' : 'Show hidden cards';
+      toggle.innerHTML = state.showDismissed ? EYE_SVG : EYE_OFF_SVG;
+      applyDismissFilter();
+    });
+  }
+})();
 
 function buildCardPrompt(card) {
   var prompt = 'Re: "' + (card.title || 'Untitled') + '" [card:' + card.card_id + (card.study ? ', study:' + card.study : '') + ']\n';

@@ -444,6 +444,15 @@ body {
   align-items: center;
 }
 
+/* .btn has a border + larger line-height; .btn-icon does not.
+   Force equal height so all navbar buttons align.
+   Overridden by neo.css (32px) due to thicker borders. */
+.header-actions .btn,
+.header-actions .btn-icon {
+  height: 28px;
+  box-sizing: border-box;
+}
+
 .btn {
   padding: 5px 12px;
   border: 1px solid var(--border);

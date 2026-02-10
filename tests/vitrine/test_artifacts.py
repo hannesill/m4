@@ -400,6 +400,31 @@ class TestSerialization:
         restored = store.list_cards()[0]
         assert restored.annotations == []
 
+    def test_roundtrip_with_dismissed(self, store):
+        card = CardDescriptor(
+            card_id="rt-dis",
+            card_type=CardType.MARKDOWN,
+            preview={"text": "dismissed card"},
+            dismissed=True,
+        )
+        store.store_card(card)
+        restored = store.list_cards()[0]
+        assert restored.dismissed is True
+
+    def test_dismissed_backward_compat(self, store):
+        """Cards serialized before the dismissed field should default to False."""
+        raw = [
+            {
+                "card_id": "old-card",
+                "card_type": "markdown",
+                "preview": {"text": "old"},
+                "provenance": None,
+            }
+        ]
+        store._write_index(raw)
+        restored = store.list_cards()[0]
+        assert restored.dismissed is False
+
     def test_roundtrip_without_provenance(self, store):
         card = CardDescriptor(
             card_id="rt-002",

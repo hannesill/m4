@@ -418,6 +418,9 @@ class CardDescriptor:
     pinned: bool = False
     """Whether this card survives clear() operations."""
 
+    dismissed: bool = False
+    """Whether this card is soft-hidden in the browser (provenance preserved)."""
+
     artifact_id: str | None = None
     """Reference to artifact in the store (for large objects)."""
 

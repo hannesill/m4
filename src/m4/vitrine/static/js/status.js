@@ -15,7 +15,7 @@ function updateCardCount() {
   var all = feed.querySelectorAll('.card');
   var visible = 0;
   all.forEach(function(el) {
-    if (!el.classList.contains('hidden-by-filter')) visible++;
+    if (!el.classList.contains('hidden-by-filter') && !el.classList.contains('hidden-by-dismiss')) visible++;
   });
   var text = visible + ' card' + (visible !== 1 ? 's' : '');
   if (visible !== all.length) {

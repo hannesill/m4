@@ -1115,6 +1115,20 @@ class DisplayServer:
                         }
                     )
 
+        elif event_type == "dismiss":
+            dismissed = payload.get("dismissed", True)
+            store = self._resolve_store(card_id)
+            if store is not None:
+                updated = store.update_card(card_id, dismissed=dismissed)
+                if updated:
+                    await self._broadcast(
+                        {
+                            "type": "display.update",
+                            "card_id": card_id,
+                            "card": _serialize_card(updated),
+                        }
+                    )
+
         elif event_type == "selection":
             # Passive selection tracking from browser checkboxes / chart selection
             self._selections[card_id] = payload.get("selected_indices", [])

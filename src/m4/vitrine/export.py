@@ -420,7 +420,8 @@ def _render_card_html(card: CardDescriptor, study_manager: StudyManager) -> str:
             )
         annotations_html = f'<div class="card-annotations">{"".join(ann_items)}</div>'
 
-    return f"""<div class="card" data-card-type="{card_type}">
+    dismissed_class = " dismissed" if card.dismissed else ""
+    return f"""<div class="card{dismissed_class}" data-card-type="{card_type}">
   <div class="card-header" data-type="{header_type}">
     <div class="card-type-icon" data-type="{header_type}">{type_letter}</div>
     <span class="card-title">{title_text}</span>
@@ -923,6 +924,8 @@ _EXPORT_CSS = """<style>
     overflow: hidden;
     page-break-inside: avoid;
   }
+
+  .card.dismissed { opacity: 0.5; }
 
   .card-header {
     padding: 10px 14px;

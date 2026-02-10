@@ -146,6 +146,13 @@ body {
   box-shadow: none;
 }
 
+/* Override base.css 28px — neo uses 2px borders + 6px padding,
+   so buttons need 32px to fit content without clipping. */
+.header-actions .btn,
+.header-actions .btn-icon {
+  height: 32px;
+}
+
 .btn-icon {
   border: var(--border-width) solid var(--border);
   border-radius: var(--radius);
