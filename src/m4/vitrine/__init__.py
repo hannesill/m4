@@ -753,6 +753,14 @@ def show(
     if not wait:
         return DisplayHandle(card.card_id, url=_study_url(study), study=study)
 
+    # Signal in terminal that we're waiting for browser input
+    _wait_label = title or prompt or "decision card"
+    _wait_url = _study_url(study)
+    if _wait_url:
+        print(f'Waiting for response on "{_wait_label}" in vitrine → {_wait_url}')
+    else:
+        print(f'Waiting for response on "{_wait_label}" in vitrine')
+
     # Blocking flow: wait for user response
     result = _wait_for_card_response(card.card_id, timeout)
     return DisplayResponse(

@@ -21,3 +21,6 @@ changelog:
   - version: "1.0"
     date: 2026-02-07
     summary: Initial creation documenting the m4.vitrine public API — show(), section(), interaction patterns, run management, and the save-then-show principle
+  - version: "1.1"
+    date: 2026-02-10
+    summary: Add terminal handoff guidance to Agent Usage Patterns — narrate blocking calls before show(wait=True) so the researcher knows what to evaluate in vitrine.

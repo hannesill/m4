@@ -77,6 +77,7 @@ set_status("Running logistic regression...")
 
 - **Document decisions as you make them.** Every exclusion criterion, parameter choice, or methodology decision should be a card. The journal should explain *why*, not just *what*.
 - **Use `show()` instead of `print()`** for DataFrames and charts — the browser handles rendering, keeping terminal output minimal.
+- **Narrate blocking calls in the terminal.** When using `show(wait=True)`, always tell the researcher what you've posted and what you need from them *before* the call: "I've posted the cohort for review in vitrine — please check the exclusion criteria and approve before I continue." The `show()` function prints a waiting message automatically, but your narration gives context for what to evaluate.
 - **Batch related outputs, then block.** Show several cards, then use a single `wait=True` card for the decision point.
 - **Use `set_status()` during long operations** so the researcher knows the agent is working ("Querying 4.2M rows...", "Running bootstrap...").
 - **Attach provenance with `source=`** when showing query results — it records where data came from.
