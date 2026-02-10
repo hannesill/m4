@@ -197,6 +197,7 @@ function addCard(cardData) {
   }
 
   updateCardCount();
+  if (typeof tocNotifyChange === 'function') tocNotifyChange();
 
   // Check for pending deep-link scroll (prefix match)
   if (state.pendingCardScroll && cardData.card_id.indexOf(state.pendingCardScroll) === 0) {
@@ -239,6 +240,7 @@ function addSection(title, study) {
   }
 
   scrollToBottom();
+  if (typeof tocNotifyChange === 'function') tocNotifyChange();
 }
 
 function updateCard(cardId, newCardData) {
@@ -306,6 +308,7 @@ function updateCard(cardId, newCardData) {
   void el.offsetWidth; // Force reflow
   el.classList.add('flash');
   setTimeout(function() { el.classList.remove('flash'); }, 600);
+  if (typeof tocNotifyChange === 'function') tocNotifyChange();
 }
 
 function rebuildStudyFilter() {
