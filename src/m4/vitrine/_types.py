@@ -327,6 +327,60 @@ class NumberInput:
         return d
 
 
+@dataclass
+class Question:
+    """Interview-style question with rich option descriptions."""
+
+    name: str
+    question: str
+    options: list[tuple[str, str] | str]
+    header: str | None = None
+    multi_select: bool = False
+    allow_other: bool = True
+    default: str | list[str] | None = None
+
+    def __post_init__(self) -> None:
+        if not self.options:
+            raise ValueError("Question options must be non-empty")
+        labels = self._option_labels()
+        if self.default is not None:
+            if isinstance(self.default, list):
+                for d in self.default:
+                    if d not in labels:
+                        raise ValueError(
+                            f"Question default {d!r} not in option labels {labels}"
+                        )
+            elif self.default not in labels:
+                raise ValueError(
+                    f"Question default {self.default!r} not in option labels {labels}"
+                )
+
+    def _option_labels(self) -> list[str]:
+        """Extract label strings from options (tuple or plain string)."""
+        return [opt[0] if isinstance(opt, tuple) else opt for opt in self.options]
+
+    def to_dict(self) -> dict[str, Any]:
+        options_out: list[dict[str, str]] = []
+        for opt in self.options:
+            if isinstance(opt, tuple):
+                options_out.append({"label": opt[0], "description": opt[1]})
+            else:
+                options_out.append({"label": opt, "description": ""})
+        d: dict[str, Any] = {
+            "type": "question",
+            "name": self.name,
+            "question": self.question,
+            "options": options_out,
+            "multi_select": self.multi_select,
+            "allow_other": self.allow_other,
+        }
+        if self.header:
+            d["header"] = self.header
+        if self.default is not None:
+            d["default"] = self.default
+        return d
+
+
 # Union of all field primitives
 FormField = (
     Dropdown
@@ -339,6 +393,7 @@ FormField = (
     | TextInput
     | DateRange
     | NumberInput
+    | Question
 )
 
 

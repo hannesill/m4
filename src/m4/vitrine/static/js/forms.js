@@ -50,6 +50,9 @@ function renderFormFields(container, fields) {
       case 'number':
         renderNumberField(fieldEl, field);
         break;
+      case 'question':
+        renderQuestionField(fieldEl, field);
+        break;
       default:
         fieldEl.textContent = 'Unknown field type: ' + field.type;
     }
@@ -662,6 +665,130 @@ function renderNumberField(container, field) {
   container.appendChild(input);
 }
 
+function renderQuestionField(container, field) {
+  // Optional header chip
+  if (field.header) {
+    var chip = document.createElement('span');
+    chip.className = 'question-header';
+    chip.textContent = field.header;
+    container.appendChild(chip);
+  }
+
+  // Question text
+  var questionText = document.createElement('div');
+  questionText.className = 'question-text';
+  questionText.textContent = field.question || '';
+  container.appendChild(questionText);
+
+  var optionsDiv = document.createElement('div');
+  optionsDiv.className = 'question-options';
+
+  var inputType = field.multi_select ? 'checkbox' : 'radio';
+  var groupName = 'question-' + field.name + '-' + Math.random().toString(36).slice(2, 8);
+  var defaults = field.default;
+  if (defaults != null && !Array.isArray(defaults)) defaults = [defaults];
+
+  (field.options || []).forEach(function(opt) {
+    var optLabel = document.createElement('label');
+    optLabel.className = 'question-option';
+
+    var input = document.createElement('input');
+    input.type = inputType;
+    if (inputType === 'radio') input.name = groupName;
+    input.value = opt.label || '';
+    input.dataset.fieldInput = field.name;
+
+    if (defaults && defaults.indexOf(input.value) !== -1) {
+      input.checked = true;
+    }
+
+    // Click on option card selects it
+    input.addEventListener('change', function() {
+      // Update selected state on option cards
+      var siblings = optionsDiv.querySelectorAll('.question-option');
+      siblings.forEach(function(sib) {
+        var sibInput = sib.querySelector('input');
+        sib.classList.toggle('selected', sibInput && sibInput.checked);
+      });
+      // Deselect "Other" when a pre-defined option is selected (single select)
+      if (inputType === 'radio') {
+        var otherOpt = optionsDiv.querySelector('.question-option-other');
+        if (otherOpt) otherOpt.classList.remove('selected');
+        var otherRadio = optionsDiv.querySelector('.question-option-other input[type="radio"]');
+        if (otherRadio) otherRadio.checked = false;
+      }
+    });
+
+    var labelSpan = document.createElement('span');
+    labelSpan.className = 'question-option-label';
+    labelSpan.textContent = opt.label || '';
+
+    optLabel.appendChild(input);
+    optLabel.appendChild(labelSpan);
+
+    if (opt.description) {
+      var descSpan = document.createElement('span');
+      descSpan.className = 'question-option-desc';
+      descSpan.textContent = opt.description;
+      optLabel.appendChild(descSpan);
+    }
+
+    if (input.checked) optLabel.classList.add('selected');
+    optionsDiv.appendChild(optLabel);
+  });
+
+  // "Other" option
+  if (field.allow_other !== false) {
+    var otherLabel = document.createElement('label');
+    otherLabel.className = 'question-option question-option-other';
+
+    var otherInput = document.createElement('input');
+    otherInput.type = inputType;
+    if (inputType === 'radio') otherInput.name = groupName;
+    otherInput.value = '__other__';
+    otherInput.dataset.fieldInput = field.name;
+
+    var otherLabelSpan = document.createElement('span');
+    otherLabelSpan.className = 'question-option-label';
+    otherLabelSpan.textContent = 'Other:';
+
+    var otherTextInput = document.createElement('input');
+    otherTextInput.type = 'text';
+    otherTextInput.className = 'question-other-input';
+    otherTextInput.dataset.otherInput = field.name;
+    otherTextInput.placeholder = 'Type your answer...';
+
+    // Focus text input selects the "Other" radio/checkbox
+    otherTextInput.addEventListener('focus', function() {
+      otherInput.checked = true;
+      otherLabel.classList.add('selected');
+      if (inputType === 'radio') {
+        var siblings = optionsDiv.querySelectorAll('.question-option:not(.question-option-other)');
+        siblings.forEach(function(sib) {
+          sib.classList.remove('selected');
+          var sibInput = sib.querySelector('input');
+          if (sibInput) sibInput.checked = false;
+        });
+      }
+    });
+
+    otherInput.addEventListener('change', function() {
+      var siblings = optionsDiv.querySelectorAll('.question-option');
+      siblings.forEach(function(sib) {
+        var sibInput = sib.querySelector('input');
+        sib.classList.toggle('selected', sibInput && sibInput.checked);
+      });
+    });
+
+    otherLabel.appendChild(otherInput);
+    otherLabel.appendChild(otherLabelSpan);
+    otherLabel.appendChild(otherTextInput);
+    optionsDiv.appendChild(otherLabel);
+  }
+
+  container.appendChild(optionsDiv);
+}
+
 function collectFormValues(cardEl) {
   var values = {};
   var fields = cardEl.querySelectorAll('.form-field');
@@ -723,6 +850,33 @@ function collectFormValues(cardEl) {
         if (num) values[name] = num.value !== '' ? parseFloat(num.value) : null;
         break;
       }
+      case 'question': {
+        var hasCheckbox = fieldEl.querySelector('input[type="checkbox"]');
+        if (hasCheckbox) {
+          // Multi-select mode
+          var selected = [];
+          var checked = fieldEl.querySelectorAll('input[type="checkbox"]:checked');
+          checked.forEach(function(cb) {
+            if (cb.value === '__other__') {
+              var otherText = fieldEl.querySelector('[data-other-input]');
+              if (otherText && otherText.value.trim()) selected.push(otherText.value.trim());
+            } else {
+              selected.push(cb.value);
+            }
+          });
+          values[name] = selected;
+        } else {
+          // Single-select mode
+          var sel = fieldEl.querySelector('input[type="radio"]:checked');
+          if (sel && sel.value === '__other__') {
+            var otherText = fieldEl.querySelector('[data-other-input]');
+            values[name] = (otherText && otherText.value.trim()) ? otherText.value.trim() : null;
+          } else {
+            values[name] = sel ? sel.value : null;
+          }
+        }
+        break;
+      }
     }
   });
   return values;
@@ -735,7 +889,7 @@ function renderFrozenForm(container, values, fields) {
   // Build a map of field names to labels
   var labelMap = {};
   (fields || []).forEach(function(f) {
-    labelMap[f.name] = f.label || f.name;
+    labelMap[f.name] = f.header || f.label || f.question || f.name;
   });
 
   Object.keys(values).forEach(function(key) {

@@ -27,7 +27,9 @@
 .card.responded .form-field select,
 .card.responded .form-field textarea,
 .card.responded .form-select-trigger,
-.card.responded .form-toggle-track {
+.card.responded .form-toggle-track,
+.card.responded .question-option,
+.card.responded .question-other-input {
   pointer-events: none;
   opacity: 0.6;
 }
@@ -423,6 +425,171 @@
   transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
 }
 
+/* Question field */
+.question-header {
+  display: inline-block;
+  font-family: var(--font-head);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 8px;
+  border: var(--border-width) solid var(--border);
+  background: var(--bg-header);
+  margin-bottom: 4px;
+}
+
+.question-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.question-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.question-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: var(--border-width) solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s, box-shadow 0.1s;
+}
+
+.question-option:hover {
+  background: var(--bg-header);
+}
+
+.question-option.selected {
+  background: var(--text);
+  color: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.question-option.selected .question-option-label {
+  color: var(--card-bg);
+}
+
+.question-option.selected .question-option-desc {
+  color: color-mix(in srgb, var(--card-bg) 70%, transparent);
+}
+
+.question-option.selected input[type="radio"],
+.question-option.selected input[type="checkbox"] {
+  border-color: var(--card-bg);
+  background: var(--text);
+}
+
+.question-option.selected input[type="radio"]:checked {
+  background: radial-gradient(circle at center, var(--text) 0 34%, var(--card-bg) 40%);
+}
+
+.question-option.selected input[type="checkbox"]:checked {
+  background-color: var(--card-bg);
+}
+
+.question-option.selected input[type="checkbox"]:checked::after {
+  border-color: var(--text);
+}
+
+.question-option input[type="radio"],
+.question-option input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 0 0;
+  border: var(--border-width) solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s;
+}
+
+.question-option input[type="radio"] {
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+}
+
+.question-option input[type="radio"]:checked {
+  background: radial-gradient(circle at center, var(--card-bg) 0 34%, var(--text) 40%);
+}
+
+.question-option input[type="checkbox"]:checked {
+  background-color: var(--text);
+}
+
+.question-option input[type="checkbox"]:checked::after {
+  content: '';
+  width: 4px;
+  height: 8px;
+  border: solid var(--card-bg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-bottom: 2px;
+}
+
+.question-option input[type="radio"]:hover,
+.question-option input[type="checkbox"]:hover {
+  border-color: var(--text);
+}
+
+.question-option-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.question-option-desc {
+  width: 100%;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  padding-left: 24px;
+  margin-top: -2px;
+}
+
+.question-other-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.question-other-input:focus {
+  border-color: var(--accent);
+}
+
+.question-option.selected .question-other-input {
+  background: color-mix(in srgb, var(--card-bg) 15%, var(--text));
+  border-color: var(--card-bg);
+  color: var(--card-bg);
+}
+
+.question-option.selected .question-other-input::placeholder {
+  color: color-mix(in srgb, var(--card-bg) 50%, transparent);
+}
+
 /* Slider */
 .form-slider-row {
   display: flex;
@@ -644,6 +811,16 @@
 
 .form-frozen-item .frozen-value {
   font-weight: 500;
+}
+
+/* Decision note (additional message on completed decision cards) */
+.decision-note {
+  margin-top: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-left: 2px solid var(--border);
+  font-style: italic;
 }
 
 /* Controls bar for hybrid cards */

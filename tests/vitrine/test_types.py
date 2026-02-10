@@ -8,6 +8,8 @@ Tests cover:
 - DisplayResponse repr and artifact_path
 """
 
+import pytest
+
 from m4.vitrine._types import (
     CardDescriptor,
     CardProvenance,
@@ -15,6 +17,9 @@ from m4.vitrine._types import (
     DisplayEvent,
     DisplayHandle,
     DisplayResponse,
+    Form,
+    Question,
+    Slider,
 )
 
 
@@ -254,3 +259,110 @@ class TestDisplayHandle:
         handle = DisplayHandle("c2", "http://127.0.0.1:7741/#study=r1")
         assert handle.card_id == "c2"
         assert handle.url.endswith("#study=r1")
+
+
+class TestQuestion:
+    def test_to_dict_tuple_options(self):
+        q = Question(
+            name="score",
+            question="Which severity score?",
+            options=[("SOFA", "6 organ systems"), ("APACHE", "More variables")],
+            header="Score",
+        )
+        d = q.to_dict()
+        assert d["type"] == "question"
+        assert d["name"] == "score"
+        assert d["question"] == "Which severity score?"
+        assert d["header"] == "Score"
+        assert d["multi_select"] is False
+        assert d["allow_other"] is True
+        assert len(d["options"]) == 2
+        assert d["options"][0] == {"label": "SOFA", "description": "6 organ systems"}
+        assert d["options"][1] == {"label": "APACHE", "description": "More variables"}
+        assert "default" not in d
+
+    def test_plain_string_options(self):
+        q = Question(
+            name="method",
+            question="Which method?",
+            options=["Logistic", "Cox", "Random Forest"],
+        )
+        d = q.to_dict()
+        assert d["options"][0] == {"label": "Logistic", "description": ""}
+        assert d["options"][2] == {"label": "Random Forest", "description": ""}
+
+    def test_mixed_options(self):
+        q = Question(
+            name="x",
+            question="Pick one",
+            options=[("A", "desc A"), "B"],
+        )
+        d = q.to_dict()
+        assert d["options"][0] == {"label": "A", "description": "desc A"}
+        assert d["options"][1] == {"label": "B", "description": ""}
+
+    def test_default_validation_invalid(self):
+        with pytest.raises(ValueError, match="not in option labels"):
+            Question(
+                name="x",
+                question="Pick",
+                options=[("A", "a"), ("B", "b")],
+                default="C",
+            )
+
+    def test_empty_options_validation(self):
+        with pytest.raises(ValueError, match="non-empty"):
+            Question(name="x", question="Pick", options=[])
+
+    def test_multi_select_default_list(self):
+        q = Question(
+            name="x",
+            question="Pick some",
+            options=["A", "B", "C"],
+            multi_select=True,
+            default=["A", "C"],
+        )
+        d = q.to_dict()
+        assert d["multi_select"] is True
+        assert d["default"] == ["A", "C"]
+
+    def test_multi_select_invalid_default(self):
+        with pytest.raises(ValueError, match="not in option labels"):
+            Question(
+                name="x",
+                question="Pick",
+                options=["A", "B"],
+                multi_select=True,
+                default=["A", "Z"],
+            )
+
+    def test_allow_other_false(self):
+        q = Question(
+            name="x",
+            question="Pick",
+            options=["A"],
+            allow_other=False,
+        )
+        d = q.to_dict()
+        assert d["allow_other"] is False
+
+    def test_question_in_form(self):
+        form = Form(
+            fields=[
+                Question(name="score", question="Which?", options=["SOFA", "APACHE"]),
+                Slider(name="threshold", range=(0, 100)),
+            ]
+        )
+        assert len(form.fields) == 2
+        d = form.to_dict()
+        assert d["fields"][0]["type"] == "question"
+        assert d["fields"][1]["type"] == "slider"
+
+    def test_question_duplicate_name_in_form(self):
+        with pytest.raises(ValueError, match="Duplicate"):
+            Form(
+                fields=[
+                    Question(name="x", question="A?", options=["1"]),
+                    Question(name="x", question="B?", options=["2"]),
+                ]
+            )

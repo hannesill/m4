@@ -598,7 +598,14 @@ def _render_form_html(card: CardDescriptor) -> str:
     fields = card.preview.get("fields", [])
     items = []
     for f in fields:
-        label = escape(str(f.get("label") or f.get("name", "")))
+        label = escape(
+            str(
+                f.get("header")
+                or f.get("question")
+                or f.get("label")
+                or f.get("name", "")
+            )
+        )
         default = f.get("default")
         if default is None:
             val = ""

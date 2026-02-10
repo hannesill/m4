@@ -171,4 +171,13 @@ function sendResponse(cardData, cardEl, action, message) {
   }
   var header = cardEl.querySelector('.card-header');
   if (header) header.appendChild(badge);
+
+  // Show additional note if provided
+  if (message && message.trim()) {
+    var noteEl = document.createElement('div');
+    noteEl.className = 'decision-note';
+    noteEl.textContent = message.trim();
+    var body = cardEl.querySelector('.card-body');
+    if (body) body.appendChild(noteEl);
+  }
 }

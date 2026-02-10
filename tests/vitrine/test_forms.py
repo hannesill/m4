@@ -25,6 +25,7 @@ from m4.vitrine._types import (
     Form,
     MultiSelect,
     NumberInput,
+    Question,
     RadioGroup,
     RangeSlider,
     Slider,
@@ -587,3 +588,78 @@ class TestDisplayHandleStudy:
         handle = display.show("hello")
         # Without study_manager, study is None
         assert handle.study is None
+
+
+# ================================================================
+# TestQuestionIntegration
+# ================================================================
+
+
+class TestQuestionIntegration:
+    def test_question_form_returns_values(self, store, mock_server):
+        mock_server._mock_response = {
+            "action": "confirm",
+            "card_id": "test",
+            "values": {"score": "SOFA", "method": "Logistic"},
+        }
+        form = Form(
+            fields=[
+                Question(
+                    name="score",
+                    question="Which severity score?",
+                    options=[
+                        ("SOFA", "6 organ systems"),
+                        ("APACHE", "More variables"),
+                    ],
+                    header="Score",
+                ),
+                Question(
+                    name="method",
+                    question="Which method?",
+                    options=["Logistic", "Cox"],
+                    allow_other=False,
+                ),
+            ]
+        )
+        result = display.show(form, title="Study Decisions", wait=True)
+        assert isinstance(result, DisplayResponse)
+        assert result.action == "confirm"
+        assert result.values == {"score": "SOFA", "method": "Logistic"}
+
+    def test_question_renders_as_markdown_card(self, store):
+        form = Form(
+            fields=[
+                Question(
+                    name="q1",
+                    question="Pick one",
+                    options=[("A", "Desc A"), ("B", "Desc B")],
+                ),
+            ]
+        )
+        card = render(form, title="Interview", store=store)
+        assert card.card_type == CardType.MARKDOWN
+        assert "fields" in card.preview
+        assert card.preview["fields"][0]["type"] == "question"
+        assert len(card.preview["fields"][0]["options"]) == 2
+
+    def test_question_preview_fields(self, store):
+        form = Form(
+            fields=[
+                Question(
+                    name="score",
+                    question="Which score?",
+                    options=[("SOFA", "Standard"), ("APACHE", "Advanced")],
+                    header="Score",
+                    multi_select=False,
+                    allow_other=True,
+                ),
+            ]
+        )
+        card = render(form, store=store)
+        field = card.preview["fields"][0]
+        assert field["question"] == "Which score?"
+        assert field["header"] == "Score"
+        assert field["multi_select"] is False
+        assert field["allow_other"] is True
+        assert field["options"][0]["label"] == "SOFA"
+        assert field["options"][0]["description"] == "Standard"
