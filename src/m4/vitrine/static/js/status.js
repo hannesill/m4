@@ -13,13 +13,17 @@ function updateStatus(status) {
 
 function updateCardCount() {
   var all = feed.querySelectorAll('.card');
-  var visible = 0;
+  var inScope = 0;   // cards matching current study filter
+  var visible = 0;   // matching filter AND not dismissed
   all.forEach(function(el) {
-    if (!el.classList.contains('hidden-by-filter') && !el.classList.contains('hidden-by-dismiss')) visible++;
+    if (!el.classList.contains('hidden-by-filter')) {
+      inScope++;
+      if (!el.classList.contains('hidden-by-dismiss')) visible++;
+    }
   });
   var text = visible + ' card' + (visible !== 1 ? 's' : '');
-  if (visible !== all.length) {
-    text += ' (of ' + all.length + ')';
+  if (visible !== inScope) {
+    text += ' (' + (inScope - visible) + ' hidden)';
   }
   cardCountEl.textContent = text;
 

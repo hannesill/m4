@@ -18,36 +18,38 @@
 <body>
 
 <div class="header">
-  <div class="header-left">
-    <h1>vitrine</h1>
-    <div class="study-dropdown" id="study-dropdown">
-      <button class="study-dropdown-trigger" id="study-dropdown-trigger" title="Browse studies" aria-label="Browse studies" aria-haspopup="listbox" aria-expanded="false">
-        <span id="study-dropdown-label">All studies</span>
-        <span class="dd-arrow">&#9662;</span>
+  <div class="header-inner">
+    <div class="header-left">
+      <h1>vitrine</h1>
+      <div class="study-dropdown" id="study-dropdown">
+        <button class="study-dropdown-trigger" id="study-dropdown-trigger" title="Browse studies" aria-label="Browse studies" aria-haspopup="listbox" aria-expanded="false">
+          <span id="study-dropdown-label">All studies</span>
+          <span class="dd-arrow">&#9662;</span>
+        </button>
+        <div class="study-dropdown-panel" id="study-dropdown-panel" role="listbox" style="display: none;"></div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span id="agent-status"></span>
+      <button class="btn-icon" id="dismiss-toggle" title="Show hidden cards" aria-label="Show hidden cards" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
       </button>
-      <div class="study-dropdown-panel" id="study-dropdown-panel" role="listbox" style="display: none;"></div>
+      <div class="toc-dropdown" id="toc-dropdown" style="display: none;">
+        <button class="btn-icon" id="toc-btn" title="Table of contents" aria-label="Table of contents">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+            <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+        </button>
+        <div class="toc-panel" id="toc-panel" style="display: none;"></div>
+      </div>
+      <div class="export-dropdown" id="export-dropdown">
+        <button class="btn" id="export-btn" title="Export study" aria-label="Export study">&#8615; Export</button>
+        <div class="export-dropdown-panel" id="export-dropdown-panel" style="display: none;"></div>
+      </div>
+      <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
     </div>
-  </div>
-  <div class="header-actions">
-    <span id="agent-status"></span>
-    <button class="btn-icon" id="dismiss-toggle" title="Show hidden cards" aria-label="Show hidden cards" style="display:none;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-    </button>
-    <div class="toc-dropdown" id="toc-dropdown" style="display: none;">
-      <button class="btn-icon" id="toc-btn" title="Table of contents" aria-label="Table of contents">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
-          <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
-          <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-        </svg>
-      </button>
-      <div class="toc-panel" id="toc-panel" style="display: none;"></div>
-    </div>
-    <div class="export-dropdown" id="export-dropdown">
-      <button class="btn" id="export-btn" title="Export study" aria-label="Export study">&#8615; Export</button>
-      <div class="export-dropdown-panel" id="export-dropdown-panel" style="display: none;"></div>
-    </div>
-    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
   </div>
 </div>
 
@@ -70,12 +72,14 @@
 </div>
 
 <div class="footer">
-  <div id="status" aria-live="polite">
-    <span class="status-dot status-connecting"></span>
-    Connecting...
+  <div class="footer-inner">
+    <div id="status" aria-live="polite">
+      <span class="status-dot status-connecting"></span>
+      Connecting...
+    </div>
+    <div id="session-info"></div>
+    <div id="card-count">0 cards</div>
   </div>
-  <div id="session-info"></div>
-  <div id="card-count">0 cards</div>
 </div>
 
 <div class="copy-toast" id="copy-toast">Copied to clipboard</div>

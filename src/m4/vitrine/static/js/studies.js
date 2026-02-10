@@ -94,7 +94,8 @@ function renderDropdown() {
 
       var meta = document.createElement('span');
       meta.className = 'study-entry-meta';
-      meta.textContent = (study.card_count || 0) + ' cards';
+      var _cc = study.card_count || 0;
+      meta.textContent = _cc + ' card' + (_cc !== 1 ? 's' : '');
       if (study.start_time) meta.textContent += '  ' + formatStudyTime(study.start_time);
       entry.appendChild(meta);
 
@@ -419,7 +420,7 @@ function insertStudySeparators() {
       sep.dataset.studySeparator = studyName;
       var text = studyName;
       if (study && study.start_time) text += ' \u00b7 ' + dateGroupLabel(study.start_time) + ' ' + formatStudyTime(study.start_time);
-      if (study && study.card_count) text += ' \u00b7 ' + study.card_count + ' cards';
+      if (study && study.card_count) text += ' \u00b7 ' + study.card_count + ' card' + (study.card_count !== 1 ? 's' : '');
       sep.textContent = text;
       el.parentNode.insertBefore(sep, el);
       lastStudy = studyName;

@@ -85,7 +85,12 @@ body {
 .header {
   background: var(--card-bg);
   border-bottom: 3px solid var(--border);
-  padding: 10px 32px;
+  padding: 10px 0;
+}
+
+.header-inner {
+  max-width: 1040px;
+  padding: 0 24px;
 }
 
 .header h1 {
@@ -197,6 +202,21 @@ body {
 
 .study-metadata-bar {
   font-family: var(--font-head);
+  max-width: 1040px;
+  padding: 28px 24px 0;
+}
+
+.study-meta-label {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.study-separator {
+  font-family: var(--font-head);
+  font-size: 22px;
+  letter-spacing: -0.3px;
+  padding: 32px 0 8px;
 }
 
 .study-meta-edit-input {
@@ -639,6 +659,10 @@ body {
   border-top: 3px solid var(--border);
   font-family: var(--font-mono);
   font-size: 11px;
+}
+
+.footer-inner {
+  max-width: 1040px;
 }
 
 .status-dot {
