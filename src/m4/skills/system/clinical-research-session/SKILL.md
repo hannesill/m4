@@ -44,12 +44,76 @@ show("""# Early Vasopressor Use in Sepsis
 
 **Branching:** Create a new version (`v2`) when the researcher wants a different approach.
 
-**File artifacts are mandatory.** Every DataFrame, figure, and analysis script MUST be saved to `output_dir`. Never save to `/tmp/` or rely on vitrine cards alone — cards document the narrative, files ARE the science. If the session ends, files must be the complete reproducible record.
+### Output Structure
 
-**Required output files:**
-- Numbered scripts: `01_cohort_definition.py`, `02_analysis.py`, etc. — the code that produced results
-- Data: `.parquet` files for every significant DataFrame
-- Figures: save every plot as `.png` to `output_dir / "plots/"`. **Never save `.html` files** — vitrine cards already store the interactive Plotly spec. Use `fig.write_image(output_dir / "plots" / "age_distribution.png")`. Create the `plots/` subdirectory once at the start of the study.
+Cards tell the story. Scripts ARE the science. Create this structure at study start:
+
+```
+output_dir/
+├── PROTOCOL.md
+├── RESULTS.md
+├── scripts/
+│   ├── 01_cohort_definition.py
+│   ├── 02_baseline_characteristics.py
+│   ├── 03_outcome_analysis.py
+│   └── ...
+├── data/
+│   ├── cohort.parquet
+│   ├── baseline_table.parquet
+│   └── ...
+└── plots/
+    ├── age_distribution.png
+    ├── kaplan_meier.png
+    └── ...
+```
+
+### Script-First Workflow
+
+Every analysis step that produces a result shown in vitrine MUST be executed from a stored script. The script IS the analysis — not a retrospective summary of interactive work. This eliminates duplicate effort: writing the script is doing the analysis.
+
+**The pattern — for every analysis step:**
+1. **Write** the script to `scripts/NN_name.py`
+2. **Run** it — outputs (parquets, PNGs) land in `data/` and `plots/`
+3. **Show** results in vitrine by loading the script's outputs
+
+Interactive exploration (checking schemas, small test queries to understand data shape) is fine — not everything needs a script. But the moment you produce a result you'll show to the researcher, it comes from a stored script.
+
+**Script requirements:**
+- **Self-contained**: imports, `set_dataset()`, SQL strings, analysis code, output writes — everything to run `python scripts/01_cohort_definition.py` from the output directory
+- **Relative paths**: use `out = Path(__file__).resolve().parent.parent` to locate `data/` and `plots/`
+- **Saves outputs**: `.parquet` to `data/`, `.png` to `plots/` (never `.html` — vitrine stores interactive Plotly specs)
+- **Independent**: each script runs on its own; later scripts load earlier outputs from `data/`
+
+**Example — one analysis step, start to finish:**
+```python
+# 1. Write the script
+(output_dir / "scripts" / "01_cohort_definition.py").write_text('''\
+"""01 — Define sepsis cohort from MIMIC-IV."""
+from pathlib import Path
+from m4 import execute_query, set_dataset
+
+set_dataset("mimic-iv")
+out = Path(__file__).resolve().parent.parent
+
+sql = """
+SELECT s.stay_id, s.subject_id, i.admission_age,
+       a.hospital_expire_flag
+FROM mimiciv_derived.sepsis3 s
+INNER JOIN mimiciv_derived.icustay_detail i ON s.stay_id = i.stay_id
+INNER JOIN mimiciv_hosp.admissions a ON s.hadm_id = a.hadm_id
+WHERE i.first_icu_stay = true AND i.admission_age >= 18
+"""
+cohort = execute_query(sql)
+cohort.to_parquet(out / "data" / "cohort.parquet")
+print(f"Cohort: {len(cohort)} patients")
+''')
+
+# 2. Run it (via Bash tool)
+
+# 3. Show results in vitrine
+cohort = pd.read_parquet(output_dir / "data" / "cohort.parquet")
+show(cohort, title="Sepsis Cohort", study=STUDY)
+```
 
 ---
 
@@ -260,10 +324,13 @@ Other plots: Kaplan-Meier curves for survival, forest plots for effect sizes, co
 
 ### Reproducibility
 
-- **Save every analysis script** as a numbered file in `output_dir`: `01_cohort_definition.py`, `02_baseline_characteristics.py`, etc. The script should be the complete, runnable Python code for that step — not a fragment. This is non-negotiable; without scripts the research is not reproducible.
-- Use `show()` for decisions and findings; `section()` for phase transitions
-- Use `set_status()` during long operations
-- Export the complete study at the end
+Follow the **script-first workflow** from Study Setup — every result card traces back to a script in `scripts/`.
+
+- **Write → run → show.** Never show results from throwaway interactive code. If you explored interactively to understand the data, crystallize the step into a script before showing results.
+- **Iterate on scripts, not inline.** If a step needs fixing, edit the script file and re-run — don't create throwaway intermediates alongside it.
+- **Later scripts read earlier outputs.** Step 03 loads `data/cohort.parquet` produced by step 01 — not by re-running the query. This makes dependencies explicit and each step independently verifiable.
+- Use `set_status()` during long script runs; `section()` for phase transitions.
+- Export the complete study at the end.
 
 ---
 
@@ -320,7 +387,7 @@ Other plots: Kaplan-Meier curves for survival, forest plots for effect sizes, co
 **Protocol → approval → execute:**
 - Save protocol to `output_dir / "PROTOCOL.md"`, show with `wait=True`
 - Use `section()` to mark phases: Cohort Definition → Matching → Analysis → Conclusions
-- Save scripts, data, and figures to `output_dir`; show key results as cards
+- Each phase = write `scripts/NN_name.py` → run → show from `data/` and `plots/` outputs
 - Block for approval at decision points
 - Export at the end: `export("output/report.html", study=STUDY)`
 
