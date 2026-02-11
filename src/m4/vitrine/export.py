@@ -365,8 +365,13 @@ def _build_html_document(
 def _render_card_html(card: CardDescriptor, study_manager: StudyManager) -> str:
     """Render a single card as self-contained HTML."""
     card_type = card.card_type.value
-    is_decision = getattr(card, "response_requested", False) or card_type == "decision"
-    is_responded = is_decision and getattr(card, "response_action", None) is not None
+    has_response_action = getattr(card, "response_action", None) is not None
+    is_decision = (
+        getattr(card, "response_requested", False)
+        or card_type == "decision"
+        or has_response_action
+    )
+    is_responded = is_decision and has_response_action
     header_type = "decision" if is_decision else card_type
     type_letters = {
         "table": "T",

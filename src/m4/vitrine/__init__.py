@@ -989,9 +989,7 @@ def confirm(
     Returns:
         True if confirmed, False if skipped or timed out.
     """
-    r = show(
-        message, wait=True, actions=["Confirm", "Skip"], study=study, timeout=timeout
-    )
+    r = show(message, wait=True, study=study, timeout=timeout)
     return r.action == "confirm"
 
 

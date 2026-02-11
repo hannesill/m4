@@ -47,7 +47,7 @@ function addCard(cardData) {
   // Header
   var header = document.createElement('div');
   header.className = 'card-header';
-  var headerType = cardData.response_requested ? 'decision' : cardData.card_type;
+  var headerType = (cardData.response_requested || cardData.response_action) ? 'decision' : cardData.card_type;
   header.setAttribute('data-type', headerType);
 
   // Collapse toggle
@@ -194,6 +194,28 @@ function addCard(cardData) {
     // Update agent status and send browser notification
     updateAgentStatus('Waiting for your response');
     notifyDecisionCard(cardData);
+  } else if (cardData.response_action) {
+    // Already-responded decision card (loaded from disk)
+    el.classList.add('responded');
+    typeIcon.textContent = '\u2713';
+    var badge = document.createElement('span');
+    badge.className = 'sent-badge';
+    if (cardData.response_action === 'confirm') {
+      badge.textContent = 'Confirmed';
+    } else if (cardData.response_action === 'skip') {
+      badge.textContent = 'Skipped';
+    } else {
+      badge.textContent = cardData.response_action;
+    }
+    header.appendChild(badge);
+    // Show researcher's note if provided
+    if (cardData.response_message && cardData.response_message.trim()) {
+      var noteEl = document.createElement('div');
+      noteEl.className = 'decision-note';
+      noteEl.textContent = cardData.response_message.trim();
+      var bodyEl = el.querySelector('.card-body');
+      if (bodyEl) bodyEl.appendChild(noteEl);
+    }
   }
 
   // Annotations
@@ -363,12 +385,12 @@ function updateCard(cardId, newCardData) {
 
     var header = el.querySelector('.card-header');
     if (header) {
-      var headerType = newCardData.response_requested ? 'decision' : newCardData.card_type;
+      var headerType = (newCardData.response_requested || newCardData.response_action) ? 'decision' : newCardData.card_type;
       header.setAttribute('data-type', headerType);
       var typeIcon = header.querySelector('.card-type-icon');
       if (typeIcon) {
         typeIcon.setAttribute('data-type', headerType);
-        typeIcon.textContent = TYPE_LETTERS[headerType] || '?';
+        typeIcon.textContent = newCardData.response_action ? '\u2713' : (TYPE_LETTERS[headerType] || '?');
       }
     }
 
