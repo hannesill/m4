@@ -1,0 +1,26 @@
+sources:
+  - url: https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iv/concepts/score
+    description: MIT-LCP mimic-code LODS implementation
+    license: MIT
+
+created:
+  by: M4 Clinical Skills Team
+  role: clinical-extraction
+  date: 2025-01-15
+
+reviews:
+  - by: Marlene Mörig, MD
+    date: 2026-02-11
+    scope: clinical-accuracy
+    notes: Identified and documented BUN threshold discrepancy in renal scoring (7.5 vs 17 mg/dL per Le Gall 1996). Flagged for upstream correction in MIMIC-Code repository.
+
+references:
+  - Le Gall JR, Klar J, Lemeshow S, et al. The Logistic Organ Dysfunction system. A new way to assess organ dysfunction in the intensive care unit. JAMA. 1996;276(10):802-810.
+
+changelog:
+  - version: "1.0"
+    date: 2025-01-15
+    summary: Initial extraction from mimic-code
+  - version: "1.1"
+    date: 2026-02-11
+    summary: Clinical review - documented BUN threshold issue
