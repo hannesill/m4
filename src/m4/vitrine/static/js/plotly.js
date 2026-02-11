@@ -132,7 +132,7 @@ window.addEventListener('resize', function() {
 
 // Re-color Plotly charts on theme change (additive listener)
 themeToggleEl.addEventListener('click', function() {
-  if (\!window.Plotly) return;
+  if (!window.Plotly) return;
   var textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim();
   var plots = document.querySelectorAll('.plotly-container .js-plotly-plot');
   plots.forEach(function(plot) {

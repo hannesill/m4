@@ -34,10 +34,10 @@ from m4.vitrine import (
 STUDY = "early-vasopressors-sepsis-v1"
 output_dir = register_output_dir(study=STUDY)
 
-# FIRST artifact: write STUDY.md describing the research question and approach
-(output_dir / "STUDY.md").write_text("""# Early Vasopressor Use in Sepsis
+# FIRST card: study description as the opening vitrine card
+show("""# Early Vasopressor Use in Sepsis
 ...research question, design, key definitions...
-""")
+""", title="Study Description", study=STUDY)
 ```
 
 **Continuing a study:** Call `list_studies()` and `study_context(study)` to re-orient. Use `section()` to mark a new conversation within an ongoing study — not a new study.
@@ -47,10 +47,9 @@ output_dir = register_output_dir(study=STUDY)
 **File artifacts are mandatory.** Every DataFrame, figure, and analysis script MUST be saved to `output_dir`. Never save to `/tmp/` or rely on vitrine cards alone — cards document the narrative, files ARE the science. If the session ends, files must be the complete reproducible record.
 
 **Required output files:**
-- `STUDY.md` — written first, describes what this study is about (research question, design, key definitions)
 - Numbered scripts: `01_cohort_definition.py`, `02_analysis.py`, etc. — the code that produced results
 - Data: `.parquet` files for every significant DataFrame
-- Figures: `.png` / `.html` for every chart shown in vitrine
+- Figures: `.png` for every chart shown in vitrine (do NOT save `.html` — vitrine cards already store the interactive spec)
 
 ---
 
