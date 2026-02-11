@@ -104,6 +104,8 @@ FROM mimiciv_derived.lods;
 
 5. **Missing Data**: Missing components are imputed as 0 (normal).
 
+6. **Known Issue — BUN Threshold**: The underlying MIMIC-Code SQL uses a BUN threshold of >= 7.5 mg/dL for renal Score 1. This does not match the original publication (Le Gall 1996, Table 5), which defines the Score 1 cutoff as BUN >= 17 mg/dL (= 6 mmol/L × 2.8). Values between 7.5 and 16.9 mg/dL should receive Score 0. This is likely a unit conversion error and has been flagged for correction upstream.
+
 ## Example: Organ Dysfunction Profile
 
 ```sql
