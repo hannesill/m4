@@ -52,7 +52,6 @@ __all__ = [
     "register_session",
     "section",
     "server_status",
-    "set_status",
     "show",
     "start",
     "stop",
@@ -1015,26 +1014,6 @@ def ask(
     """
     r = show(question, wait=True, actions=options, study=study, timeout=timeout)
     return r.action
-
-
-def set_status(message: str) -> None:
-    """Set the agent status bar message in the browser.
-
-    Displays a short status message (e.g., "Analyzing cohort...",
-    "Waiting for your response") in the vitrine header bar.
-    Pass an empty string to clear the status.
-
-    Args:
-        message: Status text to display.
-    """
-    _ensure_started()
-
-    if _remote_url and _auth_token:
-        _remote_command(
-            _remote_url, _auth_token, {"type": "status", "message": message}
-        )
-    elif _server is not None and hasattr(_server, "push_status"):
-        _server.push_status(message)
 
 
 def study_context(study: str) -> dict[str, Any]:

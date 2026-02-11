@@ -557,18 +557,6 @@
   margin-left: 4px;
 }
 
-/* Agent status */
-#agent-status {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-style: italic;
-  white-space: nowrap;
-}
-
-@media (max-width: 700px) {
-  #agent-status { display: none; }
-}
-
 /* Quick action buttons (secondary) */
 .response-btn-action {
   background: var(--bg-header);

@@ -567,11 +567,6 @@ class DisplayServer:
             await self._broadcast(message)
             return JSONResponse({"status": "ok"})
 
-        elif cmd_type == "status":
-            status_msg = body.get("message", "")
-            await self._broadcast({"type": "vitrine.status", "message": status_msg})
-            return JSONResponse({"status": "ok"})
-
         return JSONResponse(
             {"error": f"unknown command type: {cmd_type}"}, status_code=400
         )
@@ -1490,10 +1485,6 @@ class DisplayServer:
             "study": study,
         }
         self._broadcast_from_thread(message)
-
-    def push_status(self, message: str) -> None:
-        """Push a status bar message to all connected clients."""
-        self._broadcast_from_thread({"type": "vitrine.status", "message": message})
 
     def _broadcast_from_thread(self, message: dict[str, Any]) -> None:
         """Broadcast a message from a sync context (called from Python API thread)."""

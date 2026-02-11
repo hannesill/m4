@@ -701,32 +701,6 @@ class TestDeleteStudy:
         assert display.delete_study("nope") is False
 
 
-class TestSetStatus:
-    def test_set_status_in_process(self, store, mock_server):
-        """set_status pushes to in-process server."""
-        mock_server.push_status = lambda msg: None  # Add method to mock
-        display.set_status("Analyzing...")
-        # Should not raise
-
-    def test_set_status_remote(self, store, monkeypatch):
-        """set_status pushes via remote command when remote."""
-        commands_sent = []
-
-        def mock_remote_command(url, token, payload):
-            commands_sent.append(payload)
-            return True
-
-        display._remote_url = "http://127.0.0.1:7741"
-        display._auth_token = "test-token"
-        monkeypatch.setattr(display, "_ensure_started", lambda **kw: None)
-        monkeypatch.setattr(display, "_remote_command", mock_remote_command)
-
-        display.set_status("Working...")
-        assert len(commands_sent) == 1
-        assert commands_sent[0]["type"] == "status"
-        assert commands_sent[0]["message"] == "Working..."
-
-
 class TestStudyContext:
     def test_study_context_with_cards(self, study_manager, mock_server):
         display.show("hello", study="ctx-test", title="Card 1")

@@ -28,7 +28,7 @@ Every research session is organized as a **study** — one study per research qu
 ```python
 from m4.vitrine import (
     show, section, register_output_dir, study_context,
-    list_studies, export, set_status, Form, Question,
+    list_studies, export, Form, Question,
 )
 
 STUDY = "early-vasopressors-sepsis-v1"
@@ -329,7 +329,7 @@ Follow the **script-first workflow** from Study Setup — every result card trac
 - **Write → run → show.** Never show results from throwaway interactive code. If you explored interactively to understand the data, crystallize the step into a script before showing results.
 - **Iterate on scripts, not inline.** If a step needs fixing, edit the script file and re-run — don't create throwaway intermediates alongside it.
 - **Later scripts read earlier outputs.** Step 03 loads `data/cohort.parquet` produced by step 01 — not by re-running the query. This makes dependencies explicit and each step independently verifiable.
-- Use `set_status()` during long script runs; `section()` for phase transitions.
+- Use `section()` for phase transitions.
 - Export the complete study at the end.
 
 ---

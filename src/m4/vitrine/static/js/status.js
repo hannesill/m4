@@ -113,15 +113,36 @@ function scrollToLatestCard() {
 }
 
 // ================================================================
-// AGENT STATUS & BROWSER NOTIFICATIONS
+// BROWSER NOTIFICATIONS
 // ================================================================
-var agentStatusEl = document.getElementById('agent-status');
+var _chimeCtx = null;
+document.addEventListener('click', function() {
+  if (!_chimeCtx) {
+    _chimeCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } else if (_chimeCtx.state === 'suspended') {
+    _chimeCtx.resume();
+  }
+}, { once: false });
 
-function updateAgentStatus(text) {
-  if (agentStatusEl) agentStatusEl.textContent = text;
+function playDecisionChime() {
+  try {
+    if (!_chimeCtx) _chimeCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_chimeCtx.state === 'suspended') _chimeCtx.resume();
+    var osc = _chimeCtx.createOscillator();
+    var gain = _chimeCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 1318.51;
+    gain.gain.setValueAtTime(0.18, _chimeCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, _chimeCtx.currentTime + 0.25);
+    osc.connect(gain);
+    gain.connect(_chimeCtx.destination);
+    osc.start();
+    osc.stop(_chimeCtx.currentTime + 0.25);
+  } catch (e) { /* AudioContext unavailable */ }
 }
 
 function notifyDecisionCard(cardData) {
+  playDecisionChime();
   if (!document.hidden) return;
   if (!('Notification' in window)) return;
   if (Notification.permission === 'granted') {

@@ -319,41 +319,6 @@ class TestCommandEndpoint:
         assert resp.status_code == 400
 
 
-class TestStatusCommand:
-    @pytest.fixture
-    def app(self, server):
-        return server._app
-
-    def test_status_command(self, app):
-        from starlette.testclient import TestClient
-
-        client = TestClient(app)
-        resp = client.post(
-            "/api/command",
-            json={"type": "status", "message": "Analyzing cohort..."},
-            headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-        )
-        assert resp.status_code == 200
-        assert resp.json()["status"] == "ok"
-
-    def test_status_broadcast_via_websocket(self, app):
-        from starlette.testclient import TestClient
-
-        client = TestClient(app)
-        with client.websocket_connect("/ws"):
-            # Send status command
-            client.post(
-                "/api/command",
-                json={"type": "status", "message": "Working..."},
-                headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
-            )
-            import time
-
-            time.sleep(0.1)
-            # The WS should have received the status message
-            # (after replay of any existing cards)
-
-
 class TestShutdownEndpoint:
     @pytest.fixture
     def app(self, server):

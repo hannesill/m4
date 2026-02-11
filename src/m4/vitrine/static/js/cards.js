@@ -195,8 +195,6 @@ function addCard(cardData) {
     el.classList.add('waiting');
     var responseUI = buildResponseUI(cardData, el);
     el.appendChild(responseUI);
-    // Update agent status and send browser notification
-    updateAgentStatus('Waiting for your response');
     notifyDecisionCard(cardData);
   } else if (cardData.response_action) {
     // Already-responded decision card (loaded from disk)
@@ -446,7 +444,6 @@ function updateCard(cardId, newCardData) {
       if (oldBadge) oldBadge.remove();
       var responseUI = buildResponseUI(newCardData, el);
       el.appendChild(responseUI);
-      updateAgentStatus('Waiting for your response');
       notifyDecisionCard(newCardData);
     } else if (!newCardData.response_requested && existingResponseUI) {
       // Disable: remove response UI if no longer waiting

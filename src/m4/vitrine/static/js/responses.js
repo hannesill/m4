@@ -141,8 +141,6 @@ function sendResponse(cardData, cardEl, action, message) {
   }
   cardEl.classList.remove('waiting');
   cardEl.classList.add('responded');
-  // Clear agent status
-  updateAgentStatus('');
 
   // Freeze form: replace interactive fields with compact frozen display
   if (hasFormFields && Object.keys(formValues).length > 0) {

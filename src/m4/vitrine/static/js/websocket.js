@@ -74,9 +74,5 @@ function handleMessage(msg) {
     case 'display.update':
       updateCard(msg.card_id, msg.card);
       break;
-    case 'vitrine.status':
-    case 'display.status':
-      updateAgentStatus(msg.text || msg.status || '');
-      break;
   }
 }

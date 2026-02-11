@@ -18,14 +18,13 @@ Full API reference for the vitrine display system. For usage philosophy and quic
 ## Quick Start
 
 ```python
-from m4.vitrine import show, section, confirm, ask, set_status
+from m4.vitrine import show, section, confirm, ask
 
 show(df, title="Patient Demographics")           # table
 show(fig, title="Age Distribution")               # Plotly or matplotlib chart
 show("## Finding\nMortality is **23%**.")         # markdown
 show({"patients": 4238, "mortality": "23%"})      # key-value
 section("Phase 2: Analysis")                       # divider
-set_status("Running regression...")                # status bar
 if confirm("Proceed?"): ...                        # yes/no → bool
 score = ask("Which score?", ["SOFA", "APACHE"])   # choice → str
 ```
@@ -65,9 +64,6 @@ Yes/no gate. Returns `True` if confirmed, `False` if skipped or timed out.
 
 ### `ask(question, options, *, study=None, timeout=600) → str`
 Multiple-choice. Returns the chosen label or `"timeout"`.
-
-### `set_status(message)`
-Agent status bar in browser header. Ephemeral — not persisted.
 
 ### `start(port=7741, open_browser=True, mode="thread")`
 Start server explicitly. Called automatically on first `show()`. `mode="process"` for daemon.

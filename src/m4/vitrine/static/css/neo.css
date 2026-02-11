@@ -722,11 +722,6 @@ body {
   font-family: var(--font-head);
 }
 
-#agent-status {
-  font-family: var(--font-mono);
-  font-style: normal;
-}
-
 .table-wrapper th.select-col,
 .table-wrapper td.select-col {
   padding: 6px 4px;
