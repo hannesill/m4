@@ -126,7 +126,7 @@ Question(
         "Plain option",
     ],
     header="Chip",               # optional short tag
-    multiple=False,              # True → checkboxes
+    multiple=False,              # True for multi-select (checkboxes), False for single-select (radio)
     allow_other=True,            # "Other: ___" free-text option
     default="Label",             # pre-selected (str or list[str])
 )

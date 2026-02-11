@@ -55,7 +55,7 @@ Collect study parameters through vitrine forms. The interview is **adaptive** â€
 
 ### Question Library
 
-Use `from m4.vitrine import Form, Question` and compose from these:
+Use `from m4.vitrine import Form, Question` and compose from these. **Use `multiple=True` for any question where multiple answers make sense** (e.g., exclusion criteria, confounders). Without it, options render as single-select radio buttons.
 
 **Research question:**
 ```python
