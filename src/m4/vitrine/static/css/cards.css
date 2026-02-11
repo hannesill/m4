@@ -126,6 +126,12 @@
   flex-shrink: 0;
 }
 
+.card-description {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 6px 14px 0;
+}
+
 .card-body {
   padding: 16px;
   transition: background 0.2s;

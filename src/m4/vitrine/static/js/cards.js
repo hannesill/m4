@@ -136,6 +136,14 @@ function addCard(cardData) {
   header.appendChild(actions);
   el.appendChild(header);
 
+  // Description (subtitle / context line below header)
+  if (cardData.description) {
+    var desc = document.createElement('div');
+    desc.className = 'card-description';
+    desc.textContent = cardData.description;
+    el.appendChild(desc);
+  }
+
   // Body
   var body = document.createElement('div');
   body.className = 'card-body';
@@ -335,6 +343,22 @@ function updateCard(cardId, newCardData) {
     var titleEl = el.querySelector('.card-title');
     if (titleEl) {
       titleEl.textContent = newCardData.title || newCardData.card_type;
+    }
+
+    // Update description
+    var descEl = el.querySelector('.card-description');
+    if (newCardData.description) {
+      if (!descEl) {
+        descEl = document.createElement('div');
+        descEl.className = 'card-description';
+        var headerEl = el.querySelector('.card-header');
+        if (headerEl && headerEl.nextSibling) {
+          el.insertBefore(descEl, headerEl.nextSibling);
+        }
+      }
+      descEl.textContent = newCardData.description;
+    } else if (descEl) {
+      descEl.remove();
     }
 
     var header = el.querySelector('.card-header');
