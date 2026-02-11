@@ -84,7 +84,7 @@ def _deserialize_card(d: dict[str, Any]) -> CardDescriptor:
         )
     return CardDescriptor(
         card_id=d["card_id"],
-        card_type=CardType(d["card_type"]),
+        card_type=CardType("decision" if d["card_type"] == "form" else d["card_type"]),
         title=d.get("title"),
         description=d.get("description"),
         timestamp=d.get("timestamp", ""),

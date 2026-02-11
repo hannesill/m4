@@ -855,7 +855,10 @@ class DisplayServer:
                 total = con.execute(f"SELECT COUNT(*) FROM {reader}").fetchone()[0]
                 result = con.execute(f"SELECT * FROM {reader} LIMIT 1000")
                 columns = [desc[0] for desc in result.description]
-                rows = [list(row) for row in result.fetchall()]
+                rows = [
+                    [v.isoformat() if hasattr(v, "isoformat") else v for v in row]
+                    for row in result.fetchall()
+                ]
             finally:
                 con.close()
 
