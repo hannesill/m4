@@ -159,6 +159,12 @@ function sendResponse(cardData, cardEl, action, message) {
     }
   }
 
+  // Update type icon to checkmark
+  var typeIcon = cardEl.querySelector('.card-type-icon');
+  if (typeIcon) {
+    typeIcon.textContent = '\u2713';
+  }
+
   // Show response badge
   var badge = document.createElement('span');
   badge.className = 'sent-badge';

@@ -382,3 +382,22 @@ if (filesToggleBtn) {
   // Hide by default
   filesToggleBtn.style.display = 'none';
 }
+
+// Poll for new files every 5 seconds while connected with an active study
+var _filesPollTimer = null;
+
+function startFilesPoll() {
+  stopFilesPoll();
+  _filesPollTimer = setInterval(function() {
+    if (state.connected && state.activeStudyFilter) {
+      loadFiles(state.activeStudyFilter);
+    }
+  }, 5000);
+}
+
+function stopFilesPoll() {
+  if (_filesPollTimer) {
+    clearInterval(_filesPollTimer);
+    _filesPollTimer = null;
+  }
+}

@@ -123,11 +123,10 @@ class TestGetOrCreateStudy:
         assert meta["label"] == "meta-test"
         assert "start_time" in meta
 
-    def test_updates_registry(self, manager):
+    def test_no_registry_file(self, manager):
+        """studies.json should not be created — meta.json is the source of truth."""
         manager.get_or_create_study("reg-test")
-        registry = manager._read_registry()
-        assert len(registry) == 1
-        assert registry[0]["label"] == "reg-test"
+        assert not (manager.display_dir / "studies.json").exists()
 
 
 class TestStoreForCard:
@@ -202,7 +201,7 @@ class TestDeleteStudy:
         assert result is True
         assert not study_dir.exists()
         assert "to-delete" not in manager._label_to_dir
-        assert manager._read_registry() == []
+        assert not (manager._studies_dir / dir_name).exists()
 
     def test_delete_nonexistent(self, manager):
         assert manager.delete_study("nonexistent") is False
@@ -383,13 +382,6 @@ class TestRenameStudy:
         )
         assert meta["label"] == "after"
         assert meta["dir_name"] == new_dir_name
-
-    def test_updates_registry(self, manager):
-        manager.get_or_create_study("reg-old")
-        manager.rename_study("reg-old", "reg-new")
-        registry = manager._read_registry()
-        assert registry[0]["label"] == "reg-new"
-        assert "reg-new" in registry[0]["dir_name"]
 
     def test_updates_card_study_labels(self, manager):
         from m4.vitrine.renderer import render

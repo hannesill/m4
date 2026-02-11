@@ -126,15 +126,15 @@ def _migrate_if_needed(vitrine_dir: Path) -> None:
         except OSError:
             pass
 
-    # 3. Rename runs.json → studies.json
-    old_registry = vitrine_dir / "runs.json"
-    new_registry = vitrine_dir / "studies.json"
-    if old_registry.exists() and not new_registry.exists():
-        try:
-            old_registry.rename(new_registry)
-            logger.debug("Migrated runs.json → studies.json")
-        except OSError:
-            pass
+    # 3. Remove legacy registry files (runs.json / studies.json)
+    for legacy in ("runs.json", "studies.json"):
+        legacy_path = vitrine_dir / legacy
+        if legacy_path.exists():
+            try:
+                legacy_path.unlink()
+                logger.debug(f"Removed legacy {legacy}")
+            except OSError:
+                pass
 
 
 def _pid_file_path() -> Path:

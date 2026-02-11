@@ -5,7 +5,6 @@ across server restarts. Provides cross-study queries and age-based cleanup.
 
 Storage layout:
     {project_root}/.vitrine/
-    ├── studies.json            # Global registry
     ├── .server.json            # PID file (transient)
     └── studies/
         ├── 2025-06-09_103045_sepsis-mortality/
@@ -77,7 +76,6 @@ class StudyManager:
     def __init__(self, vitrine_dir: Path) -> None:
         self.display_dir = vitrine_dir
         self._studies_dir = vitrine_dir / "studies"
-        self._registry_path = vitrine_dir / "studies.json"
         # Ensure directories exist
         self._studies_dir.mkdir(parents=True, exist_ok=True)
 
@@ -135,9 +133,6 @@ class StudyManager:
         self._stores[dir_name] = store
         self._label_to_dir[study] = dir_name
 
-        # Update registry
-        self._add_to_registry(study, dir_name, meta["start_time"])
-
         logger.debug(f"Created study '{study}' -> {dir_name}")
         return study, store
 
@@ -189,9 +184,6 @@ class StudyManager:
         to_remove = [cid for cid, dn in self._card_index.items() if dn == dir_name]
         for cid in to_remove:
             del self._card_index[cid]
-
-        # Update registry
-        self._remove_from_registry(dir_name)
 
         logger.debug(f"Deleted study '{study}' ({dir_name})")
         return True
@@ -259,15 +251,6 @@ class StudyManager:
                 meta_path.write_text(json.dumps(meta, indent=2))
             except (json.JSONDecodeError, OSError):
                 pass
-
-        # Update registry
-        registry = self._read_registry()
-        for entry in registry:
-            if entry.get("dir_name") == old_dir_name:
-                entry["label"] = new_label
-                entry["dir_name"] = new_dir_name
-                break
-        self._write_registry(registry)
 
         logger.debug(
             f"Renamed study '{old_label}' -> '{new_label}' "
@@ -828,34 +811,3 @@ class StudyManager:
             self._card_index[card.card_id] = dir_name
 
         return store
-
-    def _read_registry(self) -> list[dict[str, Any]]:
-        """Read the global studies registry from disk."""
-        if not self._registry_path.exists():
-            return []
-        try:
-            return json.loads(self._registry_path.read_text())
-        except (json.JSONDecodeError, FileNotFoundError):
-            return []
-
-    def _write_registry(self, studies: list[dict[str, Any]]) -> None:
-        """Write the global studies registry to disk."""
-        self._registry_path.write_text(json.dumps(studies, indent=2))
-
-    def _add_to_registry(self, label: str, dir_name: str, start_time: str) -> None:
-        """Add a study entry to the registry."""
-        registry = self._read_registry()
-        registry.append(
-            {
-                "label": label,
-                "dir_name": dir_name,
-                "start_time": start_time,
-            }
-        )
-        self._write_registry(registry)
-
-    def _remove_from_registry(self, dir_name: str) -> None:
-        """Remove a study entry from the registry by dir_name."""
-        registry = self._read_registry()
-        registry = [r for r in registry if r.get("dir_name") != dir_name]
-        self._write_registry(registry)

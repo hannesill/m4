@@ -29,6 +29,8 @@ function connect() {
     loadStudies();
     // After replay completes (~500ms), enable live auto-switching
     setTimeout(function() { state.liveMode = true; }, 500);
+    // Start polling for new output files
+    if (typeof startFilesPoll === 'function') startFilesPoll();
   };
 
   ws.onmessage = function(event) {
@@ -44,6 +46,7 @@ function connect() {
     state.connected = false;
     state.ws = null;
     updateStatus('disconnected');
+    if (typeof stopFilesPoll === 'function') stopFilesPoll();
     showToast('Connection lost, reconnecting...', 'error');
     scheduleReconnect();
   };
@@ -63,6 +66,7 @@ function handleMessage(msg) {
   switch (msg.type) {
     case 'display.add':
       addCard(msg.card);
+      if (state.activeStudyFilter && typeof loadFiles === 'function') loadFiles(state.activeStudyFilter);
       break;
     case 'display.section':
       addSection(msg.title, msg.study);

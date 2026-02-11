@@ -1,20 +1,10 @@
 /* ================================================================
    RESPONSE UI & DECISION CARDS
    ================================================================ */
-.card.waiting {
-  border-left: 3px solid var(--accent);
-}
-
-@keyframes subtlePulse {
-  0%, 100% { box-shadow: var(--shadow); }
-  50% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent), var(--shadow); }
-}
-
 .card.waiting { animation: subtlePulse 3s ease-in-out infinite; }
 
-/* Responded: keep decision border, stop animation, freeze inputs */
+/* Responded: stop animation, freeze inputs */
 .card.responded {
-  border-left: 3px solid var(--accent);
   animation: none;
 }
 

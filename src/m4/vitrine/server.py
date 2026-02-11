@@ -238,6 +238,7 @@ class DisplayServer:
                 methods=["DELETE"],
             ),
             Route("/api/export", self._api_export, methods=["GET"]),
+            Route("/api/files-archive", self._api_all_files_archive, methods=["GET"]),
             WebSocketRoute("/ws", self._ws_endpoint),
         ]
 
@@ -933,6 +934,42 @@ class DisplayServer:
             media_type="text/html",
             headers={
                 "Content-Disposition": 'attachment; filename="m4-export-all.html"',
+            },
+        )
+
+    async def _api_all_files_archive(self, request: Request) -> Response:
+        """Download output files from all studies as a zip archive."""
+        if not self.study_manager:
+            return JSONResponse({"error": "No study manager"}, status_code=400)
+
+        import io
+        import zipfile
+
+        self.study_manager.refresh()
+        studies = self.study_manager.list_studies()
+
+        buf = io.BytesIO()
+        file_count = 0
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            for study_info in studies:
+                label = study_info["label"]
+                output_dir = self.study_manager.get_output_dir(label)
+                if output_dir is None or not output_dir.exists():
+                    continue
+                for item in sorted(output_dir.rglob("*")):
+                    if item.is_file() and not item.name.startswith("."):
+                        arcname = f"{label}/{item.relative_to(output_dir)}"
+                        zf.write(item, arcname)
+                        file_count += 1
+
+        if file_count == 0:
+            return JSONResponse({"error": "No output files"}, status_code=404)
+
+        return Response(
+            content=buf.getvalue(),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": 'attachment; filename="m4-files-all.zip"',
             },
         )
 

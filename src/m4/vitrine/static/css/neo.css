@@ -13,8 +13,8 @@
   --table-bg: #dbeafe;
   --md-color: #8b5cf6;
   --md-bg: #ede9fe;
-  --chart-color: #10b981;
-  --chart-bg: #d1fae5;
+  --chart-color: #f97316;
+  --chart-bg: #fff7ed;
   --kv-color: #f59e0b;
   --kv-bg: #fef3c7;
   --form-color: #ec4899;
@@ -58,7 +58,7 @@
 
   --table-bg: #1e3a5f;
   --md-bg: #2d1f5e;
-  --chart-bg: #14412e;
+  --chart-bg: #431407;
   --kv-bg: #3d2e0a;
   --form-bg: #3d1a2e;
   --decision-bg: #3d1a1a;
@@ -479,6 +479,19 @@ body {
 
 .card.waiting {
   border-color: var(--decision-color);
+}
+
+.card.responded {
+  border-color: var(--border);
+}
+
+.card.responded .card-header {
+  background: var(--success-bg);
+}
+
+.card.responded .card-type-icon {
+  background: var(--success);
+  color: #fff;
 }
 
 @keyframes subtlePulse {

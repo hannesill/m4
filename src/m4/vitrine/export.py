@@ -365,9 +365,9 @@ def _build_html_document(
 def _render_card_html(card: CardDescriptor, study_manager: StudyManager) -> str:
     """Render a single card as self-contained HTML."""
     card_type = card.card_type.value
-    header_type = (
-        "decision" if getattr(card, "response_requested", False) else card_type
-    )
+    is_decision = getattr(card, "response_requested", False) or card_type == "decision"
+    is_responded = is_decision and getattr(card, "response_action", None) is not None
+    header_type = "decision" if is_decision else card_type
     type_letters = {
         "table": "T",
         "markdown": "M",
@@ -377,7 +377,7 @@ def _render_card_html(card: CardDescriptor, study_manager: StudyManager) -> str:
         "section": "S",
         "decision": "!",
     }
-    type_letter = type_letters.get(header_type, "?")
+    type_letter = "\u2713" if is_responded else type_letters.get(header_type, "?")
     title_text = escape(card.title or card_type)
     desc_html = (
         f'<div class="card-description">{escape(card.description)}</div>'
@@ -421,7 +421,8 @@ def _render_card_html(card: CardDescriptor, study_manager: StudyManager) -> str:
         annotations_html = f'<div class="card-annotations">{"".join(ann_items)}</div>'
 
     dismissed_class = " dismissed" if card.dismissed else ""
-    return f"""<div class="card{dismissed_class}" data-card-type="{card_type}">
+    responded_class = " responded" if is_responded else ""
+    return f"""<div class="card{dismissed_class}{responded_class}" data-card-type="{card_type}">
   <div class="card-header" data-type="{header_type}">
     <div class="card-type-icon" data-type="{header_type}">{type_letter}</div>
     <span class="card-title">{title_text}</span>
@@ -862,8 +863,8 @@ _EXPORT_CSS = """<style>
     --table-bg: #dbeafe;
     --md-color: #8b5cf6;
     --md-bg: #ede9fe;
-    --chart-color: #10b981;
-    --chart-bg: #d1fae5;
+    --chart-color: #f97316;
+    --chart-bg: #fff7ed;
     --kv-color: #f59e0b;
     --kv-bg: #fef3c7;
     --form-color: #ec4899;
@@ -872,6 +873,8 @@ _EXPORT_CSS = """<style>
     --decision-bg: #fee2e2;
     --image-color: #06b6d4;
     --image-bg: #cffafe;
+    --success: #16a34a;
+    --success-bg: #dcfce7;
     --shadow: 4px 4px 0 #1a1a1a;
     --shadow-sm: 2px 2px 0 #1a1a1a;
     --font-head: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -969,6 +972,9 @@ _EXPORT_CSS = """<style>
   .card-type-icon[data-type="image"] { background: var(--image-color); color: #fff; }
   .card-type-icon[data-type="keyvalue"] { background: var(--kv-color); color: #fff; }
   .card-type-icon[data-type="decision"] { background: var(--decision-color); color: #fff; }
+
+  .card.responded .card-header { background: var(--success-bg); }
+  .card.responded .card-type-icon { background: var(--success); color: #fff; }
 
   .card-title {
     font-family: var(--font-head);
