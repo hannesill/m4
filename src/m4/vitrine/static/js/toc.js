@@ -69,6 +69,8 @@
 
       // Skip hidden elements
       if (el.classList.contains('hidden-by-filter')) continue;
+      // Skip dismissed (soft-hidden) cards
+      if (el.classList.contains('hidden-by-dismiss')) continue;
       // Skip empty state
       if (el.id === 'empty-state') continue;
       // Skip study separators

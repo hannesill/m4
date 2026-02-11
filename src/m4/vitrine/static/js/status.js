@@ -82,6 +82,11 @@ function loadStudies() {
       }
 
       updateCardCount();
+      // Re-check metadata bar now that state.studies is populated
+      // (fixes live mode where updateStudyMetadataBar ran before fetch completed)
+      if (state.activeStudyFilter) {
+        updateStudyMetadataBar();
+      }
 
       // Update empty state
       if (studies.length === 0 && state.cards.length === 0) {
