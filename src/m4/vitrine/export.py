@@ -541,7 +541,8 @@ def _render_plotly_html(card: CardDescriptor) -> str:
     var data = spec.data || [];
     var layout = spec.layout || {{}};
     layout.autosize = true;
-    Plotly.newPlot(el, data, layout, {{responsive: true, displayModeBar: false}});
+    Plotly.newPlot(el, data, layout, {{responsive: true, displayModeBar: false}})
+      .catch(function(err) {{ el.textContent = 'Chart render error: ' + err.message; }});
   }} else if (el) {{
     el.textContent = 'Plotly.js not available — chart data exported in JSON.';
   }}

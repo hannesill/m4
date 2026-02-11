@@ -221,13 +221,26 @@ def _render_plotly(
     # Get a JSON-safe Plotly spec.
     # Plotly Express can emit numpy arrays in fields like `customdata`,
     # which are not directly serializable by the card index writer.
-    spec = fig.to_plotly_json()
+    try:
+        spec = fig.to_plotly_json()
+    except Exception:
+        logger.error(
+            "fig.to_plotly_json() failed for %s.%s — card will be empty",
+            type(fig).__module__,
+            type(fig).__name__,
+            exc_info=True,
+        )
+        spec = {"data": [], "layout": {}}
+
     try:
         from plotly.utils import PlotlyJSONEncoder
 
         spec = json.loads(json.dumps(spec, cls=PlotlyJSONEncoder))
-    except Exception:
-        # Fallback for unusual Plotly setups.
+    except (ImportError, TypeError) as exc:
+        logger.warning(
+            "PlotlyJSONEncoder unavailable (%s), using fallback serialization",
+            exc,
+        )
         spec = json.loads(json.dumps(spec, default=str))
 
     # Cap spec size: truncate data arrays if over limit
@@ -362,6 +375,16 @@ def _render_repr(
     store: ArtifactStore,
 ) -> CardDescriptor:
     """Fallback: render any object via repr() as a markdown code block."""
+    module = getattr(type(obj), "__module__", "") or ""
+    if module.startswith("plotly") or module.startswith("matplotlib"):
+        logger.warning(
+            "Object of type %s.%s fell through to repr() fallback — "
+            "this figure was NOT rendered as a chart. "
+            "Check that the object is a plotly.graph_objects.Figure "
+            "or matplotlib.figure.Figure.",
+            module,
+            type(obj).__name__,
+        )
     text = f"```\n{obj!r}\n```"
     return _render_markdown(text, title, description, source, study, store)
 

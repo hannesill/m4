@@ -55,6 +55,10 @@ function renderPlotly(container, cardData) {
           }
         });
       }
+    }).catch(function(err) {
+      console.error('Plotly render failed for card ' + cardData.card_id + ':', err);
+      plotDiv.innerHTML = '<div class="chart-loading" style="color:var(--text-muted)">'
+        + 'Chart render error: ' + (err.message || err) + '</div>';
     });
   }
 
@@ -68,7 +72,8 @@ function renderPlotly(container, cardData) {
     plotDiv.appendChild(loading);
 
     loadPlotly(function() {
-      plotDiv.removeChild(loading);
+      if (!window.Plotly) return;  // Script failed to load; onerror already shows message
+      if (loading.parentNode === plotDiv) plotDiv.removeChild(loading);
       doRender();
     });
   }
