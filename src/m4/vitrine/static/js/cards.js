@@ -162,7 +162,11 @@ function addCard(cardData) {
       renderMarkdown(body, cardData);
       break;
     case 'decision':
-      renderForm(body, cardData);
+      if (cardData.response_action && cardData.response_values && Object.keys(cardData.response_values).length > 0) {
+        renderFrozenForm(body, cardData.response_values, (cardData.preview && cardData.preview.fields) || []);
+      } else {
+        renderForm(body, cardData);
+      }
       break;
     case 'keyvalue':
       renderKeyValue(body, cardData);
@@ -417,6 +421,13 @@ function updateCard(cardId, newCardData) {
           break;
         case 'keyvalue':
           renderKeyValue(body, newCardData);
+          break;
+        case 'decision':
+          if (newCardData.response_action && newCardData.response_values && Object.keys(newCardData.response_values).length > 0) {
+            renderFrozenForm(body, newCardData.response_values, (newCardData.preview && newCardData.preview.fields) || []);
+          } else {
+            renderForm(body, newCardData);
+          }
           break;
         default:
           body.textContent = JSON.stringify(newCardData.preview);
