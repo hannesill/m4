@@ -106,8 +106,8 @@
 
         if (cardData) {
           title = cardData.title || cardData.card_type;
-          cardType = cardData.response_requested ? 'decision' : cardData.card_type;
-          isDecision = !!cardData.response_requested;
+          cardType = (cardData.response_requested || cardData.response_action) ? 'decision' : cardData.card_type;
+          isDecision = !!(cardData.response_requested || cardData.response_action);
         } else {
           var titleEl = el.querySelector('.card-title');
           title = titleEl ? titleEl.textContent : 'Untitled';
@@ -125,8 +125,9 @@
         // Type badge
         var badge = document.createElement('span');
         badge.className = 'toc-type-badge';
-        badge.textContent = (typeof TYPE_LETTERS !== 'undefined' && TYPE_LETTERS[cardType]) || '?';
-        badge.style.background = TYPE_COLORS[cardType] || 'var(--text-muted)';
+        var isResponded = isDecision && el.classList.contains('responded');
+        badge.textContent = isResponded ? '\u2713' : ((typeof TYPE_LETTERS !== 'undefined' && TYPE_LETTERS[cardType]) || '?');
+        badge.style.background = isResponded ? 'var(--success)' : (TYPE_COLORS[cardType] || 'var(--text-muted)');
         entry.appendChild(badge);
 
         // Title
