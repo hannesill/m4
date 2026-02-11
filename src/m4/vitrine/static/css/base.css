@@ -412,23 +412,6 @@ body {
   margin: 2px 0;
 }
 
-/* Study dropdown export button */
-.study-export-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: 12px;
-  padding: 0 2px;
-  line-height: 1;
-  opacity: 0;
-  transition: opacity 0.15s, color 0.15s;
-  flex-shrink: 0;
-}
-
-.study-dropdown-entry:hover .study-export-btn { opacity: 1; }
-.study-export-btn:hover { color: var(--accent); }
-
 /* Study dropdown action button (session prompt, resume) */
 .study-action-btn {
   background: none;

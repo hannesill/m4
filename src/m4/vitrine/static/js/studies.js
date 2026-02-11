@@ -143,19 +143,6 @@ function renderDropdown() {
         entry.appendChild(resumeBtn);
       }
 
-      var expBtn = document.createElement('button');
-      expBtn.type = 'button';
-      expBtn.className = 'study-export-btn';
-      expBtn.innerHTML = '&#8615;';
-      expBtn.title = 'Export study';
-      expBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        exportStudy(study.label, 'html');
-        closeDropdown();
-      });
-      entry.appendChild(expBtn);
-
       var delBtn = document.createElement('button');
       delBtn.type = 'button';
       delBtn.className = 'study-delete-btn';

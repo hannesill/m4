@@ -78,6 +78,7 @@ function loadStudies() {
         updateDropdownTrigger();
         applyStudyFilter();
         updateStudyMetadataBar();
+        if (typeof loadFiles === 'function') loadFiles(studies[0].label);
       }
 
       updateCardCount();

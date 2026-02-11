@@ -66,6 +66,37 @@ function renderExportDropdown() {
   };
   exportDropdownPanel.appendChild(jsonItem);
 
+  // Download files as ZIP
+  var zipItem = document.createElement('button');
+  zipItem.className = 'export-dropdown-item';
+  zipItem.innerHTML = '<span class="export-icon">&#128451;</span> Download files (ZIP)';
+  if (studyLabel) {
+    zipItem.onclick = function(e) {
+      e.stopPropagation();
+      closeExportDropdown();
+      var a = document.createElement('a');
+      a.href = '/api/studies/' + encodeURIComponent(studyLabel) + '/files-archive';
+      a.download = '';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Downloading files');
+    };
+  } else {
+    zipItem.onclick = function(e) {
+      e.stopPropagation();
+      closeExportDropdown();
+      var a = document.createElement('a');
+      a.href = '/api/files-archive';
+      a.download = '';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Downloading files');
+    };
+  }
+  exportDropdownPanel.appendChild(zipItem);
+
   // Separator
   var sep = document.createElement('div');
   sep.className = 'export-dropdown-sep';
