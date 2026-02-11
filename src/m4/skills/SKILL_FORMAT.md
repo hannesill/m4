@@ -178,7 +178,7 @@ The skill encodes clinical domain knowledge — scoring systems, cohort definiti
 
 The skill encodes M4 framework knowledge, data structure guidance, workflow patterns, or meta-skills for contributing to M4.
 
-**Examples:** m4-api, m4-research, mimic-table-relationships, create-m4-skill
+**Examples:** m4-api, clinical-research-session, mimic-table-relationships, create-m4-skill
 
 Category is orthogonal to tier — a system skill can be `validated` (well-reviewed) just as a clinical skill can be `community` (contributed without clinical review).
 

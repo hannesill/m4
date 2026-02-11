@@ -1,5 +1,5 @@
 ---
-name: m4-vitrine
+name: vitrine-api
 description: The agent's research journal and live display. Documents decisions, findings, and rationale as persistent cards; collects structured researcher input; creates an exportable provenance trail across research studies.
 tier: community
 category: system

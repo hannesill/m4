@@ -121,7 +121,7 @@ df.to_csv("output/demographics.csv", index=False)  # Save for reproducibility
 show(df, title="Demographics", study="my-study")   # Show for review
 ```
 
-For blocking review (agent waits for researcher approval), use `show(df, wait=True, prompt="Proceed?")`. For the full display API, invoke the `/m4-vitrine` skill.
+For blocking review (agent waits for researcher approval), use `show(df, wait=True, prompt="Proceed?")`. For the full display API, invoke the `/vitrine-api` skill.
 
 ## Dataset State
 

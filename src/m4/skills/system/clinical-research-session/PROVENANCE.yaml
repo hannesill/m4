@@ -1,5 +1,5 @@
 sources:
-  - url: https://github.com/TODO/m4/tree/main/src/m4/skills/system/m4-research
+  - url: https://github.com/TODO/m4/tree/main/src/m4/skills/system/clinical-research-session
     description: M4 structured clinical research workflow skill
     license: Apache 2.0
 

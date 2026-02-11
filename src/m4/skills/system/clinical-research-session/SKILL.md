@@ -1,5 +1,5 @@
 ---
-name: m4-research
+name: clinical-research-session
 description: Start a structured clinical research session. Use when users describe research goals, want to analyze cohorts, investigate hypotheses, or need a rigorous research plan. Interviews the user, then produces a research protocol.
 tier: validated
 category: system
@@ -7,7 +7,7 @@ category: system
 
 # M4 Clinical Research Workflow
 
-Structured clinical research from hypothesis through analysis. All work is tracked in a **vitrine study** — see CLAUDE.md for the vitrine quick reference or `/m4-vitrine` for the full API.
+Structured clinical research from hypothesis through analysis. All work is tracked in a **vitrine study** — see CLAUDE.md for the vitrine quick reference or `/vitrine-api` for the full API.
 
 ## When This Skill Activates
 
@@ -33,6 +33,11 @@ from m4.vitrine import (
 
 STUDY = "early-vasopressors-sepsis-v1"
 output_dir = register_output_dir(study=STUDY)
+
+# FIRST artifact: write STUDY.md describing the research question and approach
+(output_dir / "STUDY.md").write_text("""# Early Vasopressor Use in Sepsis
+...research question, design, key definitions...
+""")
 ```
 
 **Continuing a study:** Call `list_studies()` and `study_context(study)` to re-orient. Use `section()` to mark a new conversation within an ongoing study — not a new study.
@@ -40,6 +45,12 @@ output_dir = register_output_dir(study=STUDY)
 **Branching:** Create a new version (`v2`) when the researcher wants a different approach.
 
 **File artifacts are mandatory.** Every DataFrame, figure, and analysis script MUST be saved to `output_dir`. Never save to `/tmp/` or rely on vitrine cards alone — cards document the narrative, files ARE the science. If the session ends, files must be the complete reproducible record.
+
+**Required output files:**
+- `STUDY.md` — written first, describes what this study is about (research question, design, key definitions)
+- Numbered scripts: `01_cohort_definition.py`, `02_analysis.py`, etc. — the code that produced results
+- Data: `.parquet` files for every significant DataFrame
+- Figures: `.png` / `.html` for every chart shown in vitrine
 
 ---
 
@@ -240,11 +251,15 @@ Apply throughout the analysis.
 
 ### Visualizations
 
-Use plots liberally — a chart often reveals what a table hides. Distributions before modeling, Kaplan-Meier curves for survival, forest plots for effect sizes, covariate balance after matching, CONSORT flow diagrams. If you're staring at numbers and deciding what they mean, make a plot instead.
+Use plots liberally — a chart often reveals what a table hides.
+
+**Distributions → plots, not key-value cards.** Categorical variables (race, gender, admission type) → horizontal bar chart. Continuous variables (age, LOS, SOFA) → histogram. Never `show(dict)` for a distribution with 5+ categories — use `show(fig)` instead. Reserve key-value cards for small summary stats (n, median, IQR).
+
+Other plots: Kaplan-Meier curves for survival, forest plots for effect sizes, covariate balance after matching, CONSORT flow diagrams. If you're staring at numbers and deciding what they mean, make a plot instead.
 
 ### Reproducibility
 
-- Save all SQL/analysis as numbered scripts in `output_dir` (e.g., `01_cohort_definition.py`)
+- **Save every analysis script** as a numbered file in `output_dir`: `01_cohort_definition.py`, `02_baseline_characteristics.py`, etc. The script should be the complete, runnable Python code for that step — not a fragment. This is non-negotiable; without scripts the research is not reproducible.
 - Use `show()` for decisions and findings; `section()` for phase transitions
 - Use `set_status()` during long operations
 - Export the complete study at the end
