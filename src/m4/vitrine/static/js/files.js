@@ -317,11 +317,6 @@ function previewFile(study, filepath, fileType, filename) {
           div.innerHTML = window.marked.parse(text);
           _highlightCodeBlocks(div);
         } else {
-          loadMarked(function() {
-            div.innerHTML = window.marked.parse(text);
-            _highlightCodeBlocks(div);
-          });
-          // Show plain text while loading
           div.textContent = text;
         }
         body.appendChild(div);

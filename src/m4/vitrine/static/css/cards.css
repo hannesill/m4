@@ -289,6 +289,29 @@
   margin: 8px 0;
 }
 
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+}
+
+.markdown-body th,
+.markdown-body td {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.markdown-body th {
+  font-weight: 600;
+  background: var(--bg-card);
+}
+
+.markdown-body tr:hover td {
+  background: var(--bg-card);
+}
+
 /* Key-value cards */
 .kv-list {
   display: grid;

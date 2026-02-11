@@ -22,7 +22,7 @@ var state = {
   connected: false,
   reconnectDelay: 1000,
   reconnectTimer: null,
-  markedLoaded: false,
+  markedConfigured: false,
   plotlyLoaded: false,
   plotlyCallbacks: [],
   studyNames: [],

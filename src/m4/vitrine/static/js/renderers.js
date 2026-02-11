@@ -8,49 +8,16 @@ function renderMarkdown(container, cardData) {
   container.className += ' markdown-body';
 
   if (window.marked) {
+    if (!state.markedConfigured) {
+      state.markedConfigured = true;
+      window.marked.setOptions({ breaks: true, gfm: true });
+    }
     container.innerHTML = window.marked.parse(text);
   } else {
-    container.innerHTML = basicMarkdown(text);
-    loadMarked(function() {
-      container.innerHTML = window.marked.parse(text);
-    });
+    // Fallback: marked.min.js should be loaded eagerly via index.html,
+    // but handle the edge case gracefully.
+    container.textContent = text;
   }
-}
-
-function basicMarkdown(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-    .replace(/^/, '<p>')
-    .replace(/$/, '</p>');
-}
-
-function loadMarked(callback) {
-  if (state.markedLoaded) return;
-  state.markedLoaded = true;
-
-  var script = document.createElement('script');
-  script.src = '/static/vendor/marked.min.js';
-  script.onload = function() {
-    if (window.marked) {
-      window.marked.setOptions({ breaks: true, gfm: true });
-      if (callback) callback();
-    }
-  };
-  script.onerror = function() {
-    state.markedLoaded = false;
-  };
-  document.head.appendChild(script);
 }
 
 function renderKeyValue(container, cardData) {
