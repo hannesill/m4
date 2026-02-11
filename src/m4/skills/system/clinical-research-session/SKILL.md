@@ -49,7 +49,7 @@ show("""# Early Vasopressor Use in Sepsis
 **Required output files:**
 - Numbered scripts: `01_cohort_definition.py`, `02_analysis.py`, etc. — the code that produced results
 - Data: `.parquet` files for every significant DataFrame
-- Figures: `.png` for every chart shown in vitrine (do NOT save `.html` — vitrine cards already store the interactive spec)
+- Figures: save every plot as `.png` to `output_dir / "plots/"`. **Never save `.html` files** — vitrine cards already store the interactive Plotly spec. Use `fig.write_image(output_dir / "plots" / "age_distribution.png")`. Create the `plots/` subdirectory once at the start of the study.
 
 ---
 
@@ -253,6 +253,8 @@ Apply throughout the analysis.
 Use plots liberally — a chart often reveals what a table hides.
 
 **Distributions → plots, not key-value cards.** Categorical variables (race, gender, admission type) → horizontal bar chart. Continuous variables (age, LOS, SOFA) → histogram. Never `show(dict)` for a distribution with 5+ categories — use `show(fig)` instead. Reserve key-value cards for small summary stats (n, median, IQR).
+
+**Every plot card MUST have a description.** Always pass a `description=` to `show()` when displaying a Plotly figure — a 1-4 sentences explanation of what the plot shows and why it matters. Example: `show(fig, title="Age Distribution", description="Right-skewed distribution with median age 65; most patients are 50-80.", study=STUDY)`.
 
 Other plots: Kaplan-Meier curves for survival, forest plots for effect sizes, covariate balance after matching, CONSORT flow diagrams. If you're staring at numbers and deciding what they mean, make a plot instead.
 
