@@ -94,7 +94,7 @@ function renderDropdown() {
 
       var meta = document.createElement('span');
       meta.className = 'study-entry-meta';
-      var _cc = study.card_count || 0;
+      var _cc = countStudyCards(study.label);
       meta.textContent = _cc + ' card' + (_cc !== 1 ? 's' : '');
       if (study.start_time) meta.textContent += '  ' + formatStudyTime(study.start_time);
       entry.appendChild(meta);
@@ -210,7 +210,8 @@ function updateStudyMetadataBar() {
   }
   studyMetaLabel.textContent = study.label;
   var parts = [];
-  if (study.card_count !== undefined) parts.push(study.card_count + ' card' + (study.card_count !== 1 ? 's' : ''));
+  var _metaCC = countStudyCards(study.label);
+  parts.push(_metaCC + ' card' + (_metaCC !== 1 ? 's' : ''));
   if (study.start_time) parts.push(new Date(study.start_time).toLocaleDateString());
   studyMetaDetail.textContent = parts.join(' \u00b7 ');
   studyMetaBar.classList.add('visible');
@@ -383,6 +384,11 @@ function startEditStudyName() {
 // Click the study title in the metadata bar to rename
 studyMetaLabel.addEventListener('click', startEditStudyName);
 
+function countStudyCards(studyLabel) {
+  // Count DOM-rendered cards for a study (matches footer counter logic)
+  return feed.querySelectorAll('.card[data-study="' + studyLabel + '"]').length;
+}
+
 function trackStudy(studyName) {
   if (!studyName || state.studyNames.indexOf(studyName) !== -1) return;
   state.studyNames.push(studyName);
@@ -407,7 +413,8 @@ function insertStudySeparators() {
       sep.dataset.studySeparator = studyName;
       var text = studyName;
       if (study && study.start_time) text += ' \u00b7 ' + dateGroupLabel(study.start_time) + ' ' + formatStudyTime(study.start_time);
-      if (study && study.card_count) text += ' \u00b7 ' + study.card_count + ' card' + (study.card_count !== 1 ? 's' : '');
+      var _sepCC = countStudyCards(studyName);
+      if (_sepCC > 0) text += ' \u00b7 ' + _sepCC + ' card' + (_sepCC !== 1 ? 's' : '');
       sep.textContent = text;
       el.parentNode.insertBefore(sep, el);
       lastStudy = studyName;
