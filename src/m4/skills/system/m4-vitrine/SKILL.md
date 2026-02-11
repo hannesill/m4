@@ -46,7 +46,7 @@ show("## Exclusion Decision\nRemoving 312 patients with ICU stay < 24h — insuf
 ## Quick Start
 
 ```python
-from m4.vitrine import show, section, set_status
+from m4.vitrine import show, section, confirm, ask, set_status
 
 # DataFrame → interactive table with paging/sorting
 show(df, title="Patient Demographics")
@@ -111,6 +111,24 @@ Push any displayable object to the browser. Auto-starts the server on first call
 ### `section(title, study=None)`
 
 Insert a visual section divider in the display feed.
+
+### `confirm(message, *, study=None, timeout=600) → bool`
+
+Block until the researcher confirms or skips. Returns `True` if confirmed, `False` otherwise.
+
+```python
+if confirm("Proceed with these exclusion criteria?", study=RUN):
+    # researcher approved
+    ...
+```
+
+### `ask(question, options, *, study=None, timeout=600) → str`
+
+Block until the researcher picks one of the given options. Returns the chosen label, or `"timeout"`.
+
+```python
+score = ask("Which severity score?", ["SOFA", "APACHE III", "Both"], study=RUN)
+```
 
 ### `set_status(message)`
 
@@ -309,7 +327,7 @@ response = show(
                 ("Short stays", "Exclude ICU stays < 24 hours"),
                 ("Pediatric", "Exclude patients < 18 years"),
             ],
-            multi_select=True,
+            multiple=True,
             default=["Readmissions", "Pediatric"],
         ),
     ]),
@@ -334,7 +352,7 @@ Question(
         "Plain option",
     ],
     header="Chip",               # optional short tag displayed above question
-    multi_select=False,          # True → checkboxes, False → radio buttons
+    multiple=False,              # True → checkboxes, False → radio buttons
     allow_other=True,            # show "Other: ___" free-text option
     default="Label",             # pre-selected option (str or list[str])
 )

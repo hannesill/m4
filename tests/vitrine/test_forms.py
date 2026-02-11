@@ -399,13 +399,13 @@ class TestFormFieldValidation:
         q = Question(name="q", question="Pick one", options=["A", "B"], default="A")
         assert q.default == "A"
 
-    def test_question_multi_select_invalid_default(self):
+    def test_question_multiple_invalid_default(self):
         with pytest.raises(ValueError, match="not in option labels"):
             Question(
                 name="q",
                 question="Pick",
                 options=["A", "B"],
-                multi_select=True,
+                multiple=True,
                 default=["C"],
             )
 
@@ -524,7 +524,7 @@ class TestQuestionIntegration:
                     question="Which score?",
                     options=[("SOFA", "Standard"), ("APACHE", "Advanced")],
                     header="Score",
-                    multi_select=False,
+                    multiple=False,
                     allow_other=True,
                 ),
             ]
@@ -533,7 +533,7 @@ class TestQuestionIntegration:
         field = card.preview["fields"][0]
         assert field["question"] == "Which score?"
         assert field["header"] == "Score"
-        assert field["multi_select"] is False
+        assert field["multiple"] is False
         assert field["allow_other"] is True
         assert field["options"][0]["label"] == "SOFA"
         assert field["options"][0]["description"] == "Standard"

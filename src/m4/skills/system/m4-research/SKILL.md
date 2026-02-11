@@ -190,7 +190,7 @@ Question("population", question="Base Population",
 **Exclusion criteria:**
 ```python
 Question("exclusions", question="Exclusion Criteria (select all that apply)",
-         multi_select=True,
+         multiple=True,
          options=[
              ("First ICU stay only", "Exclude readmissions — one observation per patient"),
              ("Age < 18", "Exclude pediatric patients"),
@@ -208,7 +208,7 @@ Question("exclusions", question="Exclusion Criteria (select all that apply)",
 **Confounders:**
 ```python
 Question("confounders", question="Key Confounders to Adjust For (select all that apply)",
-         multi_select=True,
+         multiple=True,
          options=[
              ("Age, sex", "Basic demographics"),
              ("BMI / weight", "Body habitus — available in chartevents"),
@@ -250,7 +250,7 @@ response = show(
         Question("outcome", question="Primary Outcome", options=[...]),
         Question("exposure", question="Exposure / Intervention", options=[...]),
         # population already known — skip it
-        Question("exclusions", question="Exclusion Criteria", multi_select=True, options=[...]),
+        Question("exclusions", question="Exclusion Criteria", multiple=True, options=[...]),
         Question("dataset", question="Primary Dataset",
                  options=[("mimic-iv", "Full"), ("mimic-iv-demo", "Demo"), ("eicu", "Multi-center")],
                  allow_other=False),
@@ -524,7 +524,7 @@ response = show(
                      ("Within 6 hours", "Broader early window"),
                  ]),
         Question("exclusions", question="Exclusion Criteria (select all that apply)",
-                 multi_select=True,
+                 multiple=True,
                  options=[
                      ("First ICU stay only", "Exclude readmissions"),
                      ("Age < 18", "Adults only"),

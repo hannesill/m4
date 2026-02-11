@@ -51,7 +51,7 @@ function renderQuestionField(container, field) {
   var optionsDiv = document.createElement('div');
   optionsDiv.className = 'question-options';
 
-  var inputType = field.multi_select ? 'checkbox' : 'radio';
+  var inputType = field.multiple ? 'checkbox' : 'radio';
   var groupName = 'question-' + field.name + '-' + Math.random().toString(36).slice(2, 8);
   var defaults = field.default;
   if (defaults != null && !Array.isArray(defaults)) defaults = [defaults];

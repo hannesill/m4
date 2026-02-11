@@ -274,7 +274,7 @@ class TestQuestion:
         assert d["name"] == "score"
         assert d["question"] == "Which severity score?"
         assert d["header"] == "Score"
-        assert d["multi_select"] is False
+        assert d["multiple"] is False
         assert d["allow_other"] is True
         assert len(d["options"]) == 2
         assert d["options"][0] == {"label": "SOFA", "description": "6 organ systems"}
@@ -314,25 +314,25 @@ class TestQuestion:
         with pytest.raises(ValueError, match="non-empty"):
             Question(name="x", question="Pick", options=[])
 
-    def test_multi_select_default_list(self):
+    def test_multiple_default_list(self):
         q = Question(
             name="x",
             question="Pick some",
             options=["A", "B", "C"],
-            multi_select=True,
+            multiple=True,
             default=["A", "C"],
         )
         d = q.to_dict()
-        assert d["multi_select"] is True
+        assert d["multiple"] is True
         assert d["default"] == ["A", "C"]
 
-    def test_multi_select_invalid_default(self):
+    def test_multiple_invalid_default(self):
         with pytest.raises(ValueError, match="not in option labels"):
             Question(
                 name="x",
                 question="Pick",
                 options=["A", "B"],
-                multi_select=True,
+                multiple=True,
                 default=["A", "Z"],
             )
 

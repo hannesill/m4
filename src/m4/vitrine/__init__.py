@@ -38,7 +38,9 @@ __all__ = [
     "DisplayResponse",
     "Form",
     "Question",
+    "ask",
     "clean_studies",
+    "confirm",
     "delete_study",
     "export",
     "get_card",
@@ -967,6 +969,54 @@ def section(title: str, study: str | None = None) -> None:
         )
     elif _server is not None:
         _server.push_section(title, study=study)
+
+
+def confirm(
+    message: str,
+    *,
+    study: str | None = None,
+    timeout: float = 600,
+) -> bool:
+    """Block until the researcher confirms or skips.
+
+    Shorthand for ``show(message, wait=True, actions=["Confirm", "Skip"])``.
+
+    Args:
+        message: Markdown text shown in the decision card.
+        study: Optional study name for grouping.
+        timeout: Seconds to wait (default 600).
+
+    Returns:
+        True if confirmed, False if skipped or timed out.
+    """
+    r = show(
+        message, wait=True, actions=["Confirm", "Skip"], study=study, timeout=timeout
+    )
+    return r.action == "confirm"
+
+
+def ask(
+    question: str,
+    options: list[str],
+    *,
+    study: str | None = None,
+    timeout: float = 600,
+) -> str:
+    """Block until the researcher picks one of the given options.
+
+    Shorthand for ``show(question, wait=True, actions=options)``.
+
+    Args:
+        question: Markdown text shown in the decision card.
+        options: Action button labels (e.g. ``["SOFA", "APACHE III"]``).
+        study: Optional study name for grouping.
+        timeout: Seconds to wait (default 600).
+
+    Returns:
+        The chosen action string, or ``"timeout"`` if no response.
+    """
+    r = show(question, wait=True, actions=options, study=study, timeout=timeout)
+    return r.action
 
 
 def set_status(message: str) -> None:

@@ -36,7 +36,7 @@ class Question:
     question: str
     options: list[tuple[str, str] | str]
     header: str | None = None
-    multi_select: bool = False
+    multiple: bool = False
     allow_other: bool = True
     default: str | list[str] | None = None
 
@@ -72,7 +72,7 @@ class Question:
             "name": self.name,
             "question": self.question,
             "options": options_out,
-            "multi_select": self.multi_select,
+            "multiple": self.multiple,
             "allow_other": self.allow_other,
         }
         if self.header:
