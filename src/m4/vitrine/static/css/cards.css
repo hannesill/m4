@@ -539,6 +539,11 @@
   font-size: 12px;
   color: var(--text-muted);
   font-style: italic;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  #agent-status { display: none; }
 }
 
 /* Quick action buttons (secondary) */
@@ -569,7 +574,7 @@
   max-height: 60vh;
   overflow-y: auto;
   min-width: 280px;
-  max-width: 380px;
+  max-width: min(380px, calc(100vw - 24px));
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -670,6 +675,17 @@
   text-align: center;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+@media (max-width: 600px) {
+  .toc-panel {
+    position: fixed;
+    right: 12px;
+    top: 48px;
+    min-width: 0;
+    width: calc(100vw - 24px);
+    max-width: 380px;
+  }
 }
 
 /* ================================================================

@@ -77,6 +77,11 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
+}
+
+.header-left h1 {
+  flex-shrink: 0;
 }
 
 .header h1 {
@@ -91,6 +96,9 @@ body {
 .study-dropdown {
   position: relative;
   display: inline-block;
+  min-width: 0;
+  flex-shrink: 1;
+  margin-right: 8px;
 }
 
 .study-dropdown-trigger {
@@ -107,6 +115,14 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  max-width: 100%;
+}
+
+#study-dropdown-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .study-dropdown-trigger:hover { border-color: var(--accent); }
@@ -439,6 +455,7 @@ body {
   display: flex;
   gap: 6px;
   align-items: center;
+  flex-shrink: 0;
 }
 
 /* .btn has a border + larger line-height; .btn-icon does not.
@@ -463,6 +480,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .btn:hover { background: var(--bg-header); }
@@ -482,4 +500,17 @@ body {
 .btn-icon:hover {
   color: var(--text);
   background: var(--bg-header);
+}
+
+/* ================================================================
+   RESPONSIVE — narrow viewports
+   ================================================================ */
+@media (max-width: 600px) {
+  .header-inner {
+    padding: 0 12px;
+  }
+
+  .header-left {
+    gap: 8px;
+  }
 }
