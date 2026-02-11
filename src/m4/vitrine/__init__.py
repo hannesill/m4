@@ -56,6 +56,7 @@ __all__ = [
     "stop",
     "stop_server",
     "study_context",
+    "wait_for",
 ]
 
 logger = logging.getLogger(__name__)
@@ -567,7 +568,7 @@ def show(
     position: str | None = None,
     wait: bool = False,
     prompt: str | None = None,
-    timeout: float = 300,
+    timeout: float = 600,
     actions: list[str] | None = None,
     controls: list[Any] | None = None,
 ) -> Any:
@@ -597,7 +598,7 @@ def show(
         position: "top" to prepend instead of append.
         wait: If True, block until user responds in the browser.
         prompt: Question shown to the user (requires wait=True).
-        timeout: Seconds to wait for response (default 300).
+        timeout: Seconds to wait for response (default 600).
         actions: Named action buttons for decision cards. When provided,
             replaces the default Confirm button (requires wait=True).
         controls: List of form field primitives to attach as controls to
@@ -730,8 +731,19 @@ def show(
 
     # Blocking flow: wait for user response
     result = _wait_for_card_response(card.card_id, timeout)
+    action = result.get("action", "timeout")
+
+    # Terminal notification so the agent (and researcher) sees the outcome
+    if action == "timeout":
+        print(
+            f'Timed out waiting for "{_wait_label}" '
+            f'-- use wait_for("{card.card_id}") to re-attach'
+        )
+    else:
+        print(f'Response received: {action} on "{_wait_label}"')
+
     return DisplayResponse(
-        action=result.get("action", "timeout"),
+        action=action,
         card_id=card.card_id,
         message=result.get("message"),
         summary=result.get("summary", ""),
@@ -802,6 +814,120 @@ def _poll_remote_response(card_id: str, timeout: float) -> dict[str, Any]:
         return {"action": "timeout", "card_id": card_id}
     except Exception:
         return {"action": "timeout", "card_id": card_id}
+
+
+def wait_for(card_id: str, timeout: float = 600) -> DisplayResponse:
+    """Re-attach to a previously posted blocking card and wait for its response.
+
+    Use this after a ``show(..., wait=True)`` call has timed out. If the
+    researcher has already responded (after the original timeout expired),
+    the stored response is returned immediately. Otherwise the card's
+    response UI is re-enabled in the browser and the call blocks until the
+    researcher responds or the new timeout expires.
+
+    Args:
+        card_id: Card identifier (from ``DisplayResponse.card_id`` or
+            ``DisplayHandle``).
+        timeout: Seconds to wait for response (default 600).
+
+    Returns:
+        DisplayResponse with the researcher's action, message, and values.
+    """
+    from m4.vitrine.artifacts import _serialize_card
+
+    # Strip slug suffix (e.g. "a1b2c3-protocol" → "a1b2c3")
+    id_prefix = card_id.split("-")[0]
+
+    # Look up the card
+    card = get_card(id_prefix)
+    if card is None:
+        return DisplayResponse(
+            action="error",
+            card_id=card_id,
+            message=f"Card not found: {card_id}",
+        )
+
+    # If the researcher already responded (after the original timeout),
+    # return the stored response immediately.
+    if card.response_action is not None:
+        _label = card.title or card.prompt or card_id
+        print(f'Response already received: {card.response_action} on "{_label}"')
+        # Find the store for _store parameter
+        _ensure_study_manager()
+        store = None
+        if _study_manager is not None:
+            store = _study_manager.get_store_for_card(id_prefix)
+        if store is None:
+            store = _store
+        return DisplayResponse(
+            action=card.response_action,
+            card_id=card.card_id,
+            message=card.response_message,
+            summary=card.response_summary or "",
+            artifact_id=card.response_artifact_id,
+            values=card.response_values or {},
+            _store=store,
+        )
+
+    # No response yet — re-enable the response UI and wait again.
+    _ensure_study_manager()
+    store = None
+    if _study_manager is not None:
+        store = _study_manager.get_store_for_card(id_prefix)
+    if store is None:
+        store = _store
+
+    # Update card metadata to re-enable blocking
+    if store is not None:
+        store.update_card(
+            card.card_id,
+            response_requested=True,
+            timeout=timeout,
+        )
+        card.response_requested = True
+        card.timeout = timeout
+
+    # Push update to frontend so it re-shows the response UI
+    with _lock:
+        server, url, token = _server, _remote_url, _auth_token
+
+    if url and token:
+        _remote_command(
+            url,
+            token,
+            {
+                "type": "update",
+                "card_id": card.card_id,
+                "card": _serialize_card(card),
+            },
+        )
+    elif server is not None:
+        server.push_update(card.card_id, card)
+
+    _label = card.title or card.prompt or card_id
+    print(f'Re-waiting for response on "{_label}" in vitrine')
+
+    # Block again
+    result = _wait_for_card_response(card.card_id, timeout)
+    action = result.get("action", "timeout")
+
+    if action == "timeout":
+        print(
+            f'Timed out waiting for "{_label}" '
+            f'-- use wait_for("{card.card_id}") to re-attach'
+        )
+    else:
+        print(f'Response received: {action} on "{_label}"')
+
+    return DisplayResponse(
+        action=action,
+        card_id=card.card_id,
+        message=result.get("message"),
+        summary=result.get("summary", ""),
+        artifact_id=result.get("artifact_id"),
+        values=result.get("values", {}),
+        _store=store,
+    )
 
 
 def section(title: str, study: str | None = None) -> None:
