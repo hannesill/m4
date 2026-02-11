@@ -378,6 +378,27 @@ function updateCard(cardId, newCardData) {
     }
   }
 
+  // Handle response_requested toggling (e.g. wait_for() re-enabling after timeout)
+  if (newCardData) {
+    var existingResponseUI = el.querySelector('.card-response-ui');
+    if (newCardData.response_requested && !existingResponseUI) {
+      // Re-enable: remove responded state and old badges, add fresh response UI
+      el.classList.remove('responded');
+      el.classList.add('waiting');
+      var oldBadge = el.querySelector('.sent-badge');
+      if (oldBadge) oldBadge.remove();
+      var responseUI = buildResponseUI(newCardData, el);
+      el.appendChild(responseUI);
+      updateAgentStatus('Waiting for your response');
+      notifyDecisionCard(newCardData);
+    } else if (!newCardData.response_requested && existingResponseUI) {
+      // Disable: remove response UI if no longer waiting
+      if (existingResponseUI._timer) clearInterval(existingResponseUI._timer);
+      existingResponseUI.remove();
+      el.classList.remove('waiting');
+    }
+  }
+
   // Re-render annotations
   if (newCardData) {
     var annotationsContainer = el.querySelector('.card-annotations');

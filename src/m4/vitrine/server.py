@@ -597,7 +597,7 @@ class DisplayServer:
 
         card_id = request.path_params["card_id"]
         timeout = float(request.query_params.get("timeout", "300"))
-        timeout = min(timeout, 600)  # Cap at 10 minutes
+        timeout = min(timeout, 1800)  # Cap at 30 minutes
 
         result = await self.wait_for_response(card_id, timeout)
         return JSONResponse(result)
