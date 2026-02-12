@@ -18,7 +18,8 @@ function buildResponseUI(cardData, cardEl) {
   // Message input
   var msgInput = document.createElement('textarea');
   msgInput.className = 'response-message-input';
-  msgInput.placeholder = 'Optional message...';
+  var isAskCard = cardData.actions && Array.isArray(cardData.actions) && cardData.actions.length > 0;
+  msgInput.placeholder = isAskCard ? 'Or type your own answer...' : 'Optional message...';
   msgInput.rows = 1;
   container.appendChild(msgInput);
 

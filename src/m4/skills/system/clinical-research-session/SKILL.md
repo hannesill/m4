@@ -62,8 +62,8 @@ output_dir/
 │   ├── baseline_table.parquet
 │   └── ...
 └── plots/
-    ├── age_distribution.png
-    ├── kaplan_meier.png
+    ├── age_distribution.json
+    ├── kaplan_meier.json
     └── ...
 ```
 
@@ -81,7 +81,8 @@ Interactive exploration (checking schemas, small test queries to understand data
 **Script requirements:**
 - **Self-contained**: imports, `set_dataset()`, SQL strings, analysis code, output writes — everything to run `python scripts/01_cohort_definition.py` from the output directory
 - **Relative paths**: use `out = Path(__file__).resolve().parent.parent` to locate `data/` and `plots/`
-- **Saves outputs**: `.parquet` to `data/`, `.png` to `plots/` (never `.html` — vitrine stores interactive Plotly specs)
+- **Saves outputs**: `.parquet` to `data/`, `.json` to `plots/` via `fig.write_json()` (never `.html` or `.png`)
+- **Plotly reload**: `plotly.io.from_json(open("plots/fig.json").read())` to reconstruct a `Figure` for `show()`
 - **Independent**: each script runs on its own; later scripts load earlier outputs from `data/`
 
 **Example — one analysis step, start to finish:**

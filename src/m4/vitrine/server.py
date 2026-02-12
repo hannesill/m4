@@ -1111,20 +1111,20 @@ class DisplayServer:
             artifact_id = None
             if selected_rows and columns:
                 artifact_id = f"resp-{card_id}"
-                if self.study_manager:
+                if sel_store:
+                    sel_store.store_selection(artifact_id, selected_rows, columns)
+                elif self.study_manager:
                     self.study_manager.store_selection(
                         artifact_id, selected_rows, columns
                     )
-                elif sel_store:
-                    sel_store.store_selection(artifact_id, selected_rows, columns)
             elif points:
                 artifact_id = f"resp-{card_id}"
-                if self.study_manager:
+                if sel_store:
+                    sel_store.store_selection_json(artifact_id, {"points": points})
+                elif self.study_manager:
                     self.study_manager.store_selection_json(
                         artifact_id, {"points": points}
                     )
-                elif sel_store:
-                    sel_store.store_selection_json(artifact_id, {"points": points})
 
             summary = self._build_summary(card_id, selected_rows, points, columns)
 
