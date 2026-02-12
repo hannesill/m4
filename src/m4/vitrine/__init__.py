@@ -150,27 +150,16 @@ def _lock_file_path() -> Path:
 
 def _is_process_alive(pid: int) -> bool:
     """Check if a process with the given PID is alive."""
-    try:
-        os.kill(pid, 0)
-        return True
-    except OSError:
-        return False
+    from m4.vitrine._utils import is_pid_alive
+
+    return is_pid_alive(pid)
 
 
 def _health_check(url: str, expected_session_id: str) -> bool:
     """GET /api/health and validate session_id matches."""
-    try:
-        import urllib.request
+    from m4.vitrine._utils import health_check
 
-        req = urllib.request.Request(f"{url}/api/health", method="GET")
-        with urllib.request.urlopen(req, timeout=2) as resp:
-            data = json.loads(resp.read())
-            return (
-                data.get("status") == "ok"
-                and data.get("session_id") == expected_session_id
-            )
-    except Exception:
-        return False
+    return health_check(url, session_id=expected_session_id)
 
 
 def _discover_server() -> dict[str, Any] | None:
@@ -411,10 +400,12 @@ def stop() -> None:
     global _server, _event_poll_thread
 
     _event_poll_stop.set()
-    if _event_poll_thread is not None:
-        _event_poll_thread.join(timeout=2)
+    with _lock:
+        poll_thread = _event_poll_thread
         _event_poll_thread = None
-    _event_callbacks.clear()
+        _event_callbacks.clear()
+    if poll_thread is not None:
+        poll_thread.join(timeout=2)
 
     with _lock:
         if _server is not None:
@@ -1280,9 +1271,9 @@ def on_event(callback: Any) -> None:
     global _event_poll_thread
 
     _ensure_started()
-    _event_callbacks.append(callback)
 
     with _lock:
+        _event_callbacks.append(callback)
         server, url = _server, _remote_url
 
     if server is not None and hasattr(server, "register_event_callback"):
@@ -1290,12 +1281,14 @@ def on_event(callback: Any) -> None:
         server.register_event_callback(callback)
     elif url is not None:
         # Remote server: start polling thread if not already running
-        if _event_poll_thread is None or not _event_poll_thread.is_alive():
-            _event_poll_stop.clear()
-            _event_poll_thread = threading.Thread(
-                target=_poll_remote_events, daemon=True
-            )
-            _event_poll_thread.start()
+        with _lock:
+            need_start = _event_poll_thread is None or not _event_poll_thread.is_alive()
+            if need_start:
+                _event_poll_stop.clear()
+                _event_poll_thread = threading.Thread(
+                    target=_poll_remote_events, daemon=True
+                )
+                _event_poll_thread.start()
 
 
 def _poll_remote_events() -> None:
@@ -1319,13 +1312,15 @@ def _poll_remote_events() -> None:
             )
             with urllib.request.urlopen(req, timeout=5) as resp:
                 events = json.loads(resp.read())
+            with _lock:
+                callbacks = list(_event_callbacks)
             for evt_data in events:
                 event = DisplayEvent(
                     event_type=evt_data.get("event_type", ""),
                     card_id=evt_data.get("card_id", ""),
                     payload=evt_data.get("payload", {}),
                 )
-                for cb in _event_callbacks:
+                for cb in callbacks:
                     try:
                         cb(event)
                     except Exception:
@@ -1385,11 +1380,13 @@ def list_annotations(
         List of annotation dicts, newest first.
     """
     _ensure_study_manager()
+    with _lock:
+        sm, store = _study_manager, _store
     cards: list[CardDescriptor] = []
-    if _study_manager is not None:
-        cards = _study_manager.list_all_cards(study=study)
-    elif _store is not None:
-        cards = _store.list_cards()
+    if sm is not None:
+        cards = sm.list_all_cards(study=study)
+    elif store is not None:
+        cards = store.list_cards()
 
     annotations: list[dict[str, Any]] = []
     for card in cards:

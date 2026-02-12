@@ -36,7 +36,9 @@ def _duckdb_safe_path(path: Path) -> str:
 
     Single quotes in the path are doubled to prevent SQL injection.
     """
-    return str(path).replace("'", "''")
+    from m4.vitrine._utils import duckdb_safe_path
+
+    return duckdb_safe_path(path)
 
 
 def _serialize_card(card: CardDescriptor) -> dict[str, Any]:
@@ -247,10 +249,13 @@ class ArtifactStore:
         s = search.strip()
         # Reject SQL keywords to prevent injection
         sql_keywords = re.compile(
-            r"\b(DROP|DELETE|INSERT|UPDATE|ALTER|CREATE|EXEC|UNION|--|;)\b",
+            r"\b(DROP|DELETE|INSERT|UPDATE|ALTER|CREATE|EXEC|UNION)\b",
             re.IGNORECASE,
         )
         if sql_keywords.search(s):
+            return None
+        # Reject SQL comment syntax and statement terminators
+        if "--" in s or ";" in s:
             return None
         # Only allow alphanumeric, spaces, basic punctuation
         if not re.match(r"^[\w\s.,\-:/'\"()]+$", s):

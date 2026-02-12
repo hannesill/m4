@@ -3,7 +3,8 @@
 Tests cover:
 - Redactor creation with defaults and overrides
 - Pattern matching on column names
-- Pass-through behavior (stub implementation)
+- redact_dataframe() with PHI masking and ID hashing
+- enforce_row_limit() with truncation
 - Environment variable configuration
 """
 
@@ -111,20 +112,85 @@ class TestPatternMatching:
         assert r._matches_pattern("subject_id") is False
 
 
-class TestPassThrough:
-    """Verify the stub implementation is a clean pass-through."""
+class TestRedactDataFrame:
+    """Test redact_dataframe() implementation."""
 
-    def test_redact_dataframe_returns_same(self):
+    def test_redacts_phi_columns(self):
         r = Redactor()
+        df = pd.DataFrame({"first_name": ["Alice", "Bob"], "age": [30, 25]})
+        result = r.redact_dataframe(df)
+        assert result is not df  # Returns a copy
+        assert list(result["first_name"]) == ["[REDACTED]", "[REDACTED]"]
+        assert list(result["age"]) == [30, 25]  # Untouched
+
+    def test_disabled_returns_same_object(self):
+        r = Redactor(enabled=False)
         df = pd.DataFrame({"first_name": ["Alice"], "age": [30]})
         result = r.redact_dataframe(df)
-        # Currently pass-through — same object returned
         assert result is df
 
-    def test_enforce_row_limit_returns_same(self):
-        r = Redactor()
-        df = pd.DataFrame({"x": range(20_000)})
+    def test_hash_ids_columns(self):
+        r = Redactor(hash_ids=True)
+        df = pd.DataFrame({"subject_id": [12345], "age": [30]})
+        result = r.redact_dataframe(df)
+        val = result["subject_id"].iloc[0]
+        assert isinstance(val, str)
+        assert len(val) == 12
+        # Should be hex
+        int(val, 16)
+
+    def test_hash_ids_preserves_nan(self):
+        import numpy as np
+
+        r = Redactor(hash_ids=True)
+        df = pd.DataFrame({"subject_id": [12345, np.nan, 67890]})
+        result = r.redact_dataframe(df)
+        assert pd.isna(result["subject_id"].iloc[1])
+        assert isinstance(result["subject_id"].iloc[0], str)
+
+    def test_hash_ids_deterministic(self):
+        r = Redactor(hash_ids=True)
+        df1 = pd.DataFrame({"patient_id": [100]})
+        df2 = pd.DataFrame({"patient_id": [100]})
+        r1 = r.redact_dataframe(df1)
+        r2 = r.redact_dataframe(df2)
+        assert r1["patient_id"].iloc[0] == r2["patient_id"].iloc[0]
+
+    def test_custom_patterns(self):
+        r = Redactor(patterns=[r"(?i)secret"])
+        df = pd.DataFrame({"secret_field": ["xyz"], "normal": [1]})
+        result = r.redact_dataframe(df)
+        assert list(result["secret_field"]) == ["[REDACTED]"]
+        assert list(result["normal"]) == [1]
+
+
+class TestEnforceRowLimit:
+    """Test enforce_row_limit() implementation."""
+
+    def test_truncation_over_limit(self):
+        r = Redactor(max_rows=100)
+        df = pd.DataFrame({"x": range(200)})
         result_df, was_truncated = r.enforce_row_limit(df)
-        # Currently pass-through
+        assert len(result_df) == 100
+        assert was_truncated is True
+
+    def test_no_truncation_under_limit(self):
+        r = Redactor(max_rows=100)
+        df = pd.DataFrame({"x": range(50)})
+        result_df, was_truncated = r.enforce_row_limit(df)
+        assert len(result_df) == 50
+        assert was_truncated is False
+
+    def test_exact_limit(self):
+        r = Redactor(max_rows=100)
+        df = pd.DataFrame({"x": range(100)})
+        result_df, was_truncated = r.enforce_row_limit(df)
+        assert len(result_df) == 100
+        assert was_truncated is False
+
+    def test_disabled_skips_limit(self):
+        r = Redactor(enabled=False, max_rows=10)
+        df = pd.DataFrame({"x": range(100)})
+        result_df, was_truncated = r.enforce_row_limit(df)
         assert result_df is df
         assert was_truncated is False

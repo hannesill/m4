@@ -18,8 +18,10 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import shutil
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -64,6 +66,25 @@ def _parse_age(age_str: str) -> float:
     unit = match.group(2).lower() or "s"
     multipliers = {"d": 86400, "h": 3600, "m": 60, "s": 1}
     return value * multipliers[unit]
+
+
+def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
+    """Write JSON to a file atomically using a temporary file + rename.
+
+    On POSIX, ``os.replace()`` is atomic, preventing partial writes if the
+    process crashes mid-write.
+    """
+    fd, tmp_path = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as f:
+            json.dump(data, f, indent=2)
+        os.replace(tmp_path, str(path))
+    except BaseException:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 class StudyManager:
@@ -126,7 +147,7 @@ class StudyManager:
             "dir_name": dir_name,
             "start_time": datetime.now(timezone.utc).isoformat(),
         }
-        (study_dir / "meta.json").write_text(json.dumps(meta, indent=2))
+        _atomic_write_json(study_dir / "meta.json", meta)
 
         # Create ArtifactStore
         store = ArtifactStore(session_dir=study_dir, session_id=dir_name)
@@ -248,7 +269,7 @@ class StudyManager:
                 meta = json.loads(meta_path.read_text())
                 meta["label"] = new_label
                 meta["dir_name"] = new_dir_name
-                meta_path.write_text(json.dumps(meta, indent=2))
+                _atomic_write_json(meta_path, meta)
             except (json.JSONDecodeError, OSError):
                 pass
 
@@ -585,7 +606,7 @@ class StudyManager:
             except (json.JSONDecodeError, OSError):
                 pass
         meta["output_dir"] = rel
-        meta_path.write_text(json.dumps(meta, indent=2))
+        _atomic_write_json(meta_path, meta)
 
         return output_dir
 
@@ -637,7 +658,7 @@ class StudyManager:
         try:
             meta = json.loads(meta_path.read_text())
             meta["session_id"] = session_id
-            meta_path.write_text(json.dumps(meta, indent=2))
+            _atomic_write_json(meta_path, meta)
         except (json.JSONDecodeError, OSError):
             pass
 

@@ -96,13 +96,32 @@ class Redactor:
         Returns:
             A new DataFrame with PHI columns masked.
         """
-        # TODO: implement redaction
-        # When implemented, this should:
-        # 1. Copy the DataFrame
-        # 2. Check each column name against self._patterns
-        # 3. Replace matching columns with '[REDACTED]'
-        # 4. If self.hash_ids, hash columns matching id patterns
-        return df
+        if not self.enabled:
+            return df
+
+        import hashlib
+
+        import pandas as pd
+
+        result = df.copy()
+
+        for col in result.columns:
+            if self._matches_pattern(col):
+                result[col] = "[REDACTED]"
+
+        if self.hash_ids:
+            id_pattern = re.compile(r"(?i)(subject|patient|hadm|stay|icustay)_?id")
+            for col in result.columns:
+                if id_pattern.search(col):
+                    result[col] = result[col].map(
+                        lambda v: (
+                            hashlib.sha256(str(v).encode()).hexdigest()[:12]
+                            if pd.notna(v)
+                            else v
+                        )
+                    )
+
+        return result
 
     def enforce_row_limit(self, df: pd.DataFrame) -> tuple[pd.DataFrame, bool]:
         """Cap rows at the configured limit.
@@ -113,11 +132,12 @@ class Redactor:
         Returns:
             Tuple of (possibly truncated DataFrame, was_truncated flag).
         """
-        # TODO: implement row limiting
-        # When implemented, this should:
-        # 1. Check if len(df) > self.max_rows
-        # 2. If so, truncate to self.max_rows rows
-        # 3. Return (df, True) if truncated, (df, False) otherwise
+        if not self.enabled:
+            return df, False
+
+        if len(df) > self.max_rows:
+            return df.head(self.max_rows), True
+
         return df, False
 
     def _matches_pattern(self, column_name: str) -> bool:
@@ -129,5 +149,4 @@ class Redactor:
         Returns:
             True if the column name matches a PHI pattern.
         """
-        # TODO: implement pattern matching
         return any(p.search(column_name) for p in self._patterns)
