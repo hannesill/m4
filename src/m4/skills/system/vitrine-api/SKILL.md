@@ -63,7 +63,24 @@ Visual section divider.
 Yes/no gate. Returns `True` if confirmed, `False` if skipped or timed out.
 
 ### `ask(question, options, *, study=None, timeout=600) → str`
-Multiple-choice. Returns the chosen label or `"timeout"`.
+Multiple-choice with free-text fallback. Returns the chosen label,
+or the researcher's typed text if they wrote something instead.
+
+### `progress(title, *, study=None)`
+Context manager that shows a progress card with auto-complete/fail.
+
+```python
+# Simple — auto-start/end:
+with progress("Running DTW clustering"):
+    do_clustering()
+
+# With mid-run updates:
+with progress("Running analysis", study="sepsis-v1") as status:
+    build_cohort()
+    status("Applying exclusions...")
+    apply_exclusions()
+# Card auto-updates to ✓ complete or ✗ failed on scope exit
+```
 
 ### `start(port=7741, open_browser=True, mode="thread")`
 Start server explicitly. Called automatically on first `show()`. `mode="process"` for daemon.

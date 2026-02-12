@@ -914,3 +914,113 @@ class TestFileLocking:
         monkeypatch.setattr(display, "_get_vitrine_dir", lambda: tmp_path / "vitrine")
         path = display._lock_file_path()
         assert path == tmp_path / "vitrine" / ".server.lock"
+
+
+class TestStoreResolution:
+    """Fix 1: response.data() uses the correct study store."""
+
+    def test_response_data_with_multi_study(self, study_manager, mock_server):
+        """response.data() returns DataFrame (not None) when multiple studies exist."""
+        # Create two studies so the manager has multiple stores
+        display.show("card-a", study="study-alpha")
+        display.show("card-b", study="study-beta")
+
+        # Post a blocking table card in study-alpha
+        df = pd.DataFrame({"id": [10, 20, 30], "val": ["a", "b", "c"]})
+        mock_server._mock_response = {
+            "action": "confirm",
+            "card_id": "test",
+            "artifact_id": "resp-test",
+        }
+        result = display.show(df, title="Pick rows", wait=True, study="study-alpha")
+
+        # Store the selection artifact in the correct study store
+        store = study_manager.get_store_for_card(result.card_id)
+        assert store is not None
+        store.store_dataframe("resp-test", df.iloc[[0, 2]])
+
+        loaded = result.data()
+        assert loaded is not None
+        assert len(loaded) == 2
+        assert list(loaded["id"]) == [10, 30]
+
+
+class TestAskFreeText:
+    """Fix 2: ask() returns typed text when present."""
+
+    def test_ask_returns_button_label(self, store, mock_server):
+        """ask() returns button label when no message typed."""
+        mock_server._mock_response = {
+            "action": "SOFA",
+            "card_id": "test",
+            "message": None,
+        }
+        result = display.ask("Which score?", ["SOFA", "APACHE III"])
+        assert result == "SOFA"
+
+    def test_ask_returns_typed_text(self, store, mock_server):
+        """ask() returns typed text when researcher writes something."""
+        mock_server._mock_response = {
+            "action": "SOFA",
+            "card_id": "test",
+            "message": "Actually, use LODS instead",
+        }
+        result = display.ask("Which score?", ["SOFA", "APACHE III"])
+        assert result == "Actually, use LODS instead"
+
+    def test_ask_returns_button_on_empty_message(self, store, mock_server):
+        """ask() returns button label when message is empty string."""
+        mock_server._mock_response = {
+            "action": "APACHE III",
+            "card_id": "test",
+            "message": "",
+        }
+        result = display.ask("Which score?", ["SOFA", "APACHE III"])
+        assert result == "APACHE III"
+
+
+class TestProgress:
+    """Fix 4: progress() context manager."""
+
+    def test_progress_success(self, store, mock_server):
+        """progress() shows complete on normal exit."""
+        with display.progress("Running analysis") as status:
+            card_id = status._card_id
+
+        # The original card should be updated to show completion
+        card = next(c for c in store.list_cards() if c.card_id == card_id)
+        text = card.preview.get("text", "") or card.preview.get("markdown", "")
+        assert "\u2713" in text
+        assert "complete" in text
+
+    def test_progress_failure(self, store, mock_server):
+        """progress() shows failed on exception."""
+        with pytest.raises(ValueError, match="boom"):
+            with display.progress("Running analysis") as status:
+                card_id = status._card_id
+                raise ValueError("boom")
+
+        # The original card should be updated to show failure
+        card = next(c for c in store.list_cards() if c.card_id == card_id)
+        text = card.preview.get("text", "") or card.preview.get("markdown", "")
+        assert "\u2717" in text
+        assert "failed" in text
+
+    def test_progress_callable_update(self, store, mock_server):
+        """progress() supports mid-run status updates via __call__."""
+        with display.progress("Running analysis") as status:
+            card_id = status._card_id
+            status("Step 2 of 3...")
+
+        # The original card should be updated to show completion
+        card = next(c for c in store.list_cards() if c.card_id == card_id)
+        text = card.preview.get("text", "") or card.preview.get("markdown", "")
+        assert "\u2713" in text
+
+    def test_progress_with_study(self, study_manager, mock_server):
+        """progress() passes study parameter through."""
+        with display.progress("Analysis", study="test-study"):
+            pass
+
+        labels = {s["label"] for s in display.list_studies()}
+        assert "test-study" in labels

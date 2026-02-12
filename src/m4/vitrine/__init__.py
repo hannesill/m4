@@ -48,6 +48,7 @@ __all__ = [
     "list_annotations",
     "list_studies",
     "on_event",
+    "progress",
     "register_output_dir",
     "register_session",
     "section",
@@ -1013,7 +1014,82 @@ def ask(
         The chosen action string, or ``"timeout"`` if no response.
     """
     r = show(question, wait=True, actions=options, study=study, timeout=timeout)
-    return r.action
+    return r.message if r.message else r.action
+
+
+class ProgressContext:
+    """Context manager that shows a progress card with auto-complete/fail.
+
+    Used via the ``progress()`` factory function.
+    """
+
+    def __init__(self, title: str, *, study: str | None = None) -> None:
+        self._title = title
+        self._study = study
+        self._card_id: str | None = None
+
+    def __enter__(self) -> ProgressContext:
+        handle = show(
+            f"\u23f3 {self._title}",
+            title=self._title,
+            study=self._study,
+        )
+        self._card_id = str(handle)
+        return self
+
+    def __call__(self, message: str) -> None:
+        """Update the progress card with a new message."""
+        if self._card_id is not None:
+            show(
+                f"\u23f3 {message}",
+                title=self._title,
+                study=self._study,
+                replace=self._card_id,
+            )
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        if self._card_id is not None:
+            if exc_type is not None:
+                show(
+                    f"\u2717 {self._title} \u2014 failed",
+                    title=self._title,
+                    study=self._study,
+                    replace=self._card_id,
+                )
+            else:
+                show(
+                    f"\u2713 {self._title} \u2014 complete",
+                    title=self._title,
+                    study=self._study,
+                    replace=self._card_id,
+                )
+        # Never suppress exceptions
+        return None
+
+
+def progress(title: str, *, study: str | None = None) -> ProgressContext:
+    """Show a progress card that auto-completes or marks failed on scope exit.
+
+    Simple usage::
+
+        with progress("Running DTW clustering"):
+            do_clustering()
+
+    With mid-run updates::
+
+        with progress("Running analysis", study="sepsis-v1") as status:
+            build_cohort()
+            status("Applying exclusions...")
+            apply_exclusions()
+
+    Args:
+        title: Label shown on the progress card.
+        study: Optional study name for grouping.
+
+    Returns:
+        ProgressContext that can be used as a context manager.
+    """
+    return ProgressContext(title, study=study)
 
 
 def study_context(study: str) -> dict[str, Any]:
