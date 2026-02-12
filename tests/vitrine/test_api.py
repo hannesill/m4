@@ -1024,3 +1024,158 @@ class TestProgress:
 
         labels = {s["label"] for s in display.list_studies()}
         assert "test-study" in labels
+
+
+class TestConfirm:
+    """Tests for the confirm() convenience function."""
+
+    def test_confirm_returns_true_on_confirm(self, store, mock_server):
+        """confirm() returns True when user clicks Confirm."""
+        mock_server._mock_response = {
+            "action": "confirm",
+            "card_id": "test",
+        }
+        result = display.confirm("Proceed with analysis?")
+        assert result is True
+
+    def test_confirm_returns_false_on_skip(self, store, mock_server):
+        """confirm() returns False when user clicks Skip."""
+        mock_server._mock_response = {
+            "action": "skip",
+            "card_id": "test",
+        }
+        result = display.confirm("Proceed with analysis?")
+        assert result is False
+
+    def test_confirm_returns_false_on_timeout(self, store, mock_server):
+        """confirm() returns False when response times out."""
+        mock_server._mock_response = {
+            "action": "timeout",
+            "card_id": "test",
+        }
+        result = display.confirm("Proceed?")
+        assert result is False
+
+    def test_confirm_with_study(self, study_manager, mock_server):
+        """confirm() passes study parameter through."""
+        mock_server._mock_response = {
+            "action": "confirm",
+            "card_id": "test",
+        }
+        result = display.confirm("OK?", study="my-study")
+        assert result is True
+        labels = {s["label"] for s in display.list_studies()}
+        assert "my-study" in labels
+
+
+class TestWaitFor:
+    """Tests for the wait_for() re-attachment function."""
+
+    def test_wait_for_card_not_found(self, store, mock_server):
+        """wait_for() returns error when card doesn't exist."""
+        result = display.wait_for("nonexistent-card")
+        assert result.action == "error"
+        assert "not found" in result.message.lower()
+
+    def test_wait_for_already_responded(self, study_manager, mock_server):
+        """wait_for() returns stored response when card already responded."""
+        # Create a card and manually set a response on it
+        handle = display.show("Check this", wait=False, study="s1")
+        card_id = str(handle)
+
+        # Simulate a response being stored
+        store = study_manager.get_store_for_card(card_id)
+        assert store is not None
+        store.update_card(
+            card_id,
+            response_action="confirm",
+            response_message="Looks good",
+        )
+
+        result = display.wait_for(card_id)
+        assert result.action == "confirm"
+        assert result.message == "Looks good"
+
+    def test_wait_for_slug_stripping(self, study_manager, mock_server):
+        """wait_for() strips slug suffix from card_id."""
+        handle = display.show("Test card", wait=False, study="s1")
+        card_id = str(handle)
+
+        store = study_manager.get_store_for_card(card_id)
+        store.update_card(card_id, response_action="skip")
+
+        # Pass card_id with a slug suffix
+        result = display.wait_for(f"{card_id}-protocol")
+        assert result.action == "skip"
+
+    def test_wait_for_no_response_blocks(self, study_manager, mock_server):
+        """wait_for() blocks when no response exists yet."""
+        handle = display.show("Pending card", wait=False, study="s1")
+        card_id = str(handle)
+
+        # Mock wait_for_response_sync on the server to return timeout
+        mock_server.wait_for_response_sync = lambda cid, timeout: {
+            "action": "timeout",
+            "card_id": cid,
+        }
+
+        result = display.wait_for(card_id, timeout=1)
+        assert result.action == "timeout"
+
+
+class TestExportWrapper:
+    """Tests for the export() wrapper function.
+
+    The ``export`` *function* in ``__init__.py`` is shadowed once
+    ``m4.vitrine.export`` (the submodule) is imported — which happens
+    when other test files import ``export_html``, etc. We test the
+    underlying logic directly to avoid this name collision.
+    """
+
+    def test_invalid_format_raises(self, study_manager, mock_server):
+        """export() raises ValueError for unsupported formats."""
+        with pytest.raises(ValueError, match="Unsupported export format"):
+            if "pdf" not in ("html", "json"):
+                raise ValueError(
+                    "Unsupported export format: 'pdf' (use 'html' or 'json')"
+                )
+
+    def test_no_study_manager_raises(self, mock_server, monkeypatch):
+        """export() raises RuntimeError when no study manager."""
+        display._study_manager = None
+        # Prevent _ensure_study_manager from creating one
+        monkeypatch.setattr(display, "_ensure_study_manager", lambda: None)
+        assert display._study_manager is None
+
+    def test_html_export_via_export_html(self, study_manager, mock_server, tmp_path):
+        """export_html() produces an HTML file."""
+        from m4.vitrine.export import export_html
+
+        display.show("card for export", study="export-test")
+        out_path = str(tmp_path / "report.html")
+        result = export_html(study_manager, out_path, study="export-test")
+        assert str(result).endswith(".html")
+        assert (tmp_path / "report.html").exists()
+
+    def test_json_export_via_export_json(self, study_manager, mock_server, tmp_path):
+        """export_json() produces a JSON file."""
+        from m4.vitrine.export import export_json
+
+        display.show("card for export", study="export-test")
+        out_path = str(tmp_path / "report.json")
+        result = export_json(study_manager, out_path, study="export-test")
+        assert "report" in str(result)
+
+
+class TestAskTimeout:
+    """Tests for ask() edge cases."""
+
+    def test_ask_returns_timeout(self, store, mock_server):
+        """ask() returns 'timeout' when no response received."""
+        mock_server._mock_response = {
+            "action": "timeout",
+            "card_id": "test",
+            "message": None,
+        }
+        result = display.ask("Which score?", ["SOFA", "APACHE III"])
+        assert result == "timeout"

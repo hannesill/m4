@@ -1114,6 +1114,17 @@ body {
   margin-left: 2px;
 }
 
+.agent-usage-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  padding: 2px 8px;
+  border: var(--border-width) solid var(--border);
+  background: var(--agent-bg);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .agent-perms-badge-sm {
   font-family: var(--font-head);
   font-size: 10px;
@@ -1227,6 +1238,38 @@ body {
 
 [data-theme="dark"] .agent-terminal-content {
   color: #d0d0d0;
+}
+
+/* Alive strip in running agent terminal — pulsing dot + thinking message */
+.agent-alive-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.agent-alive-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  background: var(--chart-color);
+  border: var(--border-width) solid var(--border);
+  animation: agentPulse 1.5s ease-in-out infinite;
+}
+
+.agent-alive-msg {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #888;
+}
+
+/* Inactivity indicator */
+.agent-inactivity-indicator {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #666;
 }
 
 /* Status reason badge in header (cancelled/failed/timed out) */

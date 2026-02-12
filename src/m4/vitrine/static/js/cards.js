@@ -9,6 +9,20 @@ var MODEL_DISPLAY = {
   haiku: 'Haiku 4.5'
 };
 
+var AGENT_THINKING_MESSAGES = [
+  'Accomplishing', 'Actioning', 'Actualizing', 'Baking', 'Brewing',
+  'Calculating', 'Cerebrating', 'Churning', 'Clauding', 'Coalescing',
+  'Cogitating', 'Computing', 'Conjuring', 'Considering', 'Cooking',
+  'Crafting', 'Creating', 'Crunching', 'Deliberating', 'Determining',
+  'Doing', 'Effecting', 'Finagling', 'Forging', 'Forming', 'Generating',
+  'Hatching', 'Herding', 'Honking', 'Hustling', 'Ideating', 'Inferring',
+  'Manifesting', 'Marinating', 'Moseying', 'Mulling', 'Mustering',
+  'Musing', 'Noodling', 'Percolating', 'Pondering', 'Processing',
+  'Puttering', 'Reticulating', 'Ruminating', 'Schlepping', 'Shucking',
+  'Simmering', 'Smooshing', 'Spinning', 'Stewing', 'Synthesizing',
+  'Thinking', 'Transmuting', 'Vibing', 'Working'
+];
+
 // ================================================================
 // CARD RENDERING — addCard, updateCard, toast
 // ================================================================
@@ -112,6 +126,15 @@ function addCard(cardData) {
     modelBadge.className = 'agent-model-badge agent-header-badge';
     modelBadge.textContent = MODEL_DISPLAY[cardData.preview.model] || cardData.preview.model || '';
     if (modelBadge.textContent) header.appendChild(modelBadge);
+
+    // Usage badge (tokens + context %)
+    var usageText = formatAgentUsage(cardData.preview);
+    if (usageText) {
+      var usageBadge = document.createElement('span');
+      usageBadge.className = 'agent-usage-badge agent-header-badge';
+      usageBadge.textContent = usageText;
+      header.appendChild(usageBadge);
+    }
 
     // Status reason badge for failed/cancelled agents
     if (cardData.preview.status === 'failed' && cardData.preview.error) {
@@ -536,6 +559,23 @@ function updateCard(cardId, newCardData) {
         } else if (existingReason) {
           existingReason.remove();
         }
+
+        // Update usage badge (tokens + context %)
+        var existingUsage = header.querySelector('.agent-usage-badge');
+        var usageStr = formatAgentUsage(newCardData.preview);
+        if (usageStr) {
+          if (existingUsage) {
+            existingUsage.textContent = usageStr;
+          } else {
+            var ub = document.createElement('span');
+            ub.className = 'agent-usage-badge agent-header-badge';
+            ub.textContent = usageStr;
+            var usageAnchor = header.querySelector('.agent-model-badge.agent-header-badge') || header.querySelector('.card-title');
+            if (usageAnchor) usageAnchor.insertAdjacentElement('afterend', ub);
+          }
+        } else if (existingUsage) {
+          existingUsage.remove();
+        }
       }
     }
 
@@ -567,10 +607,14 @@ function updateCard(cardId, newCardData) {
             }
           }
         } else if (currentState !== newStatus) {
-          // State transition: clear timer + full re-render
+          // State transition: clear timers + full re-render
           if (el._agentTimer) {
             clearInterval(el._agentTimer);
             el._agentTimer = null;
+          }
+          if (el._agentInactivityTimer) {
+            clearInterval(el._agentInactivityTimer);
+            el._agentInactivityTimer = null;
           }
           body.innerHTML = '';
           renderAgentCard(body, newCardData);
@@ -1129,6 +1173,59 @@ function renderAgentRunning(container, cardData) {
   }
   terminal.appendChild(termContent);
 
+  // Alive indicator — pulsing dot + rotating message
+  var aliveStrip = document.createElement('div');
+  aliveStrip.className = 'agent-alive-strip';
+  var aliveDot = document.createElement('span');
+  aliveDot.className = 'agent-alive-dot';
+  aliveStrip.appendChild(aliveDot);
+  var aliveMsg = document.createElement('span');
+  aliveMsg.className = 'agent-alive-msg';
+  aliveMsg.textContent = AGENT_THINKING_MESSAGES[Math.floor(Math.random() * AGENT_THINKING_MESSAGES.length)] + '\u2026';
+  aliveStrip.appendChild(aliveMsg);
+
+  // Inactivity indicator — hidden until 2 min idle
+  var inactivityEl = document.createElement('span');
+  inactivityEl.className = 'agent-inactivity-indicator';
+  inactivityEl.style.display = 'none';
+  aliveStrip.appendChild(inactivityEl);
+
+  terminal.appendChild(aliveStrip);
+
+  var aliveTickCount = 0;
+  // Check inactivity every 5s, rotate message every ~30s
+  var aliveTimer = setInterval(function() {
+    aliveTickCount++;
+    if (aliveTickCount % 6 === 0) {
+      aliveMsg.textContent = AGENT_THINKING_MESSAGES[Math.floor(Math.random() * AGENT_THINKING_MESSAGES.length)] + '\u2026';
+    }
+
+    // Check inactivity
+    var cardEl = terminal.closest('.card');
+    if (!cardEl) return;
+    var cid = cardEl.dataset.cardId;
+    var current = null;
+    for (var i = 0; i < state.cards.length; i++) {
+      if (state.cards[i].card_id === cid) { current = state.cards[i]; break; }
+    }
+    if (!current || !current.preview || !current.preview.last_activity_at) {
+      inactivityEl.style.display = 'none';
+      return;
+    }
+    var elapsed = Math.floor((Date.now() - new Date(current.preview.last_activity_at).getTime()) / 1000);
+    if (elapsed < 120) {
+      inactivityEl.style.display = 'none';
+      return;
+    }
+    var mins = Math.floor(elapsed / 60);
+    inactivityEl.textContent = ' \u00b7 No new output for ' + mins + 'm';
+    inactivityEl.style.display = '';
+  }, 4000);
+
+  // Store timer ref on the card element for cleanup
+  var outerCard = container.closest('.card');
+  if (outerCard) outerCard._agentInactivityTimer = aliveTimer;
+
   // Auto-scroll to bottom
   requestAnimationFrame(function() { terminal.scrollTop = terminal.scrollHeight; });
 
@@ -1216,6 +1313,32 @@ function formatAgentDuration(seconds) {
     return Math.floor(secs / 60) + 'm ' + (secs % 60) + 's';
   }
   return secs + 's';
+}
+
+function formatTokenCount(n) {
+  if (n == null || n === 0) return '0';
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return String(n);
+}
+
+function formatAgentUsage(preview) {
+  var usage = preview.usage;
+  if (!usage) return '';
+  var parts = [];
+  var totalTokens = (usage.input_tokens || 0) + (usage.output_tokens || 0);
+  if (totalTokens > 0) {
+    parts.push(formatTokenCount(totalTokens) + ' tokens');
+  }
+  if (usage.input_tokens > 0 && usage.context_window > 0) {
+    var pct = Math.round((usage.input_tokens / usage.context_window) * 100);
+    parts.push(pct + '% ctx');
+  }
+  if (usage.cost_usd != null) {
+    var cost = usage.cost_usd;
+    parts.push(cost < 0.01 ? '<$0.01' : '$' + cost.toFixed(2));
+  }
+  return parts.join(' \u00b7 ');
 }
 
 function formatElapsed(isoTimestamp) {
