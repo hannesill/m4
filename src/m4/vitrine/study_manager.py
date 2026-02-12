@@ -493,13 +493,21 @@ class StudyManager:
             card_summaries.append(summary)
 
             if c.response_action:
+                raw_values = c.response_values or {}
+                fields = c.preview.get("fields") or c.preview.get("controls") or []
+                if raw_values and fields:
+                    from m4.vitrine._utils import resolve_option_descriptions
+
+                    enriched_values = resolve_option_descriptions(raw_values, fields)
+                else:
+                    enriched_values = raw_values
                 decisions_made.append(
                     {
                         "card_id": c.card_id,
                         "title": c.title,
                         "action": c.response_action,
                         "message": c.response_message,
-                        "values": c.response_values or {},
+                        "values": enriched_values,
                         "summary": c.response_summary,
                         "artifact_id": c.response_artifact_id,
                         "timestamp": c.response_timestamp,

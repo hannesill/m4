@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # PID check
@@ -110,3 +111,61 @@ IMAGE_MIME_TYPES: dict[str, str] = {
     ".gif": "image/gif",
     ".svg": "image/svg+xml",
 }
+
+
+# ---------------------------------------------------------------------------
+# Option description resolution
+# ---------------------------------------------------------------------------
+
+
+def resolve_option_descriptions(
+    values: dict[str, Any],
+    fields: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Cross-reference selected values with field specs to get option descriptions.
+
+    For single-select fields, returns::
+
+        {"field_name": {"selected": "label", "description": "desc"}}
+
+    For multi-select fields, returns::
+
+        {"field_name": {"selected": ["a", "b"], "descriptions": ["desc_a", "desc_b"]}}
+
+    Fields whose selected value doesn't match any option (e.g. "Other" free-text)
+    are included with an empty description.
+
+    Args:
+        values: Submitted form values (``{field_name: label_or_list}``).
+        fields: Field specs from ``card.preview["fields"]``.
+
+    Returns:
+        Dict mapping field names to enriched selection dicts.
+    """
+    # Build a lookup: field_name -> {label: description}
+    field_options: dict[str, dict[str, str]] = {}
+    for f in fields:
+        name = f.get("name", "")
+        opts = f.get("options", [])
+        label_to_desc: dict[str, str] = {}
+        for opt in opts:
+            if isinstance(opt, dict):
+                label_to_desc[opt.get("label", "")] = opt.get("description", "")
+            elif isinstance(opt, str):
+                label_to_desc[opt] = ""
+        field_options[name] = label_to_desc
+
+    result: dict[str, Any] = {}
+    for field_name, selected in values.items():
+        descs = field_options.get(field_name, {})
+        if isinstance(selected, list):
+            result[field_name] = {
+                "selected": selected,
+                "descriptions": [descs.get(s, "") for s in selected],
+            }
+        else:
+            result[field_name] = {
+                "selected": selected,
+                "description": descs.get(selected, "") if selected else "",
+            }
+    return result
