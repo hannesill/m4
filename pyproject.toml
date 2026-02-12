@@ -73,6 +73,7 @@ m4 = "m4.cli:app"
 m4-infra = "m4.mcp_server:main"  # Primary entry point (enables `uvx m4-infra`)
 m4-mcp = "m4.mcp_server:main"  # Kept for backwards compatibility
 m4-mcp-server = "m4.mcp_server:main"  # Kept for backwards compatibility
+vitrine = "m4.vitrine.cli:app"  # Standalone vitrine server management
 
 [project.urls]
 Homepage = "https://github.com/rafiattrach/m4"
