@@ -104,6 +104,15 @@ function getActions() {
         createAgentCard(studyLabel, 'report');
       }
     });
+
+    // Draft Paper
+    actions.push({
+      icon: '&#128221;',
+      label: 'Draft Paper',
+      handler: function() {
+        createAgentCard(studyLabel, 'paper');
+      }
+    });
   }
 
   return actions;

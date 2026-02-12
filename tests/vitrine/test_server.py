@@ -1349,6 +1349,23 @@ class TestAgentEndpoints:
         assert resp.status_code == 200
         assert resp.json()["task"] == "report"
 
+    def test_create_agent_card_paper(self, agent_app, study_mgr):
+        from starlette.testclient import TestClient
+
+        app, srv = agent_app
+        study_mgr.get_or_create_study("my-study")
+
+        client = TestClient(app)
+        resp = client.post(
+            "/api/studies/my-study/agents",
+            json={"task": "paper"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["task"] == "paper"
+        assert data["study"] == "my-study"
+        assert "card_id" in data
+
     def test_create_agent_unknown_task(self, agent_app, study_mgr):
         from starlette.testclient import TestClient
 
