@@ -12,18 +12,53 @@ function renderPlotly(container, cardData) {
   plotDiv.id = 'plotly-' + cardData.card_id;
   container.appendChild(plotDiv);
 
+  function getAvailableWidth() {
+    // Measure the card-body (container) content width, minus its padding
+    var cs = getComputedStyle(container);
+    var padL = parseFloat(cs.paddingLeft) || 0;
+    var padR = parseFloat(cs.paddingRight) || 0;
+    return container.clientWidth - padL - padR;
+  }
+
   function doRender() {
     var data = spec.data || [];
+    var availWidth = getAvailableWidth();
     var layout = Object.assign({}, spec.layout || {}, {
-      autosize: true,
-      margin: { l: 50, r: 30, t: 40, b: 50 },
+      autosize: false,
+      width: availWidth > 0 ? availWidth : undefined,
+      margin: { l: 50, r: 20, t: 40, b: 50 },
       paper_bgcolor: 'transparent',
       plot_bgcolor: 'transparent',
       font: { color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() },
+      legend: Object.assign({
+        orientation: 'h',
+        yanchor: 'top',
+        y: -0.15,
+        xanchor: 'center',
+        x: 0.5,
+      }, (spec.layout && spec.layout.legend) || {}),
     });
-    var config = { responsive: true, displayModeBar: true, displaylogo: false };
+    var config = { responsive: false, displayModeBar: true, displaylogo: false, modeBarButtonsToRemove: ['lasso2d', 'select2d'] };
 
     window.Plotly.newPlot(plotDiv, data, layout, config).then(function() {
+      // Observe container size changes and relayout with correct width
+      if (typeof ResizeObserver !== 'undefined') {
+        var resizeTimer = null;
+        var lastWidth = availWidth;
+        var ro = new ResizeObserver(function() {
+          if (resizeTimer) clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(function() {
+            resizeTimer = null;
+            var newWidth = getAvailableWidth();
+            if (newWidth > 0 && newWidth !== lastWidth && window.Plotly) {
+              lastWidth = newWidth;
+              window.Plotly.relayout(plotDiv, { width: newWidth });
+            }
+          }, 100);
+        });
+        ro.observe(container);
+      }
+
       // Attach point selection event (guard against missing .on method)
       if (typeof plotDiv.on === 'function') {
         plotDiv.on('plotly_selected', function(eventData) {
@@ -116,16 +151,22 @@ function loadPlotly(callback) {
   document.head.appendChild(script);
 }
 
-// Resize Plotly charts on window resize (debounced 150ms)
+// Resize all Plotly charts on window resize (debounced 150ms)
+// This is a fallback — ResizeObserver per-chart handles most cases
 var _plotlyResizeTimer = null;
 window.addEventListener('resize', function() {
   if (_plotlyResizeTimer) clearTimeout(_plotlyResizeTimer);
   _plotlyResizeTimer = setTimeout(function() {
     _plotlyResizeTimer = null;
     if (!window.Plotly) return;
-    var plots = document.querySelectorAll('.plotly-container .js-plotly-plot');
-    plots.forEach(function(plot) {
-      window.Plotly.Plots.resize(plot);
+    document.querySelectorAll('.plotly-container').forEach(function(plotDiv) {
+      var body = plotDiv.closest('.card-body');
+      if (!body) return;
+      var cs = getComputedStyle(body);
+      var w = body.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+      if (w > 0) {
+        window.Plotly.relayout(plotDiv, { width: w });
+      }
     });
   }, 150);
 });

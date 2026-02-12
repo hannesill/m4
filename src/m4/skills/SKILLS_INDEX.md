@@ -75,6 +75,8 @@ This directory contains skills for the M4 framework, covering clinical research 
 | [vitrine-api](system/vitrine-api/SKILL.md) | Visualization API for presenting results to researchers |
 | [clinical-research-session](system/clinical-research-session/SKILL.md) | Structured clinical research workflow and protocol drafting |
 | [create-m4-skill](system/create-m4-skill/SKILL.md) | Guide for creating new M4 skills |
+| [export-report](system/export-report/SKILL.md) | Compile a structured research report from a vitrine study |
+| [reproduce-study](system/reproduce-study/SKILL.md) | Reproducibility audit — re-execute scripts and verify claims |
 
 ---
 

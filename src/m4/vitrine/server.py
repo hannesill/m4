@@ -44,6 +44,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from m4.vitrine._types import CardDescriptor
 from m4.vitrine.artifacts import ArtifactStore, _serialize_card
+from m4.vitrine.dispatch import DispatchInfo, cancel, cleanup_dispatches, dispatch
 from m4.vitrine.study_manager import StudyManager
 
 logger = logging.getLogger(__name__)
@@ -143,6 +144,9 @@ class DisplayServer:
         self._load_selections()
         self._selection_save_timer: threading.Timer | None = None
 
+        # Agent dispatch state
+        self._dispatches: dict[str, DispatchInfo] = {}
+
         # Selection rate-limiting: per-connection cooldown
         self._selection_cooldowns: dict[int, float] = {}  # ws id -> last timestamp
         _SELECTION_COOLDOWN_SEC = 0.1  # 100ms min between selection events per client
@@ -231,6 +235,11 @@ class DisplayServer:
                 "/api/studies/{study:path}/files/{filepath:path}",
                 self._api_study_file,
                 methods=["GET"],
+            ),
+            Route(
+                "/api/studies/{study:path}/dispatch",
+                self._api_dispatch_handler,
+                methods=["GET", "POST", "DELETE"],
             ),
             Route(
                 "/api/studies/{study:path}",
@@ -968,6 +977,76 @@ class DisplayServer:
             },
         )
 
+    # --- Dispatch Endpoints ---
+
+    async def _api_dispatch_handler(self, request: Request) -> JSONResponse:
+        """Route dispatch requests by HTTP method."""
+        if request.method == "POST":
+            return await self._api_dispatch(request)
+        elif request.method == "DELETE":
+            return await self._api_dispatch_cancel(request)
+        return await self._api_dispatch_status(request)
+
+    async def _api_dispatch(self, request: Request) -> JSONResponse:
+        """Dispatch a headless Claude Code agent for a study operation.
+
+        POST /api/studies/{study}/dispatch with {"task": "reproduce"|"report"}.
+        """
+        study = request.path_params["study"]
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+
+        task = body.get("task")
+        if task not in ("reproduce", "report"):
+            return JSONResponse(
+                {"error": f"Unknown task: {task!r} (expected 'reproduce' or 'report')"},
+                status_code=400,
+            )
+
+        try:
+            info = await dispatch(task, study, self)
+            return JSONResponse(
+                {"status": "ok", "task": task, "study": study, "pid": info.pid}
+            )
+        except RuntimeError as e:
+            return JSONResponse({"error": str(e)}, status_code=409)
+        except ValueError as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+
+    async def _api_dispatch_cancel(self, request: Request) -> JSONResponse:
+        """Cancel a running dispatch for a study.
+
+        DELETE /api/studies/{study}/dispatch.
+        """
+        study = request.path_params["study"]
+        cancelled = await cancel(study, self)
+        if cancelled:
+            return JSONResponse({"status": "ok"})
+        return JSONResponse(
+            {"error": "No running dispatch for this study"}, status_code=404
+        )
+
+    async def _api_dispatch_status(self, request: Request) -> JSONResponse:
+        """Get the status of a dispatch for a study.
+
+        GET /api/studies/{study}/dispatch.
+        """
+        study = request.path_params["study"]
+        info = self._dispatches.get(study)
+        if info is None:
+            return JSONResponse({"status": "none", "study": study})
+        return JSONResponse(
+            {
+                "status": info.status,
+                "study": study,
+                "task": info.task,
+                "pid": info.pid,
+                "error": info.error,
+            }
+        )
+
     # --- WebSocket ---
 
     async def _ws_endpoint(self, ws: WebSocket) -> None:
@@ -1387,6 +1466,7 @@ class DisplayServer:
 
     def stop(self) -> None:
         """Stop the server and remove PID file if set."""
+        cleanup_dispatches(self)
         self._remove_pid_file()
         # Flush pending selection save
         if self._selection_save_timer is not None:

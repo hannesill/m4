@@ -74,5 +74,10 @@ function handleMessage(msg) {
     case 'display.update':
       updateCard(msg.card_id, msg.card);
       break;
+    case 'agent.started':
+    case 'agent.completed':
+    case 'agent.failed':
+      if (typeof handleAgentMessage === 'function') handleAgentMessage(msg);
+      break;
   }
 }

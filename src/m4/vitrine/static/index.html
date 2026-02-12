@@ -43,10 +43,7 @@
         </button>
         <div class="toc-panel" id="toc-panel" style="display: none;"></div>
       </div>
-      <div class="export-dropdown" id="export-dropdown">
-        <button class="btn" id="export-btn" title="Export study" aria-label="Export study">&#8615; Export</button>
-        <div class="export-dropdown-panel" id="export-dropdown-panel" style="display: none;"></div>
-      </div>
+      <button class="btn" id="actions-btn" title="Actions (⌘K)" aria-label="Actions">&#8984; Actions</button>
       <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
     </div>
   </div>
@@ -54,6 +51,7 @@
 
 <div class="study-metadata-bar" id="study-metadata-bar">
   <span class="study-meta-label" id="study-meta-label"></span>
+  <span id="dispatch-indicator"></span>
   <span class="study-meta-sep">&middot;</span>
   <span id="study-meta-detail"></span>
   <button class="files-toggle-btn" id="files-toggle-btn" style="display:none"></button>
@@ -90,6 +88,7 @@
 <script defer src="/static/js/studies.js"></script>
 <script defer src="/static/js/toc.js"></script>
 <script defer src="/static/js/export-ui.js"></script>
+<script defer src="/static/js/actions.js"></script>
 <script defer src="/static/js/renderers.js"></script>
 <script defer src="/static/js/plotly.js"></script>
 <script defer src="/static/js/tables.js"></script>

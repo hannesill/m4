@@ -408,14 +408,24 @@
 .status-connecting { background: var(--warning); }
 
 /* Plotly chart cards */
-.plotly-container {
-  width: 100%;
-  min-height: 300px;
-  position: relative;
+.card-body:has(.plotly-container) {
+  min-width: 0;
+  overflow: hidden;
 }
 
-.plotly-container .js-plotly-plot {
+.plotly-container {
+  width: 100%;
+  min-width: 0;
+  min-height: 300px;
+  position: relative;
+  overflow: hidden;
+}
+
+.plotly-container .js-plotly-plot,
+.plotly-container .js-plotly-plot .plotly,
+.plotly-container .svg-container {
   width: 100% !important;
+  max-width: 100% !important;
 }
 
 .chart-loading {
