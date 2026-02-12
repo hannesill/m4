@@ -44,7 +44,15 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from m4.vitrine._types import CardDescriptor
 from m4.vitrine.artifacts import ArtifactStore, _serialize_card
-from m4.vitrine.dispatch import DispatchInfo, cancel, cleanup_dispatches, dispatch
+from m4.vitrine.dispatch import (
+    DispatchInfo,
+    cancel_agent,
+    cleanup_dispatches,
+    create_agent_card,
+    get_agent_status,
+    reconcile_orphaned_agents,
+    run_agent,
+)
 from m4.vitrine.study_manager import StudyManager
 
 logger = logging.getLogger(__name__)
@@ -147,6 +155,11 @@ class DisplayServer:
         # Agent dispatch state
         self._dispatches: dict[str, DispatchInfo] = {}
 
+        # Fix agent cards orphaned by previous server crashes/restarts
+        fixed = reconcile_orphaned_agents(self)
+        if fixed:
+            logger.info(f"Reconciled {fixed} orphaned agent card(s)")
+
         # Selection rate-limiting: per-connection cooldown
         self._selection_cooldowns: dict[int, float] = {}  # ws id -> last timestamp
         _SELECTION_COOLDOWN_SEC = 0.1  # 100ms min between selection events per client
@@ -237,9 +250,19 @@ class DisplayServer:
                 methods=["GET"],
             ),
             Route(
-                "/api/studies/{study:path}/dispatch",
-                self._api_dispatch_handler,
-                methods=["GET", "POST", "DELETE"],
+                "/api/studies/{study:path}/agents",
+                self._api_create_agent,
+                methods=["POST"],
+            ),
+            Route(
+                "/api/agents/{card_id}/run",
+                self._api_run_agent,
+                methods=["POST"],
+            ),
+            Route(
+                "/api/agents/{card_id}",
+                self._api_agent_handler,
+                methods=["GET", "DELETE"],
             ),
             Route(
                 "/api/studies/{study:path}",
@@ -977,20 +1000,12 @@ class DisplayServer:
             },
         )
 
-    # --- Dispatch Endpoints ---
+    # --- Agent Endpoints ---
 
-    async def _api_dispatch_handler(self, request: Request) -> JSONResponse:
-        """Route dispatch requests by HTTP method."""
-        if request.method == "POST":
-            return await self._api_dispatch(request)
-        elif request.method == "DELETE":
-            return await self._api_dispatch_cancel(request)
-        return await self._api_dispatch_status(request)
+    async def _api_create_agent(self, request: Request) -> JSONResponse:
+        """Create an agent card for a study.
 
-    async def _api_dispatch(self, request: Request) -> JSONResponse:
-        """Dispatch a headless Claude Code agent for a study operation.
-
-        POST /api/studies/{study}/dispatch with {"task": "reproduce"|"report"}.
+        POST /api/studies/{study}/agents with {"task": "reproduce"|"report"}.
         """
         study = request.path_params["study"]
         try:
@@ -1006,46 +1021,94 @@ class DisplayServer:
             )
 
         try:
-            info = await dispatch(task, study, self)
+            info = await create_agent_card(task, study, self)
             return JSONResponse(
-                {"status": "ok", "task": task, "study": study, "pid": info.pid}
+                {
+                    "status": "ok",
+                    "task": task,
+                    "study": study,
+                    "card_id": info.card_id,
+                }
+            )
+        except ValueError as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+
+    async def _api_run_agent(self, request: Request) -> JSONResponse:
+        """Start an agent for an existing agent card.
+
+        POST /api/agents/{card_id}/run with optional config overrides.
+        """
+        card_id = request.path_params["card_id"]
+        config = None
+        try:
+            body = await request.json()
+            config = body if body else None
+        except Exception:
+            pass  # No body is fine — use defaults
+
+        try:
+            info = await run_agent(card_id, self, config=config)
+            return JSONResponse(
+                {
+                    "status": "ok",
+                    "card_id": card_id,
+                    "pid": info.pid,
+                }
             )
         except RuntimeError as e:
             return JSONResponse({"error": str(e)}, status_code=409)
         except ValueError as e:
             return JSONResponse({"error": str(e)}, status_code=400)
 
-    async def _api_dispatch_cancel(self, request: Request) -> JSONResponse:
-        """Cancel a running dispatch for a study.
+    async def _api_agent_handler(self, request: Request) -> JSONResponse:
+        """Handle GET (status) and DELETE (cancel) for an agent card."""
+        card_id = request.path_params["card_id"]
+        if request.method == "DELETE":
+            cancelled = await cancel_agent(card_id, self)
+            if cancelled:
+                return JSONResponse({"status": "ok"})
+            # Agent not in _dispatches — maybe orphaned after restart.
+            # Force-update the stored card if it's still showing "running".
+            if self.study_manager:
+                from m4.vitrine._types import CardType
 
-        DELETE /api/studies/{study}/dispatch.
-        """
-        study = request.path_params["study"]
-        cancelled = await cancel(study, self)
-        if cancelled:
-            return JSONResponse({"status": "ok"})
-        return JSONResponse(
-            {"error": "No running dispatch for this study"}, status_code=404
-        )
-
-    async def _api_dispatch_status(self, request: Request) -> JSONResponse:
-        """Get the status of a dispatch for a study.
-
-        GET /api/studies/{study}/dispatch.
-        """
-        study = request.path_params["study"]
-        info = self._dispatches.get(study)
-        if info is None:
-            return JSONResponse({"status": "none", "study": study})
-        return JSONResponse(
-            {
-                "status": info.status,
-                "study": study,
-                "task": info.task,
-                "pid": info.pid,
-                "error": info.error,
-            }
-        )
+                for card in self.study_manager.list_all_cards():
+                    if card.card_id != card_id:
+                        continue
+                    if card.card_type != CardType.AGENT:
+                        break
+                    status = card.preview.get("status") if card.preview else None
+                    if status in ("running", "pending"):
+                        new_preview = dict(card.preview)
+                        new_preview["status"] = "failed"
+                        new_preview["error"] = "Agent process no longer running"
+                        _, store = self.study_manager.get_or_create_study(card.study)
+                        if store:
+                            store.update_card(card_id, preview=new_preview)
+                        # Broadcast so UI updates immediately
+                        await self._broadcast(
+                            {
+                                "type": "display.update",
+                                "card_id": card_id,
+                                "card": {
+                                    "card_id": card_id,
+                                    "card_type": CardType.AGENT.value,
+                                    "study": card.study,
+                                    "title": card.title,
+                                    "preview": new_preview,
+                                },
+                            }
+                        )
+                        return JSONResponse({"status": "ok"})
+                    break
+            return JSONResponse(
+                {"error": "No running agent for this card"}, status_code=404
+            )
+        # GET — status
+        status = get_agent_status(card_id, self)
+        if status is None:
+            return JSONResponse({"status": "none", "card_id": card_id})
+        return JSONResponse(status)
 
     # --- WebSocket ---
 

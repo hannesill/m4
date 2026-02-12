@@ -381,6 +381,7 @@ def _render_card_html(card: CardDescriptor, study_manager: StudyManager) -> str:
         "keyvalue": "K",
         "section": "S",
         "decision": "!",
+        "agent": "A",
     }
     type_letter = "\u2713" if is_responded else type_letters.get(header_type, "?")
     title_text = escape(card.title or card_type)
@@ -454,6 +455,8 @@ def _render_card_body(card: CardDescriptor, study_manager: StudyManager) -> str:
         return _render_markdown_html(card)
     elif card.card_type == CardType.KEYVALUE:
         return _render_keyvalue_html(card)
+    elif card.card_type == CardType.AGENT:
+        return _render_agent_html(card)
     else:
         return f"<pre>{escape(json.dumps(card.preview, indent=2, default=str))}</pre>"
 
@@ -628,6 +631,64 @@ def _render_form_html(card: CardDescriptor) -> str:
             f"<span class='frozen-value'>{val}</span></span>"
         )
     return f'<div class="form-frozen">{"".join(items)}</div>'
+
+
+def _render_agent_html(card: CardDescriptor) -> str:
+    """Render an agent card for HTML export."""
+    preview = card.preview
+    status = preview.get("status", "pending")
+    output = preview.get("output", "")
+    error = preview.get("error")
+    duration = preview.get("duration")
+
+    # Status badge
+    if status == "completed":
+        badge = (
+            '<span style="color: #16a34a; font-weight: 700;">\u2713 Completed</span>'
+        )
+    elif status == "failed":
+        badge = '<span style="color: #dc2626; font-weight: 700;">\u2717 Failed</span>'
+    elif status == "running":
+        badge = '<span style="color: #f97316; font-weight: 700;">\u25cf Running</span>'
+    else:
+        badge = '<span style="color: #6b7280;">Pending</span>'
+
+    # Duration
+    duration_html = ""
+    if duration is not None:
+        secs = round(duration)
+        if secs >= 60:
+            duration_html = f" &middot; {secs // 60}m {secs % 60}s"
+        else:
+            duration_html = f" &middot; {secs}s"
+
+    # Error line
+    error_html = ""
+    if error and status == "failed":
+        error_html = (
+            f'<div style="color: #dc2626; font-size: 12px; margin-top: 4px;">'
+            f"{escape(error)}</div>"
+        )
+
+    # Output as markdown
+    output_html = ""
+    if output:
+        div_id = f"agent-{card.card_id}"
+        output_html = f"""<div id="{div_id}" class="markdown-export" style="margin-top: 12px; border-top: 1px solid #e5e7eb; padding-top: 12px;">{escape(output)}</div>
+<script class="md-init">
+(function() {{
+  var el = document.getElementById('{div_id}');
+  if (typeof marked !== 'undefined' && el) {{
+    el.innerHTML = marked.parse({json.dumps(output)});
+  }}
+}})();
+</script>"""
+
+    return f"""<div style="font-family: var(--font-head); font-size: 13px;">
+  {badge}{duration_html}
+  {error_html}
+</div>
+{output_html}"""
 
 
 # --- Files Section for Export ---
@@ -879,6 +940,8 @@ _EXPORT_CSS = """<style>
     --decision-bg: #fee2e2;
     --image-color: #06b6d4;
     --image-bg: #cffafe;
+    --agent-color: #6b7280;
+    --agent-bg: #f3f4f6;
     --success: #16a34a;
     --success-bg: #dcfce7;
     --shadow: 4px 4px 0 #1a1a1a;
@@ -957,6 +1020,7 @@ _EXPORT_CSS = """<style>
   .card-header[data-type="image"] { background: var(--image-bg); }
   .card-header[data-type="keyvalue"] { background: var(--kv-bg); }
   .card-header[data-type="decision"] { background: var(--decision-bg); }
+  .card-header[data-type="agent"] { background: var(--agent-bg); }
 
   .card-type-icon {
     width: 28px;
@@ -978,6 +1042,7 @@ _EXPORT_CSS = """<style>
   .card-type-icon[data-type="image"] { background: var(--image-color); color: #fff; }
   .card-type-icon[data-type="keyvalue"] { background: var(--kv-color); color: #fff; }
   .card-type-icon[data-type="decision"] { background: var(--decision-color); color: #fff; }
+  .card-type-icon[data-type="agent"] { background: var(--agent-color); color: #fff; }
 
   .card.responded .card-header { background: var(--success-bg); }
   .card.responded .card-type-icon { background: var(--success); color: #fff; }
