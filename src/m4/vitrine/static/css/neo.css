@@ -236,6 +236,14 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
+.card-title-edit-input {
+  font-family: var(--font-mono);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+}
+
 .feed {
   max-width: 1040px;
 }
@@ -1156,13 +1164,10 @@ body {
   margin-left: 2px;
 }
 
-.agent-usage-badge {
+/* Usage info in completed bottom bar (left-aligned) */
+.agent-bottom-usage {
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 400;
-  padding: 2px 8px;
-  border: var(--border-width) solid var(--border);
-  background: var(--agent-bg);
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -1317,11 +1322,6 @@ body {
   white-space: nowrap;
 }
 
-/* Hide header usage badge while agent is running */
-.card-header:has(.agent-status-dot.running) .agent-usage-badge {
-  display: none;
-}
-
 /* Inactivity indicator */
 .agent-inactivity-indicator {
   font-family: var(--font-mono);
@@ -1388,8 +1388,17 @@ body {
 }
 
 /* Bottom bar updates for running/completed */
-.agent-bottom-bar-running,
-.agent-bottom-bar-completed {
+.agent-bottom-bar-running {
   justify-content: flex-end;
   gap: 8px;
+}
+
+.agent-bottom-bar-completed {
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-bottom-bar-completed:has(.agent-bottom-usage) {
+  justify-content: space-between;
 }

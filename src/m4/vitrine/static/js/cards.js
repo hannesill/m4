@@ -114,10 +114,14 @@ function addCard(cardData) {
     }
   }
 
-  // Title
+  // Title (click to rename)
   var title = document.createElement('span');
   title.className = 'card-title';
   title.textContent = cardData.title || cardData.card_type;
+  title.addEventListener('click', function(e) {
+    e.stopPropagation();
+    startEditCardTitle(el, cardData.card_id);
+  });
   header.appendChild(title);
 
   // Model badge (agent cards only)
@@ -126,15 +130,6 @@ function addCard(cardData) {
     modelBadge.className = 'agent-model-badge agent-header-badge';
     modelBadge.textContent = MODEL_DISPLAY[cardData.preview.model] || cardData.preview.model || '';
     if (modelBadge.textContent) header.appendChild(modelBadge);
-
-    // Usage badge (tokens + context %)
-    var usageText = formatAgentUsage(cardData.preview);
-    if (usageText) {
-      var usageBadge = document.createElement('span');
-      usageBadge.className = 'agent-usage-badge agent-header-badge';
-      usageBadge.textContent = usageText;
-      header.appendChild(usageBadge);
-    }
 
     // Status reason badge for failed/cancelled agents
     if (cardData.preview.status === 'failed' && cardData.preview.error) {
@@ -464,6 +459,66 @@ function isInCollapsedSection(el) {
   return false;
 }
 
+function startEditCardTitle(cardEl, cardId) {
+  var titleEl = cardEl.querySelector('.card-title');
+  if (!titleEl || titleEl.style.display === 'none') return;
+
+  var originalTitle = titleEl.textContent;
+  titleEl.style.display = 'none';
+
+  var wrap = document.createElement('span');
+  wrap.className = 'card-title-edit-wrap';
+
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'card-title-edit-input';
+  input.value = originalTitle;
+  wrap.appendChild(input);
+
+  titleEl.parentNode.insertBefore(wrap, titleEl);
+  input.focus();
+  input.select();
+
+  var committed = false;
+  function commit() {
+    if (committed) return;
+    committed = true;
+    var newTitle = input.value.trim();
+    if (!newTitle || newTitle === originalTitle) { cleanup(); return; }
+
+    if (ws && ws.readyState === 1) {
+      ws.send(JSON.stringify({
+        type: 'vitrine.event',
+        event_type: 'rename',
+        card_id: cardId,
+        payload: { new_title: newTitle }
+      }));
+    }
+    // Optimistic update
+    titleEl.textContent = newTitle;
+    for (var i = 0; i < state.cards.length; i++) {
+      if (state.cards[i].card_id === cardId) {
+        state.cards[i].title = newTitle;
+        break;
+      }
+    }
+    if (typeof tocNotifyChange === 'function') tocNotifyChange();
+    cleanup();
+  }
+
+  function cleanup() {
+    if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+    titleEl.style.display = '';
+  }
+
+  var _blurTimeout = null;
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); if (_blurTimeout) { clearTimeout(_blurTimeout); _blurTimeout = null; } commit(); }
+    if (e.key === 'Escape') { e.preventDefault(); if (_blurTimeout) { clearTimeout(_blurTimeout); _blurTimeout = null; } cleanup(); }
+  });
+  input.addEventListener('blur', function() { _blurTimeout = setTimeout(commit, 100); });
+}
+
 function updateCard(cardId, newCardData) {
   var el = document.getElementById('card-' + cardId);
   if (!el) return;
@@ -591,22 +646,9 @@ function updateCard(cardId, newCardData) {
           existingReason.remove();
         }
 
-        // Update usage badge (tokens + context %)
+        // Remove any legacy usage badge from header
         var existingUsage = header.querySelector('.agent-usage-badge');
-        var usageStr = formatAgentUsage(newCardData.preview);
-        if (usageStr) {
-          if (existingUsage) {
-            existingUsage.textContent = usageStr;
-          } else {
-            var ub = document.createElement('span');
-            ub.className = 'agent-usage-badge agent-header-badge';
-            ub.textContent = usageStr;
-            var usageAnchor = header.querySelector('.agent-model-badge.agent-header-badge') || header.querySelector('.card-title');
-            if (usageAnchor) usageAnchor.insertAdjacentElement('afterend', ub);
-          }
-        } else if (existingUsage) {
-          existingUsage.remove();
-        }
+        if (existingUsage) existingUsage.remove();
       }
     }
 
@@ -1463,20 +1505,31 @@ function renderAgentCompleted(container, cardData) {
   terminal.appendChild(termContent);
   container.appendChild(terminal);
 
-  // Bottom bar with expand toggle (only if there's content to expand)
-  if (outputText) {
+  // Bottom bar with usage info (left) + expand toggle (right)
+  var usageStr = formatAgentUsage(preview);
+  if (outputText || usageStr) {
     var bottomBar = document.createElement('div');
     bottomBar.className = 'agent-bottom-bar agent-bottom-bar-completed';
 
-    var expandBtn = document.createElement('button');
-    expandBtn.className = 'agent-expand-btn';
-    expandBtn.textContent = 'Expand';
-    expandBtn.onclick = function() {
-      var isExpanded = terminal.classList.toggle('expanded');
-      terminal.classList.toggle('agent-terminal-compact', !isExpanded);
-      expandBtn.textContent = isExpanded ? 'Collapse' : 'Expand';
-    };
-    bottomBar.appendChild(expandBtn);
+    if (usageStr) {
+      var usageEl = document.createElement('span');
+      usageEl.className = 'agent-bottom-usage';
+      usageEl.textContent = usageStr;
+      bottomBar.appendChild(usageEl);
+    }
+
+    if (outputText) {
+      var expandBtn = document.createElement('button');
+      expandBtn.className = 'agent-expand-btn';
+      expandBtn.textContent = 'Expand';
+      expandBtn.onclick = function() {
+        var isExpanded = terminal.classList.toggle('expanded');
+        terminal.classList.toggle('agent-terminal-compact', !isExpanded);
+        expandBtn.textContent = isExpanded ? 'Collapse' : 'Expand';
+      };
+      bottomBar.appendChild(expandBtn);
+    }
+
     container.appendChild(bottomBar);
   }
 }

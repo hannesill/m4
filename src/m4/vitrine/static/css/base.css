@@ -295,6 +295,33 @@ body {
 }
 .confirm-danger:hover { opacity: 0.85; }
 
+/* Inline card title editing */
+.card-title {
+  cursor: text;
+}
+.card-title:hover {
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--text-muted);
+}
+.card-title-edit-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+.card-title-edit-input {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 1px 4px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  min-width: 120px;
+}
+
 /* Inline study name editing (metadata bar) */
 .study-meta-label {
   cursor: text;
