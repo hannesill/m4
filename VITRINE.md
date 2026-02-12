@@ -83,7 +83,6 @@ def show(obj, title=None, description=None, *, study=None,
 def start(port=7741, open_browser=True, mode="thread") -> None
 def stop() -> None
 def section(title, study=None) -> None
-def set_status(message) -> None       # Ephemeral agent status bar in browser header
 def export(path, format="html", study=None) -> None
 
 # Study management
@@ -277,15 +276,6 @@ Desktop notifications when the agent pushes a decision card, so the researcher k
 - [x] `Notification.requestPermission()` on first decision card
 - [x] Desktop notification with card title/prompt when decision card arrives
 - [x] Only fire when browser tab is not focused (respect `document.hidden`)
-
-### Agent status bar
-
-Show the agent's current state in the browser header so the researcher knows what's happening.
-
-- [x] `set_status(message)` Python API — pushes a lightweight status to the browser
-- [x] Browser header shows status: "Agent is working...", "Waiting for your response", "Idle"
-- [x] WebSocket message type `vitrine.status` — no persistence, purely ephemeral
-- [x] Auto-set "Waiting for your response" when a decision card is pushed
 
 ### Deep-link URLs
 

@@ -81,6 +81,8 @@ class TestCardDescriptor:
         assert card.study is None
         assert card.pinned is False
         assert card.dismissed is False
+        assert card.deleted is False
+        assert card.deleted_at is None
         assert card.artifact_id is None
         assert card.artifact_type is None
         assert card.preview == {}
@@ -110,6 +112,16 @@ class TestCardDescriptor:
             card_id="dis1", card_type=CardType.MARKDOWN, dismissed=True
         )
         assert card.dismissed is True
+
+    def test_deleted(self):
+        card = CardDescriptor(
+            card_id="del1",
+            card_type=CardType.MARKDOWN,
+            deleted=True,
+            deleted_at="2026-02-12T10:00:00Z",
+        )
+        assert card.deleted is True
+        assert card.deleted_at == "2026-02-12T10:00:00Z"
 
     def test_with_actions(self):
         card = CardDescriptor(

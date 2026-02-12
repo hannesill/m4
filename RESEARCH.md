@@ -163,7 +163,7 @@ The top-level `.vitrine/` directory also holds non-study state: `selections.json
 ## API Sketch
 
 ```python
-from m4.vitrine import show, section, set_status, register_output_dir, export, study_context
+from m4.vitrine import show, section, register_output_dir, export, study_context
 
 STUDY = "lactate-trajectory-v1"
 

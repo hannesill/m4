@@ -166,6 +166,12 @@ class CardDescriptor:
     dismissed: bool = False
     """Whether this card is soft-hidden in the browser (provenance preserved)."""
 
+    deleted: bool = False
+    """Whether this card is soft-deleted (excluded from exports and context)."""
+
+    deleted_at: str | None = None
+    """ISO timestamp of when the card was soft-deleted."""
+
     artifact_id: str | None = None
     """Reference to artifact in the store (for large objects)."""
 

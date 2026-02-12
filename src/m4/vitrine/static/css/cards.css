@@ -45,8 +45,51 @@
 
 .card.hidden-by-filter { display: none; }
 .card.hidden-by-dismiss { display: none; }
+.card.hidden-by-delete { display: none; }
 .card.dismissed { opacity: 0.5; }
 .card.dismissed .card-header { background: var(--bg-card); }
+
+/* Card delete animation — slide right + fade */
+@keyframes cardSlideOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(30px); }
+}
+
+.card.card-deleting {
+  animation: cardSlideOut 0.3s ease forwards;
+  pointer-events: none;
+}
+
+/* Card restore animation — slide in from right */
+@keyframes cardSlideIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.card.card-restoring {
+  animation: cardSlideIn 0.3s ease;
+}
+
+/* Card dismiss animation — fade out */
+@keyframes cardDismissOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.97); }
+}
+
+.card.card-dismissing {
+  animation: cardDismissOut 0.25s ease forwards;
+  pointer-events: none;
+}
+
+/* Card undismiss animation — fade in */
+@keyframes cardDismissIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.card.card-undismissing {
+  animation: cardDismissIn 0.25s ease;
+}
 #dismiss-toggle.active { color: var(--accent); }
 
 @keyframes fadeIn {
@@ -698,6 +741,65 @@
   color: var(--text-muted);
 }
 
+.toc-trash-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-top: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+  user-select: none;
+}
+
+.toc-trash-header:hover {
+  color: var(--text);
+}
+
+.toc-trash-header.toc-trash-open {
+  color: var(--text);
+}
+
+.toc-trash-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 4px 20px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.toc-trash-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toc-trash-restore {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.toc-trash-entry:hover .toc-trash-restore {
+  opacity: 1;
+}
+
+.toc-trash-restore:hover {
+  color: var(--text);
+}
+
+.delete-btn:hover {
+  color: var(--decision-color, #ef4444);
+}
+
 @media (max-width: 600px) {
   .toc-panel {
     position: fixed;
@@ -790,4 +892,46 @@
   gap: 8px;
   margin-top: 8px;
   justify-content: flex-end;
+}
+
+/* ================================================================
+   UNDO SNACKBAR
+   ================================================================ */
+.undo-snackbar {
+  position: fixed;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  z-index: 300;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  background: var(--text);
+  color: var(--bg);
+}
+
+.undo-snackbar.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+.undo-snackbar-text {
+  font-weight: 500;
+}
+
+.undo-snackbar-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: inherit;
+  padding: 0;
 }

@@ -1300,6 +1300,25 @@ class DisplayServer:
                         }
                     )
 
+        elif event_type == "delete":
+            deleted = payload.get("deleted", True)
+            store = self._resolve_store(card_id)
+            if store is not None:
+                updates: dict[str, Any] = {"deleted": deleted}
+                if deleted:
+                    updates["deleted_at"] = datetime.now(timezone.utc).isoformat()
+                else:
+                    updates["deleted_at"] = None
+                updated = store.update_card(card_id, **updates)
+                if updated:
+                    await self._broadcast(
+                        {
+                            "type": "display.update",
+                            "card_id": card_id,
+                            "card": _serialize_card(updated),
+                        }
+                    )
+
         elif event_type == "selection":
             # Passive selection tracking from browser checkboxes / chart selection
             self._selections[card_id] = payload.get("selected_indices", [])

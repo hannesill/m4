@@ -213,6 +213,31 @@ function addCard(cardData) {
   };
   actions.appendChild(dismissBtn);
 
+  // Delete button
+  var deleteBtn = document.createElement('button');
+  deleteBtn.className = 'card-action-btn delete-btn';
+  deleteBtn.title = 'Delete card';
+  deleteBtn.setAttribute('aria-label', 'Delete card');
+  deleteBtn.innerHTML = TRASH_SVG;
+  deleteBtn.onclick = function(e) {
+    e.stopPropagation();
+    el.classList.add('card-deleting');
+    var cleaned = false;
+    var cleanup = function() {
+      if (cleaned) return;
+      cleaned = true;
+      el.classList.remove('card-deleting');
+      el.classList.add('deleted', 'hidden-by-delete');
+      updateCardCount();
+      if (typeof tocNotifyChange === 'function') tocNotifyChange();
+    };
+    el.addEventListener('animationend', cleanup, { once: true });
+    setTimeout(cleanup, 400);
+    sendDeleteEvent(cardData.card_id, true);
+    showUndoSnackbar(cardData.card_id, cardData.title || cardData.card_type);
+  };
+  actions.appendChild(deleteBtn);
+
   header.appendChild(actions);
   el.appendChild(header);
 
@@ -332,6 +357,12 @@ function addCard(cardData) {
       el.classList.add('hidden-by-dismiss');
     }
     updateDismissToggleVisibility();
+  }
+
+  // Apply deleted state
+  if (cardData.deleted) {
+    el.classList.add('deleted');
+    el.classList.add('hidden-by-delete');
   }
 
   // Hide card if it lands inside a collapsed section
@@ -606,6 +637,11 @@ function updateCard(cardId, newCardData) {
               requestAnimationFrame(function() { termBox.scrollTop = termBox.scrollHeight; });
             }
           }
+          // Update usage info in alive strip
+          var aliveUsage = body.querySelector('.agent-alive-usage');
+          if (aliveUsage) {
+            aliveUsage.textContent = formatAgentUsage(newCardData.preview);
+          }
         } else if (currentState !== newStatus) {
           // State transition: clear timers + full re-render
           if (el._agentTimer) {
@@ -714,15 +750,51 @@ function updateCard(cardId, newCardData) {
     }
   }
 
-  // Handle dismissed state
+  // Handle dismissed state (with animation)
   if (newCardData) {
     var isDismissed = !!newCardData.dismissed;
-    el.classList.toggle('dismissed', isDismissed);
-    if (isDismissed && !state.showDismissed) {
-      el.classList.add('hidden-by-dismiss');
+    var wasDismissed = el.classList.contains('dismissed');
+    var wasHiddenByDismiss = el.classList.contains('hidden-by-dismiss');
+
+    if (isDismissed && !wasDismissed && !state.showDismissed) {
+      // Newly dismissed and should be hidden — animate out
+      el.classList.add('card-dismissing');
+      var dCleaned = false;
+      var dCleanup = function() {
+        if (dCleaned) return;
+        dCleaned = true;
+        el.classList.remove('card-dismissing');
+        el.classList.add('dismissed', 'hidden-by-dismiss');
+        updateCardCount();
+        if (typeof tocNotifyChange === 'function') tocNotifyChange();
+      };
+      el.addEventListener('animationend', dCleanup, { once: true });
+      setTimeout(dCleanup, 350);
+    } else if (!isDismissed && wasDismissed) {
+      // Undismissed — animate in if was hidden
+      el.classList.remove('dismissed');
+      if (wasHiddenByDismiss) {
+        el.classList.remove('hidden-by-dismiss');
+        el.classList.add('card-undismissing');
+        var uCleaned = false;
+        var uCleanup = function() {
+          if (uCleaned) return;
+          uCleaned = true;
+          el.classList.remove('card-undismissing');
+        };
+        el.addEventListener('animationend', uCleanup, { once: true });
+        setTimeout(uCleanup, 350);
+      }
     } else {
-      el.classList.remove('hidden-by-dismiss');
+      // Sync state (no transition, e.g. initial load or showDismissed toggle)
+      el.classList.toggle('dismissed', isDismissed);
+      if (isDismissed && !state.showDismissed) {
+        el.classList.add('hidden-by-dismiss');
+      } else {
+        el.classList.remove('hidden-by-dismiss');
+      }
     }
+
     var dBtn = el.querySelector('.dismiss-btn');
     if (dBtn) {
       dBtn.title = isDismissed ? 'Show card' : 'Hide card';
@@ -733,10 +805,59 @@ function updateCard(cardId, newCardData) {
     updateCardCount();
   }
 
-  // Flash animation to highlight the update (skip for running agent cards to reduce noise)
+  // Handle deleted state (with animation)
+  if (newCardData) {
+    var isDeleted = !!newCardData.deleted;
+    if (isDeleted) {
+      // Card should be deleted — if already animating or hidden, don't interfere
+      if (!el.classList.contains('card-deleting') && !el.classList.contains('hidden-by-delete')) {
+        // Server-side delete (not initiated from this client's button)
+        el.classList.add('deleted');
+        el.classList.add('card-deleting');
+        var sdCleaned = false;
+        var sdCleanup = function() {
+          if (sdCleaned) return;
+          sdCleaned = true;
+          el.classList.remove('card-deleting');
+          el.classList.add('hidden-by-delete');
+          updateCardCount();
+          if (typeof tocNotifyChange === 'function') tocNotifyChange();
+        };
+        el.addEventListener('animationend', sdCleanup, { once: true });
+        setTimeout(sdCleanup, 400);
+      }
+      el.classList.add('deleted');
+    } else {
+      // Restoring a deleted card
+      var wasDeleted = el.classList.contains('deleted') || el.classList.contains('hidden-by-delete') || el.classList.contains('card-deleting');
+      el.classList.remove('deleted', 'hidden-by-delete', 'card-deleting');
+      if (wasDeleted) {
+        el.classList.add('card-restoring');
+        var rCleaned = false;
+        var rCleanup = function() {
+          if (rCleaned) return;
+          rCleaned = true;
+          el.classList.remove('card-restoring');
+        };
+        el.addEventListener('animationend', rCleanup, { once: true });
+        setTimeout(rCleanup, 400);
+        // Hide undo snackbar if this card was the one being undone
+        if (_undoCardId === cardId) {
+          hideUndoSnackbar();
+        }
+      }
+    }
+    updateCardCount();
+    if (typeof tocNotifyChange === 'function') tocNotifyChange();
+  }
+
+  // Flash animation to highlight the update (skip during other animations)
   var isRunningAgent = newCardData && newCardData.card_type === 'agent'
     && newCardData.preview && newCardData.preview.status === 'running';
-  if (!isRunningAgent) {
+  var isAnimating = el.classList.contains('card-deleting') || el.classList.contains('card-restoring')
+    || el.classList.contains('card-dismissing') || el.classList.contains('card-undismissing')
+    || el.classList.contains('hidden-by-delete');
+  if (!isRunningAgent && !isAnimating) {
     el.classList.remove('flash');
     void el.offsetWidth; // Force reflow
     el.classList.add('flash');
@@ -949,6 +1070,16 @@ function sendDismissEvent(cardId, dismissed) {
   }));
 }
 
+function sendDeleteEvent(cardId, deleted) {
+  if (!state.ws || !state.connected) return;
+  state.ws.send(JSON.stringify({
+    type: 'vitrine.event',
+    event_type: 'delete',
+    card_id: cardId,
+    payload: { deleted: deleted }
+  }));
+}
+
 function applyDismissFilter() {
   var cards = feed.querySelectorAll('.card.dismissed');
   cards.forEach(function(el) {
@@ -978,6 +1109,44 @@ function updateDismissToggleVisibility() {
       toggle.title = state.showDismissed ? 'Hide hidden cards' : 'Show hidden cards';
       toggle.innerHTML = state.showDismissed ? EYE_SVG : EYE_OFF_SVG;
       applyDismissFilter();
+    });
+  }
+})();
+
+// ================================================================
+// UNDO SNACKBAR
+// ================================================================
+var _undoTimer = null;
+var _undoCardId = null;
+
+function showUndoSnackbar(cardId, title) {
+  var snackbar = document.getElementById('undo-snackbar');
+  if (!snackbar) return;
+  var textEl = snackbar.querySelector('.undo-snackbar-text');
+  if (_undoTimer) clearTimeout(_undoTimer);
+  _undoCardId = cardId;
+  var displayTitle = title || 'Card';
+  if (displayTitle.length > 30) displayTitle = displayTitle.substring(0, 30) + '\u2026';
+  textEl.textContent = '\u201c' + displayTitle + '\u201d deleted';
+  snackbar.classList.add('visible');
+  _undoTimer = setTimeout(function() { hideUndoSnackbar(); }, 5000);
+}
+
+function hideUndoSnackbar() {
+  var snackbar = document.getElementById('undo-snackbar');
+  if (snackbar) snackbar.classList.remove('visible');
+  if (_undoTimer) { clearTimeout(_undoTimer); _undoTimer = null; }
+  _undoCardId = null;
+}
+
+(function() {
+  var btn = document.getElementById('undo-snackbar-btn');
+  if (btn) {
+    btn.addEventListener('click', function() {
+      if (_undoCardId) {
+        sendDeleteEvent(_undoCardId, false);
+        hideUndoSnackbar();
+      }
     });
   }
 })();
@@ -1189,6 +1358,12 @@ function renderAgentRunning(container, cardData) {
   inactivityEl.className = 'agent-inactivity-indicator';
   inactivityEl.style.display = 'none';
   aliveStrip.appendChild(inactivityEl);
+
+  // Usage info (tokens + context %) — right-aligned
+  var aliveUsage = document.createElement('span');
+  aliveUsage.className = 'agent-alive-usage';
+  aliveUsage.textContent = formatAgentUsage(preview);
+  aliveStrip.appendChild(aliveUsage);
 
   terminal.appendChild(aliveStrip);
 

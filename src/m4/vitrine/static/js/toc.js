@@ -14,6 +14,7 @@
   var observer = null;
   var activeCardId = null;
   var debounceTimer = null;
+  var trashIsOpen = false;
 
   // --- Hover interaction ---
   function showPanel() {
@@ -71,6 +72,8 @@
       if (el.classList.contains('hidden-by-filter')) continue;
       // Skip dismissed (soft-hidden) cards
       if (el.classList.contains('hidden-by-dismiss')) continue;
+      // Skip deleted or deleting cards (handled in trash section below)
+      if (el.classList.contains('deleted') || el.classList.contains('card-deleting')) continue;
       // Skip empty state
       if (el.id === 'empty-state') continue;
       // Skip study separators
@@ -167,6 +170,58 @@
       jumpEl.href = '#card=' + buildCardRef(latestVisibleId, '');
       jumpEl.addEventListener('click', makeTocClickHandler(latestVisibleId, ''));
       tocPanel.appendChild(jumpEl);
+    }
+
+    // Trash section — collapsed list of deleted cards with restore action
+    var deletedCards = feed.querySelectorAll('.card.deleted');
+    if (deletedCards.length > 0) {
+      var trashHeader = document.createElement('div');
+      trashHeader.className = 'toc-trash-header';
+      if (trashIsOpen) trashHeader.classList.add('toc-trash-open');
+      trashHeader.innerHTML = TRASH_SVG + ' <span>Trash (' + deletedCards.length + ')</span>';
+      var trashList = document.createElement('div');
+      trashList.className = 'toc-trash-list';
+      trashList.style.display = trashIsOpen ? '' : 'none';
+      trashHeader.addEventListener('click', function(e) {
+        e.stopPropagation();
+        trashIsOpen = !trashIsOpen;
+        trashList.style.display = trashIsOpen ? '' : 'none';
+        trashHeader.classList.toggle('toc-trash-open', trashIsOpen);
+        if (trashIsOpen) {
+          trashList.scrollIntoView({ block: 'nearest' });
+        }
+      });
+      tocPanel.appendChild(trashHeader);
+
+      deletedCards.forEach(function(cardEl) {
+        var cid = cardEl.dataset.cardId;
+        var cData = findCardData(cid);
+        var cTitle = cData ? (cData.title || cData.card_type) : 'Untitled';
+
+        var trashEntry = document.createElement('div');
+        trashEntry.className = 'toc-trash-entry';
+
+        var trashTitle = document.createElement('span');
+        trashTitle.className = 'toc-trash-title';
+        trashTitle.textContent = cTitle;
+        trashEntry.appendChild(trashTitle);
+
+        var restoreBtn = document.createElement('button');
+        restoreBtn.className = 'toc-trash-restore';
+        restoreBtn.innerHTML = UNDO_SVG;
+        restoreBtn.title = 'Restore';
+        restoreBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          sendDeleteEvent(cid, false);
+        });
+        trashEntry.appendChild(restoreBtn);
+
+        trashList.appendChild(trashEntry);
+      });
+      tocPanel.appendChild(trashList);
+      hasEntries = true;
+    } else {
+      trashIsOpen = false;
     }
 
     if (!hasEntries) {

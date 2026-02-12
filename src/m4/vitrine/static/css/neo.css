@@ -739,6 +739,47 @@ body {
   border-radius: 0;
 }
 
+/* Undo snackbar */
+.undo-snackbar {
+  background: var(--text);
+  color: var(--card-bg);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-family: var(--font-head);
+  font-weight: 600;
+}
+
+.undo-snackbar-btn {
+  font-family: var(--font-head);
+  background: none;
+  border: var(--border-width) solid currentColor;
+  color: var(--card-bg);
+  padding: 2px 12px;
+  border-radius: var(--radius);
+  transition: background 0.15s, color 0.15s;
+}
+
+.undo-snackbar-btn:hover {
+  background: var(--card-bg);
+  color: var(--text);
+}
+
+/* Card animations — override hover transform during animation */
+.card.card-deleting,
+.card.card-restoring,
+.card.card-dismissing,
+.card.card-undismissing {
+  box-shadow: var(--shadow);
+}
+
+.card.card-deleting:hover,
+.card.card-restoring:hover,
+.card.card-dismissing:hover,
+.card.card-undismissing:hover {
+  transform: none;
+}
+
 /* TOC overrides */
 .toc-panel {
   border: var(--border-width) solid var(--border);
@@ -913,6 +954,7 @@ body {
   background: var(--chart-color);
   border: var(--border-width) solid var(--border);
   animation: agentPulse 1.5s ease-in-out infinite;
+  animation-delay: -1500s;
 }
 
 .agent-status-dot.completed {
@@ -1257,12 +1299,27 @@ body {
   background: var(--chart-color);
   border: var(--border-width) solid var(--border);
   animation: agentPulse 1.5s ease-in-out infinite;
+  animation-delay: -1500s;
 }
 
 .agent-alive-msg {
   font-family: var(--font-mono);
   font-size: 11px;
   color: #888;
+}
+
+/* Usage info in alive strip (right-aligned) */
+.agent-alive-usage {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #666;
+  white-space: nowrap;
+}
+
+/* Hide header usage badge while agent is running */
+.card-header:has(.agent-status-dot.running) .agent-usage-badge {
+  display: none;
 }
 
 /* Inactivity indicator */

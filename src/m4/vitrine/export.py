@@ -56,8 +56,8 @@ def export_html(
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Gather cards and metadata
-    cards = study_manager.list_all_cards(study=study)
+    # Gather cards and metadata (exclude soft-deleted cards)
+    cards = [c for c in study_manager.list_all_cards(study=study) if not c.deleted]
     studies = study_manager.list_studies()
 
     if study:
@@ -96,7 +96,7 @@ def export_json(
         output_path = output_path.with_suffix(".zip")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    cards = study_manager.list_all_cards(study=study)
+    cards = [c for c in study_manager.list_all_cards(study=study) if not c.deleted]
     studies = study_manager.list_studies()
     if study:
         studies = [s for s in studies if s["label"] == study]
@@ -153,7 +153,7 @@ def export_html_string(
     Returns:
         HTML string.
     """
-    cards = study_manager.list_all_cards(study=study)
+    cards = [c for c in study_manager.list_all_cards(study=study) if not c.deleted]
     studies = study_manager.list_studies()
     if study:
         studies = [s for s in studies if s["label"] == study]
@@ -173,7 +173,7 @@ def export_json_bytes(
     Returns:
         Zip file bytes.
     """
-    cards = study_manager.list_all_cards(study=study)
+    cards = [c for c in study_manager.list_all_cards(study=study) if not c.deleted]
     studies = study_manager.list_studies()
     if study:
         studies = [s for s in studies if s["label"] == study]

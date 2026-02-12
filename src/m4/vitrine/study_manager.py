@@ -325,13 +325,13 @@ class StudyManager:
                 except (json.JSONDecodeError, OSError):
                     pass
 
-            # Count cards lazily (exclude sections — rendered as dividers, not cards)
+            # Count cards lazily (exclude sections and soft-deleted cards)
             card_count = 0
             if dir_name in self._stores:
                 card_count = sum(
                     1
                     for c in self._stores[dir_name].list_cards()
-                    if c.card_type != CardType.SECTION
+                    if c.card_type != CardType.SECTION and not c.deleted
                 )
             else:
                 index_path = study_dir / "index.json"
@@ -339,7 +339,9 @@ class StudyManager:
                     try:
                         cards = json.loads(index_path.read_text())
                         card_count = sum(
-                            1 for c in cards if c.get("card_type") != "section"
+                            1
+                            for c in cards
+                            if c.get("card_type") != "section" and not c.get("deleted")
                         )
                     except (json.JSONDecodeError, OSError):
                         pass
@@ -440,7 +442,9 @@ class StudyManager:
                 "current_selections": {},
             }
 
-        cards = store.list_cards()
+        all_cards = store.list_cards()
+        # Exclude soft-deleted cards from context
+        cards = [c for c in all_cards if not c.deleted]
         card_summaries = []
         pending_responses = []
         decisions_made = []
