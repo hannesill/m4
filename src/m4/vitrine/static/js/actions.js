@@ -191,13 +191,6 @@ function renderActionPalette() {
   document.body.appendChild(backdrop);
 }
 
-function executeAction(action) {
-  if (action && typeof action.handler === 'function') {
-    closeActionPalette();
-    action.handler();
-  }
-}
-
 // ================================================================
 // AGENT CARD CREATION
 // ================================================================

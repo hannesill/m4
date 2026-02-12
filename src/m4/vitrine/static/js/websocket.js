@@ -27,8 +27,6 @@ function connect() {
     updateStatus('connected');
     loadSessionInfo();
     loadStudies();
-    // After replay completes (~500ms), enable live auto-switching
-    setTimeout(function() { state.liveMode = true; }, 500);
     // Start polling for new output files
     if (typeof startFilesPoll === 'function') startFilesPoll();
   };
@@ -58,7 +56,9 @@ function connect() {
 }
 
 function scheduleReconnect() {
-  state.reconnectTimer = setTimeout(connect, state.reconnectDelay);
+  // Add jitter (0-50% extra) to prevent thundering herd on server restart
+  var jitteredDelay = state.reconnectDelay * (1 + Math.random() * 0.5);
+  state.reconnectTimer = setTimeout(connect, jitteredDelay);
   state.reconnectDelay = Math.min(state.reconnectDelay * 2, 15000);
 }
 
@@ -73,6 +73,9 @@ function handleMessage(msg) {
       break;
     case 'display.update':
       updateCard(msg.card_id, msg.card);
+      break;
+    case 'display.replay_done':
+      state.liveMode = true;
       break;
     case 'agent.started':
     case 'agent.completed':

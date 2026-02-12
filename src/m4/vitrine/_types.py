@@ -160,9 +160,6 @@ class CardDescriptor:
     study: str | None = None
     """Optional study name for grouping related cards."""
 
-    pinned: bool = False
-    """Whether this card survives clear() operations."""
-
     dismissed: bool = False
     """Whether this card is soft-hidden in the browser (provenance preserved)."""
 

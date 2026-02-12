@@ -407,7 +407,7 @@ async def run_agent(
         cli_args,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         start_new_session=True,
     )
 
@@ -699,13 +699,9 @@ async def _stream_monitor(info: DispatchInfo, server: DisplayServer) -> None:
             )
         else:
             info.status = "failed"
-            stderr = ""
-            if proc.stderr:
-                try:
-                    stderr = proc.stderr.read().decode(errors="replace")[:2000]
-                except Exception:
-                    pass
-            info.error = stderr or f"Process exited with code {returncode}"
+            # stderr is merged into stdout (subprocess.STDOUT), so error
+            # details are already captured in the accumulated output.
+            info.error = f"Process exited with code {returncode}"
             error_output = accumulated + f"\n\n---\n**Error:** {info.error}"
             await _update_agent_card(
                 info.card_id,

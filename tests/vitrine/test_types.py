@@ -79,7 +79,6 @@ class TestCardDescriptor:
         assert card.title is None
         assert card.description is None
         assert card.study is None
-        assert card.pinned is False
         assert card.dismissed is False
         assert card.deleted is False
         assert card.deleted_at is None
@@ -140,14 +139,12 @@ class TestCardDescriptor:
             description="A test",
             timestamp="2025-01-01T00:00:00Z",
             study="study-1",
-            pinned=True,
             artifact_id="xyz789",
             artifact_type="parquet",
             preview={"columns": ["a", "b"], "shape": [10, 2]},
             provenance=prov,
         )
         assert card.title == "Test Table"
-        assert card.pinned is True
         assert card.artifact_type == "parquet"
         assert card.preview["columns"] == ["a", "b"]
         assert card.provenance.source == "test_table"

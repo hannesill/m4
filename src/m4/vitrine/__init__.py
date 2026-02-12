@@ -68,7 +68,6 @@ _lock = threading.Lock()
 _server: Any = None  # DisplayServer | None
 _store: Any = None  # ArtifactStore | None (backwards-compat)
 _study_manager: Any = None  # StudyManager | None
-_current_study: str | None = None
 _session_id: str | None = None
 _remote_url: str | None = None
 _auth_token: str | None = None
@@ -272,10 +271,9 @@ def register_session(study: str | None = None) -> None:
     sm = _ensure_study_manager()
     if sm is None:
         return
-    label = study or _current_study
-    if label is None:
+    if study is None:
         return
-    sm.set_session_id(label, session_id)
+    sm.set_session_id(study, session_id)
 
 
 def _ensure_started(
@@ -316,27 +314,26 @@ def _ensure_started(
         # Acquire cross-process file lock before discovery + start
         lock_path = _lock_file_path()
         lock_path.parent.mkdir(parents=True, exist_ok=True)
-        lock_fd = open(lock_path, "w")
-        try:
-            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        with open(lock_path, "w") as lock_fd:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_EX)
 
-            # Try to discover an existing persistent server (PID file).
-            # The PID file is the sole authority — no port scanning.
-            # Port scanning would risk connecting to a different project's
-            # server when multiple projects run vitrine concurrently.
-            info = _discover_server()
-            if info:
-                _remote_url = info.get("api_url", info["url"])
-                _auth_token = info.get("token")
-                _session_id = info["session_id"]
-                return
+                # Try to discover an existing persistent server (PID file).
+                # The PID file is the sole authority — no port scanning.
+                # Port scanning would risk connecting to a different project's
+                # server when multiple projects run vitrine concurrently.
+                info = _discover_server()
+                if info:
+                    _remote_url = info.get("api_url", info["url"])
+                    _auth_token = info.get("token")
+                    _session_id = info["session_id"]
+                    return
 
-            # No server found -> start a new persistent process
-            _start_process(port=port, open_browser=open_browser)
+                # No server found -> start a new persistent process
+                _start_process(port=port, open_browser=open_browser)
 
-        finally:
-            fcntl.flock(lock_fd, fcntl.LOCK_UN)
-            lock_fd.close()
+            finally:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
 
         # Poll for the PID file to appear (server writes it after binding)
         deadline = time.monotonic() + 5.0
@@ -551,6 +548,11 @@ def _push_remote(card_data: dict[str, Any]) -> bool:
                 _remote_url = info.get("api_url", info["url"])
                 _auth_token = info.get("token")
                 url, token = _remote_url, _auth_token
+            if url is None or token is None:
+                logger.warning(
+                    "Remote card push: re-discovery returned no URL or token"
+                )
+                return False
             ok = _remote_command(url, token, {"type": "card", "card": card_data})
             if not ok:
                 logger.warning("Remote card push failed after re-discovery")
@@ -813,9 +815,10 @@ def _poll_remote_response(card_id: str, timeout: float) -> dict[str, Any]:
         return {"action": "error", "card_id": card_id}
     except urllib.error.URLError as e:
         logger.warning(f"Remote response poll connection error for card {card_id}: {e}")
-        return {"action": "timeout", "card_id": card_id}
+        return {"action": "error", "card_id": card_id}
     except Exception:
-        return {"action": "timeout", "card_id": card_id}
+        logger.warning(f"Remote response poll unexpected error for card {card_id}")
+        return {"action": "error", "card_id": card_id}
 
 
 def wait_for(card_id: str, timeout: float = 600) -> DisplayResponse:
@@ -1014,7 +1017,7 @@ def ask(
         The chosen action string, or ``"timeout"`` if no response.
     """
     r = show(question, wait=True, actions=options, study=study, timeout=timeout)
-    return r.message if r.message else r.action
+    return r.message if r.message is not None else r.action
 
 
 class ProgressContext:
@@ -1326,9 +1329,9 @@ def _poll_remote_events() -> None:
                     try:
                         cb(event)
                     except Exception:
-                        pass
+                        logger.debug("Event callback error", exc_info=True)
         except Exception:
-            pass
+            logger.debug("Remote event poll error", exc_info=True)
         _event_poll_stop.wait(0.5)
 
 

@@ -31,6 +31,14 @@ from m4.vitrine._types import CardDescriptor, CardProvenance, CardType
 logger = logging.getLogger(__name__)
 
 
+def _duckdb_safe_path(path: Path) -> str:
+    """Escape a file path for safe interpolation into DuckDB SQL string literals.
+
+    Single quotes in the path are doubled to prevent SQL injection.
+    """
+    return str(path).replace("'", "''")
+
+
 def _serialize_card(card: CardDescriptor) -> dict[str, Any]:
     """Serialize a CardDescriptor to a JSON-compatible dict."""
     d: dict[str, Any] = {
@@ -40,7 +48,6 @@ def _serialize_card(card: CardDescriptor) -> dict[str, Any]:
         "description": card.description,
         "timestamp": card.timestamp,
         "study": card.study,
-        "pinned": card.pinned,
         "dismissed": card.dismissed,
         "deleted": card.deleted,
         "deleted_at": card.deleted_at,
@@ -91,7 +98,6 @@ def _deserialize_card(d: dict[str, Any]) -> CardDescriptor:
         description=d.get("description"),
         timestamp=d.get("timestamp", ""),
         study=d.get("study"),
-        pinned=d.get("pinned", False),
         dismissed=d.get("dismissed", False),
         deleted=d.get("deleted", False),
         deleted_at=d.get("deleted_at"),
@@ -255,8 +261,9 @@ class ArtifactStore:
         self, path: Path, con: duckdb.DuckDBPyConnection
     ) -> list[tuple[str, str]]:
         """Return list of (column_name, column_type) for a Parquet file."""
+        safe = _duckdb_safe_path(path)
         rows = con.execute(
-            f"SELECT name, type FROM parquet_schema('{path}') WHERE type IS NOT NULL"
+            f"SELECT name, type FROM parquet_schema('{safe}') WHERE type IS NOT NULL"
         ).fetchall()
         return [(r[0], r[1]) for r in rows]
 
@@ -266,15 +273,19 @@ class ArtifactStore:
         col_info: list[tuple[str, str]],
     ) -> str:
         """Build a WHERE clause that searches across all columns."""
-        escaped = search.replace("'", "''")
+        # Escape ILIKE wildcards first, then single quotes for SQL strings
+        escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        escaped = escaped.replace("'", "''")
         clauses = []
         for col_name, col_type in col_info:
             upper = col_type.upper()
             if any(t in upper for t in ("VARCHAR", "UTF8", "STRING", "TEXT")):
-                clauses.append(f"\"{col_name}\" ILIKE '%{escaped}%'")
+                clauses.append(f"\"{col_name}\" ILIKE '%{escaped}%' ESCAPE '\\'")
             else:
                 # Cast non-text columns to VARCHAR for general search
-                clauses.append(f"CAST(\"{col_name}\" AS VARCHAR) ILIKE '%{escaped}%'")
+                clauses.append(
+                    f"CAST(\"{col_name}\" AS VARCHAR) ILIKE '%{escaped}%' ESCAPE '\\'"
+                )
         if not clauses:
             return ""
         return " WHERE " + " OR ".join(clauses)
@@ -310,6 +321,7 @@ class ArtifactStore:
 
         con = duckdb.connect(":memory:")
         try:
+            safe = _duckdb_safe_path(path)
             col_info = self._parquet_columns(path, con)
             col_names = [c[0] for c in col_info]
 
@@ -321,11 +333,11 @@ class ArtifactStore:
 
             # Get total row count (filtered if searching)
             total = con.execute(
-                f"SELECT COUNT(*) FROM read_parquet('{path}'){where}"
+                f"SELECT COUNT(*) FROM read_parquet('{safe}'){where}"
             ).fetchone()[0]
 
             # Build query
-            query = f"SELECT * FROM read_parquet('{path}'){where}"
+            query = f"SELECT * FROM read_parquet('{safe}'){where}"
 
             if sort_col and sort_col in col_names:
                 direction = "ASC" if sort_asc else "DESC"
@@ -366,6 +378,7 @@ class ArtifactStore:
 
         con = duckdb.connect(":memory:")
         try:
+            safe = _duckdb_safe_path(path)
             col_info = self._parquet_columns(path, con)
             stats: dict[str, dict[str, Any]] = {}
 
@@ -395,7 +408,7 @@ class ArtifactStore:
                     aggs.append(f'AVG("{col_name}") AS mean_val')
 
                 row = con.execute(
-                    f"SELECT {', '.join(aggs)} FROM read_parquet('{path}')"
+                    f"SELECT {', '.join(aggs)} FROM read_parquet('{safe}')"
                 ).fetchone()
 
                 col_stats: dict[str, Any] = {
@@ -453,6 +466,7 @@ class ArtifactStore:
 
         con = duckdb.connect(":memory:")
         try:
+            safe = _duckdb_safe_path(path)
             col_info = self._parquet_columns(path, con)
             col_names = [c[0] for c in col_info]
 
@@ -461,7 +475,7 @@ class ArtifactStore:
             if sanitized:
                 where = self._build_search_where(sanitized, col_info)
 
-            query = f"SELECT * FROM read_parquet('{path}'){where}"
+            query = f"SELECT * FROM read_parquet('{safe}'){where}"
 
             if sort_col and sort_col in col_names:
                 direction = "ASC" if sort_asc else "DESC"
@@ -564,32 +578,6 @@ class ArtifactStore:
         self._artifacts_dir = new_dir / "artifacts"
         self._index_path = new_dir / "index.json"
         self._meta_path = new_dir / "meta.json"
-
-    def clear(self, keep_pinned: bool = True) -> None:
-        """Clear all cards and artifacts from the session.
-
-        Args:
-            keep_pinned: If True, preserve cards with pinned=True.
-        """
-        index = self._read_index()
-
-        if keep_pinned:
-            pinned = [d for d in index if d.get("pinned", False)]
-            removed = [d for d in index if not d.get("pinned", False)]
-        else:
-            pinned = []
-            removed = index
-
-        # Delete artifact files for removed cards
-        for card_dict in removed:
-            card_id = card_dict["card_id"]
-            for ext in ("parquet", "json", "svg", "png"):
-                path = self._artifacts_dir / f"{card_id}.{ext}"
-                if path.exists():
-                    path.unlink()
-
-        self._write_index(pinned)
-        logger.debug(f"Cleared {len(removed)} cards, kept {len(pinned)} pinned")
 
     def store_selection(self, selection_id: str, rows: list, columns: list) -> Path:
         """Store a selection of rows as a Parquet artifact.

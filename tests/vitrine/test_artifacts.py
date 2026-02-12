@@ -8,7 +8,6 @@ Tests cover:
 - read_table_page with offset, limit, sort
 - list_cards in insertion order, with study filter
 - update_card
-- clear with and without keep_pinned
 - Serialization/deserialization of CardDescriptor
 """
 
@@ -229,71 +228,9 @@ class TestUpdateCard:
         cards = store.list_cards()
         assert cards[0].title == "New Title"
 
-    def test_update_pinned(self, store, sample_card):
-        store.store_card(sample_card)
-        updated = store.update_card("card-001", pinned=True)
-        assert updated.pinned is True
-
     def test_update_nonexistent(self, store):
         result = store.update_card("nonexistent", title="X")
         assert result is None
-
-
-class TestClear:
-    def test_clear_all(self, store, sample_df):
-        store.store_dataframe("c1", sample_df)
-        store.store_card(
-            CardDescriptor(
-                card_id="c1",
-                card_type=CardType.TABLE,
-                artifact_id="c1",
-                artifact_type="parquet",
-                preview={},
-            )
-        )
-        store.store_card(
-            CardDescriptor(
-                card_id="c2",
-                card_type=CardType.MARKDOWN,
-                preview={"text": "hi"},
-            )
-        )
-
-        store.clear(keep_pinned=False)
-        assert store.list_cards() == []
-        assert not (store._artifacts_dir / "c1.parquet").exists()
-
-    def test_clear_keeps_pinned(self, store, sample_df):
-        store.store_dataframe("p1", sample_df)
-        store.store_card(
-            CardDescriptor(
-                card_id="p1",
-                card_type=CardType.TABLE,
-                pinned=True,
-                artifact_id="p1",
-                artifact_type="parquet",
-                preview={},
-            )
-        )
-        store.store_card(
-            CardDescriptor(
-                card_id="u1",
-                card_type=CardType.MARKDOWN,
-                pinned=False,
-                preview={"text": "gone"},
-            )
-        )
-
-        store.clear(keep_pinned=True)
-        cards = store.list_cards()
-        assert len(cards) == 1
-        assert cards[0].card_id == "p1"
-        # Pinned artifact preserved
-        assert (store._artifacts_dir / "p1.parquet").exists()
-
-    def test_clear_empty_store(self, store):
-        store.clear()  # Should not raise
-        assert store.list_cards() == []
 
 
 class TestGetArtifact:
@@ -339,7 +276,6 @@ class TestSerialization:
             description="Test roundtrip",
             timestamp="2025-06-01T00:00:00Z",
             study="study-rt",
-            pinned=True,
             artifact_id="rt-001",
             artifact_type="parquet",
             preview={"columns": ["x"], "shape": [1, 1]},
@@ -358,7 +294,6 @@ class TestSerialization:
         assert restored.card_id == "rt-001"
         assert restored.card_type == CardType.TABLE
         assert restored.title == "Roundtrip"
-        assert restored.pinned is True
         assert restored.provenance is not None
         assert restored.provenance.source == "test_source"
         assert restored.provenance.query == "SELECT 1"

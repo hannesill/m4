@@ -32,6 +32,15 @@ logger = logging.getLogger(__name__)
 # Maximum rows to include in HTML table exports
 _MAX_HTML_TABLE_ROWS = 10_000
 
+
+def _duckdb_safe_path(path: str | Path) -> str:
+    """Escape a file path for safe interpolation into DuckDB SQL strings.
+
+    Prevents SQL injection by escaping single quotes in file paths.
+    """
+    return str(path).replace("'", "''")
+
+
 _STATIC_DIR = Path(__file__).parent / "static"
 
 
@@ -475,12 +484,13 @@ def _render_table_html(card: CardDescriptor, study_manager: StudyManager) -> str
     try:
         con = duckdb.connect(":memory:")
         try:
+            safe_path = _duckdb_safe_path(parquet_path)
             total = con.execute(
-                f"SELECT COUNT(*) FROM read_parquet('{parquet_path}')"
+                f"SELECT COUNT(*) FROM read_parquet('{safe_path}')"
             ).fetchone()[0]
 
             truncated = total > _MAX_HTML_TABLE_ROWS
-            query = f"SELECT * FROM read_parquet('{parquet_path}')"
+            query = f"SELECT * FROM read_parquet('{safe_path}')"
             if truncated:
                 query += f" LIMIT {_MAX_HTML_TABLE_ROWS}"
 
@@ -604,8 +614,13 @@ def _render_keyvalue_html(card: CardDescriptor) -> str:
 
 
 def _render_form_html(card: CardDescriptor) -> str:
-    """Render a form card as a frozen key-value summary."""
+    """Render a form card as a frozen key-value summary.
+
+    Uses the researcher's actual submitted response values when available,
+    falling back to field defaults only when no response was recorded.
+    """
     fields = card.preview.get("fields", [])
+    response_values = card.response_values or {}
     items = []
     for f in fields:
         label = escape(
@@ -616,15 +631,20 @@ def _render_form_html(card: CardDescriptor) -> str:
                 or f.get("name", "")
             )
         )
-        default = f.get("default")
-        if default is None:
-            val = ""
-        elif isinstance(default, bool):
-            val = "yes" if default else "no"
-        elif isinstance(default, list):
-            val = escape(" \u2013 ".join(str(v) for v in default))
+        field_name = f.get("name", "")
+        # Prefer actual submitted response; fall back to field default
+        if field_name and field_name in response_values:
+            value = response_values[field_name]
         else:
-            val = escape(str(default))
+            value = f.get("default")
+        if value is None:
+            val = ""
+        elif isinstance(value, bool):
+            val = "yes" if value else "no"
+        elif isinstance(value, list):
+            val = escape(" \u2013 ".join(str(v) for v in value))
+        else:
+            val = escape(str(value))
         items.append(
             f"<span class='form-frozen-item'>"
             f"<span class='frozen-label'>{label}:</span> "
@@ -788,10 +808,11 @@ def _render_files_section(study_label: str, study_manager: StudyManager) -> str:
             try:
                 con = duckdb.connect(":memory:")
                 try:
+                    safe_fpath = _duckdb_safe_path(fpath)
                     reader = (
-                        f"read_csv_auto('{fpath}')"
+                        f"read_csv_auto('{safe_fpath}')"
                         if suffix == ".csv"
-                        else f"read_parquet('{fpath}')"
+                        else f"read_parquet('{safe_fpath}')"
                     )
                     total = con.execute(f"SELECT COUNT(*) FROM {reader}").fetchone()[0]
                     result = con.execute(f"SELECT * FROM {reader} LIMIT 100")
@@ -1390,12 +1411,6 @@ _EXPORT_CSS = """<style>
 # --- JS for Export (minimal — just init Plotly charts and render markdown) ---
 
 _EXPORT_JS = """
-// Initialize Plotly charts after page load
-document.addEventListener('DOMContentLoaded', function() {
-  // Plotly init scripts are already inline — they self-execute.
-  // Marked.js init scripts are already inline — they self-execute.
-});
-
 // Collapsible sections
 function toggleExportSection(sectionEl) {
   var isCollapsed = sectionEl.classList.toggle('section-collapsed');

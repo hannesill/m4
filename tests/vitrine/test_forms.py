@@ -430,25 +430,6 @@ class TestFormFieldValidation:
 
 
 # ================================================================
-# TestDisplayResponseConstants
-# ================================================================
-
-
-class TestDisplayResponseConstants:
-    def test_confirm_constant(self):
-        assert DisplayResponse.CONFIRM == "confirm"
-
-    def test_skip_constant(self):
-        assert DisplayResponse.SKIP == "skip"
-
-    def test_timeout_constant(self):
-        assert DisplayResponse.TIMEOUT == "timeout"
-
-    def test_error_constant(self):
-        assert DisplayResponse.ERROR == "error"
-
-
-# ================================================================
 # TestDisplayHandleStudy
 # ================================================================
 

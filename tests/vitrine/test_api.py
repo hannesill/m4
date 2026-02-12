@@ -878,7 +878,7 @@ class TestErrorLogging:
         with caplog.at_level(logging.WARNING, logger="m4.vitrine"):
             result = display._poll_remote_response("card-456", timeout=1.0)
 
-        assert result["action"] == "timeout"
+        assert result["action"] == "error"
         assert result["card_id"] == "card-456"
         assert "connection error" in caplog.text
 
@@ -968,12 +968,22 @@ class TestAskFreeText:
         result = display.ask("Which score?", ["SOFA", "APACHE III"])
         assert result == "Actually, use LODS instead"
 
-    def test_ask_returns_button_on_empty_message(self, store, mock_server):
-        """ask() returns button label when message is empty string."""
+    def test_ask_returns_empty_string_message(self, store, mock_server):
+        """ask() returns empty string when message is empty (not None)."""
         mock_server._mock_response = {
             "action": "APACHE III",
             "card_id": "test",
             "message": "",
+        }
+        result = display.ask("Which score?", ["SOFA", "APACHE III"])
+        assert result == ""
+
+    def test_ask_returns_button_on_none_message(self, store, mock_server):
+        """ask() returns button label when message is None."""
+        mock_server._mock_response = {
+            "action": "APACHE III",
+            "card_id": "test",
+            "message": None,
         }
         result = display.ask("Which score?", ["SOFA", "APACHE III"])
         assert result == "APACHE III"

@@ -472,6 +472,7 @@ class TestAnnotations:
         client = TestClient(app)
         with client.websocket_connect("/ws") as ws:
             ws.receive_json()  # drain replay
+            ws.receive_json()  # drain replay_done
             ws.send_json(
                 {
                     "type": "vitrine.event",
@@ -517,6 +518,7 @@ class TestAnnotations:
         client = TestClient(app)
         with client.websocket_connect("/ws") as ws:
             ws.receive_json()  # drain replay
+            ws.receive_json()  # drain replay_done
             ws.send_json(
                 {
                     "type": "vitrine.event",
@@ -563,6 +565,7 @@ class TestAnnotations:
         client = TestClient(app)
         with client.websocket_connect("/ws") as ws:
             ws.receive_json()  # drain replay
+            ws.receive_json()  # drain replay_done
             ws.send_json(
                 {
                     "type": "vitrine.event",
@@ -1203,6 +1206,7 @@ class TestDismiss:
         client = TestClient(app)
         with client.websocket_connect("/ws") as ws:
             ws.receive_json()  # drain replay
+            ws.receive_json()  # drain replay_done
             ws.send_json(
                 {
                     "type": "vitrine.event",
@@ -1237,6 +1241,7 @@ class TestDismiss:
         client = TestClient(app)
         with client.websocket_connect("/ws") as ws:
             ws.receive_json()  # drain replay
+            ws.receive_json()  # drain replay_done
             ws.send_json(
                 {
                     "type": "vitrine.event",

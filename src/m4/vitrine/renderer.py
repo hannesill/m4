@@ -70,6 +70,13 @@ def _sanitize_svg(svg_bytes: bytes) -> bytes:
     """
     text = svg_bytes.decode("utf-8", errors="replace")
     text = _SCRIPT_TAG_RE.sub("", text)
+    # Strip javascript: URIs from href and xlink:href attributes
+    text = re.sub(
+        r'\b(xlink:)?href\s*=\s*["\']javascript:[^"\']*["\']',
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
     # Also strip onXxx event attributes
     text = re.sub(r'\s+on\w+\s*=\s*"[^"]*"', "", text)
     text = re.sub(r"\s+on\w+\s*=\s*'[^']*'", "", text)

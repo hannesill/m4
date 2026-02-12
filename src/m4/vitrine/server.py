@@ -154,11 +154,6 @@ class DisplayServer:
         if fixed:
             logger.info(f"Reconciled {fixed} orphaned agent card(s)")
 
-        # Selection rate-limiting: per-connection cooldown
-        self._selection_cooldowns: dict[int, float] = {}  # ws id -> last timestamp
-        _SELECTION_COOLDOWN_SEC = 0.1  # 100ms min between selection events per client
-        self._selection_cooldown_sec = _SELECTION_COOLDOWN_SEC
-
         # Server start time for health endpoint
         self._started_at = datetime.now(timezone.utc)
 
@@ -179,7 +174,9 @@ class DisplayServer:
         if not self._selections_path:
             return
         try:
-            self._selections_path.write_text(json.dumps(self._selections, default=str))
+            with self._lock:
+                snapshot = dict(self._selections)
+            self._selections_path.write_text(json.dumps(snapshot, default=str))
         except OSError:
             logger.debug("Failed to persist selections to disk")
 
@@ -341,8 +338,8 @@ class DisplayServer:
     async def _api_table(self, request: Request) -> JSONResponse:
         """Return a page of table data from a stored Parquet artifact."""
         card_id = request.path_params["card_id"]
-        offset = int(request.query_params.get("offset", "0"))
-        limit = int(request.query_params.get("limit", "50"))
+        offset = max(0, int(request.query_params.get("offset", "0")))
+        limit = max(1, min(int(request.query_params.get("limit", "50")), 10000))
         sort_col = request.query_params.get("sort")
         sort_asc = request.query_params.get("asc", "true").lower() == "true"
         search = request.query_params.get("search") or None
@@ -397,11 +394,12 @@ class DisplayServer:
             con = duckdb.connect(":memory:")
             try:
                 # Use ROW_NUMBER to select by 0-based index
+                safe_path = str(path).replace("'", "''")
                 idx_list = ", ".join(str(int(i)) for i in indices)
                 query = (
                     f"SELECT * FROM ("
                     f"  SELECT *, ROW_NUMBER() OVER () - 1 AS _rn "
-                    f"  FROM read_parquet('{path}')"
+                    f"  FROM read_parquet('{safe_path}')"
                     f") WHERE _rn IN ({idx_list})"
                 )
                 result = con.execute(query)
@@ -869,10 +867,11 @@ class DisplayServer:
 
             con = duckdb.connect(":memory:")
             try:
+                safe_path = str(path).replace("'", "''")
                 if suffix == ".csv":
-                    reader = f"read_csv_auto('{path}')"
+                    reader = f"read_csv_auto('{safe_path}')"
                 else:
-                    reader = f"read_parquet('{path}')"
+                    reader = f"read_parquet('{safe_path}')"
 
                 total = con.execute(f"SELECT COUNT(*) FROM {reader}").fetchone()[0]
                 result = con.execute(f"SELECT * FROM {reader} LIMIT 1000")
@@ -1127,6 +1126,7 @@ class DisplayServer:
                     "card": _serialize_card(card),
                 }
                 await ws.send_json(msg)
+            await ws.send_json({"type": "display.replay_done"})
         except Exception:
             logger.exception("Error replaying cards on WebSocket connect")
 
@@ -1219,10 +1219,13 @@ class DisplayServer:
                 return
 
             if action == "add":
+                text = payload.get("text", "").strip()
+                if not text:
+                    return
                 annotation_id = uuid.uuid4().hex[:8]
                 annotation = {
                     "id": annotation_id,
-                    "text": payload.get("text", ""),
+                    "text": text,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
                 # Read current annotations, append, persist
@@ -1348,7 +1351,9 @@ class DisplayServer:
                 card_id=card_id,
                 payload=payload,
             )
-            for cb in self._event_callbacks:
+            with self._lock:
+                callbacks = list(self._event_callbacks)
+            for cb in callbacks:
                 try:
                     cb(event)
                 except Exception:
@@ -1471,7 +1476,8 @@ class DisplayServer:
         Args:
             callback: Function that receives DisplayEvent instances.
         """
-        self._event_callbacks.append(callback)
+        with self._lock:
+            self._event_callbacks.append(callback)
 
     # --- Lifecycle ---
 
