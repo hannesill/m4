@@ -19,7 +19,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 import shutil
 import subprocess
 import uuid
@@ -49,6 +48,7 @@ _MODEL_CONTEXT_WINDOWS = {
 _TASK_CONFIG = {
     "reproduce": ("reproduce-study", "Reproducibility Audit", "Bash,Read,Glob,Grep"),
     "report": ("export-report", "Study Report", "Read,Glob,Grep"),
+    "paper": ("draft-paper", "Paper Draft", "Bash,Read,Glob,Grep,Write"),
 }
 
 
@@ -376,6 +376,13 @@ async def run_agent(
         if output_dir and output_dir.exists():
             work_dir = _create_sandbox(output_dir)
             info.extra["sandbox"] = str(work_dir)
+    elif info.task == "paper":
+        output_dir = server.study_manager.get_output_dir(info.study)
+        if output_dir and output_dir.exists():
+            paper_dir, copied = _create_paper_workspace(output_dir)
+            work_dir = paper_dir
+            info.extra["paper_workspace"] = str(paper_dir)
+            info.extra["paper_copies"] = copied
 
     prompt = build_prompt(
         info.task,
@@ -564,6 +571,47 @@ def _cleanup_sandbox(sandbox: Path) -> None:
     if sandbox.exists():
         shutil.rmtree(sandbox, ignore_errors=True)
         logger.info(f"Cleaned up sandbox: {sandbox}")
+
+
+def _create_paper_workspace(output_dir: Path) -> tuple[Path, list[str]]:
+    """Create a paper workspace with copies of study artifacts.
+
+    The agent works entirely inside ``paper/`` — it reads from the copies
+    and writes new files alongside them.  Original study files are never
+    touched.
+
+    Returns:
+        Tuple of (paper_dir, list of copied item names).
+    """
+    paper_dir = output_dir / "paper"
+    paper_dir.mkdir(exist_ok=True)
+    copied: list[str] = []
+    for item in ("scripts", "data", "plots", "PROTOCOL.md", "RESULTS.md", "REPORT.md"):
+        src = output_dir / item
+        dst = paper_dir / item
+        if src.is_dir() and not dst.exists():
+            shutil.copytree(src, dst)
+            copied.append(item)
+        elif src.is_file() and not dst.exists():
+            shutil.copy2(src, dst)
+            copied.append(item)
+    logger.info(f"Created paper workspace: {paper_dir} (copied: {copied})")
+    return paper_dir, copied
+
+
+def _cleanup_paper_workspace(paper_dir: Path, copied_items: list[str]) -> None:
+    """Remove copied study files from the paper workspace.
+
+    Leaves only agent-generated files (paper.md, abstract.md, figures/,
+    references.bib, build.sh, README.md, etc.).
+    """
+    for item in copied_items:
+        path = paper_dir / item
+        if path.is_dir():
+            shutil.rmtree(path, ignore_errors=True)
+        elif path.is_file():
+            path.unlink(missing_ok=True)
+    logger.info(f"Cleaned up paper workspace copies: {paper_dir}")
 
 
 async def _stream_monitor(info: DispatchInfo, server: DisplayServer) -> None:
@@ -804,6 +852,11 @@ async def _stream_monitor(info: DispatchInfo, server: DisplayServer) -> None:
             logger.debug("Failed to update card after monitor error")
 
     finally:
+        # Clean up paper workspace copies if one was created
+        paper_ws = info.extra.get("paper_workspace")
+        paper_copies = info.extra.get("paper_copies")
+        if paper_ws and paper_copies:
+            _cleanup_paper_workspace(Path(paper_ws), paper_copies)
         # Clean up sandbox copy if one was created
         sandbox = info.extra.get("sandbox")
         if sandbox:
@@ -836,6 +889,11 @@ async def cancel_agent(card_id: str, server: DisplayServer) -> bool:
         end_dt = datetime.fromisoformat(completed_at)
         duration = (end_dt - start_dt).total_seconds()
 
+    # Clean up paper workspace copies if one was created
+    paper_ws = info.extra.get("paper_workspace")
+    paper_copies = info.extra.get("paper_copies")
+    if paper_ws and paper_copies:
+        _cleanup_paper_workspace(Path(paper_ws), paper_copies)
     # Clean up sandbox copy if one was created
     sandbox = info.extra.get("sandbox")
     if sandbox:
@@ -936,6 +994,11 @@ def cleanup_dispatches(server: DisplayServer) -> None:
             except OSError:
                 pass
             info.status = "cancelled"
+        # Clean up any paper workspace copies
+        paper_ws = info.extra.get("paper_workspace")
+        paper_copies = info.extra.get("paper_copies")
+        if paper_ws and paper_copies:
+            _cleanup_paper_workspace(Path(paper_ws), paper_copies)
         # Clean up any sandbox copies
         sandbox = info.extra.get("sandbox")
         if sandbox:
@@ -945,11 +1008,9 @@ def cleanup_dispatches(server: DisplayServer) -> None:
 
 def _is_pid_alive(pid: int) -> bool:
     """Check if a process with the given PID is alive."""
-    try:
-        os.kill(pid, 0)
-        return True
-    except OSError:
-        return False
+    from m4.vitrine._utils import is_pid_alive
+
+    return is_pid_alive(pid)
 
 
 _WATCHDOG_INTERVAL = 30  # seconds

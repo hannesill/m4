@@ -6,7 +6,9 @@ Tests cover:
 - build_prompt() with valid/invalid tasks
 - _build_agent_preview() preview dict construction
 - create_agent_card() card creation and persistence
-- _update_agent_card() preview merging
+- _update_agent_card() preview merging and broadcasting
+- run_agent() validation and process spawning
+- _stream_monitor() output parsing and card finalization
 - cancel_agent() cancellation flow
 - get_agent_status() status reporting
 - reconcile_orphaned_agents() orphan cleanup
@@ -27,16 +29,21 @@ from m4.vitrine._types import CardDescriptor, CardType
 from m4.vitrine.dispatch import (
     DispatchInfo,
     _build_agent_preview,
+    _cleanup_paper_workspace,
     _cleanup_sandbox,
+    _create_paper_workspace,
     _create_sandbox,
     _is_pid_alive,
     _parse_stream_event,
+    _stream_monitor,
+    _update_agent_card,
     build_prompt,
     cancel_agent,
     cleanup_dispatches,
     create_agent_card,
     get_agent_status,
     reconcile_orphaned_agents,
+    run_agent,
 )
 from m4.vitrine.study_manager import StudyManager
 
@@ -398,7 +405,7 @@ class TestBuildPrompt:
 
     def test_valid_task_includes_skill_content(self, study_mgr):
         # Create a study with a card so there's context
-        _, store = study_mgr.get_or_create_study("test-study")
+        _, _store = study_mgr.get_or_create_study("test-study")
         prompt = build_prompt("reproduce", "test-study", study_mgr)
         assert "Study:" in prompt
         assert "test-study" in prompt
@@ -406,7 +413,7 @@ class TestBuildPrompt:
         assert "scripts/" in prompt
 
     def test_valid_task_report(self, study_mgr):
-        _, store = study_mgr.get_or_create_study("my-study")
+        _, _store = study_mgr.get_or_create_study("my-study")
         prompt = build_prompt("report", "my-study", study_mgr)
         assert "my-study" in prompt
 
@@ -931,3 +938,371 @@ class TestIsPidAlive:
 
     def test_very_large_pid_is_dead(self):
         assert _is_pid_alive(999_999_999) is False
+
+
+# ---------------------------------------------------------------------------
+# _update_agent_card
+# ---------------------------------------------------------------------------
+
+
+class TestUpdateAgentCard:
+    """Test that _update_agent_card merges preview and broadcasts."""
+
+    async def test_merges_preview_and_broadcasts(self, mock_server, study_mgr):
+        # Create a study and card
+        _, store = study_mgr.get_or_create_study("s1")
+        card = CardDescriptor(
+            card_id="upd1",
+            card_type=CardType.AGENT,
+            title="Test Agent",
+            study="s1",
+            preview={"status": "pending", "output": "", "model": "sonnet"},
+        )
+        store.store_card(card)
+        study_mgr.register_card("upd1", study_mgr._label_to_dir["s1"])
+
+        await _update_agent_card(
+            "upd1",
+            "s1",
+            mock_server,
+            {"status": "running", "output": "Starting..."},
+        )
+
+        # Verify the preview was merged in the store
+        cards = store.list_cards()
+        updated = next(c for c in cards if c.card_id == "upd1")
+        assert updated.preview["status"] == "running"
+        assert updated.preview["output"] == "Starting..."
+        assert updated.preview["model"] == "sonnet"  # Preserved
+
+        # Verify broadcast was called
+        mock_server._broadcast.assert_called_once()
+        msg = mock_server._broadcast.call_args[0][0]
+        assert msg["type"] == "display.update"
+        assert msg["card_id"] == "upd1"
+        assert msg["card"]["preview"]["status"] == "running"
+
+    async def test_title_override(self, mock_server, study_mgr):
+        _, store = study_mgr.get_or_create_study("s1")
+        card = CardDescriptor(
+            card_id="upd2",
+            card_type=CardType.AGENT,
+            title="Old Title",
+            study="s1",
+            preview={"status": "pending"},
+        )
+        store.store_card(card)
+        study_mgr.register_card("upd2", study_mgr._label_to_dir["s1"])
+
+        await _update_agent_card(
+            "upd2", "s1", mock_server, {"status": "running"}, title="New Title"
+        )
+
+        msg = mock_server._broadcast.call_args[0][0]
+        assert msg["card"]["title"] == "New Title"
+
+
+# ---------------------------------------------------------------------------
+# run_agent
+# ---------------------------------------------------------------------------
+
+
+class TestRunAgent:
+    """Test run_agent() validation and error paths."""
+
+    async def test_no_study_manager_raises(self, mock_server_no_mgr):
+        with pytest.raises(ValueError, match="No study manager"):
+            await run_agent("abc", mock_server_no_mgr)
+
+    async def test_card_not_found_raises(self, mock_server):
+        with pytest.raises(ValueError, match="No agent card found"):
+            await run_agent("nonexistent", mock_server)
+
+    async def test_not_pending_raises(self, mock_server):
+        info = DispatchInfo(
+            task="reproduce", study="s1", card_id="abc", status="completed"
+        )
+        mock_server._dispatches["abc"] = info
+        with pytest.raises(RuntimeError, match="not pending"):
+            await run_agent("abc", mock_server)
+
+    async def test_concurrency_limit_raises(self, mock_server):
+        # Fill up to max concurrent (5)
+        for i in range(5):
+            cid = f"run{i}"
+            mock_server._dispatches[cid] = DispatchInfo(
+                task="reproduce", study="s1", card_id=cid, status="running"
+            )
+        # Add the pending card
+        mock_server._dispatches["pending1"] = DispatchInfo(
+            task="reproduce", study="s1", card_id="pending1", status="pending"
+        )
+        with pytest.raises(RuntimeError, match="Maximum"):
+            await run_agent("pending1", mock_server)
+
+    async def test_no_claude_cli_raises(self, mock_server, study_mgr, monkeypatch):
+        # Create agent card
+        info = await create_agent_card("reproduce", "s1", mock_server)
+        monkeypatch.setattr("m4.vitrine.dispatch._find_claude", lambda: None)
+        with pytest.raises(ValueError, match="claude CLI not found"):
+            await run_agent(info.card_id, mock_server)
+
+    async def test_happy_path_spawns_process(self, mock_server, study_mgr, monkeypatch):
+        info = await create_agent_card("reproduce", "s1", mock_server)
+
+        # Mock _find_claude and subprocess.Popen
+        monkeypatch.setattr(
+            "m4.vitrine.dispatch._find_claude", lambda: "/usr/local/bin/claude"
+        )
+
+        mock_proc = MagicMock(spec=subprocess.Popen)
+        mock_proc.pid = 42
+        mock_proc.stdin = MagicMock()
+        mock_proc.stdout = MagicMock()
+
+        mock_popen = MagicMock(return_value=mock_proc)
+        monkeypatch.setattr("m4.vitrine.dispatch.subprocess.Popen", mock_popen)
+
+        # Mock asyncio.create_task to avoid actual monitoring
+        import asyncio
+
+        monkeypatch.setattr(
+            asyncio,
+            "create_task",
+            lambda coro: MagicMock(spec=asyncio.Task),
+        )
+
+        result = await run_agent(info.card_id, mock_server)
+        assert result.status == "running"
+        assert result.pid == 42
+        mock_popen.assert_called_once()
+        mock_proc.stdin.write.assert_called_once()
+        mock_proc.stdin.close.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# _stream_monitor
+# ---------------------------------------------------------------------------
+
+
+class TestStreamMonitor:
+    """Test _stream_monitor output parsing and card finalization."""
+
+    async def test_successful_completion(self, mock_server, study_mgr):
+        """Mocked stdout producing text + result → status=completed."""
+        _, store = study_mgr.get_or_create_study("s1")
+        card = CardDescriptor(
+            card_id="mon1",
+            card_type=CardType.AGENT,
+            title="Monitor Test",
+            study="s1",
+            preview={"status": "running", "output": ""},
+        )
+        store.store_card(card)
+        study_mgr.register_card("mon1", study_mgr._label_to_dir["s1"])
+
+        # Build canned stream lines
+        text_line = json.dumps(
+            {
+                "type": "assistant",
+                "message": {"content": [{"type": "text", "text": "Analysis done."}]},
+            }
+        )
+        result_line = json.dumps(
+            {"type": "result", "result": "Final output.", "total_cost_usd": 0.01}
+        )
+
+        lines = [
+            (text_line + "\n").encode(),
+            (result_line + "\n").encode(),
+            b"",  # EOF
+        ]
+        line_iter = iter(lines)
+
+        mock_proc = MagicMock()
+        mock_proc.stdout.readline = lambda: next(line_iter)
+        mock_proc.wait.return_value = 0
+        mock_proc.poll.return_value = 0
+
+        info = DispatchInfo(
+            task="reproduce",
+            study="s1",
+            card_id="mon1",
+            status="running",
+            model="sonnet",
+            started_at="2025-01-01T00:00:00+00:00",
+        )
+        info.process = mock_proc
+
+        await _stream_monitor(info, mock_server)
+
+        assert info.status == "completed"
+        assert info.completed_at is not None
+        # Should have broadcast agent.completed
+        broadcast_types = [
+            call[0][0]["type"] for call in mock_server._broadcast.call_args_list
+        ]
+        assert "agent.completed" in broadcast_types
+
+    async def test_failed_process(self, mock_server, study_mgr):
+        """Process exits with code 1 → status=failed."""
+        _, store = study_mgr.get_or_create_study("s1")
+        card = CardDescriptor(
+            card_id="mon2",
+            card_type=CardType.AGENT,
+            title="Fail Test",
+            study="s1",
+            preview={"status": "running", "output": ""},
+        )
+        store.store_card(card)
+        study_mgr.register_card("mon2", study_mgr._label_to_dir["s1"])
+
+        lines = [b""]  # Immediate EOF
+        line_iter = iter(lines)
+
+        mock_proc = MagicMock()
+        mock_proc.stdout.readline = lambda: next(line_iter)
+        mock_proc.wait.return_value = 1
+        mock_proc.poll.return_value = 1
+
+        info = DispatchInfo(
+            task="reproduce",
+            study="s1",
+            card_id="mon2",
+            status="running",
+            model="sonnet",
+            started_at="2025-01-01T00:00:00+00:00",
+        )
+        info.process = mock_proc
+
+        await _stream_monitor(info, mock_server)
+
+        assert info.status == "failed"
+        assert "exit" in info.error.lower()
+        broadcast_types = [
+            call[0][0]["type"] for call in mock_server._broadcast.call_args_list
+        ]
+        assert "agent.failed" in broadcast_types
+
+
+# ---------------------------------------------------------------------------
+# Paper task — build_prompt, preview, card creation
+# ---------------------------------------------------------------------------
+
+
+class TestPaperTask:
+    def test_valid_task_paper(self, study_mgr):
+        _, _store = study_mgr.get_or_create_study("paper-study")
+        prompt = build_prompt("paper", "paper-study", study_mgr)
+        assert "paper-study" in prompt
+        assert "Output directory:" in prompt
+
+    def test_paper_task_tools(self):
+        preview = _build_agent_preview("paper", "pending")
+        assert "Bash" in preview["tools"]
+        assert "Read" in preview["tools"]
+        assert "Glob" in preview["tools"]
+        assert "Grep" in preview["tools"]
+        assert "Write" in preview["tools"]
+
+    async def test_paper_task_card_title(self, mock_server):
+        await create_agent_card("paper", "my-study", mock_server)
+        call_args = mock_server._broadcast.call_args[0][0]
+        assert call_args["card"]["title"] == "Paper Draft"
+
+
+# ---------------------------------------------------------------------------
+# Paper workspace helpers
+# ---------------------------------------------------------------------------
+
+
+class TestPaperWorkspace:
+    def test_create_paper_workspace(self, tmp_path):
+        output_dir = tmp_path / "study-output"
+        output_dir.mkdir()
+        (output_dir / "scripts").mkdir()
+        (output_dir / "scripts" / "01_cohort.py").write_text("print('hello')")
+        (output_dir / "data").mkdir()
+        (output_dir / "data" / "cohort.parquet").write_bytes(b"fake-parquet")
+        (output_dir / "plots").mkdir()
+        (output_dir / "plots" / "fig1.png").write_bytes(b"fake-png")
+        (output_dir / "PROTOCOL.md").write_text("# Protocol")
+        (output_dir / "RESULTS.md").write_text("# Results")
+
+        paper_dir, copied = _create_paper_workspace(output_dir)
+
+        assert paper_dir == output_dir / "paper"
+        assert paper_dir.exists()
+        assert set(copied) == {"scripts", "data", "plots", "PROTOCOL.md", "RESULTS.md"}
+        assert (paper_dir / "scripts" / "01_cohort.py").read_text() == "print('hello')"
+        assert (paper_dir / "data" / "cohort.parquet").exists()
+        assert (paper_dir / "plots" / "fig1.png").exists()
+        assert (paper_dir / "PROTOCOL.md").read_text() == "# Protocol"
+        assert (paper_dir / "RESULTS.md").read_text() == "# Results"
+
+    def test_cleanup_paper_workspace(self, tmp_path):
+        """Copied items are removed; agent-generated files are preserved."""
+        paper_dir = tmp_path / "paper"
+        paper_dir.mkdir()
+
+        # Simulate copied study files
+        (paper_dir / "scripts").mkdir()
+        (paper_dir / "scripts" / "01.py").write_text("code")
+        (paper_dir / "PROTOCOL.md").write_text("protocol")
+
+        # Simulate agent-generated files
+        (paper_dir / "paper.md").write_text("# My Paper")
+        (paper_dir / "abstract.md").write_text("Abstract text")
+        (paper_dir / "references.bib").write_text("@article{}")
+        (paper_dir / "figures").mkdir()
+        (paper_dir / "figures" / "fig1.png").write_bytes(b"png")
+
+        _cleanup_paper_workspace(paper_dir, ["scripts", "PROTOCOL.md"])
+
+        # Copied items should be gone
+        assert not (paper_dir / "scripts").exists()
+        assert not (paper_dir / "PROTOCOL.md").exists()
+
+        # Agent-generated files should remain
+        assert (paper_dir / "paper.md").read_text() == "# My Paper"
+        assert (paper_dir / "abstract.md").exists()
+        assert (paper_dir / "references.bib").exists()
+        assert (paper_dir / "figures" / "fig1.png").exists()
+
+    def test_create_workspace_skips_missing(self, tmp_path):
+        """Gracefully handles missing scripts/plots/etc."""
+        output_dir = tmp_path / "sparse-study"
+        output_dir.mkdir()
+        # Only create PROTOCOL.md — scripts, data, plots, RESULTS.md, REPORT.md missing
+        (output_dir / "PROTOCOL.md").write_text("# Protocol")
+
+        paper_dir, copied = _create_paper_workspace(output_dir)
+
+        assert paper_dir.exists()
+        assert copied == ["PROTOCOL.md"]
+        assert (paper_dir / "PROTOCOL.md").exists()
+        assert not (paper_dir / "scripts").exists()
+        assert not (paper_dir / "plots").exists()
+
+    def test_create_workspace_skips_existing(self, tmp_path):
+        """Does not overwrite existing items in the paper directory."""
+        output_dir = tmp_path / "study-output"
+        output_dir.mkdir()
+        (output_dir / "PROTOCOL.md").write_text("new version")
+
+        paper_dir = output_dir / "paper"
+        paper_dir.mkdir()
+        (paper_dir / "PROTOCOL.md").write_text("old version")
+
+        _, copied = _create_paper_workspace(output_dir)
+
+        # Should NOT have copied since destination already exists
+        assert "PROTOCOL.md" not in copied
+        assert (paper_dir / "PROTOCOL.md").read_text() == "old version"
+
+    def test_cleanup_missing_items_is_noop(self, tmp_path):
+        """Cleanup doesn't fail if items are already gone."""
+        paper_dir = tmp_path / "paper"
+        paper_dir.mkdir()
+        # Items don't exist — should not raise
+        _cleanup_paper_workspace(paper_dir, ["scripts", "PROTOCOL.md", "nonexistent"])

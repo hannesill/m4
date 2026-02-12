@@ -38,7 +38,9 @@ def _duckdb_safe_path(path: str | Path) -> str:
 
     Prevents SQL injection by escaping single quotes in file paths.
     """
-    return str(path).replace("'", "''")
+    from m4.vitrine._utils import duckdb_safe_path
+
+    return duckdb_safe_path(path)
 
 
 _STATIC_DIR = Path(__file__).parent / "static"

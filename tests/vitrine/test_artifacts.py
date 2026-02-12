@@ -9,6 +9,7 @@ Tests cover:
 - list_cards in insertion order, with study filter
 - update_card
 - Serialization/deserialization of CardDescriptor
+- _sanitize_search SQL injection prevention
 """
 
 import json
@@ -370,3 +371,66 @@ class TestSerialization:
         restored = store.list_cards()[0]
         assert restored.provenance is None
         assert restored.preview["text"] == "hello"
+
+
+class TestSanitizeSearch:
+    """Test ArtifactStore._sanitize_search SQL injection prevention."""
+
+    def test_none_input(self):
+        assert ArtifactStore._sanitize_search(None) is None
+
+    def test_empty_string(self):
+        assert ArtifactStore._sanitize_search("") is None
+
+    def test_whitespace_only(self):
+        assert ArtifactStore._sanitize_search("   ") is None
+
+    def test_valid_search(self):
+        assert ArtifactStore._sanitize_search("sepsis") == "sepsis"
+
+    def test_valid_with_punctuation(self):
+        result = ArtifactStore._sanitize_search("ICD-10, code: 'A41'")
+        assert result == "ICD-10, code: 'A41'"
+
+    def test_strips_whitespace(self):
+        assert ArtifactStore._sanitize_search("  hello  ") == "hello"
+
+    def test_rejects_drop(self):
+        assert ArtifactStore._sanitize_search("foo DROP TABLE bar") is None
+
+    def test_rejects_delete(self):
+        assert ArtifactStore._sanitize_search("DELETE FROM cards") is None
+
+    def test_rejects_insert(self):
+        assert ArtifactStore._sanitize_search("INSERT INTO x") is None
+
+    def test_rejects_update(self):
+        assert ArtifactStore._sanitize_search("UPDATE cards SET") is None
+
+    def test_rejects_union(self):
+        assert ArtifactStore._sanitize_search("x UNION SELECT 1") is None
+
+    def test_rejects_sql_comment(self):
+        assert ArtifactStore._sanitize_search("hello -- comment") is None
+
+    def test_rejects_special_characters(self):
+        assert ArtifactStore._sanitize_search("foo{bar") is None
+        assert ArtifactStore._sanitize_search("foo<bar") is None
+        assert ArtifactStore._sanitize_search("foo>bar") is None
+
+    def test_case_insensitive_rejection(self):
+        assert ArtifactStore._sanitize_search("drop table") is None
+        assert ArtifactStore._sanitize_search("Drop Table") is None
+        assert ArtifactStore._sanitize_search("DROP TABLE") is None
+
+    def test_allows_parentheses(self):
+        result = ArtifactStore._sanitize_search("test (value)")
+        assert result == "test (value)"
+
+    def test_allows_double_quotes(self):
+        result = ArtifactStore._sanitize_search('test "value"')
+        assert result == 'test "value"'
+
+    def test_allows_forward_slash(self):
+        result = ArtifactStore._sanitize_search("ICD-10/A41")
+        assert result == "ICD-10/A41"

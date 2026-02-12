@@ -67,31 +67,16 @@ _DISPLAY_HOST = "vitrine.localhost"
 
 def _check_health(url: str, session_id: str | None = None) -> bool:
     """GET /api/health and optionally validate session_id matches."""
-    try:
-        import urllib.request
+    from m4.vitrine._utils import health_check
 
-        req = urllib.request.Request(f"{url}/api/health", method="GET")
-        with urllib.request.urlopen(req, timeout=0.5) as resp:
-            data = json.loads(resp.read())
-            if data.get("status") != "ok":
-                return False
-            if session_id is not None:
-                return data.get("session_id") == session_id
-            return True
-    except Exception:
-        return False
+    return health_check(url, session_id=session_id)
 
 
 def _get_vitrine_dir() -> Path:
     """Resolve the vitrine directory at {project_root}/.vitrine/."""
-    try:
-        from m4.config import _PROJECT_ROOT
+    from m4.vitrine._utils import get_vitrine_dir
 
-        return _PROJECT_ROOT / ".vitrine"
-    except Exception:
-        import tempfile
-
-        return Path(tempfile.gettempdir()) / ".vitrine"
+    return get_vitrine_dir()
 
 
 class DisplayServer:
@@ -289,6 +274,15 @@ class DisplayServer:
             if store:
                 return store
         return self.store
+
+    def _get_card_annotations(
+        self, store: ArtifactStore, card_id: str
+    ) -> list[dict[str, Any]]:
+        """Return a copy of the annotations list for a card, or [] if not found."""
+        for c in store.list_cards():
+            if c.card_id == card_id:
+                return list(c.annotations)
+        return []
 
     # --- HTTP Endpoints ---
 
@@ -807,29 +801,10 @@ class DisplayServer:
             )
 
         # Preview mode — content-type dispatch
-        _TEXT_EXTENSIONS = {
-            ".py",
-            ".sql",
-            ".r",
-            ".json",
-            ".yaml",
-            ".yml",
-            ".toml",
-            ".txt",
-            ".cfg",
-            ".log",
-            ".sh",
-            ".bash",
-            ".ini",
-            ".env",
-        }
-        _IMAGE_MIMES = {
-            ".png": "image/png",
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".gif": "image/gif",
-            ".svg": "image/svg+xml",
-        }
+        from m4.vitrine._utils import IMAGE_MIME_TYPES, TEXT_EXTENSIONS
+
+        _TEXT_EXTENSIONS = TEXT_EXTENSIONS
+        _IMAGE_MIMES = IMAGE_MIME_TYPES
 
         if suffix == ".md":
             text = resolved.read_text(encoding="utf-8", errors="replace")
@@ -1007,9 +982,11 @@ class DisplayServer:
             return JSONResponse({"error": "Invalid JSON"}, status_code=400)
 
         task = body.get("task")
-        if task not in ("reproduce", "report"):
+        if task not in ("reproduce", "report", "paper"):
             return JSONResponse(
-                {"error": f"Unknown task: {task!r} (expected 'reproduce' or 'report')"},
+                {
+                    "error": f"Unknown task: {task!r} (expected 'reproduce', 'report', or 'paper')"
+                },
                 status_code=400,
             )
 
@@ -1229,12 +1206,7 @@ class DisplayServer:
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
                 # Read current annotations, append, persist
-                cards = store.list_cards()
-                current: list[dict[str, Any]] = []
-                for c in cards:
-                    if c.card_id == card_id:
-                        current = list(c.annotations)
-                        break
+                current = self._get_card_annotations(store, card_id)
                 current.append(annotation)
                 updated = store.update_card(card_id, annotations=current)
                 if updated:
@@ -1249,12 +1221,7 @@ class DisplayServer:
             elif action == "edit":
                 ann_id = payload.get("annotation_id", "")
                 new_text = payload.get("text", "")
-                cards = store.list_cards()
-                current = []
-                for c in cards:
-                    if c.card_id == card_id:
-                        current = list(c.annotations)
-                        break
+                current = self._get_card_annotations(store, card_id)
                 for ann in current:
                     if ann.get("id") == ann_id:
                         ann["text"] = new_text
@@ -1272,12 +1239,7 @@ class DisplayServer:
 
             elif action == "delete":
                 ann_id = payload.get("annotation_id", "")
-                cards = store.list_cards()
-                current = []
-                for c in cards:
-                    if c.card_id == card_id:
-                        current = list(c.annotations)
-                        break
+                current = self._get_card_annotations(store, card_id)
                 current = [a for a in current if a.get("id") != ann_id]
                 updated = store.update_card(card_id, annotations=current)
                 if updated:
