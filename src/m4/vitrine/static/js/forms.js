@@ -197,6 +197,22 @@ function collectFormValues(cardEl) {
   return values;
 }
 
+function _resolveOptionDesc(fieldName, selected, fields) {
+  // Find the field spec and look up the option description for a selected label
+  var field = null;
+  (fields || []).forEach(function(f) {
+    if (f.name === fieldName) field = f;
+  });
+  if (!field || !field.options) return '';
+  var match = '';
+  field.options.forEach(function(opt) {
+    if (opt && opt.label === selected && opt.description) {
+      match = opt.description;
+    }
+  });
+  return match;
+}
+
 function renderFrozenForm(container, values, fields) {
   var frozen = document.createElement('div');
   frozen.className = 'form-frozen';
@@ -227,6 +243,25 @@ function renderFrozenForm(container, values, fields) {
       valueSpan.textContent = String(val);
     }
     item.appendChild(valueSpan);
+
+    // Look up and display option descriptions
+    var descTexts = [];
+    if (Array.isArray(val)) {
+      val.forEach(function(v) {
+        var d = _resolveOptionDesc(key, v, fields);
+        if (d) descTexts.push(d);
+      });
+    } else if (typeof val === 'string') {
+      var d = _resolveOptionDesc(key, val, fields);
+      if (d) descTexts.push(d);
+    }
+    if (descTexts.length > 0) {
+      var descSpan = document.createElement('small');
+      descSpan.className = 'frozen-desc';
+      descSpan.textContent = descTexts.join(' · ');
+      item.appendChild(descSpan);
+    }
+
     frozen.appendChild(item);
   });
 

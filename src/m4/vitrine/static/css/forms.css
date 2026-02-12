@@ -314,6 +314,7 @@
 
 .form-frozen-item {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 4px;
 }
 
@@ -323,6 +324,14 @@
 
 .form-frozen-item .frozen-value {
   font-weight: 500;
+}
+
+.form-frozen-item .frozen-desc {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-top: 1px;
 }
 
 /* Decision note (additional message on completed decision cards) */

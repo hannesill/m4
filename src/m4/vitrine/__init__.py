@@ -744,6 +744,7 @@ def show(
         summary=result.get("summary", ""),
         artifact_id=result.get("artifact_id"),
         values=result.get("values", {}),
+        fields=card.preview.get("fields") or card.preview.get("controls"),
         _store=store,
     )
 
@@ -862,6 +863,7 @@ def wait_for(card_id: str, timeout: float = 600) -> DisplayResponse:
             summary=card.response_summary or "",
             artifact_id=card.response_artifact_id,
             values=card.response_values or {},
+            fields=card.preview.get("fields") or card.preview.get("controls"),
             _store=store,
         )
 
@@ -922,6 +924,7 @@ def wait_for(card_id: str, timeout: float = 600) -> DisplayResponse:
         summary=result.get("summary", ""),
         artifact_id=result.get("artifact_id"),
         values=result.get("values", {}),
+        fields=card.preview.get("fields") or card.preview.get("controls"),
         _store=store,
     )
 

@@ -278,6 +278,9 @@ class DisplayResponse:
     values: dict[str, Any] = field(default_factory=dict)
     """Form field values (populated when the card is a form or has controls)."""
 
+    fields: list[dict[str, Any]] | None = field(default=None, repr=False)
+    """Original field specs from the card preview (internal, for description lookup)."""
+
     _store: Any = field(default=None, repr=False)
     """Reference to artifact store (internal, for lazy data loading)."""
 
@@ -302,6 +305,24 @@ class DisplayResponse:
             if path.exists():
                 return str(path)
         return None
+
+    @property
+    def values_detailed(self) -> dict[str, Any]:
+        """Form values enriched with option descriptions.
+
+        Cross-references ``values`` with the original field specs to
+        include the description for each selected option.
+
+        For single-select: ``{"field": {"selected": "label", "description": "..."}}``
+        For multi-select: ``{"field": {"selected": ["a"], "descriptions": ["..."]}}``
+
+        Returns empty dict when no values or field specs are available.
+        """
+        if not self.values or not self.fields:
+            return {}
+        from m4.vitrine._utils import resolve_option_descriptions
+
+        return resolve_option_descriptions(self.values, self.fields)
 
     def __repr__(self) -> str:
         lines = [f"DisplayResponse(action={self.action!r}"]

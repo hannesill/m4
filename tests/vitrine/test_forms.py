@@ -518,3 +518,232 @@ class TestQuestionIntegration:
         assert field["allow_other"] is True
         assert field["options"][0]["label"] == "SOFA"
         assert field["options"][0]["description"] == "Standard"
+
+
+# ================================================================
+# TestResolveOptionDescriptions
+# ================================================================
+
+
+class TestResolveOptionDescriptions:
+    def test_single_select(self):
+        from m4.vitrine._utils import resolve_option_descriptions
+
+        values = {"score": "SOFA"}
+        fields = [
+            {
+                "name": "score",
+                "options": [
+                    {"label": "SOFA", "description": "6 organ systems"},
+                    {"label": "APACHE", "description": "More variables"},
+                ],
+            }
+        ]
+        result = resolve_option_descriptions(values, fields)
+        assert result["score"]["selected"] == "SOFA"
+        assert result["score"]["description"] == "6 organ systems"
+
+    def test_multi_select(self):
+        from m4.vitrine._utils import resolve_option_descriptions
+
+        values = {"scores": ["SOFA", "APACHE"]}
+        fields = [
+            {
+                "name": "scores",
+                "options": [
+                    {"label": "SOFA", "description": "6 organ systems"},
+                    {"label": "APACHE", "description": "More variables"},
+                ],
+            }
+        ]
+        result = resolve_option_descriptions(values, fields)
+        assert result["scores"]["selected"] == ["SOFA", "APACHE"]
+        assert result["scores"]["descriptions"] == [
+            "6 organ systems",
+            "More variables",
+        ]
+
+    def test_other_freetext(self):
+        from m4.vitrine._utils import resolve_option_descriptions
+
+        values = {"method": "Custom regression"}
+        fields = [
+            {
+                "name": "method",
+                "options": [
+                    {"label": "Logistic", "description": "Standard"},
+                    {"label": "Cox", "description": "Survival"},
+                ],
+            }
+        ]
+        result = resolve_option_descriptions(values, fields)
+        assert result["method"]["selected"] == "Custom regression"
+        assert result["method"]["description"] == ""
+
+    def test_empty_values(self):
+        from m4.vitrine._utils import resolve_option_descriptions
+
+        result = resolve_option_descriptions({}, [{"name": "q", "options": []}])
+        assert result == {}
+
+    def test_no_options_field(self):
+        from m4.vitrine._utils import resolve_option_descriptions
+
+        values = {"q": "yes"}
+        fields = [{"name": "q"}]
+        result = resolve_option_descriptions(values, fields)
+        assert result["q"]["selected"] == "yes"
+        assert result["q"]["description"] == ""
+
+    def test_string_only_options(self):
+        from m4.vitrine._utils import resolve_option_descriptions
+
+        values = {"q": "Yes"}
+        fields = [{"name": "q", "options": ["Yes", "No"]}]
+        result = resolve_option_descriptions(values, fields)
+        assert result["q"]["selected"] == "Yes"
+        assert result["q"]["description"] == ""
+
+
+# ================================================================
+# TestValuesDetailed
+# ================================================================
+
+
+class TestValuesDetailed:
+    def test_values_detailed_single_select(self):
+        resp = DisplayResponse(
+            action="confirm",
+            card_id="test",
+            values={"score": "SOFA"},
+            fields=[
+                {
+                    "name": "score",
+                    "options": [
+                        {"label": "SOFA", "description": "6 organ systems"},
+                        {"label": "APACHE", "description": "More variables"},
+                    ],
+                }
+            ],
+        )
+        detailed = resp.values_detailed
+        assert detailed["score"]["selected"] == "SOFA"
+        assert detailed["score"]["description"] == "6 organ systems"
+
+    def test_values_detailed_no_fields(self):
+        resp = DisplayResponse(
+            action="confirm",
+            card_id="test",
+            values={"score": "SOFA"},
+        )
+        assert resp.values_detailed == {}
+
+    def test_values_detailed_no_values(self):
+        resp = DisplayResponse(
+            action="confirm",
+            card_id="test",
+            fields=[{"name": "score", "options": []}],
+        )
+        assert resp.values_detailed == {}
+
+    def test_values_detailed_multi_select(self):
+        resp = DisplayResponse(
+            action="confirm",
+            card_id="test",
+            values={"items": ["A", "B"]},
+            fields=[
+                {
+                    "name": "items",
+                    "options": [
+                        {"label": "A", "description": "First"},
+                        {"label": "B", "description": "Second"},
+                    ],
+                }
+            ],
+        )
+        detailed = resp.values_detailed
+        assert detailed["items"]["selected"] == ["A", "B"]
+        assert detailed["items"]["descriptions"] == ["First", "Second"]
+
+
+# ================================================================
+# TestBuildContextDescriptions
+# ================================================================
+
+
+class TestBuildContextDescriptions:
+    def test_decisions_made_includes_descriptions(self, tmp_path):
+        mgr = StudyManager(tmp_path / "ctx")
+        _, store = mgr.get_or_create_study("desc-test")
+        dir_name = mgr._label_to_dir["desc-test"]
+
+        form = Form(
+            fields=[
+                Question(
+                    name="score",
+                    question="Which score?",
+                    options=[
+                        ("SOFA", "6 organ systems"),
+                        ("APACHE", "More variables"),
+                    ],
+                ),
+            ]
+        )
+        card = render(form, title="Decision", store=store, study="desc-test")
+        mgr.register_card(card.card_id, dir_name)
+
+        # Simulate response
+        store.update_card(
+            card.card_id,
+            response_action="confirm",
+            response_values={"score": "SOFA"},
+            response_timestamp="2026-01-01T00:00:00Z",
+        )
+
+        ctx = mgr.build_context("desc-test")
+        dm = ctx["decisions_made"]
+        assert len(dm) == 1
+        assert dm[0]["values"]["score"]["selected"] == "SOFA"
+        assert dm[0]["values"]["score"]["description"] == "6 organ systems"
+
+
+# ================================================================
+# TestFormExportDescriptions
+# ================================================================
+
+
+class TestFormExportDescriptions:
+    def test_html_export_includes_description(self, tmp_path):
+        from m4.vitrine.export import export_html
+
+        mgr = StudyManager(tmp_path / "export-desc")
+        _, store = mgr.get_or_create_study("desc-export")
+        dir_name = mgr._label_to_dir["desc-export"]
+
+        form = Form(
+            fields=[
+                Question(
+                    name="score",
+                    question="Which severity score?",
+                    options=[
+                        ("SOFA", "Sequential Organ Failure"),
+                        ("APACHE", "Acute Physiology"),
+                    ],
+                ),
+            ]
+        )
+        card = render(form, title="Score Choice", store=store, study="desc-export")
+        mgr.register_card(card.card_id, dir_name)
+
+        # Simulate response
+        store.update_card(
+            card.card_id,
+            response_action="confirm",
+            response_values={"score": "SOFA"},
+        )
+
+        out = tmp_path / "export.html"
+        export_html(mgr, out, study="desc-export")
+        html = out.read_text()
+        assert "Sequential Organ Failure" in html
+        assert "frozen-desc" in html

@@ -620,9 +620,19 @@ def _render_form_html(card: CardDescriptor) -> str:
 
     Uses the researcher's actual submitted response values when available,
     falling back to field defaults only when no response was recorded.
+    Includes option descriptions when the selected value matches a
+    described option from the field spec.
     """
     fields = card.preview.get("fields", [])
     response_values = card.response_values or {}
+
+    # Build option description lookup per field
+    from m4.vitrine._utils import resolve_option_descriptions
+
+    detailed = (
+        resolve_option_descriptions(response_values, fields) if response_values else {}
+    )
+
     items = []
     for f in fields:
         label = escape(
@@ -641,16 +651,33 @@ def _render_form_html(card: CardDescriptor) -> str:
             value = f.get("default")
         if value is None:
             val = ""
+            desc_html = ""
         elif isinstance(value, bool):
             val = "yes" if value else "no"
+            desc_html = ""
         elif isinstance(value, list):
             val = escape(" \u2013 ".join(str(v) for v in value))
+            # Gather descriptions for each selected item
+            info = detailed.get(field_name, {})
+            descs = info.get("descriptions", [])
+            desc_parts = [escape(d) for d in descs if d]
+            desc_html = (
+                f"<small class='frozen-desc'>{' · '.join(desc_parts)}</small>"
+                if desc_parts
+                else ""
+            )
         else:
             val = escape(str(value))
+            info = detailed.get(field_name, {})
+            desc = info.get("description", "")
+            desc_html = (
+                f"<small class='frozen-desc'>{escape(desc)}</small>" if desc else ""
+            )
         items.append(
             f"<span class='form-frozen-item'>"
             f"<span class='frozen-label'>{label}:</span> "
-            f"<span class='frozen-value'>{val}</span></span>"
+            f"<span class='frozen-value'>{val}</span>"
+            f"{desc_html}</span>"
         )
     return f'<div class="form-frozen">{"".join(items)}</div>'
 
@@ -1249,6 +1276,36 @@ _EXPORT_CSS = """<style>
     background: none;
     padding: 0;
     border: none;
+  }
+
+  /* Frozen form (decision summary) */
+  .form-frozen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    font-size: 13px;
+  }
+
+  .form-frozen-item {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .form-frozen-item .frozen-label {
+    color: var(--text-muted);
+  }
+
+  .form-frozen-item .frozen-value {
+    font-weight: 500;
+  }
+
+  .form-frozen-item .frozen-desc {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-top: 1px;
   }
 
   /* Section dividers */
