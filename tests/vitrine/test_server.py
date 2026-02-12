@@ -1287,3 +1287,183 @@ class TestDismiss:
             msg = ws.receive_json()
             assert msg["type"] == "display.add"
             assert msg["card"]["dismissed"] is True
+
+
+class TestAgentEndpoints:
+    """Test the agent dispatch REST endpoints.
+
+    These endpoints:
+    - POST /api/studies/{study}/agents  → create agent card
+    - POST /api/agents/{card_id}/run    → start agent
+    - GET  /api/agents/{card_id}        → get status
+    - DELETE /api/agents/{card_id}      → cancel agent
+    """
+
+    @pytest.fixture
+    def agent_app(self, study_mgr):
+        """Create a DisplayServer app with StudyManager for agent tests."""
+        srv = DisplayServer(
+            study_manager=study_mgr,
+            port=7797,
+            host="127.0.0.1",
+            token=_TEST_TOKEN,
+            session_id="agent-test",
+        )
+        return srv._app, srv
+
+    def test_create_agent_card(self, agent_app, study_mgr):
+        from starlette.testclient import TestClient
+
+        app, srv = agent_app
+        # Create a study first
+        study_mgr.get_or_create_study("my-study")
+
+        client = TestClient(app)
+        resp = client.post(
+            "/api/studies/my-study/agents",
+            json={"task": "reproduce"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "ok"
+        assert data["task"] == "reproduce"
+        assert data["study"] == "my-study"
+        assert "card_id" in data
+
+    def test_create_agent_card_report(self, agent_app, study_mgr):
+        from starlette.testclient import TestClient
+
+        app, srv = agent_app
+        study_mgr.get_or_create_study("my-study")
+
+        client = TestClient(app)
+        resp = client.post(
+            "/api/studies/my-study/agents",
+            json={"task": "report"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["task"] == "report"
+
+    def test_create_agent_unknown_task(self, agent_app, study_mgr):
+        from starlette.testclient import TestClient
+
+        app, srv = agent_app
+        study_mgr.get_or_create_study("my-study")
+
+        client = TestClient(app)
+        resp = client.post(
+            "/api/studies/my-study/agents",
+            json={"task": "nonexistent"},
+        )
+        assert resp.status_code == 400
+        assert "Unknown task" in resp.json()["error"]
+
+    def test_create_agent_invalid_json(self, agent_app):
+        from starlette.testclient import TestClient
+
+        app, srv = agent_app
+        client = TestClient(app)
+        resp = client.post(
+            "/api/studies/test/agents",
+            content="not json",
+            headers={"content-type": "application/json"},
+        )
+        assert resp.status_code == 400
+        assert "Invalid JSON" in resp.json()["error"]
+
+    def test_get_agent_status_unknown(self, agent_app):
+        from starlette.testclient import TestClient
+
+        app, srv = agent_app
+        client = TestClient(app)
+        resp = client.get("/api/agents/nonexistent")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "none"
+
+    def test_get_agent_status_known(self, agent_app, study_mgr):
+        from starlette.testclient import TestClient
+
+        app, srv = agent_app
+        study_mgr.get_or_create_study("s1")
+
+        client = TestClient(app)
+        # Create an agent card first
+        resp = client.post("/api/studies/s1/agents", json={"task": "reproduce"})
+        card_id = resp.json()["card_id"]
+
+        # Get status
+        resp = client.get(f"/api/agents/{card_id}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "pending"
+        assert data["task"] == "reproduce"
+
+    def test_run_agent_missing_card(self, agent_app):
+        from starlette.testclient import TestClient
+
+        app, srv = agent_app
+        client = TestClient(app)
+        resp = client.post("/api/agents/nonexistent/run", json={})
+        assert resp.status_code == 400
+        assert "No agent card" in resp.json()["error"]
+
+    def test_delete_agent_not_found(self, agent_app):
+        """DELETE on unknown card returns 404."""
+        from starlette.testclient import TestClient
+
+        app, srv = agent_app
+        client = TestClient(app)
+        resp = client.delete("/api/agents/nonexistent")
+        assert resp.status_code == 404
+
+    def test_delete_orphaned_agent_card(self, agent_app, study_mgr):
+        """DELETE force-fails an orphaned agent card stuck in 'running'."""
+        from starlette.testclient import TestClient
+
+        from m4.vitrine._types import CardDescriptor, CardType
+
+        app, srv = agent_app
+        _, store = study_mgr.get_or_create_study("s1")
+
+        # Create an AGENT card directly in the store (simulating orphan)
+        card = CardDescriptor(
+            card_id="orphan123",
+            card_type=CardType.AGENT,
+            title="Orphaned Agent",
+            study="s1",
+            preview={"status": "running", "output": "stuck"},
+        )
+        store.store_card(card)
+
+        client = TestClient(app)
+        resp = client.delete("/api/agents/orphan123")
+        assert resp.status_code == 200
+
+        # Verify card was force-failed
+        cards = store.list_cards()
+        updated = next(c for c in cards if c.card_id == "orphan123")
+        assert updated.preview["status"] == "failed"
+        assert "no longer running" in updated.preview["error"].lower()
+
+    def test_delete_completed_agent_returns_404(self, agent_app, study_mgr):
+        """DELETE on a completed (non-running) agent card returns 404."""
+        from starlette.testclient import TestClient
+
+        from m4.vitrine._types import CardDescriptor, CardType
+
+        app, srv = agent_app
+        _, store = study_mgr.get_or_create_study("s1")
+
+        card = CardDescriptor(
+            card_id="done123",
+            card_type=CardType.AGENT,
+            title="Completed Agent",
+            study="s1",
+            preview={"status": "completed", "output": "done"},
+        )
+        store.store_card(card)
+
+        client = TestClient(app)
+        resp = client.delete("/api/agents/done123")
+        assert resp.status_code == 404

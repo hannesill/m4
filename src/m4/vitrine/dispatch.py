@@ -19,6 +19,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import shutil
 import subprocess
 import uuid
@@ -38,6 +39,11 @@ _DISPATCH_TIMEOUT = 1800  # 30 minutes
 _UPDATE_INTERVAL = 0.5  # seconds between card updates (debounce)
 _SANDBOX_SUFFIX = "_reproduce"  # suffix for sandboxed output directory copies
 _MAX_CONCURRENT = 5  # global running agent limit
+_MODEL_CONTEXT_WINDOWS = {
+    "sonnet": 200_000,
+    "opus": 200_000,
+    "haiku": 200_000,
+}
 
 # task name -> (skill directory, card title, allowed tools)
 _TASK_CONFIG = {
@@ -66,6 +72,7 @@ class DispatchInfo:
     started_at: str | None = None
     completed_at: str | None = None
     accumulated_output: str = ""  # live output buffer for cancel recovery
+    last_activity_at: str | None = None  # ISO — last output line received
     extra: dict[str, Any] = field(default_factory=dict)
 
 
@@ -202,6 +209,13 @@ def _build_agent_preview(
         "completed_at": None,
         "duration": None,
         "error": None,
+        "last_activity_at": None,
+        "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "context_window": _MODEL_CONTEXT_WINDOWS.get(model, 200_000),
+            "cost_usd": None,
+        },
     }
 
 
@@ -418,7 +432,14 @@ async def run_agent(
             "additional_prompt": info.additional_prompt,
             "budget": info.budget,
             "started_at": info.started_at,
+            "last_activity_at": info.started_at,
             "output": "*Agent starting...*",
+            "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "context_window": _MODEL_CONTEXT_WINDOWS.get(info.model, 200_000),
+                "cost_usd": None,
+            },
         },
         title=card_title,
     )
@@ -443,17 +464,18 @@ async def run_agent(
     return info
 
 
-def _parse_stream_event(line: str) -> tuple[str, str]:
-    """Parse a stream-json line and return (event_kind, display_text).
+def _parse_stream_event(line: str) -> tuple[str, str, dict[str, Any] | None]:
+    """Parse a stream-json line and return (event_kind, display_text, usage).
 
     event_kind is one of: "text", "tool_use", "tool_result", "error",
     "result", "ignore".
     display_text is the content to show for that event (may be empty).
+    usage is a dict with token/cost info if available, else None.
     """
     try:
         obj = json.loads(line)
     except (json.JSONDecodeError, ValueError):
-        return ("ignore", "")
+        return ("ignore", "", None)
 
     evt_type = obj.get("type", "")
 
@@ -488,13 +510,39 @@ def _parse_stream_event(line: str) -> tuple[str, str]:
                     parts.append(f"\n\n> *Running `{short}`...*\n\n")
                 else:
                     parts.append(f"\n\n> *Using {name}...*\n\n")
-        return (kind, "".join(parts))
+
+        # Extract usage from assistant message
+        usage_data = None
+        raw_usage = msg.get("usage")
+        if raw_usage:
+            usage_data = {
+                "input_tokens": raw_usage.get("input_tokens", 0),
+                "output_tokens": raw_usage.get("output_tokens", 0),
+                "cache_read": raw_usage.get("cache_read_input_tokens", 0),
+                "cache_creation": raw_usage.get("cache_creation_input_tokens", 0),
+            }
+        return (kind, "".join(parts), usage_data)
 
     if evt_type == "result":
-        # Final result — contains the complete text in "result"
-        return ("result", obj.get("result", ""))
+        # Extract final usage from result event
+        usage_data: dict[str, Any] | None = None
+        model_usage = obj.get("modelUsage", {})
+        if model_usage:
+            for _model_name, mu in model_usage.items():
+                usage_data = {
+                    "input_tokens": mu.get("inputTokens", 0),
+                    "output_tokens": mu.get("outputTokens", 0),
+                    "cache_read": mu.get("cacheReadInputTokens", 0),
+                    "cache_creation": mu.get("cacheCreationInputTokens", 0),
+                    "context_window": mu.get("contextWindow"),
+                    "cost_usd": mu.get("costUSD"),
+                }
+                break
+        elif obj.get("total_cost_usd") is not None:
+            usage_data = {"cost_usd": obj["total_cost_usd"]}
+        return ("result", obj.get("result", ""), usage_data)
 
-    return ("ignore", "")
+    return ("ignore", "", None)
 
 
 def _create_sandbox(output_dir: Path) -> Path:
@@ -531,6 +579,15 @@ async def _stream_monitor(info: DispatchInfo, server: DisplayServer) -> None:
     config = _TASK_CONFIG.get(info.task, ("", "", ""))
     _, card_title, _ = config
 
+    # Usage tracking — input_tokens is latest turn (context fill),
+    # output_tokens is accumulated across turns
+    usage: dict[str, Any] = {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "context_window": _MODEL_CONTEXT_WINDOWS.get(info.model, 200_000),
+        "cost_usd": None,
+    }
+
     try:
 
         def _read_line() -> bytes:
@@ -549,18 +606,41 @@ async def _stream_monitor(info: DispatchInfo, server: DisplayServer) -> None:
             if not line:
                 continue
 
-            kind, text = _parse_stream_event(line)
+            kind, text, event_usage = _parse_stream_event(line)
 
             if kind == "result":
                 # The result event has the clean final text
                 final_result = text
+                # Capture authoritative final usage
+                if event_usage:
+                    if event_usage.get("cost_usd") is not None:
+                        usage["cost_usd"] = event_usage["cost_usd"]
+                    if event_usage.get("context_window"):
+                        usage["context_window"] = event_usage["context_window"]
+                    usage["input_tokens"] = (
+                        event_usage.get("input_tokens", 0)
+                        + event_usage.get("cache_read", 0)
+                        + event_usage.get("cache_creation", 0)
+                    )
+                    usage["output_tokens"] = event_usage.get("output_tokens", 0)
                 continue
+
+            # Extract usage from assistant events (before skipping on empty text)
+            if event_usage and kind != "ignore":
+                # input_tokens = total context fill for this turn
+                usage["input_tokens"] = (
+                    event_usage.get("input_tokens", 0)
+                    + event_usage.get("cache_read", 0)
+                    + event_usage.get("cache_creation", 0)
+                )
+                usage["output_tokens"] += event_usage.get("output_tokens", 0)
 
             if kind == "ignore" or not text:
                 continue
 
             accumulated += text
             info.accumulated_output = accumulated
+            info.last_activity_at = datetime.now(timezone.utc).isoformat()
 
             # Update card (debounced)
             now = loop.time()
@@ -569,7 +649,11 @@ async def _stream_monitor(info: DispatchInfo, server: DisplayServer) -> None:
                     info.card_id,
                     info.study,
                     server,
-                    {"output": accumulated},
+                    {
+                        "output": accumulated,
+                        "last_activity_at": info.last_activity_at,
+                        "usage": usage,
+                    },
                     title=card_title,
                 )
                 last_update = now
@@ -601,6 +685,7 @@ async def _stream_monitor(info: DispatchInfo, server: DisplayServer) -> None:
                     "output": display,
                     "completed_at": completed_at,
                     "duration": duration,
+                    "usage": usage,
                 },
                 title=card_title,
             )
@@ -632,6 +717,7 @@ async def _stream_monitor(info: DispatchInfo, server: DisplayServer) -> None:
                     "completed_at": completed_at,
                     "duration": duration,
                     "error": info.error,
+                    "usage": usage,
                 },
                 title=card_title,
             )
@@ -677,6 +763,7 @@ async def _stream_monitor(info: DispatchInfo, server: DisplayServer) -> None:
                 "completed_at": completed_at,
                 "duration": duration,
                 "error": info.error,
+                "usage": usage,
             },
             title=card_title,
         )
@@ -713,6 +800,7 @@ async def _stream_monitor(info: DispatchInfo, server: DisplayServer) -> None:
                     "completed_at": completed_at,
                     "duration": duration,
                     "error": info.error,
+                    "usage": usage,
                 },
                 title=card_title,
             )
@@ -806,6 +894,7 @@ def get_agent_status(card_id: str, server: DisplayServer) -> dict[str, Any] | No
         "error": info.error,
         "started_at": info.started_at,
         "completed_at": info.completed_at,
+        "last_activity_at": info.last_activity_at,
     }
 
 
@@ -856,3 +945,71 @@ def cleanup_dispatches(server: DisplayServer) -> None:
         if sandbox:
             _cleanup_sandbox(Path(sandbox))
     server._dispatches.clear()
+
+
+def _is_pid_alive(pid: int) -> bool:
+    """Check if a process with the given PID is alive."""
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+_WATCHDOG_INTERVAL = 30  # seconds
+
+
+async def _dispatch_watchdog(server: DisplayServer) -> None:
+    """Periodic safety net: detect dead PIDs that the stream monitor missed."""
+    while True:
+        await asyncio.sleep(_WATCHDOG_INTERVAL)
+        for info in list(server._dispatches.values()):
+            if info.status != "running" or info.pid is None:
+                continue
+            if _is_pid_alive(info.pid):
+                continue
+            # PID is dead but monitor hasn't caught it yet
+            if info.monitor_task and not info.monitor_task.done():
+                # Give the monitor a moment to catch up
+                continue
+            # Monitor is done or absent — force-fail the card
+            info.status = "failed"
+            info.error = "Process exited unexpectedly"
+            completed_at = datetime.now(timezone.utc).isoformat()
+            info.completed_at = completed_at
+            duration = None
+            if info.started_at:
+                start_dt = datetime.fromisoformat(info.started_at)
+                end_dt = datetime.fromisoformat(completed_at)
+                duration = (end_dt - start_dt).total_seconds()
+            config = _TASK_CONFIG.get(info.task, ("", "", ""))
+            _, card_title, _ = config
+            output = (
+                info.accumulated_output
+                + "\n\n---\n**Error:** Process exited unexpectedly"
+            )
+            await _update_agent_card(
+                info.card_id,
+                info.study,
+                server,
+                {
+                    "status": "failed",
+                    "output": output,
+                    "completed_at": completed_at,
+                    "duration": duration,
+                    "error": info.error,
+                },
+                title=card_title,
+            )
+            await server._broadcast(
+                {
+                    "type": "agent.failed",
+                    "study": info.study,
+                    "task": info.task,
+                    "card_id": info.card_id,
+                    "error": info.error,
+                }
+            )
+            logger.warning(
+                f"Watchdog: agent {info.card_id} PID {info.pid} dead, marked failed"
+            )

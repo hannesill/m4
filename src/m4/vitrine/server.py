@@ -46,6 +46,8 @@ from m4.vitrine._types import CardDescriptor
 from m4.vitrine.artifacts import ArtifactStore, _serialize_card
 from m4.vitrine.dispatch import (
     DispatchInfo,
+    _dispatch_watchdog,
+    _is_pid_alive,
     cancel_agent,
     cleanup_dispatches,
     create_agent_card,
@@ -61,15 +63,6 @@ _STATIC_DIR = Path(__file__).parent / "static"
 _DEFAULT_PORT = 7741
 _MAX_PORT = 7750
 _DISPLAY_HOST = "vitrine.localhost"
-
-
-def _is_pid_alive(pid: int) -> bool:
-    """Check if a process with the given PID is alive."""
-    try:
-        os.kill(pid, 0)
-        return True
-    except OSError:
-        return False
 
 
 def _check_health(url: str, session_id: str | None = None) -> bool:
@@ -154,6 +147,7 @@ class DisplayServer:
 
         # Agent dispatch state
         self._dispatches: dict[str, DispatchInfo] = {}
+        self._watchdog_task: asyncio.Task | None = None
 
         # Fix agent cards orphaned by previous server crashes/restarts
         fixed = reconcile_orphaned_agents(self)
@@ -1496,6 +1490,16 @@ class DisplayServer:
         # Wait a moment for the server to fully bind
         self._wait_for_server()
 
+        # Start dispatch watchdog
+        if self._loop:
+            self._loop.call_soon_threadsafe(
+                lambda: setattr(
+                    self,
+                    "_watchdog_task",
+                    self._loop.create_task(_dispatch_watchdog(self)),
+                )
+            )
+
         # Write PID file if requested
         if pid_path is not None:
             self._write_pid_file(pid_path)
@@ -1529,6 +1533,9 @@ class DisplayServer:
 
     def stop(self) -> None:
         """Stop the server and remove PID file if set."""
+        if self._watchdog_task:
+            self._watchdog_task.cancel()
+            self._watchdog_task = None
         cleanup_dispatches(self)
         self._remove_pid_file()
         # Flush pending selection save
