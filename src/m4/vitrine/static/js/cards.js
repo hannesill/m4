@@ -10,17 +10,20 @@ var MODEL_DISPLAY = {
 };
 
 var AGENT_THINKING_MESSAGES = [
-  'Accomplishing', 'Actioning', 'Actualizing', 'Baking', 'Brewing',
-  'Calculating', 'Cerebrating', 'Churning', 'Clauding', 'Coalescing',
+  'Accomplishing', 'Actioning', 'Actualizing', 'Annotating', 'Auditing',
+  'Baking', 'Bootstrapping', 'Brewing', 'Calculating', 'Calibrating',
+  'Cerebrating', 'Charting', 'Churning', 'Clauding', 'Coalescing',
   'Cogitating', 'Computing', 'Conjuring', 'Considering', 'Cooking',
-  'Crafting', 'Creating', 'Crunching', 'Deliberating', 'Determining',
-  'Doing', 'Effecting', 'Finagling', 'Forging', 'Forming', 'Generating',
-  'Hatching', 'Herding', 'Honking', 'Hustling', 'Ideating', 'Inferring',
+  'Correlating', 'Crafting', 'Creating', 'Crunching', 'Curating',
+  'Deliberating', 'Determining', 'Doing', 'Effecting', 'Finagling',
+  'Forging', 'Forming', 'Generating', 'Hatching', 'Herding', 'Honking',
+  'Hustling', 'Hypothesizing', 'Ideating', 'Incubating', 'Inferring',
   'Manifesting', 'Marinating', 'Moseying', 'Mulling', 'Mustering',
-  'Musing', 'Noodling', 'Percolating', 'Pondering', 'Processing',
-  'Puttering', 'Reticulating', 'Ruminating', 'Schlepping', 'Shucking',
-  'Simmering', 'Smooshing', 'Spinning', 'Stewing', 'Synthesizing',
-  'Thinking', 'Transmuting', 'Vibing', 'Working'
+  'Musing', 'Noodling', 'Percolating', 'Pipetting', 'Pondering',
+  'Processing', 'Puttering', 'Reticulating', 'Ruminating', 'Schlepping',
+  'Shucking', 'Simmering', 'Smooshing', 'Spinning', 'Stewing',
+  'Stratifying', 'Synthesizing', 'Thinking', 'Titrating', 'Transmuting',
+  'Triaging', 'Vibing', 'Working'
 ];
 
 // ================================================================
