@@ -24,12 +24,14 @@
   --image-color: #06b6d4;
   --image-bg: #cffafe;
   --section-color: #1a1a1a;
+  --agent-color: #6b7280;
+  --agent-bg: #f3f4f6;
 
   --success: #16a34a;
   --success-bg: #dcfce7;
   --warning: #d97706;
   --error: #dc2626;
-  --highlight: #ffef5c;
+  --highlight: #dab6fc;
 
   --shadow: 4px 4px 0 var(--border);
   --shadow-sm: 2px 2px 0 var(--border);
@@ -63,12 +65,13 @@
   --form-bg: #3d1a2e;
   --decision-bg: #3d1a1a;
   --image-bg: #0a3d4a;
+  --agent-bg: #374151;
 
   --shadow: 4px 4px 0 var(--border);
   --shadow-sm: 2px 2px 0 var(--border);
   --shadow-pressed: 1px 1px 0 var(--border);
 
-  --highlight: #4a4520;
+  --highlight: #352050;
   --success-bg: #14412e;
   --bg-card: var(--card-bg);
   --bg-header: #333333;
@@ -264,6 +267,7 @@ body {
 .card-header[data-type="keyvalue"] { background: var(--kv-bg); }
 .card-header[data-type="form"] { background: var(--form-bg); }
 .card-header[data-type="decision"] { background: var(--decision-bg); }
+.card-header[data-type="agent"] { background: var(--agent-bg); }
 
 .card-type-icon {
   width: 28px;
@@ -286,6 +290,7 @@ body {
 .card-type-icon[data-type="keyvalue"] { background: var(--kv-color); color: #fff; }
 .card-type-icon[data-type="form"] { background: var(--form-color); color: #fff; }
 .card-type-icon[data-type="decision"] { background: var(--decision-color); color: #fff; }
+.card-type-icon[data-type="agent"] { background: var(--agent-color); color: #fff; }
 
 .card-title {
   font-family: var(--font-head);
@@ -882,28 +887,409 @@ body {
   margin: 4px 16px;
 }
 
-/* Dispatch running indicator */
-#dispatch-indicator {
-  display: none;
-  width: 8px;
-  height: 8px;
-  background: var(--chart-color);
-  border: var(--border-width) solid var(--border);
-  margin-left: 8px;
-  animation: dispatchPulse 1.5s ease-in-out infinite;
-}
-
-#dispatch-indicator.active {
-  display: inline-block;
-}
-
-@keyframes dispatchPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-
 /* Actions button in header */
 #actions-btn {
   font-family: var(--font-head);
   font-weight: 600;
+}
+
+/* ================================================================
+   AGENT CARD STYLES
+   ================================================================ */
+
+/* Agent status dot in header */
+.agent-status-dot {
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-status-dot.running {
+  width: 8px;
+  height: 8px;
+  background: var(--chart-color);
+  border: var(--border-width) solid var(--border);
+  animation: agentPulse 1.5s ease-in-out infinite;
+}
+
+.agent-status-dot.completed {
+  color: var(--success);
+}
+
+.agent-status-dot.failed {
+  color: var(--error);
+}
+
+@keyframes agentPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Agent config form */
+.agent-config {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agent-config-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.agent-config-row-full {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.agent-config-label {
+  font-family: var(--font-head);
+  font-size: 12px;
+  font-weight: 700;
+  width: 100px;
+  flex-shrink: 0;
+  color: var(--text);
+}
+
+.agent-config-row-full .agent-config-label {
+  width: auto;
+}
+
+.agent-config-select,
+.agent-config-input {
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 4px 8px;
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
+}
+
+.agent-config-select {
+  min-width: 120px;
+}
+
+.agent-config-input {
+  width: 100px;
+}
+
+.agent-config-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.agent-perms-badge {
+  font-family: var(--font-head);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--card-bg);
+  background: var(--warning);
+  padding: 2px 8px;
+  border: var(--border-width) solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.agent-config-textarea {
+  width: 100%;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px;
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
+  resize: vertical;
+}
+
+.agent-config-textarea:focus {
+  box-shadow: var(--shadow-pressed);
+  outline: none;
+}
+
+/* Advanced toggle */
+.agent-advanced-toggle {
+  font-family: var(--font-head);
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.agent-advanced-toggle summary {
+  padding: 4px 0;
+  user-select: none;
+  list-style: none;
+  position: relative;
+  padding-left: 16px;
+  transition: color 0.15s;
+}
+
+.agent-advanced-toggle summary::-webkit-details-marker {
+  display: none;
+}
+
+.agent-advanced-toggle summary::before {
+  content: '\25b6';
+  position: absolute;
+  left: 0;
+  font-size: 9px;
+  transition: transform 0.15s;
+}
+
+.agent-advanced-toggle[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.agent-advanced-toggle summary:hover {
+  color: var(--text);
+}
+
+.agent-prompt-preview {
+  background: var(--bg);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  margin-top: 8px;
+  color: var(--text);
+}
+
+/* Bottom bar */
+.agent-bottom-bar {
+  display: flex;
+  justify-content: center;
+  padding: 12px 16px;
+  border-top: var(--border-width) solid var(--border);
+  background: var(--card-bg);
+}
+
+.agent-run-btn {
+  min-width: 140px;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.agent-run-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Metadata strip (running state) */
+.agent-meta-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 12px;
+  font-family: var(--font-head);
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.agent-model-badge {
+  font-family: var(--font-head);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border: var(--border-width) solid var(--border);
+  background: var(--agent-bg);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.agent-header-badge {
+  margin-left: 2px;
+}
+
+.agent-perms-badge-sm {
+  font-family: var(--font-head);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border: var(--border-width) solid var(--border);
+  background: var(--warning);
+  color: var(--card-bg);
+  white-space: nowrap;
+}
+
+.agent-tools-list {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Terminal box */
+.agent-terminal {
+  background: #1a1a1a;
+  border: var(--border-width) solid var(--border);
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 12px 14px;
+  position: relative;
+}
+
+.agent-terminal.expanded {
+  max-height: none;
+}
+
+.agent-terminal-compact {
+  max-height: 80px;
+  overflow: hidden;
+  position: relative;
+}
+
+.agent-terminal-compact::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(to bottom, rgba(26, 26, 26, 0), #1a1a1a);
+  pointer-events: none;
+}
+
+.agent-terminal-compact.expanded::after {
+  display: none;
+}
+
+.agent-terminal-content {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: #e0e0e0;
+}
+
+.agent-terminal-content.markdown-body {
+  color: #e0e0e0;
+}
+
+.agent-terminal-content h1,
+.agent-terminal-content h2,
+.agent-terminal-content h3 {
+  color: #f5f5f5;
+  border-bottom: none;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.agent-terminal-content p {
+  margin: 4px 0;
+}
+
+.agent-terminal-content code {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #e0e0e0;
+}
+
+.agent-terminal-content pre {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
+.agent-terminal-content a {
+  color: #93c5fd;
+}
+
+.agent-terminal-content ul,
+.agent-terminal-content ol {
+  padding-left: 20px;
+  margin: 4px 0;
+}
+
+/* Dark mode terminal adjustments */
+[data-theme="dark"] .agent-terminal {
+  background: #0a0a0a;
+  border-color: #444;
+}
+
+[data-theme="dark"] .agent-terminal-compact::after {
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0), #0a0a0a);
+}
+
+[data-theme="dark"] .agent-terminal-content {
+  color: #d0d0d0;
+}
+
+/* Status reason badge in header (cancelled/failed/timed out) */
+.agent-reason-badge {
+  font-family: var(--font-head);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border: var(--border-width) solid var(--error);
+  background: var(--decision-bg);
+  color: var(--error);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+/* Cancel button */
+.agent-cancel-btn {
+  font-family: var(--font-head);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  color: var(--error);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.1s, box-shadow 0.1s, background 0.15s, color 0.15s;
+}
+
+.agent-cancel-btn:hover {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-pressed);
+  background: var(--error);
+  color: var(--card-bg);
+}
+
+/* Expand/collapse toggle */
+.agent-expand-btn {
+  font-family: var(--font-head);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.agent-expand-btn:hover {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-pressed);
+  color: var(--text);
+}
+
+/* Bottom bar updates for running/completed */
+.agent-bottom-bar-running,
+.agent-bottom-bar-completed {
+  justify-content: flex-end;
+  gap: 8px;
 }

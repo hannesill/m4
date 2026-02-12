@@ -48,6 +48,7 @@ var TYPE_LETTERS = {
   keyvalue: 'K',
   section: 'S',
   decision: '!',
+  agent: 'A',
 };
 
 var feed = document.getElementById('feed');

@@ -5,7 +5,7 @@
 // ================================================================
 
 var actionPaletteOpen = false;
-var actionPaletteActiveIndex = 0;
+var actionPaletteActiveIndex = -1;
 
 var actionsBtn = document.getElementById('actions-btn');
 if (actionsBtn) {
@@ -22,7 +22,7 @@ if (actionsBtn) {
 function openActionPalette() {
   if (actionPaletteOpen) return;
   actionPaletteOpen = true;
-  actionPaletteActiveIndex = 0;
+  actionPaletteActiveIndex = -1;
   renderActionPalette();
 }
 
@@ -92,7 +92,7 @@ function getActions() {
       icon: '&#9654;',
       label: 'Reproduce Study',
       handler: function() {
-        dispatchAgent(studyLabel, 'reproduce');
+        createAgentCard(studyLabel, 'reproduce');
       }
     });
 
@@ -101,7 +101,7 @@ function getActions() {
       icon: '&#128203;',
       label: 'Compile Report',
       handler: function() {
-        dispatchAgent(studyLabel, 'report');
+        createAgentCard(studyLabel, 'report');
       }
     });
   }
@@ -199,11 +199,11 @@ function executeAction(action) {
 }
 
 // ================================================================
-// DISPATCH
+// AGENT CARD CREATION
 // ================================================================
 
-function dispatchAgent(studyLabel, task) {
-  fetch('/api/studies/' + encodeURIComponent(studyLabel) + '/dispatch', {
+function createAgentCard(studyLabel, task) {
+  fetch('/api/studies/' + encodeURIComponent(studyLabel) + '/agents', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ task: task })
@@ -213,30 +213,10 @@ function dispatchAgent(studyLabel, task) {
       return r.json();
     })
     .then(function() {
-      showToast('Agent dispatched: ' + task);
-      var indicator = document.getElementById('dispatch-indicator');
-      if (indicator) indicator.classList.add('active');
+      showToast('Agent card created');
     })
     .catch(function(err) {
-      showToast(err.message || 'Dispatch failed', 'error');
-    });
-}
-
-function cancelDispatch(studyLabel) {
-  fetch('/api/studies/' + encodeURIComponent(studyLabel) + '/dispatch', {
-    method: 'DELETE'
-  })
-    .then(function(r) {
-      if (!r.ok) return r.json().then(function(d) { throw new Error(d.error || 'Server returned ' + r.status); });
-      return r.json();
-    })
-    .then(function() {
-      showToast('Dispatch cancelled');
-      var indicator = document.getElementById('dispatch-indicator');
-      if (indicator) indicator.classList.remove('active');
-    })
-    .catch(function(err) {
-      showToast(err.message || 'Cancel failed', 'error');
+      showToast(err.message || 'Failed to create agent card', 'error');
     });
 }
 
@@ -245,17 +225,11 @@ function cancelDispatch(studyLabel) {
 // ================================================================
 
 function handleAgentMessage(msg) {
-  var indicator = document.getElementById('dispatch-indicator');
   switch (msg.type) {
-    case 'agent.started':
-      if (indicator) indicator.classList.add('active');
-      break;
     case 'agent.completed':
-      if (indicator) indicator.classList.remove('active');
       showToast('Agent completed');
       break;
     case 'agent.failed':
-      if (indicator) indicator.classList.remove('active');
       showToast(msg.error || 'Agent failed', 'error');
       break;
   }
@@ -300,13 +274,16 @@ document.addEventListener('keydown', function(e) {
 
   if (e.key === 'ArrowUp') {
     e.preventDefault();
-    actionPaletteActiveIndex = (actionPaletteActiveIndex - 1 + items.length) % items.length;
+    actionPaletteActiveIndex = actionPaletteActiveIndex <= 0
+      ? items.length - 1
+      : actionPaletteActiveIndex - 1;
     _updateActiveItem(items);
     return;
   }
 
   if (e.key === 'Enter') {
     e.preventDefault();
+    if (actionPaletteActiveIndex < 0) return;
     var activeItem = items[actionPaletteActiveIndex];
     if (activeItem) activeItem.click();
     return;

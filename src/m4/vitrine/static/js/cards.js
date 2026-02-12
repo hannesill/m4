@@ -1,6 +1,15 @@
 'use strict';
 
 // ================================================================
+// MODEL DISPLAY NAMES
+// ================================================================
+var MODEL_DISPLAY = {
+  sonnet: 'Sonnet 4.5',
+  opus: 'Opus 4.6',
+  haiku: 'Haiku 4.5'
+};
+
+// ================================================================
 // CARD RENDERING — addCard, updateCard, toast
 // ================================================================
 function addCard(cardData) {
@@ -71,16 +80,64 @@ function addCard(cardData) {
   typeIcon.textContent = TYPE_LETTERS[headerType] || '?';
   header.appendChild(typeIcon);
 
+  // Agent status indicator (pulsing dot for running, checkmark/X for done)
+  if (cardData.card_type === 'agent' && cardData.preview) {
+    var agentStatus = cardData.preview.status || 'pending';
+    if (agentStatus === 'running') {
+      var dot = document.createElement('span');
+      dot.className = 'agent-status-dot running';
+      header.appendChild(dot);
+    } else if (agentStatus === 'completed') {
+      var check = document.createElement('span');
+      check.className = 'agent-status-dot completed';
+      check.textContent = '\u2713';
+      header.appendChild(check);
+    } else if (agentStatus === 'failed') {
+      var xmark = document.createElement('span');
+      xmark.className = 'agent-status-dot failed';
+      xmark.textContent = '\u2717';
+      header.appendChild(xmark);
+    }
+  }
+
   // Title
   var title = document.createElement('span');
   title.className = 'card-title';
   title.textContent = cardData.title || cardData.card_type;
   header.appendChild(title);
 
-  // Timestamp
+  // Model badge (agent cards only)
+  if (cardData.card_type === 'agent' && cardData.preview) {
+    var modelBadge = document.createElement('span');
+    modelBadge.className = 'agent-model-badge agent-header-badge';
+    modelBadge.textContent = MODEL_DISPLAY[cardData.preview.model] || cardData.preview.model || '';
+    if (modelBadge.textContent) header.appendChild(modelBadge);
+
+    // Status reason badge for failed/cancelled agents
+    if (cardData.preview.status === 'failed' && cardData.preview.error) {
+      var reasonBadge = document.createElement('span');
+      reasonBadge.className = 'agent-reason-badge';
+      reasonBadge.textContent = cardData.preview.error;
+      header.appendChild(reasonBadge);
+    }
+  }
+
+  // Timestamp / duration / live timer
   var meta = document.createElement('span');
   meta.className = 'card-meta';
-  if (cardData.timestamp) {
+  if (cardData.card_type === 'agent' && cardData.preview) {
+    var agentPreview = cardData.preview;
+    if (agentPreview.status === 'running' && agentPreview.started_at) {
+      // Live timer
+      meta.textContent = formatElapsed(agentPreview.started_at);
+      var timerId = setInterval(function() {
+        meta.textContent = formatElapsed(agentPreview.started_at);
+      }, 1000);
+      el._agentTimer = timerId;
+    } else if (agentPreview.duration != null) {
+      meta.textContent = formatAgentDuration(agentPreview.duration);
+    }
+  } else if (cardData.timestamp) {
     meta.textContent = new Date(cardData.timestamp).toLocaleTimeString();
   }
   header.appendChild(meta);
@@ -170,6 +227,9 @@ function addCard(cardData) {
       break;
     case 'keyvalue':
       renderKeyValue(body, cardData);
+      break;
+    case 'agent':
+      renderAgentCard(body, cardData);
       break;
     case 'section':
       el.remove();
@@ -354,11 +414,23 @@ function updateCard(cardId, newCardData) {
   var el = document.getElementById('card-' + cardId);
   if (!el) return;
 
-  // Update state.cards entry
+  // Update state.cards entry (merge into existing, don't replace)
   if (newCardData) {
     for (var i = 0; i < state.cards.length; i++) {
       if (state.cards[i].card_id === cardId) {
-        state.cards[i] = newCardData;
+        var existing = state.cards[i];
+        // Merge top-level fields
+        for (var key in newCardData) {
+          if (key === 'preview' && existing.preview && newCardData.preview) {
+            // Deep merge preview
+            for (var pk in newCardData.preview) {
+              existing.preview[pk] = newCardData.preview[pk];
+            }
+          } else {
+            existing[key] = newCardData[key];
+          }
+        }
+        newCardData = existing;
         break;
       }
     }
@@ -394,41 +466,177 @@ function updateCard(cardId, newCardData) {
         typeIcon.setAttribute('data-type', headerType);
         typeIcon.textContent = newCardData.response_action ? '\u2713' : (TYPE_LETTERS[headerType] || '?');
       }
+
+      // Update agent status indicator in header
+      if (newCardData.card_type === 'agent' && newCardData.preview) {
+        var oldDot = header.querySelector('.agent-status-dot');
+        if (oldDot) oldDot.remove();
+        var agentSt = newCardData.preview.status || 'pending';
+        if (agentSt === 'running') {
+          var dot = document.createElement('span');
+          dot.className = 'agent-status-dot running';
+          if (typeIcon) typeIcon.insertAdjacentElement('afterend', dot);
+        } else if (agentSt === 'completed') {
+          var chk = document.createElement('span');
+          chk.className = 'agent-status-dot completed';
+          chk.textContent = '\u2713';
+          if (typeIcon) typeIcon.insertAdjacentElement('afterend', chk);
+        } else if (agentSt === 'failed') {
+          var xm = document.createElement('span');
+          xm.className = 'agent-status-dot failed';
+          xm.textContent = '\u2717';
+          if (typeIcon) typeIcon.insertAdjacentElement('afterend', xm);
+        }
+
+        // Update duration/timer in meta
+        var meta = header.querySelector('.card-meta');
+        if (meta) {
+          var st = newCardData.preview.status || 'pending';
+          if (st === 'running' && newCardData.preview.started_at && !el._agentTimer) {
+            meta.textContent = formatElapsed(newCardData.preview.started_at);
+            el._agentTimer = setInterval(function() {
+              meta.textContent = formatElapsed(newCardData.preview.started_at);
+            }, 1000);
+          } else if (st !== 'running' && newCardData.preview.duration != null) {
+            if (el._agentTimer) {
+              clearInterval(el._agentTimer);
+              el._agentTimer = null;
+            }
+            meta.textContent = formatAgentDuration(newCardData.preview.duration);
+          }
+        }
+
+        // Update or add model badge in header
+        var existingModelBadge = header.querySelector('.agent-header-badge');
+        if (newCardData.preview.model) {
+          if (existingModelBadge) {
+            existingModelBadge.textContent = MODEL_DISPLAY[newCardData.preview.model] || newCardData.preview.model;
+          } else {
+            var mb = document.createElement('span');
+            mb.className = 'agent-model-badge agent-header-badge';
+            mb.textContent = MODEL_DISPLAY[newCardData.preview.model] || newCardData.preview.model;
+            var titleAfter = header.querySelector('.card-title');
+            if (titleAfter) titleAfter.insertAdjacentElement('afterend', mb);
+          }
+        }
+
+        // Update or add/remove status reason badge
+        var existingReason = header.querySelector('.agent-reason-badge');
+        if (newCardData.preview.status === 'failed' && newCardData.preview.error) {
+          if (existingReason) {
+            existingReason.textContent = newCardData.preview.error;
+          } else {
+            var rb = document.createElement('span');
+            rb.className = 'agent-reason-badge';
+            rb.textContent = newCardData.preview.error;
+            // Insert after model badge or after title
+            var anchor = header.querySelector('.agent-header-badge') || header.querySelector('.card-title');
+            if (anchor) anchor.insertAdjacentElement('afterend', rb);
+          }
+        } else if (existingReason) {
+          existingReason.remove();
+        }
+      }
     }
 
     // Re-render body content
     var body = el.querySelector('.card-body');
     if (body) {
-      body.innerHTML = '';
-      switch (newCardData.card_type) {
-        case 'table':
-          renderTable(body, newCardData);
-          break;
-        case 'plotly':
-          renderPlotly(body, newCardData);
-          break;
-        case 'image':
-          renderImage(body, newCardData);
-          break;
-        case 'markdown':
-          if (newCardData.preview && newCardData.preview.fields) {
-            renderForm(body, newCardData);
-          } else {
-            renderMarkdown(body, newCardData);
+      // Agent cards: incremental updates to avoid jitter
+      if (newCardData.card_type === 'agent' && newCardData.preview) {
+        var newStatus = newCardData.preview.status || 'pending';
+        // Detect current rendered state
+        var currentState = 'pending';
+        if (body.querySelector('.agent-terminal:not(.agent-terminal-compact)') || body.querySelector('.agent-meta-strip')) currentState = 'running';
+        else if (body.querySelector('.agent-terminal-compact')) currentState = 'completed';
+        else if (body.querySelector('.agent-config')) currentState = 'pending';
+
+        if (currentState === newStatus && newStatus === 'running') {
+          // Incremental: just update the terminal content markdown
+          var termContent = body.querySelector('.agent-terminal-content');
+          if (termContent && newCardData.preview.output) {
+            if (typeof marked !== 'undefined') {
+              termContent.innerHTML = marked.parse(newCardData.preview.output);
+            } else {
+              termContent.textContent = newCardData.preview.output;
+            }
+            // Auto-scroll terminal to bottom
+            var termBox = body.querySelector('.agent-terminal');
+            if (termBox) {
+              requestAnimationFrame(function() { termBox.scrollTop = termBox.scrollHeight; });
+            }
           }
-          break;
-        case 'keyvalue':
-          renderKeyValue(body, newCardData);
-          break;
-        case 'decision':
-          if (newCardData.response_action && newCardData.response_values && Object.keys(newCardData.response_values).length > 0) {
-            renderFrozenForm(body, newCardData.response_values, (newCardData.preview && newCardData.preview.fields) || []);
-          } else {
-            renderForm(body, newCardData);
+        } else if (currentState !== newStatus) {
+          // State transition: clear timer + full re-render
+          if (el._agentTimer) {
+            clearInterval(el._agentTimer);
+            el._agentTimer = null;
           }
-          break;
-        default:
-          body.textContent = JSON.stringify(newCardData.preview);
+          body.innerHTML = '';
+          renderAgentCard(body, newCardData);
+
+          // Update header badges for new state
+          var hdr = el.querySelector('.card-header');
+          if (hdr) {
+            // Update model badge
+            var existingBadge = hdr.querySelector('.agent-header-badge');
+            if (!existingBadge && newCardData.preview.model) {
+              var mb = document.createElement('span');
+              mb.className = 'agent-model-badge agent-header-badge';
+              mb.textContent = MODEL_DISPLAY[newCardData.preview.model] || newCardData.preview.model;
+              var titleEl2 = hdr.querySelector('.card-title');
+              if (titleEl2) titleEl2.insertAdjacentElement('afterend', mb);
+            }
+            // Update meta (duration or timer)
+            var metaEl = hdr.querySelector('.card-meta');
+            if (metaEl) {
+              if (newStatus === 'running' && newCardData.preview.started_at) {
+                metaEl.textContent = formatElapsed(newCardData.preview.started_at);
+                el._agentTimer = setInterval(function() {
+                  metaEl.textContent = formatElapsed(newCardData.preview.started_at);
+                }, 1000);
+              } else if (newCardData.preview.duration != null) {
+                metaEl.textContent = formatAgentDuration(newCardData.preview.duration);
+              }
+            }
+          }
+        }
+        // Same state (pending/completed/failed): no re-render needed
+      } else {
+        body.innerHTML = '';
+        switch (newCardData.card_type) {
+          case 'table':
+            renderTable(body, newCardData);
+            break;
+          case 'plotly':
+            renderPlotly(body, newCardData);
+            break;
+          case 'image':
+            renderImage(body, newCardData);
+            break;
+          case 'markdown':
+            if (newCardData.preview && newCardData.preview.fields) {
+              renderForm(body, newCardData);
+            } else {
+              renderMarkdown(body, newCardData);
+            }
+            break;
+          case 'keyvalue':
+            renderKeyValue(body, newCardData);
+            break;
+          case 'decision':
+            if (newCardData.response_action && newCardData.response_values && Object.keys(newCardData.response_values).length > 0) {
+              renderFrozenForm(body, newCardData.response_values, (newCardData.preview && newCardData.preview.fields) || []);
+            } else {
+              renderForm(body, newCardData);
+            }
+            break;
+          case 'agent':
+            renderAgentCard(body, newCardData);
+            break;
+          default:
+            body.textContent = JSON.stringify(newCardData.preview);
+        }
       }
     }
   }
@@ -481,11 +689,15 @@ function updateCard(cardId, newCardData) {
     updateCardCount();
   }
 
-  // Flash animation to highlight the update
-  el.classList.remove('flash');
-  void el.offsetWidth; // Force reflow
-  el.classList.add('flash');
-  setTimeout(function() { el.classList.remove('flash'); }, 600);
+  // Flash animation to highlight the update (skip for running agent cards to reduce noise)
+  var isRunningAgent = newCardData && newCardData.card_type === 'agent'
+    && newCardData.preview && newCardData.preview.status === 'running';
+  if (!isRunningAgent) {
+    el.classList.remove('flash');
+    void el.offsetWidth; // Force reflow
+    el.classList.add('flash');
+    setTimeout(function() { el.classList.remove('flash'); }, 600);
+  }
   if (typeof tocNotifyChange === 'function') tocNotifyChange();
 }
 
@@ -725,6 +937,294 @@ function updateDismissToggleVisibility() {
     });
   }
 })();
+
+// ================================================================
+// AGENT CARD RENDERING
+// ================================================================
+function renderAgentCard(container, cardData) {
+  var preview = cardData.preview || {};
+  var status = preview.status || 'pending';
+
+  container.innerHTML = '';
+
+  if (status === 'pending') {
+    renderAgentConfigForm(container, cardData);
+  } else if (status === 'running') {
+    renderAgentRunning(container, cardData);
+  } else {
+    // completed or failed
+    renderAgentCompleted(container, cardData);
+  }
+}
+
+function renderAgentConfigForm(container, cardData) {
+  var preview = cardData.preview || {};
+  var form = document.createElement('div');
+  form.className = 'agent-config';
+
+  // Model selector
+  var modelRow = document.createElement('div');
+  modelRow.className = 'agent-config-row';
+  var modelLabel = document.createElement('label');
+  modelLabel.className = 'agent-config-label';
+  modelLabel.textContent = 'Model';
+  modelRow.appendChild(modelLabel);
+  var modelSelect = document.createElement('select');
+  modelSelect.className = 'agent-config-select';
+  ['sonnet', 'opus', 'haiku'].forEach(function(m) {
+    var opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = MODEL_DISPLAY[m] || m;
+    if (m === (preview.model || 'sonnet')) opt.selected = true;
+    modelSelect.appendChild(opt);
+  });
+  modelRow.appendChild(modelSelect);
+  form.appendChild(modelRow);
+
+  // Tools (read-only)
+  var toolsRow = document.createElement('div');
+  toolsRow.className = 'agent-config-row';
+  var toolsLabel = document.createElement('label');
+  toolsLabel.className = 'agent-config-label';
+  toolsLabel.textContent = 'Tools';
+  toolsRow.appendChild(toolsLabel);
+  var toolsText = document.createElement('span');
+  toolsText.className = 'agent-config-value';
+  toolsText.textContent = (preview.tools || []).join(', ');
+  toolsRow.appendChild(toolsText);
+  form.appendChild(toolsRow);
+
+  // Permissions warning
+  var permsRow = document.createElement('div');
+  permsRow.className = 'agent-config-row';
+  var permsLabel = document.createElement('label');
+  permsLabel.className = 'agent-config-label';
+  permsLabel.textContent = 'Perms';
+  permsRow.appendChild(permsLabel);
+  var permsBadge = document.createElement('span');
+  permsBadge.className = 'agent-perms-badge';
+  permsBadge.textContent = 'Autonomous';
+  permsRow.appendChild(permsBadge);
+  form.appendChild(permsRow);
+
+  // Budget (optional)
+  var budgetRow = document.createElement('div');
+  budgetRow.className = 'agent-config-row';
+  var budgetLabel = document.createElement('label');
+  budgetLabel.className = 'agent-config-label';
+  budgetLabel.textContent = 'Max turns';
+  budgetRow.appendChild(budgetLabel);
+  var budgetInput = document.createElement('input');
+  budgetInput.type = 'number';
+  budgetInput.className = 'agent-config-input';
+  budgetInput.placeholder = 'unlimited';
+  budgetInput.min = '1';
+  if (preview.budget) budgetInput.value = preview.budget;
+  budgetRow.appendChild(budgetInput);
+  form.appendChild(budgetRow);
+
+  // Additional instructions
+  var instrRow = document.createElement('div');
+  instrRow.className = 'agent-config-row agent-config-row-full';
+  var instrLabel = document.createElement('label');
+  instrLabel.className = 'agent-config-label';
+  instrLabel.textContent = 'Additional instructions';
+  instrRow.appendChild(instrLabel);
+  var instrTextarea = document.createElement('textarea');
+  instrTextarea.className = 'agent-config-textarea';
+  instrTextarea.placeholder = 'Extra instructions for the agent...';
+  instrTextarea.rows = 3;
+  instrTextarea.value = preview.additional_prompt || '';
+  instrRow.appendChild(instrTextarea);
+  form.appendChild(instrRow);
+
+  // Advanced toggle (view full prompt)
+  var advToggle = document.createElement('details');
+  advToggle.className = 'agent-advanced-toggle';
+  var advSummary = document.createElement('summary');
+  advSummary.textContent = 'Advanced (view full prompt)';
+  advToggle.appendChild(advSummary);
+  var advContent = document.createElement('pre');
+  advContent.className = 'agent-prompt-preview';
+  advContent.textContent = preview.full_prompt || preview.prompt_preview || '';
+  advToggle.appendChild(advContent);
+  form.appendChild(advToggle);
+
+  container.appendChild(form);
+
+  // Bottom bar with Run button
+  var bottomBar = document.createElement('div');
+  bottomBar.className = 'agent-bottom-bar';
+  var runBtn = document.createElement('button');
+  runBtn.className = 'response-btn response-btn-confirm agent-run-btn';
+  runBtn.textContent = 'Run Agent';
+  runBtn.onclick = function() {
+    runBtn.disabled = true;
+    runBtn.textContent = 'Starting...';
+    var config = {
+      model: modelSelect.value,
+      additional_prompt: instrTextarea.value.trim()
+    };
+    var budgetVal = budgetInput.value.trim();
+    if (budgetVal) config.budget = parseFloat(budgetVal);
+    fetch('/api/agents/' + encodeURIComponent(cardData.card_id) + '/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    })
+      .then(function(r) {
+        if (!r.ok) return r.json().then(function(d) { throw new Error(d.error || 'Failed'); });
+        return r.json();
+      })
+      .then(function() {
+        showToast('Agent started');
+      })
+      .catch(function(err) {
+        showToast(err.message || 'Failed to start agent', 'error');
+        runBtn.disabled = false;
+        runBtn.textContent = 'Run Agent';
+      });
+  };
+  bottomBar.appendChild(runBtn);
+  container.appendChild(bottomBar);
+}
+
+function renderAgentRunning(container, cardData) {
+  var preview = cardData.preview || {};
+
+  // Metadata strip
+  var strip = document.createElement('div');
+  strip.className = 'agent-meta-strip';
+
+  var modelBadge = document.createElement('span');
+  modelBadge.className = 'agent-model-badge';
+  modelBadge.textContent = MODEL_DISPLAY[preview.model] || preview.model || 'Sonnet 4.5';
+  strip.appendChild(modelBadge);
+
+  var permsBadge = document.createElement('span');
+  permsBadge.className = 'agent-perms-badge-sm';
+  permsBadge.textContent = 'Autonomous';
+  strip.appendChild(permsBadge);
+
+  if (preview.tools && preview.tools.length > 0) {
+    var toolsList = document.createElement('span');
+    toolsList.className = 'agent-tools-list';
+    toolsList.textContent = preview.tools.join(', ');
+    strip.appendChild(toolsList);
+  }
+
+  container.appendChild(strip);
+
+  // Terminal box
+  var terminal = document.createElement('div');
+  terminal.className = 'agent-terminal';
+
+  var termContent = document.createElement('div');
+  termContent.className = 'agent-terminal-content markdown-body';
+  var outputText = preview.output || '*Agent starting...*';
+  if (typeof marked !== 'undefined') {
+    termContent.innerHTML = marked.parse(outputText);
+  } else {
+    termContent.textContent = outputText;
+  }
+  terminal.appendChild(termContent);
+
+  // Auto-scroll to bottom
+  requestAnimationFrame(function() { terminal.scrollTop = terminal.scrollHeight; });
+
+  container.appendChild(terminal);
+
+  // Bottom bar with expand toggle + cancel
+  var bottomBar = document.createElement('div');
+  bottomBar.className = 'agent-bottom-bar agent-bottom-bar-running';
+
+  var expandBtn = document.createElement('button');
+  expandBtn.className = 'agent-expand-btn';
+  expandBtn.textContent = 'Expand';
+  expandBtn.onclick = function() {
+    var isExpanded = terminal.classList.toggle('expanded');
+    expandBtn.textContent = isExpanded ? 'Collapse' : 'Expand';
+    if (!isExpanded) {
+      requestAnimationFrame(function() { terminal.scrollTop = terminal.scrollHeight; });
+    }
+  };
+  bottomBar.appendChild(expandBtn);
+
+  var cancelBtn = document.createElement('button');
+  cancelBtn.className = 'agent-cancel-btn';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = function() {
+    cancelBtn.disabled = true;
+    fetch('/api/agents/' + encodeURIComponent(cardData.card_id), {
+      method: 'DELETE'
+    })
+      .then(function(r) {
+        if (!r.ok) return r.json().then(function(d) { throw new Error(d.error || 'Failed'); });
+        showToast('Agent cancelled');
+      })
+      .catch(function(err) {
+        showToast(err.message || 'Cancel failed', 'error');
+        cancelBtn.disabled = false;
+      });
+  };
+  bottomBar.appendChild(cancelBtn);
+
+  container.appendChild(bottomBar);
+}
+
+function renderAgentCompleted(container, cardData) {
+  var preview = cardData.preview || {};
+  var isSuccess = preview.status === 'completed';
+  var outputText = preview.output || '';
+
+  // Terminal box — compact height with gradient fade
+  var terminal = document.createElement('div');
+  terminal.className = 'agent-terminal agent-terminal-compact';
+
+  var termContent = document.createElement('div');
+  termContent.className = 'agent-terminal-content markdown-body';
+  if (typeof marked !== 'undefined' && outputText) {
+    termContent.innerHTML = marked.parse(outputText);
+  } else {
+    termContent.textContent = outputText;
+  }
+  terminal.appendChild(termContent);
+  container.appendChild(terminal);
+
+  // Bottom bar with expand toggle (only if there's content to expand)
+  if (outputText) {
+    var bottomBar = document.createElement('div');
+    bottomBar.className = 'agent-bottom-bar agent-bottom-bar-completed';
+
+    var expandBtn = document.createElement('button');
+    expandBtn.className = 'agent-expand-btn';
+    expandBtn.textContent = 'Expand';
+    expandBtn.onclick = function() {
+      var isExpanded = terminal.classList.toggle('expanded');
+      terminal.classList.toggle('agent-terminal-compact', !isExpanded);
+      expandBtn.textContent = isExpanded ? 'Collapse' : 'Expand';
+    };
+    bottomBar.appendChild(expandBtn);
+    container.appendChild(bottomBar);
+  }
+}
+
+function formatAgentDuration(seconds) {
+  if (seconds == null) return '';
+  var secs = Math.round(seconds);
+  if (secs >= 60) {
+    return Math.floor(secs / 60) + 'm ' + (secs % 60) + 's';
+  }
+  return secs + 's';
+}
+
+function formatElapsed(isoTimestamp) {
+  var start = new Date(isoTimestamp).getTime();
+  var elapsed = Math.max(0, Math.floor((Date.now() - start) / 1000));
+  var mins = Math.floor(elapsed / 60);
+  var secs = elapsed % 60;
+  return mins + ':' + (secs < 10 ? '0' : '') + secs;
+}
 
 function buildCardPrompt(card) {
   var prompt = 'Re: "' + (card.title || 'Untitled') + '" [card:' + card.card_id + (card.study ? ', study:' + card.study : '') + ']\n';

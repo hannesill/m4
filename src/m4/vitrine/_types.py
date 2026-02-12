@@ -21,6 +21,7 @@ class CardType(str, Enum):
     PLOTLY = "plotly"
     IMAGE = "image"
     DECISION = "decision"
+    AGENT = "agent"
 
 
 # ---------------------------------------------------------------------------
