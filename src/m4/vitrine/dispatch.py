@@ -19,6 +19,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import shutil
 import subprocess
 import uuid
@@ -409,6 +410,9 @@ async def run_agent(
     if info.budget is not None:
         cli_args.extend(["--max-turns", str(int(info.budget))])
 
+    # Strip CLAUDECODE env var so the child doesn't think it's nested
+    env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
+
     # Spawn headless agent
     proc = subprocess.Popen(
         cli_args,
@@ -416,6 +420,7 @@ async def run_agent(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         start_new_session=True,
+        env=env,
     )
 
     # Feed prompt and close stdin

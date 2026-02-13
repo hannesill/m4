@@ -1286,6 +1286,11 @@ class DisplayServer:
 
         elif event_type == "delete":
             deleted = payload.get("deleted", True)
+            # Cancel running agent if this is an agent card being deleted
+            if deleted and card_id in self._dispatches:
+                from m4.vitrine.dispatch import cancel_agent
+
+                await cancel_agent(card_id, self)
             store = self._resolve_store(card_id)
             if store is not None:
                 updates: dict[str, Any] = {"deleted": deleted}
