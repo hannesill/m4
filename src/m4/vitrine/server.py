@@ -825,6 +825,10 @@ class DisplayServer:
             content = resolved.read_bytes()
             return Response(content=content, media_type="application/pdf")
 
+        if suffix in (".html", ".htm"):
+            content = resolved.read_bytes()
+            return Response(content=content, media_type="text/html; charset=utf-8")
+
         # Fallback — binary download
         content = resolved.read_bytes()
         return Response(
