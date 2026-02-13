@@ -718,6 +718,8 @@ class StudyManager:
             ".gif": "image",
             ".svg": "image",
             ".pdf": "pdf",
+            ".html": "html",
+            ".htm": "html",
         }
 
         files: list[dict[str, Any]] = []

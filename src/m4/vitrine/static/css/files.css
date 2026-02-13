@@ -331,6 +331,14 @@
   margin: 0 auto;
 }
 
+/* HTML iframe preview */
+.file-preview-iframe {
+  width: 100%;
+  min-height: 80vh;
+  border: none;
+  background: #fff;
+}
+
 /* Table preview */
 .file-preview-table-wrap {
   overflow-x: auto;

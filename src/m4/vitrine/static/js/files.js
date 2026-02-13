@@ -15,6 +15,7 @@ var _FILE_TYPE_LETTERS = {
   r: 'R',
   text: 'T',
   pdf: 'F',
+  html: 'W',
   directory: '/',
   other: '?',
 };
@@ -274,6 +275,16 @@ function previewFile(study, filepath, fileType, filename) {
     img.src = url;
     img.alt = filename;
     body.appendChild(img);
+    return;
+  }
+
+  if (fileType === 'html') {
+    body.innerHTML = '';
+    var iframe = document.createElement('iframe');
+    iframe.className = 'file-preview-iframe';
+    iframe.sandbox = 'allow-scripts allow-same-origin';
+    iframe.src = url;
+    body.appendChild(iframe);
     return;
   }
 
