@@ -1697,6 +1697,7 @@ dependencies = [
     { name = "rich" },
     { name = "sqlparse" },
     { name = "typer" },
+    { name = "vitrine" },
 ]
 
 [package.optional-dependencies]
@@ -1737,6 +1738,7 @@ requires-dist = [
     { name = "sqlparse", specifier = ">=0.4.0" },
     { name = "statsmodels", marker = "extra == 'research'", specifier = ">=0.14.6" },
     { name = "typer", specifier = ">=0.9.0" },
+    { name = "vitrine", git = "https://github.com/hannesill/vitrine.git" },
 ]
 provides-extras = ["research"]
 
@@ -3839,6 +3841,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a4/d5/b0ccd381d55c8f45d46f77df6ae59fbc23d19e901e2d523395598e5f4c93/virtualenv-20.35.3.tar.gz", hash = "sha256:4f1a845d131133bdff10590489610c98c168ff99dc75d6c96853801f7f67af44", size = 6002907, upload-time = "2025-10-10T21:23:33.178Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/27/73/d9a94da0e9d470a543c1b9d3ccbceb0f59455983088e727b8a1824ed90fb/virtualenv-20.35.3-py3-none-any.whl", hash = "sha256:63d106565078d8c8d0b206d48080f938a8b25361e19432d2c9db40d2899c810a", size = 5981061, upload-time = "2025-10-10T21:23:30.433Z" },
+]
+
+[[package]]
+name = "vitrine"
+version = "0.1.0"
+source = { git = "https://github.com/hannesill/vitrine.git#c6a3288b6346d26209d32fbf8016fe9dc1169e04" }
+dependencies = [
+    { name = "duckdb" },
+    { name = "pandas" },
+    { name = "pyarrow" },
+    { name = "rich" },
+    { name = "starlette" },
+    { name = "typer" },
+    { name = "uvicorn" },
 ]
 
 [[package]]

@@ -26,7 +26,7 @@ The researcher has the terminal and vitrine open side by side. Vitrine is where 
 Every research session is organized as a **study** â€” one study per research question, spanning one or more conversations.
 
 ```python
-from m4.vitrine import (
+from vitrine import (
     show, section, register_output_dir, study_context,
     list_studies, export, Form, Question,
 )
@@ -130,7 +130,7 @@ Collect study parameters through vitrine forms. The interview is **adaptive** â€
 
 ### Question Library
 
-Use `from m4.vitrine import Form, Question` and compose from these. **Use `multiple=True` for any question where multiple answers make sense** (e.g., exclusion criteria, confounders). Without it, options render as single-select radio buttons.
+Use `from vitrine import Form, Question` and compose from these. **Use `multiple=True` for any question where multiple answers make sense** (e.g., exclusion criteria, confounders). Without it, options render as single-select radio buttons.
 
 **Research question:**
 ```python

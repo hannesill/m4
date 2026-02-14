@@ -114,7 +114,7 @@ Use `show()` from the vitrine module to present query results to the researcher 
 
 ```python
 from m4 import execute_query
-from m4.vitrine import show
+from vitrine import show
 
 df = execute_query("SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROUP BY gender")
 df.to_csv("output/demographics.csv", index=False)  # Save for reproducibility
