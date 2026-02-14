@@ -49,6 +49,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0", # Additional JWT support with crypto
     "httpx>=0.24.0", # Modern HTTP client for OAuth2 token validation
     "duckdb>=1.4.1",
+    "vitrine @ git+https://github.com/hannesill/vitrine.git",
 ]
 
 [project.optional-dependencies]
@@ -73,7 +74,7 @@ m4 = "m4.cli:app"
 m4-infra = "m4.mcp_server:main"  # Primary entry point (enables `uvx m4-infra`)
 m4-mcp = "m4.mcp_server:main"  # Kept for backwards compatibility
 m4-mcp-server = "m4.mcp_server:main"  # Kept for backwards compatibility
-vitrine = "m4.vitrine.cli:app"  # Standalone vitrine server management
+vitrine = "vitrine.cli:app"  # Standalone vitrine CLI (from vitrine package)
 
 [project.urls]
 Homepage = "https://github.com/rafiattrach/m4"
