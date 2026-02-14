@@ -3846,7 +3846,7 @@ wheels = [
 [[package]]
 name = "vitrine"
 version = "0.1.0"
-source = { git = "https://github.com/hannesill/vitrine.git#c6a3288b6346d26209d32fbf8016fe9dc1169e04" }
+source = { git = "https://github.com/hannesill/vitrine.git#d4d531a223f3a2ceb21b470b3f7d867952298c08" }
 dependencies = [
     { name = "duckdb" },
     { name = "pandas" },
