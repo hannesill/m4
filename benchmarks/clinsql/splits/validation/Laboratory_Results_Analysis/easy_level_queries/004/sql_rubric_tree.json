@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "sepsis-condition-identification",
+          "requirements": "Sepsis Condition Identification: The query must correctly identify hospital admissions for sepsis using both ICD-9 ('99591', '99592', '78552') and ICD-10 ('A419', 'R6520', 'R6521') codes from the diagnoses_icd table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using the condition p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for a patient age range similar to 76, specifically using a condition like 'p.anchor_age BETWEEN 70 AND 80'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "platelet-lab-event-selection",
+          "requirements": "Platelet Lab Event Selection: The query must correctly identify platelet count lab events by filtering on le.itemid = 51265.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-24-hours",
+          "requirements": "Temporal Filter (First 24 Hours): The query must accurately filter lab events to the first 24 hours of the hospital admission using a condition like 'le.charttime BETWEEN adm.admittime AND DATETIME_ADD(adm.admittime, INTERVAL 24 HOUR)'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "plausible-value-filtering",
+          "requirements": "Plausible Value Filtering: The query should apply a reasonable range filter for platelet counts (e.g., le.valuenum BETWEEN 10 AND 1000) to exclude outliers or erroneous data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-join",
+          "requirements": "Patient Demographics Join: The query must correctly join 'patients' and 'admissions' tables on 'subject_id' to link demographic data to hospital stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-admission-join",
+          "requirements": "Sepsis Admission Join: The query must join the 'admissions' table with the sepsis cohort (CTE) on 'hadm_id' to filter for relevant admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-events-join",
+          "requirements": "Lab Events Join: The query must join the 'labevents' table on 'hadm_id' to link lab results to the correct hospital admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-average-calculation",
+          "requirements": "Per-Admission Average Calculation: The query must first calculate the average platelet count for each patient's sepsis admission within the first 24 hours, grouped by 'subject_id' and 'hadm_id'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-of-averages-calculation",
+          "requirements": "Median of Averages Calculation: The final aggregation must compute the median of the per-admission average platelet counts using an appropriate function like APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: The query should round the final median value to a reasonable number of decimal places (e.g., 2) for clarity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

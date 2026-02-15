@@ -1,0 +1,3 @@
+metric,value1,value2,description
+Percentile Rank for Score 85,99.49238578680203,,The percentile rank of a composite instability score of 85 within the cohort.
+Top Decile Outcomes,5.013194444444443,45.0,Avg ICU LOS (days) and Mortality (%) for patients in the top 10% of instability scores.

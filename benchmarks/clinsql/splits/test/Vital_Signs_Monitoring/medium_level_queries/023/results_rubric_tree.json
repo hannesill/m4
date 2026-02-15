@@ -1,0 +1,170 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "A column grouping by temperature category (e.g., `temperature_category`) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-columns-exist",
+              "requirements": "Columns for mean temperature, median temperature, IQR temperature, and AKI rate must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in the key answer columns (category, mean_temp, median_temp, iqr_temp, aki_rate).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "temperature-category-validation",
+          "requirements": "Validation of the temperature category column (e.g., `temperature_category`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "category-count",
+              "requirements": "There should be exactly 3 temperature categories.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mean-temp-validation",
+          "requirements": "Validation of the mean temperature column (e.g., `mean_temp_c`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-temp-plausible",
+              "requirements": "Values must be clinically plausible (33.0-42.0 C).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-temp-acceptable",
+              "requirements": "Values must be within an acceptable range for each category (e.g., Hypothermia: 34.5-35.9, Normothermia: 36.5-37.5, Fever: 38.0-39.5 C).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-temp-validation",
+          "requirements": "Validation of the median temperature column (e.g., `median_temp_c`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-temp-plausible",
+              "requirements": "Values must be clinically plausible (33.0-42.0 C).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-temp-acceptable",
+              "requirements": "Values must be within an acceptable range for each category (e.g., Hypothermia: 34.5-35.9, Normothermia: 36.5-37.5, Fever: 38.0-39.5 C).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-temp-validation",
+          "requirements": "Validation of the IQR temperature column (e.g., `iqr_temp_c`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "iqr-temp-plausible",
+              "requirements": "Values must be clinically plausible (0.0-5.0 C).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-temp-acceptable",
+              "requirements": "Values must be within an acceptable range (0.2-1.5 C).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "aki-rate-validation",
+          "requirements": "Validation of the AKI rate column (e.g., `aki_rate_percent`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "aki-rate-plausible",
+              "requirements": "Values must be clinically plausible as percentages (0-100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "aki-rate-acceptable",
+              "requirements": "Values must be within an acceptable range for an ICU cohort (15-60).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

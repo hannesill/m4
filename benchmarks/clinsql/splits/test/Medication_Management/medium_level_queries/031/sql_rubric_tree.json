@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 53\u201363 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 53 AND 63`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-diagnosis-filter",
+          "requirements": "Diabetes Diagnosis Filter: Correctly filters for patients with a diabetes diagnosis by joining `diagnoses_icd` and checking for relevant ICD codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-filter",
+          "requirements": "Heart Failure Diagnosis Filter: Correctly filters for patients with a heart failure diagnosis by joining `diagnoses_icd` and checking for relevant ICD codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-selection",
+          "requirements": "Inpatient Selection: Implicitly filters for inpatients by using the `admissions` and `diagnoses_icd` tables which are tied to hospital admissions (`hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "diabetes-code-selection",
+          "requirements": "Diabetes Code Selection: Identifies diabetes using both ICD-9 ('250%') and ICD-10 ('E10%', 'E11%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-code-selection",
+          "requirements": "Heart Failure Code Selection: Identifies heart failure using both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "glp1-ra-identification",
+          "requirements": "GLP-1 RA Identification: Correctly identifies injectable GLP-1 RA medications from the prescriptions table using `LOWER(rx.drug) LIKE ...` for specific drug names (semaglutide, liraglutide, dulaglutide, exenatide).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: Correctly joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: Correctly joins `admissions` and `diagnoses_icd` tables on `hadm_id` for both diabetes and heart failure conditions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-prescriptions-join",
+          "requirements": "Cohort-Prescriptions Join: Correctly joins the patient cohort with the `prescriptions` table on `hadm_id` to link medications to specific admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-24h-initiation-logic",
+          "requirements": "First 24h Initiation Logic: Correctly identifies medication initiation within the first 24 hours of admission using `DATETIME_DIFF(rx.starttime, c.admittime, HOUR) BETWEEN 0 AND 24`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-12h-initiation-logic",
+          "requirements": "Final 12h Initiation Logic: Correctly identifies medication initiation within the final 12 hours before discharge using `DATETIME_DIFF(c.dischtime, rx.starttime, HOUR) BETWEEN 0 AND 12`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-patient-flagging",
+          "requirements": "Per-Patient Flagging: Correctly uses `MAX(CASE...END)` and `GROUP BY c.hadm_id` to create a binary flag (1/0) for each patient if they received the medication in either time window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: Correctly calculates the percentage for each time window by dividing the count of patients with the flag by the total number of patients in the initial cohort, and multiplying by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: The final output presents two distinct percentages, `initiation_rate_first_24h_pct` and `initiation_rate_final_12h_pct`, rounded to two decimal places.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

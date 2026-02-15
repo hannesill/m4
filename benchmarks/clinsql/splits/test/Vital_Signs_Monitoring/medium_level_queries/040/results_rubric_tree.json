@@ -1,0 +1,78 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "A column representing the minimum of the per-stay mean systolic blood pressure exists (e.g., 'min_of_mean_sbp', 'min_mean_sbp').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL or empty values in the primary column 'min_of_mean_sbp'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "min-mean-sbp-validation",
+          "requirements": "Validation of the minimum per-stay mean systolic blood pressure (SBP)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "min-mean-sbp-plausible",
+              "requirements": "The minimum mean SBP value must be clinically plausible (40-150 mmHg). A mean SBP below 40 is generally incompatible with life, and a minimum of means above 150 for this cohort is highly unlikely.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-mean-sbp-acceptable",
+              "requirements": "The minimum mean SBP value is within an acceptable range (60-110 mmHg). For an elderly ICU cohort, it's expected that at least one patient's mean SBP might drop to hypotensive levels (e.g., 60s-70s), but it's less likely to be extremely low or near normal.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

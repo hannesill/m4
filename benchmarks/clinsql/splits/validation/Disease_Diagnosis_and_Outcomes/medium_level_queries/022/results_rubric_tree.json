@@ -1,0 +1,125 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "Column Exists for Mortality Rate (e.g., `mortality_rate_percent`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-column-exists",
+              "requirements": "Column Exists for Median Length of Stay (e.g., `median_length_of_stay_days`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-group-column-exists",
+              "requirements": "Column Exists for Length of Stay Grouping (e.g., `los_group`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-status-column-exists",
+              "requirements": "Column Exists for ICU Status (e.g., `day1_icu_status`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in Answer-Relevant Columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation for Mortality Rate Column (`mortality_rate_percent`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Mortality Rate is Clinically Plausible (0-50%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Mortality Rate is in Acceptable Range (1-30%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-validation",
+          "requirements": "Validation for Median Length of Stay Column (`median_length_of_stay_days`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-los-plausible",
+              "requirements": "Median Length of Stay is Clinically Plausible (1-60 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-acceptable",
+              "requirements": "Median Length of Stay is in Acceptable Range (2-25 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "A column representing the median Troponin-T value exists (e.g., 'median_troponin_t_ng_ml', 'median_troponin').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists",
+              "requirements": "A column representing the interquartile range (IQR) of Troponin-T exists (e.g., 'iqr_troponin_t', 'troponin_iqr').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL or empty values in the median and IQR columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "median-troponin-validation",
+          "requirements": "Validation of the median Troponin-T column ('median_troponin_t_ng_ml')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-troponin-plausible",
+              "requirements": "Median Troponin-T value is clinically plausible. It must be greater than the elevation threshold of 0.014 ng/mL and within a range seen in ischemic events.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": [
+                {
+                  "id": "median-troponin-plausible-range",
+                  "requirements": "Plausible Range (0.015-5.0 ng/mL)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "median-troponin-acceptable",
+              "requirements": "Median Troponin-T value is within an acceptable range for this specific patient cohort (males 47-57 with IHD).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": [
+                {
+                  "id": "median-troponin-acceptable-range",
+                  "requirements": "Acceptable Range (0.05-1.5 ng/mL)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "iqr-troponin-validation",
+          "requirements": "Validation of the IQR Troponin-T column ('iqr_troponin_t')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "iqr-troponin-plausible",
+              "requirements": "IQR of Troponin-T is clinically plausible, indicating a reasonable spread of values in an elevated cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": [
+                {
+                  "id": "iqr-troponin-plausible-range",
+                  "requirements": "Plausible Range (0.01-10.0 ng/mL)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "iqr-troponin-acceptable",
+              "requirements": "IQR of Troponin-T is within an acceptable range for this cohort, reflecting expected variability.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": [
+                {
+                  "id": "iqr-troponin-acceptable-range",
+                  "requirements": "Acceptable Range (0.1-2.5 ng/mL)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

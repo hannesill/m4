@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients by checking p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate patient age at admission and filter for the range 56-66 using the expression (p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 56 AND 66.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: The query must correctly identify ICU stays and ensure they have a valid intake time (ie.intime IS NOT NULL).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Mean Arterial Pressure (MAP)",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "map-code-selection",
+          "requirements": "MAP Code Selection: The query must select MAP measurements by filtering chartevents using the correct itemids: ce.itemid IN (220052, 456, 224322, 52).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-48h",
+          "requirements": "Temporal Filter (First 48 Hours): The query must correctly filter MAP measurements to the first 48 hours of the ICU stay using the condition ce.charttime BETWEEN pc.intime AND DATETIME_ADD(pc.intime, INTERVAL 48 HOUR).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-plausibility-filter",
+          "requirements": "Value Plausibility Filter: The query must apply a clinically reasonable range filter for MAP values, such as ce.valuenum BETWEEN 20 AND 200, to exclude erroneous data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join patients, admissions, and icustays tables on their respective keys (subject_id and hadm_id) to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "events-table-join",
+          "requirements": "Events Table Join: The query must correctly join the patient cohort with the chartevents table on stay_id to link measurements to specific ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-map-aggregation",
+          "requirements": "Per-Stay MAP Aggregation: The query must first calculate the average MAP for each individual stay using AVG(map_value) and GROUP BY stay_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "map-categorization",
+          "requirements": "MAP Categorization: The query must use a CASE statement to correctly categorize each stay's average MAP into the specified bins: <65, 65-74, 75-84, >=85 mmHg.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-calculation",
+          "requirements": "Final Metric Calculation: The query must correctly calculate the count, mean, median, and IQR of the per-stay average MAPs for each category, using functions like COUNT, AVG, and APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-ordering",
+          "requirements": "Final Grouping and Ordering: The final result must be grouped by map_category and ordered logically based on the MAP ranges.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,201 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "Primary Column Exists (e.g., `complexity_quintile`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists",
+              "requirements": "Secondary Columns Exist (e.g., `num_patients`, `min_complexity_score`, `max_complexity_score`, `avg_los_days`, `mortality_rate`, `readmission_rate_30_day`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "stratification-validation",
+          "requirements": "Validate Stratification Column (`complexity_quintile`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "stratification-plausible",
+              "requirements": "Quintiles are plausible (1-5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-acceptable",
+              "requirements": "Quintiles are exactly 1, 2, 3, 4, 5",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "patient-count-validation",
+          "requirements": "Validate Patient Count Column (`num_patients`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "patient-count-plausible",
+              "requirements": "Clinically Plausible (10-50000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "patient-count-acceptable",
+              "requirements": "Acceptable Range (100-5000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "complexity-score-range-validation",
+          "requirements": "Validate Complexity Score Range Columns (`min_complexity_score`, `max_complexity_score`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "complexity-score-plausible",
+              "requirements": "Clinically Plausible (0-500)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "complexity-score-acceptable",
+              "requirements": "Acceptable Range (1-200)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validate Mean LOS Column (`avg_los_days`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Clinically Plausible (1.0-60.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Acceptable Range (2.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate Mortality Rate Column (`mortality_rate`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range for HF in this cohort (0.001-0.25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "readmission-rate-validation",
+          "requirements": "Validate 30-Day Readmission Rate Column (`readmission_rate_30_day`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "readmission-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-rate-acceptable",
+              "requirements": "Acceptable Range for HF (0.1-0.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

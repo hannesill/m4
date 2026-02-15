@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters for the specific patient population with acute pancreatitis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters for patients aged 47-57 using p.anchor_age BETWEEN 47 AND 57.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-identification",
+          "requirements": "Condition Identification: Filters for acute pancreatitis diagnoses using ICD-9 code '5770' or ICD-10 codes starting with 'K85%'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-pre-filtering",
+          "requirements": "Length of Stay Pre-filtering: Correctly calculates and filters for admissions with a length of stay between 1 and 8 days.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all required tables to link patient demographics, diagnoses, and procedures.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly joins patients, admissions, and diagnoses_icd tables using subject_id and hadm_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join-type",
+          "requirements": "Procedure Table Join Type: Uses a LEFT JOIN to connect the patient cohort to the procedures_icd table to ensure all admissions are retained, even those without imaging.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Accurately identifies the specific medical procedures relevant to the clinical question.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "imaging-procedure-code-selection",
+          "requirements": "Imaging Procedure Code Selection: Correctly filters for CT/MRI procedures by handling both ICD-9 (e.g., '8801', '889%') and ICD-10 (e.g., 'B' root codes) versions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly stratifies the cohort, performs intermediate calculations, and aggregates final results.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-procedure-count",
+          "requirements": "Per-Admission Procedure Count: Correctly counts the number of imaging procedures for each individual hospital admission using COUNT() and GROUP BY hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-stratification",
+          "requirements": "LOS Stratification: Correctly creates two distinct length-of-stay groups ('1-4 Day Stay', '5-8 Day Stay') using a CASE statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-outcome-aggregation",
+          "requirements": "Final Outcome Aggregation: Correctly calculates the final patient counts using COUNT(DISTINCT subject_id) and mean procedures per admission using AVG(), grouped by the LOS strata.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

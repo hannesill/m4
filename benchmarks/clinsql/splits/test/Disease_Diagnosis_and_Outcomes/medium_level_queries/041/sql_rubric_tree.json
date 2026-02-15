@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the initial patient population based on demographics.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately filter for patients aged 50-60 at the time of admission using a calculation like `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 50 AND 60`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies the final clinical cohort by applying sepsis and septic shock criteria.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sepsis-identification",
+          "requirements": "Sepsis Identification: The query must correctly identify patients with a sepsis diagnosis using appropriate ICD codes ('99591' or 'A41%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "septic-shock-exclusion",
+          "requirements": "Septic Shock Exclusion: The query must correctly exclude patients with a septic shock diagnosis using relevant ICD codes ('78552' or 'R6521') via a NOT EXISTS or similar clause.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Ensures correct joining of tables to link patient demographics with clinical data.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: The query must correctly join the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnoses-linking",
+          "requirements": "Diagnoses Linking: The query must link diagnoses to the correct admission using `hadm_id` within subqueries (e.g., EXISTS clauses).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculates and presents the final requested metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation-and-stratification",
+          "requirements": "LOS Calculation and Stratification: The query must calculate length of stay (LOS) in days and stratify patients into two groups: LOS <= 7 and LOS > 7.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Mortality Rate Calculation: The query must calculate the in-hospital mortality rate for each LOS stratum, typically using `AVG(hospital_expire_flag)` and scaling to a percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-time-to-death-calculation",
+          "requirements": "Median Time-to-Death Calculation: The query must calculate the median time to death for deceased patients in each stratum, using a function like `APPROX_QUANTILES` on LOS for patients with `hospital_expire_flag = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "difference-calculation",
+          "requirements": "Difference Calculation: The query must compute both the absolute and relative difference in mortality rates between the two LOS strata.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting",
+      "requirements": "Output Formatting and Readability",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "column-aliasing",
+          "requirements": "Column Aliasing: The final output columns must have clear and descriptive names (e.g., 'mortality_rate_percent').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "result-ordering",
+          "requirements": "Result Ordering: The final results should be logically ordered, for instance, by the LOS strata ('<=7 days' then '>7 days').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

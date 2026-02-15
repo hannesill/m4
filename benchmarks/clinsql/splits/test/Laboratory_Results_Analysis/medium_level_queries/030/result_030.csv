@@ -1,0 +1,4 @@
+troponin_category,patient_count,total_patients_with_troponin,percent_of_patients
+Normal,21,1171,1.79
+Borderline,133,1171,11.36
+Myocardial Injury,1017,1171,86.85

@@ -1,0 +1,4 @@
+complexity_tertile,patient_count,min_complexity_score,max_complexity_score,avg_complexity_score,avg_los_days,in_hospital_mortality_percent,readmission_rate_30day_percent
+1,84,0,40,24.94,3.62,73.81,9.52
+2,84,40,61,51.02,8.04,65.48,11.9
+3,83,61,114,76.6,15.47,56.63,12.05

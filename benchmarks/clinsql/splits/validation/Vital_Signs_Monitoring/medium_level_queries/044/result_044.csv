@@ -1,0 +1,2 @@
+cohort_description,measurement_period,metric,percentile_rank_of_150_mmhg,total_icu_stays_in_cohort,mean_avg_sbp,stddev_avg_sbp,p25_avg_sbp,p50_avg_sbp_median,p75_avg_sbp,p90_avg_sbp,p95_avg_sbp,min_avg_sbp,max_avg_sbp
+Male ICU patients aged 81-91,First 48 hours of ICU stay,Average Systolic Blood Pressure (mmHg),97.04,2468,117.55,15.22,108.12,115.82,125.8,137.75,144.47,44.0,194.0

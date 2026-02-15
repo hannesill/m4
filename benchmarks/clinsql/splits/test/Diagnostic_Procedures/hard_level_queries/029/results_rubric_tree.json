@@ -1,0 +1,183 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stratification-column-exists",
+              "requirements": "Column for stratification exists (e.g., 'diagnostic_load_quartile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-procedure-count-column-exists",
+              "requirements": "Column for average procedure count exists (e.g., 'avg_procedure_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-hospital-los-column-exists",
+              "requirements": "Column for average hospital LOS exists (e.g., 'avg_hospital_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "Column for in-hospital mortality rate exists (e.g., 'mortality_rate_percent')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-rate-column-exists",
+              "requirements": "Column for 30-day readmission rate exists (e.g., 'readmission_rate_30d_percent')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "avg-procedure-count-validation",
+          "requirements": "Validate values for average procedure count",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg-procedure-count-plausible",
+              "requirements": "Values are clinically plausible for ICU patients (10.0-1000.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-procedure-count-acceptable",
+              "requirements": "Values are within an acceptable range for this cohort (50.0-500.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-hospital-los-validation",
+          "requirements": "Validate values for average hospital length of stay",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg-hospital-los-plausible",
+              "requirements": "Values are clinically plausible for ICU survivors/decedents (1.0-100.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-hospital-los-acceptable",
+              "requirements": "Values are within an acceptable range for this cohort (5.0-30.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate values for in-hospital mortality rate",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Values are clinically plausible for vasopressor-dependent ICU patients (5.0-80.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Values are within an acceptable range for this cohort (5.0-50.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "readmission-rate-validation",
+          "requirements": "Validate values for 30-day readmission rate",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "readmission-rate-plausible",
+              "requirements": "Values are clinically plausible for a post-ICU cohort (0.0-50.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-rate-acceptable",
+              "requirements": "Values are within an acceptable range for this cohort (5.0-30.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

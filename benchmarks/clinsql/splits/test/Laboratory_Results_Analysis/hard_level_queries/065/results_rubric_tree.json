@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p25-instability-score-column-exists",
+              "requirements": "Column for 25th percentile instability score exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "target-cohort-critical-events-column-exists",
+              "requirements": "Column for critical events frequency in target cohort exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-cohort-critical-events-column-exists",
+              "requirements": "Column for critical events frequency in general cohort exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-column-exists",
+              "requirements": "Column for length of stay (LOS) in target cohort exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column for mortality rate in target cohort exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "p25-instability-score-validation",
+          "requirements": "Validation for 25th percentile instability score (e.g., p25_instability_score_target_cohort)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p25-instability-score-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-instability-score-acceptable",
+              "requirements": "Acceptable Range (5-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "target-critical-events-validation",
+          "requirements": "Validation for average critical events in target cohort (e.g., avg_critical_events_per_admission_target)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "target-critical-events-plausible",
+              "requirements": "Clinically Plausible (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "target-critical-events-acceptable",
+              "requirements": "Acceptable Range (0.5-3.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "general-critical-events-validation",
+          "requirements": "Validation for average critical events in general cohort (e.g., avg_critical_events_per_admission_general)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "general-critical-events-plausible",
+              "requirements": "Clinically Plausible (0-5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-critical-events-acceptable",
+              "requirements": "Acceptable Range (0.1-1.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-validation",
+          "requirements": "Validation for average length of stay (e.g., avg_los_days_target_cohort)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "los-plausible",
+              "requirements": "Clinically Plausible (1-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-acceptable",
+              "requirements": "Acceptable Range (4-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validation for mortality rate (e.g., mortality_rate_target_cohort)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-acceptable",
+              "requirements": "Acceptable Range (0.02-0.20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

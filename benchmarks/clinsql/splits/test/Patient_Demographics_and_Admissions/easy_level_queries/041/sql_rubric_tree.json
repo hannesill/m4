@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients by using the condition p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients with an age between 50 and 60 using p.anchor_age BETWEEN 50 AND 60.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "anticoagulant-identification",
+          "requirements": "Anticoagulant Identification: The query must correctly identify patients on anticoagulants by checking the 'prescriptions' table for relevant drug names (e.g., heparin, warfarin, apixaban) using a subquery or join.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-admission-filtering",
+          "requirements": "First Admission Filtering: The query must correctly identify and filter for each patient's first hospital admission, typically using a window function like ROW_NUMBER() over admittime.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-filtering",
+          "requirements": "First ICU Stay Filtering: The query must correctly identify and filter for the first ICU stay within the selected admission, typically using a window function like ROW_NUMBER() over intime.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the 'patients' and 'admissions' tables on 'subject_id' to link demographic data with admission records.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-prescription-link",
+          "requirements": "Admission-Prescription Link: The query must correctly link admissions to prescriptions using 'hadm_id' to identify anticoagulant use during the stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-icu-join",
+          "requirements": "Admission-ICU Join: The query must correctly join the filtered admissions with the 'icustays' table on 'hadm_id' to find associated ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay Calculation: The query must calculate the ICU length of stay in days using DATETIME_DIFF between 'outtime' and 'intime'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-aggregation",
+          "requirements": "Median Aggregation: The query must correctly calculate the median ICU length of stay for the final cohort using an appropriate function like APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-data-validity",
+          "requirements": "LOS Data Validity: The query should exclude records with a NULL 'outtime' to prevent incorrect LOS calculations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

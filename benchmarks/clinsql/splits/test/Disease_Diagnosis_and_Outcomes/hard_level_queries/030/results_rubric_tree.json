@@ -1,0 +1,207 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "number-of-patients-column-exists",
+              "requirements": "A column for the number of patients exists (e.g., 'number_of_patients', 'n')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-risk-score-column-exists",
+              "requirements": "A column for the average risk score exists (e.g., 'avg_risk_score', 'mean_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-30day-rate-column-exists",
+              "requirements": "A column for 30-day mortality rate exists (e.g., 'mortality_30day_rate_percent', '30d_mortality')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "major-complication-rate-column-exists",
+              "requirements": "A column for major complication rate exists (e.g., 'major_complication_rate_percent', 'major_comp_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-survivor-los-column-exists",
+              "requirements": "A column for median survivor length of stay exists (e.g., 'median_survivor_los_days', 'median_los_survivors')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "number-of-patients-validation",
+          "requirements": "Validate values in the column for number of patients per quintile",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "number-of-patients-plausible",
+              "requirements": "Clinically Plausible (1-1000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "number-of-patients-acceptable",
+              "requirements": "Acceptable Range (50-300)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-risk-score-validation",
+          "requirements": "Validate values in the column for average risk score",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg-risk-score-plausible",
+              "requirements": "Clinically Plausible (1-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-risk-score-acceptable",
+              "requirements": "Acceptable Range (5-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate values in the column for 30-day mortality rate (%)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (1-40)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "major-complication-rate-validation",
+          "requirements": "Validate values in the column for major complication rate (%)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "major-complication-rate-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "major-complication-rate-acceptable",
+              "requirements": "Acceptable Range (0-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-validation",
+          "requirements": "Validate values in the column for median survivor length of stay (days)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "median-los-plausible",
+              "requirements": "Clinically Plausible (1-365)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-acceptable",
+              "requirements": "Acceptable Range (1-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

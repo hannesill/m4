@@ -1,0 +1,123 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction for AMI",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0"
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at admission and filter for the 40-50 age range.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0"
+        },
+        {
+          "id": "ami-diagnosis-selection",
+          "requirements": "AMI Diagnosis Selection: The query must filter for admissions with an Acute Myocardial Infarction (AMI) diagnosis using appropriate ICD-9 ('410%') and ICD-10 ('I21%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0"
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Troponin T Measurement",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "troponin-t-identification",
+          "requirements": "Troponin T Identification: The query must correctly identify Troponin T lab events using `itemid = 51003`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0"
+        },
+        {
+          "id": "initial-measurement-logic",
+          "requirements": "Initial Measurement Logic: The query must use a window function (`ROW_NUMBER() OVER (PARTITION BY ... ORDER BY charttime ASC)`) to isolate the first Troponin T measurement for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0"
+        },
+        {
+          "id": "troponin-value-categorization",
+          "requirements": "Troponin Value Categorization: The query must use a CASE statement to correctly classify Troponin T values into 'Normal' (<=0.01), 'Borderline' (>0.01 and <=0.04), and 'Elevated' (>0.04).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0"
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `patients`, `admissions`, and `diagnoses_icd` tables to establish the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0"
+        },
+        {
+          "id": "lab-data-join",
+          "requirements": "Lab Data Join: The query must correctly join the patient cohort with the `labevents` table on `hadm_id` to link admissions to lab results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0"
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-by-category",
+          "requirements": "Grouping by Category: The final aggregation must group results by the derived `troponin_category`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0"
+        },
+        {
+          "id": "patient-count-aggregation",
+          "requirements": "Patient Count Aggregation: The query must correctly calculate the count of unique patients (`COUNT(DISTINCT subject_id)`) for each Troponin category.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0"
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: The query should calculate the percentage of patients in each category relative to the total number of patients with an initial Troponin T measurement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0"
+        },
+        {
+          "id": "output-ordering",
+          "requirements": "Output Ordering: The query should order the final results logically based on the clinical severity of the troponin categories ('Normal', 'Borderline', 'Elevated').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0"
+        }
+      ]
+    }
+  ]
+}

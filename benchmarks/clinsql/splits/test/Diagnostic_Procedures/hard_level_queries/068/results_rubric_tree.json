@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "procedure-quartile-column-exists",
+              "requirements": "Column Name Exists Related to procedure quartile stratification",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-procedure-count-column-exists",
+              "requirements": "Column Name Exists Related to mean procedure count",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-hospital-los-column-exists",
+              "requirements": "Column Name Exists Related to mean hospital length of stay",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hospital-mortality-column-exists",
+              "requirements": "Column Name Exists Related to hospital mortality",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "avg-procedure-count-validation",
+          "requirements": "Exist Column Related to average procedure count",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-procedure-count-plausible",
+              "requirements": "Clinically Plausible (0-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-procedure-count-acceptable",
+              "requirements": "Acceptable Range (0.5-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-hospital-los-validation",
+          "requirements": "Exist Column Related to average hospital length of stay in days",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-hospital-los-plausible",
+              "requirements": "Clinically Plausible (1-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-hospital-los-acceptable",
+              "requirements": "Acceptable Range (3-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hospital-mortality-validation",
+          "requirements": "Exist Column Related to hospital mortality percentage",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "hospital-mortality-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hospital-mortality-acceptable",
+              "requirements": "Acceptable Range (0-40)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

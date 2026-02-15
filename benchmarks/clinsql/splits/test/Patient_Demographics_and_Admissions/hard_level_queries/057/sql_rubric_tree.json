@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using `p.gender = 'M'` or `all_adm.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters for patients aged 60-70 by calculating age at admission using `anchor_age`, `anchor_year`, and `admittime`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insurance-filter",
+          "requirements": "Filters for patients with 'Medicare' insurance using `a.insurance = 'Medicare'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-source-filter",
+          "requirements": "Filters for admissions from the Emergency Department using `UPPER(a.admission_location) LIKE '%EMERGENCY%'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "principal-diagnosis-filter",
+          "requirements": "Correctly filters for the principal diagnosis by requiring `d.seq_num = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "uti-diagnosis-code-selection",
+          "requirements": "Identifies Urinary Tract Infection (UTI) using both ICD-9 ('5990%') and ICD-10 ('N390%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Preprocessing",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Correctly joins the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Correctly joins the resulting admissions data with the `diagnoses_icd` table on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Metrics Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "readmission-window-logic",
+          "requirements": "Uses a window function (LEAD) partitioned by `subject_id` and ordered by `admittime` to find the next admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-flag-calculation",
+          "requirements": "Correctly flags 30-day readmissions by checking if the difference between `next_admittime` and `dischtime` is less than or equal to 30 days.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "Calculates the index length of stay (LOS) in days using the difference between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-output",
+      "requirements": "Final Aggregation and Output Formatting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "readmission-rate-aggregation",
+          "requirements": "Calculates the 30-day readmission rate as a percentage using `AVG(is_readmitted_30_days) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-los-readmitted-aggregation",
+          "requirements": "Calculates the median LOS for readmitted patients using a conditional `APPROX_QUANTILES` function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-los-not-readmitted-aggregation",
+          "requirements": "Calculates the median LOS for non-readmitted patients using a conditional `APPROX_QUANTILES` function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-gt9-percentage-aggregation",
+          "requirements": "Calculates the percentage of patients with LOS > 9 days using a conditional `AVG` and multiplying by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

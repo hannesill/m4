@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-patient-selection",
+          "requirements": "ICU Patient Selection: The query must correctly join with the `icustays` table to identify patients who have had at least one ICU stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "abg-ph-code-selection",
+          "requirements": "Arterial Blood Gas pH Code Selection: The query must correctly filter the `labevents` table for arterial blood gas pH using `le.itemid = 50820`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "plausible-value-filter",
+          "requirements": "Plausible Value Filter: The query should apply a reasonable range filter for pH values, such as `le.valuenum BETWEEN 7.0 AND 7.7`, to exclude erroneous data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-icu-join",
+          "requirements": "Patient-ICU Join: The query must correctly join `patients` and `icustays` tables on `subject_id` to link patient demographics with ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-lab-join",
+          "requirements": "ICU-Lab Join: The query must correctly join `icustays` and `labevents` tables on `hadm_id` to associate lab measurements with specific hospital admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filter-logic",
+          "requirements": "Temporal Filter Logic: The query must correctly identify the first pH measurement on ICU admission by partitioning by `stay_id` and ordering by `charttime` using a window function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-event-selection",
+          "requirements": "Admission Event Selection: The query must filter the results of the window function to select only the first event for each ICU stay (e.g., `WHERE rn = 1`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-calculation",
+          "requirements": "Median Calculation: The query must calculate the median of the first pH values using an appropriate function like `APPROX_QUANTILES(valuenum, 2)[OFFSET(1)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final median value should be rounded to a reasonable number of decimal places, such as `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

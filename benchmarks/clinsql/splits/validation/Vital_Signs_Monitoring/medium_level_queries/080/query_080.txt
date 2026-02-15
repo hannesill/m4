@@ -1,0 +1,1 @@
+For a 61-year-old female ICU patient: among female ICU stays aged 56–66, categorize per-stay mean MAP over first 48 hours (<65, 65–74, 75–84, ≥85 mmHg) and report count, mean, median, IQR.

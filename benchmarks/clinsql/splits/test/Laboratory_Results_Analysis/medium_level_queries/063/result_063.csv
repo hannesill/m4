@@ -1,0 +1,2 @@
+cohort_description,patient_count,admission_count,mean_troponin_i,median_troponin_i,p25_troponin_i,p75_troponin_i,iqr_troponin_i,min_troponin_i_in_cohort,max_troponin_i_in_cohort
+Female patients aged 84-94 with ACS and initial Troponin I > 99th percentile,46,46,272.74,234.0,191.0,308.0,117.0,174.0,593.0

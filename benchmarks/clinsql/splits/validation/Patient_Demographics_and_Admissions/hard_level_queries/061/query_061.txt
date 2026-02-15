@@ -1,0 +1,1 @@
+I am evaluating a 68-year-old woman. Among female Medicare inpatients aged 63–73 who were transferred from another hospital and had a principal diagnosis of atrial fibrillation on admission, how many total admissions are in that cohort overall in the dataset?

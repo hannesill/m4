@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the initial patient population based on demographics and the primary clinical condition.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate the age at admission and filter for patients between 53 and 63 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-identification",
+          "requirements": "Sepsis Identification: The query must correctly identify patients with sepsis using relevant ICD-9 ('99591') or ICD-10 ('A41%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "septic-shock-exclusion",
+          "requirements": "Septic Shock Exclusion: The query must correctly exclude patients diagnosed with septic shock using ICD-9 ('78552', 'T8112%') or ICD-10 ('R6521') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-interventions-and-stratification",
+      "requirements": "Clinical Interventions and Stratification: Identifies specific organ support treatments and stratifies the cohort by LOS and ICU admission time.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "organ-support-identification",
+          "requirements": "Organ Support Identification: The query must correctly identify the use of mechanical ventilation, vasopressors, and RRT by checking for specific `itemid`s in `procedureevents` and `inputevents` tables.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-stratification",
+          "requirements": "LOS Stratification: The query must correctly calculate the length of stay and categorize it into '<8 days' and '>=8 days'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "day1-icu-stratification",
+          "requirements": "Day-1 ICU Stratification: The query must correctly identify patients admitted to the ICU within the first 24 hours of hospital admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, diagnoses, and ICU events.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "base-table-join",
+          "requirements": "Base Table Join: The query must correctly join `patients` and `admissions` tables on `subject_id` to form the initial cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "event-table-joins",
+          "requirements": "Event Table Joins: The query must use LEFT JOINs to connect the patient cohort with `procedureevents` and `inputevents` on `hadm_id` to prevent patient loss.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final aggregation and calculation of the required metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final query must group results by `los_category` and `day1_icu_category` to provide stratified outcomes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation",
+          "requirements": "Metric Calculation: The query must correctly calculate the percentage for in-hospital mortality, mechanical ventilation, vasopressors, and RRT using `AVG()` and multiplying by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query must round the final percentages to two decimal places for clarity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

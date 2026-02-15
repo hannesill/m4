@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the specific patient population based on demographics and primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at admission and filter for the age range 59-69 using `age_at_admission BETWEEN 59 AND 69`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hf-condition-selection",
+          "requirements": "Heart Failure Condition Selection: The query must identify patients with Heart Failure by correctly filtering on both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-setting-selection",
+          "requirements": "Inpatient Setting Selection: The query must restrict the analysis to inpatient admissions by utilizing tables like `admissions` and `diagnoses_icd` which are linked to `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Ensures tables are correctly joined to link patient data, admissions, and diagnoses.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The `patients` and `admissions` tables must be correctly joined on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The admissions-based cohort must be joined with `diagnoses_icd` on `hadm_id` to filter for conditions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-integration-join",
+          "requirements": "Outcome Integration Join: A `LEFT JOIN` must be used to connect the main HF cohort (`hf_admissions`) to the comorbidity flags (`comorbidity_flags`) to ensure no patients from the cohort are lost.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-feature-engineering",
+      "requirements": "Clinical Feature Engineering: Correctly defines and calculates clinical outcomes and features based on medical codes and patient data.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "aki-flag-creation",
+          "requirements": "AKI Flag Creation: The query must correctly identify Acute Kidney Injury (AKI) using both ICD-9 ('584%') and ICD-10 ('N17%') codes within a `CASE` statement.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ards-flag-creation",
+          "requirements": "ARDS Flag Creation: The query must correctly identify Acute Respiratory Distress Syndrome (ARDS) using both ICD-9 ('518.82') and ICD-10 ('J80') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "survival-days-calculation",
+          "requirements": "Survival Days Calculation: The query must calculate survival days for in-hospital deaths using `DATETIME_DIFF` between `deathtime` and `admittime`, and correctly condition this calculation on `hospital_expire_flag = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "composite-risk-score-logic",
+          "requirements": "Composite Risk Score Logic: The query must correctly implement the weighted sum logic for the composite risk score based on the defined comorbidity flags.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-analytics-and-aggregation",
+      "requirements": "Final Analytics and Aggregation: Correctly calculates and formats the final metrics for the entire cohort.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "rate-calculations",
+          "requirements": "Rate Calculations: The query must correctly calculate in-hospital mortality, AKI, and ARDS rates as a percentage using `SAFE_DIVIDE(SUM(flag), COUNT(hadm_id)) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-survival-aggregation",
+          "requirements": "Median Survival Aggregation: The query must find the median survival for deceased patients by applying `APPROX_QUANTILES(survival_days_if_deceased, 2)[OFFSET(1)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-distribution",
+          "requirements": "Risk Score Distribution: The query must report the full distribution of the composite risk score using `MIN`, `MAX`, and `APPROX_QUANTILES` for P25, P50, P75, and P90.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

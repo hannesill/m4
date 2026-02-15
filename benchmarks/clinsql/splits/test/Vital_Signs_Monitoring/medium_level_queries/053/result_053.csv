@@ -1,0 +1,4 @@
+sbp_category,measurement_count,mean_sbp,median_sbp,q1_sbp,q3_sbp,iqr_sbp
+< 140 mmHg,75201,110.5,111.0,100.0,122.0,22.0
+140-159 mmHg,8414,147.7,147.0,143.0,152.0,9.0
+>= 160 mmHg,2955,173.6,169.0,164.0,179.0,15.0

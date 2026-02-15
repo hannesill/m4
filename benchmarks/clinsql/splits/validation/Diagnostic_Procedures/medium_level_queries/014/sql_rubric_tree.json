@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction for ACS Admissions",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for patients between 83 and 93 years old.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-diagnosis-selection",
+          "requirements": "ACS Diagnosis Selection: Identifies admissions with an ACS diagnosis using specific ICD-9 ('410%', '4111') and ICD-10 ('I20.0%', 'I21%', 'I22%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-level-grouping",
+          "requirements": "Admission-Level Grouping: Groups by `hadm_id` to correctly associate diagnoses with a single admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-concept-stratification",
+      "requirements": "Clinical Concept Stratification",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: Correctly calculates the length of stay in days using `DATETIME_DIFF` on `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stay-duration-stratification",
+          "requirements": "Stay Duration Stratification: Uses a CASE statement to stratify admissions into '1-4 Day Stay' and '5-7 Day Stay' categories and filters for these ranges.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-type-logic",
+          "requirements": "Diagnosis Type Logic: Correctly determines the minimum `seq_num` for ACS codes to identify primary vs. secondary diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-type-stratification",
+          "requirements": "Diagnosis Type Stratification: Uses a CASE statement to label admissions as 'Primary Diagnosis' (`min_acs_seq_num = 1`) or 'Secondary Diagnosis'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation (Ultrasound Procedures)",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "ultrasound-code-selection",
+          "requirements": "Ultrasound Code Selection: Correctly identifies ultrasound procedures using ICD-9 ('88.7%') and ICD-10 ('B24%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-admission-ultrasound-count",
+          "requirements": "Per-Admission Ultrasound Count: Correctly counts the number of ultrasound procedures per admission using `COUNT(proc.icd_code)` and grouping by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Final Clinical Analytics and Aggregation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Final Grouping Logic: Groups the final results by the two stratification columns (`stay_category`, `diagnosis_type`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-calculation",
+          "requirements": "Mean Calculation: Calculates the mean number of ultrasounds per admission for each group using `AVG(pc.ultrasound_count)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "min-max-calculation",
+          "requirements": "Min/Max Calculation: Calculates the minimum and maximum number of ultrasounds for each group using `MIN(pc.ultrasound_count)` and `MAX(pc.ultrasound_count)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Includes the stratification columns, admission count, and all three required metrics (mean, min, max) in the final output, with the average rounded.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

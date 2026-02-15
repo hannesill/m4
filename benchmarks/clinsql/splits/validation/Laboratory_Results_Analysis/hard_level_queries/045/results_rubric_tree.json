@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p90-instability-score-column-exists",
+              "requirements": "Column exists for 90th percentile lab instability score (e.g., p90_instability_score_for_asthma_cohort).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-decile-mortality-column-exists",
+              "requirements": "Column exists for top decile mortality rate (e.g., top_tier_mortality_rate_percent).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-decile-los-column-exists",
+              "requirements": "Column exists for top decile average LOS (e.g., top_tier_avg_los_days).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-decile-events-column-exists",
+              "requirements": "Column exists for top decile average critical lab events (e.g., top_tier_avg_critical_events_per_patient).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comparison-events-column-exists",
+              "requirements": "Column exists for comparison group average critical lab events (e.g., comparison_avg_critical_events_per_patient).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "instability-score-validation",
+          "requirements": "Validation for 90th-percentile 72-hour lab instability score (p90_instability_score_for_asthma_cohort)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "instability-score-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0). A score is a positive number.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-score-acceptable",
+              "requirements": "Acceptable Range (0.5-15.0). The 90th percentile for a 72h instability score in a specific cohort is expected to be a moderate, non-zero number.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation for top decile mortality rate (top_tier_mortality_rate_percent)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0). Mortality is a percentage.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0.0-25.0). While asthma exacerbation can be fatal, mortality in this specific inpatient group, even the sickest decile, is not expected to be extremely high.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validation for top decile average LOS (top_tier_avg_los_days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Clinically Plausible (1.0-100.0). Average LOS for inpatients should be at least one day.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Acceptable Range (3.0-25.0). The sickest decile of asthma exacerbation patients would likely have a hospital stay longer than a typical admission but not excessively long on average.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-decile-events-validation",
+          "requirements": "Validation for top decile average critical lab events (top_tier_avg_critical_events_per_patient)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "top-decile-events-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0). The average number of events must be a positive value.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-decile-events-acceptable",
+              "requirements": "Acceptable Range (1.0-20.0). Patients in the top decile of instability are expected to have at least one critical lab event on average, but not an astronomically high number.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "comparison-events-validation",
+          "requirements": "Validation for comparison group average critical lab events (comparison_avg_critical_events_per_patient)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "comparison-events-plausible",
+              "requirements": "Clinically Plausible (0.0-50.0). The average number of events for a general age-matched inpatient population.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comparison-events-acceptable",
+              "requirements": "Acceptable Range (0.1-10.0). The general population should have a lower average than the high-risk asthma group.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

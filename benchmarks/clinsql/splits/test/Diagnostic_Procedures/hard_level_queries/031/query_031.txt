@@ -1,0 +1,1 @@
+I have a 71‑year‑old male ICU patient. For male ICU patients aged 66–76 with HHS, stratify 48‑hour procedure burden into quintiles and report per quintile: number of ICU stays, mean procedures, min/max, hospital mortality %, mean hospital LOS, and 30‑day readmission %.

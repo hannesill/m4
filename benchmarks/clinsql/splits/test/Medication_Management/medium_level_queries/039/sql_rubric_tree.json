@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters patients based on demographics and diagnoses.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at the time of admission and filter for the range 52-62 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-diagnosis-filtering",
+          "requirements": "T2DM Diagnosis Filtering: The query must correctly identify patients with Type 2 Diabetes Mellitus using relevant ICD-9 ('250%') and ICD-10 ('E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-filtering",
+          "requirements": "Heart Failure Diagnosis Filtering: The query must correctly identify patients with Heart Failure using relevant ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-length-filter",
+          "requirements": "Admission Length Filter: The query must ensure the hospital stay is at least 72 hours long to allow for distinct 'first 24h' and 'final 48h' windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies and categorizes GLP-1 administrations within specific timeframes.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "glp1-drug-identification",
+          "requirements": "GLP-1 Drug Identification: The query must correctly identify GLP-1 medications by name (e.g., semaglutide, liraglutide) from the prescriptions table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "injectable-route-filtering",
+          "requirements": "Injectable Route Filtering: The query must filter for injectable GLP-1s by specifying the subcutaneous route (`LOWER(rx.route) = 'sc'`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-24h-window-logic",
+          "requirements": "First 24h Window Logic: The query must correctly flag administrations occurring within the first 24 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-48h-window-logic",
+          "requirements": "Final 48h Window Logic: The query must correctly flag administrations occurring within the final 48 hours before discharge.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables to link patient data with diagnoses and prescriptions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-prescription-join",
+          "requirements": "Cohort-Prescription Join: The query must join the patient cohort to the `prescriptions` table on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-summary-join",
+          "requirements": "Cohort-Summary Join: The query must use a LEFT JOIN to connect the full patient cohort with the `glp1_events` to ensure all cohort members are included in the final count, even if they did not receive the medication.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates and presents the final prevalence and change metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-aggregation",
+          "requirements": "Cohort Aggregation: The query must correctly count the total number of unique admissions in the cohort and the unique admissions with a GLP-1 in each time window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-calculation",
+          "requirements": "Prevalence Calculation: The query must correctly calculate the prevalence for each time window as a percentage, using the appropriate numerator and denominator.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "absolute-change-calculation",
+          "requirements": "Absolute Change Calculation: The query must calculate the absolute change in prevalence by subtracting the first window's prevalence from the last window's.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "relative-change-calculation",
+          "requirements": "Relative Change Calculation: The query must calculate the relative change in prevalence, correctly handling the formula ((late_prevalence - early_prevalence) / early_prevalence).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "safe-division-and-rounding",
+          "requirements": "Safe Division and Rounding: The query should use `SAFE_DIVIDE` to prevent division-by-zero errors and `ROUND` to format the final output.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

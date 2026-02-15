@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters for patients aged 75-85 using p.anchor_age BETWEEN 75 AND 85.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ventilation-identification",
+          "requirements": "Ventilation Identification: Correctly identifies patients on invasive mechanical ventilation by filtering chartevents for itemid = 223849.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-data-extraction-and-processing",
+      "requirements": "Clinical Data Extraction and Processing",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filtering-vitals",
+          "requirements": "Temporal Filtering of Vitals: Correctly filters vital signs to the first 48 hours of the ICU stay using DATETIME_DIFF(ce.charttime, tc.intime, HOUR) BETWEEN 0 AND 48.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-sign-identification",
+          "requirements": "Vital Sign Identification: Correctly identifies itemids for Heart Rate (220045) and Mean Arterial Pressure (220181, 220052).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-logic",
+          "requirements": "Instability Score Logic: Correctly defines hypotension (map < 65) and tachycardia (heart_rate > 100) and combines them into a point instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-cleaning",
+          "requirements": "Data Cleaning: Applies plausible physiological range filters and removes nulls for heart rate and MAP to ensure data quality before scoring.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Aggregation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stay-level-aggregation",
+          "requirements": "Stay-Level Aggregation: Correctly aggregates point scores to a per-stay composite instability score using AVG().",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "90th Percentile Calculation: Correctly calculates the 90th percentile of the composite instability score using APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-stratification",
+          "requirements": "Risk Stratification: Correctly identifies the top 25% of unstable patients using NTILE(4) ordered by the composite instability score descending.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-calculation",
+          "requirements": "Outcome Calculation: Correctly joins with the admissions table to retrieve mortality status and calculates averages for specified outcomes (ICU LOS, mortality, etc.) grouped by risk group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "correct-table-joins",
+          "requirements": "Correct Table Joins: Accurately joins patients, icustays, chartevents, and admissions tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: Consistently uses subject_id, hadm_id, and stay_id as joining keys between the respective datasets.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

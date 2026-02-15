@@ -1,0 +1,216 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates patient age at admission and filters for the range 64-74 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-filter",
+          "requirements": "Identifies admissions for Upper GI Bleeding (UGIB) by filtering `diagnoses_icd`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-filter",
+          "requirements": "Implicitly filters for inpatient admissions by joining with `hosp.admissions` and `hosp.diagnoses_icd`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Correct joining of tables and Common Table Expressions (CTEs).",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Correctly joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-ugib-join",
+          "requirements": "Correctly joins the main patient cohort with the UGIB admissions list on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "feature-integration-join",
+          "requirements": "Uses `LEFT JOIN` to integrate calculated features (complications, diagnosis count) to avoid dropping patients from the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "derived-feature-and-score-calculation",
+      "requirements": "Calculation of intermediate features and the composite risk score.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ugib-code-selection",
+          "requirements": "Selects a comprehensive set of UGIB codes for both ICD-9 and ICD-10.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "major-complication-identification",
+          "requirements": "Correctly flags admissions with major complications based on specified ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-count-calculation",
+          "requirements": "Calculates the total number of unique diagnoses per admission using `COUNT(DISTINCT icd_code)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "composite-risk-score-formula",
+          "requirements": "Correctly applies the formula `(diagnosis count) + (20 * major complication flag)` to calculate the risk score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "30-day-mortality-flag",
+          "requirements": "Correctly creates a binary flag for mortality within 30 days of admission time.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Calculates the length of stay in days using the difference between discharge and admission times.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-analytics-and-aggregation",
+      "requirements": "Final stratification, aggregation, and calculation of output metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-quintile-stratification",
+          "requirements": "Correctly stratifies the cohort into 5 quintiles using `NTILE(5)` ordered by the composite risk score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Groups the final results by the calculated `risk_quintile`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-metric-calculation-n",
+          "requirements": "Calculates the number of patients in each quintile using `COUNT()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-metric-calculation-mean-score",
+          "requirements": "Calculates the mean composite risk score for each quintile using `AVG()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-metric-calculation-mortality-rate",
+          "requirements": "Calculates the 30-day mortality percentage using `AVG(mortality_30day) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-metric-calculation-complication-rate",
+          "requirements": "Calculates the major complication percentage using `AVG(has_major_complication) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-survivor-los-calculation",
+          "requirements": "Correctly calculates the median Length of Stay (LOS) specifically for survivors.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "survivor-filter-for-los",
+              "requirements": "Filters for survivors (`mortality_30day = 0`) before calculating the median LOS.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-function",
+              "requirements": "Uses an appropriate function like `APPROX_QUANTILES` to calculate the median (50th percentile).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

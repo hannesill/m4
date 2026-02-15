@@ -1,0 +1,4 @@
+cohort_group,total_admissions,mean_risk_score,mortality_rate_90_day_pct,major_complication_rate_pct,avg_survivor_los_days,profile_risk_percentile
+"Profile (68M, Septic Shock, High Comorbidity) Risk Percentile",,74.0,,,,1.58
+General Inpatient Population,544007,57.8,7.22,8.24,4.53,
+"Target Cohort (Male, 63-73, Septic Shock, High Comorbidity)",2021,93.63,42.45,100.0,18.45,

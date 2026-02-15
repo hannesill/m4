@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the initial patient population based on demographics and primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at the time of admission and filter for the range 39-49 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pneumonia-diagnosis-filter",
+          "requirements": "Pneumonia Diagnosis Filter: The query must filter admissions to include only those with a diagnosis of either community-acquired or aspiration pneumonia using specific ICD codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly translates clinical concepts from the question into SQL logic.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "pneumonia-type-classification",
+          "requirements": "Pneumonia Type Classification: The query must use a CASE statement to correctly categorize admissions as 'Aspiration Pneumonia' vs. 'Community-Acquired Pneumonia' based on specific ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly handle both ICD-9 and ICD-10 codes by checking the 'icd_version' column for all diagnosis codes used.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "day1-icu-status-logic",
+          "requirements": "Day-1 ICU Status Logic: The query must correctly determine if a patient was admitted to the ICU within the first 24 hours of hospital admission using an EXISTS subquery and a time-based condition.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-bucketing",
+          "requirements": "Length of Stay (LOS) Bucketing: The query must calculate LOS in days and categorize it into the specified buckets: '1-3 days', '4-7 days', and '>=8 days'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient, admission, and diagnosis data.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join 'patients' and 'admissions' tables on 'subject_id'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must correctly join the admissions cohort with 'diagnoses_icd' on 'hadm_id' to identify pneumonia cases and comorbidities.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs final calculations and aggregations to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final aggregation must group results by 'pneumonia_type', 'day1_icu_status', and the calculated 'los_bucket'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "In-Hospital Mortality Rate Calculation: The query must calculate the mortality rate as a percentage using `AVG(hospital_expire_flag) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-count-calculation",
+          "requirements": "Average Comorbidity Count Calculation: The query must calculate the average comorbidity count per admission within each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "difference-calculation",
+          "requirements": "Absolute and Relative Difference Calculation: The query must use window functions (LAG) to compute the absolute and relative differences in mortality rates between LOS buckets.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-scaffolding",
+          "requirements": "Output Scaffolding: The query must use a scaffold to ensure all possible strata combinations are present in the final output, even if they have no patients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the patient population based on demographics and primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "The query must filter for female patients using `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "The query must correctly calculate the age at admission and filter for patients between 88 and 98 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "asthma-condition-identification",
+          "requirements": "The query must identify patients with asthma by checking for both ICD-9 codes (LIKE '493%') and ICD-10 codes (LIKE 'J45%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Translates clinical concepts like length of stay and diagnostic procedures into SQL logic.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-categorization",
+          "requirements": "Correctly categorizes admissions into '1-3 Day Stay' and '4-7 Day Stay' using DATETIME_DIFF and a CASE statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-procedure-code-selection",
+          "requirements": "Identifies diagnostic procedures by correctly filtering for both ICD-9 (e.g., '87%', '88%') and ICD-10 (e.g., 'B%') procedure codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Ensures correct table joins and relationships to link patient, admission, and procedure data.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Correctly joins the `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to build the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-data-join-strategy",
+          "requirements": "Uses a LEFT JOIN to connect the asthma admissions cohort with the `procedures_icd` table, ensuring admissions with zero procedures are included in the count.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the required calculations and aggregations to answer the question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-procedure-count",
+          "requirements": "Correctly counts the number of diagnostic procedures per admission by using `COUNT(proc.icd_code)` and grouping by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-logic",
+          "requirements": "The final aggregation must group results by `stay_category` to provide separate analytics for each length-of-stay cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Uses the `APPROX_QUANTILES` function with 4 quantiles to correctly calculate and extract the 25th, 50th, and 75th percentiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

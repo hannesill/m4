@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using the condition p.gender = 'M'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter the patient cohort to the age range of 39 to 49 years using p.anchor_age BETWEEN 39 AND 49.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: The query must ensure that the patient cohort is restricted to individuals with at least one ICU stay by joining with the icustays table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "respiratory-rate-code-selection",
+          "requirements": "Respiratory Rate Code Selection: The query must correctly identify respiratory rate measurements by filtering on the appropriate itemids (e.g., ce.itemid IN (220210, 615)).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-plausibility-filter",
+          "requirements": "Value Plausibility Filter: The query should apply a reasonable range filter on the measurement values (e.g., ce.valuenum BETWEEN 5 AND 50) to exclude outliers and ensure data quality.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-to-icu-join",
+          "requirements": "Patient to ICU Join: The query must correctly join the patients table (p) with the icustays table (icu) using subject_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-to-events-join",
+          "requirements": "ICU to Events Join: The query must correctly join the icustays table (icu) with the chartevents table (ce) using stay_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-constraint",
+          "requirements": "Temporal Constraint: The query must filter for events within the first 24 hours of the ICU stay using a condition like DATETIME_DIFF(ce.charttime, icu.intime, HOUR) BETWEEN 0 AND 24.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aggregation-function",
+          "requirements": "Aggregation Function: The query must use the MIN() function on the respiratory rate value column (ce.valuenum) to find the minimum rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to two decimal places using the ROUND() function for clarity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Filters for the correct patient population based on demographics and admission details.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Correctly filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates and filters for patient age at admission to be between 68 and 78.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insurance-selection",
+          "requirements": "Insurance Selection: Correctly filters for patients with 'Medicare' insurance.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-source-selection",
+          "requirements": "Admission Source Selection: Correctly filters for admissions from the emergency department using `admission_location`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-status-selection",
+          "requirements": "Discharge Status Selection: Correctly ensures that the admission has a documented discharge by checking `dischtime IS NOT NULL`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient, admission, and diagnosis information.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: Correctly joins the `admissions` and `patients` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: Correctly joins the `admissions` (or a CTE derived from it) and `diagnoses_icd` tables on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies principal hemorrhagic stroke admissions.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "principal-diagnosis-filter",
+          "requirements": "Principal Diagnosis Filter: Correctly filters for the principal diagnosis by using `d.seq_num = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: Correctly processes both ICD-9 and ICD-10 codes by checking the `icd_version` column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hemorrhagic-stroke-code-selection",
+          "requirements": "Hemorrhagic Stroke Code Selection: Uses the correct ICD-9 (430-432) and ICD-10 (I60-I62) code ranges to identify hemorrhagic stroke.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly performs the final aggregation to answer the clinical question.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "final-count-aggregation",
+          "requirements": "Final Count Aggregation: Correctly counts the total number of admissions that meet the cohort criteria using `COUNT(hadm_id)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "unnecessary-calculations",
+          "requirements": "Unnecessary Calculations: The query includes several calculations (readmission rate, LOS) not requested in the question, but provides the primary required count.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

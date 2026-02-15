@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly filters patient age using `p.anchor_age BETWEEN 76 AND 86`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "unit-selection",
+          "requirements": "Unit Selection: Filters for patients in a step-down/intermediate care unit using `icu.first_careunit IN ('Medical/Surgical Intermediate Care', 'Neuro Stepdown')`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sbp-code-selection",
+          "requirements": "SBP Code Selection: Identifies Systolic Blood Pressure measurements using the correct itemids: `ce.itemid IN (220050, 51)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-constraint",
+          "requirements": "Temporal Constraint: Filters SBP measurements to the first 24 hours of the ICU stay using a condition like `ce.charttime BETWEEN icu.intime AND DATETIME_ADD(icu.intime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "plausible-value-filtering",
+          "requirements": "Plausible Value Filtering: Excludes null values and applies a reasonable range filter for SBP, e.g., `ce.valuenum IS NOT NULL AND ce.valuenum BETWEEN 70 AND 250`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins the `patients`, `icustays`, and `chartevents` tables to link demographics with clinical events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: Uses the correct keys for joining tables: `p.subject_id = icu.subject_id` and `icu.stay_id = ce.stay_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "standard-deviation-calculation",
+          "requirements": "Standard Deviation Calculation: Correctly applies the `STDDEV()` function to the SBP values (`ce.valuenum`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Formats the final result by rounding it to two decimal places using `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

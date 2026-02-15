@@ -1,0 +1,1 @@
+For my 64-year-old male inpatient, among male medicine-service admissions aged 59–69, provide LOS distribution (mean, 25th/50th/75th/90th percentiles) by discharge home, facility, and in-hospital death, and percent ≤10 days.

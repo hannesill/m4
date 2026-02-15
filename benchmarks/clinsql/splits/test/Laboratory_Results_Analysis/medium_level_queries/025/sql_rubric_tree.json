@@ -1,0 +1,168 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at the time of admission and filter for the 58-68 age range.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-selection",
+          "requirements": "Primary Condition Selection: The query must filter admissions based on diagnosis codes for Chest Pain or Acute Myocardial Infarction (AMI).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd-version-handling",
+              "requirements": "ICD Version Handling: The query must correctly handle both ICD-9 and ICD-10 codes by filtering on the 'icd_version' column.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ami-code-selection",
+              "requirements": "AMI Code Selection: The query must select appropriate ICD codes for AMI, such as '410%' for ICD-9 and 'I21%' for ICD-10.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "chest-pain-code-selection",
+              "requirements": "Chest Pain Code Selection: The query must select appropriate ICD codes for Chest Pain, such as '78650', '78659' for ICD-9 and 'R079', 'R0789' for ICD-10.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifying and filtering for the first elevated Troponin T measurement.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "troponin-t-identification",
+          "requirements": "Troponin T Identification: The query must correctly identify Troponin T measurements using the specific itemid (51003).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-measurement-logic",
+          "requirements": "First Measurement Logic: The query must use a window function like ROW_NUMBER() partitioned by admission and ordered by charttime to isolate the first Troponin T measurement for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "elevated-troponin-filter",
+          "requirements": "Elevated Troponin Filter: The query must filter the identified first measurement to include only those with a value greater than 0.01.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joining tables to link patient demographics, admissions, diagnoses, and lab events.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the 'patients' and 'admissions' tables on 'subject_id'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must correctly join the 'admissions' and 'diagnoses_icd' tables on 'hadm_id'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-lab-join",
+          "requirements": "Cohort-Lab Join: The query must correctly join the patient cohort with the 'labevents' table on 'hadm_id' to link lab results to specific admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculation of the final Troponin T distribution metrics for the qualified patient cohort.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-rejoin-for-analytics",
+          "requirements": "Cohort Re-join for Analytics: The query must rejoin the final cohort (patients with an elevated first troponin) back to the labevents table to gather all their Troponin T values for distribution analysis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-calculation",
+          "requirements": "Mean Calculation: The query must calculate the average of all Troponin T values for the final cohort using AVG(valuenum).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stddev-calculation",
+          "requirements": "Standard Deviation Calculation: The query must calculate the standard deviation of Troponin T values using STDDEV(valuenum).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "min-max-calculation",
+          "requirements": "Min-Max Calculation: The query must find the minimum and maximum Troponin T values using MIN(valuenum) and MAX(valuenum).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

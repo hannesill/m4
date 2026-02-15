@@ -1,0 +1,130 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "troponin-category-column-exists",
+              "requirements": "A column for Troponin categories exists (e.g., 'troponin_category', 'category', 'level')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "patient-count-column-exists",
+              "requirements": "A column for patient counts exists (e.g., 'patient_count', 'count', 'num_patients')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-column-exists",
+              "requirements": "A column for percentages exists (e.g., 'percentage_of_total', 'percent', 'pct_patients')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns (`troponin_category`, `patient_count`, `percentage_of_total`)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "troponin-category-validation",
+          "requirements": "Validate Troponin categories are present",
+          "sequential": false,
+          "critical": false,
+          "scoring": "custom_logic",
+          "sub_tasks": [
+            {
+              "id": "troponin-category-values-correct",
+              "requirements": "Output contains the three expected categories: Normal, Borderline, Elevated.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "patient-count-validation",
+          "requirements": "Validate patient counts for each Troponin category",
+          "sequential": false,
+          "critical": false,
+          "scoring": "custom_logic",
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-patient-count",
+              "requirements": "Patient counts are clinically plausible (e.g., >0, and Elevated > Borderline > Normal for this ACS cohort)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentage-validation",
+          "requirements": "Validate percentage values for each Troponin category",
+          "sequential": false,
+          "critical": false,
+          "scoring": "custom_logic",
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-percentage",
+              "requirements": "Percentages sum to 100% (+/- 1%) and reflect the expected distribution for an elderly ACS cohort (Elevated category should be the vast majority)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-percentage",
+              "requirements": "Percentage for 'Elevated' category is within an acceptable range for this high-risk population (e.g., 70-95%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

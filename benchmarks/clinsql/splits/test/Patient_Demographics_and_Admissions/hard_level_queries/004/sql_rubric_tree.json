@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at the time of admission and filter for the range 85-95, e.g., `(anchor_age + EXTRACT(YEAR FROM admittime) - anchor_year) BETWEEN 85 AND 95`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insurance-filter",
+          "requirements": "Insurance Filter: The query must filter for patients with 'Medicare' insurance via `insurance = 'Medicare'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-source-filter",
+          "requirements": "Admission Source Filter: The query must identify patients transferred from another hospital using a condition like `UPPER(admission_location) LIKE '%TRANSFER%HOSP%'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Osteomyelitis",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "principal-diagnosis-filter",
+          "requirements": "Principal Diagnosis Filter: The query must correctly identify the principal diagnosis by filtering on `d.seq_num = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly distinguish and handle both ICD-9 and ICD-10 codes by using the `d.icd_version` field in its conditions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "osteomyelitis-code-selection",
+          "requirements": "Osteomyelitis Code Selection: The query must use appropriate LIKE patterns to identify osteomyelitis for both ICD versions, such as `d.icd_code LIKE '730%'` for ICD-9 and `d.icd_code LIKE 'M86%'` for ICD-10.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "admissions-patients-join",
+          "requirements": "Admissions-Patients Join: The `admissions` and `patients` tables must be correctly joined on `subject_id` to link patient demographics with admission details.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: The resulting admissions data must be correctly joined with the `diagnoses_icd` table on `hadm_id` to link admissions to their diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "count-admissions",
+          "requirements": "Count Admissions: The query must calculate the total number of index admissions that meet all specified criteria using `COUNT(hadm_id)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

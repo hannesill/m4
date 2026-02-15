@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-mean",
+              "requirements": "Column for mean Troponin T exists (e.g., mean_troponin_t, avg_troponin_t)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-stddev",
+              "requirements": "Column for standard deviation of Troponin T exists (e.g., stddev_troponin_t, sd_troponin)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-min",
+              "requirements": "Column for minimum Troponin T exists (e.g., min_troponin_t)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-max",
+              "requirements": "Column for maximum Troponin T exists (e.g., max_troponin_t)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns (mean, stddev, min, max)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mean-troponin-validation",
+          "requirements": "Validate column 'mean_troponin_t'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-troponin-plausible",
+              "requirements": "Clinically Plausible (0.01-10.0 ng/mL)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-troponin-acceptable",
+              "requirements": "Acceptable Range (0.1-2.5 ng/mL)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "stddev-troponin-validation",
+          "requirements": "Validate column 'stddev_troponin_t'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "stddev-troponin-plausible",
+              "requirements": "Clinically Plausible (0.0-15.0 ng/mL)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stddev-troponin-acceptable",
+              "requirements": "Acceptable Range (0.5-5.0 ng/mL)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "min-troponin-validation",
+          "requirements": "Validate column 'min_troponin_t'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "min-troponin-plausible",
+              "requirements": "Clinically Plausible (0.01-1.0 ng/mL)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-troponin-acceptable",
+              "requirements": "Acceptable Range (0.01-0.1 ng/mL)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "max-troponin-validation",
+          "requirements": "Validate column 'max_troponin_t'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "max-troponin-plausible",
+              "requirements": "Clinically Plausible (1.0-50.0 ng/mL)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-troponin-acceptable",
+              "requirements": "Acceptable Range (5.0-35.0 ng/mL)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

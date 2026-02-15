@@ -1,0 +1,210 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "cohort-column-exists",
+              "requirements": "Exists column for cohort identification (e.g., 'cohort', 'group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-utilization-column-exists",
+              "requirements": "Exists column for minimum diagnostic utilization (e.g., 'min_diagnostic_utilization')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-utilization-column-exists",
+              "requirements": "Exists column for P75 diagnostic utilization (e.g., 'diagnostic_utilization_p75')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-utilization-column-exists",
+              "requirements": "Exists column for P90 diagnostic utilization (e.g., 'diagnostic_utilization_p90')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-column-exists",
+              "requirements": "Exists column for average hospital length of stay (e.g., 'avg_hospital_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Exists column for in-hospital mortality (e.g., 'in_hospital_mortality_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key result columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "min-diagnostic-utilization-validation",
+          "requirements": "Validate values in column 'min_diagnostic_utilization'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "min-utilization-plausible",
+              "requirements": "Clinically Plausible (0-5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-utilization-acceptable",
+              "requirements": "Acceptable Range (0-2)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p75-diagnostic-utilization-validation",
+          "requirements": "Validate values in column 'diagnostic_utilization_p75'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p75-utilization-plausible",
+              "requirements": "Clinically Plausible (2-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-utilization-acceptable",
+              "requirements": "Acceptable Range (5-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p90-diagnostic-utilization-validation",
+          "requirements": "Validate values in column 'diagnostic_utilization_p90'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p90-utilization-plausible",
+              "requirements": "Clinically Plausible (3-40)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-utilization-acceptable",
+              "requirements": "Acceptable Range (7-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-hospital-los-validation",
+          "requirements": "Validate values in column 'avg_hospital_los_days'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "los-plausible",
+              "requirements": "Clinically Plausible (3-60 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-acceptable",
+              "requirements": "Acceptable Range (8-35 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "in-hospital-mortality-validation",
+          "requirements": "Validate values in column 'in_hospital_mortality_pct'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-plausible",
+              "requirements": "Clinically Plausible (0-100%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-acceptable",
+              "requirements": "Acceptable Range (8-40%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

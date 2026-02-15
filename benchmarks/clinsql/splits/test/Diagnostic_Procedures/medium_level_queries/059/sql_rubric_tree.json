@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients (p.gender = 'M').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Calculates and filters patient age at admission to be between 67 and 77 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-identification",
+          "requirements": "Identifies admissions with a heart failure diagnosis using ICD-9 ('428%') or ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-stay-filter",
+          "requirements": "Restricts analysis to admissions with a length of stay between 1 and 7 days.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Correctly joins the patients, admissions, diagnoses_icd, and procedures_icd tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Uses the correct keys (subject_id and hadm_id) for joining tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-join-type",
+          "requirements": "Uses a LEFT JOIN to the procedures table to correctly include admissions with zero imaging studies.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "stratification-and-concept-mapping",
+      "requirements": "Stratification and Medical Concept Mapping",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-categorization",
+          "requirements": "Correctly categorizes admissions into length of stay groups ('1-4 Day Stay' vs. '5-7 Day Stay').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-type-categorization",
+          "requirements": "Correctly categorizes heart failure as 'Primary Diagnosis' or 'Secondary Diagnosis' based on the diagnosis sequence number (seq_num).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-procedure-identification",
+          "requirements": "Identifies imaging procedures using appropriate ICD-9 ('87%', '88%') and ICD-10 ('B%') code patterns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-counting",
+          "requirements": "Counts the number of imaging procedures for each individual admission (per hadm_id).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-stratified-grouping",
+          "requirements": "Groups the final results by the correct stratification categories (stay_category, diagnosis_type).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Calculates the 25th, 50th, and 75th percentiles of imaging studies per admission using APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

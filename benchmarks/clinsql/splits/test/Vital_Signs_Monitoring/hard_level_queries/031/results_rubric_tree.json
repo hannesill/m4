@@ -1,0 +1,263 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "group_name_column_exists",
+              "requirements": "Column for grouping exists (e.g., 'group_name', 'cohort')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile_score_column_exists",
+              "requirements": "Column for 95th-percentile instability score exists (e.g., 'target_group_95th_percentile_score', 'p95_instability')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "fever_episodes_column_exists",
+              "requirements": "Column for average fever episodes exists (e.g., 'avg_fever_episodes_72h', 'mean_fever_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hypoxemia_episodes_column_exists",
+              "requirements": "Column for average hypoxemia episodes exists (e.g., 'avg_hypoxemia_episodes_72h', 'mean_spo2_drops')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachypnea_episodes_column_exists",
+              "requirements": "Column for average tachypnea episodes exists (e.g., 'avg_tachypnea_episodes_72h', 'mean_rr_high_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu_los_column_exists",
+              "requirements": "Column for average ICU length of stay exists (e.g., 'avg_icu_los_days', 'mean_icu_duration')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality_column_exists",
+              "requirements": "Column for in-hospital mortality exists (e.g., 'in_hospital_mortality_percent', 'mortality_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No Unexpected NULL/Empty Values",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "no-null-percentile-score",
+              "requirements": "The 95th percentile instability score column must not be null/empty for the target group row.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "no-null-comparison-metrics",
+              "requirements": "Columns for fever, hypoxemia, tachypnea, ICU LOS, and mortality must not be null/empty for either group.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "percentile-instability-score-validation",
+          "requirements": "Validate 95th-percentile instability score for the target group",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-score-plausible",
+              "requirements": "Clinically Plausible (0.0 - 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-score-acceptable",
+              "requirements": "Acceptable Range (2.5 - 5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "fever-episodes-validation",
+          "requirements": "Validate average fever episodes for both groups",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "fever-episodes-plausible",
+              "requirements": "Clinically Plausible (0.0 - 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "fever-episodes-acceptable",
+              "requirements": "Acceptable Ranges: Target Group (0.5 - 2.0), Comparison Group (0.1 - 1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hypoxemia-episodes-validation",
+          "requirements": "Validate average hypoxemia episodes for both groups",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "hypoxemia-episodes-plausible",
+              "requirements": "Clinically Plausible (0.0 - 20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hypoxemia-episodes-acceptable",
+              "requirements": "Acceptable Ranges: Target Group (1.0 - 5.0), Comparison Group (0.2 - 2.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "tachypnea-episodes-validation",
+          "requirements": "Validate average tachypnea episodes for both groups",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "tachypnea-episodes-plausible",
+              "requirements": "Clinically Plausible (0.0 - 72.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachypnea-episodes-acceptable",
+              "requirements": "Acceptable Ranges: Target Group (20.0 - 40.0), Comparison Group (10.0 - 25.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "Validate average ICU length of stay for both groups",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "icu-los-plausible",
+              "requirements": "Clinically Plausible (1.0 - 30.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-acceptable",
+              "requirements": "Acceptable Ranges: Target Group (4.0 - 10.0), Comparison Group (2.0 - 7.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validate in-hospital mortality percentage for both groups",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-plausible",
+              "requirements": "Clinically Plausible (0.0 - 100.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-acceptable",
+              "requirements": "Acceptable Ranges: Target Group (8.0 - 25.0%), Comparison Group (3.0 - 15.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

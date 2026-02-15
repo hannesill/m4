@@ -1,0 +1,5 @@
+diagnosis_type,stay_category,admission_count,p25_ultrasounds,p50_median_ultrasounds,p75_ultrasounds
+Primary ACS,1-4 Day Stay,263,0,0,1
+Primary ACS,5-7 Day Stay,46,0,0,1
+Secondary ACS,1-4 Day Stay,94,0,0,0
+Secondary ACS,5-7 Day Stay,35,0,0,0

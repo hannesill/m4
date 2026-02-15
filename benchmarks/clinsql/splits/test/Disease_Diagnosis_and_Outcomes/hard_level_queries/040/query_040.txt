@@ -1,0 +1,1 @@
+I am evaluating a 74‑year‑old female with intracranial hemorrhage. For female inpatients aged 69–79 with ICH, stratify admissions into quintiles by the composite risk score and report, per quintile: n, 30‑day mortality %, major complication %, and median survivor LOS.

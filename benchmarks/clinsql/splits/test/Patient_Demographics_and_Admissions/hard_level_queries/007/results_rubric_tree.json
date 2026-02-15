@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "readmission-rate-column-exists",
+              "requirements": "Column Exists: 30-day readmission rate (e.g., 'readmission_rate_30_day_percent')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-readmitted-column-exists",
+              "requirements": "Column Exists: Median LOS for readmitted patients (e.g., 'median_los_readmitted_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-not-readmitted-column-exists",
+              "requirements": "Column Exists: Median LOS for non-readmitted patients (e.g., 'median_los_not_readmitted_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percent-los-gt-10-column-exists",
+              "requirements": "Column Exists: Percent of stays > 10 days (e.g., 'percent_los_gt_10_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "readmission-rate-validation",
+          "requirements": "Validation for 30-day readmission rate",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-readmission-rate",
+              "requirements": "Clinically Plausible (0.0-40.0). TIA readmission rates in the elderly are significant but typically not over 40% in 30 days.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-readmission-rate",
+              "requirements": "Acceptable Range (8.0-20.0). Expected TIA readmission rates for this high-risk elderly cohort fall in this range.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-readmitted-validation",
+          "requirements": "Validation for median LOS (readmitted)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-median-los-readmitted",
+              "requirements": "Clinically Plausible (0.5-15.0). Median TIA LOS is typically short, but can extend; 15 days is a generous upper bound for a median.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-median-los-readmitted",
+              "requirements": "Acceptable Range (1.0-5.0). TIA workups are usually quick; median LOS should be in the low single digits.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-not-readmitted-validation",
+          "requirements": "Validation for median LOS (not readmitted)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-median-los-not-readmitted",
+              "requirements": "Clinically Plausible (0.5-15.0). Similar logic to the readmitted group; median should not be excessively high.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-median-los-not-readmitted",
+              "requirements": "Acceptable Range (1.0-4.0). Expecting this to be similar to or slightly less than the readmitted group.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percent-los-gt-10-validation",
+          "requirements": "Validation for percent of stays > 10 days",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-percent-los-gt-10",
+              "requirements": "Clinically Plausible (0.0-20.0). It's very rare for a TIA stay to exceed 10 days; the percentage should be low.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-percent-los-gt-10",
+              "requirements": "Acceptable Range (0.0-5.0). A >10 day stay for an uncomplicated TIA is a significant outlier.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

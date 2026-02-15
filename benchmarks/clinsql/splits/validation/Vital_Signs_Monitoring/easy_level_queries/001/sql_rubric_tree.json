@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients within the 52 to 62 age range using `p.anchor_age BETWEEN 52 AND 62`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "measurement-identification",
+      "requirements": "Measurement Identification",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "map-code-selection",
+          "requirements": "MAP Code Selection: The query must correctly identify Mean Arterial Pressure (MAP) using the relevant item IDs, such as `ce.itemid IN (220052, 456)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-measurement-logic",
+          "requirements": "First Measurement Logic: The query must use a window function like `ROW_NUMBER() OVER(PARTITION BY p.subject_id ORDER BY ce.charttime ASC)` to isolate the earliest measurement for each patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-measurement-filtering",
+          "requirements": "First Measurement Filtering: The query must apply a filter, such as `WHERE measurement_rank = 1`, to select only the first recorded MAP value for each patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the `patients` and `chartevents` tables to link patient demographics with clinical measurements.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join must be performed on the correct key, `subject_id`, to ensure data integrity.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "quantile-calculation",
+          "requirements": "Quantile Calculation: The query must use an appropriate function, such as `APPROX_QUANTILES`, to calculate the necessary percentiles for the IQR.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "iqr-computation",
+          "requirements": "IQR Computation: The query must correctly calculate the Interquartile Range by subtracting the 25th percentile from the 75th percentile (e.g., `percentiles[OFFSET(75)] - percentiles[OFFSET(25)]`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-quality-filtering",
+          "requirements": "Data Quality Filtering: The query should apply filters to exclude null or clinically implausible values, such as `ce.valuenum IS NOT NULL` and `ce.valuenum BETWEEN 40 AND 140`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

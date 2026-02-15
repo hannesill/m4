@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "The query must correctly filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "The query must correctly filter patients aged 75-85 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-diagnosis-inclusion",
+          "requirements": "The query must identify patients with sepsis using appropriate ICD-9 ('99591') or ICD-10 ('A41%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "septic-shock-diagnosis-exclusion",
+          "requirements": "The query must explicitly exclude patients with a diagnosis of septic shock using relevant ICD-9 ('78552') or ICD-10 ('R6521') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation and Stratification",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ckd-identification",
+          "requirements": "The query must correctly identify patients with Chronic Kidney Disease (CKD) using ICD-9 ('585%') and ICD-10 ('N18%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-identification",
+          "requirements": "The query must correctly identify patients with Diabetes using appropriate ICD-9 ('250%') and ICD-10 ('E08%' - 'E13%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "afib-identification",
+          "requirements": "The query must correctly identify patients with Atrial Fibrillation (AFib) using ICD-9 ('42731') and ICD-10 ('I48%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hypertension-identification",
+          "requirements": "The query must correctly identify patients with Hypertension (HTN) using ICD-9 ('401%') and ICD-10 ('I10') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-stratification",
+          "requirements": "The query must correctly calculate the length of stay (LOS) and stratify it into '\u22645 days' and '>5 days' groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "The query must join `admissions` and `patients` tables to link patient demographics with admission details.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-table-usage",
+          "requirements": "The query must use the `diagnoses_icd` table with subqueries (`EXISTS`/`NOT EXISTS`) to correctly identify conditions for the patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "The final results must be grouped by the calculated Length of Stay (LOS) categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "The query must correctly calculate in-hospital mortality as a percentage for each subgroup (with/without each comorbidity).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "conditional-aggregation",
+          "requirements": "The query must use conditional aggregation (e.g., `COUNTIF`) to correctly count patients and deaths within each comorbidity stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "The final mortality percentage must be rounded to two decimal places and handled safely to avoid division by zero.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients aged 59 to 69 using `p.anchor_age BETWEEN 59 AND 69`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dvt-diagnosis-identification",
+          "requirements": "DVT Diagnosis Identification: The query must correctly identify patients with a DVT diagnosis using specific ICD-9 and ICD-10 codes and filter the cohort with `ad.has_dvt = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-comorbidity-filter",
+          "requirements": "High Comorbidity Filter: The query must correctly filter the cohort to include only patients with a comorbidity score above the 75th percentile, using the condition `h.comorbidity_score > h.p75_comorbidity_score`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling-dvt",
+          "requirements": "ICD Version Handling for DVT: The query must correctly identify DVT using both ICD-9 ('4534') and ICD-10 ('I824') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-score-calculation",
+          "requirements": "Comorbidity Score Calculation: The query must implement the custom weighted comorbidity score using a `CASE` statement on `icd_code` within the `AdmissionDiagnoses` CTE.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "major-complication-flagging",
+          "requirements": "Major Complication Flagging: The query must correctly flag admissions with major complications using the defined set of ICD codes in a `CASE` statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-percentile-calculation",
+          "requirements": "Comorbidity Percentile Calculation: The query must use a window function, specifically `PERCENTILE_CONT(comorbidity_score, 0.75) OVER ()`, to calculate the 75th percentile for the comorbidity score threshold.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: The query must correctly join the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: The query must correctly join the base patient cohort with aggregated diagnosis data on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "thirty-day-mortality-logic",
+          "requirements": "30-Day Mortality Logic: The query must correctly calculate 30-day mortality by checking both in-hospital (`deathtime`) and out-of-hospital (`dod`) death dates against the admission time.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "decedent-survival-calculation",
+          "requirements": "Median Survival for Decedents Logic: The query must calculate survival days specifically for in-hospital deaths and use `APPROX_QUANTILES` with `IGNORE NULLS` to find the median.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "composite-risk-score-calculation",
+          "requirements": "Composite Risk Score Calculation: The query must correctly implement the composite risk score using Min-Max normalization over the cohort for comorbidity, age, and length of stay with the specified weights (0.5, 0.3, 0.2).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-aggregation",
+          "requirements": "Final Metric Aggregation: The query must correctly calculate all requested output metrics: total patient count (`COUNT(DISTINCT)`), mortality and complication rates (`AVG`), median survival (`APPROX_QUANTILES`), and risk score quartiles (`APPROX_QUANTILES`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

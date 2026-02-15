@@ -1,0 +1,117 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "Column for medication class exists (e.g., 'medication_class')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists",
+              "requirements": "Column for initiation rate in the first 72h exists (e.g., 'initiation_rate_first_72h_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tertiary-column-exists",
+              "requirements": "Column for initiation rate in the last 48h exists (e.g., 'initiation_rate_last_48h_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in result columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "initiation-rate-first-72h-validation",
+          "requirements": "Validation for Initiation Rate in First 72h ('initiation_rate_first_72h_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-first-72h",
+              "requirements": "Clinically Plausible Rate (0-20%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-first-72h",
+              "requirements": "Acceptable Rate (0.05-5.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "initiation-rate-last-48h-validation",
+          "requirements": "Validation for Initiation Rate in Last 48h ('initiation_rate_last_48h_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-last-48h",
+              "requirements": "Clinically Plausible Rate (0-20%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-last-48h",
+              "requirements": "Acceptable Rate (0.01-4.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "Columns for medication prevalence percentages (e.g., prevalence_early_pct, prevalence_late_pct) and transition counts (e.g., transition_continued, transition_initiated, transition_discontinued) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists",
+              "requirements": "A column for medication class stratification (e.g., medication_class) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in primary or secondary columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "prevalence-early-pct-validation",
+          "requirements": "Validation for 'prevalence_early_pct' column",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-early-pct-plausible",
+              "requirements": "Values must be clinically plausible (0-100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-early-pct-acceptable",
+              "requirements": "Insulin prevalence is expected to be high in acute HF (20-95%). Oral agent prevalence is expected to be much lower (1-20%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "prevalence-late-pct-validation",
+          "requirements": "Validation for 'prevalence_late_pct' column",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-late-pct-plausible",
+              "requirements": "Values must be clinically plausible (0-100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-late-pct-acceptable",
+              "requirements": "Insulin prevalence is expected to decrease significantly by the final 24h as patients are stabilized and transitioned to home meds (5-40%). Oral agent prevalence may slightly increase or decrease (1-15%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "transition-counts-validation",
+          "requirements": "Validation for transition count columns (continued, initiated, discontinued)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "transition-counts-plausible",
+              "requirements": "Transition counts must be plausible (non-negative integers).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "transition-counts-acceptable",
+              "requirements": "For insulin, 'discontinued' count should be high. For oral agents, 'initiated' count may be higher than 'discontinued' as patients are prepared for discharge.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

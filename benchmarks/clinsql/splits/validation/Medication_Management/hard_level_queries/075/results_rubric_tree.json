@@ -1,0 +1,250 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "tertile-column-exists",
+              "requirements": "Column exists for tertile stratification (e.g., 'complexity_tertile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "patient-count-column-exists",
+              "requirements": "Column exists for patient count (e.g., 'number_of_patients', 'n')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-complexity-column-exists",
+              "requirements": "Column exists for minimum complexity score (e.g., 'min_complexity_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-complexity-column-exists",
+              "requirements": "Column exists for maximum complexity score (e.g., 'max_complexity_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-complexity-column-exists",
+              "requirements": "Column exists for average complexity score (e.g., 'avg_complexity_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-column-exists",
+              "requirements": "Column exists for average length of stay (e.g., 'avg_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column exists for mortality rate (e.g., 'mortality_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-column-exists",
+              "requirements": "Column exists for 30-day readmission rate (e.g., 'readmission_rate_30day_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-count-validation",
+          "requirements": "Validate patient count (e.g., 'number_of_patients')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-patient-count",
+              "requirements": "Clinically Plausible (1-2000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-patient-count",
+              "requirements": "Acceptable Range (50-1000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-complexity-validation",
+          "requirements": "Validate average complexity score (e.g., 'avg_complexity_score')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-avg-complexity",
+              "requirements": "Clinically Plausible (10-1000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-avg-complexity",
+              "requirements": "Acceptable Range (50-300)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-complexity-trend",
+              "requirements": "Average complexity score must increase with each tertile",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validate average length of stay (e.g., 'avg_los_days')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-avg-los",
+              "requirements": "Clinically Plausible (1.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-avg-los",
+              "requirements": "Acceptable Range (2.0-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-trend",
+              "requirements": "Average LOS should generally increase with higher complexity tertiles",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validate mortality rate (e.g., 'mortality_rate_pct')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-mortality",
+              "requirements": "Clinically Plausible (0-40.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-mortality",
+              "requirements": "Acceptable Range (0.1-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-trend",
+              "requirements": "Mortality rate should generally increase with higher complexity tertiles",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "readmission-validation",
+          "requirements": "Validate 30-day readmission rate (e.g., 'readmission_rate_30day_pct')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-readmission",
+              "requirements": "Clinically Plausible (0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-readmission",
+              "requirements": "Acceptable Range (5.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

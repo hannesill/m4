@@ -1,0 +1,1 @@
+I have a 43‑year‑old woman. Among female inpatients aged 38–48 with AMI, calculate a 72‑hour lab instability score, stratify AMI patients into quartiles, and report LOS and in‑hospital mortality for each quartile. Compare overall critical‑lab rates to age‑matched controls.

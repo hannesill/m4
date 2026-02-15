@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Identifies a cohort of female patients aged 38-48 with diagnoses of both Type 2 Diabetes and Heart Failure during a hospital admission of at least 72 hours.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must calculate and filter patient age to be between 38 and 48 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-selection",
+          "requirements": "Diagnosis Selection: The query must correctly identify patients with both Type 2 Diabetes and Heart Failure diagnoses using appropriate ICD codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-duration-filter",
+          "requirements": "Admission Duration Filter: The query must filter for admissions that are at least 72 hours long to ensure the 'first' and 'final' 72-hour windows are meaningful.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies and categorizes relevant medications and time windows for analysis.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-code-selection",
+          "requirements": "ICD Code Selection: The query must use appropriate ICD-9 and ICD-10 codes for Type 2 Diabetes (e.g., 'E11%', '250__0', '250__2') and Heart Failure (e.g., 'I50%', '428%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-categorization",
+          "requirements": "Medication Categorization: The query must categorize prescriptions into 'Insulin' and 'Oral Agents' using a CASE statement and appropriate drug name patterns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-window-definition",
+          "requirements": "Temporal Window Definition: The query must correctly define two distinct time windows: the first 72 hours after admission and the final 72 hours before discharge.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables to link patient demographics, diagnoses, and medication records.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must join `admissions` to `diagnoses_icd` twice on `hadm_id` to independently check for both required diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-prescription-join",
+          "requirements": "Admission-Prescription Join: The query must join the patient cohort to the `prescriptions` table on `hadm_id` to analyze medication administrations.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculates the percentage of patients initiated on different medication classes within the specified time windows.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-denominator-calculation",
+          "requirements": "Cohort Denominator Calculation: The query must first calculate the total count of unique patients in the cohort to serve as the denominator for percentage calculations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-window-patient-count",
+          "requirements": "Per-Window Patient Count: The query must count the distinct number of patients receiving each medication class within the 'first 72h' and 'final 72h' windows separately.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: The query must correctly calculate the final percentages by dividing the per-window patient counts by the total cohort size and multiplying by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output must be grouped by medication class and present the two calculated percentages, rounded to two decimal places.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

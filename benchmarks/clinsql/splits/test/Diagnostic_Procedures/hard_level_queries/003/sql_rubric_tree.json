@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the specific ARDS cohort and the general ICU comparison group.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "ards-cohort-gender-selection",
+          "requirements": "Gender Selection (ARDS Cohort): The query must filter the ARDS cohort for female patients using `gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ards-cohort-age-range-selection",
+          "requirements": "Age Range Selection (ARDS Cohort): The query must filter the ARDS cohort for patients aged 84-94 using `age_at_admission BETWEEN 84 AND 94`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ards-diagnosis-application",
+          "requirements": "ARDS Diagnosis Application: The query must filter the primary cohort by joining with or selecting from a pre-filtered set of ARDS admission IDs, e.g., `hadm_id IN (SELECT hadm_id FROM ards_cohort_ids)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "general-cohort-definition",
+          "requirements": "General ICU Cohort Definition: The query must correctly define the general ICU population by using the base cohort without the ARDS-specific age, gender, or diagnosis filters for comparison.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly translates clinical concepts like 'ARDS', 'first ICU stay', and 'diagnostic intensity' into SQL.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-icu-stay-identification",
+          "requirements": "First ICU Stay Identification: The query must correctly isolate the first ICU stay per hospital admission using a window function like `ROW_NUMBER() OVER (PARTITION BY hadm_id ORDER BY intime)` and filtering for the first row.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ards-code-selection",
+          "requirements": "ARDS Code Selection: The query must identify ARDS by filtering `diagnoses_icd` for both ICD-9 ('51882%') and ICD-10 ('J80%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-intensity-temporal-filter",
+          "requirements": "Diagnostic Intensity Temporal Filter: The query must limit procedures to the first 24 hours of the ICU stay using a condition like `pe.starttime BETWEEN f.intime AND DATETIME_ADD(f.intime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all required tables to link patient demographics, ICU stays, diagnoses, and procedures.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The `patients` and `admissions` tables must be correctly joined on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-icu-join",
+          "requirements": "Admission-ICU Join: The `admissions` and `icustays` tables must be correctly joined on `hadm_id` to link hospital admissions to ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-procedure-join",
+          "requirements": "ICU-Procedure Join: A `LEFT JOIN` must be used between the ICU stay information and `procedureevents` on `stay_id` to ensure patients without procedures are not excluded from the cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates and presents all requested metrics for both cohorts.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-metric-calculation",
+          "requirements": "Per-Stay Metric Calculation: The query must first calculate diagnostic intensity per stay by using `COUNT(DISTINCT pe.itemid)` and grouping by stay-level identifiers.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must use `APPROX_QUANTILES` with offsets 25, 75, and 95 to calculate the percentiles of diagnostic intensity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metric-calculation",
+          "requirements": "Outcome Metric Calculation: The query must correctly calculate average hospital LOS (`AVG(hospital_los_days)`) and hospital mortality (`AVG(CAST(hospital_expire_flag AS FLOAT64)) * 100`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-comparison-structure",
+          "requirements": "Cohort Comparison Structure: The final output must use `UNION ALL` to combine results from the two cohorts and include a descriptive column to distinguish them (e.g., 'Female, 84-94, ARDS' vs 'General ICU Population').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

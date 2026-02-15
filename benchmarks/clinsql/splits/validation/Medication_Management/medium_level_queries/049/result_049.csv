@@ -1,0 +1,8 @@
+medication_class,prevalence_first_72h_pct,prevalence_final_24h_pct
+Insulin,91.04,21.09
+Sulfonylurea,3.25,1.06
+Metformin,2.88,1.17
+SGLT2 Inhibitor,0.45,0.19
+Thiazolidinedione,0.17,0.02
+DPP-4 Inhibitor,0.02,0.0
+GLP-1 Agonist,0.0,0.0

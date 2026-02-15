@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Accurately define the patient cohort based on demographics and clinical conditions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filter for patients aged 67 to 77 at the time of admission using the calculated age `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 67 AND 77`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-diagnosis-filter",
+          "requirements": "T2DM Diagnosis Filter: Identify patients with Type 2 Diabetes Mellitus using ICD-9 ('250%') and ICD-10 ('E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hf-diagnosis-filter",
+          "requirements": "Heart Failure Diagnosis Filter: Identify patients with Heart Failure using ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-duration-filter",
+          "requirements": "Admission Duration Filter: Ensure the hospital admission is at least 60 hours long to accommodate both the 12h and 48h analysis windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identify and classify anti-diabetic medications.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "drug-classification-logic",
+          "requirements": "Drug Classification Logic: Use a CASE statement to correctly classify drugs into specified classes (Insulin, Metformin, Sulfonylurea, DPP-4, SGLT2, GLP-1, Thiazolidinedione) based on drug names.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-initiation-identification",
+          "requirements": "Medication Initiation Identification: For each medication class and admission, identify the first administration time using `MIN(starttime)` grouped by `hadm_id` and `med_class`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly join tables to link patient demographics, diagnoses, and prescriptions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Join `patients` and `admissions` tables on `subject_id` to link patient demographics with admission details.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Link `admissions` and `diagnoses_icd` tables on `hadm_id` to filter by clinical conditions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-prescription-join",
+          "requirements": "Join the patient cohort with `prescriptions` on `hadm_id` to analyze medication data.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculate and present the required percentages and net change.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "early-initiation-window",
+          "requirements": "Early Initiation Window: Correctly identify initiations within the first 12 hours of admission using `DATETIME_DIFF(initiation_time, admittime, HOUR) <= 12`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "late-initiation-window",
+          "requirements": "Late Initiation Window: Correctly identify initiations within the final 48 hours of admission using `DATETIME_DIFF(dischtime, initiation_time, HOUR) <= 48`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: Calculate the initiation rates for both windows as a percentage of the total number of admissions in the cohort, rounding to two decimal places.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "net-change-calculation",
+          "requirements": "Net Change Calculation: Compute the net change in percentage points (pp) between the late and early initiation rates.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: The final output must include columns for medication class, initiation rate at 12h, initiation rate at 48h, and the net change, ordered correctly.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

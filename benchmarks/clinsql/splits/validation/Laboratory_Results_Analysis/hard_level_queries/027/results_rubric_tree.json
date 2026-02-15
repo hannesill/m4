@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "quintile-column-exists",
+              "requirements": "Column for instability score quintiles exists (e.g., 'instability_quintile').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-column-exists",
+              "requirements": "Column for average length of stay exists (e.g., 'avg_los_days').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column for mortality rate exists (e.g., 'mortality_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-critical-rate-column-exists",
+              "requirements": "Column for the cohort's quintile-specific critical lab rate exists (e.g., 'cohort_quintile_critical_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-critical-rate-column-exists",
+              "requirements": "Column for the general inpatient critical lab rate exists (e.g., 'general_population_critical_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "quintile-validation",
+          "requirements": "Validate quintile column (e.g., 'instability_quintile').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "quintile-plausible",
+              "requirements": "Quintiles should be integers.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "quintile-acceptable",
+              "requirements": "Quintiles should be represented by values from 1 to 5.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validate average length of stay column (e.g., 'avg_los_days').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Clinically Plausible (0.5-50.0). Average LOS should be positive and not excessively long.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Acceptable Range (2.0-20.0). For an elderly cohort with GI bleed, LOS is expected to be several days.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate mortality rate column (e.g., 'mortality_rate').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0). Mortality rate must be a probability between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0.01-0.5). For a very elderly, sick cohort, mortality is significant but unlikely to exceed 50% even in the highest risk quintile.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-critical-rate-validation",
+          "requirements": "Validate cohort's quintile-specific critical lab rate column (e.g., 'cohort_quintile_critical_rate').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "cohort-critical-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0). The rate must be a probability between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-critical-rate-acceptable",
+              "requirements": "Acceptable Range (0.0-0.6). The rate of critical labs should increase with instability quintile but is unlikely to exceed 60%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "general-critical-rate-validation",
+          "requirements": "Validate general population critical lab rate column (e.g., 'general_population_critical_rate').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "general-critical-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0). The rate must be a probability between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-critical-rate-acceptable",
+              "requirements": "Acceptable Range (0.02-0.2). The baseline critical lab rate for a general inpatient population is expected to be relatively low.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

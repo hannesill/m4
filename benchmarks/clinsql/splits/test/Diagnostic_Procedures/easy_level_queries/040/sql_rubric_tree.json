@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters the patient population based on demographics.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients to the age range of 51 to 61 using `p.anchor_age BETWEEN 51 AND 61`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies the relevant ECG/telemetry procedures using correct ICD codes.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly distinguish between ICD-9 and ICD-10 codes using the `pr.icd_version` column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-code-selection",
+          "requirements": "Procedure Code Selection: The query must select the correct ICD-9 codes ('8952', '8954') and ICD-10 code ('4A12X4Z') for ECG/telemetry procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins the necessary tables to link patients with their procedures.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must join the `patients` and `procedures_icd` tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between tables must be correctly performed on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates the 25th percentile of distinct procedure counts per patient.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The inner query must group results by `p.subject_id` to enable per-patient procedure counting.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "distinct-count-aggregation",
+          "requirements": "Distinct Count Aggregation: The query must count the number of distinct procedures per patient using `COUNT(DISTINCT pr.icd_code)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The outer query must correctly calculate the 25th percentile of the procedure counts using `APPROX_QUANTILES(..., 100)[OFFSET(25)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

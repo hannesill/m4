@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Restricts the patient cohort to ages 53\u201363 using `pat.anchor_age BETWEEN 53 AND 63`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ugib-diagnosis-selection",
+          "requirements": "Identifies admissions for Upper GI Bleeding by filtering `diagnoses_icd` for ICD-9 codes `LIKE '578%'` or specific ICD-10 codes ('K920', 'K921', 'K922').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Restricts the cohort to admissions with a length of stay between 1 and 8 days using `DATETIME_DIFF(adm.dischtime, adm.admittime, DAY) BETWEEN 1 AND 8`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "diagnostic-procedure-identification",
+          "requirements": "Interprets 'diagnostic procedures' by selecting specific ICD-9 (`'87%'`, `'88%'`) and ICD-10 (`'B%'`) codes from the `procedures_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "Correctly handles different code versions by checking the `icd_version` column when filtering both diagnoses and procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Correctly joins `patients`, `admissions`, and `diagnoses_icd` on `subject_id` and `hadm_id` to create the base cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Uses a `LEFT JOIN` on `hadm_id` to link the cohort to `procedures_icd`, ensuring no admissions are lost if they have no procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cte-structuring",
+          "requirements": "Uses CTEs (`ugib_admissions`, `procedure_counts`) to break down the query into logical, readable steps.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stay-duration-grouping",
+          "requirements": "Creates two distinct groups for analysis ('1-4 Day Stay', '5-8 Day Stay') using a `CASE` statement and groups the final results by this category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-count-per-admission",
+          "requirements": "Correctly counts the number of diagnostic procedures for each admission (`COUNT(proc.icd_code)`) before the final aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quantile-calculation",
+          "requirements": "Calculates the procedure count quartiles for each group using `APPROX_QUANTILES(pc.num_diagnostic_procedures, 4)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quantile-extraction",
+          "requirements": "Correctly extracts the p25, p50, and p75 values from the quantiles array using `OFFSET(1)`, `OFFSET(2)`, and `OFFSET(3)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

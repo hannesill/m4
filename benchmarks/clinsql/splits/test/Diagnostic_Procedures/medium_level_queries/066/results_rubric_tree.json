@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stay-category-column-exists",
+              "requirements": "Column for stay category exists (e.g., 'stay_category', 'stay_duration_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-column-exists",
+              "requirements": "Column for 25th percentile of procedures exists (e.g., 'p25_procedures', 'percentile_25')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-column-exists",
+              "requirements": "Column for 50th percentile/median of procedures exists (e.g., 'p50_median_procedures', 'median_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-column-exists",
+              "requirements": "Column for 75th percentile of procedures exists (e.g., 'p75_procedures', 'percentile_75')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values-in-answer-columns",
+          "requirements": "No NULL/Empty values in the stay category or percentile columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "p25-procedures-validation",
+          "requirements": "Validation for the 25th percentile of diagnostic procedures",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p25-procedures-plausible",
+              "requirements": "Values are clinically plausible (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-procedures-acceptable",
+              "requirements": "Values are in the acceptable range (0-3)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p50-procedures-validation",
+          "requirements": "Validation for the 50th percentile (median) of diagnostic procedures",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p50-procedures-plausible",
+              "requirements": "Values are clinically plausible (0-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-procedures-acceptable",
+              "requirements": "Values are in the acceptable range (0-5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p75-procedures-validation",
+          "requirements": "Validation for the 75th percentile of diagnostic procedures",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p75-procedures-plausible",
+              "requirements": "Values are clinically plausible (0-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-procedures-acceptable",
+              "requirements": "Values are in the acceptable range (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

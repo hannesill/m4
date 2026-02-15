@@ -1,0 +1,156 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "severity-group-column-exists",
+              "requirements": "Column exists for ICU vs non-ICU comparison (e.g., 'severity_group', 'icu_status')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-bucket-column-exists",
+              "requirements": "Column exists for LOS bucketing (e.g., 'los_bucket', 'los_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column exists for in-hospital mortality (e.g., 'in_hospital_mortality_rate_pct', 'mortality_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-column-exists",
+              "requirements": "Column exists for median LOS (e.g., 'median_los_days', 'median_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comorbidity-column-exists",
+              "requirements": "Column exists for average comorbidity count (e.g., 'average_comorbidity_count', 'avg_comorbidities')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key metric columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate In-Hospital Mortality Rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0-50). In this elderly HF cohort, mortality can be high, especially in the ICU.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-validation",
+          "requirements": "Validate Median LOS (days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-los-plausible",
+              "requirements": "Clinically Plausible (1-60). A median LOS over 60 days for this cohort is highly improbable.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-acceptable",
+              "requirements": "Acceptable Range (1-30). Median LOS is expected to fall within the specified buckets, with some variance.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "comorbidity-count-validation",
+          "requirements": "Validate Average Comorbidity Count",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "comorbidity-count-plausible",
+              "requirements": "Clinically Plausible (1-50). It's unlikely for a patient to have more than 50 distinct comorbidities recorded.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comorbidity-count-acceptable",
+              "requirements": "Acceptable Range (5-40). Elderly HF patients are expected to have a significant number of comorbidities.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+los_category,total_admissions,in_hospital_deaths,mortality_rate_percent,mortality_ci_95_lower,mortality_ci_95_upper,median_time_to_death_days_for_deceased
+1-3 days,3261,149,4.57,3.85,5.29,2
+4-7 days,3032,134,4.42,3.69,5.15,5
+>=8 days,2478,196,7.91,6.85,8.97,14

@@ -1,0 +1,7 @@
+sepsis_severity,charlson_group,n_admissions_le_7_days,mortality_rate_le_7_days,n_admissions_gt_7_days,mortality_rate_gt_7_days,absolute_mortality_difference,relative_mortality_difference
+Sepsis (without shock),≤3,247,0.81,137,3.65,2.84,4.506172839506172
+Sepsis (without shock),4–5,162,4.94,128,7.03,2.09,1.423076923076923
+Sepsis (without shock),>5,123,6.5,224,8.04,1.5399999999999991,1.2369230769230768
+Septic Shock,≤3,104,37.5,160,18.13,-19.37,0.48346666666666666
+Septic Shock,4–5,100,41.0,200,26.0,-15.0,0.6341463414634146
+Septic Shock,>5,101,55.45,247,33.2,-22.25,0.5987376014427412

@@ -1,0 +1,4 @@
+sbp_category,patient_count,percentage_of_patients
+< 140 mmHg,3418,88.53
+140-159 mmHg,370,9.58
+>= 160 mmHg,73,1.89

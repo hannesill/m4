@@ -1,0 +1,5 @@
+diagnosis_type,stay_category,admission_count,p25_procedures,p50_median_procedures,p75_procedures
+Primary Diagnosis,1-3 days,814,1,1,1
+Primary Diagnosis,4-7 days,438,0,1,1
+Secondary Diagnosis,1-3 days,676,0,1,1
+Secondary Diagnosis,4-7 days,537,0,0,1

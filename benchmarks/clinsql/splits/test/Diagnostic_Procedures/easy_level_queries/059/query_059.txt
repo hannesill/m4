@@ -1,0 +1,1 @@
+Male patient, 81. Among males aged 76-86, what's the IQR of distinct cardiac procedure codes per hospitalization?

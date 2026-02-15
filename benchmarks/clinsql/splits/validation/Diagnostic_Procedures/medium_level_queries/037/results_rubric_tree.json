@@ -1,0 +1,127 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "median-column-exists",
+              "requirements": "Primary answer column exists for median procedures (e.g., `procedures_median`, `median_count`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-column-exists",
+              "requirements": "Secondary answer column exists for IQR of procedures (e.g., `procedures_iqr`, `iqr_count`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-column1-exists",
+              "requirements": "Stratification column for diagnosis type exists (e.g., `diagnosis_type`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-column2-exists",
+              "requirements": "Stratification column for length of stay exists (e.g., `stay_category`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key columns (`procedures_median`, `procedures_iqr`)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "median-procedures-validation",
+          "requirements": "Validate values in column for Median Number of Procedures (e.g., `procedures_median`)",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-median",
+              "requirements": "Values are clinically plausible (0.0-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-median",
+              "requirements": "Values are within an acceptable range (0.0-5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-procedures-validation",
+          "requirements": "Validate values in column for IQR of Number of Procedures (e.g., `procedures_iqr`)",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-iqr",
+              "requirements": "Values are clinically plausible (0.0-20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-iqr",
+              "requirements": "Values are within an acceptable range (0.0-8.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

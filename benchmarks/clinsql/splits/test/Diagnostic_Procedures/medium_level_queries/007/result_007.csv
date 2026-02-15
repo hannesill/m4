@@ -1,0 +1,5 @@
+diagnosis_type,los_category,num_admissions,p25_procedures,p50_median_procedures,p75_procedures
+Primary Diagnosis,1-4 days,257,1,1,1
+Primary Diagnosis,5-8 days,82,0,1,1
+Secondary Diagnosis,1-4 days,237,0,0,1
+Secondary Diagnosis,5-8 days,114,0,0,1

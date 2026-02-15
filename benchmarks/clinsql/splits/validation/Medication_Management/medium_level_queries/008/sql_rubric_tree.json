@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the 44-54 range using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 44 AND 54`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-diagnosis-selection",
+          "requirements": "T2DM Diagnosis Selection: Identifies patients with Type 2 Diabetes Mellitus using both ICD-10 codes (LIKE 'E11%') and ICD-9 codes (LIKE '250__0' or '250__2').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-selection",
+          "requirements": "Heart Failure Diagnosis Selection: Identifies patients with Heart Failure using both ICD-10 codes (LIKE 'I50%') and ICD-9 codes (LIKE '428%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "combined-diagnosis-logic",
+          "requirements": "Combined Diagnosis Logic: Ensures patients have BOTH T2DM and Heart Failure diagnoses within the same hospital admission using `COUNTIF(...) > 0 AND COUNTIF(...) > 0`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-duration-filter",
+          "requirements": "Admission Duration Filter: Correctly filters for admissions lasting at least 72 hours to allow for distinct first 24h and last 48h windows, using `DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 72`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-class-identification",
+          "requirements": "Medication Class Identification: Correctly categorizes medications into 'Insulin' and 'Oral Agent' groups using string matching on the `drug` column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-24h-window-logic",
+          "requirements": "First 24h Window Logic: Correctly identifies medication administration within the first 24 hours of admission using `DATETIME_DIFF(rx.starttime, cohort.admittime, HOUR) BETWEEN 0 AND 24`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "last-48h-window-logic",
+          "requirements": "Last 48h Window Logic: Correctly identifies medication administration within the last 48 hours before discharge using `DATETIME_DIFF(cohort.dischtime, rx.starttime, HOUR) BETWEEN 0 AND 48`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables to build the initial patient cohort. The join to prescriptions is also required.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: Consistently and accurately uses `subject_id` and `hadm_id` as join keys across all relevant tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "scaffold-join-logic",
+          "requirements": "Scaffold Join Logic: Implements a LEFT JOIN from a complete `(hadm_id, medication_class)` scaffold to the medication flag data to ensure all cohort admissions are included in prevalence calculations for both medication classes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: Correctly groups the final result set by `medication_class` to provide separate analytics for 'Insulin' and 'Oral Agent'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-calculation",
+          "requirements": "Prevalence Calculation: Correctly calculates prevalence percentages for both time windows, using the total cohort size as the denominator for each medication class.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "transition-counts-logic",
+          "requirements": "Transition Counts Logic: Accurately calculates the counts for 'continued', 'initiated', and 'discontinued' medication use based on the boolean flags for the early and late time windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output includes all required columns: `medication_class`, prevalence percentages, and transition counts, with percentages rounded.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

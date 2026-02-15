@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis",
+          "requirements": "Heart Failure Diagnosis: The query must correctly identify heart failure admissions using both ICD-9 ('428%') and ICD-10 ('I50%') codes from the diagnoses_icd table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "serum-creatinine-identification",
+          "requirements": "Serum Creatinine Identification: The query must select the correct medical concept for serum creatinine by filtering labevents on `itemid = 50912`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-24h-admission-window",
+          "requirements": "First 24h Admission Window: The query must correctly filter for lab results within the first 24 hours of admission using `le.charttime BETWEEN adm.admittime AND DATETIME_ADD(adm.admittime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "plausible-value-filtering",
+          "requirements": "Plausible Value Filtering: The query should filter for valid and plausible creatinine values, for example `valuenum IS NOT NULL` and `valuenum BETWEEN 0.5 AND 10`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-join",
+          "requirements": "Cohort Table Join: The query must correctly join the identified heart failure admissions with the `patients` and `admissions` tables on `subject_id` and `hadm_id` respectively.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "labevents-table-join",
+          "requirements": "Labevents Table Join: The query must correctly join the cohort to the `labevents` table using `hadm_id` to link admissions to their lab results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "maximum-value-calculation",
+          "requirements": "Maximum Value Calculation: The query must use the MAX() function on the creatinine value (`valuenum`) to identify the maximum value across the entire cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "incorrect-temporal-filtering",
+          "requirements": "Incorrect Temporal Filtering: The query incorrectly filters for the first chronological lab result (`WHERE rn = 1`) instead of considering all results within the 24-hour window to find the true maximum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

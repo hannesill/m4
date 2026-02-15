@@ -1,0 +1,4 @@
+troponin_category,number_of_patients,percentage_of_patients,avg_length_of_stay_days
+Normal,99,22.81,5.2
+Borderline,92,21.2,5.8
+Elevated,243,55.99,7.0

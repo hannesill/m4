@@ -1,0 +1,241 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p95-instability-column-exists",
+              "requirements": "Column Exists: 95th-percentile composite instability score (e.g., 'p95_instability_score_for_target_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hypotension-column-exists",
+              "requirements": "Column Exists: Hypotension metric (e.g., 'avg_hypotension_episodes')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachycardia-column-exists",
+              "requirements": "Column Exists: Tachycardia metric (e.g., 'avg_tachycardia_episodes')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-column-exists",
+              "requirements": "Column Exists: ICU LOS metric (e.g., 'avg_icu_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column Exists: Mortality metric (e.g., 'mortality_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key result columns, except where a metric is not applicable to a cohort (e.g., p95 score for the control group).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "p95-instability-validation",
+          "requirements": "Validation for 95th-percentile instability score",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p95-instability-plausible",
+              "requirements": "Clinically Plausible (20.0-80.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p95-instability-acceptable",
+              "requirements": "Acceptable Range (30.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hypotension-validation",
+          "requirements": "Validation for hypotension episodes",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "hypotension-plausible",
+              "requirements": "Clinically Plausible (0.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hypotension-acceptable",
+              "requirements": "Acceptable Range (1.0-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "tachycardia-validation",
+          "requirements": "Validation for tachycardia episodes",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "tachycardia-plausible",
+              "requirements": "Clinically Plausible (0.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachycardia-acceptable",
+              "requirements": "Acceptable Range (2.0-20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "Validation for ICU LOS (days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "icu-los-plausible",
+              "requirements": "Clinically Plausible (1.0-90.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-acceptable",
+              "requirements": "Acceptable Range (2.0-20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validation for mortality rate",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-acceptable",
+              "requirements": "Acceptable Range (0.05-0.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-comparison-validation",
+          "requirements": "Validation of relative values between cohorts",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "comparison-hypotension",
+              "requirements": "Top quartile has higher hypotension than control",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comparison-tachycardia",
+              "requirements": "Top quartile has higher tachycardia than control",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comparison-los",
+              "requirements": "Top quartile has longer ICU LOS than control",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comparison-mortality",
+              "requirements": "Top quartile has higher mortality than control",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

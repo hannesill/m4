@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-selection",
+          "requirements": "Age Selection: The query must filter for patients who are 45 years old at the time of admission. This involves calculating the age at admission (e.g., using anchor_age and admittime) and applying a condition like age = 45.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-selection",
+          "requirements": "Condition Selection (GI Bleeding): The query must filter admissions for GI bleeding by checking for relevant ICD-9 ('578%') and ICD-10 ('K92%') codes in the diagnoses_icd table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hemoglobin-identification",
+          "requirements": "Hemoglobin Identification: The query must correctly identify hemoglobin lab tests using the specific itemid (e.g., le.itemid = 51222).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-day-measurement",
+          "requirements": "Discharge-Day Measurement: The query must filter for hemoglobin measurements taken on the day of hospital discharge by comparing the lab event date with the discharge date (e.g., DATE(le.charttime) = DATE(adm.dischtime)).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "plausible-value-filtering",
+          "requirements": "Plausible Value Filtering: The query should filter out invalid or implausible hemoglobin values by ensuring the value is not null and within a reasonable range (e.g., le.valuenum BETWEEN 7 AND 18).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: The query must correctly join the patients and admissions tables on subject_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: The query must correctly join the admissions and diagnoses_icd tables on hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-labevents-join",
+          "requirements": "Admissions-LabEvents Join: The query must correctly join the admissions and labevents tables on hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must calculate the 75th percentile of hemoglobin values using an appropriate function like APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to two decimal places for clinical readability, using a function like ROUND().",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-systolic-bp-column-exists",
+              "requirements": "Column for 75th percentile of maximum systolic blood pressure exists (e.g., 'p75_max_systolic_bp', 'percentile_75_sbp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the percentile systolic blood pressure column",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "percentile-systolic-bp-validation",
+          "requirements": "Validate the 75th percentile of maximum systolic blood pressure",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-systolic-bp-plausible",
+              "requirements": "Value is clinically plausible (50-300 mmHg)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-systolic-bp-acceptable",
+              "requirements": "Value is in an acceptable range for the 75th percentile in this cohort (130-220 mmHg)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

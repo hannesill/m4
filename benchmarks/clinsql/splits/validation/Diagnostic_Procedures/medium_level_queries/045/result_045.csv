@@ -1,0 +1,5 @@
+los_group,icu_status,patient_count,avg_noninvasive_diagnostics,min_diagnostics,max_diagnostics
+1-4 Day Stay,ICU Stay,10,0.4,0,1
+1-4 Day Stay,No ICU Stay,83,0.09,0,2
+5-8 Day Stay,ICU Stay,22,0.32,0,2
+5-8 Day Stay,No ICU Stay,50,0.06,0,1

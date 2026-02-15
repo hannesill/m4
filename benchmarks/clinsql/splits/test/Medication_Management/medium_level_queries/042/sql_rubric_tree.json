@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 51-61 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 51 AND 61`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-diagnosis-selection",
+          "requirements": "Diabetes Diagnosis Selection: Identifies patients with diabetes using both ICD-9 ('250%') and ICD-10 ('E10%', 'E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-selection",
+          "requirements": "Heart Failure Diagnosis Selection: Identifies patients with acute heart failure using both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: Includes a filter to ensure the hospital admission is at least 72 hours long to make the early and late periods distinct.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to build the initial patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-table-join",
+          "requirements": "Medication Table Join: Correctly joins the patient cohort with the `prescriptions` table on `hadm_id` to link medications to hospital stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-classification",
+          "requirements": "Medication Classification: Uses a CASE statement with LIKE operators to correctly categorize drugs into 'Insulin' and 'Oral Agents' classes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-48h-period-definition",
+          "requirements": "First 48h Period Definition: Correctly identifies medications administered in the first 48 hours of admission using `DATETIME_DIFF` between `starttime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-24h-period-definition",
+          "requirements": "Final 24h Period Definition: Correctly identifies medications administered in the final 24 hours of admission using `DATETIME_DIFF` between `dischtime` and `starttime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-patient-medication-period-aggregation",
+          "requirements": "Per-Patient Medication Period Aggregation: Correctly uses `LOGICAL_OR` grouped by `hadm_id` and `medication_class` to determine if a patient received a drug class in the early or late period.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: Correctly calculates the percentage of patients on each medication class for both periods, using the total cohort size as the denominator.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "transition-state-counts",
+          "requirements": "Transition State Counts: Correctly uses `COUNTIF` with boolean logic to calculate the counts for 'continued', 'initiated', and 'discontinued' medication statuses between the two periods.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: Groups the final results by `medication_class` to provide separate statistics for Insulin and Oral Agents.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

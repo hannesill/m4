@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation for Status Epilepticus Cohort Analysis",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the primary 'Status Epilepticus' cohort and the 'General ICU' comparison group.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients ('F') in the 'Status_Epilepticus' cohort definition.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 63 and 73 using the calculated age from anchor_year and anchor_age.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "status-epilepticus-diagnosis",
+          "requirements": "Status Epilepticus Diagnosis: The query must identify patients with a diagnosis of status epilepticus using both ICD-9 ('3453') and ICD-10 ('G41%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-grouping-logic",
+          "requirements": "Cohort Grouping Logic: A CASE statement must be used to correctly label ICU stays as either 'Status_Epilepticus_63_73_F' or 'General_ICU_Population'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Data Integration: Correctly joining tables to link patient demographics, ICU stays, diagnoses, and measurements.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join icustays, patients, and admissions tables using subject_id and hadm_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-integration",
+          "requirements": "Vitals Integration: The chartevents table must be correctly joined to the cohort data on stay_id to link measurements to specific ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-score-integration",
+          "requirements": "Final Score Integration: A LEFT JOIN must be used to connect the aggregated patient scores back to the main cohort to ensure all patients are included in the final analysis, with COALESCE handling nulls.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculation of clinical metrics and burdens as specified in the question.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filter-72h",
+          "requirements": "Temporal Filter (First 72 Hours): The query must filter chartevents to include only those recorded within the first 72 hours of the ICU admission time.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-vital-definitions",
+          "requirements": "Abnormal Vital Definitions: The query must correctly define abnormal vital signs using CASE statements and appropriate thresholds (e.g., HR > 100, MAP < 65).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-instability-index-calculation",
+          "requirements": "Vital Instability Index Calculation: The query must sum the occurrences of all defined abnormal vital signs to calculate the vital_instability_index per stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "burden-calculation",
+          "requirements": "Tachycardia and MAP Burden Calculation: The query must separately sum the counts of tachycardia and hypotension (MAP<65) episodes per stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-output",
+      "requirements": "Final Aggregation and Output: Aggregating patient-level data to produce the final comparative report.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Final Grouping Logic: The final query must group results by 'cohort_group' to compare the two populations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-index-metrics",
+          "requirements": "Instability Index Metrics: The query must report the mean and P25/50/75/90 quantiles for the vital_instability_index using AVG() and APPROX_QUANTILES().",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-metrics",
+          "requirements": "Comparative Metrics Calculation: The query must calculate and report the average tachycardia burden, MAP < 65 burden, ICU LOS, and mortality rate for each cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-calculation",
+          "requirements": "Mortality Calculation: The query must correctly calculate the mortality rate as a percentage by averaging the casted hospital_expire_flag.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

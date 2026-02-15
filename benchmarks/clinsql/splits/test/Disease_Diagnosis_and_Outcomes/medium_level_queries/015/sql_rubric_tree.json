@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at admission and filter for the range 48-58.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stroke-condition-filter",
+          "requirements": "Stroke Condition Filter: The query must use an EXISTS or JOIN clause to filter admissions for patients diagnosed with a stroke, using appropriate ICD-9 and ICD-10 codes (e.g., '430'-'434', 'I60'-'I63').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: The query must accurately calculate the length of stay in days using the `dischtime` and `admittime` columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-burden-quantification",
+          "requirements": "Comorbidity Burden Quantification: The query must quantify comorbidity by counting the number of distinct diagnosis codes for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the `patients` and `admissions` tables on `subject_id` to link demographic and admission data.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must correctly join the admissions data with `diagnoses_icd` on `hadm_id` to identify stroke cases and count comorbidities.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-status-join",
+          "requirements": "ICU Status Join: The query must use a LEFT JOIN on the `icustays` table to correctly differentiate between ICU and Non-ICU admissions without excluding Non-ICU patients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-stratification",
+          "requirements": "Cohort Stratification: The query must correctly stratify the patient cohort into categories for ICU status, length of stay (\u22645 vs >5 days), and comorbidity burden (tertiles).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final aggregation must group results by `icu_status`, `los_category`, and `comorbidity_burden` to report stratified mortality.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Mortality Rate Calculation: The query must accurately calculate the in-hospital mortality percentage for each group, typically by `SUM(hospital_expire_flag) / COUNT(*) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "confidence-interval-calculation",
+          "requirements": "Confidence Interval Calculation: The query must correctly calculate the 95% confidence intervals for the mortality rate in each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

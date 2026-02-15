@@ -1,0 +1,3 @@
+stay_category,patient_count,mean_ultrasounds_per_admission
+1-3 Day Stay,198,0.24
+4-7 Day Stay,89,0.18

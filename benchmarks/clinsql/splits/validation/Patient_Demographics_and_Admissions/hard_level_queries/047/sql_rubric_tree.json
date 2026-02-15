@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the specific patient population for analysis based on demographics, insurance, and admission type.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 68\u201378 using `age_at_admission BETWEEN 68 AND 78`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insurance-selection",
+          "requirements": "Insurance Selection: Filters for patients with Medicare insurance using `adm.insurance = 'Medicare'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-source-selection",
+          "requirements": "Admission Source Selection: Identifies patients admitted from the Emergency Department using `UPPER(adm.admission_location) LIKE '%EMERGENCY%'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies index admissions based on the principal diagnosis of hemorrhagic stroke.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "principal-diagnosis-filtering",
+          "requirements": "Principal Diagnosis Filtering: Correctly identifies the principal diagnosis by filtering on `d.seq_num = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query correctly distinguishes between ICD-9 and ICD-10 codes using the `d.icd_version` field.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hemorrhagic-stroke-code-selection",
+          "requirements": "Hemorrhagic Stroke Code Selection: Correctly filters for hemorrhagic stroke using both ICD-9 (LIKE '430%', '431%', '432%') and ICD-10 (LIKE 'I60%', 'I61%', 'I62%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables to link patient demographics with admission and diagnosis details.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins the `admissions` and `patients` tables and subsequently joins the result with `diagnoses_icd`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: Consistently uses `subject_id` to join patient-level data and `hadm_id` to join admission-level data.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates the requested clinical metrics: readmission rate, median length of stay, and percentage with long LOS.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "readmission-logic",
+          "requirements": "Readmission Logic: Accurately identifies 30-day readmissions using a window function (`LEAD`) to find the next admission and checking if the time difference is within 30 days.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: Correctly calculates the length of stay in days using `DATETIME_DIFF` between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-rate-aggregation",
+          "requirements": "Readmission Rate Aggregation: Correctly calculates the 30-day readmission rate as a percentage using `AVG(is_readmitted_30_day) * 100.0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "conditional-median-los-calculation",
+          "requirements": "Conditional Median LOS Calculation: Correctly calculates the median LOS for readmitted and non-readmitted cohorts separately using `APPROX_QUANTILES` with a conditional `IF` statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "long-los-percentage-calculation",
+          "requirements": "Long LOS Percentage Calculation: Correctly calculates the percentage of patients with a LOS greater than 4 days using a conditional average `AVG(CASE WHEN los_days > 4 THEN 1.0 ELSE 0.0 END) * 100.0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+outcome,number_of_admissions,mean_los_days,p25_los_days,median_los_days,p75_los_days,p90_los_days
+Discharged Alive,1077,5.57,2,4,6,9
+In-Hospital Mortality,6,43.33,14,17,72,107

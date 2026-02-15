@@ -1,0 +1,226 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the cohort of first ICU stays for male patients aged 39-49 with a DKA diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "dka-diagnosis-selection",
+          "requirements": "DKA Diagnosis Selection: Accurately identifies hospital admissions associated with Diabetic Ketoacidosis (DKA) using both ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd9-dka-codes",
+              "requirements": "ICD-9 DKA Code Selection: Filters for DKA using the correct ICD-9 code pattern (e.g., `icd_code LIKE '2501%'`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd10-dka-codes",
+              "requirements": "ICD-10 DKA Code Selection: Filters for DKA using the correct ICD-10 code patterns (e.g., `icd_code LIKE 'E101%'`, `'E111%'`, `'E131%'`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd-version-logic",
+              "requirements": "ICD Version Handling: Correctly uses the `icd_version` column to distinguish between ICD-9 and ICD-10 code sets within the filtering logic.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Restricts the patient cohort to males (e.g., `pat.gender = 'M'`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters for patients aged 39-49 at the time of admission using the correct MIMIC-IV age calculation formula (e.g., `(pat.anchor_age + EXTRACT(YEAR FROM adm.admittime) - pat.anchor_year) BETWEEN 39 AND 49`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: Correctly identifies and filters for only the first ICU stay for each hospital admission, using a window function like `ROW_NUMBER()` partitioned by `hadm_id` and ordered by `intime`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly translates the 'diagnostic intensity' concept into a quantifiable SQL metric.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "procedure-event-identification",
+          "requirements": "Procedure Event Identification: Correctly links ICU stays to procedures using the `procedureevents` table.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "distinct-procedure-counting",
+          "requirements": "Distinct Procedure Counting: Correctly calculates diagnostic intensity as the count of *distinct* procedures using `COUNT(DISTINCT pe.itemid)`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-constraint-application",
+          "requirements": "First 24-Hour Window: Accurately filters procedures to include only those performed within the first 24 hours of the ICU stay (e.g., `pe.starttime BETWEEN icu.intime AND DATETIME_ADD(icu.intime, INTERVAL 24 HOUR)`).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to construct the cohort and link relevant data.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-demographic-joins",
+          "requirements": "Core Demographic and Stay Joins: Correctly joins `patients`, `admissions`, and `icustays` to link patient demographics with ICU stay information.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "patients-admissions-join",
+              "requirements": "Joins 'patients' and 'admissions' tables on `subject_id`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admissions-icustays-join",
+              "requirements": "Joins 'admissions' and 'icustays' tables on `hadm_id`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "procedure-event-join",
+          "requirements": "Procedure Event Join: Correctly performs a LEFT JOIN from the ICU stays cohort to `procedureevents` on `stay_id` to include stays with zero procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dka-subquery-integration",
+          "requirements": "DKA Filter Integration: Integrates the DKA diagnosis filter into the main cohort selection (e.g., using an `IN` clause with a subquery on `hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly performs stratification and calculates all required summary statistics for the final output.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "quintile-stratification",
+          "requirements": "Quintile Stratification: Correctly stratifies stays into five groups based on procedure count using `NTILE(5) OVER (ORDER BY num_procedures_24h)`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: Groups the final results by the calculated quintile to report metrics per stratum.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-metric-calculation",
+          "requirements": "Output Metric Calculation: Accurately computes all required metrics for each quintile.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "stay-count",
+              "requirements": "Calculates the number of stays per quintile (e.g., `COUNT(q.stay_id)`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "procedure-count-stats",
+              "requirements": "Calculates the mean, min, and max procedure counts per quintile.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-calculation",
+              "requirements": "Calculates the average ICU length of stay in days (e.g., `AVG(DATETIME_DIFF(q.outtime, q.intime, HOUR) / 24.0)`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-calculation",
+              "requirements": "Calculates the hospital mortality as a percentage (e.g., `AVG(CAST(hospital_expire_flag AS FLOAT64)) * 100`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "final-ordering",
+          "requirements": "Final Ordering: Orders the final output by `diagnostic_quintile` for clear and logical presentation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

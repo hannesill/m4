@@ -1,0 +1,6 @@
+risk_quintile,patient_count,min_risk_score,max_risk_score,mortality_rate_30_day_pct,cardio_complication_rate_pct,neuro_complication_rate_pct,median_survivor_los_days
+1,585,10,43,10.26,0.0,0.34,3
+2,585,43,55,15.9,0.17,2.91,4
+3,585,55,70,21.03,2.05,9.91,6
+4,585,70,90,29.91,11.62,20.0,8
+5,585,90,169,37.44,32.48,28.55,10

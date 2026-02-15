@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-quintile",
+              "requirements": "Column exists for stratification groups (e.g., complexity_quintile)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-los",
+              "requirements": "Column exists for average length of stay (e.g., avg_los_days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mortality",
+              "requirements": "Column exists for mortality rate (e.g., mortality_rate_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-readmission",
+              "requirements": "Column exists for 30-day readmission rate (e.g., readmission_30d_rate_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns (quintile, LOS, mortality, readmission)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "quintile-validation",
+          "requirements": "Exist Column Related to Quintiles",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "quintile-plausible",
+              "requirements": "Values are integers from 1 to 5",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "quintile-acceptable-range",
+              "requirements": "Column contains 5 distinct integer values, representing quintiles",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Exist Column Related to Average Length of Stay (days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-los-clinically-plausible",
+              "requirements": "Clinically Plausible (0.5-90.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable-range",
+              "requirements": "Acceptable Range (2.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Exist Column Related to In-hospital Mortality Rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-clinically-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable-range",
+              "requirements": "Acceptable Range (0.5-40.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "readmission-rate-validation",
+          "requirements": "Exist Column Related to 30-day Readmission Rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "readmission-rate-clinically-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-rate-acceptable-range",
+              "requirements": "Acceptable Range (5.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

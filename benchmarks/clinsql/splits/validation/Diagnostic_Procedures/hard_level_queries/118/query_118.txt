@@ -1,0 +1,1 @@
+My patient is a 49‑year‑old woman with AMI. Among female ICU admissions aged 44–54 with AMI, stratify procedure burden during first ICU stay (72h) into quartiles and report n per quartile, mean procedure count, hospital LOS (days), and in‑hospital mortality%.

@@ -1,0 +1,3 @@
+comparison_group,p99_instability_score_for_hf_cohort,avg_tachycardia_episodes,avg_hypotension_episodes,avg_tachypnea_episodes,avg_icu_los_hours,mortality_rate
+Unstable HF Cohort (Top Quartile),174.63999999999993,36.76277372262774,13.478102189781026,55.03284671532846,221.1245421245421,0.17153284671532856
+General ICU Population,,9.533724684473144,8.380686821250364,19.3688641033167,84.07835746409744,0.11105371294393893

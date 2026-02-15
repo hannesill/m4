@@ -1,0 +1,101 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "Column exists for the number of GCS measurements (e.g., `number_of_gcs_measurements`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists",
+              "requirements": "Column exists for the median GCS total (e.g., `median_gcs_total`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values-if-applicable",
+          "requirements": "If the number of GCS measurements is > 0, the median GCS value should not be NULL/empty. If the number of measurements is 0, the median can be NULL/empty.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gcs-measurement-count-validation",
+          "requirements": "Validation for the number of GCS measurements",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "gcs-measurement-count-plausible",
+              "requirements": "The number of GCS measurements must be a non-negative integer.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-gcs-validation",
+          "requirements": "Validation for the median GCS total (if applicable)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-gcs-plausible",
+              "requirements": "Clinically Plausible: If a median GCS total exists, it must be between 3 and 15.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-gcs-acceptable",
+              "requirements": "Acceptable Range: Given the elderly and critically ill cohort on respiratory support, a median GCS total between 8 and 15 is expected.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

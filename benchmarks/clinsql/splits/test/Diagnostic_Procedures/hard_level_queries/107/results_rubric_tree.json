@@ -1,0 +1,187 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "quartile-column-exists",
+              "requirements": "Exists Column Related to Diagnostic Quartile",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "patient-count-column-exists",
+              "requirements": "Exists Column Related to Number of Patients (N)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-procedure-count-column-exists",
+              "requirements": "Exists Column Related to Mean Procedure Count",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-icu-los-column-exists",
+              "requirements": "Exists Column Related to Mean ICU LOS",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hospital-mortality-column-exists",
+              "requirements": "Exists Column Related to Hospital Mortality (%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in Key Columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "row-count-validation",
+          "requirements": "Result has 4 rows, one for each quartile",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-count-validation",
+          "requirements": "Validate Column Related to Patient Count (N)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-patient-count",
+              "requirements": "Clinically Plausible (10-1000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-patient-count",
+              "requirements": "Acceptable Range (20-500)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mean-procedure-count-validation",
+          "requirements": "Validate Column Related to Mean Procedure Count",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-procedure-count",
+              "requirements": "Clinically Plausible (0-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-procedure-count",
+              "requirements": "Acceptable Range (0.1-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mean-icu-los-validation",
+          "requirements": "Validate Column Related to Mean ICU LOS (days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-icu-los",
+              "requirements": "Clinically Plausible (0.5-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-icu-los",
+              "requirements": "Acceptable Range (1-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hospital-mortality-validation",
+          "requirements": "Validate Column Related to Hospital Mortality (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-mortality",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-mortality",
+              "requirements": "Acceptable Range (5-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

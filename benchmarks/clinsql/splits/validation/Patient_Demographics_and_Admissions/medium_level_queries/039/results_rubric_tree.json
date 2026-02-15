@@ -1,0 +1,210 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "discharge-group-column-exists",
+              "requirements": "Column Exists for 'discharge_group'",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-column-exists",
+              "requirements": "Column Exists for 'mean_los_days'",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-los-column-exists",
+              "requirements": "Column Exists for 'p25_los_days'",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-column-exists",
+              "requirements": "Column Exists for 'median_los_days'",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-column-exists",
+              "requirements": "Column Exists for 'p75_los_days'",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-column-exists",
+              "requirements": "Column Exists for 'percentile_rank_of_7_days'",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mean-los-validation",
+          "requirements": "Validation for 'mean_los_days'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mean-los-plausible",
+              "requirements": "Clinically Plausible (1.0-40.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-acceptable",
+              "requirements": "Acceptable Range (2.0-20.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p25-los-validation",
+          "requirements": "Validation for 'p25_los_days'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p25-los-plausible",
+              "requirements": "Clinically Plausible (1.0-20.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-los-acceptable",
+              "requirements": "Acceptable Range (1.0-6.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-validation",
+          "requirements": "Validation for 'median_los_days'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "median-los-plausible",
+              "requirements": "Clinically Plausible (1.0-30.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-acceptable",
+              "requirements": "Acceptable Range (2.0-12.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p75-los-validation",
+          "requirements": "Validation for 'p75_los_days'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p75-los-plausible",
+              "requirements": "Clinically Plausible (2.0-40.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-acceptable",
+              "requirements": "Acceptable Range (4.0-20.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentile-rank-validation",
+          "requirements": "Validation for 'percentile_rank_of_7_days'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-rank-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-acceptable",
+              "requirements": "Acceptable Range (40.0-99.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

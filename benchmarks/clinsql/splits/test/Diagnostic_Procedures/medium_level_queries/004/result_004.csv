@@ -1,0 +1,5 @@
+diagnosis_type,stay_category,total_admissions,mean_imaging_procedures,min_imaging_procedures,max_imaging_procedures
+Secondary Diagnosis,1-3 Day Stay,741,0.0,0,0
+Secondary Diagnosis,4-7 Day Stay,534,0.0,0,0
+Primary Diagnosis,1-3 Day Stay,102,0.0,0,0
+Primary Diagnosis,4-7 Day Stay,82,0.0,0,0

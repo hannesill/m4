@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for female patients using p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query accurately filters for patients aged between 67 and 77 at the time of admission using the calculated age.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-patient-identification",
+          "requirements": "ICU Patient Identification: The query correctly identifies ICU patients by joining with the icustays table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographics-admission-join",
+          "requirements": "Demographics and Admission Join: Correctly joins 'patients' and 'admissions' tables on 'subject_id' to link demographic data with hospital admission information.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-icu-join",
+          "requirements": "Admission and ICU Stay Join: Correctly joins 'admissions' (via cohort) and 'icustays' tables on 'hadm_id' to associate hospital admissions with specific ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-events-join",
+          "requirements": "ICU Stay and Chart Events Join: Correctly joins 'icustays' (via cohort) and 'chartevents' tables on 'stay_id' to link ICU stays to their corresponding measurements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "hr-code-selection",
+          "requirements": "Heart Rate Code Selection: The query correctly identifies Heart Rate measurements using the appropriate itemids (220045, 211).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-constraint",
+          "requirements": "Temporal Constraint (First 24 Hours): The query accurately filters for heart rate measurements within the first 24 hours of the ICU stay using the 'intime' and 'charttime' columns.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-validation",
+          "requirements": "Value Validation: The query includes a plausible range filter for heart rate values (e.g., BETWEEN 30 AND 250) to exclude erroneous data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-aggregation",
+          "requirements": "Per-Stay Aggregation: The query correctly groups measurements by 'stay_id' to calculate a per-stay average heart rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "average-hr-calculation",
+          "requirements": "Average HR Calculation: The query correctly computes the average heart rate per stay using the AVG() function on 'valuenum'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: The query correctly calculates the percentile rank of 110 bpm using the formula COUNTIF(avg_hr <= 110) * 100.0 / COUNT(*).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

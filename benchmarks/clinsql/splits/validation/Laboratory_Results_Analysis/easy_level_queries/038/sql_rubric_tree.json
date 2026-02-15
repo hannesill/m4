@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'` to restrict the analysis to the correct demographic group as specified in the question.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stroke-diagnosis-selection",
+          "requirements": "Stroke Diagnosis Selection: The query must correctly identify patients with ischemic stroke by filtering on appropriate ICD codes from the `diagnoses_icd` table (e.g., `dx.icd_code LIKE '434%' OR dx.icd_code LIKE 'I63%'`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hemoglobin-test-identification",
+          "requirements": "Hemoglobin Test Identification: The query must correctly identify the hemoglobin lab test using the specific `itemid` (e.g., `le.itemid = 51222`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-for-lab",
+          "requirements": "Temporal Filter for Lab: The query must correctly filter for hemoglobin measurements taken within the first 24 hours of hospital admission using a time window (e.g., `le.charttime BETWEEN adm.admittime AND DATETIME_ADD(adm.admittime, INTERVAL 24 HOUR)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the `patients`, `admissions`, `diagnoses_icd`, and `labevents` tables to link patient demographics, diagnoses, and lab results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The query must use the correct keys for joining tables: `subject_id` between `patients` and `admissions`, and `hadm_id` between `admissions`, `diagnoses_icd`, and `labevents`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "minimum-value-aggregation",
+          "requirements": "Minimum Value Aggregation: The query must use the `MIN()` aggregation function on the hemoglobin value (`le.valuenum`) to find the lowest recorded level.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-cleansing",
+          "requirements": "Data Cleansing: The query should include conditions to ensure the quality of the lab value being aggregated, such as `le.valuenum IS NOT NULL`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to two decimal places using `ROUND(..., 2)` for clear presentation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

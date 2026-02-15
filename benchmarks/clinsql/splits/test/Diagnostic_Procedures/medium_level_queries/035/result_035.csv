@@ -1,0 +1,5 @@
+los_group,diagnosis_type,patient_count,avg_mri_ct_per_admission
+1-4 Day LOS,Primary Diagnosis,241,0.0
+1-4 Day LOS,Secondary Diagnosis,1138,0.02
+5-7 Day LOS,Primary Diagnosis,60,0.0
+5-7 Day LOS,Secondary Diagnosis,650,0.04

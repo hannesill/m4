@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "icu-patient-identification",
+          "requirements": "ICU Patient Identification: The query must correctly join patients, admissions, and icustays tables to identify ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate patient age at the time of ICU admission and filter for the range 81-91 using `(p.anchor_age + EXTRACT(YEAR FROM ie.intime) - p.anchor_year) BETWEEN 81 AND 91`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept and Temporal Filtering",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sbp-code-selection",
+          "requirements": "Systolic Blood Pressure (SBP) Code Selection: The query must select SBP measurements by filtering `chartevents.itemid` using `IN (220050, 51)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-constraint",
+          "requirements": "Temporal Constraint (First 48 Hours): The query must limit measurements to the first 48 hours of the ICU stay using `DATETIME_DIFF(ce.charttime, pat.intime, HOUR) BETWEEN 0 AND 48`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-plausibility",
+          "requirements": "Value Plausibility Check: The query should filter out physiologically implausible SBP values using a range filter like `ce.valuenum > 40 AND ce.valuenum < 300`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Calculation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-aggregation",
+          "requirements": "Per-Stay Aggregation: The query must calculate the average SBP for each unique ICU stay by using `AVG(sbp_value)` and grouping by `stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: The query must correctly calculate the percentile rank of a 150 mmHg SBP value using the formula `COUNTIF(avg_sbp <= 150) / COUNT(stay_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting",
+      "requirements": "Output Formatting and Descriptive Statistics",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "descriptive-statistics-provision",
+          "requirements": "Descriptive Statistics Provision: The query should provide additional descriptive statistics for context, such as mean, standard deviation, and quartiles of the average SBP distribution.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rounding-and-aliasing",
+          "requirements": "Rounding and Aliasing: The query should round numerical outputs for readability and use clear aliases for all columns in the final result set.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "number_of_patients-column-exists",
+              "requirements": "Column Exists for Number of Patients (e.g., 'number_of_patients')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "average_age-column-exists",
+              "requirements": "Column Exists for Average Age (e.g., 'average_age')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_length_of_stay_days-column-exists",
+              "requirements": "Column Exists for Average Length of Stay (e.g., 'avg_length_of_stay_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_initial_troponin_t-column-exists",
+              "requirements": "Column Exists for Average Troponin (e.g., 'avg_initial_troponin_t')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "number_of_patients-validation",
+          "requirements": "Validation of 'number_of_patients' (Actual: 1316)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "number_of_patients-plausible",
+              "requirements": "Clinically Plausible (100-3000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "number_of_patients-acceptable",
+              "requirements": "Acceptable Range (1000-1600)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "average_age-validation",
+          "requirements": "Validation of 'average_age' (Actual: 87.4)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "average_age-plausible",
+              "requirements": "Clinically Plausible (83.0-93.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "average_age-acceptable",
+              "requirements": "Acceptable Range (86.0-89.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg_length_of_stay_days-validation",
+          "requirements": "Validation of 'avg_length_of_stay_days' (Actual: 7.9)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg_length_of_stay_days-plausible",
+              "requirements": "Clinically Plausible (2.0-20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_length_of_stay_days-acceptable",
+              "requirements": "Acceptable Range (5.0-12.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg_initial_troponin_t-validation",
+          "requirements": "Validation of 'avg_initial_troponin_t' (Actual: 0.88)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg_initial_troponin_t-plausible",
+              "requirements": "Clinically Plausible (0.02-5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_initial_troponin_t-acceptable",
+              "requirements": "Acceptable Range (0.5-2.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

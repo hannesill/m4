@@ -1,0 +1,25 @@
+icu_status,los_bucket,comorbidity_bucket,number_of_admissions,mortality_rate_pct,median_los_days,ckd_prevalence_pct,diabetes_prevalence_pct
+Non-ICU,1-2 days,0-1 systems,793,0.13,1,7.19,14.25
+Non-ICU,1-2 days,2 systems,353,0.57,1,33.43,53.26
+Non-ICU,1-2 days,>=3 systems,345,0.58,2,59.13,77.97
+Non-ICU,3-5 days,0-1 systems,804,0.0,4,5.47,15.17
+Non-ICU,3-5 days,2 systems,339,0.0,4,34.81,50.44
+Non-ICU,3-5 days,>=3 systems,431,0.23,4,60.56,75.64
+Non-ICU,6-9 days,0-1 systems,502,0.0,7,5.78,13.15
+Non-ICU,6-9 days,2 systems,254,0.0,7,35.83,46.06
+Non-ICU,6-9 days,>=3 systems,339,0.88,7,59.59,79.06
+Non-ICU,>=10 days,0-1 systems,380,1.58,15,5.53,11.05
+Non-ICU,>=10 days,2 systems,228,1.32,15,23.68,39.91
+Non-ICU,>=10 days,>=3 systems,369,2.44,15,57.72,71.82
+ICU,1-2 days,0-1 systems,57,5.26,2,3.51,8.77
+ICU,1-2 days,2 systems,21,14.29,2,38.1,38.1
+ICU,1-2 days,>=3 systems,18,33.33,1,38.89,55.56
+ICU,3-5 days,0-1 systems,119,1.68,4,2.52,10.92
+ICU,3-5 days,2 systems,71,7.04,4,18.31,46.48
+ICU,3-5 days,>=3 systems,105,13.33,4,55.24,67.62
+ICU,6-9 days,0-1 systems,167,1.8,8,4.19,11.98
+ICU,6-9 days,2 systems,95,7.37,7,27.37,30.53
+ICU,6-9 days,>=3 systems,181,10.5,7,47.51,68.51
+ICU,>=10 days,0-1 systems,330,8.18,17,4.24,10.61
+ICU,>=10 days,2 systems,272,10.66,18,14.71,29.41
+ICU,>=10 days,>=3 systems,536,13.81,20,49.25,61.01

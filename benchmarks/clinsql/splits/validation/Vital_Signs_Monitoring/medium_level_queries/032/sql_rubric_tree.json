@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for the range 53-63 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 53 AND 63`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "care-unit-selection",
+          "requirements": "Care Unit Selection: Identifies patients admitted to 'Step-down' or 'Intermediate' care units using `ie.first_careunit LIKE '%Stepdown%' OR ie.first_careunit LIKE '%Intermediate%'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ventilation-identification",
+          "requirements": "Invasive Mechanical Ventilation Identification: Correctly identifies ventilated patients by checking for specific ventilation-related `itemid`s (223849, 220339, 224695, 224688) in the chartevents table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sbp-code-selection",
+          "requirements": "SBP Code Selection: Correctly filters for Systolic Blood Pressure measurements using the appropriate `itemid`s (220050, 51).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: Correctly joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-icustays-join",
+          "requirements": "Admissions-ICUStays Join: Correctly joins the patient cohort to `icustays` on `hadm_id` to identify ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icustays-chartevents-join",
+          "requirements": "ICUStays-Chartevents Join: Correctly joins `icustays` to `chartevents` on `stay_id` to link events to specific ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filtering",
+          "requirements": "Temporal Filtering: Correctly filters for nighttime measurements using `EXTRACT(HOUR FROM ce.charttime) < 6`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-quality-filtering",
+          "requirements": "Data Quality Filtering: Includes reasonable filters to exclude null and physiologically implausible SBP values (`valuenum IS NOT NULL` and `valuenum BETWEEN 40 AND 250`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "standard-deviation-calculation",
+          "requirements": "Standard Deviation Calculation: Correctly calculates the standard deviation of nighttime SBP values using `STDDEV(sbp_value)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Provides multiple summary statistics (count, avg, stddev, min, max, quartiles) and rounds the results for readability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

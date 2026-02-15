@@ -1,0 +1,208 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients within the 46-56 age range using `p.anchor_age BETWEEN 46 AND 56`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-diagnosis-selection",
+          "requirements": "AMI Diagnosis Selection: The query must correctly identify admissions for acute myocardial infarction by filtering `diagnoses_icd`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "ami-icd9-code",
+              "requirements": "AMI ICD-9 Code: Correctly filters for ICD-9 AMI codes using `d.icd_code LIKE '410%'`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ami-icd10-code",
+              "requirements": "AMI ICD-10 Code: Correctly filters for ICD-10 AMI codes using `d.icd_code LIKE 'I21%'`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ami-icd-versioning",
+              "requirements": "AMI ICD Versioning: The `WHERE` clause must correctly associate code patterns with the `d.icd_version` field.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "major-complication-identification",
+          "requirements": "Major Complication Identification: The query must correctly identify and count major complications from `diagnoses_icd`.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "complication-code-selection",
+              "requirements": "Complication Code Selection: Correctly identifies major complication codes for both ICD-9 (e.g., '995.92', '785.52') and ICD-10 (e.g., 'R65.21', 'A41.9').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "complication-counting",
+              "requirements": "Complication Counting: Correctly counts the number of unique complications per admission using `COUNT(DISTINCT icd_code)` grouped by `hadm_id`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "composite-risk-score-calculation",
+          "requirements": "Composite Risk Score Calculation: The query must correctly calculate the composite risk score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "risk-score-formula",
+              "requirements": "Risk Score Formula: Implements the weighted risk score formula: `(ami.anchor_age * 1.5) + (COALESCE(cc.complication_count, 0) * 10)`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "complication-flag-creation",
+          "requirements": "Complication Flag Creation: Creates a binary flag `has_major_complication` to indicate if a patient has one or more complications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: Correctly joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: Correctly joins the patient cohort with `diagnoses_icd` on `hadm_id` to identify conditions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complication-data-join",
+          "requirements": "Complication Data Join: Uses a `LEFT JOIN` to connect the main AMI cohort to the complication counts, ensuring no patients are lost if they lack complications.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "LOS Calculation: Correctly calculates length of stay in days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY)` and handles non-positive values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-stratification",
+          "requirements": "Risk Stratification: Correctly stratifies patients into 5 quintiles using `NTILE(5) OVER (ORDER BY composite_risk_score ASC)`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: Groups the final results by `risk_quintile` to report metrics per stratum.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Mortality Rate Calculation: Calculates in-hospital mortality as a percentage using `AVG(CAST(hospital_expire_flag AS FLOAT64)) * 100`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complication-rate-calculation",
+          "requirements": "Complication Rate Calculation: Calculates the major complication rate as a percentage using `AVG(CAST(has_major_complication AS FLOAT64)) * 100`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-survivor-los-calculation",
+          "requirements": "Median Survivor LOS Calculation: Correctly calculates the median LOS for survivors by filtering for `hospital_expire_flag = 0` before applying an approximation function like `APPROX_QUANTILES`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

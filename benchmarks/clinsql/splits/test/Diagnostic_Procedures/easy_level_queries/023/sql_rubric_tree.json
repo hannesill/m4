@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters patients with an anchor age between 82 and 92 using `p.anchor_age BETWEEN 82 AND 92`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "Distinguishes between ICD-9 and ICD-10 procedures using the `pr.icd_version` column to apply different code logic.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cardiac-code-selection",
+          "requirements": "Identifies cardiac procedures using a combination of `LIKE` and equality checks for specific ICD-9 (e.g., `LIKE '37.2%'`) and ICD-10 (e.g., `LIKE 'B21%'`) codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Correctly joins the `patients` and `procedures_icd` tables.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Uses `subject_id` as the primary key to link patient demographic data to their corresponding procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Correctly groups data by the hospitalization identifier (`hadm_id`) to analyze procedures per hospitalization. The query incorrectly groups by `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "distinct-procedure-count",
+          "requirements": "Applies `COUNT(DISTINCT pr.icd_code)` within a subquery to determine the unique number of procedures for each grouping.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Uses the `APPROX_QUANTILES(procedure_count, 4)[OFFSET(1)]` function to calculate the 25th percentile of the procedure counts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

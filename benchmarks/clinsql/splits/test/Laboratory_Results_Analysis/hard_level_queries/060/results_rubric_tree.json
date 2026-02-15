@@ -1,0 +1,227 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "instability-score-iqr-exists",
+              "requirements": "Column Exists for Instability Score Interquartile Range (e.g., instability_score_interquartile_range)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-score-q1-exists",
+              "requirements": "Column Exists for Instability Score Q1 (e.g., instability_score_q1)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-score-median-exists",
+              "requirements": "Column Exists for Instability Score Median (e.g., instability_score_median)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-los-exists",
+              "requirements": "Column Exists for Cohort Length of Stay (e.g., cohort_avg_los_days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-mortality-exists",
+              "requirements": "Column Exists for Cohort Mortality (e.g., cohort_mortality_percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-critical-events-exists",
+              "requirements": "Column Exists for Cohort Critical Lab Events per Admission (e.g., cohort_critical_events_per_admission)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-pop-critical-events-exists",
+              "requirements": "Column Exists for General Population Critical Lab Events per Admission (e.g., general_pop_critical_events_per_admission)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "instability-score-validation",
+          "requirements": "Validate Instability Score IQR, Q1, and Median",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "instability-score-iqr-plausible",
+              "requirements": "Instability Score IQR is Clinically Plausible (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-score-iqr-acceptable",
+              "requirements": "Instability Score IQR is within Acceptable Range (0-5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-score-median-plausible",
+              "requirements": "Instability Score Median is Clinically Plausible (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-score-median-acceptable",
+              "requirements": "Instability Score Median is within Acceptable Range (0-4)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-mortality-validation",
+          "requirements": "Validate Cohort Mortality",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "cohort-mortality-plausible",
+              "requirements": "Mortality is Clinically Plausible (10-90%) for post-cardiac arrest cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-mortality-acceptable",
+              "requirements": "Mortality is within Acceptable Range (40-65%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-los-validation",
+          "requirements": "Validate Cohort Length of Stay",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "cohort-los-plausible",
+              "requirements": "Average LOS is Clinically Plausible (3-40 days) for post-cardiac arrest cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-los-acceptable",
+              "requirements": "Average LOS is within Acceptable Range (8-20 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "critical-events-validation",
+          "requirements": "Validate Critical Lab Events Comparison",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "cohort-critical-events-plausible",
+              "requirements": "Cohort Critical Events per Admission is Clinically Plausible (0.5-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-critical-events-acceptable",
+              "requirements": "Cohort Critical Events per Admission is within Acceptable Range (2-7)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-pop-critical-events-plausible",
+              "requirements": "General Population Critical Events per Admission is Clinically Plausible (0.01-3)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-pop-critical-events-acceptable",
+              "requirements": "General Population Critical Events per Admission is within Acceptable Range (0.1-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

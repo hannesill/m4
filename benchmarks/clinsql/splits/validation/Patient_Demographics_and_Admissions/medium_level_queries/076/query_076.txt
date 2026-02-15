@@ -1,0 +1,1 @@
+I’m assessing my 88‑year‑old male inpatient. For male inpatients aged 83–93, report mean, median (p50), p75, p90 LOS by discharged alive versus in‑hospital death, and percentile rank of a 5‑day LOS.

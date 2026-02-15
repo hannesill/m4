@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Correctly filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly filters for patients aged between 55 and 65 at the time of admission using the calculated age `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 55 AND 65`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: The analysis is correctly limited to ICU stays by joining with the `icustays` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Heart Rate",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "heart-rate-code-selection",
+          "requirements": "Heart Rate Code Selection: Correctly identifies heart rate measurements by filtering `chartevents` for the appropriate `itemid`s (220045, 211).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-quality-filtering",
+          "requirements": "Data Quality Filtering: Excludes clinically implausible heart rate values by applying filters like `valuenum IS NOT NULL` and a reasonable range (`valuenum > 0 AND valuenum < 300`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-integration",
+          "requirements": "Patient Demographics Integration: Correctly joins `patients`, `admissions`, and `icustays` tables to link patient demographics with ICU stay information.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "clinical-events-integration",
+          "requirements": "Clinical Events Integration: Correctly joins the patient cohort with `chartevents` on `stay_id` to link patients to their recorded measurements.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-patient-max-hr",
+          "requirements": "Per-Patient Maximum Heart Rate: Correctly calculates the maximum heart rate for each unique ICU stay by using `MAX(ce.valuenum)` and grouping by `stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-calculation",
+          "requirements": "Quartile Calculation: Uses `APPROX_QUANTILES(max_heart_rate, 4)` to correctly determine the 25th (Q1) and 75th (Q3) percentiles of the maximum heart rates across the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "iqr-calculation",
+          "requirements": "Interquartile Range Calculation: Correctly computes the interquartile range (IQR) by subtracting the 25th percentile from the 75th percentile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

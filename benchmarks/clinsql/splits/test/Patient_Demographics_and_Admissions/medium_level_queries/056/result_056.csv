@@ -1,0 +1,3 @@
+outcome_group,total_admissions,avg_los_days,median_los_days,proportion_los_ge_7_days,proportion_los_ge_14_days,percentile_rank_of_10_day_los
+In-Hospital Mortality,593,9.97,7,0.5042,0.2243,0.6796
+Discharged Alive,17204,4.9,3,0.2201,0.0605,0.9029

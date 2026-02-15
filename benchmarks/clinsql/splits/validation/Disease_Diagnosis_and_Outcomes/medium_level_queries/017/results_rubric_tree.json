@@ -1,0 +1,156 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stratification-column-exists",
+              "requirements": "Column for stratification (e.g., los_group)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "Column for mortality rate (e.g., mortality_rate_percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ci-lower-column-exists",
+              "requirements": "Column for 95% CI lower bound (e.g., mortality_ci_95_lower)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ci-upper-column-exists",
+              "requirements": "Column for 95% CI upper bound (e.g., mortality_ci_95_upper)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "time-to-death-column-exists",
+              "requirements": "Column for median time to death (e.g., median_days_to_death_among_nonsurvivors)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Mortality Rate Validation (e.g., mortality_rate_percent)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.1-40.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (2.0-20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-ci-validation",
+          "requirements": "Mortality 95% CI Validation (e.g., mortality_ci_95_lower, mortality_ci_95_upper)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-ci-plausible",
+              "requirements": "Clinically Plausible (0.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-ci-acceptable",
+              "requirements": "Acceptable Range (1.0-25.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "time-to-death-validation",
+          "requirements": "Median Time-to-Death Validation (e.g., median_days_to_death_among_nonsurvivors)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "time-to-death-plausible",
+              "requirements": "Clinically Plausible (0.5-90.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "time-to-death-acceptable",
+              "requirements": "Acceptable Range (1.0-40.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

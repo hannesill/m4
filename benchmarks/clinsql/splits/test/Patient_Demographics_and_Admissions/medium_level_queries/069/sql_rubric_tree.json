@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 59 and 69 using `p.anchor_age BETWEEN 59 AND 69`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-type-filter",
+          "requirements": "Admission Type Filter: The query must select emergent admissions using `a.admission_type LIKE '%EMER%'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-integrity-filter",
+          "requirements": "Data Integrity Filter: The query should filter out records with null admission or discharge times to ensure valid length of stay calculations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the `patients` and `admissions` tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between `patients` and `admissions` must be on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay Calculation: The query must correctly calculate the length of stay in days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "proportion-calculation",
+          "requirements": "Proportion Calculation: The query must calculate the proportion of admissions with LOS \u2265 7 days using `COUNTIF(length_of_stay_days >= 7) / COUNT(*)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: The query must attempt to calculate the percentile rank of a 7-day LOS using `COUNTIF(length_of_stay_days < 7) / (COUNT(*) - 1)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-by-outcome",
+          "requirements": "Grouping by Outcome: The query must group results by mortality status using `GROUP BY hospital_expire_flag`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-labeling",
+          "requirements": "Outcome Labeling: The query should use a CASE statement to label the mortality status as 'Discharged Alive' and 'In-Hospital Mortality'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

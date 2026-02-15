@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates and filters patient age to be between 62 and 72 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gi-bleed-condition-selection",
+          "requirements": "Accurately identifies admissions for lower GI bleed using a combination of ICD-9 ('578%', '5693') and ICD-10 ('K921', 'K922', 'K625') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-cohort-filter",
+          "requirements": "Restricts the analysis to admissions with a length of stay between 1 and 7 days.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "procedure-identification",
+      "requirements": "Non-Invasive Diagnostic Procedure Identification",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "Correctly handles both ICD-9 and ICD-10 procedure codes by checking the `pr.icd_version` field within the join condition.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd9-diagnostic-code-selection",
+          "requirements": "Selects non-invasive diagnostic procedures for ICD-9 using appropriate codes (e.g., '87%', '88%', '8952', '891%', '893%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd10-diagnostic-code-selection",
+          "requirements": "Selects non-invasive diagnostic procedures for ICD-10 using appropriate codes (e.g., 'B%', '4A02%', '4A00%', '4A06%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to form the base cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-data-integration",
+          "requirements": "Uses a `LEFT JOIN` to the `icustays` table on `hadm_id` to correctly identify ICU status without excluding non-ICU admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-data-integration",
+          "requirements": "Uses a `LEFT JOIN` from the admissions cohort to the `procedures_icd` table on `hadm_id` to allow for counting admissions with zero relevant procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stratification-variable-creation",
+          "requirements": "Creates stratification variables for ICU status (using a `CASE` statement on `icu.stay_id`) and LOS category (using a `CASE` statement on `length_of_stay`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-admission-procedure-count",
+          "requirements": "Correctly counts the number of diagnostic procedures for each individual admission by grouping on `hadm_id` in the `procedure_counts` CTE.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-aggregation",
+          "requirements": "Produces the final result by grouping by the `stay_category` and `icu_status` variables and calculating the mean procedure count using `AVG()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

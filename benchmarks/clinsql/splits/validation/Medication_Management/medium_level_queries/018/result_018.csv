@@ -1,0 +1,6 @@
+medication_class,total_patients,patients_early_72h,patients_late_48h,prevalence_early_pct,prevalence_late_pct,absolute_diff_pp
+DPP-4 Inhibitor,1676,0,0,0.0,0.0,0.0
+Metformin,1676,41,24,2.45,1.43,-1.01
+SGLT2 Inhibitor,1676,6,2,0.36,0.12,-0.24
+Sulfonylurea,1676,34,17,2.03,1.01,-1.01
+Thiazolidinedione,1676,0,1,0.0,0.06,0.06

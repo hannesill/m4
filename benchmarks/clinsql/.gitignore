@@ -1,0 +1,8 @@
+# Benchmark outputs (large, per-run)
+clinsql_results_*.csv
+traces_*/
+mcp_config.json
+
+# Generated data (reproducible via load_dataset.py / evaluate_gold_m4.py)
+clinsql.csv
+clinsql_with_m4.csv

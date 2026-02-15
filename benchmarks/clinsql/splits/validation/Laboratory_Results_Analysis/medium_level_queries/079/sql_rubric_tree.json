@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 82-92 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-identification",
+          "requirements": "Condition Identification: Correctly filters for admissions with a diagnosis of chest pain or AMI using appropriate ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "troponin-t-identification",
+          "requirements": "Troponin T Identification: Identifies Troponin T lab events using the correct `itemid` (51003).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initial-measurement-logic",
+          "requirements": "Initial Measurement Logic: Uses a window function (`ROW_NUMBER`) partitioned by `hadm_id` and ordered by `charttime` to isolate the first troponin measurement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-threshold-filter",
+          "requirements": "Troponin Threshold Filter: Correctly filters for patients with an initial troponin T value greater than 0.01.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables to build the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-data-join",
+          "requirements": "Lab Data Join: Correctly joins the patient cohort with `labevents` on `hadm_id` to link patients to their lab results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: Correctly calculates the 25th, 50th, and 75th percentiles of the initial troponin T value using `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "min-max-calculation",
+          "requirements": "Min-Max Calculation: Correctly calculates the minimum and maximum troponin T values using `MIN()` and `MAX()` aggregation functions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation",
+          "requirements": "Final Aggregation: The query correctly aggregates results from the final cohort without incorrect grouping, producing a single row of summary statistics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

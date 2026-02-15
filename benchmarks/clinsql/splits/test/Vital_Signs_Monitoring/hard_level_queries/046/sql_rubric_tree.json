@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients with an age between 84 and 94 using `pat.anchor_age BETWEEN 84 AND 94`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ischemic-stroke-condition",
+          "requirements": "Ischemic Stroke Condition: The query must correctly identify patients with ischemic stroke using both ICD-9 codes ('433', '434') and ICD-10 codes ('I63').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-selection",
+          "requirements": "ICU Stay Selection: The query must correctly identify ICU stays for the specified patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Vital Sign Instability Score Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "vital-sign-selection",
+          "requirements": "Vital Sign Selection: The query must select the correct vital signs from `chartevents` using their `itemid`s (220045, 220179, 220052, 220210, 220277, 223762).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-72h",
+          "requirements": "72-Hour Temporal Filter: The query must filter vital sign events to the first 72 hours of the ICU stay using `DATETIME_DIFF(vs.charttime, cs.intime, HOUR) BETWEEN 0 AND 72`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormality-definition",
+          "requirements": "Abnormality Definition: The query must correctly implement the logic in a CASE statement to flag abnormal vital sign values based on specified thresholds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-aggregation",
+          "requirements": "Instability Score Aggregation: The query must correctly calculate the total instability score per `stay_id` by summing the `is_abnormal` flags.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `icustays`, `patients`, `admissions`, and the `icd_stroke` CTE using appropriate keys (`subject_id`, `hadm_id`) to build the patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-data-join",
+          "requirements": "Vitals Data Join: The query must correctly link vital sign data (`chartevents`) with the patient cohort using `stay_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: The query must correctly calculate the percentile rank for a score of 80 using the formula `(COUNTIF(score < 80) + 0.5 * COUNTIF(score = 80)) / COUNT(score)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-quartile-ranking",
+          "requirements": "Instability Quartile Ranking: The query must use `NTILE(4) OVER (ORDER BY instability_score DESC)` to correctly partition patients into instability quartiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-filtering",
+          "requirements": "Top Quartile Filtering: The query must correctly filter for the top instability quartile (`instability_quartile = 1`) to calculate subsequent statistics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-los-calculation",
+          "requirements": "Top Quartile LOS Calculation: The query must calculate the average ICU length of stay in days for the top quartile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-mortality-calculation",
+          "requirements": "Top Quartile Mortality Calculation: The query must calculate the average mortality rate for the top quartile using `AVG(CAST(hospital_expire_flag AS FLOAT64)) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-aggregation",
+          "requirements": "Final Output Aggregation: The query must correctly combine the percentile rank and the top quartile statistics into a single output row, for example using a CROSS JOIN.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

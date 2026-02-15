@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p90-instability-score-column-exists",
+              "requirements": "Column exists for 90th percentile instability score",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-tier-mortality-rate-column-exists",
+              "requirements": "Column exists for top-tier mortality rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-tier-avg-los-column-exists",
+              "requirements": "Column exists for top-tier average length of stay",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-tier-critical-lab-rate-column-exists",
+              "requirements": "Column exists for top-tier critical lab rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-population-critical-lab-rate-column-exists",
+              "requirements": "Column exists for general population critical lab rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "p90-instability-score-validation",
+          "requirements": "Validate 90th percentile instability score (p90_instability_score: 4.0)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p90-instability-score-plausible",
+              "requirements": "Clinically Plausible (0.0 to 50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-instability-score-acceptable",
+              "requirements": "Acceptable Range (1.0 to 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-tier-mortality-rate-validation",
+          "requirements": "Validate top-tier mortality rate (top_tier_mortality_rate: 0.1515)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "top-tier-mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.0 to 1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-tier-mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0.05 to 0.40)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-tier-avg-los-validation",
+          "requirements": "Validate top-tier average LOS (top_tier_avg_los_days: 16.39)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "top-tier-avg-los-plausible",
+              "requirements": "Clinically Plausible (1.0 to 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-tier-avg-los-acceptable",
+              "requirements": "Acceptable Range (5.0 to 30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-tier-critical-lab-rate-validation",
+          "requirements": "Validate top-tier critical lab rate (top_tier_critical_lab_rate: 0.2194)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "top-tier-critical-lab-rate-plausible",
+              "requirements": "Clinically Plausible (0.0 to 1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-tier-critical-lab-rate-acceptable",
+              "requirements": "Acceptable Range (0.10 to 0.50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "general-population-critical-lab-rate-validation",
+          "requirements": "Validate general population critical lab rate (general_population_critical_lab_rate: 0.0209)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "general-population-critical-lab-rate-plausible",
+              "requirements": "Clinically Plausible (0.0 to 1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-population-critical-lab-rate-acceptable",
+              "requirements": "Acceptable Range (0.01 to 0.15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

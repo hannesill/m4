@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the initial patient population based on demographics and the primary clinical condition.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Correctly filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Accurately filters for patients aged between 82 and 92 years at the time of admission using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 82 AND 92`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "postop-complication-selection",
+          "requirements": "Postoperative Complication Selection: Correctly identifies admissions with postoperative complications using both ICD-9 ('996'-'999') and ICD-10 ('T8') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs stratification and calculates metrics for the defined patient cohort.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "comorbidity-identification",
+          "requirements": "Comorbidity Identification: Correctly identifies a range of specified comorbidities using both ICD-9 and ICD-10 codes within a CASE statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-counting",
+          "requirements": "Comorbidity Counting: Accurately calculates the number of unique comorbidity systems per admission using `COUNT(DISTINCT comorbidity_system)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-status-stratification",
+          "requirements": "ICU Status Stratification: Correctly categorizes admissions into 'ICU' and 'Non-ICU' by checking for existence in the `icustays` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-binning",
+          "requirements": "Length of Stay (LOS) Binning: Correctly bins LOS into '<=5 days' and '>5 days' based on the difference between admission and discharge times.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-binning",
+          "requirements": "Comorbidity Binning: Correctly categorizes the comorbidity count into '0-1', '2', and '>=3' bins.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-reporting",
+      "requirements": "Final Aggregation and Reporting: Groups the stratified data and computes the final requested metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "strata-generation",
+          "requirements": "Complete Strata Generation: Ensures all possible combinations of stratification bins are present in the final output, typically using a CROSS JOIN of all bin values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: Correctly groups the final results by all stratification columns (icu_status, los_bin, comorbidity_bin).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-count-calculation",
+          "requirements": "Patient Count (N) Calculation: Correctly calculates the number of patients (N) in each group using `COUNT(hadm_id)` and handles zero-count groups with `COALESCE`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "In-hospital Mortality Rate Calculation: Correctly calculates the mortality percentage using `SAFE_DIVIDE(SUM(hospital_expire_flag), COUNT(hadm_id)) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "avg-comorbidity-calculation",
+          "requirements": "Average Comorbidity Count Calculation: Correctly calculates the average comorbidity count for each group using `AVG(comorbidity_count)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient, admission, and diagnosis data.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly performs INNER JOINs between patients, admissions, and diagnoses_icd tables using `subject_id` and `hadm_id` keys.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "analytical-table-joins",
+          "requirements": "Analytical Table Joins: Correctly performs LEFT JOINs to integrate the comorbidity counts and the final strata for complete reporting.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

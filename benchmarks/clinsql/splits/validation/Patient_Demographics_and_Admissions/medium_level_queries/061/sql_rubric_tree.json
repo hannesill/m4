@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients with an anchor age between 86 and 96 using `p.anchor_age BETWEEN 86 AND 96`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-type-filter",
+          "requirements": "Admission Type Filter: The query must filter for urgent admissions using `a.admission_type = 'URGENT'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insurance-type-filter",
+          "requirements": "Insurance Type Filter: The query must filter for admissions covered by Medicare using `a.insurance = 'Medicare'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "discharge-outcome-mapping",
+          "requirements": "Discharge Outcome Mapping: The query must correctly categorize discharge outcomes using a CASE statement based on `hospital_expire_flag` and `discharge_location` into 'In-Hospital Mortality', 'Discharged Home', and 'Discharged to Facility'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must join the `patients` and `admissions` tables to link demographic data with admission details.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between `patients` and `admissions` tables must be correctly performed on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: The query must calculate the length of stay in days using `DATE_DIFF(DATE(a.dischtime), DATE(a.admittime), DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final result must be grouped by the derived `discharge_outcome`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aggregation-functions",
+          "requirements": "Aggregation Functions: The query must calculate the mean (AVG), and percentiles 50, 75, and 90 (`APPROX_QUANTILES`) for the length of stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: The query must calculate the percentile rank of a 10-day stay using an expression like `100.0 * COUNTIF(length_of_stay_days <= 10) / COUNT(*)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-cohort-filtering",
+          "requirements": "Final Cohort Filtering: The query must filter the final results to include only the specified discharge outcomes ('Discharged Home', 'Discharged to Facility', 'In-Hospital Mortality').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

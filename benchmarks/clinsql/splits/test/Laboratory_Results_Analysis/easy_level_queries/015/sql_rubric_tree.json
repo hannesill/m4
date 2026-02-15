@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients by checking for 'F' in the gender column of the patients table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pneumonia-diagnosis-identification",
+          "requirements": "Pneumonia Diagnosis Identification: The query must correctly identify pneumonia diagnoses using ICD codes.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "icd-version-handling",
+              "requirements": "ICD Version Handling: The query must handle both ICD-9 and ICD-10 codes by checking the 'icd_version' column.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pneumonia-icd-code-selection",
+              "requirements": "Pneumonia ICD Code Selection: The query must use the correct ICD-9 ('480'-'486') and ICD-10 ('J12'-'J18') code ranges for pneumonia.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join 'patients', 'admissions', and 'diagnoses_icd' tables to build the initial patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-data-join",
+          "requirements": "Lab Data Join: The query must join the patient cohort with the 'labevents' table using 'hadm_id' to link lab results to admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "creatinine-lab-selection",
+          "requirements": "Creatinine Lab Selection: The query must correctly filter the 'labevents' table for serum creatinine using itemid 50912.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-plausibility-filter",
+          "requirements": "Data Plausibility Filter: The query should apply a reasonable range filter on creatinine values (e.g., BETWEEN 0.5 AND 10) to exclude erroneous data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filter-first-24h",
+          "requirements": "Temporal Filter (First 24 Hours): The query must filter lab events to include only those that occurred within the first 24 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-admission-average-creatinine",
+          "requirements": "Per-Admission Average Creatinine: The query must calculate the average creatinine for each hospital admission using AVG() and GROUP BY hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-minimum-calculation",
+          "requirements": "Final Minimum Calculation: The query must find the minimum value among all the calculated 24-hour average creatinine values using the MIN() function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to two decimal places for readability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

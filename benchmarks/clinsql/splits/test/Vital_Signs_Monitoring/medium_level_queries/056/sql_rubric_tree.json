@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query accurately filters for patients aged 89-99 using the MIMIC-IV age calculation `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 89 AND 99`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-filter",
+          "requirements": "ICU Stay Filter: The query correctly identifies ICU patients by joining the `icustays` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temperature-itemid-selection",
+          "requirements": "Temperature ItemID Selection: The query correctly identifies temperature measurements by filtering on `itemid`s 223762 (Celsius) and 676 (Fahrenheit).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "unit-conversion",
+          "requirements": "Unit Conversion: The query correctly converts temperature values from Fahrenheit (itemid 676) to Celsius using the formula `(ce.valuenum - 32) * 5 / 9`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mi-code-selection",
+          "requirements": "MI Code Selection: The query correctly identifies myocardial infarction diagnoses using ICD-9 ('410%') and ICD-10 ('I21%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temperature-categorization",
+          "requirements": "Temperature Categorization: The query correctly categorizes temperature measurements into 'Hypothermic (<36.0 C)', 'Normothermic (36.0-37.9 C)', and 'Febrile (>=38.0 C)' using a CASE statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query correctly joins `patients`, `admissions`, and `icustays` tables on `subject_id` and `hadm_id` to build the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "events-table-join",
+          "requirements": "Events Table Join: The query correctly joins the patient cohort to `chartevents` using `stay_id` to link patients to their temperature measurements.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mi-diagnoses-join",
+          "requirements": "MI Diagnoses Join: The query correctly uses a LEFT JOIN on `hadm_id` to link temperature measurements to MI diagnoses without losing measurement records.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The query correctly groups the final results by `temperature_category`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "statistical-aggregations",
+          "requirements": "Statistical Aggregations: The query correctly calculates mean (AVG), median (APPROX_QUANTILES), and IQR for temperature within each category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "count-calculations",
+          "requirements": "Count Calculations: The query correctly calculates the unique patient count `COUNT(DISTINCT subject_id)` and total measurement count `COUNT(temperature_celsius)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mi-rate-calculation",
+          "requirements": "MI Rate Calculation: The query correctly calculates the MI rate as the percentage of unique patients with an MI within each temperature category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

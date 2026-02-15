@@ -1,0 +1,210 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "medication-class-column-exists",
+              "requirements": "Column exists for medication class (e.g., 'medication_class', 'drug_type')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-first-24h-column-exists",
+              "requirements": "Column exists for prevalence in the first 24h (e.g., 'prevalence_first_24h_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-last-48h-column-exists",
+              "requirements": "Column exists for prevalence in the last 48h (e.g., 'prevalence_last_48h_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "continued-count-column-exists",
+              "requirements": "Column exists for count of continued medications (e.g., 'continued_on_med')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiated-count-column-exists",
+              "requirements": "Column exists for count of initiated medications (e.g., 'initiated_before_discharge')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "discontinued-count-column-exists",
+              "requirements": "Column exists for count of discontinued medications (e.g., 'discontinued_after_admission')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in required columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "prevalence-first-24h-validation",
+          "requirements": "Validation for 'prevalence_first_24h_pct' column",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-first-24h-plausible",
+              "requirements": "Clinically Plausible (0.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-first-24h-acceptable",
+              "requirements": "Acceptable Range: Insulin (40-95), Oral Agent (0-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "prevalence-last-48h-validation",
+          "requirements": "Validation for 'prevalence_last_48h_pct' column",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-last-48h-plausible",
+              "requirements": "Clinically Plausible (0.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-last-48h-acceptable",
+              "requirements": "Acceptable Range: Insulin (20-70), Oral Agent (0-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "continued-count-validation",
+          "requirements": "Validation for 'continued_on_med' column",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "continued-count-plausible",
+              "requirements": "Clinically Plausible (count >= 0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "continued-count-acceptable",
+              "requirements": "Acceptable Range: Count should be less than or equal to total cohort size (e.g., 304)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "initiated-count-validation",
+          "requirements": "Validation for 'initiated_before_discharge' column",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "initiated-count-plausible",
+              "requirements": "Clinically Plausible (count >= 0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiated-count-acceptable",
+              "requirements": "Acceptable Range: Count should be less than or equal to total cohort size (e.g., 304)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "discontinued-count-validation",
+          "requirements": "Validation for 'discontinued_after_admission' column",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "discontinued-count-plausible",
+              "requirements": "Clinically Plausible (count >= 0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "discontinued-count-acceptable",
+              "requirements": "Acceptable Range: Count should be less than or equal to total cohort size (e.g., 304)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

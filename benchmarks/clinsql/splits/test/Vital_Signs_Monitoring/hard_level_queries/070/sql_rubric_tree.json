@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the specific patient cohort based on demographics and diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at ICU admission and filter for the range 78-88.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hhs-diagnosis-selection",
+          "requirements": "HHS Diagnosis Selection: The query must identify patients with a diagnosis of HHS by correctly filtering on both ICD-9 ('250.2%') and ICD-10 codes ('E102%', 'E112%', etc.).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient data, diagnoses, and vitals.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-tables-join",
+          "requirements": "Core Tables Join: The query must correctly join `icustays`, `patients`, and `admissions` tables to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-table-join",
+          "requirements": "Vitals Table Join: The query must correctly join the `chartevents` table to the patient cohort on `stay_id` to access vital sign data.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs complex calculations and aggregations to derive clinical metrics.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-24h-vitals-extraction",
+          "requirements": "First 24-Hour Vitals Extraction: The query must select specified vital signs from `chartevents` and filter them to the first 24 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cv-calculation",
+          "requirements": "Coefficient of Variation (CV) Calculation: The query must correctly calculate the CV for HR, MAP, and RR as SAFE_DIVIDE(STDDEV_SAMP(value), AVG(value)).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must correctly sum the individual CVs for HR, MAP, and RR, handling potential nulls with COALESCE.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-vital-count",
+          "requirements": "Abnormal Vital Count: The query must correctly identify and count the number of abnormal vitals for each patient stay based on predefined thresholds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-ranking",
+          "requirements": "Quartile Ranking: The query must use NTILE(4) ordered by the instability score in descending order to identify the top quartile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-filtering",
+          "requirements": "Top Quartile Filtering: The final result set must be filtered to include only patients in the top instability quartile (quartile = 1).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-generation",
+      "requirements": "Output Generation: Correctly formats and presents the final required data columns.",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "final-column-selection",
+          "requirements": "Final Column Selection: The query must output all required columns: instability score, decile, abnormal vital count, ICU LOS, and in-hospital mortality.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "decile-calculation",
+          "requirements": "Decile Calculation: The query correctly calculates the instability decile using NTILE(10) over the instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-ordering",
+          "requirements": "Output Ordering: The final output must be sorted by instability score and abnormal vital count in descending order.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

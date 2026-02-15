@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-p95-instability-score",
+              "requirements": "A column for the 95th percentile of the lab instability score must exist (e.g., 'p95_instability_score').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-top-tier-mortality",
+              "requirements": "A column for the mortality rate of the top-tier cohort must exist (e.g., 'top_tier_mortality_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-top-tier-avg-los",
+              "requirements": "A column for the mean length of stay of the top-tier cohort must exist (e.g., 'top_tier_avg_los').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-target-cohort-critical-lab-rate",
+              "requirements": "A column for the critical lab rate of the top-tier cohort must exist (e.g., 'target_cohort_critical_lab_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-general-population-critical-lab-rate",
+              "requirements": "A column for the critical lab rate of the general inpatient population must exist (e.g., 'general_population_critical_lab_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-validation",
+          "requirements": "Validate 95th Percentile Lab Instability Score (p95_instability_score)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p95-instability-score-plausible",
+              "requirements": "Clinically Plausible: Value must be between 0 and 20. The score represents a count of unstable labs.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p95-instability-score-acceptable",
+              "requirements": "Acceptable Range: Value should be between 2 and 12. For a DVT cohort, the 95th percentile would indicate significant instability but not an extreme number of simultaneous critical labs.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate Top Tier Mortality Rate (top_tier_mortality_rate)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible: Value must be a rate between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range: Value should be between 0.05 and 0.40. Patients with high lab instability are at increased risk of mortality, so a rate higher than the general population but less than 40% is expected.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validate Top Tier Average Length of Stay (top_tier_avg_los)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Clinically Plausible: Value must be between 1 and 90 days. LOS must be positive and inpatient stays are unlikely to exceed 90 days on average.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Acceptable Range: Value should be between 5 and 25 days. DVT patients with high lab instability would be expected to have a significantly longer LOS than average.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "target-critical-lab-rate-validation",
+          "requirements": "Validate Target Cohort Critical Lab Rate (target_cohort_critical_lab_rate)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "target-lab-rate-plausible",
+              "requirements": "Clinically Plausible: Value must be a rate between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "target-lab-rate-acceptable",
+              "requirements": "Acceptable Range: Value should be between 0.01 and 0.20. The rate of labs being critical should be a small fraction of all labs measured.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "general-critical-lab-rate-validation",
+          "requirements": "Validate General Population Critical Lab Rate (general_population_critical_lab_rate)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "general-lab-rate-plausible",
+              "requirements": "Clinically Plausible: Value must be a rate between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-lab-rate-acceptable",
+              "requirements": "Acceptable Range: Value should be between 0.005 and 0.15. This should be a small fraction, likely lower than or similar to the high-risk cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

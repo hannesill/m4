@@ -1,0 +1,13 @@
+comorbidity_burden,los_quartile,number_of_admissions,mortality_rate_percent
+Low,Q1,414,0.24
+Low,Q2,304,0.66
+Low,Q3,191,0.0
+Low,Q4,71,0.0
+Medium,Q1,232,2.16
+Medium,Q2,277,0.0
+Medium,Q3,296,1.69
+Medium,Q4,175,0.57
+High,Q1,89,6.74
+High,Q2,154,3.25
+High,Q3,248,7.66
+High,Q4,488,6.97

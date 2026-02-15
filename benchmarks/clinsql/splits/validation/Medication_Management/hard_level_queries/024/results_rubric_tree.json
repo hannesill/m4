@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "complexity-quartiles-column-exists",
+              "requirements": "A column for medication complexity quartiles exists (e.g., `complexity_score_quartiles`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-complexity-percentile-column-exists",
+              "requirements": "A column for average complexity percentile exists (e.g., `avg_complexity_percentile`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-column-exists",
+              "requirements": "A column for length of stay exists (e.g., `avg_los_days`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "A column for mortality rate exists (e.g., `mortality_rate_percent`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No unexpected NULL/Empty values. It is acceptable for `avg_complexity_percentile` to be empty for the 'Top 25% Complexity' subgroup.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "los-validation",
+          "requirements": "Validation for average length of stay (e.g., `avg_los_days`)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "los-plausible",
+              "requirements": "Clinically Plausible: Average LOS for multi-trauma inpatients should be between 1 and 150 days.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-acceptable",
+              "requirements": "Acceptable Range: Based on the cohort, average LOS is expected to be between 7.0 and 20.0 days.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validation for mortality rate (e.g., `mortality_rate_percent`)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-plausible",
+              "requirements": "Clinically Plausible: Mortality rate for this patient population should be between 0% and 50%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-acceptable",
+              "requirements": "Acceptable Range: Mortality rate is expected to be between 1.0% and 15.0%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-complexity-percentile-validation",
+          "requirements": "Validation for average medication complexity percentile (e.g., `avg_complexity_percentile`)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-complexity-percentile-plausible",
+              "requirements": "Clinically Plausible: Average percentile must be between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-complexity-percentile-acceptable",
+              "requirements": "Acceptable Range: Expected average percentile is between 40.0 and 75.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "complexity-quartiles-validation",
+          "requirements": "Validation for medication complexity quartiles (e.g., `complexity_score_quartiles`)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "complexity-quartiles-plausible",
+              "requirements": "Clinically Plausible: Each value in the quartile list is between 0 and 200, and the list is monotonically increasing.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "complexity-quartiles-acceptable",
+              "requirements": "Acceptable Range: The median (third value) of the complexity quartiles is between 10 and 35.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

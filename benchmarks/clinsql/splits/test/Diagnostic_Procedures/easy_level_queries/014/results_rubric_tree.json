@@ -1,0 +1,78 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "A column representing the median number of distinct mechanical circulatory support devices exists (e.g., 'median_mechanical_support_count', 'median_mcs_devices').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the primary answer column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "column-related-validation-1",
+          "requirements": "Validation for the median number of distinct mechanical circulatory support devices per hospitalization.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-1",
+              "requirements": "The median value must be a clinically plausible integer. Mechanical circulatory support is a significant intervention, so having more than a few distinct types in a single hospitalization is rare. Plausible range: 1 to 5.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-1",
+              "requirements": "The most common scenario is the use of a single type of device (e.g., IABP or Impella) per hospitalization. A median of 1 is highly expected. Acceptable range: 1 to 2.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

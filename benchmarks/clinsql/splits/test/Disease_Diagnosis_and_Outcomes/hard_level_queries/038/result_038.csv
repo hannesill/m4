@@ -1,0 +1,4 @@
+cohort_profile,total_admissions,median_risk_score_with_iqr,risk_percentile_in_general_pop,mortality_rate_30_day_pct,aki_rate_pct,ards_rate_pct,avg_survivor_los_days
+Matched Profile: Percentile of Median AKI Risk Score,,,74.0,,,,
+"General Inpatient Cohort (Age 74-84, Male)",43014,,,8.48,23.09,0.14,5.4
+"AKI Cohort (Age 74-84, Male)",9933,21 (15-29),,17.12,,0.46,8.8

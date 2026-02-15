@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters for patients aged 49-59 using `p.anchor_age BETWEEN 49 AND 59`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-diagnosis-filter",
+          "requirements": "Identifies the admission as being for a primary condition by filtering for the primary diagnosis sequence number (`d.seq_num = 1`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "Correctly handles both ICD-9 and ICD-10 by checking the `d.icd_version` column for each code group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "copd-code-selection",
+          "requirements": "Selects COPD diagnoses using appropriate codes for both versions: `d.icd_code LIKE 'J44%'` for ICD-10 and `SUBSTR(d.icd_code, 1, 3) BETWEEN '491' AND '496'` for ICD-9.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "join-patients-admissions",
+          "requirements": "Correctly joins the `patients` and `admissions` tables using the shared patient identifier `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "join-admissions-diagnoses",
+          "requirements": "Correctly joins the `admissions` and `diagnoses_icd` tables using the shared hospital admission identifier `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Calculates the hospital length of stay in days using `DATE_DIFF(DATE(a.dischtime), DATE(a.admittime), DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Calculates the 25th percentile of the length of stay using `APPROX_QUANTILES(... , 100)[OFFSET(25)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "supportive-criteria",
+      "requirements": "Supportive Criteria",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "los-data-validation",
+          "requirements": "Ensures data integrity for LOS calculation by filtering out records with null admission/discharge times and non-positive length of stay values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

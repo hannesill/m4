@@ -1,0 +1,216 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-score-column-exists",
+              "requirements": "Column exists for the 75th percentile instability score (e.g., 'ards_75th_percentile_score', 'instability_threshold').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column exists for mortality rate (e.g., 'mortality_rate', 'death_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-column-exists",
+              "requirements": "Column exists for mean length of stay (e.g., 'avg_length_of_stay_days', 'mean_los').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "critical-events-column-exists",
+              "requirements": "Column exists for average critical lab events (e.g., 'avg_critical_events_per_patient', 'avg_lab_events').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "patient-group-column-exists",
+              "requirements": "Column exists for patient group stratification (e.g., 'patient_category', 'group').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "percentile-score-validation",
+          "requirements": "Validation for 75th percentile laboratory-instability score (e.g., 'ards_75th_percentile_score'). Value: 6.0",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentile-score-plausible",
+              "requirements": "Clinically Plausible (1.0-20.0). A score representing a count of unstable lab systems.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-score-acceptable",
+              "requirements": "Acceptable Range (4.0-10.0). Expected for a high-risk threshold in a severe condition like ARDS.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "high-risk-ards-metrics-validation",
+          "requirements": "Validation for High-Risk ARDS Cohort (>=75th percentile).",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "high-risk-mortality-validation",
+              "requirements": "Validation for mortality rate. Value: 0.333",
+              "sequential": true,
+              "sub_tasks": [
+                {
+                  "id": "high-risk-mortality-plausible",
+                  "requirements": "Clinically Plausible (0.0-1.0). Must be a valid rate.",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "high-risk-mortality-acceptable",
+                  "requirements": "Acceptable Range (0.2-0.6). High mortality is expected in severe ARDS.",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "high-risk-los-validation",
+              "requirements": "Validation for mean LOS (days). Value: 32.0",
+              "sequential": true,
+              "sub_tasks": [
+                {
+                  "id": "high-risk-los-plausible",
+                  "requirements": "Clinically Plausible (5-100 days). Hospital stays for severe ARDS are prolonged.",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "high-risk-los-acceptable",
+                  "requirements": "Acceptable Range (15-50 days). Reflects prolonged ICU and hospital care.",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "high-risk-events-validation",
+              "requirements": "Validation for avg critical lab events. Value: 9.222",
+              "sequential": true,
+              "sub_tasks": [
+                {
+                  "id": "high-risk-events-plausible",
+                  "requirements": "Clinically Plausible (1-50). Represents a count of events over 72h.",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "high-risk-events-acceptable",
+                  "requirements": "Acceptable Range (5-20). Critically ill patients have frequent lab abnormalities.",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "control-group-metrics-validation",
+          "requirements": "Validation for Control (Non-ARDS) Cohort.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "control-events-validation",
+              "requirements": "Validation for avg critical lab events. Value: 0.251",
+              "sequential": true,
+              "sub_tasks": [
+                {
+                  "id": "control-events-plausible",
+                  "requirements": "Clinically Plausible (0-10). Non-ARDS inpatients should have fewer events.",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "control-events-acceptable",
+                  "requirements": "Acceptable Range (0.1-2.0). Low rate of critical events expected in a general inpatient control group.",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

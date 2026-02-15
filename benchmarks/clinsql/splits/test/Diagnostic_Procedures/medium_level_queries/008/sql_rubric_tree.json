@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate and filter for patient age at admission between 58 and 68 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-hhs",
+          "requirements": "Primary Condition (HHS): The query must filter for admissions with a diagnosis of Hyperosmolar Hyperglycemic State (HHS) using relevant ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filtering",
+          "requirements": "Length of Stay Filtering: The query must correctly filter the final cohort to include only admissions with a length of stay between 1 and 7 days.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must handle both ICD-9 and ICD-10 versions for diagnoses (HHS) and procedures (radiography/CT).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hhs-code-selection",
+          "requirements": "HHS Code Selection: The query correctly identifies HHS using ICD-9 code '2502%' and ICD-10 codes 'E110%' or 'E130%'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-code-selection",
+          "requirements": "Imaging Code Selection: The query identifies radiography/CT procedures using ICD-9 code '87%' and ICD-10 code 'B%'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join `patients` to `admissions`, `admissions` to `diagnoses_icd`, and the resulting cohort to `procedures_icd`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The joins must use the correct keys: `subject_id` for patient-level joins and `hadm_id` for admission-level joins.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "left-join-for-procedures",
+          "requirements": "LEFT JOIN for Procedures: The query must use a LEFT JOIN to connect the patient cohort to procedures to ensure admissions without imaging procedures are not excluded from counts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "los-grouping-logic",
+          "requirements": "LOS Grouping Logic: The query must use a CASE statement to correctly categorize admissions into '1-4 Day Stay' and '5-7 Day Stay' groups.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-admission-counts",
+          "requirements": "Patient and Admission Counts: The query must accurately calculate the count of distinct patients and the total count of admissions per LOS group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-procedure-aggregation",
+          "requirements": "Imaging Procedure Aggregation: The query must count imaging procedures per admission and then calculate the average of these counts per LOS group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: The final aggregation must group results by the calculated `los_group` to produce the required output format.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

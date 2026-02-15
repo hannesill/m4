@@ -1,0 +1,288 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-group",
+              "requirements": "Exists Column for Cohort Identification (e.g., comparison_group)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-p99",
+              "requirements": "Exists Column for 99th Percentile Instability Score (e.g., p99_instability_score_for_hf_cohort)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-tachy",
+              "requirements": "Exists Column for Average Tachycardia Episodes (e.g., avg_tachycardia_episodes)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-hypo",
+              "requirements": "Exists Column for Average Hypotension Episodes (e.g., avg_hypotension_episodes)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-tachy-p",
+              "requirements": "Exists Column for Average Tachypnea Episodes (e.g., avg_tachypnea_episodes)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-los",
+              "requirements": "Exists Column for Average ICU LOS (e.g., avg_icu_los_hours)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mortality",
+              "requirements": "Exists Column for Mortality Rate (e.g., mortality_rate)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant cells (e.g., p99 score cell for General ICU pop can be null)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-validation",
+          "requirements": "Validation for 99th Percentile Instability Score Column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "instability-score-plausible",
+              "requirements": "Clinically Plausible (20.0-300.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-score-acceptable",
+              "requirements": "Acceptable Range (100.0-250.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "tachycardia-validation",
+          "requirements": "Validation for Average Tachycardia Episodes Column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "tachycardia-plausible",
+              "requirements": "Clinically Plausible (0.0-72.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachycardia-acceptable",
+              "requirements": "Acceptable Range (5.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hypotension-validation",
+          "requirements": "Validation for Average Hypotension Episodes Column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "hypotension-plausible",
+              "requirements": "Clinically Plausible (0.0-72.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hypotension-acceptable",
+              "requirements": "Acceptable Range (5.0-40.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "tachypnea-validation",
+          "requirements": "Validation for Average Tachypnea Episodes Column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "tachypnea-plausible",
+              "requirements": "Clinically Plausible (0.0-72.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachypnea-acceptable",
+              "requirements": "Acceptable Range (10.0-65.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-validation",
+          "requirements": "Validation for Average ICU LOS Column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "los-plausible",
+              "requirements": "Clinically Plausible (24.0-500.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-acceptable",
+              "requirements": "Acceptable Range (72.0-300.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validation for Mortality Rate Column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-acceptable",
+              "requirements": "Acceptable Range (0.05-0.35)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-comparison-validation",
+          "requirements": "Validation of relative values between cohorts",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "relative-tachycardia",
+              "requirements": "Unstable HF cohort avg tachycardia > General ICU avg tachycardia",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-hypotension",
+              "requirements": "Unstable HF cohort avg hypotension > General ICU avg hypotension",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-tachypnea",
+              "requirements": "Unstable HF cohort avg tachypnea > General ICU avg tachypnea",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-los",
+              "requirements": "Unstable HF cohort avg ICU LOS > General ICU avg ICU LOS",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-mortality",
+              "requirements": "Unstable HF cohort mortality rate > General ICU mortality rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

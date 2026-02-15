@@ -1,0 +1,1 @@
+I have a 59-year-old man. Among male ICU patients 54–64, categorize per-stay average RR during first 48 hours as <12, 12–20, 21–29, ≥30 and give n, mean, median, IQR.

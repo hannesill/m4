@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using the condition p.gender = 'M'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-hospitalization-identification",
+          "requirements": "Sepsis Hospitalization Identification: The query must correctly identify hospital admissions (hadm_id) associated with a sepsis diagnosis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sepsis-code-selection",
+          "requirements": "Sepsis Code Selection: The query must use a CTE or subquery to filter the 'diagnoses_icd' table for relevant sepsis codes, including both ICD-9 ('99591', '99592', '78552') and ICD-10 ('A40', 'A41', 'R65.2') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-measurement-identification",
+          "requirements": "Lab Measurement Identification: The query must filter the 'labevents' table for serum lactate using the correct itemid (50813).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-on-discharge",
+          "requirements": "Temporal Filter on Discharge: The query must restrict lab measurements to the discharge day by comparing the date parts of 'le.charttime' and 'adm.dischtime'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join the 'patients', 'admissions', and 'labevents' tables to link patient demographics with their hospital stays and lab results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-cohort-join",
+          "requirements": "Sepsis Cohort Join: The query must join the main query with the sepsis admissions CTE/subquery using 'hadm_id' to filter for the correct patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-validity-filter",
+          "requirements": "Data Validity Filter: The query should include filters to exclude null or clinically implausible lab values (e.g., valuenum IS NOT NULL AND valuenum BETWEEN 0.1 AND 30).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "iqr-calculation",
+          "requirements": "IQR Calculation: The query must calculate the Interquartile Range (IQR) by finding the difference between the 75th and 25th percentiles of serum lactate values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quantile-function-usage",
+          "requirements": "Quantile Function Usage: The query must use an appropriate function like APPROX_QUANTILES to compute the quartiles needed for the IQR calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final IQR value should be rounded to a reasonable number of decimal places (e.g., 2) for clarity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

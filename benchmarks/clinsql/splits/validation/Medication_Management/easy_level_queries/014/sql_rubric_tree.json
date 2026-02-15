@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters patients within the age range of 86 to 96 years using `p.anchor_age BETWEEN 86 AND 96`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "high-intensity-statin-identification",
+      "requirements": "High-Intensity Atorvastatin Identification",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "drug-name-selection",
+          "requirements": "Identifies atorvastatin prescriptions using `LOWER(pr.drug) LIKE '%atorvastatin%'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dose-unit-selection",
+          "requirements": "Correctly filters for the 'mg' dose unit using `LOWER(pr.dose_unit_rx) = 'mg'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-intensity-dose-range",
+          "requirements": "Selects for high-intensity dosage (40-80mg) by parsing the dose value and applying a `BETWEEN 40 AND 80` condition.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Correctly joins the `patients` and `prescriptions` tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Uses the `subject_id` field as the joining key between the tables (`p.subject_id = pr.subject_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "duration-calculation",
+          "requirements": "Calculates the duration of each prescription in days using `DATE_DIFF(DATE(pr.stoptime), DATE(pr.starttime), DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "minimum-duration-aggregation",
+          "requirements": "Applies the `MIN()` aggregation function to find the minimum prescription duration across all valid records.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "valid-duration-filtering",
+          "requirements": "Excludes invalid or zero-day durations by filtering for `DATE_DIFF(...) > 0` and ensuring start/stop times are not null.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

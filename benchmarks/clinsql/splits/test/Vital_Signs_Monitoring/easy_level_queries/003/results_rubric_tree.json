@@ -1,0 +1,78 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "A column representing the median of mean heart rate exists (e.g., 'median_of_mean_heart_rate', 'median_hr').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the answer column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "median-heart-rate-validation",
+          "requirements": "Validate the value for the median of mean heart rate.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-heart-rate-plausible",
+              "requirements": "Median heart rate value is clinically plausible. A normal resting heart rate for adults ranges from 60 to 100 beats per minute. ICU patients often have higher rates due to stress, illness, or medications. Plausible range: 40-160 bpm.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-heart-rate-acceptable",
+              "requirements": "Median heart rate value is within an acceptable range for an ICU cohort aged 40-50. Considering the clinical context of critical illness, a slightly elevated heart rate is expected. Acceptable range: 70-110 bpm.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

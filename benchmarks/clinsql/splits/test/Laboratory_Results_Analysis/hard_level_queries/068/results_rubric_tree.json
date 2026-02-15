@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "instability-score-quartiles-exists",
+              "requirements": "Column exists for instability score quartiles (Q1, median, Q3, IQR)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-exists",
+              "requirements": "Column exists for cohort length of stay (LOS)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-exists",
+              "requirements": "Column exists for cohort mortality rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "abnormal-lab-freq-exists",
+              "requirements": "Columns exist for abnormal lab frequency (cohort and general population)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "instability-score-quartiles-validation",
+          "requirements": "Validate Instability Score Quartiles (q1, median, q3, iqr)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "instability-score-quartiles-plausible",
+              "requirements": "Values are plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-score-quartiles-acceptable",
+              "requirements": "Values are in an acceptable range for septic shock (10-90)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-days-validation",
+          "requirements": "Validate Average Length of Stay (avg_los_days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-los-days-plausible",
+              "requirements": "Value is clinically plausible (1.0-100.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-days-acceptable",
+              "requirements": "Value is in an acceptable range for elderly septic shock patients (5.0-30.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate Mortality Rate (mortality_rate)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Value is a plausible rate (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Value is in an acceptable range for elderly septic shock patients (0.2-0.7)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "abnormal-lab-freq-validation",
+          "requirements": "Validate Abnormal Lab Frequencies (cohort and general)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "abnormal-lab-freq-plausible",
+              "requirements": "Values are plausible frequencies (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "abnormal-lab-freq-acceptable",
+              "requirements": "Values are in acceptable ranges (Cohort: 0.2-0.8, General: 0.1-0.5) and cohort frequency is higher than general",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

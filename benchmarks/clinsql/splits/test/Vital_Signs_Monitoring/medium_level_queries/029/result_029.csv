@@ -1,0 +1,2 @@
+target_spo2_value,total_stays_in_cohort,stays_at_or_below_target,percentile_rank_of_92,cohort_mean_avg_spo2,cohort_stddev_avg_spo2,cohort_min_avg_spo2,cohort_max_avg_spo2
+92,11383,268,2.35,96.73,2.16,72.0,100.0

@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation for ACS Patient Analysis",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Identify female inpatients aged 40-50 with an ACS diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must calculate age at admission and filter for patients aged 40 to 50 using `HAVING age_at_admission BETWEEN 40 AND 50`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-diagnosis-selection",
+          "requirements": "ACS Diagnosis Selection: The query must correctly identify ACS diagnoses using both ICD-9 (e.g., '410%', '4111') and ICD-10 (e.g., 'I200%', 'I21%', 'I22%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly join patient, admission, diagnosis, and lab event tables.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to build the initial cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-event-join",
+          "requirements": "Lab Event Join: The query must join the `acs_cohort` with the `labevents` table on `hadm_id` to link lab results to the correct patient admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculate instability scores, percentiles, and comparative metrics.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-instability-score-calculation",
+          "requirements": "Lab Instability Score Calculation: The query must define critical lab thresholds, filter labs within the first 48 hours, identify critical events, and count them per admission to create an 'instability_score'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must use `PERCENTILE_CONT(instability_score, 0.9) OVER()` to calculate the 90th-percentile instability score across the ACS cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-tier-cohort-analysis",
+          "requirements": "Top-Tier Cohort Analysis: The query must filter for patients at or above the 90th percentile and correctly calculate their mortality rate and mean length of stay (LOS).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-rate-comparison",
+          "requirements": "Critical Lab Rate Comparison: The query must calculate and compare the critical lab rate for the top-tier cohort against the rate for the general inpatient population.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "temporal-filtering",
+      "requirements": "Temporal Filtering: Apply correct time constraints for lab events.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "first-48-hour-labs",
+          "requirements": "First 48-Hour Labs: The query must accurately filter lab events to include only those within the first 48 hours of admission using a condition like `charttime BETWEEN admittime AND DATETIME_ADD(admittime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

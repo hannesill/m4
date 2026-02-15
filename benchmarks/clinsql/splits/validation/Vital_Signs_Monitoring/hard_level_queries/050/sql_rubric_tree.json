@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at ICU admission and filter for the range 52-62 using `(EXTRACT(YEAR FROM i.intime) - p.anchor_year + p.anchor_age) BETWEEN 52 AND 62`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "rrt-identification",
+          "requirements": "Renal Replacement Therapy Identification: The query must identify patients who received RRT by filtering `chartevents` for relevant item IDs (e.g., 225802, 225803, 225805, 224149, 224150, 225441).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-sign-selection",
+          "requirements": "Vital Sign Selection: The query must correctly select the specified vital signs (Heart Rate, Blood Pressure, Respiratory Rate, SpO2) using their item IDs (220045, 220179, 220052, 220210, 220277).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-72hr",
+          "requirements": "Temporal Filter for Vitals: The query must limit the vital sign data to the first 72 hours of the ICU stay using a condition like `c.charttime BETWEEN i.intime AND DATETIME_ADD(i.intime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `patients`, `admissions`, and `icustays` tables on `subject_id` and `hadm_id` to form the initial patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "chartevents-integration",
+          "requirements": "Chartevents Integration: The query must correctly link the `chartevents` table to the patient cohort using `stay_id` to identify RRT and vital signs.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Calculations",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must correctly calculate the instability score by computing standard deviation per vital, applying min-max normalization, summing the normalized values, and scaling by 20.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: The query must calculate the percentile rank of a score of 65 using a formula equivalent to `COUNT(scores < 65) / COUNT(all scores)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-identification",
+          "requirements": "Top Decile Identification: The query must correctly identify the top decile of patients based on the highest instability scores, using `NTILE(10) OVER (ORDER BY instability_score DESC)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-metrics",
+          "requirements": "Top Decile Metrics Calculation: The query must calculate the average ICU length of stay and mortality rate for the identified top decile cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-structure",
+          "requirements": "Final Output Structure: The query must produce the three required values (percentile_rank_of_65, avg_los_top_decile, mortality_rate_top_decile) in the final SELECT statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

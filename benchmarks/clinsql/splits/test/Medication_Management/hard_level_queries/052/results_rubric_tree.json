@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "complexity-distribution-column-exists",
+              "requirements": "Column for medication complexity distribution exists (e.g., 'complexity_score_distribution')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hyperk-rank-column-exists",
+              "requirements": "Column for median percentile rank of hyperkalemia-risk patients exists (e.g., 'median_percentile_rank_of_risk_patients')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hyperk-percent-column-exists",
+              "requirements": "Column for percent of patients with hyperkalemia-risk interaction exists (e.g., 'percent_with_hyperk_risk_interaction')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-column-exists",
+              "requirements": "Column for top-quartile length of stay exists (e.g., 'top_quartile_avg_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column for top-quartile mortality rate exists (e.g., 'top_quartile_mortality_rate_percent')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "med-complexity-distribution-validation",
+          "requirements": "Validation for 'complexity_score_distribution'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-med-complexity-distribution",
+              "requirements": "Each value in the distribution is clinically plausible (0-150)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-med-complexity-distribution",
+              "requirements": "Each value in the distribution is within an acceptable range for a complex HHS cohort (10-70)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hyperk-rank-validation",
+          "requirements": "Validation for 'median_percentile_rank_of_risk_patients'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-hyperk-rank",
+              "requirements": "Clinically Plausible (0-1)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-hyperk-rank",
+              "requirements": "Acceptable Range (0.2-0.9)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hyperk-percent-validation",
+          "requirements": "Validation for 'percent_with_hyperk_risk_interaction'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-hyperk-percent",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-hyperk-percent",
+              "requirements": "Acceptable Range for this high-risk cohort (5-45)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-quartile-los-validation",
+          "requirements": "Validation for 'top_quartile_avg_los_days'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-top-quartile-los",
+              "requirements": "Clinically Plausible (3-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-top-quartile-los",
+              "requirements": "Acceptable Range for complex HHS patients (7-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-quartile-mortality-validation",
+          "requirements": "Validation for 'top_quartile_mortality_rate_percent'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-top-quartile-mortality",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-top-quartile-mortality",
+              "requirements": "Acceptable Range for long-stay HHS patients (0-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

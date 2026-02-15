@@ -1,0 +1,109 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-percentile-rank",
+              "requirements": "Column Exists for Percentile Rank of SpO2 (e.g., 'percentile_rank_of_92_spo2', 'proportion_le_92')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-total-stays",
+              "requirements": "Column Exists for Total ICU Stays in Cohort (e.g., 'total_icu_stays_in_cohort')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "percentile-rank-validation",
+          "requirements": "Validation of the SpO2 percentile rank value",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentile-rank-plausible",
+              "requirements": "Clinically Plausible: Percentile rank should be a percentage between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-acceptable",
+              "requirements": "Acceptable Range: Based on clinical data, a mean SpO2 of 92% for an ICU stay is very low, indicating severe hypoxia. We expect the percentile rank to be low. The value should be between 0.1 and 5.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-size-validation",
+          "requirements": "Validation of the total number of ICU stays in the cohort",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "cohort-size-plausible",
+              "requirements": "Clinically Plausible: The total count of ICU stays for females aged 38-48 in a large database should be a substantial number, greater than 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-size-acceptable",
+              "requirements": "Acceptable Range: Based on the size of typical ICU research databases, a cohort of this nature would likely contain between 2000 and 5000 stays.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

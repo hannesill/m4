@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-filter",
+          "requirements": "ICU Stay Filter: The query must ensure that each hospital admission included an ICU stay, correctly implemented using an `EXISTS` subquery or a JOIN on the `icustays` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept and Temporal Filtering",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-test-identification",
+          "requirements": "Lab Test Identification: The query must correctly identify serum potassium measurements using `le.itemid = 50971`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-constraint",
+          "requirements": "Temporal Constraint: The query must accurately filter lab measurements to the specific date of hospital discharge using a condition like `DATE(le.charttime) = DATE(adm.dischtime)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-filtering",
+          "requirements": "Value Filtering: The query must include logic to exclude null values and filter for a plausible physiological range for serum potassium, such as `le.valuenum IS NOT NULL AND le.valuenum BETWEEN 2.0 AND 7.0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the `labevents`, `admissions`, and `patients` tables to link lab results with patient demographics and admission details.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The joins must use the correct keys: `hadm_id` to link `labevents` and `admissions`, and `subject_id` to link to `patients`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must use an appropriate function, such as `APPROX_QUANTILES`, to calculate the 75th percentile of the serum potassium values.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to two decimal places for readability, using a function like `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

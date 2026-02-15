@@ -1,0 +1,6 @@
+metric,value,description
+Comparative Stats,"Avg Complexity: 27.09, QT Risk: 43.3%, Bleeding Risk: 72.4%",Comparative metrics from a general population of ICU inpatients.
+Avg. Complexity Percentile by Risk,"QT Risk Group: P57.9, Bleeding Risk Group: P49.3",Average complexity percentile rank for patients with specific interaction risks.
+Interaction Risk Prevalence,"QT Risk: 33.1%, Bleeding Risk: 88.5%",Percentage of patients in the cohort with potential drug interactions.
+Overall Complexity Distribution,"Avg: 22.51, Min: 0, Max: 54, StdDev: 8.46",Medication complexity score distribution for the target cohort.
+Top Quartile (Complexity) Outcomes,"Avg LOS: 10.34 days, Mortality: 17.1%",Clinical outcomes for patients in the highest 25% of medication complexity.

@@ -1,0 +1,9 @@
+los_category,day1_icu_status,total_patients,total_deaths,mortality_rate_percent,median_days_to_death_for_nonsurvivors
+≤3 days,ICU_Day1,30,11,36.67,2
+≤3 days,Non_ICU_Day1,74,9,12.16,2
+4-6 days,ICU_Day1,45,3,6.67,5
+4-6 days,Non_ICU_Day1,123,7,5.69,5
+7-10 days,ICU_Day1,53,7,13.21,9
+7-10 days,Non_ICU_Day1,86,12,13.95,8
+>10 days,ICU_Day1,51,14,27.45,15
+>10 days,Non_ICU_Day1,91,9,9.89,18

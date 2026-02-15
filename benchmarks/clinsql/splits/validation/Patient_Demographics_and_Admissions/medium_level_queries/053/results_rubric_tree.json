@@ -1,0 +1,167 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stratification-column-exists",
+              "requirements": "Column Exists for Discharge Outcome (e.g., 'discharge_outcome', 'disposition')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-column-exists",
+              "requirements": "Column Exists for Median Length of Stay (e.g., 'median_los_days', 'median_stay')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-los-column-exists",
+              "requirements": "Column Exists for IQR of Length of Stay (e.g., 'iqr_los_days', 'iqr_stay')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "median-los-validation",
+          "requirements": "Validation for Median Length of Stay (days)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "median-los-plausible-range",
+              "requirements": "Clinically Plausible Range (1.0 - 50.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-acceptable-range-home",
+              "requirements": "Acceptable Range for 'Discharged Home' (2.0 - 6.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-acceptable-range-hospice",
+              "requirements": "Acceptable Range for 'Hospice' (5.0 - 15.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-acceptable-range-death",
+              "requirements": "Acceptable Range for 'In-Hospital Mortality' (3.0 - 12.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-los-validation",
+          "requirements": "Validation for IQR of Length of Stay (days)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "iqr-los-plausible-range",
+              "requirements": "Clinically Plausible Range (1.0 - 60.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-los-acceptable-range-home",
+              "requirements": "Acceptable Range for 'Discharged Home' (2.0 - 6.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-los-acceptable-range-hospice",
+              "requirements": "Acceptable Range for 'Hospice' (4.0 - 12.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-los-acceptable-range-death",
+              "requirements": "Acceptable Range for 'In-Hospital Mortality' (5.0 - 15.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "discharge-outcome-validation",
+          "requirements": "Validation for Discharge Outcome Categories",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "discharge-outcome-category-check",
+              "requirements": "Contains categories related to home, hospice, and in-hospital death",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

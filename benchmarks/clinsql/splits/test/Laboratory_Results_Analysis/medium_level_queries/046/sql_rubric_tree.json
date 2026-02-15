@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly filter patients to be within the 83-93 age range at admission (`pb.age_at_admission BETWEEN 83 AND 93`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-filtering",
+          "requirements": "Diagnosis Filtering: The query must filter admissions based on diagnosis codes for both AMI (e.g., '410%', 'I21%') and chest pain (e.g., 'R07.9', '78650').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-level-filtering",
+          "requirements": "Troponin Level Filtering: The query must filter for patients with an initial troponin T level above the 99th percentile, correctly implemented as `ft.valuenum > 0.01`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "troponin-t-identification",
+          "requirements": "Troponin T Identification: Correctly identifies Troponin T lab events using `itemid = 51003`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initial-troponin-logic",
+          "requirements": "Initial Troponin Logic: Correctly isolates the first troponin value for each admission using a window function like `ROW_NUMBER() OVER(PARTITION BY le.hadm_id ORDER BY le.charttime ASC)` and filtering for the first row.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-code-selection",
+          "requirements": "ICD Code Selection: The query correctly includes both ICD-9 and ICD-10 codes for the specified conditions (AMI and Chest Pain).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: Correctly joins the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: Correctly joins the cohort with `diagnoses_icd` on `hadm_id` to link diagnoses to admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-lab-join",
+          "requirements": "Admission-Lab Join: Correctly joins the cohort with `labevents` on `hadm_id` to link lab results to admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-count-calculation",
+          "requirements": "Patient Count Calculation: Correctly calculates the number of unique patients using `COUNT(DISTINCT subject_id)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-age-calculation",
+          "requirements": "Mean Age Calculation: Correctly calculates the average age of the final cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-los-calculation",
+          "requirements": "Mean LOS Calculation: Correctly calculates the average length of stay in days using `DATETIME_DIFF(dischtime, admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-summary-statistics",
+          "requirements": "Troponin Summary Statistics: Correctly calculates summary statistics (AVG, MIN, MAX, STDDEV) for the initial troponin T value.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

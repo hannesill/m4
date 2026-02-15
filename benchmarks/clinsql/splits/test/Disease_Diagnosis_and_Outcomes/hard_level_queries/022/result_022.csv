@@ -1,0 +1,6 @@
+risk_quintile,total_patients,mortality_30day_rate_pct,ards_co_occurrence_rate_pct,median_survivor_los_days
+1,407,2.46,0.0,3
+2,407,3.19,0.0,4
+3,407,6.88,0.0,5
+4,406,14.04,0.74,8
+5,406,21.67,5.42,16

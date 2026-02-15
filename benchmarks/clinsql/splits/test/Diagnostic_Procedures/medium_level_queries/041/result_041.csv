@@ -1,0 +1,5 @@
+length_of_stay_group,diagnosis_type,patient_count,avg_radiography_ct_per_admission
+1-3 Days,Primary Diagnosis,86,0.02
+1-3 Days,Secondary Diagnosis,44,0.14
+4-7 Days,Primary Diagnosis,55,0.03
+4-7 Days,Secondary Diagnosis,50,0.12

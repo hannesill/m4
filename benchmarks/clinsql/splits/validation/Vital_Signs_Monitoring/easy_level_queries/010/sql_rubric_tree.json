@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters the patient population based on demographics.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using the condition p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 71 and 81 using the condition p.anchor_age BETWEEN 71 AND 81.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-concept-implementation",
+      "requirements": "Clinical Concept Implementation: Correctly identifies and filters for the Diastolic Blood Pressure measurements.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "dbp-code-selection",
+          "requirements": "DBP Code Selection: The query must correctly identify Diastolic Blood Pressure measurements using itemids 220051 and 8368 from the chartevents table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dbp-value-validation",
+          "requirements": "DBP Value Validation: The query must filter out null values and apply a plausible clinical range filter (e.g., BETWEEN 30 AND 150) to the DBP measurements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables to link patient demographics with clinical events.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must join the 'patients' and 'chartevents' tables to link patient demographics with their blood pressure measurements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between 'patients' and 'chartevents' tables must be correctly performed on the 'subject_id' key.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly computes the per-stay maximum DBP and the final median value.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-aggregation",
+          "requirements": "Per-Stay Aggregation: The query must first calculate the maximum DBP for each ICU stay by grouping by 'stay_id' and using MAX(valuenum).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-calculation",
+          "requirements": "Median Calculation: The query must correctly calculate the median of the per-stay maximum DBP values using a suitable function like APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to a reasonable number of decimal places for clarity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

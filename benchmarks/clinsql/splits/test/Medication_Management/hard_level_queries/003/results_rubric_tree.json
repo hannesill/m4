@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-avg_complexity_score",
+              "requirements": "Primary Column Exists (related to average medication complexity score)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-avg_percentile_rank",
+              "requirements": "Primary Column Exists (related to average medication complexity percentile rank)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-avg_los_days",
+              "requirements": "Primary Column Exists (related to average length of stay)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mortality_rate",
+              "requirements": "Primary Column Exists (related to mortality rate)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "column-related-validation-avg_complexity_score",
+          "requirements": "Validation for column 'avg_complexity_score'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-avg_complexity_score",
+              "requirements": "Clinically Plausible (20.0-200.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-avg_complexity_score",
+              "requirements": "Acceptable Range (30.0-150.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "column-related-validation-avg_percentile_rank",
+          "requirements": "Validation for column 'avg_percentile_rank'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-avg_percentile_rank",
+              "requirements": "Clinically Plausible (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-avg_percentile_rank",
+              "requirements": "Acceptable Range (0.4-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "column-related-validation-avg_los_days",
+          "requirements": "Validation for column 'avg_los_days'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-avg_los_days",
+              "requirements": "Clinically Plausible (2.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-avg_los_days",
+              "requirements": "Acceptable Range (3.5-22.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "column-related-validation-mortality_rate",
+          "requirements": "Validation for column 'mortality_rate'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-mortality_rate",
+              "requirements": "Clinically Plausible (0.0-0.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-mortality_rate",
+              "requirements": "Acceptable Range (0.005-0.35)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

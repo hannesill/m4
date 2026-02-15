@@ -1,0 +1,2 @@
+cohort_description,total_patients,mortality_rate_30_day_pct,major_complication_rate_pct,median_survival_days_for_deceased,risk_score_25th_percentile,risk_score_50th_percentile_median,risk_score_75th_percentile
+"Female, 59-69, with DVT and High Comorbidity Burden (>75th Pct)",154,29.88,51.83,14,0.1909,0.2772,0.3552

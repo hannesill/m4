@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using the condition p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter the patient cohort to an age range of 81 to 91 using p.anchor_age BETWEEN 81 AND 91.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Echocardiography Procedure Identification",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly use the pr.icd_version column to differentiate between ICD-9 and ICD-10 codes within the WHERE clause.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "echocardiography-code-selection",
+          "requirements": "Echocardiography Code Selection: The query must correctly identify codes for echocardiography. It correctly identifies the ICD-9 code ('88.72') but incorrectly uses 'B21%' for ICD-10, which pertains to HIV, not echocardiography.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must join the 'patients' and 'procedures_icd' tables to link patient demographics with their procedures.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join condition must correctly use 'subject_id' as the key (p.subject_id = pr.subject_id) to ensure data integrity.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-patient-distinct-count",
+          "requirements": "Per-Patient Distinct Count: The query must use COUNT(DISTINCT pr.icd_code) grouped by p.subject_id to calculate the number of unique echocardiography procedures for each patient.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "maximum-value-calculation",
+          "requirements": "Maximum Value Calculation: The final query must use the MAX() function on the per-patient counts to find the maximum number of distinct procedures across the cohort.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "subquery-structure",
+          "requirements": "Subquery Structure: The query must correctly use a subquery to first calculate per-patient counts and then an outer query to find the maximum of those counts.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

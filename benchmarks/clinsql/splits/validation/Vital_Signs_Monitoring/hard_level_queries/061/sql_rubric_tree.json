@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query correctly calculates the patient's age at ICU admission and filters the cohort to patients aged between 49 and 59.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-condition-filter",
+          "requirements": "ACS Condition Filter: The query correctly identifies patients with Acute Coronary Syndrome (ACS) by filtering on relevant ICD-9 and ICD-10 codes from the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-concept-implementation",
+      "requirements": "Clinical Concept Implementation: Instability Score Calculation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "vital-sign-selection",
+          "requirements": "Vital Sign Selection: The query correctly identifies and filters for the specific itemids corresponding to heart rate, blood pressure (systolic, MAP), SpO2, respiratory rate, and temperature within the first 24 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temperature-unit-conversion",
+          "requirements": "Temperature Unit Conversion: The query correctly identifies the Fahrenheit temperature itemid (223762) and converts its value to Celsius before applying abnormality thresholds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormality-thresholds",
+          "requirements": "Abnormality Thresholds: The query correctly applies clinically appropriate thresholds to flag abnormal vital signs (e.g., HR < 50 or > 120, SBP < 90, Temp < 36 or > 38.5).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "composite-score-aggregation",
+          "requirements": "Composite Score Aggregation: The query correctly sums the individual abnormality flags for each patient stay_id to generate the composite instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query correctly calculates the percentile rank of a score of 70 by dividing the count of patients with scores less than 70 by the total number of patients.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-identification",
+          "requirements": "Top Decile Identification: The query correctly uses the NTILE(10) window function, ordered by the instability score in descending order, to identify the top decile of patients.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-outcome-analysis",
+          "requirements": "Top Decile Outcome Analysis",
+          "weight": 2,
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-icu-los-calculation",
+              "requirements": "Average ICU LOS Calculation: The query correctly calculates the average ICU length of stay in days for the top decile cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-calculation",
+              "requirements": "Mortality Rate Calculation: The query correctly calculates the hospital mortality rate as a percentage for the top decile cohort using the hospital_expire_flag.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration-and-output",
+      "requirements": "Database Integration and Output Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query correctly joins icustays, patients, diagnoses_icd, chartevents, and admissions tables using appropriate keys (subject_id, hadm_id, stay_id).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-structure",
+          "requirements": "Final Output Structure: The query correctly uses UNION ALL to combine the percentile calculation results and the top decile outcome analysis into a single output.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

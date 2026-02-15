@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the patient population based on demographics and clinical conditions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 69 and 79 using `p.anchor_age BETWEEN 69 AND 79`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ugib-cohort-filter",
+          "requirements": "UGIB Cohort Filter: The query must use an EXISTS subquery to ensure patients have a diagnosis of Upper Gastrointestinal Bleeding (UGIB) within the same hospital admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "copd-exacerbation-cohort-filter",
+          "requirements": "COPD Exacerbation Cohort Filter: The query must use a second EXISTS subquery to ensure patients also have a diagnosis of COPD exacerbation within the same hospital admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Evaluates the correctness of the specific medical codes used to identify UGIB and COPD exacerbation.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly differentiate between ICD-9 and ICD-10 codes using the `icd_version` column for both UGIB and COPD conditions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ugib-code-selection",
+          "requirements": "UGIB Code Selection: The query must correctly identify UGIB using ICD-9 codes (LIKE '578%') and ICD-10 codes ('K920', 'K921', 'K922', 'K2901').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "copd-exacerbation-code-selection",
+          "requirements": "COPD Exacerbation Code Selection: The query must correctly identify COPD exacerbation using the specific ICD-9 code ('49121') and ICD-10 code ('J441').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Assesses the correctness of table joins and key linkages.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The `patients` and `admissions` tables must be correctly joined on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-linkage",
+          "requirements": "Admission-Diagnosis Linkage: The `diagnoses_icd` table must be correctly linked to the `admissions` table on `hadm_id` within the EXISTS subqueries.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Evaluates the final calculation of the median length of stay.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-data-integrity",
+          "requirements": "Length of Stay Data Integrity: The query must filter out records with null admission/discharge times and ensure the calculated LOS is non-negative.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay Calculation: The query must correctly calculate the length of stay in days using `DATE_DIFF` on the `dischtime` and `admittime` fields.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-length-of-stay-aggregation",
+          "requirements": "Median Length of Stay Aggregation: The query must accurately compute the median of the calculated length of stay values using `APPROX_QUANTILES(..., 2)[OFFSET(1)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

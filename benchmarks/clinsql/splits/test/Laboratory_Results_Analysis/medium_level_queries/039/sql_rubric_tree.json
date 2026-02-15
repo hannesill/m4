@@ -1,0 +1,136 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters the patient cohort to include only females (p.gender = 'F').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates the age at admission and filters for patients between 87 and 97 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "chest-pain-diagnosis-selection",
+          "requirements": "Chest Pain Diagnosis Selection: Filters admissions based on a diagnosis of chest pain using appropriate ICD-9 ('7865%') and ICD-10 ('R07%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "troponin-lab-identification",
+          "requirements": "Troponin Lab Identification: Correctly identifies High Sensitivity Troponin-T (hs-TnT) lab events using itemid 51003.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-troponin-measurement-logic",
+          "requirements": "First Troponin Measurement Logic: Uses a window function (ROW_NUMBER) partitioned by admission and ordered by charttime to isolate the first troponin measurement for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-categorization",
+          "requirements": "Troponin Categorization: Implements a CASE statement to correctly categorize troponin values into 'Normal' (\u22640.04), 'Borderline' (0.04-0.1), and 'Myocardial Injury' (>0.1).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly joins patients, admissions, and diagnoses_icd tables to form the initial cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-data-join",
+          "requirements": "Lab Data Join: Correctly joins the patient cohort with the labevents table on hadm_id to link admissions with lab results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: Groups the final results by the derived troponin_category.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "count-and-percentage-calculation",
+          "requirements": "Count and Percentage Calculation: Calculates the count of admissions per category and the percentage of the total for each category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "statistical-aggregation",
+          "requirements": "Statistical Aggregation: Correctly calculates the mean, median, and IQR (P25, P75) of troponin values for each category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Rounds the numerical results to the specified precision and orders the output logically by category.",
+          "weight": 1,
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

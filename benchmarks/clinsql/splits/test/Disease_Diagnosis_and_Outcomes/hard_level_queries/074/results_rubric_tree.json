@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-rank-column-exists",
+              "requirements": "Column exists for the patient's composite risk score percentile",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "Column exists for the 30-day mortality rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cardiac-complication-column-exists",
+              "requirements": "Column exists for the cardiac complication rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "neuro-complication-column-exists",
+              "requirements": "Column exists for the neurologic complication rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-survival-column-exists",
+              "requirements": "Column exists for the median survival days",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "percentile-rank-validation",
+          "requirements": "Validate the patient's composite risk score percentile",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentile-rank-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-acceptable",
+              "requirements": "Acceptable Range (25.0-95.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate the 30-day mortality rate for the cohort",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (15.0-75.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cardiac-complication-validation",
+          "requirements": "Validate the cardiac complication rate for the cohort",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "cardiac-complication-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cardiac-complication-acceptable",
+              "requirements": "Acceptable Range (10.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "neuro-complication-validation",
+          "requirements": "Validate the neurologic complication rate for the cohort",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "neuro-complication-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "neuro-complication-acceptable",
+              "requirements": "Acceptable Range (5.0-35.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-survival-validation",
+          "requirements": "Validate the median survival days for deceased patients in the cohort",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-survival-plausible",
+              "requirements": "Clinically Plausible (0.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-survival-acceptable",
+              "requirements": "Acceptable Range (1.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

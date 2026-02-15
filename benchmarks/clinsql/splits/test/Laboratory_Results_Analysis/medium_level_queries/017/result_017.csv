@@ -1,0 +1,2 @@
+cohort_description,number_of_patients,median_troponin_t_ng_ml,p25_troponin_t_ng_ml,p75_troponin_t_ng_ml,iqr_troponin_t,min_elevated_value,max_elevated_value
+"Male patients, aged 47-57, with cardiac diagnosis and elevated first Troponin T",2029,0.19,0.06,0.64,0.58,0.02,24.15

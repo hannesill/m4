@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query correctly calculates the age at admission and filters for patients aged between 41 and 51.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-identification",
+          "requirements": "Condition Identification: The query correctly identifies hospital admissions with diagnoses of both neutropenia and fever within the same admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "icd-code-selection",
+          "requirements": "ICD Code Selection: The query accurately selects both ICD-9 and ICD-10 codes for neutropenia (`D70%`, `288.0%`) and fever (`R50%`, `780.6%`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-time-window",
+          "requirements": "Medication Time Window: The query correctly filters prescriptions to the first 48 hours of admission using `pr.starttime BETWEEN nf.admittime AND TIMESTAMP_ADD(nf.admittime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query correctly joins `patients`, `admissions`, `diagnoses_icd`, and `prescriptions` tables to construct the cohort and calculate medication complexity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "join-key-matching",
+          "requirements": "Join Key Matching: The query consistently uses appropriate keys (`subject_id`, `hadm_id`) for all joins, ensuring data integrity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "null-handling-with-left-join",
+          "requirements": "NULL Handling with LEFT JOIN: The query correctly uses LEFT JOINs to include all patients from the core cohort, even those without medications, and handles potential NULLs using `COALESCE`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-complexity-calculation",
+          "requirements": "Medication Complexity Calculation: The query correctly calculates the count of unique medications per admission using `COUNT(DISTINCT ...)`. The use of `LOWER()` is also a good practice.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stratification-by-tertiles",
+          "requirements": "Stratification by Tertiles: The query correctly stratifies the cohort into tertiles based on medication complexity using `NTILE(3) OVER (ORDER BY ...)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "LOS Calculation: The query accurately calculates the length of stay in days using `TIMESTAMP_DIFF(nf.dischtime, nf.admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-calculation",
+          "requirements": "30-Day Readmission Calculation: The query correctly identifies 30-day readmissions using a window function (`LEAD`) partitioned by patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-and-output",
+          "requirements": "Final Aggregation and Output: The query correctly groups by the calculated tertile and computes the required metrics: average LOS, mortality rate, and 30-day readmission rate, with appropriate rounding and formatting.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

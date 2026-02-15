@@ -1,0 +1,5 @@
+stay_category,icu_status,num_admissions,avg_procedures,min_procedures,max_procedures
+1-4 Day Stay,ICU Stay,135,0.08,0,2
+1-4 Day Stay,No ICU Stay,552,0.06,0,4
+5-7 Day Stay,ICU Stay,117,0.1,0,2
+5-7 Day Stay,No ICU Stay,259,0.07,0,3

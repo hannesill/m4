@@ -1,0 +1,172 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "discharge_group-column-exists",
+              "requirements": "Exists Column for Stratification by Discharge Group",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean_los_days-column-exists",
+              "requirements": "Exists Column for Mean Length of Stay",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25_los_days-column-exists",
+              "requirements": "Exists Column for 25th Percentile of LOS",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50_los_days-column-exists",
+              "requirements": "Exists Column for 50th Percentile of LOS",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75_los_days-column-exists",
+              "requirements": "Exists Column for 75th Percentile of LOS",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90_los_days-column-exists",
+              "requirements": "Exists Column for 90th Percentile of LOS",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percent_los_le_10-column-exists",
+              "requirements": "Exists Column for Percent of LOS Less Than or Equal to 10 Days",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in Answer-Relevant Columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mean_los_days-validation",
+          "requirements": "Validation for Mean Length of Stay",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mean_los_days-plausible",
+              "requirements": "Clinically Plausible (1.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean_los_days-acceptable",
+              "requirements": "Acceptable Range (2.0-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p50_los_days-validation",
+          "requirements": "Validation for Median (50th Percentile) Length of Stay",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p50_los_days-plausible",
+              "requirements": "Clinically Plausible (1.0-25.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50_los_days-acceptable",
+              "requirements": "Acceptable Range (2.0-12.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percent_los_le_10-validation",
+          "requirements": "Validation for Percent of LOS <= 10 Days",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "percent_los_le_10-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percent_los_le_10-acceptable",
+              "requirements": "Acceptable Range (50.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

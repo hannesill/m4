@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the initial patient population based on demographics and the primary clinical condition.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter for patient ages between 44 and 54 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stroke-diagnosis-filtering",
+          "requirements": "Stroke Diagnosis Filtering: The query must correctly identify and exclusively include patients with a diagnosis of 'Ischemic' or 'Hemorrhagic' stroke, filtering out others.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "valid-los-filter",
+          "requirements": "Valid Length of Stay Filter: The query must ensure the length of stay is a non-negative value by filtering out invalid admission or discharge times.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly translates clinical concepts into code, including stroke types, comorbidities, and interventions.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stroke-type-identification",
+          "requirements": "Stroke Type Identification: The query must use both ICD-9 and ICD-10 codes to accurately classify strokes as 'Hemorrhagic' or 'Ischemic'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-calculation",
+          "requirements": "Comorbidity Calculation: The query must count the number of distinct comorbidities by correctly excluding the primary stroke diagnosis codes from the count.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "organ-support-identification",
+          "requirements": "Organ Support Identification: The query must correctly identify the use of mechanical ventilation, vasopressors, and RRT using the specified item IDs from `procedureevents` and `inputevents` tables.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables to link patient demographics, diagnoses, and ICU-level interventions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to build the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-table-joins",
+          "requirements": "ICU Table Joins: The query must use LEFT JOINs to connect the main cohort to ICU tables (`icustays`, `procedureevents`, `inputevents`) to prevent patient loss if they were not in the ICU.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs final calculations and stratifications as required by the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stratification-logic",
+          "requirements": "Stratification Logic: The query must create and group by the specified strata: `stroke_type`, `los_category` (\u22645/>5 days), and `comorbidity_burden` (Low/Medium/High).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-calculations",
+          "requirements": "Outcome Calculations: The query must accurately calculate mortality rate (%), median length of stay, and the prevalence (%) of mechanical ventilation, vasopressors, and RRT.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output must be grouped correctly and ordered logically by stroke type and comorbidity burden.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

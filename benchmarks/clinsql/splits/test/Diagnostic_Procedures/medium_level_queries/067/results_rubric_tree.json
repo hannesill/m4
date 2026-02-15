@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stratification-columns-exist",
+              "requirements": "Stratification columns exist (e.g., diagnosis_type, stay_category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-column-exists",
+              "requirements": "25th percentile column exists (e.g., p25_ultrasounds)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-column-exists",
+              "requirements": "50th percentile column exists (e.g., p50_median_ultrasounds)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-column-exists",
+              "requirements": "75th percentile column exists (e.g., p75_ultrasounds)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "p25-ultrasound-value-validation",
+          "requirements": "Validate values in the 25th percentile column for ultrasounds",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p25-plausible",
+              "requirements": "Clinically Plausible (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-acceptable",
+              "requirements": "Acceptable Range (0-1)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p50-ultrasound-value-validation",
+          "requirements": "Validate values in the 50th percentile column for ultrasounds",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p50-plausible",
+              "requirements": "Clinically Plausible (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-acceptable",
+              "requirements": "Acceptable Range (0-2)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p75-ultrasound-value-validation",
+          "requirements": "Validate values in the 75th percentile column for ultrasounds",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p75-plausible",
+              "requirements": "Clinically Plausible (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-acceptable",
+              "requirements": "Acceptable Range (0-3)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

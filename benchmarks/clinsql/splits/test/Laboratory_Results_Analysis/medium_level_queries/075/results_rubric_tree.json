@@ -1,0 +1,227 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "troponin-category-column-exists",
+              "requirements": "A column grouping by troponin category exists (e.g., 'troponin_category', 'category').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-column-exists",
+              "requirements": "A column for patient/admission counts exists (e.g., 'admission_count', 'patient_count').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-column-exists",
+              "requirements": "A column for the percentage of admissions exists (e.g., 'percentage_of_admissions', 'percent').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-troponin-column-exists",
+              "requirements": "A column for the mean troponin value exists (e.g., 'mean_troponin_t', 'avg_troponin').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-troponin-column-exists",
+              "requirements": "A column for the median troponin value exists (e.g., 'median_troponin_t', 'median_troponin').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-troponin-column-exists",
+              "requirements": "A column for the IQR of troponin values exists (e.g., 'iqr_troponin_t', 'troponin_iqr').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns (count, percentage, mean, median, iqr).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mean-troponin-validation",
+          "requirements": "Validate Mean Troponin T Values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-troponin-plausible",
+              "requirements": "Values for mean troponin are clinically plausible (>=0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-troponin-acceptable-normal",
+              "requirements": "Mean Troponin for 'Normal' category is in an acceptable range (0.00-0.015).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-troponin-acceptable-borderline",
+              "requirements": "Mean Troponin for 'Borderline' category is in an acceptable range (0.015-0.08).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-troponin-acceptable-elevated",
+              "requirements": "Mean Troponin for 'Elevated' category is in an acceptable range (>0.08).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-troponin-validation",
+          "requirements": "Validate Median Troponin T Values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-troponin-plausible",
+              "requirements": "Values for median troponin are clinically plausible (>=0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-troponin-acceptable-normal",
+              "requirements": "Median Troponin for 'Normal' category is in an acceptable range (0.00-0.015).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-troponin-acceptable-borderline",
+              "requirements": "Median Troponin for 'Borderline' category is in an acceptable range (0.015-0.08).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-troponin-acceptable-elevated",
+              "requirements": "Median Troponin for 'Elevated' category is in an acceptable range (>0.08).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentage-validation",
+          "requirements": "Validate Percentage Values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentage-plausible",
+              "requirements": "Values for percentages are plausible (0-100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-acceptable",
+              "requirements": "The majority of patients with Chest Pain/AMI have elevated troponin (e.g., 'Elevated' percentage > 50%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-troponin-validation",
+          "requirements": "Validate IQR Troponin T Values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "iqr-troponin-plausible",
+              "requirements": "Values for IQR are clinically plausible (>=0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-troponin-acceptable-normal",
+              "requirements": "IQR for 'Normal' category is acceptably low (e.g., 0.0-0.01).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-troponin-acceptable-elevated",
+              "requirements": "IQR for 'Elevated' category shows plausible spread and is larger than 'Normal' or 'Borderline' categories.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

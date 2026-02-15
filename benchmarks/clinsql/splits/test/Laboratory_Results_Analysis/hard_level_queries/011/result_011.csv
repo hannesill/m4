@@ -1,0 +1,3 @@
+cohort,number_of_patients,avg_instability_score,p25_instability_score,p50_instability_score,p75_instability_score,total_critical_events_in_72h,total_lab_tests_in_72h,critical_event_frequency,avg_length_of_stay_days,in_hospital_mortality_rate
+"AKI Cohort (Male, 47-57)",6186,2.792434529582926,0,1,4,17274,161006,0.10728792715799411,9.950210151956062,0.07355318461041095
+"Control Cohort (Male, 47-57)",43887,0.43596053501036175,0,0,0,19133,508071,0.03765812258522923,3.920226946476185,0.0079522409825233

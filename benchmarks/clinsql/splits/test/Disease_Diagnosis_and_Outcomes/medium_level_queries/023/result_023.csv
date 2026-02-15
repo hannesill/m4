@@ -1,0 +1,13 @@
+stroke_type,los_category,comorbidity_burden,total_admissions,mortality_rate_percent,median_length_of_stay,ckd_prevalence_percent,diabetes_prevalence_percent
+Hemorrhagic,< 8 Days,Low,121,14.05,3,0.83,9.92
+Hemorrhagic,>= 8 Days,Low,39,2.56,11,0.0,2.56
+Hemorrhagic,< 8 Days,Medium,100,18.0,3,6.0,18.0
+Hemorrhagic,>= 8 Days,Medium,60,0.0,13,0.0,13.33
+Hemorrhagic,< 8 Days,High,45,33.33,4,17.78,26.67
+Hemorrhagic,>= 8 Days,High,114,20.18,20,12.28,21.93
+Ischemic,< 8 Days,Low,201,0.0,2,1.99,26.87
+Ischemic,>= 8 Days,Low,14,0.0,9,7.14,42.86
+Ischemic,< 8 Days,Medium,174,2.3,3,10.34,46.55
+Ischemic,>= 8 Days,Medium,40,0.0,10,5.0,32.5
+Ischemic,< 8 Days,High,84,10.71,5,20.24,50.0
+Ischemic,>= 8 Days,High,130,10.0,16,21.54,44.62

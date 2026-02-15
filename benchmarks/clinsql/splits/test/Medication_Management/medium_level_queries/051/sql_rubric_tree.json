@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates dynamic age at admission and filters for the range 86-96.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "co-morbidity-selection",
+          "requirements": "Co-morbidity Selection: Correctly identifies admissions with diagnoses for both Diabetes Mellitus and Heart Failure using a HAVING clause with two distinct counts.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-duration-filter",
+          "requirements": "Admission Duration Filter: Includes a filter to ensure hospital admission is at least 72 hours long, which is necessary for the 'late' window analysis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "medication-class-identification",
+          "requirements": "Medication Class Identification: Correctly categorizes medications into 'Insulin' (using `LIKE '%insulin%'`) and 'Oral Agents' (using a specific list of drug names).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dm-icd-code-selection",
+          "requirements": "Diabetes Mellitus ICD Code Selection: Selects appropriate ICD-9 ('250%') and ICD-10 ('E10%', 'E11%') codes for Diabetes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hf-icd-code-selection",
+          "requirements": "Heart Failure ICD Code Selection: Selects appropriate ICD-9 ('428%') and ICD-10 ('I50%') codes for Heart Failure.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly joins `patients`, `admissions`, and a `diagnoses_icd` subquery on `subject_id` and `hadm_id` to build the initial patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-data-join",
+          "requirements": "Medication Data Join: Correctly joins the patient cohort to the `prescriptions` table on `hadm_id` to link patients to their medication records.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-expansion-join",
+          "requirements": "Cohort Expansion Join: Correctly uses a CROSS JOIN with the medication classes and a LEFT JOIN back to the medication flags to ensure all patients in the cohort are represented for both drug classes in the final analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-window-definition",
+          "requirements": "Temporal Window Definition: Correctly defines an 'Early' window (first 12h from admission) and a 'Late' window (final 72h before discharge) using `DATETIME_DIFF`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-window-flagging",
+          "requirements": "Patient-Window Flagging: Accurately pivots the data to create binary flags (`on_early`, `on_late`) for each patient and medication class using `MAX(IF(...))` and `GROUP BY`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rate-calculation",
+          "requirements": "Rate Calculation: Correctly calculates early and late usage rates as percentages by dividing the sum of flags by the total count of distinct patients per medication class.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "transition-analysis",
+          "requirements": "Transition Analysis: Correctly uses `COUNTIF` on the binary flags to count the four transition states (continued, initiated late, discontinued, never prescribed).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: Groups the final results by `med_class` to report metrics for 'Insulin' and 'Oral Agents' separately.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+target_rr_value,total_stays_in_cohort,stays_at_or_below_target,percentile_rank_of_target_rr,mean_avg_rr,stddev_avg_rr,quartiles_of_avg_rr
+12,13259,47,0.35,19.23,3.5,[ 8.         16.76470588 18.73913043 21.15555556 38.12      ]

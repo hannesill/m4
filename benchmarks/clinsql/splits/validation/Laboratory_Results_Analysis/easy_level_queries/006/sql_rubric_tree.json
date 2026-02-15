@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Identifies hospital admissions for female patients diagnosed with COPD. NOTE: The query fails to filter by age, which is a critical requirement.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using the condition `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-selection",
+          "requirements": "Age Selection: The query must filter for patients who are 50 years old at the time of admission (e.g., using `anchor_age`). This is a missing critical requirement.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "copd-diagnosis-selection",
+          "requirements": "COPD Diagnosis Selection: The query must filter for patients with a COPD diagnosis by including both ICD-9 ('490', '491', '492', '496') and ICD-10 ('J44') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins patient, diagnosis, and lab event tables to link demographics and clinical measurements.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-diagnosis-join",
+          "requirements": "Patient-Diagnosis Join: The query must join `patients` and `diagnoses_icd` tables on `subject_id` to link patient demographics with diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-lab-join",
+          "requirements": "Cohort-Lab Join: The query must join the identified cohort of hospital admissions with the `labevents` table on `hadm_id` to associate lab results with specific stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates the nadir sodium per admission and then the standard deviation across those nadir values.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sodium-lab-identification",
+          "requirements": "Sodium Lab Identification: The query must filter `labevents` for serum sodium measurements using the correct `itemid` (50983).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "nadir-calculation-logic",
+          "requirements": "Nadir Calculation Logic: The query must use the `MIN()` aggregation function on the sodium value, grouped by `hadm_id`, to determine the nadir (lowest) value for each hospitalization.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-stddev-calculation",
+          "requirements": "Final Standard Deviation Calculation: The query must calculate the standard deviation of the nadir sodium values using the `STDDEV()` function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "result-formatting-and-quality",
+      "requirements": "Result Formatting and Quality: Ensures the final output is correctly formatted and employs data quality best practices.",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "result-rounding",
+          "requirements": "Result Rounding: The final standard deviation value should be rounded to two decimal places using `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "plausible-value-filtering",
+          "requirements": "Plausible Value Filtering: The query includes filters to remove nulls (`valuenum IS NOT NULL`) and clinically implausible sodium values (e.g., `BETWEEN 120 AND 160`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

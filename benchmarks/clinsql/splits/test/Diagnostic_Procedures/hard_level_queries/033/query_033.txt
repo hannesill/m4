@@ -1,0 +1,1 @@
+42-year-old male with pneumonia: among male ICU patients aged 37–47 in their first ICU stay, stratify distinct procedures in the first 48 hours into quintiles and report mean procedure count, mean ICU LOS (days), and hospital mortality by quintile.

@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters patients to include only males ('M').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 52-62.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-filter",
+          "requirements": "Primary Condition Filter: Selects patients with a diagnosis of asthma exacerbation using appropriate ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparison-cohort-construction",
+          "requirements": "Comparison Cohort Construction: Correctly defines a separate age- and gender-matched cohort without the primary asthma condition.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Lab Instability Score Logic",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-definitions-creation",
+          "requirements": "Lab Definitions Creation: Creates a temporary table or CTE defining the specific labs and their critical high/low thresholds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-lab-filter",
+          "requirements": "Temporal Lab Filter: Restricts lab events to the first 72 hours following admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: Correctly calculates the instability score as the count of distinct lab types with at least one critical value.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-events-count",
+          "requirements": "Critical Events Count: Correctly counts the total number of critical lab events (not distinct by type).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: Correctly joins 'patients' and 'admissions' tables on 'subject_id' for both asthma and comparison cohorts.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: Correctly links admissions to diagnoses using 'hadm_id' via a subquery or join.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-labevents-join",
+          "requirements": "Admissions-Labevents Join: Correctly joins the patient cohorts with the 'labevents' table on 'hadm_id'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "p90-instability-score",
+          "requirements": "90th Percentile Instability Score: Calculates the 90th-percentile instability score for the asthma cohort using APPROX_QUANTILES or equivalent.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-identification",
+          "requirements": "Top Decile Identification: Correctly identifies the top decile of patients (>= 90th percentile) using a window function like PERCENT_RANK or by comparing scores to the P90 value.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-metrics",
+          "requirements": "Top Decile Metrics Calculation: Correctly calculates mortality rate, mean LOS, and average critical events for the identified top decile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparison-group-metric",
+          "requirements": "Comparison Group Metric Calculation: Correctly calculates the average critical lab events for the age-matched comparison group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-structure",
+          "requirements": "Final Output Structure: Presents the five required metrics in the final SELECT statement: P90 score, top-tier mortality, top-tier LOS, top-tier avg events, and comparison avg events.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

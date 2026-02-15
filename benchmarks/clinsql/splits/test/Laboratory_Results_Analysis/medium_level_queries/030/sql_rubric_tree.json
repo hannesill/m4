@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters for patients aged 64-74 at the time of admission using `pc.admission_age BETWEEN 64 AND 74`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation",
+          "requirements": "Age Calculation: Correctly calculates the patient's age at the time of admission using a formula like `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-diagnosis-selection",
+          "requirements": "AMI Diagnosis Selection: Correctly identifies AMI admissions using both ICD-9 ('410%') and ICD-10 ('I21%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "index-admission-identification",
+          "requirements": "Index Admission Identification: Correctly identifies the first AMI admission for each patient using `ROW_NUMBER() OVER(PARTITION BY subject_id ORDER BY admittime ASC)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: High-Sensitivity Troponin Measurement",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "troponin-lab-event-selection",
+          "requirements": "Troponin Lab Event Selection: Correctly filters for high-sensitivity troponin T using `le.itemid = 51003`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "index-troponin-measurement",
+          "requirements": "Index Troponin Measurement: Correctly identifies the first troponin measurement for the index admission using `QUALIFY ROW_NUMBER() OVER(PARTITION BY fa.hadm_id ORDER BY le.charttime ASC) = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-value-categorization",
+          "requirements": "Troponin Value Categorization: Correctly categorizes troponin values into 'Normal' (<=0.014), 'Borderline' (0.015-0.052), and 'Myocardial Injury' (>0.052) using a CASE statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: Correctly joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: Correctly joins the cohort with `diagnoses_icd` on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-labevents-join",
+          "requirements": "Admissions-Labevents Join: Correctly joins the cohort with `labevents` on `hadm_id` to link troponin results to the correct admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-by-category",
+          "requirements": "Grouping by Category: Correctly groups results by the `troponin_category` to count patients in each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-count-per-category",
+          "requirements": "Patient Count per Category: Correctly counts the number of distinct patients in each category using `COUNT(DISTINCT subject_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "total-patient-count",
+          "requirements": "Total Patient Count: Correctly calculates the total number of patients with a troponin measurement to serve as the denominator.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: Correctly calculates the percentage of patients in each category as `(patient_count * 100.0 / total_patients_with_troponin)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

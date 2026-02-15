@@ -1,0 +1,2 @@
+p95_instability_score,num_top_tier_patients,avg_los_top_tier,mortality_rate_top_tier,critical_lab_rate_top_tier,critical_lab_rate_general_inpatients
+1,704,8.266335227272727,0.04829545454545454,0.08798391151332328,0.016395646431615455

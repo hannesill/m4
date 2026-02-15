@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Filters for the correct patient demographic and clinical condition.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-selection",
+          "requirements": "Age Selection: The query must filter for 82-year-old patients. The provided query fails to include any age-based filtering.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-selection",
+          "requirements": "Condition Selection (Ischemic Stroke): The query must filter for ischemic stroke using appropriate ICD codes. The use of `d.icd_code LIKE 'I63%' OR d.icd_code LIKE '434%' OR d.icd_code LIKE '433%'` correctly identifies the condition across ICD-9 and ICD-10.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies and filters for the correct lab event and its timing.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-event-identification",
+          "requirements": "Lab Event Identification: The query must correctly identify serum glucose measurements using `le.itemid = 50931`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-glucose-logic",
+          "requirements": "Admission Glucose Logic: The query must correctly isolate the first glucose measurement per admission. The use of `ROW_NUMBER() OVER(PARTITION BY le.hadm_id ORDER BY le.charttime ASC)` and filtering for `rn = 1` is a valid approach.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-range-filtering",
+          "requirements": "Value Range Filtering: The query should apply a reasonable filter for glucose values to exclude outliers, such as `le.valuenum BETWEEN 50 AND 500`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins the necessary tables to link patient demographics, diagnoses, and lab events.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join `patients`, `diagnoses_icd`, and `labevents` tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The query must use the correct keys for joining: `subject_id` between `patients` and `diagnoses_icd`, and `hadm_id` between `diagnoses_icd` and `labevents`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates the specified statistical measure.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must calculate the 75th percentile of the selected glucose values. Using `APPROX_QUANTILES(ag.valuenum, 100)[OFFSET(75)]` is the correct method in BigQuery SQL.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query should round the final result for clarity, for example using `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the specific patient population based on demographics and diagnosis.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-filtering",
+          "requirements": "Demographic Filtering: Selects male inpatients aged 43-53. This involves joining patients and admissions, filtering by gender, and calculating age at admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hepatic-failure-diagnosis",
+          "requirements": "Hepatic Failure Diagnosis: Correctly identifies patients with hepatic failure using ICD-9 ('570', '5722') and ICD-10 ('K72%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-join",
+          "requirements": "Cohort Join: Correctly combines the demographic and diagnostic cohorts using an inner join on hadm_id to create the final patient group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medication-data-extraction",
+      "requirements": "Medication Data Extraction: Identifies and filters medications administered within the specified time window.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-table-join",
+          "requirements": "Medication Table Join: Correctly joins the target admissions cohort with the prescriptions table on hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-temporal-filtering",
+          "requirements": "Medication Temporal Filtering: Filters prescriptions to include only those administered within the first 72 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs complex calculations and stratifications as required by the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-complexity-score-calculation",
+          "requirements": "Medication Complexity Score Calculation: Correctly implements the formula: (COUNT(DISTINCT drug) * 2 + COUNT(DISTINCT route) + COUNT(DISTINCT IV_drugs) * 3).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-flag-calculation",
+          "requirements": "30-Day Readmission Flag Calculation: Correctly calculates a per-admission flag for readmission within 30 days using a window function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quintile-stratification",
+          "requirements": "Quintile Stratification: Uses the NTILE(5) window function to stratify patients into quintiles based on their medication complexity score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-reporting",
+      "requirements": "Final Reporting: Aggregates and presents the final metrics grouped by the calculated quintiles.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-by-quintile",
+          "requirements": "Grouping by Quintile: The final query must group results by the 'complexity_quintile' column.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-aggregation",
+          "requirements": "Metric Aggregation: Correctly calculates n, min/max/mean score, mean LOS, mortality %, and readmission % for each quintile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Correctly rounds the final metrics to two decimal places and orders the output by quintile.",
+          "weight": 1,
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+cohort_group,number_of_stays,p90_diagnostic_load_first_72h,avg_icu_los_days,in_hospital_mortality_pct
+"Age-Matched ICU (Male, 40-50)",4298,11,3.5505335661621964,6.700791065611895
+"Hemorrhagic Stroke (Male, 40-50)",244,13,7.351605191256831,13.934426229508201

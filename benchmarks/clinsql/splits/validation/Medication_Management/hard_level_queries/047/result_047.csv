@@ -1,0 +1,8 @@
+cohort,subgroup,patient_count,avg_medication_complexity,avg_los_days,mortality_rate
+Age-Matched Control (48-58 F),All Patients,44747,15.73,4.34,0.011
+Age-Matched Control (48-58 F),Interaction Risk (>=2 Sero. Drugs),10850,22.76,5.49,0.0128
+Age-Matched Control (48-58 F),No/Low Interaction Risk (<2 Sero. Drugs),33897,13.48,3.97,0.0104
+Hemorrhagic Stroke (48-58 F),All Patients,496,23.46,10.74,0.123
+Hemorrhagic Stroke (48-58 F),Interaction Risk (>=2 Sero. Drugs),140,27.96,11.72,0.0857
+Hemorrhagic Stroke (48-58 F),No/Low Interaction Risk (<2 Sero. Drugs),356,21.69,10.36,0.1376
+Hemorrhagic Stroke (48-58 F),Top 25% Complexity (Quartile 1),124,35.46,16.48,0.2016

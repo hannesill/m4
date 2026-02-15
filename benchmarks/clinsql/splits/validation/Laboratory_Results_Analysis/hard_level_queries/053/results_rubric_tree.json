@@ -1,0 +1,241 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p90_instability_score-column-exists",
+              "requirements": "Column Exists: 90th percentile lab-instability score (e.g., p90_instability_score)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top_tier_mortality_rate-column-exists",
+              "requirements": "Column Exists: Mortality rate for top-tier patients (e.g., top_tier_mortality_rate)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top_tier_avg_los_days-column-exists",
+              "requirements": "Column Exists: Average length of stay for top-tier patients (e.g., top_tier_avg_los_days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "critical_lab_test-column-exists",
+              "requirements": "Column Exists: Name of the lab test (e.g., critical_lab_test)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top_tier_proportion_of_patients_affected-column-exists",
+              "requirements": "Column Exists: Critical rate for top-tier patients (e.g., top_tier_proportion_of_patients_affected)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general_pop_proportion_of_patients_affected-column-exists",
+              "requirements": "Column Exists: Critical rate for general inpatients (e.g., general_pop_proportion_of_patients_affected)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative_risk_vs_general_pop-column-exists",
+              "requirements": "Column Exists: Relative risk or comparison metric (e.g., relative_risk_vs_general_pop)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "p90-instability-score-validation",
+          "requirements": "Validate 90th percentile lab-instability score",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p90-instability-score-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-instability-score-acceptable",
+              "requirements": "Acceptable Range (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-tier-mortality-validation",
+          "requirements": "Validate top-tier mortality rate",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "top-tier-mortality-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-tier-mortality-acceptable",
+              "requirements": "Acceptable Range (0.05-0.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-tier-los-validation",
+          "requirements": "Validate top-tier average length of stay",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "top-tier-los-plausible",
+              "requirements": "Clinically Plausible (1.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-tier-los-acceptable",
+              "requirements": "Acceptable Range (5.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-tier-critical-rate-validation",
+          "requirements": "Validate critical rate for top-tier patients",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "top-tier-critical-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-tier-critical-rate-acceptable",
+              "requirements": "Acceptable Range (0.01-0.8)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "general-pop-critical-rate-validation",
+          "requirements": "Validate critical rate for general inpatients",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "general-pop-critical-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-pop-critical-rate-acceptable",
+              "requirements": "Acceptable Range (0.001-0.1)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "relative-risk-validation",
+          "requirements": "Validate relative risk metric",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "relative-risk-plausible",
+              "requirements": "Clinically Plausible (0.1-1000.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-risk-acceptable",
+              "requirements": "Acceptable Range (1.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

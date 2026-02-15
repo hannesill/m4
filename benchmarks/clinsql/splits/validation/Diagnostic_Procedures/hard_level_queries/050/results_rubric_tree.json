@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stratification-column-exists",
+              "requirements": "A column for stratification exists (e.g., 'diagnostic_quartile', 'procedure_quartile').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-procedure-count-column-exists",
+              "requirements": "A column for mean procedure count exists (e.g., 'avg_diagnostic_intensity', 'mean_procedure_count').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-icu-los-column-exists",
+              "requirements": "A column for mean ICU length of stay exists (e.g., 'avg_icu_los_days', 'mean_icu_stay').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hospital-mortality-column-exists",
+              "requirements": "A column for hospital mortality percentage exists (e.g., 'hospital_mortality_pct', 'mortality_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns (quartile, procedure count, ICU LOS, mortality).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mean-procedure-count-validation",
+          "requirements": "Validation for Mean Procedure Count (e.g., 'avg_diagnostic_intensity')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-procedure-count-plausible",
+              "requirements": "Values are clinically plausible (0.1-20).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-procedure-count-acceptable",
+              "requirements": "Values are in an acceptable range for this cohort (0.5-15).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mean-icu-los-validation",
+          "requirements": "Validation for Mean ICU LOS (e.g., 'avg_icu_los_days')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-icu-los-plausible",
+              "requirements": "Values are clinically plausible in days (0.5-30).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-icu-los-acceptable",
+              "requirements": "Values are in an acceptable range for this cohort (1-10).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hospital-mortality-validation",
+          "requirements": "Validation for Hospital Mortality (e.g., 'hospital_mortality_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "hospital-mortality-plausible",
+              "requirements": "Values are a plausible percentage (0-100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hospital-mortality-acceptable",
+              "requirements": "Values are in an acceptable range for this high-risk cohort (10-40).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

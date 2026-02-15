@@ -1,0 +1,2 @@
+patient_population,total_icu_stays_in_cohort,stays_with_avg_temp_lte_37_5,percentile_rank_of_37_5_C,p25_avg_temp_c,p50_avg_temp_c_median,p75_avg_temp_c,mean_avg_temp_c
+Male ICU patients aged 82-92 (First 24h),502,459,91.4,36.14,36.51,36.95,36.53

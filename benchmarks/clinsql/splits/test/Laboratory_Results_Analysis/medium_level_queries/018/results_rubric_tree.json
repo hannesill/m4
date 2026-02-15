@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "Primary column for troponin category exists (e.g., troponin_category, category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-1",
+              "requirements": "Secondary column for patient count exists (e.g., patient_admission_count, patient_count)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-2",
+              "requirements": "Secondary column for percentage exists (e.g., percentage_of_total, percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-3",
+              "requirements": "Secondary column for average length of stay exists (e.g., avg_length_of_stay_days, mean_los)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in any of the answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-count-validation",
+          "requirements": "Validate values in the patient count column (e.g., patient_admission_count)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "patient-count-plausible",
+              "requirements": "Values are clinically plausible (e.g., greater than 0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "patient-count-acceptable",
+              "requirements": "Values fall within an acceptable range for this cohort (e.g., 10-1000 per category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentage-validation",
+          "requirements": "Validate values in the percentage column (e.g., percentage_of_total)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "percentage-plausible",
+              "requirements": "Values are plausible for a percentage (e.g., 0.1-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-acceptable",
+              "requirements": "Values are acceptable for this clinical context (e.g., 5.0-75.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validate values in the average length of stay column (e.g., avg_length_of_stay_days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Values are clinically plausible for elderly ACS patients (e.g., 1.0-30.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Values fall within an acceptable range for this specific cohort (e.g., 3.0-15.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

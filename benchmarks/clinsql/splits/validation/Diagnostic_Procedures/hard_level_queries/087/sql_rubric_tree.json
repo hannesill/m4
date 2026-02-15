@@ -1,0 +1,191 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort and Comparison Group Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "target-cohort-gender-filter",
+          "requirements": "Target Cohort Gender Filter: The query must correctly filter for female patients within the CASE statement logic (e.g., f.gender = 'F').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "target-cohort-age-filter",
+          "requirements": "Target Cohort Age Filter: The query must accurately filter patients aged 56-66, inclusive, using a BETWEEN clause on the calculated age (e.g., f.age_at_admission BETWEEN 56 AND 66).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "target-cohort-diagnosis-filter",
+          "requirements": "Target Cohort Diagnosis Filter: The query must link patients to the intracranial hemorrhage diagnosis by checking if their hadm_id is present in the ich_admissions CTE (e.g., f.hadm_id IN (SELECT hadm_id FROM ich_admissions)).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-stratification-logic",
+          "requirements": "Cohort Stratification Logic: The query must use a CASE statement to correctly assign stays to either the 'ICH Cohort (Female, 56-66)' or the 'General ICU Population' to enable comparison.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Intracranial Hemorrhage (ICH)",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "diagnosis-table-selection",
+          "requirements": "Diagnosis Table Selection: The query must use the 'diagnoses_icd' table to identify patient diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly handle both ICD-9 and ICD-10 codes using a conditional check on the 'icd_version' column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ich-icd9-code-selection",
+          "requirements": "ICH ICD-9 Code Selection: The query must use appropriate LIKE patterns (e.g., '430%', '431%', '432%') to identify ICH-related diagnoses under ICD-9.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ich-icd10-code-selection",
+          "requirements": "ICH ICD-10 Code Selection: The query must use appropriate LIKE patterns (e.g., 'I60%', 'I61%', 'I62%') to identify ICH-related diagnoses under ICD-10.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "unique-admission-selection",
+          "requirements": "Unique Admission Selection: The query must select DISTINCT hadm_id to create a unique list of admissions with an ICH diagnosis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Data Structuring",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join 'patients' and 'admissions' tables on 'subject_id'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-icu-join",
+          "requirements": "Admission-ICU Join: The query must correctly join 'admissions' and 'icustays' tables on 'hadm_id'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-logic",
+          "requirements": "First ICU Stay Logic: The query must correctly isolate the first ICU stay per hospital admission using a window function like ROW_NUMBER() partitioned by hadm_id and ordered by intime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-procedure-join",
+          "requirements": "ICU-Procedure Join: The query must correctly join the ICU stays data with 'procedureevents' on 'stay_id' to count procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-aggregation-join",
+          "requirements": "Data Aggregation Join: A LEFT JOIN must be used to connect the main patient data (first_icu) with the procedure counts (proc_counts) to ensure all patients are retained, even those with zero procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Calculations",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "diagnostic-intensity-definition",
+          "requirements": "Diagnostic Intensity Definition: The query must calculate diagnostic intensity by counting the distinct procedure item IDs (e.g., COUNT(DISTINCT pe.itemid)).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-intensity-time-window",
+          "requirements": "Diagnostic Intensity Time Window: The query must restrict the procedure count to the first 72 hours of the ICU stay (e.g., pe.starttime BETWEEN icu.intime AND DATETIME_ADD(icu.intime, INTERVAL 72 HOUR)).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must correctly calculate the 95th percentile of diagnostic intensity using an appropriate function like APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-metrics-calculation",
+          "requirements": "Comparative Metrics Calculation: The query must calculate the average ICU length of stay and the in-hospital mortality rate for comparison.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-for-comparison",
+          "requirements": "Final Grouping for Comparison: The final aggregation must group by the 'cohort_group' column to produce separate results for the target cohort and the general ICU population.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

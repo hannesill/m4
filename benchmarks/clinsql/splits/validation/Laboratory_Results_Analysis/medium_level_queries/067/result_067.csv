@@ -1,0 +1,2 @@
+cohort_description,total_patients,total_admissions,avg_age,avg_length_of_stay_days,avg_first_troponin_t,min_first_troponin_t,max_first_troponin_t,stddev_first_troponin_t,in_hospital_mortality_rate_pct
+Female Patients (52-62) with AMI and Elevated First Troponin T,554,664,57.8,9.4,1.115,0.02,24.31,2.454,6.63

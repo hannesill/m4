@@ -1,0 +1,2 @@
+cohort_description,total_icu_stays_in_cohort,percentile_rank_of_150_sbp,mean_avg_sbp,stddev_avg_sbp,min_avg_sbp,max_avg_sbp,p25_avg_sbp,p50_avg_sbp_median,p75_avg_sbp,p90_avg_sbp,p95_avg_sbp
+Female patients aged 87-97,831,94.1,119.29,18.41,56.08,191.0,107.44,117.79,130.5,141.86,152.5

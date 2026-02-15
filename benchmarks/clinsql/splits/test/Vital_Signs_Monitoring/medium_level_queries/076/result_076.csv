@@ -1,0 +1,5 @@
+hr_category,patient_count,percent_of_total_patients,aki_rate_percent
+< 60,161,3.37,14.29
+60 - 99,3625,75.93,23.14
+100 - 119,853,17.87,36.23
+>= 120,135,2.83,45.93

@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "los-quartile-column-exists",
+              "requirements": "A column representing LOS quartiles (e.g., 'los_quartile', 'quartile') must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "A column representing in-hospital mortality rate (e.g., 'mortality_rate_percent', 'in_hospital_death_rate') must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ckd-prevalence-column-exists",
+              "requirements": "A column representing CKD prevalence (e.g., 'ckd_prevalence_percent', 'ckd_rate') must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "diabetes-prevalence-column-exists",
+              "requirements": "A column representing diabetes prevalence (e.g., 'diabetes_prevalence_percent', 'dm_rate') must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in the key result columns (mortality, CKD prevalence, diabetes prevalence).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate values in the column for in-hospital mortality rate (e.g., 'mortality_rate_percent').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Values for in-hospital mortality rate for sepsis (excluding septic shock) should be clinically plausible (0.0-50.0%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Values should be in an acceptable range for this specific patient cohort (1.0-25.0%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ckd-prevalence-validation",
+          "requirements": "Validate values in the column for CKD prevalence (e.g., 'ckd_prevalence_percent').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "ckd-prevalence-plausible",
+              "requirements": "Values for CKD prevalence in a hospitalized sepsis cohort should be clinically plausible (0.0-80.0%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ckd-prevalence-acceptable",
+              "requirements": "Values should be in an acceptable range, considering CKD is a common comorbidity in sepsis (15.0-50.0%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "diabetes-prevalence-validation",
+          "requirements": "Validate values in the column for diabetes prevalence (e.g., 'diabetes_prevalence_percent').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "diabetes-prevalence-plausible",
+              "requirements": "Values for diabetes prevalence in an older, hospitalized sepsis cohort should be clinically plausible (0.0-80.0%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "diabetes-prevalence-acceptable",
+              "requirements": "Values should be in an acceptable range, as diabetes is a significant risk factor for sepsis (25.0-60.0%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

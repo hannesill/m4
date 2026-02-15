@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the specific cohort of hospital admissions based on patient demographics, insurance, and admission circumstances.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 43 and 53 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insurance-filter",
+          "requirements": "Insurance Filter: The query must filter for admissions covered by 'Medicare'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-location-filter",
+          "requirements": "Admission Location Filter: The query must correctly identify admissions from a 'Skilled Nursing Facility' or 'SNF' using string matching on the admission_location field.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly translates clinical concepts such as 'principal diagnosis' and 'dehydration' into SQL logic using appropriate codes and filters.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "principal-diagnosis-selection",
+          "requirements": "Principal Diagnosis Selection: The query must filter for the principal diagnosis by using `seq_num = 1` on the diagnoses_icd table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dehydration-code-selection",
+          "requirements": "Dehydration Code Selection: The query must correctly identify both ICD-9 ('27651') and ICD-10 ('E860') codes for dehydration, conditional on the `icd_version`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Data Integration: Correctly joins necessary tables to link patient demographics with admission and diagnosis details.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "join-patients-admissions",
+          "requirements": "Join Patients and Admissions: The query must join the `patients` and `admissions` tables on `subject_id` to link demographic data to hospital stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "join-admissions-diagnoses",
+          "requirements": "Join Admissions and Diagnoses: The query must join the admissions data with the `diagnoses_icd` table on `hadm_id` to link diagnoses to specific admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation",
+      "requirements": "Final Aggregation: Correctly aggregates the filtered data to produce the final count of admissions.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "count-admissions",
+          "requirements": "Count Admissions: The query must use `COUNT(hadm_id)` or an equivalent function to count the total number of admissions in the final cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-correctness",
+          "requirements": "Output Correctness: The query's primary output should be a single value representing the total count of admissions, even if additional metrics are calculated.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

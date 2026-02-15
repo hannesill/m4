@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query correctly calculates patient age at admission and filters for the 38-48 age range.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-condition-identification",
+          "requirements": "AMI Condition Identification: The query correctly identifies AMI admissions using both ICD-9 ('410%') and ICD-10 ('I21%') codes and creates a flag `is_ami_admission` to distinguish AMI patients from controls.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Logic",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-instability-score-calculation",
+          "requirements": "Lab Instability Score Calculation: The query correctly calculates a per-admission instability score as the percentage of critical lab results within the first 72 hours.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-patient-stratification",
+          "requirements": "AMI Patient Stratification: The query correctly uses NTILE(4) to stratify only AMI patients into quartiles based on their calculated instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-aggregation-by-quartile",
+          "requirements": "Outcome Aggregation by Quartile: The query correctly calculates the average length of stay and in-hospital mortality rate for each AMI patient quartile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-vs-control-comparison",
+          "requirements": "AMI vs. Control Comparison: The query correctly calculates and compares the overall rate of critical lab results between the AMI group and the control group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "lab-event-selection",
+          "requirements": "Lab Event Selection: The query correctly identifies the relevant lab tests using their specific `itemid`s (50912, 51003, 50983, 50971, 50931, 51006).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-time-window",
+          "requirements": "Lab Time Window: The query correctly filters lab events to those occurring within the first 72 hours of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-value-logic",
+          "requirements": "Critical Lab Value Logic: The query correctly implements the specified thresholds in a CASE statement to flag individual lab results as critical.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query correctly joins `patients`, `admissions`, `diagnoses_icd`, and `labevents` tables to link demographics, diagnoses, and lab results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching-integrity",
+          "requirements": "Key Matching Integrity: The query consistently uses `subject_id` and `hadm_id` as the correct joining keys across all relevant tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting",
+      "requirements": "Output Formatting and Readability",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "final-column-selection",
+          "requirements": "Final Column Selection: The final SELECT statement presents all required metrics: quartile, patient count, avg instability score, avg LOS, mortality rate, and the comparison rates for both groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rounding-and-aliasing",
+          "requirements": "Rounding and Aliasing: The query appropriately rounds numerical outputs for clarity and uses descriptive column aliases.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

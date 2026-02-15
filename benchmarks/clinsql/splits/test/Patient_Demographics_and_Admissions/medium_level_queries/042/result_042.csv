@@ -1,0 +1,3 @@
+outcome,total_admissions,mean_los_days,median_los_p50,los_p75,los_p90,percentile_rank_of_5_day_stay
+Discharged Alive,4233,9.24,6,11,19,43.96
+In-Hospital Mortality,351,9.82,5,13,24,52.71

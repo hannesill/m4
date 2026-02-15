@@ -1,0 +1,205 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-filtering",
+          "requirements": "Filter for male patients aged 72-82 at the time of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "gender-selection",
+              "requirements": "The query correctly filters for male patients using `p.gender = 'M'`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "age-calculation-and-filter",
+              "requirements": "The query correctly calculates patient age at admission and filters for the range 72-82 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 72 AND 82`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "heart-failure-diagnosis",
+          "requirements": "Identify hospital admissions with a diagnosis of Heart Failure.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd-version-handling-hf",
+              "requirements": "The query correctly uses both ICD-9 ('428%') and ICD-10 ('I50%') codes to identify heart failure.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-filtering",
+          "requirements": "Filter out invalid Length of Stay values to ensure data quality for subsequent calculations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "valid-los-filter",
+              "requirements": "The query correctly excludes admissions with null or negative LOS using `cb.los_days IS NOT NULL AND cb.los_days >= 0`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Stratification",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-stratification",
+          "requirements": "Stratify the patient cohort by severity (ICU vs. non-ICU) and length of stay buckets.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "severity-stratification",
+              "requirements": "The query correctly creates a 'severity_group' by checking for a patient's presence in the `icustays` table via a LEFT JOIN.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-bucketing",
+              "requirements": "The query correctly categorizes LOS into four buckets (\u22643, 4-6, 7-10, >10 days) using a CASE statement.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "outcome-and-metric-calculation",
+          "requirements": "Calculate specified outcomes and metrics for each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-calculation",
+              "requirements": "The query calculates in-hospital mortality rate as a percentage using `AVG(hospital_expire_flag) * 100`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-calculation",
+              "requirements": "The query calculates the median LOS using an approximation function like `APPROX_QUANTILES(los_days, 100)[OFFSET(50)]`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comorbidity-count-calculation",
+              "requirements": "The query calculates an average comorbidity count by first counting distinct ICD codes per admission and then averaging this count across the group.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Table Joins",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Correctly join core hospital tables to link patient demographics with admission and diagnosis data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "admissions-patients-join",
+              "requirements": "The query correctly joins `admissions` and `patients` tables on `subject_id`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admissions-diagnoses-join",
+              "requirements": "The query correctly joins the cohort with `diagnoses_icd` on `hadm_id` to identify HF patients.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reporting-and-formatting",
+      "requirements": "Final Reporting and Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "final-grouping",
+          "requirements": "The query correctly groups results by `severity_group` and `los_bucket` for the final report.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "scaffold-implementation",
+          "requirements": "The query uses a scaffold (CROSS JOIN) to ensure all possible strata are represented in the final output, filling missing groups with 0 or NULL.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-ordering",
+          "requirements": "The query correctly orders the final output by severity group and LOS bucket for readability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

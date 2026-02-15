@@ -1,0 +1,1 @@
+I have a 73-year-old female to evaluate. Among female Medicare patients aged 68–78 at admission admitted from the emergency department with a principal hemorrhagic stroke (ICD‑9/10) and documented discharge, how many index admissions meet these cohort criteria in the dataset?

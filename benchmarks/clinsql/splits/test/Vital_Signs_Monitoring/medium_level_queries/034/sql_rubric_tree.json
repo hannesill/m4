@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter patient age to be between 37 and 47 years using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 37 AND 47`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-patient-identification",
+          "requirements": "ICU Patient Identification: The query must correctly identify ICU stays by joining the `icustays` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "niv-identification",
+          "requirements": "Noninvasive Ventilation Identification: The query must identify stays with noninvasive ventilation by filtering `chartevents` for `itemid = 223849` and `value IN ('CPAP', 'BiPAP')`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dbp-code-selection",
+          "requirements": "Diastolic Blood Pressure Code Selection: The query must correctly select diastolic blood pressure measurements using the appropriate item IDs (`itemid IN (220051, 8368)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dbp-value-filtering",
+          "requirements": "Diastolic Blood Pressure Value Filtering: The query must filter out null and clinically implausible DBP values (e.g., `valuenum IS NOT NULL AND valuenum BETWEEN 20 AND 200`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `patients`, `admissions`, and `icustays` tables to establish the base patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "events-table-join",
+          "requirements": "Events Table Join: The query must join the cohort with the `chartevents` table on `stay_id` to link patients to clinical events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching-integrity",
+          "requirements": "Key Matching Integrity: The query must consistently use the correct joining keys (`subject_id`, `hadm_id`, `stay_id`) across all joins.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-aggregation",
+          "requirements": "Per-Stay Aggregation: The query must calculate the maximum diastolic blood pressure per ICU stay using `MAX(ce.valuenum)` and `GROUP BY ns.stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "25th Percentile Calculation: The query must correctly calculate the 25th percentile of the maximum DBP values using `APPROX_QUANTILES(max_dbp, 100)[OFFSET(25)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query should round the final percentile result to two decimal places using `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

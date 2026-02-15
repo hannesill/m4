@@ -1,0 +1,156 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg-procedures-column-exists",
+              "requirements": "Column exists for mean non-invasive diagnostics (e.g., 'avg_procedures', 'mean_diagnostics')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-procedures-column-exists",
+              "requirements": "Column exists for minimum non-invasive diagnostics (e.g., 'min_procedures', 'min_diagnostics')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-procedures-column-exists",
+              "requirements": "Column exists for maximum non-invasive diagnostics (e.g., 'max_procedures', 'max_diagnostics')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stay-category-column-exists",
+              "requirements": "Column exists for length of stay stratification (e.g., 'stay_category', 'los_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-status-column-exists",
+              "requirements": "Column exists for ICU stratification (e.g., 'icu_status', 'icu_stay')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key metric columns (mean, min, max)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "avg-procedures-validation",
+          "requirements": "Validate values in the mean non-invasive diagnostics column (e.g., 'avg_procedures')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-procedures-plausible",
+              "requirements": "Clinically Plausible (0.0 - 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-procedures-acceptable",
+              "requirements": "Acceptable Range (0.05 - 1.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "min-procedures-validation",
+          "requirements": "Validate values in the minimum non-invasive diagnostics column (e.g., 'min_procedures')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "min-procedures-plausible",
+              "requirements": "Clinically Plausible (0 - 2)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-procedures-acceptable",
+              "requirements": "Acceptable Range (0 - 1)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "max-procedures-validation",
+          "requirements": "Validate values in the maximum non-invasive diagnostics column (e.g., 'max_procedures')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "max-procedures-plausible",
+              "requirements": "Clinically Plausible (1 - 20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-procedures-acceptable",
+              "requirements": "Acceptable Range (1 - 8)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

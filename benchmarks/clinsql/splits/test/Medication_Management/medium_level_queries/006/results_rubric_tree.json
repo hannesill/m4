@@ -1,0 +1,140 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-first-72h-rate",
+              "requirements": "Column exists for GLP-1 initiation rate in first 72h (e.g., prevalence_first_72h_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-last-48h-rate",
+              "requirements": "Column exists for GLP-1 initiation rate in last 48h (e.g., prevalence_last_48h_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-difference",
+              "requirements": "Column exists for absolute difference in rates (e.g., absolute_difference_pp)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-related columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-72h-rate-validation",
+          "requirements": "Validation for first 72h initiation rate (%) (prevalence_first_72h_pct)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "first-72h-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "first-72h-rate-acceptable",
+              "requirements": "Acceptable Range (0.0-5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "last-48h-rate-validation",
+          "requirements": "Validation for last 48h initiation rate (%) (prevalence_last_48h_pct)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "last-48h-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "last-48h-rate-acceptable",
+              "requirements": "Acceptable Range (0.0-5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "difference-validation",
+          "requirements": "Validation for absolute difference (pp) (absolute_difference_pp)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "difference-plausible",
+              "requirements": "Clinically Plausible (0.0-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "difference-acceptable",
+              "requirements": "Acceptable Range (0.0-5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

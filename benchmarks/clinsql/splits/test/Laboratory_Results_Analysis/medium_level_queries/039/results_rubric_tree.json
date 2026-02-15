@@ -1,0 +1,210 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "troponin-category-column-exists",
+              "requirements": "Exists column for troponin categories (e.g., troponin_category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-column-exists",
+              "requirements": "Exists column for admission counts (e.g., admission_count, n_admissions)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-column-exists",
+              "requirements": "Exists column for percentages (e.g., percentage_of_total)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-troponin-column-exists",
+              "requirements": "Exists column for mean troponin values (e.g., mean_troponin)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-troponin-column-exists",
+              "requirements": "Exists column for median troponin values (e.g., median_troponin)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-troponin-column-exists",
+              "requirements": "Exists column for IQR of troponin values (e.g., iqr_troponin)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "admission-count-validation",
+          "requirements": "Validate admission counts (e.g., admission_count)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "admission-count-plausible",
+              "requirements": "Count value is clinically plausible (>=0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admission-count-acceptable",
+              "requirements": "Count value is in acceptable range [1, 500]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentage-validation",
+          "requirements": "Validate percentages (e.g., percentage_of_total)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "percentage-plausible",
+              "requirements": "Percentage value is mathematically plausible [0, 100]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-acceptable",
+              "requirements": "Percentage value is in acceptable range [1, 95]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mean-troponin-validation",
+          "requirements": "Validate mean troponin values (e.g., mean_troponin)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mean-troponin-plausible",
+              "requirements": "Mean troponin value is clinically plausible (>=0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-troponin-acceptable",
+              "requirements": "Mean troponin value is in acceptable range [0.01, 10.0]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-troponin-validation",
+          "requirements": "Validate median troponin values (e.g., median_troponin)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "median-troponin-plausible",
+              "requirements": "Median troponin value is clinically plausible (>=0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-troponin-acceptable",
+              "requirements": "Median troponin value is in acceptable range [0.01, 5.0]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-troponin-validation",
+          "requirements": "Validate IQR of troponin values (e.g., iqr_troponin)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "iqr-troponin-plausible",
+              "requirements": "IQR troponin value is clinically plausible (>=0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-troponin-acceptable",
+              "requirements": "IQR troponin value is in acceptable range [0.01, 10.0]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

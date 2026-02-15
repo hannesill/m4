@@ -1,0 +1,1 @@
+I have an 81‑year‑old woman with pneumonia. Among female inpatients aged 76–86 with pneumonia, stratify admissions into tertiles by medication complexity (unique drugs in first 7 hospital days) and report counts, min/avg/max score, mean LOS, in‑hospital mortality%, and 30‑day readmission%.

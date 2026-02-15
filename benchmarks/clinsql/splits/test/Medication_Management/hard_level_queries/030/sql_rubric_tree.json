@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters for patients aged 71-81 at admission using the standard MIMIC-IV calculation: `(EXTRACT(YEAR FROM a.admittime) - p.anchor_year) + p.anchor_age`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-selection",
+          "requirements": "Identifies patients with acute pancreatitis by filtering on both ICD-9 (`d.icd_code = '5770'`) and ICD-10 (`STARTS_WITH(d.icd_code, 'K85')`) codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medication-complexity-analysis",
+      "requirements": "Medication Complexity Analysis",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-medication-filter",
+          "requirements": "Filters prescriptions to only those administered within the first 72 hours of admission using a condition like `pr.starttime <= DATETIME_ADD(c.admittime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complexity-score-calculation",
+          "requirements": "Calculates the medication complexity score using a weighted formula that incorporates distinct counts of drugs, administration routes, and a classification of high-risk drugs.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "readmission-calculation",
+      "requirements": "30-Day Readmission Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "readmission-window-logic",
+          "requirements": "Uses the `LEAD` window function, partitioned by `subject_id` and ordered by `admittime`, to identify a patient's subsequent admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "30-day-interval-check",
+          "requirements": "Correctly calculates the interval between discharge and the next admission using `DATETIME_DIFF`, flagging readmissions occurring within 30 days.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics-and-reporting",
+      "requirements": "Clinical Analytics and Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "data-integration-integrity",
+          "requirements": "Correctly uses `LEFT JOIN` and `COALESCE` to combine the cohort with complexity scores and readmission data, ensuring no patients are lost from the initial cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "tertile-stratification",
+          "requirements": "Stratifies the patient cohort into three groups (tertiles) based on the calculated medication complexity score using the `NTILE(3)` window function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-outcome-aggregation",
+          "requirements": "Correctly groups the results by `complexity_tertile` and calculates the final average metrics for LOS, in-hospital mortality rate, and 30-day readmission rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

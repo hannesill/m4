@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients aged between 75 and 85 using `p.anchor_age BETWEEN 75 AND 85`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-selection",
+          "requirements": "Inpatient Selection: The query should select hospital inpatients. The use of `admission_type` is a reasonable proxy for this. Note: The query does not explicitly exclude ICU stays, which is a minor deviation from 'general wards (non-ICU)'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must join the `patients` and `admissions` tables to link demographic data with admission details.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between `patients` and `admissions` tables must be correctly performed on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay Calculation: The query must correctly calculate the hospital length of stay in days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-stratification",
+          "requirements": "Outcome Stratification: The query must use a CASE statement to stratify patients into 'In-Hospital Mortality', 'Discharged to Hospice', and 'Discharged Home' based on `hospital_expire_flag` and `discharge_location`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: The results must be grouped by the derived `outcome_category`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aggregation-functions",
+          "requirements": "Aggregation Functions: The query must compute the mean and standard deviation of the length of stay using `AVG()` and `STDDEV()` respectively.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting-and-filtering",
+      "requirements": "Output Formatting and Filtering",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "outcome-filtering",
+          "requirements": "Outcome Filtering: The final result set must be filtered to include only the three required outcome categories ('Discharged Home', 'Discharged to Hospice', 'In-Hospital Mortality').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rounding-results",
+          "requirements": "Rounding Results: The final mean and standard deviation values should be rounded to two decimal places using the `ROUND()` function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

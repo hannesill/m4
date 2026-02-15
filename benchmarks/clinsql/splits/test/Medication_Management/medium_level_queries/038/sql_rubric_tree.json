@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies and filters the patient cohort based on demographic and diagnostic criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 57-67 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 57 AND 67`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-diagnosis-filter",
+          "requirements": "Diabetes Diagnosis Filter: Filters for patients with diabetes using ICD codes for both ICD-9 ('250%') and ICD-10 ('E10%', 'E11%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-filter",
+          "requirements": "Heart Failure Diagnosis Filter: Filters for patients with acute heart failure using ICD codes for both ICD-9 ('428%') and ICD-10 ('I50%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: Correctly filters for admissions with a duration of at least 72 hours using `DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 72`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, admissions, diagnoses, and prescriptions.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to form the base cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescription-data-join",
+          "requirements": "Prescription Data Join: Correctly joins the `patient_cohort` with the `prescriptions` table on `hadm_id` to analyze medication orders.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Accurately identifies GLP-1 medications and differentiates between prevalence and initiation.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "glp1-identification",
+          "requirements": "GLP-1 Identification: Identifies GLP-1 medications from the `prescriptions` table using string matching on drug names like '%glutide%' or '%enatide%'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initiation-logic",
+          "requirements": "Initiation Logic: Correctly identifies the first GLP-1 prescription during an admission using `ROW_NUMBER() OVER (PARTITION BY c.hadm_id ORDER BY rx.starttime ASC) = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly implements the logic for time windows, calculates prevalence and initiation rates, and computes changes.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "time-window-classification",
+          "requirements": "Time Window Classification: Correctly classifies prescriptions into 'Early_72h' and 'Discharge_24h' windows using `DATETIME_DIFF` logic.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-level-aggregation",
+          "requirements": "Admission-Level Aggregation: Correctly aggregates data to the admission level (`hadm_id`) to determine if a prescription or initiation occurred in each time window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-calculation",
+          "requirements": "Prevalence Calculation: Correctly calculates the prevalence percentage for each time window by dividing the count of patients with a prescription by the total cohort size.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initiation-rate-calculation",
+          "requirements": "Initiation Rate Calculation: Correctly calculates the initiation rate percentage for each time window by dividing the count of patients with a first-time prescription by the total cohort size.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "absolute-change-calculation",
+          "requirements": "Absolute Change Calculation: Correctly calculates the absolute change in percentage points between the discharge and early windows for both prevalence and initiation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "relative-change-calculation",
+          "requirements": "Relative Change Calculation: Correctly calculates the relative change for prevalence and initiation, using `SAFE_DIVIDE` to prevent division-by-zero errors.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+p90_instability_score,cohort_group,patient_count,avg_hypotension_episodes,avg_tachycardia_episodes,avg_icu_los_days,mortality_rate
+0.5,Top 10% Instability (RRT Cohort),42,18.02380952380953,47.952380952380956,7.7619047619047645,0.7857142857142857
+0.5,Comparison Cohort (No RRT),12133,7.657215857578536,6.424050111266784,3.360174730074992,0.11967361740707204

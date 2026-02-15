@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter for patient ages between 38 and 48 at the time of admission using the `anchor_age`, `anchor_year`, and `admittime` fields.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join `patients`, `admissions`, and `icustays` to create the initial cohort, and then join with `chartevents` for clinical measurements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The joins must use the correct keys: `subject_id` between `patients` and `admissions`, `hadm_id` between `admissions` and `icustays`, and `stay_id` between `icustays` and `chartevents`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sbp-code-selection",
+          "requirements": "Systolic Blood Pressure Code Selection: The query must filter `chartevents` for Systolic Blood Pressure measurements using the correct itemids (e.g., 220050, 51).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-24h",
+          "requirements": "Temporal Filtering (First 24 Hours): The query must accurately filter SBP measurements to include only those recorded within the first 24 hours of the ICU stay, using the `intime` and `charttime` fields.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sbp-value-validation",
+          "requirements": "SBP Value Validation: The query should include a clause to filter out null or clinically implausible SBP values (e.g., `valuenum > 0 AND valuenum < 300`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "average-sbp-per-stay",
+          "requirements": "Average SBP per Stay: The query must correctly group by `stay_id` and calculate the average SBP for each stay using `AVG(valuenum)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: The query must correctly calculate the percentile rank for an average SBP of 120 mmHg using a formula like `100 * COUNTIF(avg_sbp < 120) / COUNT(stay_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

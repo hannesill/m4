@@ -1,0 +1,5 @@
+los_group,icu_status,patient_count,avg_ultrasounds_per_admission
+1-4 Days,No ICU Stay,151,0.02
+1-4 Days,ICU Stay,46,0.0
+5-8 Days,No ICU Stay,166,0.08
+5-8 Days,ICU Stay,75,0.06

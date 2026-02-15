@@ -1,0 +1,1 @@
+Patient: female, 55. Among female inpatients aged 50–60 with hyperosmolar hyperglycemic state, what is the 75th percentile of the first‑48‑hour laboratory instability score? For admissions ≥ this threshold, give mortality, mean LOS (days), and compare critical‑lab rates versus general inpatients.

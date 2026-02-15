@@ -1,0 +1,225 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "discharge-outcome-column-exists",
+              "requirements": "Exists Column for Discharge Outcome (e.g., 'discharge_outcome', 'discharge_disposition')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-column-exists",
+              "requirements": "Exists Column for Mean LOS (e.g., 'mean_los_days', 'avg_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-column-exists",
+              "requirements": "Exists Column for Median LOS (e.g., 'median_los_p50', 'los_median')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-column-exists",
+              "requirements": "Exists Column for 75th Percentile LOS (e.g., 'los_p75', 'p75_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-los-column-exists",
+              "requirements": "Exists Column for 90th Percentile LOS (e.g., 'los_p90', 'p90_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-column-exists",
+              "requirements": "Exists Column for Percentile Rank of 10-day stay (e.g., 'percentile_rank_of_10_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "discharge-outcome-validation",
+          "requirements": "Validate Discharge Outcome Categories",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "discharge-outcome-categories-present",
+              "requirements": "Contains categories for 'Home', 'Facility', and 'Death'",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mean-los-validation",
+          "requirements": "Validate Mean LOS Values",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mean-los-plausible",
+              "requirements": "Clinically Plausible (1-30 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-acceptable",
+              "requirements": "Acceptable Range (4-12 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-validation",
+          "requirements": "Validate Median LOS Values",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "median-los-plausible",
+              "requirements": "Clinically Plausible (1-25 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-acceptable",
+              "requirements": "Acceptable Range (3-8 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p75-los-validation",
+          "requirements": "Validate 75th Percentile LOS Values",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p75-los-plausible",
+              "requirements": "Clinically Plausible (2-40 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-acceptable",
+              "requirements": "Acceptable Range (6-15 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p90-los-validation",
+          "requirements": "Validate 90th Percentile LOS Values",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p90-los-plausible",
+              "requirements": "Clinically Plausible (3-60 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-los-acceptable",
+              "requirements": "Acceptable Range (8-25 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentile-rank-validation",
+          "requirements": "Validate Percentile Rank of 10-day stay",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-rank-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-acceptable",
+              "requirements": "Acceptable Range (60-95)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

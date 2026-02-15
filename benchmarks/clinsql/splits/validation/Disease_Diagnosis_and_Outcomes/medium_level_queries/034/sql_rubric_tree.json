@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients aged 70-80 at the time of admission using the logic `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 70 AND 80`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-filter",
+          "requirements": "Primary Condition Filter: The query must identify patients with a heart failure diagnosis by checking `diagnoses_icd` for codes starting with '428%' or 'I50%'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join `admissions` and `patients` tables.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between `admissions` and `patients` must be on `subject_id`. A subquery on `diagnoses_icd` must be linked via `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay (LOS) Calculation: The query must calculate LOS in days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-code-selection",
+          "requirements": "Heart Failure Code Selection: The query must use `LIKE '428%'` for ICD-9 and `LIKE 'I50%'` for ICD-10 to correctly identify heart failure diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-stratification",
+          "requirements": "LOS Stratification: The query must use a CASE statement to stratify admissions into two groups: LOS `<8 days` and LOS `>=8 days`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The query must group the results by the LOS stratum to calculate metrics for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aggregation-functions",
+          "requirements": "Aggregation Functions: The query must correctly use COUNT for admission counts, AVG for mortality rate, and APPROX_QUANTILES for median time-to-death.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Mortality Rate Calculation: The query must calculate the in-hospital mortality rate as a percentage, correctly using `AVG(hospital_expire_flag) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-time-to-death-calculation",
+          "requirements": "Median Time-to-Death Calculation: The query must calculate the median time-to-death only for non-survivors, using a conditional expression within the `APPROX_QUANTILES` function like `CASE WHEN hospital_expire_flag = 1 THEN los_days END`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query must ensure both LOS strata are present in the final output, handle nulls for empty strata using COALESCE, and correctly order the results.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

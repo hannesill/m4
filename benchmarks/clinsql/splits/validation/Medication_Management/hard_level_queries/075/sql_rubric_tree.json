@@ -1,0 +1,136 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter for patients with an age between 58 and 68 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-selection",
+          "requirements": "Condition Selection: The query must filter for hospital admissions related to COPD exacerbation using appropriate ICD codes ('49121', 'J441').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Implementation of Clinical Variables and Logic",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-time-window",
+          "requirements": "Medication Time Window: The query must correctly filter prescriptions to include only those started within the first 72 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-score",
+          "requirements": "Medication Complexity Score Calculation: The query must calculate a medication complexity score per admission, based on counts of distinct drugs, routes, and total prescriptions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-calculation",
+          "requirements": "30-Day Readmission Calculation: The query must correctly identify 30-day readmissions using a window function (e.g., LEAD) to compare discharge and subsequent admission times.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-construction-joins",
+          "requirements": "Cohort Construction Joins: The query must correctly join patients, admissions, and diagnoses_icd tables using subject_id and hadm_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "analysis-cte-joins",
+          "requirements": "Analysis CTE Joins: The query must correctly integrate the cohort, medication complexity, and readmission data using hadm_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stratification-logic",
+          "requirements": "Stratification into Tertiles: The query must use NTILE(3) to stratify the cohort into three tertiles based on the medication complexity score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Final Grouping: The final query must group results by the calculated complexity tertile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-metrics-calculation",
+          "requirements": "Output Metrics Calculation: The query must accurately calculate and report all required metrics for each tertile: n, min/max/mean complexity, mean LOS, mortality %, and 30-day readmission %.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query should correctly format the final metrics, including rounding percentages and averages as specified.",
+          "weight": 1,
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+report_type,stratum,metric_1_name,metric_1_value,metric_2_name,metric_2_value,metric_3_name,metric_3_value
+Critical Rate Comparison,Creatinine,ich_cohort_critical_rate,0.2,general_population_critical_rate,0.275,,
+Critical Rate Comparison,Hemoglobin,ich_cohort_critical_rate,0.535,general_population_critical_rate,0.696,,
+Critical Rate Comparison,INR,ich_cohort_critical_rate,0.12,general_population_critical_rate,0.226,,
+Critical Rate Comparison,Lactate,ich_cohort_critical_rate,0.348,general_population_critical_rate,0.426,,
+Critical Rate Comparison,Platelet,ich_cohort_critical_rate,0.346,general_population_critical_rate,0.281,,
+Critical Rate Comparison,Potassium,ich_cohort_critical_rate,0.233,general_population_critical_rate,0.205,,
+Critical Rate Comparison,Sodium,ich_cohort_critical_rate,0.258,general_population_critical_rate,0.223,,
+Critical Rate Comparison,WBC,ich_cohort_critical_rate,0.367,general_population_critical_rate,0.335,,
+Quartile Outcomes,Quartile 1,patient_count,203,avg_los_days,7.48,mortality_rate,0.039
+Quartile Outcomes,Quartile 2,patient_count,203,avg_los_days,10.31,mortality_rate,0.103
+Quartile Outcomes,Quartile 3,patient_count,203,avg_los_days,12.02,mortality_rate,0.236
+Quartile Outcomes,Quartile 4,patient_count,203,avg_los_days,12.66,mortality_rate,0.261

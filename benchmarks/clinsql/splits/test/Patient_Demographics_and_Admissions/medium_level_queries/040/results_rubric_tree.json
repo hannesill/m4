@@ -1,0 +1,149 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stratification-column-exists",
+              "requirements": "Column for discharge categories exists (e.g., 'discharge_category')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "proportion-los-ge-7-column-exists",
+              "requirements": "Column for proportion of LOS >= 7 days exists (e.g., 'proportion_los_ge_7_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "proportion-los-ge-14-column-exists",
+              "requirements": "Column for proportion of LOS >= 14 days exists (e.g., 'proportion_los_ge_14_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key columns ('proportion_los_ge_7_pct', 'proportion_los_ge_14_pct')",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "proportion-los-ge-7-validation",
+          "requirements": "Validate Column Related to proportion of patients with LOS >= 7 days (e.g., 'proportion_los_ge_7_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-los-ge-7",
+              "requirements": "Clinically Plausible (1.0-90.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-los-ge-7-home",
+              "requirements": "Acceptable Range for Home discharge (15.0-30.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-los-ge-7-facility",
+              "requirements": "Acceptable Range for Facility discharge (30.0-55.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-los-ge-7-death",
+              "requirements": "Acceptable Range for In-Hospital Mortality (40.0-65.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "proportion-los-ge-14-validation",
+          "requirements": "Validate Column Related to proportion of patients with LOS >= 14 days (e.g., 'proportion_los_ge_14_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-los-ge-14",
+              "requirements": "Clinically Plausible (0.5-70.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-los-ge-14-home",
+              "requirements": "Acceptable Range for Home discharge (2.0-8.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-los-ge-14-facility",
+              "requirements": "Acceptable Range for Facility discharge (8.0-20.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-los-ge-14-death",
+              "requirements": "Acceptable Range for In-Hospital Mortality (20.0-45.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

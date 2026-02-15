@@ -1,0 +1,4 @@
+discharge_group,total_admissions,mean_los_days,p25_los_days,median_los_days,p75_los_days,p90_los_days,percentile_rank_of_14_days
+Discharged Home,4490,4.77,2,4,6,9,96.53
+Discharged to Hospice,241,10.28,5,8,13,22,77.18
+In-Hospital Mortality,489,8.47,2,5,11,20,81.19

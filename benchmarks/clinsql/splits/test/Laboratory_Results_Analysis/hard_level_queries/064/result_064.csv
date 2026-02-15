@@ -1,0 +1,22 @@
+part,sort_order,column_1,column_2,column_3,column_4,column_5
+1,1,Quintile,Patient Count,Avg Instability Score,Avg LOS (Days),Mortality Rate (%)
+1,2,1,116,0,6.3,0.86
+1,2,2,116,0,6.9,1.72
+1,2,3,116,0.18,5.8,1.72
+1,2,4,115,1,8.1,2.61
+1,2,5,115,2.34,13,13.91
+2,1,---,---,---,---,---
+3,1,CRITICAL LAB FREQUENCY COMPARISON (First 48h),,,,
+3,2,Lab Test,% Pancreatitis Pts w/ Critical,% Control Pts w/ Critical (Age-Matched),,
+3,3,"Bilirubin, Total",9.52,1.83,,
+3,3,Creatinine,6.06,6.35,,
+3,3,Glucose,5.88,2.16,,
+3,3,Hemoglobin,2.25,3.31,,
+3,3,Lactate,3.29,1.87,,
+3,3,Lipase,16.96,0.22,,
+3,3,Platelet Count,1.04,2.45,,
+3,3,Potassium,3.46,2.77,,
+3,3,Sodium,0.87,0.79,,
+3,3,Troponin T,2.77,4.48,,
+3,3,Urea Nitrogen,9.69,11.38,,
+3,3,White Blood Cells,8.3,5.61,,

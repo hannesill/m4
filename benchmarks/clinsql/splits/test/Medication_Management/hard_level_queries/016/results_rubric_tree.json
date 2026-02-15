@@ -1,0 +1,164 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "tertile-column-exists",
+              "requirements": "A column must exist to stratify results by tertile (e.g., 'complexity_tertile', 'tertile', 'med_complexity_group').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-column-exists",
+              "requirements": "A column must exist for average length of stay (e.g., 'avg_los_days', 'average_los').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "A column must exist for in-hospital mortality rate (e.g., 'mortality_rate_pct', 'in_hospital_death_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-column-exists",
+              "requirements": "A column must exist for 30-day readmission rate (e.g., 'readmission_rate_30_day_pct', '30d_readmit_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns ('tertile', 'los', 'mortality', 'readmission').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validation of the average length of stay column (e.g., 'avg_los_days')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Values are clinically plausible for an elderly cohort with hepatic failure (1.0 - 50.0 days).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Values fall within an acceptable range based on clinical expectation and provided data (2.0 - 15.0 days).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-trend-check",
+              "requirements": "Average LOS increases with each complexity tertile.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation of the in-hospital mortality rate column (e.g., 'mortality_rate_pct')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Values are clinically plausible percentages (0.0 - 100.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Values fall within an acceptable range for this high-risk cohort (1.0 - 40.0 percent).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-trend-check",
+              "requirements": "Mortality rate increases with each complexity tertile.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "readmission-rate-validation",
+          "requirements": "Validation of the 30-day readmission rate column (e.g., 'readmission_rate_30_day_pct')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "readmission-rate-plausible",
+              "requirements": "Values are clinically plausible percentages (0.0 - 100.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-rate-acceptable",
+              "requirements": "Values fall within an acceptable range for a chronic condition like hepatic failure (10.0 - 45.0 percent).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

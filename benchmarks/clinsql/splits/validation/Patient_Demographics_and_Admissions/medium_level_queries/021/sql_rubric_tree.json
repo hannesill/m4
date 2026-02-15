@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged 67 to 77 using `p.anchor_age BETWEEN 67 AND 77`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-type-selection",
+          "requirements": "Inpatient Type Selection: The query must correctly identify surgical inpatients by filtering hospital admissions based on a list of surgical services.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "surgical-service-identification",
+          "requirements": "Surgical Service Identification: Correctly identifies surgical admissions by checking `curr_service` in the `services` table against a comprehensive list of surgical department codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-disposition-categorization",
+          "requirements": "Discharge Disposition Categorization: The query must use a CASE statement to correctly classify patients into 'In-Hospital Mortality', 'Discharged Home', and 'Discharged to Facility' based on `hospital_expire_flag` and `discharge_location`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "exclusion-of-other-discharges",
+          "requirements": "Exclusion of Other Discharges: The query must filter out records not belonging to the three specified discharge groups (e.g., `WHERE discharge_group != 'Other'`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: The query must correctly join the `patients` and `admissions` tables on `subject_id` to link demographics with admission data.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "surgical-admissions-filter",
+          "requirements": "Surgical Admissions Filter: The query must use the identified surgical admission IDs (`hadm_id`) to filter the main patient cohort, for example, using an `IN` clause.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay (LOS) Calculation: The query must calculate LOS in days using `DATETIME_DIFF` between `dischtime` and `admittime` and exclude records with null timestamps or LOS < 1 day.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final aggregation must group results by the `discharge_group` categories to report metrics for each disposition.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-sd-los-calculation",
+          "requirements": "Mean and SD of LOS Calculation: The query must calculate the mean and standard deviation of LOS for each group using `AVG(los_days)` and `STDDEV(los_days)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-percentage-calculation",
+          "requirements": "LOS Percentage Calculation: The query must calculate the percentage of patients with LOS <= 7 days for each group, using a formula like `100.0 * (COUNTIF(los_days <= 7) / COUNT(hadm_id))`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

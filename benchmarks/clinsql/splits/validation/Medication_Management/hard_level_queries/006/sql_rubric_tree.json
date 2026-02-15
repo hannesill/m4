@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-filtering",
+          "requirements": "Initial Demographic Filtering: Filters the patient population based on gender ('M') and an age range (37-47) using anchor_age and anchor_year.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "postoperative-patient-identification",
+          "requirements": "Postoperative Patient Identification: Correctly identifies postoperative patients by joining the initial cohort with the `procedures_icd` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-admission-filtering",
+          "requirements": "ICU Admission Filtering: Ensures all patients in the final cohort have at least one ICU stay by joining with the `icustays` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics-and-outcomes",
+      "requirements": "Clinical Analytics and Outcome Calculation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-time-window",
+          "requirements": "Medication Time Window: Correctly filters prescriptions to the first 72 hours of hospital admission using `pr.starttime <= DATETIME_ADD(ad.admittime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-score-calculation",
+          "requirements": "Medication Complexity Score Calculation: Implements a custom medication complexity score by weighting distinct drugs, high-risk drug classes, and administration routes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-calculation",
+          "requirements": "Outcome Calculation: Correctly calculates Length of Stay (LOS), in-hospital mortality (`hospital_expire_flag`), and 30-day readmission using a window function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quintile-stratification",
+          "requirements": "Quintile Stratification: Correctly stratifies patients into five groups (quintiles) based on the calculated medication complexity score using `NTILE(5)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient and Admission Join: Correctly joins `patients` and `admissions` tables on `subject_id` to link demographic data with hospital stay information.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-procedure-icu-join",
+          "requirements": "Admission, Procedure, and ICU Join: Correctly joins `admissions`, `procedures_icd`, and `icustays` tables on `hadm_id` to build the specific patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescription-join",
+          "requirements": "Prescription Data Join: Correctly joins the `prescriptions` table on `hadm_id` to analyze medication data for the cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-output",
+      "requirements": "Final Aggregation and Output Formatting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-by-quintile",
+          "requirements": "Grouping by Quintile: The final query correctly groups results by the calculated `complexity_quintile` to aggregate outcomes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-aggregation",
+          "requirements": "Outcome Aggregation: Correctly calculates the average LOS, mortality rate, and 30-day readmission rate for each quintile using AVG() and COUNT().",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output is clearly formatted, including columns for patient count, complexity score ranges, and rounded average outcomes per quintile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

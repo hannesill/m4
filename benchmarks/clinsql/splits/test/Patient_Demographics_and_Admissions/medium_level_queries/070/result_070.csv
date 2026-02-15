@@ -1,0 +1,4 @@
+discharge_outcome,num_admissions,mean_los,median_los_p50,p75_los,p90_los,percentile_rank_of_10_days
+Discharged Home,9506,3.47,3,4,7,96.65
+Discharged to Hospice,247,9.97,7,13,21,66.4
+In-Hospital Mortality,580,10.52,6,13,23,68.28

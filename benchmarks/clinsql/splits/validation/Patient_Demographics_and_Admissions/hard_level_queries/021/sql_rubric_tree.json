@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `adm.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for patients aged between 82 and 92.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insurance-filter",
+          "requirements": "Insurance Filter: Restricts the cohort to patients with 'Medicare' insurance using `adm.insurance = 'Medicare'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-source-filter",
+          "requirements": "Admission Source Filter: Identifies admissions from the emergency department using `UPPER(adm.admission_location) LIKE '%EMERGENCY%'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-status-filter",
+          "requirements": "Discharge Status Filter: Ensures patients have a recorded discharge time by checking `adm.dischtime IS NOT NULL`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "principal-diagnosis-filter",
+          "requirements": "Principal Diagnosis Filter: Correctly identifies the principal diagnosis by filtering on `d.seq_num = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acute-pancreatitis-code-selection",
+          "requirements": "Acute Pancreatitis Code Selection: Accurately filters for acute pancreatitis using both ICD-9 ('5770') and ICD-10 ('K85%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: Correctly joins `patients` and `admissions` tables on `subject_id` to link patient demographics with admission details.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: Correctly joins the admissions cohort with `diagnoses_icd` on `hadm_id` to access diagnosis information.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "count-admissions",
+          "requirements": "Count Admissions: Correctly calculates the total number of admissions in the final cohort using `COUNT(hadm_id)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "extraneous-calculations",
+          "requirements": "Extraneous Calculations: Includes additional, unrequested calculations such as readmission rate and median length of stay, which were not part of the primary question.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

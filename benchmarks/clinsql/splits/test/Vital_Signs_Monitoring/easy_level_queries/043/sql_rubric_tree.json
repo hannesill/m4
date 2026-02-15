@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients within the 77-87 age range using `p.anchor_age BETWEEN 77 AND 87`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: GCS Score Identification",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gcs-total-code-selection",
+          "requirements": "GCS Total Code Selection: The query must correctly identify the Glasgow Coma Scale (GCS) Total score using the appropriate itemids (e.g., `ce.itemid IN (226758, 198)`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gcs-value-validation",
+          "requirements": "GCS Value Validation: The query should validate the GCS score, ensuring it falls within the clinically plausible range of 3 to 15 (`ce.valuenum BETWEEN 3 AND 15`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must join the `patients` and `chartevents` tables to link patient demographics with clinical events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between `patients` and `chartevents` tables must be correctly performed on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-event-identification",
+          "requirements": "First Event Identification: The query must use a window function like `ROW_NUMBER() OVER(PARTITION BY ce.stay_id ORDER BY ce.charttime ASC)` to isolate the first GCS measurement for each ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-event-filtering",
+          "requirements": "First Event Filtering: The query must filter the results from the window function to select only the first event (e.g., `WHERE rn = 1`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "average-calculation",
+          "requirements": "Average Calculation: The query must calculate the average of the first GCS scores using `AVG(valuenum)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final average should be rounded to two decimal places using `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

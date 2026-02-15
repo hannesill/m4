@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query accurately filters for patients aged between 90 and 100 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-diagnosis-filtering",
+          "requirements": "ACS Diagnosis Filtering: The query correctly identifies patients with an Acute Coronary Syndrome (ACS) diagnosis using appropriate ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "index-troponin-identification",
+          "requirements": "Index Troponin Identification: The query correctly identifies the first Troponin T lab event (itemid 51003) for each admission using a window function like ROW_NUMBER() ordered by charttime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-categorization",
+          "requirements": "Troponin Categorization: The query uses a CASE statement to accurately categorize troponin values into 'Normal', 'Borderline', and 'Elevated' based on specified clinical thresholds (<= 0.04, > 0.04 and <= 0.1, > 0.1).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query correctly joins the patients, admissions, diagnoses_icd, and labevents tables to link patient demographics, diagnoses, and lab results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The query accurately uses subject_id to join patient-level tables and hadm_id to join admission-level tables (admissions, diagnoses_icd, labevents).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final aggregation correctly groups results by 'troponin_category' to calculate metrics for each category.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-count-calculation",
+          "requirements": "Admission Count Calculation: The query correctly calculates the count of admissions for each category using COUNT(hadm_id).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: The query accurately calculates the percentage of total admissions for each category using a window function over the counts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: The query calculates both the individual length of stay per admission and the final average length of stay per category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the general and target patient populations for analysis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "base-cohort-demographics",
+          "requirements": "General Cohort Demographics: Correctly filters male inpatients aged 39-49.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "gender-selection",
+              "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "age-range-selection",
+              "requirements": "Age Range Selection: Filters for patients aged 39-49 using the calculated age at admission.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "target-cohort-condition",
+          "requirements": "Target Cohort Identification: Correctly identifies the sub-cohort of patients with status epilepticus.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd-version-handling",
+              "requirements": "Status Epilepticus ICD Version Handling: Correctly queries both ICD-9 ('3453%') and ICD-10 ('G41%') codes.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "target-cohort-join",
+              "requirements": "Target Cohort Join: Correctly joins the base cohort with status epilepticus admissions to form the target population.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clinical-logic-and-interactions",
+      "requirements": "Clinical Logic and Drug Interaction Identification",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-temporal-filter",
+          "requirements": "Medication Temporal Filter: Correctly identifies all medications administered within the first 24 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "drug-interaction-identification",
+          "requirements": "Drug Interaction Identification: Implements logic to flag patients with specific drug-drug interactions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "qt-prolongation-logic",
+          "requirements": "QT-Prolongation Logic: Correctly identifies concurrent administration of two or more QT-prolonging drugs from the provided list.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "bleeding-risk-logic",
+          "requirements": "Bleeding Risk Logic: Correctly identifies concurrent administration of anticoagulants/antiplatelets or warfarin/specific antibiotics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Calculations",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-complexity-score",
+          "requirements": "Medication Complexity Score: Correctly calculates a weighted score based on distinct drugs, routes, and IV medications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: Uses NTILE(100) to calculate the complexity percentile rank over the general inpatient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-calculation",
+          "requirements": "Quartile Calculation: Uses NTILE(4) to correctly identify the top complexity quartile for the target cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-mortality-calculation",
+          "requirements": "LOS and Mortality Calculation: Correctly calculates length of stay (LOS) and hospital expire flag for mortality.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-reporting-and-aggregation",
+      "requirements": "Final Reporting and Aggregation: Correctly aggregates and presents the results for all required groups.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: Correctly groups results by patient cohort (General, Target) and interaction risk group (QT, Bleeding, Both, None).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aggregation-functions",
+          "requirements": "Aggregation Functions: Correctly applies AVG and COUNT functions to calculate the required metrics for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "target-top-quartile-reporting",
+          "requirements": "Target Top Quartile Reporting: Correctly filters and reports LOS and mortality specifically for the target cohort's top complexity quartile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "union-and-ordering",
+          "requirements": "Union and Ordering: Successfully combines all result sets using UNION ALL and orders the final output for clarity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

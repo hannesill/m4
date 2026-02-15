@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients aged between 89 and 99 using `p.anchor_age BETWEEN 89 AND 99`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-type-filter",
+          "requirements": "Admission Type Filter: The query must exclude emergent admissions using a condition like `a.admission_type NOT LIKE '%EMER%'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Preprocessing",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay Calculation: The query must accurately calculate the length of stay in days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "null-time-handling",
+          "requirements": "Null Timestamp Handling: The query must filter out records where `admittime` or `dischtime` is NULL to ensure accurate LOS calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "disposition-categorization",
+          "requirements": "Disposition Categorization: The query must use a CASE statement to correctly categorize discharge outcomes into 'In-Hospital Mortality', 'Discharged to Hospice', and 'Discharged Home'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-flag-usage",
+          "requirements": "Mortality Flag Usage: The categorization must correctly identify in-hospital death using `hospital_expire_flag = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-location-logic",
+          "requirements": "Discharge Location Logic: The categorization must correctly identify 'Hospice' and 'Home' discharges using `discharge_location` with LIKE operators.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "disposition-filtering",
+          "requirements": "Disposition Filtering: The final cohort must be filtered to include only the three specified disposition categories ('In-Hospital Mortality', 'Discharged to Hospice', 'Discharged Home').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The query must group the final results by the created disposition categories.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-statistics-calculation",
+          "requirements": "LOS Statistics Calculation: The query must calculate the mean, median (p50), 75th, and 90th percentiles of the length of stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percent-los-less-than-5-days",
+          "requirements": "Percentage LOS < 5 Days: The query must correctly calculate the percentage of admissions with a length of stay less than 5 days, using functions like COUNTIF and SAFE_DIVIDE.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-function-usage",
+          "requirements": "Percentile Function Usage: The query must correctly use APPROX_QUANTILES or a similar percentile function with the correct offsets (50, 75, 90).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

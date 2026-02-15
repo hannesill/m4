@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation for Neutropenic Fever Analysis",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the 40-50 range using `(EXTRACT(YEAR FROM a.admittime) - p.anchor_year + p.anchor_age) BETWEEN 40 AND 50`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-selection",
+          "requirements": "Inpatient Selection: Implicitly filters for inpatients by using the 'admissions' and 'diagnoses_icd' tables which are tied to hospital admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "neutropenic-fever-identification",
+          "requirements": "Neutropenic Fever Identification: Correctly identifies admissions with diagnoses for both neutropenia and fever by checking for the presence of codes from both groups within the same hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "neutropenia-code-selection",
+          "requirements": "Neutropenia Code Selection: Accurately handles both ICD-9 ('2880') and ICD-10 ('D70') codes for neutropenia.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "fever-code-selection",
+          "requirements": "Fever Code Selection: Accurately handles both ICD-9 ('7806') and ICD-10 ('R50') codes for fever.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Calculations",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-time-window",
+          "requirements": "Medication Time Window: Filters prescriptions to the first 48 hours of admission using `pr.starttime BETWEEN c.admittime AND DATETIME_ADD(c.admittime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-score-calculation",
+          "requirements": "Medication Complexity Score Calculation: Implements a custom scoring logic based on distinct drugs, distinct routes, and specific high-risk medications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-calculation",
+          "requirements": "30-Day Readmission Calculation: Correctly identifies 30-day readmissions using a window function (`LEAD`) to compare discharge and subsequent admission times.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay Calculation: Correctly calculates length of stay in days using `DATETIME_DIFF(c.dischtime, c.admittime, HOUR) / 24.0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-stratification-and-aggregation",
+      "requirements": "Final Stratification and Aggregation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "quartile-stratification",
+          "requirements": "Quartile Stratification: Correctly stratifies admissions into four quartiles based on the medication complexity score using `NTILE(4) OVER (ORDER BY medication_complexity_score)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: Groups the final results by the calculated `complexity_quartile`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-metrics-calculation",
+          "requirements": "Output Metrics Calculation: Correctly calculates all required output metrics per quartile: patient count, mean/min/max score, mean LOS, mortality %, and 30-day readmission %.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

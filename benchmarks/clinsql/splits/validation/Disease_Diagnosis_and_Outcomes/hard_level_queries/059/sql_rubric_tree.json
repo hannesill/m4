@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the primary and comparison patient groups based on demographics and the primary diagnosis (DKA).",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Correctly filters for male patients using `gender = 'M'` in the `patients` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly filters for patients aged 59\u201369 using `anchor_age BETWEEN 59 AND 69`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dka-identification",
+          "requirements": "DKA Identification for Cohorting: Correctly identifies patients with DKA using both ICD-9 ('2501') and ICD-10 ('E101', 'E111', 'E131') codes to define the primary cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-group-separation",
+          "requirements": "Cohort Group Separation: Successfully creates two distinct groups, 'DKA_Cohort' and 'General_Cohort', based on the presence of a DKA diagnosis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Accurately translates clinical conditions and outcomes into SQL logic.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "30-day-mortality-logic",
+          "requirements": "30-Day Mortality Logic: Correctly calculates 30-day mortality by checking for in-hospital death (`hospital_expire_flag`) or death within 30 days of discharge (`DATETIME_DIFF(p.dod, a.dischtime, DAY) BETWEEN 0 AND 30`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-identification",
+          "requirements": "AKI Identification: Correctly identifies Acute Kidney Injury (AKI) using both ICD-9 ('5849') and ICD-10 ('N179') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ards-identification",
+          "requirements": "ARDS Identification: Correctly identifies Acute Respiratory Distress Syndrome (ARDS) using both ICD-9 ('51882') and ICD-10 ('J80') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: Consistently uses the `icd_version` column to differentiate between ICD-9 and ICD-10 codes across all diagnostic lookups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, admissions, and diagnoses.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: Correctly joins the `patients` and `admissions` tables on `subject_id` to link demographics to hospital stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: Correctly joins the admissions data with the diagnoses features on `hadm_id` to link diagnoses to specific hospital admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs correct calculations and aggregations to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-score-calculation",
+          "requirements": "Risk Score Calculation: Implements the specified weighted risk score formula, including SUM of weighted codes and a factor for COUNT(DISTINCT icd_code).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-metrics-aggregation",
+          "requirements": "Cohort Metrics Aggregation: Correctly uses AVG() to calculate mean risk score, mortality rate, AKI rate, and ARDS rate for the appropriate cohorts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "survivor-los-calculation",
+          "requirements": "Survivor LOS Calculation: Correctly calculates average length of stay for survivors only, using a conditional aggregation `AVG(CASE WHEN mortality_30day_flag = 0 THEN los_days ...)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-percentile-calculation",
+          "requirements": "Risk Percentile Calculation: Correctly calculates the percentile of the DKA cohort's mean risk score relative to its own risk distribution, using a subquery or equivalent logic.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-assembly",
+          "requirements": "Final Output Assembly: Correctly combines results from the DKA and General cohorts using CROSS JOIN and presents all required metrics with appropriate rounding and aliasing.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the patient population based on demographics and clinical conditions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients aged between 68 and 78 years at the time of admission using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 68 AND 78`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-diagnosis-filter",
+          "requirements": "T2DM Diagnosis Filter: The query must filter for patients with Type 2 Diabetes Mellitus using both ICD-9 and ICD-10 codes (`'E11%'` for ICD-10, `'250.%'` for ICD-9).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hf-diagnosis-filter",
+          "requirements": "Heart Failure Diagnosis Filter: The query must filter for patients with Heart Failure using both ICD-9 and ICD-10 codes (`'I50%'` for ICD-10, `'428%'` for ICD-9).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-duration-filter",
+          "requirements": "Admission Duration Filter: The query includes a filter to ensure the hospital admission is at least 48 hours long (`DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 48`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies drug classes and administration time windows.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "drug-class-identification",
+          "requirements": "Drug Class Identification: The query must use a CASE statement to correctly map drug names from the prescriptions table to the specified drug classes (Metformin, Sulfonylureas, DPP-4 Inhibitors, SGLT2 Inhibitors) using string matching.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "time-window-definition",
+          "requirements": "Time Window Definition: The query must define two distinct time windows: 'first 48h' (`DATETIME_DIFF(rx.starttime, c.admittime, HOUR) < 48`) and 'last 12h' (`DATETIME_DIFF(c.dischtime, rx.starttime, HOUR) <= 12`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, diagnoses, and medication records.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-admission-join",
+          "requirements": "Demographic-Admission Join: The query must join `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must join `admissions` and `diagnoses_icd` tables on `hadm_id` to filter by clinical conditions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-prescription-join",
+          "requirements": "Cohort-Prescription Join: The query must join the constructed patient cohort with the `prescriptions` table on `hadm_id` to analyze medication administrations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates and presents the final prevalence statistics and net change.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-patient-exposure-logic",
+          "requirements": "Per-Patient Exposure Logic: The query must correctly determine if a patient was exposed to a drug class within each time window, avoiding double-counting, typically by grouping by `hadm_id` and `drug_class`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-total-calculation",
+          "requirements": "Cohort Total Calculation: The query must accurately calculate the total number of unique admissions in the cohort (`COUNT(DISTINCT hadm_id)`) to serve as the denominator.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-calculation",
+          "requirements": "Prevalence Calculation: The query must calculate the prevalence percentage for both time windows by dividing the number of patients on a drug class by the total cohort size and multiplying by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "net-change-calculation",
+          "requirements": "Net Change Calculation: The query must calculate the net percentage-point change by subtracting the early prevalence percentage from the discharge prevalence percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

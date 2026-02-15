@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-discharge_group",
+              "requirements": "Column related to discharge group (e.g., discharge_group) exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-median_los",
+              "requirements": "Column related to median LOS (e.g., median_los_days) exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tertiary-column-exists-iqr_los",
+              "requirements": "Column related to IQR of LOS (e.g., iqr_los_days) exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "quaternary-column-exists-percent_le_10_days",
+              "requirements": "Column related to percent of stays <= 10 days (e.g., percentile_rank_of_10_day_los) exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key columns (discharge_group, median_los_days, iqr_los_days, percentile_rank_of_10_day_los)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "median-los-validation",
+          "requirements": "Validate values in the column `median_los_days`",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-los-plausible",
+              "requirements": "Clinically Plausible (0.1 - 40.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-acceptable",
+              "requirements": "Acceptable Range (1.0 - 25.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-los-validation",
+          "requirements": "Validate values in the column `iqr_los_days`",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "iqr-los-plausible",
+              "requirements": "Clinically Plausible (0.0 - 60.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-los-acceptable",
+              "requirements": "Acceptable Range (1.0 - 30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percent-le-10-days-validation",
+          "requirements": "Validate values in the column `percentile_rank_of_10_day_los`",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percent-le-10-days-plausible",
+              "requirements": "Clinically Plausible (0.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percent-le-10-days-acceptable",
+              "requirements": "Acceptable Range (10.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

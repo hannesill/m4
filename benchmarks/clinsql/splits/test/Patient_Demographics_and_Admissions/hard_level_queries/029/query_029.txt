@@ -1,0 +1,1 @@
+I am evaluating a 51‑year‑old woman. Among female Medicare patients aged 46–56 who were transferred from another hospital with a principal diagnosis of hip fracture, how many index admissions meet these cohort criteria in this MIMIC‑IV hospital dataset?

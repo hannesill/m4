@@ -1,0 +1,1 @@
+I have a 48-year-old man to evaluate. Among male Medicare patients aged 43–53 admitted from a skilled nursing facility (SNF) with a principal diagnosis of dehydration, how many admissions met these criteria during the study period in the dataset?

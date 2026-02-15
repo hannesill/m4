@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at admission and filter for the range 62-72 using a condition like `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 62 AND 72`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: The query must correctly identify ICU stays by joining the `icustays` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temperature-measurement-identification",
+          "requirements": "Temperature Measurement Identification: The query must select temperature measurements using the correct `itemid`s (e.g., 223762, 676 for Celsius; 223761, 678 for Fahrenheit).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-code-selection",
+          "requirements": "AKI Code Selection: The query must correctly identify Acute Kidney Injury using both ICD-9 (e.g., '5845'-'5849') and ICD-10 (e.g., 'N17%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "unit-conversion",
+          "requirements": "Unit Conversion: The query must convert temperature values from Fahrenheit to Celsius to ensure consistency.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temperature-categorization",
+          "requirements": "Temperature Categorization: The query must use a CASE statement to correctly categorize temperature measurements into '<36.0', '36.0-37.9', and '>=38.0' groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join `patients`, `admissions`, `icustays`, `chartevents`, and `diagnoses_icd` tables to link demographics, ICU stays, measurements, and diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The joins must use the correct keys: `subject_id` between patients and admissions, `hadm_id` between admissions and icustays/diagnoses, and `stay_id` between icustays and chartevents.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filtering",
+          "requirements": "Temporal Filtering: The query must filter temperature measurements to the first 24 hours of the ICU stay using the `intime` from `icustays`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The query must group the final results by the created temperature categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "statistical-calculations",
+          "requirements": "Statistical Calculations: The query must correctly calculate the mean, median, and IQR for temperature within each category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-rate-calculation",
+          "requirements": "AKI Rate Calculation: The query must correctly calculate the AKI rate per category by counting distinct patients (`stay_id` or `subject_id`) and dividing by the total distinct patients in that category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

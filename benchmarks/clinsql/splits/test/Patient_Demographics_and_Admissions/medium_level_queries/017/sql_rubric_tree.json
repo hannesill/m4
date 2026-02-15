@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters for patients aged 38-48 using `p.anchor_age BETWEEN 38 AND 48`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-admission-filter",
+          "requirements": "ICU Admission Filter: Implicitly filters for inpatients with at least one ICU stay by joining with the `icustays` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins `patients`, `admissions`, and `icustays` tables to link demographics with hospital and ICU admission data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: Uses correct primary keys for joins (`subject_id` between patients and admissions, `hadm_id` between admissions and icustays).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "LOS Calculation: Computes length of stay in days using `DATETIME_DIFF(dischtime, admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-categorization",
+          "requirements": "Discharge Categorization: Correctly uses a CASE statement to categorize discharge outcomes into 'In-Hospital Mortality', 'Discharged Home', and 'Discharged to Facility' based on `hospital_expire_flag` and `discharge_location`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: Groups the final results by the derived `discharge_category` to report metrics for each outcome.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-statistics-calculation",
+          "requirements": "LOS Statistics Calculation: Correctly calculates the mean, median (p50), p75, and p90 of the length of stay using `AVG` and `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "query-refinement",
+      "requirements": "Query Refinement and Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "los-positive-filter",
+          "requirements": "LOS Positive Filter: Includes a filter `DATETIME_DIFF(...) > 0` to exclude admissions with zero or negative length of stay, which is a reasonable data cleaning step.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: Rounds the mean LOS and correctly filters the final output to only include the requested discharge categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "distinct-admission-handling",
+          "requirements": "Distinct Admission Handling: Uses `DISTINCT hadm_id` in the initial cohort selection to avoid double-counting admissions with multiple ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

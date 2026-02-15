@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies male patients with ischemic stroke admissions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ischemic-stroke-diagnosis-selection",
+          "requirements": "Ischemic Stroke Diagnosis Selection: The query must correctly identify ischemic stroke using both ICD-9 ('434%') and ICD-10 ('I63%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies and filters for the specific lab event and its timing.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "serum-glucose-identification",
+          "requirements": "Serum Glucose Identification: The query must correctly identify serum glucose lab events using `itemid = 50931`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-day-filter",
+          "requirements": "Discharge Day Filter: The query must correctly filter for lab events that occurred on the same calendar day as the patient's discharge time using a condition like `DATE(le.charttime) = DATE(isa.dischtime)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-plausibility-filter",
+          "requirements": "Value Plausibility Filter: The query should apply a reasonable range filter for glucose values, such as `valuenum BETWEEN 50 AND 500`, to exclude erroneous data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient demographics, diagnoses, and lab events.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographics-and-admissions-join",
+          "requirements": "Demographics and Admissions Join: The `patients` and `admissions` tables must be correctly joined on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnoses-and-admissions-join",
+          "requirements": "Diagnoses and Admissions Join: The `admissions` and `diagnoses_icd` tables must be correctly joined on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "labevents-and-admissions-join",
+          "requirements": "Lab Events and Admissions Join: The `labevents` table and the intermediate stroke admissions cohort must be correctly joined on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates the Interquartile Range (IQR) of serum glucose values.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "iqr-calculation",
+          "requirements": "IQR Calculation: The query must correctly calculate the Interquartile Range by subtracting the 1st quartile from the 3rd quartile, using a function like `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: The final IQR value should be rounded to a reasonable precision, such as two decimal places.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

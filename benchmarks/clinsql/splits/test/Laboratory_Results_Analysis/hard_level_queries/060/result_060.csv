@@ -1,0 +1,2 @@
+cohort_name,cohort_size,cohort_mortality_percent,cohort_avg_los_days,instability_score_q1,instability_score_median,instability_score_q3,instability_score_interquartile_range,cohort_critical_events_per_admission,general_pop_critical_events_per_admission
+"Post-Cardiac Arrest, F, 52-62",183,50.82,13.2,0,1,2,2,3.84,0.37

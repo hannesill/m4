@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients with an age between 46 and 56 using `p.anchor_age BETWEEN 46 AND 56`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-patients-icustays",
+          "requirements": "Table Join Logic (patients to icustays): The query must correctly join the patients table with the icustays table on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "table-join-icustays-chartevents",
+          "requirements": "Table Join Logic (icustays to chartevents): The query must correctly join the icustays table with the chartevents table on `stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temperature-code-selection",
+          "requirements": "Temperature Measurement Selection: The query must correctly identify Fahrenheit temperature measurements using the appropriate itemids, such as `ce.itemid IN (223762, 676)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-24-hours",
+          "requirements": "Temporal Filter (First 24 Hours): The query must filter for temperature measurements recorded within the first 24 hours of the ICU stay using a condition like `ce.charttime <= DATETIME_ADD(icu.intime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-plausibility-filtering",
+          "requirements": "Value Plausibility Filtering: The query should apply a plausible range filter for temperature values, such as `ce.valuenum BETWEEN 95 AND 110`, and exclude nulls.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "median-calculation",
+          "requirements": "Median Calculation: The query must calculate the median of the temperature values using an appropriate function like `APPROX_QUANTILES(ce.valuenum, 2)[OFFSET(1)]`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to two decimal places for readability using `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

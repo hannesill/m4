@@ -1,0 +1,163 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stratification-columns-exist",
+              "requirements": "Stratification columns exist (e.g., 'sepsis_severity', 'charlson_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-columns-exist",
+              "requirements": "Columns for mortality rates exist (e.g., 'mortality_rate_le_7_days', 'mortality_rate_gt_7_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-difference-columns-exist",
+              "requirements": "Columns for mortality differences exist (e.g., 'absolute_mortality_difference', 'relative_mortality_difference')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-le-7-validation",
+          "requirements": "Validation for mortality rate with LOS <= 7 days (e.g., 'mortality_rate_le_7_days')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-le-7-plausible",
+              "requirements": "Clinically Plausible Range for mortality % (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-le-7-acceptable",
+              "requirements": "Acceptable Range for mortality % (0.5-65.0). Sepsis mortality is high, but >65% for LOS <=7 days is less likely.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-gt-7-validation",
+          "requirements": "Validation for mortality rate with LOS > 7 days (e.g., 'mortality_rate_gt_7_days')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-gt-7-plausible",
+              "requirements": "Clinically Plausible Range for mortality % (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-gt-7-acceptable",
+              "requirements": "Acceptable Range for mortality % (1.0-50.0). While patients with longer LOS are sicker, survivors of the initial acute phase may have a slightly lower mortality rate than the very acute <=7 day septic shock group.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "absolute-mortality-difference-validation",
+          "requirements": "Validation for absolute mortality difference (e.g., 'absolute_mortality_difference')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "abs-diff-plausible",
+              "requirements": "Plausible Range for absolute difference (-100 to 100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "abs-diff-acceptable",
+              "requirements": "Acceptable Range for absolute difference (-40.0 to 40.0). A difference greater than 40 percentage points between the two LOS groups is unlikely.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "relative-mortality-difference-validation",
+          "requirements": "Validation for relative mortality difference (e.g., 'relative_mortality_difference')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "rel-diff-plausible",
+              "requirements": "Plausible Range for relative difference (0 to 50). A ratio >50 is highly improbable.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "rel-diff-acceptable",
+              "requirements": "Acceptable Range for relative difference (0.1 to 10.0). A ten-fold difference in mortality risk between the LOS groups is a reasonable upper limit.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

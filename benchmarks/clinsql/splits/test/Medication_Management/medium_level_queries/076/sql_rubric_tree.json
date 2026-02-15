@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must calculate patient age at admission and filter for the range 75-85 years using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 75 AND 85`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-filtering-diabetes",
+          "requirements": "Diagnosis Filtering for Diabetes: The query must filter for patients with a diagnosis of diabetes by checking for both ICD-9 ('250%') and ICD-10 ('E10%', 'E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-filtering-heart-failure",
+          "requirements": "Diagnosis Filtering for Heart Failure: The query must filter for patients with a diagnosis of heart failure by checking for both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filtering",
+          "requirements": "Length of Stay Filtering: The query must filter for admissions with a length of stay of at least 36 hours using `DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 36`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "glp1-drug-identification",
+          "requirements": "GLP-1 Drug Identification: The query must correctly identify injectable GLP-1s by filtering the `drug` name for liraglutide, semaglutide, dulaglutide, or exenatide.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "injectable-route-identification",
+          "requirements": "Injectable Route Identification: The query must filter for injectable routes of administration (e.g., 'sc', 'iv', 'iv drip', 'iv bolus').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-24h-initiation-logic",
+          "requirements": "First 24h Initiation Logic: The query must correctly identify GLP-1s started within the first 24 hours of admission using `DATETIME_DIFF(rx.starttime, pc.admittime, HOUR) BETWEEN 0 AND 24`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "last-12h-initiation-logic",
+          "requirements": "Last 12h Initiation Logic: The query must correctly identify GLP-1s started within the final 12 hours of admission using `DATETIME_DIFF(pc.dischtime, rx.starttime, HOUR) BETWEEN 0 AND 12`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to build the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescriptions-table-join",
+          "requirements": "Prescriptions Table Join: The query must join the patient cohort to the `prescriptions` table on `hadm_id` to link medications to specific admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-join",
+          "requirements": "Final Aggregation Join: The query must use a LEFT JOIN from the full patient cohort to the aggregated medication flags to ensure all patients in the cohort are included in the final percentage calculation.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Output Formatting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-flagging",
+          "requirements": "Per-Admission Flagging: The query must aggregate medication events by `hadm_id` using `MAX()` to create a single flag for each admission, indicating if an initiation occurred in the specified time windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation-first-24h",
+          "requirements": "Percentage Calculation (First 24h): The query must correctly calculate the percentage of patients with a GLP-1 initiation in the first 24 hours. The numerator should be the sum of flags and the denominator should be the total count of patients in the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation-last-12h",
+          "requirements": "Percentage Calculation (Last 12h): The query must correctly calculate the percentage of patients with a GLP-1 initiation in the last 12 hours. The numerator should be the sum of flags and the denominator should be the total count of patients in the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query must return only two percentage values, rounded to two decimal places as specified.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate patient age at the time of admission and filter for ages between 49 and 59.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "troponin-measurement-logic",
+      "requirements": "Troponin T Measurement and Filtering Logic",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "troponin-t-identification",
+          "requirements": "Troponin T Identification: Correctly identifies Troponin T lab events using `itemid = 51003`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "uln-calculation",
+          "requirements": "ULN Calculation: Correctly calculates the 99th percentile Upper Limit of Normal (ULN) from the first troponin measurements of all admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initial-troponin-isolation",
+          "requirements": "Initial Troponin Isolation: Uses a window function like `ROW_NUMBER() OVER(PARTITION BY hadm_id ORDER BY charttime ASC)` to isolate the first troponin value for each admission in the target cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "elevated-troponin-filter",
+          "requirements": "Elevated Troponin Filter: Filters the patient cohort to include only those whose initial troponin value is greater than the calculated 99th percentile ULN.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins the `patients`, `admissions`, and `labevents` tables to link patient demographics with their lab results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: Uses `subject_id` to link `patients` and `admissions`, and `hadm_id` to link `admissions` and `labevents`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Reporting",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-size",
+          "requirements": "Cohort Size Reporting: Correctly reports the total number of unique patients using `COUNT(DISTINCT subject_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "statistical-aggregation",
+          "requirements": "Statistical Aggregation: Correctly calculates and reports the p25, median (p50), and p75 values using `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-range-reporting",
+          "requirements": "Value Range Reporting: Accurately reports the minimum and maximum initial troponin values for the final cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "uln-value-reporting",
+          "requirements": "ULN Value Reporting: The final SELECT statement correctly reports the calculated 99th percentile ULN value.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

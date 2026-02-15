@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the specific patient cohort based on demographic, admission, and insurance criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate and filter for patients aged between 43 and 53 at the time of admission using the formula `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 43 AND 53`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-type-filter",
+          "requirements": "Admission Type Filter: The query must filter for admissions from the emergency department, for example, using `UPPER(a.admission_location) LIKE '%EMERGENCY%'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insurance-filter",
+          "requirements": "Insurance Filter: The query must filter for patients with Medicare insurance using `a.insurance = 'Medicare'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies the clinical condition using appropriate diagnosis codes and context.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "principal-diagnosis-filter",
+          "requirements": "Principal Diagnosis Filter: The query must correctly identify the principal diagnosis by filtering on `d.seq_num = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dka-code-selection",
+          "requirements": "Diabetic Ketoacidosis Code Selection: The query must correctly identify diabetic ketoacidosis using a comprehensive set of both ICD-9 and ICD-10 codes, such as `d.icd_code LIKE '2501%'` for ICD-9 and `d.icd_code LIKE 'E101%'`, `E111%`, `E131%` for ICD-10.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, admissions, and diagnoses.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must join `admissions`, `patients`, and `diagnoses_icd` tables.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching-admissions-patients",
+          "requirements": "Key Matching (Admissions-Patients): The `admissions` and `patients` tables must be joined on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching-admissions-diagnoses",
+          "requirements": "Key Matching (Admissions-Diagnoses): The `admissions` and `diagnoses_icd` tables must be joined on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly performs the final aggregation to answer the clinical question.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "admission-count",
+          "requirements": "Admission Count: The query must count the total number of admissions that meet the criteria using `COUNT(hadm_id)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

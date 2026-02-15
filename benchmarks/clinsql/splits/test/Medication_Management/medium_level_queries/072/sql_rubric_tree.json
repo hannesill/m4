@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately filter patients aged 79 to 89 using the standard MIMIC-IV age calculation `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 79 AND 89`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-selection",
+          "requirements": "Inpatient Selection: The query must restrict the analysis to inpatient admissions by joining `admissions` with other tables on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: The query must filter out admissions shorter than 36 hours using a condition like `DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 36` to ensure the early and late time windows are distinct.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "t2dm-diagnosis-identification",
+          "requirements": "Type 2 Diabetes Diagnosis Identification: The query must correctly identify T2DM diagnoses by checking for ICD-10 codes `LIKE 'E11%'` and specific ICD-9 codes `LIKE '250%'` with a 5th digit of '0' or '2'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hf-diagnosis-identification",
+          "requirements": "Heart Failure Diagnosis Identification: The query must correctly identify Heart Failure diagnoses by checking for ICD-10 codes `LIKE 'I50%'` and ICD-9 codes `LIKE '428%'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "glp1-agonist-identification",
+          "requirements": "GLP-1 Agonist Identification: The query must identify GLP-1 receptor agonist medications by searching for relevant drug names (e.g., semaglutide, liraglutide, dulaglutide, tirzepatide) in the prescriptions table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `admissions`, `patients`, and `diagnoses_icd` tables to build the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-table-join",
+          "requirements": "Medication Table Join: The query must correctly join the cohort with the `prescriptions` table on `hadm_id` to link medications to patient admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "early-initiation-window",
+          "requirements": "Early Initiation Window Logic: The query must correctly identify medication initiation within the first 12 hours after admission (`BETWEEN ca.admittime AND DATETIME_ADD(ca.admittime, INTERVAL 12 HOUR)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "late-initiation-window",
+          "requirements": "Late Initiation Window Logic: The query must correctly identify medication initiation within the final 24 hours before discharge (`BETWEEN DATETIME_SUB(ca.dischtime, INTERVAL 24 HOUR) AND ca.dischtime`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: The query must calculate the percentage of patients in each window by dividing the count of initiations by the total cohort count and multiplying by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "net-change-calculation",
+          "requirements": "Net Change Calculation: The query must calculate the net percentage-point change by subtracting the early initiation percentage from the late initiation percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-and-output",
+          "requirements": "Final Aggregation and Output: The query must use SUM and COUNT to aggregate the initiation flags and present the final required metrics: early/late percentages and the net change.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

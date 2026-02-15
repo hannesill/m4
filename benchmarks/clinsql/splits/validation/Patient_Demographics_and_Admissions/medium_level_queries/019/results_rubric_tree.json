@@ -1,0 +1,117 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stratification-column-exists",
+              "requirements": "Stratification Column Exists (e.g., discharge_outcome, discharge_disposition)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-column-exists",
+              "requirements": "Mean LOS Column Exists (e.g., mean_los_days, avg_los)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stddev-los-column-exists",
+              "requirements": "Standard Deviation LOS Column Exists (e.g., stddev_los_days, los_sd)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mean-los-validation",
+          "requirements": "Validate Mean Length of Stay (e.g., mean_los_days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-los-plausible",
+              "requirements": "Clinically Plausible (0.5-50.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-acceptable",
+              "requirements": "Acceptable Range (2.0-25.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "stddev-los-validation",
+          "requirements": "Validate Standard Deviation of Length of Stay (e.g., stddev_los_days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "stddev-los-plausible",
+              "requirements": "Clinically Plausible (0.5-50.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stddev-los-acceptable",
+              "requirements": "Acceptable Range (2.0-30.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

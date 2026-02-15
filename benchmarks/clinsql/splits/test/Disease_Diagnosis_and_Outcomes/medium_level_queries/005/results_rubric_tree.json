@@ -1,0 +1,172 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-mortality-rate",
+              "requirements": "Column exists for mortality rate (e.g., mortality_rate_percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-ci-lower",
+              "requirements": "Column exists for 95% CI lower bound (e.g., ci_95_lower)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-ci-upper",
+              "requirements": "Column exists for 95% CI upper bound (e.g., ci_95_upper)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-comorbidity",
+              "requirements": "Column exists for mean comorbidity count (e.g., avg_comorbidity_count)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-column-exists-icu",
+              "requirements": "Column exists for ICU vs. No ICU stratification (e.g., severity_level)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-column-exists-los",
+              "requirements": "Column exists for LOS stratification (e.g., los_category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-column-exists-charlson",
+              "requirements": "Column exists for Charlson stratification (e.g., charlson_category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key result columns (mortality, CI, comorbidity count)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation for mortality rate column (e.g., mortality_rate_percent)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Mortality rate is within a plausible range (0-100%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Mortality rate is within an acceptable range for this cohort (0-60%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ci-bounds-validation",
+          "requirements": "Validation for 95% CI columns (e.g., ci_95_lower, ci_95_upper)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "ci-bounds-plausible",
+              "requirements": "CI bounds are within a plausible range (0-100%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ci-bounds-acceptable",
+              "requirements": "CI bounds are within an acceptable range for this cohort (0-70%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "comorbidity-count-validation",
+          "requirements": "Validation for mean comorbidity count column (e.g., avg_comorbidity_count)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "comorbidity-count-plausible",
+              "requirements": "Mean comorbidity count is within a plausible range (0-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comorbidity-count-acceptable",
+              "requirements": "Mean comorbidity count is within an acceptable range for a HF cohort (5-35)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

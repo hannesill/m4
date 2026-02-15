@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the initial patient cohort based on demographic, admission, and diagnostic criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 82-92.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pneumonia-diagnosis-filter",
+          "requirements": "Pneumonia Diagnosis Filter: Identifies patients with a pneumonia diagnosis using appropriate ICD-9 ('480'-'486') and ICD-10 ('J12'-'J18') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-context",
+          "requirements": "Inpatient Context: Implicitly or explicitly filters for inpatient admissions by joining with the `admissions` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "unique-admission-handling",
+          "requirements": "Unique Admission Handling: Uses `DISTINCT` on `hadm_id` or `subject_id` to ensure each admission is counted only once in the base cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, admissions, and diagnoses.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: Joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: Joins `admissions` and `diagnoses_icd` tables on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-risk-factor-join",
+          "requirements": "Cohort to Risk Factor Join: Correctly joins the base cohort with the derived complication and burden data on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Defines and calculates clinical variables including complications, risk score, and outcomes.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cardiovascular-complication-logic",
+          "requirements": "Cardiovascular Complication Logic: Correctly identifies cardiovascular complications using specified ICD-9 (e.g., '410%') and ICD-10 (e.g., 'I21%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "neurologic-complication-logic",
+          "requirements": "Neurologic Complication Logic: Correctly identifies neurologic complications using specified ICD-9 ('430'-'438') and ICD-10 ('I60'-'I69') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-calculation",
+          "requirements": "Risk Score Calculation: Accurately implements the specified composite risk score formula based on diagnosis count and complications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-outcome-definition",
+          "requirements": "30-Day Mortality Definition: Correctly calculates 30-day mortality by comparing the patient's death date with 30 days post-admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "survivor-los-definition",
+          "requirements": "Survivor Length of Stay Definition: Correctly calculates length of stay in days for survivors only, setting it to NULL for non-survivors.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs stratification and final aggregation to produce the required report.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-based-stratification",
+          "requirements": "Risk-Based Stratification: Uses `NTILE(5) OVER (ORDER BY risk_score)` to correctly stratify the cohort into quintiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Final Grouping Logic: Groups the final result set by `risk_quintile`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rate-calculation-logic",
+          "requirements": "Rate Calculation Logic: Uses `AVG()` on the 0/1 indicator columns to correctly calculate mortality and complication rates.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-los-calculation",
+          "requirements": "Median LOS Calculation: Correctly calculates the median LOS for survivors using `APPROX_QUANTILES` or an equivalent median function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

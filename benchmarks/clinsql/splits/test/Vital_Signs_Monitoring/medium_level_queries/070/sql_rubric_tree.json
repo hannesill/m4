@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the initial patient population based on demographics and ICU stay criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters for patients aged 90 to 100 using a calculated age and a `BETWEEN 90 AND 100` clause.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation",
+          "requirements": "Age Calculation: Correctly calculates patient age at the time of admission using `anchor_age`, `admittime`, and `anchor_year`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: Correctly joins `admissions` and `icustays` tables to link patients to their ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies and processes clinical events like SpO2 and AKI.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "spo2-measurement-identification",
+          "requirements": "SpO2 Measurement Identification: Correctly filters `chartevents` for SpO2 using `itemid = 220277`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-24h-temporal-filter",
+          "requirements": "First 24-Hour Temporal Filter: Accurately filters SpO2 measurements to the first 24 hours of the ICU stay using `charttime` and `intime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-diagnosis-identification",
+          "requirements": "AKI Diagnosis Identification: Correctly identifies AKI diagnoses using ICD-9 (`584%`) and ICD-10 (`N17%`) codes from the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Data Integration: Correctly joins patient, SpO2, and AKI data for analysis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-spo2-join",
+          "requirements": "Patient-SpO2 Join: Correctly joins the patient cohort with SpO2 measurements using `stay_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-aki-join",
+          "requirements": "Patient-AKI Join: Correctly performs a `LEFT JOIN` between the patient cohort and AKI diagnoses on `hadm_id` to create the `aki_flag`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "spo2-value-validation",
+          "requirements": "SpO2 Value Validation: Filters out invalid SpO2 readings by checking for non-null and physiologically plausible values (`BETWEEN 50 AND 100`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final aggregation and calculation of requested metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "spo2-categorization",
+          "requirements": "SpO2 Categorization: Correctly uses a `CASE` statement to group average SpO2 values into the four specified categories: <90, 90-92, 93-95, >95.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: Groups the final results by the created `spo2_category` to provide metrics for each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation",
+          "requirements": "Metric Calculation: Correctly calculates N (COUNT), mean (AVG), median (APPROX_QUANTILES), IQR (APPROX_QUANTILES), and AKI rate for each SpO2 category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Orders the results by SpO2 category and rounds the numerical outputs for readability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

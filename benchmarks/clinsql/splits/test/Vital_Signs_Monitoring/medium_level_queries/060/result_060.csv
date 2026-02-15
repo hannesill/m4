@@ -1,0 +1,5 @@
+sbp_category,number_of_patients,percent_of_total_patients,stroke_patient_count,stroke_rate_percent
+<130,685,20.42,40,5.84
+130-139,638,19.02,51,7.99
+140-159,1179,35.15,163,13.83
+>=160,852,25.4,182,21.36

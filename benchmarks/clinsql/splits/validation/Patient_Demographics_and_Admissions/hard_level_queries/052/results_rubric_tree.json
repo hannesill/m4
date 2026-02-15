@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "readmission-rate-column-exists",
+              "requirements": "Column related to 30-day readmission rate exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-readmitted-column-exists",
+              "requirements": "Column related to median LOS for readmitted patients exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-not-readmitted-column-exists",
+              "requirements": "Column related to median LOS for non-readmitted patients exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pct-los-gt-9-days-column-exists",
+              "requirements": "Column related to percent of stays greater than 9 days exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "readmission-rate-validation",
+          "requirements": "Validate 30-day readmission rate",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "readmission-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-rate-acceptable",
+              "requirements": "Acceptable Range (5.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-readmitted-validation",
+          "requirements": "Validate median LOS for readmitted patients",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "median-los-readmitted-plausible",
+              "requirements": "Clinically Plausible (1.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-readmitted-acceptable",
+              "requirements": "Acceptable Range (2.0-10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-not-readmitted-validation",
+          "requirements": "Validate median LOS for non-readmitted patients",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "median-los-not-readmitted-plausible",
+              "requirements": "Clinically Plausible (1.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-not-readmitted-acceptable",
+              "requirements": "Acceptable Range (2.0-8.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "pct-los-gt-9-days-validation",
+          "requirements": "Validate percent of stays >9 days",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "pct-los-gt-9-days-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pct-los-gt-9-days-acceptable",
+              "requirements": "Acceptable Range (1.0-25.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

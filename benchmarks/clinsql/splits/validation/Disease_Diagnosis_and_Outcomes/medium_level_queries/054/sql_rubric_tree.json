@@ -1,0 +1,160 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-selection",
+          "requirements": "Age Selection: The query correctly calculates and filters for the age of the patient at the time of admission to be around 44 years old, using a reasonable range (e.g., `BETWEEN 39 AND 49`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "postoperative-complication-selection",
+          "requirements": "Postoperative Complication Selection: The query correctly identifies patients with postoperative complications by filtering on appropriate ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd9-complication-codes",
+              "requirements": "ICD-9 Code Selection: The query accurately selects ICD-9 codes for postoperative complications (e.g., '996'-'999').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd10-complication-codes",
+              "requirements": "ICD-10 Code Selection: The query accurately selects ICD-10 codes for postoperative complications (e.g., 'T80'-'T88', 'Y83', 'Y84').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "unique-admission-identification",
+          "requirements": "Unique Admission Identification: The query uses `SELECT DISTINCT a.hadm_id` to ensure each unique hospital admission is counted only once in the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "stratification-and-feature-engineering",
+      "requirements": "Stratification and Feature Engineering",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icu-vs-non-icu-stratification",
+          "requirements": "ICU vs. Non-ICU Stratification: The query correctly categorizes admissions into 'ICU' and 'Non-ICU' groups based on the presence of an `icustays` record.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-bucketing",
+          "requirements": "Length of Stay (LOS) Bucketing: The query correctly calculates the length of stay and buckets it into the specified categories (\u22643, 4\u20136, 7\u201310, >10 days).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "charlson-bucketing",
+          "requirements": "Charlson Score Bucketing: The query correctly joins with the `charlson` table and buckets the Charlson Comorbidity Index into the specified categories (\u22643, 4\u20135, >5).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-identification",
+          "requirements": "Clinical Outcome Identification: The query correctly identifies the presence of Mechanical Ventilation, Vasopressors, and RRT using `EXISTS` subqueries and appropriate `itemid`s.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "strata-aggregation",
+          "requirements": "Stratified Aggregation: The query correctly groups results by `icu_group`, `los_bucket`, and `charlson_bucket` to calculate per-stratum statistics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-rate-calculation",
+          "requirements": "Outcome Rate Calculation: The query correctly calculates the percentage rates for mortality, mechanical ventilation, vasopressors, and RRT using `AVG()` on binary flags and scales to 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-difference-calculation",
+          "requirements": "Mortality Difference Calculation: The query uses window functions (`FIRST_VALUE`) partitioned by `icu_group` and `charlson_bucket` to correctly calculate absolute and relative differences in mortality against the '\u22643 days' baseline.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complete-strata-reporting",
+          "requirements": "Complete Strata Reporting: The query uses a pre-generated strata table (`all_strata`) and a `LEFT JOIN` to ensure all possible strata combinations are present in the final output, even those with zero patients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "correct-table-joins",
+          "requirements": "Correct Table Joins: The query correctly joins `admissions`, `patients`, `diagnoses_icd`, `icustays`, and `charlson` tables using the appropriate keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

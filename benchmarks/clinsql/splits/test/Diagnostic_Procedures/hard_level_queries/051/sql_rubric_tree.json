@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must correctly filter for male patients ('M') within the target cohort definition.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly filter patients to the age range of 90-100 for the target cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation",
+          "requirements": "Age Calculation: The query must accurately calculate the patient's age at the time of admission using anchor_age, anchor_year, and admittime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-condition-filter",
+          "requirements": "Sepsis Condition Filter: The query must correctly identify patients with a sepsis diagnosis to form the target cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: The query must correctly isolate the first ICU stay for each hospital admission using a window function like ROW_NUMBER().",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "sepsis-icd-code-identification",
+          "requirements": "Sepsis ICD Code Identification: The query must correctly use both ICD-9 ('9959%', '78552%') and ICD-10 ('A41%') codes to identify sepsis admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-utilization-definition",
+          "requirements": "Diagnostic Utilization Definition: The query must define diagnostic utilization as the count of distinct procedures, identified by 'itemid' in the 'procedureevents' table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-24h-temporal-filter",
+          "requirements": "First 24h Temporal Filter: The query must constrain the diagnostic utilization analysis to the first 24 hours from the ICU admission time ('intime').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-join",
+          "requirements": "Patient Demographics Join: The query must correctly join 'patients', 'admissions', and 'icustays' tables using 'subject_id' and 'hadm_id'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-events-join",
+          "requirements": "Procedure Events Join: The query must join the ICU cohort with the 'procedureevents' table on 'stay_id' to link procedures to specific ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "utilization-data-left-join",
+          "requirements": "Utilization Data Left Join: The query must use a LEFT JOIN to combine the main cohort with procedure counts, ensuring patients with zero procedures are included in the final analysis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "comparative-grouping-logic",
+          "requirements": "Comparative Grouping Logic: The query must group results by the defined cohorts ('Sepsis, Male, Age 90-100' and 'General ICU Population') to enable comparative analysis.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-count",
+          "requirements": "Admissions Count: The query must correctly count the number of distinct hospital admissions for each cohort.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "standard-deviation-calculation",
+          "requirements": "Standard Deviation Calculation: The query must use STDDEV() to calculate the standard deviation of diagnostic utilization.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must use APPROX_QUANTILES() to calculate the 75th and 95th percentiles of diagnostic utilization.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Mortality Rate Calculation: The query must correctly calculate the in-hospital mortality percentage using the 'hospital_expire_flag'.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "LOS Calculation: The query must correctly calculate the average hospital length of stay in days using 'dischtime' and 'admittime'.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

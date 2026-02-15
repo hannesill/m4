@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Correctly filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for the 64-74 year range.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "chest-pain-identification",
+          "requirements": "Chest Pain Identification: Correctly filters for admissions with a chest pain diagnosis using both ICD-9 ('7865%') and ICD-10 ('R07%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-test-identification",
+          "requirements": "hs-Troponin T Test Identification: Correctly identifies hs-Troponin T lab events using `itemid = 51003`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-troponin-measurement",
+          "requirements": "First Troponin Measurement Selection: Correctly isolates the first hs-Troponin T measurement for each admission using a window function like `ROW_NUMBER()` ordered by `charttime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-percentile-filtering",
+          "requirements": "Troponin 99th Percentile Filtering: Correctly filters for troponin values exceeding the 99th percentile for males, using a hardcoded value such as `> 0.014`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly joins `patients`, `admissions`, `diagnoses_icd`, and `labevents` tables on appropriate keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-integrity",
+          "requirements": "Data Integrity Handling: Ensures data quality by filtering for non-null and non-negative troponin values (`valuenum IS NOT NULL AND valuenum >= 0`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "In-Hospital Mortality Rate Calculation: Correctly calculates the in-hospital mortality rate by averaging the `hospital_expire_flag`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "summary-statistics-calculation",
+          "requirements": "Summary Statistics Calculation: Correctly calculates summary statistics for the final cohort, including patient count, average age, and troponin statistics (AVG, STDDEV, MIN, MAX).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: Correctly calculates the length of stay using `DATETIME_DIFF` between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: Correctly formats the final output by rounding numerical values and presenting troponin quartiles as distinct columns for clarity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

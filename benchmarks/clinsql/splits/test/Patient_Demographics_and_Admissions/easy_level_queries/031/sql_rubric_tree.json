@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the initial patient cohort based on demographic and primary diagnosis criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients aged between 38 and 48 using `p.anchor_age BETWEEN 38 AND 48`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis",
+          "requirements": "Heart Failure Diagnosis: The query must correctly identify heart failure diagnoses using ICD-9 codes (LIKE '428%') and ICD-10 codes (LIKE 'I50%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly implements the logic to identify the first admission and calculate the 30-day readmission rate.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "admission-ranking",
+          "requirements": "Admission Ranking: The query must use `ROW_NUMBER()` or a similar window function partitioned by patient and ordered by admission time to identify each patient's admissions chronologically.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-admission-identification",
+          "requirements": "First Admission Identification: The query must filter the ranked admissions to isolate only the first admission (e.g., `admission_rank = 1`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-time-calculation",
+          "requirements": "Readmission Time Calculation: The query must correctly calculate the time difference in days between the discharge of the first admission and the start of the next admission using functions like `LEAD()` and `DATE_DIFF()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-flagging",
+          "requirements": "Readmission Flagging: The query must create a binary flag (1/0) indicating if a readmission occurred within a 30-day window (`<= 30`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-rate-calculation",
+          "requirements": "Final Rate Calculation: The query must use `AVG()` on the binary readmission flag to compute the final average 30-day readmission rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins the necessary tables to link patient demographics with their admission and diagnosis information.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must join `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must join `admissions` and `diagnoses_icd` tables on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Accurately handles different versions of medical coding systems.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly handle both ICD-9 and ICD-10 versions by checking the `icd_version` column in conjunction with the `icd_code`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

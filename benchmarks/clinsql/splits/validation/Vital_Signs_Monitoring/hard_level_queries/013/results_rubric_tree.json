@@ -1,0 +1,271 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "num_patients-exists",
+              "requirements": "A column for the count of patients exists (e.g., 'num_patients', 'patient_count').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_instability_score-exists",
+              "requirements": "A column for the average instability score exists (e.g., 'avg_instability_score', 'mean_score').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_icu_los_hours-exists",
+              "requirements": "A column for the average ICU length of stay exists (e.g., 'avg_icu_los_hours', 'mean_los').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality_rate-exists",
+              "requirements": "A column for the mortality rate exists (e.g., 'mortality_rate', 'death_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_tachycardia_episodes-exists",
+              "requirements": "A column for the average number of tachycardia episodes exists (e.g., 'avg_tachycardia_episodes', 'mean_tachycardia').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_hypotension_episodes-exists",
+              "requirements": "A column for the average number of hypotension episodes exists (e.g., 'avg_hypotension_episodes', 'mean_hypotension').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_tachypnea_episodes-exists",
+              "requirements": "A column for the average number of tachypnea episodes exists (e.g., 'avg_tachypnea_episodes', 'mean_tachypnea').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No unexpected NULL/Empty values in result columns for the rows they apply to.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "num_patients-validation",
+          "requirements": "Validation for patient count column (e.g., 'num_patients').",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "num_patients-plausible",
+              "requirements": "Values are clinically plausible (1 to 2000).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "num_patients-acceptable",
+              "requirements": "Values are in the acceptable range (50 to 500).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg_instability_score-validation",
+          "requirements": "Validation for average instability score column (e.g., 'avg_instability_score').",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg_instability_score-plausible",
+              "requirements": "Values are clinically plausible (0 to 100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_instability_score-acceptable",
+              "requirements": "Values are in the acceptable range (1 to 45).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg_icu_los_hours-validation",
+          "requirements": "Validation for average ICU LOS column (e.g., 'avg_icu_los_hours').",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg_icu_los_hours-plausible",
+              "requirements": "Values are clinically plausible (24 to 2400 hours).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_icu_los_hours-acceptable",
+              "requirements": "Values are in the acceptable range (72 to 500 hours).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality_rate-validation",
+          "requirements": "Validation for mortality rate column (e.g., 'mortality_rate').",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality_rate-plausible",
+              "requirements": "Values are clinically plausible (0 to 1).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality_rate-acceptable",
+              "requirements": "Values are in the acceptable range (0.05 to 0.4).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg_tachycardia_episodes-validation",
+          "requirements": "Validation for average tachycardia episodes column in the top decile (e.g., 'avg_tachycardia_episodes').",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg_tachycardia_episodes-plausible",
+              "requirements": "Value is clinically plausible (0 to 24).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_tachycardia_episodes-acceptable",
+              "requirements": "Value is in the acceptable range (5 to 20).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg_hypotension_episodes-validation",
+          "requirements": "Validation for average hypotension episodes column in the top decile (e.g., 'avg_hypotension_episodes').",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg_hypotension_episodes-plausible",
+              "requirements": "Value is clinically plausible (0 to 24).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_hypotension_episodes-acceptable",
+              "requirements": "Value is in the acceptable range (1 to 15).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg_tachypnea_episodes-validation",
+          "requirements": "Validation for average tachypnea episodes column in the top decile (e.g., 'avg_tachypnea_episodes').",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg_tachypnea_episodes-plausible",
+              "requirements": "Value is clinically plausible (0 to 24).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_tachypnea_episodes-acceptable",
+              "requirements": "Value is in the acceptable range (5 to 22).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

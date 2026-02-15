@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction for Heart Failure Admissions",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Correctly filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Accurately calculates age at admission and filters for patients aged between 45 and 55 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hf-diagnosis-identification",
+          "requirements": "Heart Failure Diagnosis Identification: Correctly identifies HF admissions using both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-filter",
+          "requirements": "Length of Stay (LOS) Filter: Correctly calculates the length of stay in days and filters admissions to be between 1 and 7 days.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "primary-vs-secondary-diagnosis-logic",
+          "requirements": "Primary vs. Secondary Diagnosis Logic: Correctly identifies if HF is a primary diagnosis by finding the minimum `seq_num` for HF codes per admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-code-selection",
+          "requirements": "Imaging Code Selection: Correctly identifies CT/MRI procedures using appropriate ICD-9 ('88.0%', '88.9%') and ICD-10 ('B_2%', 'B_3%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to build the initial cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-procedure-join",
+          "requirements": "Imaging Procedure Join: Correctly uses a LEFT JOIN to link the `hf_admissions` cohort with `procedures_icd` on `hadm_id` to include admissions with zero imaging procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: Correctly groups the final results by diagnosis type (Primary vs. Secondary) and stay category (1-3 vs. 4-7 days).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-admission-imaging-count",
+          "requirements": "Per-Admission Imaging Count: Accurately counts the number of imaging procedures for each individual admission before the final aggregation.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-functions",
+          "requirements": "Final Aggregation Functions: Correctly calculates the mean, min, and max imaging procedures per group using AVG, MIN, and MAX functions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Correctly uses CASE statements to create the required 'diagnosis_type' and 'stay_category' output columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

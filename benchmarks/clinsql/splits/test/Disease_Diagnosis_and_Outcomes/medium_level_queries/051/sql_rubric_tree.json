@@ -1,0 +1,192 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using the condition p.gender = 'M'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the age at admission and filter for the range 51-61.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "postoperative-complication-filter",
+          "requirements": "Postoperative Complication Filter: The query must filter admissions for postoperative complications using appropriate ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "postop-icd9-codes",
+              "requirements": "Postoperative ICD-9 Codes: Correctly filters for ICD-9 codes '996', '997', '998', '999'.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "postop-icd10-codes",
+              "requirements": "Postoperative ICD-10 Codes: Correctly filters for ICD-10 codes in the 'T80'-'T88' range.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly joins admissions, patients, and diagnoses_icd tables to build the primary cohort.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "charlson-table-join",
+          "requirements": "Charlson Table Join: Correctly performs a LEFT JOIN on the derived charlson table using hadm_id to access comorbidity flags.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "ckd-identification",
+          "requirements": "CKD Identification: Correctly identifies patients with Chronic Kidney Disease using relevant ICD-9 ('585%') and ICD-10 ('N18%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-identification",
+          "requirements": "Diabetes Identification: Correctly identifies patients with Diabetes using relevant ICD-9 ('250%') and ICD-10 ('E08'-'E13') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay Calculation: Correctly calculates the length of stay in days using the difference between dischtime and admittime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Stratification",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icu-status-stratification",
+          "requirements": "ICU Status Stratification: Correctly stratifies admissions into 'ICU' and 'Non-ICU' based on the existence of an entry in the icustays table.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-bucketing",
+          "requirements": "LOS Bucketing: Correctly buckets the length of stay into '1-2 days', '3-5 days', '6-9 days', and '>=10 days'.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "charlson-bucketing",
+          "requirements": "Charlson Comorbidity Bucketing: Correctly sums Charlson flags and buckets the score into '0-1', '2', and '>=3'.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-logic",
+          "requirements": "Final Aggregation Logic: Groups results by all stratification columns to calculate the final metrics.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation",
+          "requirements": "Metric Calculation: Correctly calculates mortality rate, median LOS, CKD prevalence, and diabetes prevalence for each stratum.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "reporting-and-formatting",
+      "requirements": "Reporting and Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "zero-count-group-handling",
+          "requirements": "Zero-Count Group Handling: Ensures all possible strata combinations are present in the final output, even those with zero admissions, by creating and joining to a strata grid.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-column-selection",
+          "requirements": "Output Column Selection: The final SELECT statement includes all required stratification columns and calculated metrics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "result-ordering",
+          "requirements": "Result Ordering: The final output is ordered logically by ICU status, LOS bucket, and comorbidity bucket.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

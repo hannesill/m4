@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies female inpatients aged 80-90 with a diagnosis of hepatic failure.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters the patient cohort to include only females (p.gender = 'F').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for patients between 80 and 90 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-identification",
+          "requirements": "Hepatic Failure Diagnosis: Identifies patients with hepatic failure using relevant ICD-9 (571%, 572%, 573%) and ICD-10 (K70% through K76%) codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medication-complexity-score-calculation",
+      "requirements": "Medication Complexity Score Calculation: Accurately computes a custom medication complexity score based on medications administered within the first 7 days of admission.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-time-window",
+          "requirements": "7-Day Medication Window: Filters prescriptions to include only those administered within the first 7 days of the hospital admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "unique-drug-count",
+          "requirements": "Unique Drug Count: Correctly counts the number of distinct drugs (COUNT(DISTINCT drug)).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "unique-route-count",
+          "requirements": "Unique Route Count: Correctly counts the number of distinct administration routes (COUNT(DISTINCT route)).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-drug-class-count",
+          "requirements": "High-Risk Drug Class Count: Correctly identifies and counts distinct high-risk medication classes (anticoagulants, insulin, opioids).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "score-formula-implementation",
+          "requirements": "Score Formula Implementation: Applies the specified weighted formula to calculate the final medication_complexity_score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "outcome-metrics-calculation",
+      "requirements": "Outcome Metrics Calculation: Correctly calculates length of stay, in-hospital mortality, and 30-day readmission for each admission.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay Calculation: Calculates the length of stay in days by finding the difference between discharge and admission times.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-identification",
+          "requirements": "In-Hospital Mortality Identification: Correctly uses the 'hospital_expire_flag' to identify in-hospital mortality.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-logic",
+          "requirements": "30-Day Readmission Logic: Uses a window function (LEAD) to identify the next admission and correctly determines if it occurred within 30 days of discharge.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-analytics-and-reporting",
+      "requirements": "Final Analytics and Reporting: Stratifies the cohort into tertiles based on the complexity score and reports aggregated outcomes for each tertile.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "tertile-stratification",
+          "requirements": "Tertile Stratification: Uses the NTILE(3) window function to stratify the cohort into three groups based on the medication complexity score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-by-tertile",
+          "requirements": "Grouping by Tertile: Groups the final results by the calculated complexity_tertile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-aggregation",
+          "requirements": "Outcome Aggregation: Correctly calculates the average LOS, mortality rate, and readmission rate per tertile using AVG().",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Presents rates as percentages and rounds numerical outputs for clarity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+cohort_description,number_of_patients_in_cohort,min_instability_score_cohort,p25_instability_score_cohort,median_instability_score_cohort,p75_instability_score_cohort,max_instability_score_cohort,avg_instability_score_cohort,avg_critical_events_per_general_admission,avg_length_of_stay_days_cohort,mortality_rate_cohort
+"Female, 78-88, Acute Ischemic Stroke",671,0,0,0,0,10,0.26825633383010433,0.26217153699077705,9.180824639841031,0.1296572280178838

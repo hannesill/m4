@@ -1,0 +1,1 @@
+I am evaluating a male patient. Among male pneumonia admissions, what is the 75th‑percentile serum glucose at discharge?

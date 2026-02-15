@@ -1,0 +1,1 @@
+Male patient, 94. Among male ICU patients aged 89–99, what is the 95th‑percentile 48‑hour instability score for ischemic stroke? For the top instability quartile, compare ischemic stroke versus general ICU: N, mean instability, mean abnormal episodes, mean ICU LOS (hrs), and mortality.

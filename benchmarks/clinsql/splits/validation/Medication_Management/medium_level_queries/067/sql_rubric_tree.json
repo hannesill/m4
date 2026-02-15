@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters for patients aged 64-74 at admission using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 64 AND 74`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-diagnosis-filter",
+          "requirements": "Identifies patients with a diabetes diagnosis using relevant ICD-9 ('250%') and ICD-10 ('E08%'-'E13%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-filter",
+          "requirements": "Identifies patients with an acute heart failure diagnosis using relevant ICD-9 ('428x') and ICD-10 ('I50x') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Ensures the hospital admission is at least 48 hours long using `DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 48`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "admission-patient-join",
+          "requirements": "Correctly joins the `admissions` and `patients` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-prescription-join",
+          "requirements": "Correctly joins the identified patient cohort with the `prescriptions` table on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-linkage",
+          "requirements": "Correctly links diagnoses to admissions using `hadm_id` within `EXISTS` subqueries.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-class-mapping",
+          "requirements": "Maps drug names to the seven specified antidiabetic classes using a CASE statement and LIKE operators.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-12h-window",
+          "requirements": "Correctly identifies medications initiated within the first 12 hours of admission using `DATETIME_DIFF(rx.starttime, c.admittime, HOUR) <= 12`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-48h-window",
+          "requirements": "Correctly identifies medications active within the final 48 hours of discharge using `DATETIME_DIFF(c.dischtime, rx.starttime, HOUR) <= 48`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Output",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Groups the final results by medication class to calculate initiation counts for each class.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initiation-counting",
+          "requirements": "Correctly counts the number of unique hospital admissions (`hadm_id`) with a medication initiation in each time window.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Calculates the initiation percentage for each class by dividing the initiation count by the total number of admissions in the cohort and multiplying by 100.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complete-class-reporting",
+          "requirements": "Ensures all seven requested medication classes are present in the final output, including those with zero initiations, by using a LEFT JOIN from a master class list.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

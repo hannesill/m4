@@ -1,0 +1,152 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the cohort of male patients aged 87-97 with sepsis but without septic shock.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the age at admission using `anchor_age`, `admittime`, and `anchor_year`, and filter the range `BETWEEN 87 AND 97`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-diagnosis-selection",
+          "requirements": "Sepsis Diagnosis Selection: The query must identify admissions with sepsis using a `HAVING` clause to check for ICD-9 code '99591' or ICD-10 codes starting with 'A41'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "septic-shock-exclusion",
+          "requirements": "Septic Shock Exclusion: The query must exclude admissions with septic shock using a `HAVING` clause to ensure a count of 0 for ICD-9 code '78552' or ICD-10 code 'R6521'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient demographics, diagnoses, and procedures.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "initial-cohort-joins",
+          "requirements": "Initial Cohort Joins: The query must correctly `INNER JOIN` the `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` keys.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-data-join",
+          "requirements": "Procedure Data Join: The query must use a `LEFT JOIN` to connect the sepsis cohort with the `procedures_icd` table on `hadm_id` to retain admissions without any procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies diagnostic procedures based on ICD code conventions.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "diagnostic-procedure-identification",
+          "requirements": "Diagnostic Procedure Identification: The query must apply correct filtering logic to identify diagnostic procedures from the `procedures_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "procedure-icd-version-handling",
+              "requirements": "Procedure ICD Version Handling: The query must correctly handle both ICD-9 and ICD-10 codes by using the `pr.icd_version` field.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd9-diagnostic-procedure-codes",
+              "requirements": "ICD-9 Diagnostic Procedure Codes: The query must select ICD-9 procedure codes starting with '87' or '88' to identify diagnostic procedures.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd10-diagnostic-procedure-codes",
+              "requirements": "ICD-10 Diagnostic Procedure Codes: The query must select ICD-10 procedure codes starting with 'B' to identify diagnostic procedures.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the correct calculations and aggregations to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: The query must accurately calculate the length of stay in days using `DATETIME_DIFF` on `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-categorization",
+          "requirements": "Length of Stay Categorization: The query must use a `CASE` statement to group admissions into '1-3 days' and '4-7 days' and filter the final output for these categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-admission-procedure-count",
+          "requirements": "Per-Admission Procedure Count: The query must count the number of diagnostic procedures for each admission using `COUNT(pr.icd_code)` and grouping by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation",
+          "requirements": "Final Aggregation: The query must calculate the mean number of diagnostic procedures per stay category using `AVG(diagnostic_procedure_count)` and group the final results by `stay_category`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

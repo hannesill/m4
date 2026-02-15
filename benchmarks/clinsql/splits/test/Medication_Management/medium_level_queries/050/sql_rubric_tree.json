@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters patients aged 49-59 at admission using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 49 AND 59`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-condition-filter",
+          "requirements": "T2DM Condition Filter: Identifies patients with Type 2 Diabetes Mellitus using both ICD-9 ('250%') and ICD-10 ('E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-condition-filter",
+          "requirements": "Heart Failure Condition Filter: Identifies patients with Heart Failure using both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-logic",
+          "requirements": "Comorbidity Logic: Correctly uses `INTERSECT DISTINCT` to ensure patients have both T2DM and Heart Failure diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-duration-filter",
+          "requirements": "Admission Duration Filter: Includes only hospital admissions lasting at least 72 hours (`DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 72`) to allow for analysis of both early and late periods.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation and Temporal Logic",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-classification",
+          "requirements": "Medication Classification: Uses a CASE statement to categorize drugs into 'Antidiabetic', 'Beta-Blocker', 'ACEi/ARB/ARNI', and 'Loop Diuretic' based on `rx.drug` names.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-24h-period-definition",
+          "requirements": "First 24h Period Definition: Correctly identifies medications given in the first 24 hours of admission using `DATETIME_DIFF(rx.starttime, c.admittime, HOUR) <= 24`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-48h-period-definition",
+          "requirements": "Final 48h Period Definition: Correctly identifies medications given in the final 48 hours of admission using `DATETIME_DIFF(c.dischtime, rx.starttime, HOUR) <= 48`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "demographic-join",
+          "requirements": "Demographic Join: Correctly joins `patients` and `admissions` tables on `subject_id` to link demographic data with admission records.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-join",
+          "requirements": "Medication Join: Correctly joins the patient cohort with the `prescriptions` table on `hadm_id` to link medications to specific hospital stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-join",
+          "requirements": "Diagnosis Join: Correctly links admissions to diagnoses via `hadm_id` within the subquery for condition filtering.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-patient-medication-exposure",
+          "requirements": "Per-Patient Medication Exposure: Aggregates medication data using `LOGICAL_OR` grouped by `hadm_id` and `med_class` to determine if a patient was exposed to a drug class in each period.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "total-cohort-count",
+          "requirements": "Total Cohort Count: Correctly calculates the total number of unique patients in the cohort using `COUNT(DISTINCT hadm_id)` and joins it for percentage calculations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-calculation",
+          "requirements": "Prevalence Calculation: Calculates the percentage of patients on medications in the early and late periods using `COUNTIF(...) * 100.0 / total_patients`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "transition-counts",
+          "requirements": "Transition Counts: Correctly calculates continued, initiated, and discontinued counts using `COUNTIF` with appropriate boolean logic on `was_on_early` and `was_on_late` flags.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: Groups the final results by `med_class` to provide separate statistics for each medication category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "discharge-category-column-exists",
+              "requirements": "Exists column for discharge category (e.g., discharge_category, discharge_location)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-column-exists",
+              "requirements": "Exists column for mean LOS (e.g., mean_los_days, avg_los)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stddev-los-column-exists",
+              "requirements": "Exists column for LOS standard deviation (e.g., stddev_los_days, los_sd)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-column-exists",
+              "requirements": "Exists column for percentile rank of 5-day LOS (e.g., percentile_rank_of_5_days, perc_rank_5d)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key columns (discharge category, mean LOS, stddev LOS, percentile rank)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mean-los-validation",
+          "requirements": "Validation of Mean LOS values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-los-plausible",
+              "requirements": "Clinically Plausible (1.0-30.0 days). LOS for discharged patients is typically positive but not excessively long on average.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-acceptable-home",
+              "requirements": "Acceptable Range for 'Discharged Home' (2.0-8.0 days). Home discharges are typically shorter stays.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-acceptable-facility-death",
+              "requirements": "Acceptable Range for 'Facility' or 'Death' (5.0-20.0 days). These patients are sicker and have longer stays.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "stddev-los-validation",
+          "requirements": "Validation of LOS Standard Deviation values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "stddev-los-plausible",
+              "requirements": "Clinically Plausible (1.0-40.0 days). Standard deviation should be positive and can be large, reflecting variability.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stddev-los-acceptable",
+              "requirements": "Acceptable Range (2.0-25.0 days). Should be reasonably proportional to the mean.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentile-rank-validation",
+          "requirements": "Validation of Percentile Rank for 5-day LOS",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentile-rank-plausible",
+              "requirements": "Plausible Range (0.0-100.0). Percentile rank must be within this mathematical range.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-acceptable-home",
+              "requirements": "Acceptable Range for 'Discharged Home' (40.0-80.0). Since mean LOS is low, a 5-day stay is at or above the median.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-acceptable-facility-death",
+              "requirements": "Acceptable Range for 'Facility' or 'Death' (10.0-50.0). Since mean LOS is high, a 5-day stay is below the median.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

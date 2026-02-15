@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates and filters for patients aged between 55 and 65 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-diagnosis-selection",
+          "requirements": "AMI Diagnosis Selection: Identifies patients with an Acute Myocardial Infarction (AMI) diagnosis using appropriate ICD-9 ('410%') and ICD-10 ('I21%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables to build the initial AMI cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-data-join",
+          "requirements": "Lab Data Join: Correctly joins the AMI cohort with the `labevents` table on `hadm_id` to link admissions to lab results.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "troponin-test-identification",
+          "requirements": "Troponin Test Identification: Correctly identifies High-Sensitivity Troponin T (hs-TnT) tests using `itemid = 51003`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-troponin-logic",
+          "requirements": "First Troponin Logic: Uses a window function (`ROW_NUMBER`) partitioned by `hadm_id` and ordered by `charttime` to isolate the first troponin test for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-threshold-filter",
+          "requirements": "Troponin Threshold Filter: Correctly filters for first troponin values greater than 0.01 ng/mL (`troponin_t_value > 0.01`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-count-aggregation",
+          "requirements": "Patient Count Aggregation: Correctly calculates the count of unique patients using `COUNT(DISTINCT subject_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-count-aggregation",
+          "requirements": "Admission Count Aggregation: Correctly calculates the count of admissions using `COUNT(hadm_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "statistical-calculations",
+          "requirements": "Statistical Calculations: Correctly computes the mean (`AVG`), median (`APPROX_QUANTILES`), and Interquartile Range (IQR) for the first hs-TnT values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

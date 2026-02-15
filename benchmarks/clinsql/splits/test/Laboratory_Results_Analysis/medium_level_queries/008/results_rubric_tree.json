@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "troponin-category-column-exists",
+              "requirements": "Exists Column Related to Troponin T category (e.g., troponin_category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admission-count-column-exists",
+              "requirements": "Exists Column Related to admission counts (e.g., admission_count)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-column-exists",
+              "requirements": "Exists Column Related to admission percentages (e.g., percentage_of_admissions)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "Exists Column Related to in-hospital mortality rate (e.g., in_hospital_mortality_rate_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "admission-count-validation",
+          "requirements": "Validation for 'admission_count' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "admission-count-plausible",
+              "requirements": "Clinically Plausible (1 to 5000 per category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admission-count-acceptable",
+              "requirements": "Acceptable Range (50 to 1500 per category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentage-of-admissions-validation",
+          "requirements": "Validation for 'percentage_of_admissions' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentage-of-admissions-plausible",
+              "requirements": "Clinically Plausible (0.1% to 99.9%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-of-admissions-acceptable",
+              "requirements": "Acceptable Range: 'Elevated' category should have the highest percentage (e.g., >40%), 'Normal/Minimal' should have the lowest (e.g., <30%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "in-hospital-mortality-rate-validation",
+          "requirements": "Validation for 'in_hospital_mortality_rate_pct' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "in-hospital-mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.1% to 50%). Mortality rates in this very elderly ACS cohort are expected to be high, but over 50% is unlikely.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "in-hospital-mortality-rate-acceptable",
+              "requirements": "Acceptable Range: Mortality rate should increase with Troponin category (Elevated > Borderline > Normal/Minimal). Normal: 3-12%; Borderline: 5-18%; Elevated: 10-30%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

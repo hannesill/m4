@@ -1,0 +1,1 @@
+For a 55-year-old man: among males 50–60 with sepsis (excluding septic shock), report in-hospital mortality (%) with 95% CIs and median time-to-death among non-survivors (days) by LOS (<8 vs ≥8 days).

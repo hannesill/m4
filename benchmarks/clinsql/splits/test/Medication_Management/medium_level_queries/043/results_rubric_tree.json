@@ -1,0 +1,140 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "Column Exists for Early Initiation Rate (e.g., 'early_initiation_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists",
+              "requirements": "Column Exists for Late Initiation Rate (e.g., 'late_initiation_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tertiary-column-exists",
+              "requirements": "Column Exists for Net Change (e.g., 'net_change_pp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key answer columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "early-initiation-rate-validation",
+          "requirements": "Validation for Early Initiation Rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "early-rate-clinically-plausible",
+              "requirements": "Clinically Plausible (0.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "early-rate-acceptable-range",
+              "requirements": "Acceptable Range (5.0 - 95.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "late-initiation-rate-validation",
+          "requirements": "Validation for Late Initiation Rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "late-rate-clinically-plausible",
+              "requirements": "Clinically Plausible (0.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "late-rate-acceptable-range",
+              "requirements": "Acceptable Range (0.0 - 15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "net-change-validation",
+          "requirements": "Validation for Net Change (percentage points)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "net-change-clinically-plausible",
+              "requirements": "Clinically Plausible (-100.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-acceptable-range",
+              "requirements": "Acceptable Range (-95.0 - 0.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates age at admission and filters for patients between 83 and 93 years old using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 83 AND 93`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-diagnosis-filter",
+          "requirements": "Filters for admissions with a sepsis diagnosis by joining with a subquery or CTE that identifies relevant `hadm_id`s (`a.hadm_id IN (SELECT hadm_id FROM sepsis_hadms)`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "Correctly identifies and filters for the first ICU stay of a hospital admission using a window function like `ROW_NUMBER()` and filtering for `rn = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "sepsis-code-identification",
+          "requirements": "Correctly identifies sepsis using both ICD-9 and ICD-10 codes from the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd-version-handling",
+              "requirements": "Differentiates between ICD versions using `icd_version = 9` and `icd_version = 10` in the filtering logic.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "sepsis-icd-code-selection",
+              "requirements": "Uses appropriate wildcard searches for sepsis codes, such as `icd_code LIKE '9959%'` or `'78552%'` for ICD-9, and `icd_code LIKE 'A41%'` for ICD-10.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "temporal-procedure-filter",
+          "requirements": "Restricts procedure analysis to the first 72 hours of the ICU stay using a time-based filter like `pe.starttime BETWEEN c.intime AND DATETIME_ADD(c.intime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-demographic-join",
+          "requirements": "Correctly joins `patients`, `admissions`, and `icustays` tables using `subject_id` and `hadm_id` to link patient demographics with ICU stay information.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-data-join",
+          "requirements": "Correctly uses a `LEFT JOIN` to connect the patient cohort with the `procedureevents` table on `stay_id`, ensuring patients without procedures are not excluded.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Accurately calculates the ICU length of stay in days, for example, using `DATETIME_DIFF(i.outtime, i.intime, HOUR) / 24.0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-intensity-quantification",
+          "requirements": "Correctly quantifies diagnostic intensity by counting distinct procedures using `COUNT(DISTINCT pe.itemid)` from the `procedureevents` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-stratification",
+          "requirements": "Accurately stratifies patients into quartiles based on their diagnostic procedure count using `APPROX_QUANTILES` and a subsequent `CASE` statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-aggregation",
+          "requirements": "Correctly aggregates and computes the final required metrics per quartile: mean procedure count, mean ICU LOS, and mortality percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "grouping-logic",
+              "requirements": "Groups the final results by the calculated diagnostic quartile.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "outcome-metrics-calculation",
+              "requirements": "Calculates `AVG(diagnostic_proc_count)`, `AVG(icu_los_days)`, and mortality via `AVG(CAST(hospital_expire_flag AS FLOAT64)) * 100`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

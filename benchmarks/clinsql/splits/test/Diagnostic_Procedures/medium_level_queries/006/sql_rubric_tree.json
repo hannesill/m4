@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic-cohort",
+          "requirements": "Table Join Logic for Cohort: The query must correctly join 'patients', 'admissions', and 'diagnoses_icd' tables using 'subject_id' and 'hadm_id' to build the initial patient cohort.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at admission and filter for the range 48\u201358 years.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-condition-identification",
+          "requirements": "Sepsis Condition Identification: The query must use a HAVING clause to identify admissions with at least one sepsis code ('99591', 'A419', 'R6520').",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "septic-shock-exclusion",
+          "requirements": "Septic Shock Exclusion: The query must use a HAVING clause to exclude admissions with any septic shock codes ('78552', 'R6521').",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-concept-implementation",
+      "requirements": "Clinical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-filtering",
+          "requirements": "Length of Stay Filtering: The query must filter admissions to include only those with a length of stay between 1 and 8 days using DATETIME_DIFF.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ultrasound-procedure-identification",
+          "requirements": "Ultrasound Procedure Identification: The query must identify ultrasound procedures by filtering 'procedures_icd' for ICD-9 codes starting with '887%'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: The query must correctly identify if an admission included an ICU stay by checking for a matching 'hadm_id' in the 'icustays' table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-procedure-join",
+          "requirements": "Cohort to Procedure Join: The query must use a LEFT JOIN to connect the sepsis cohort to the 'procedures_icd' table on 'hadm_id' to correctly count ultrasounds per admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-icu-join",
+          "requirements": "Cohort to ICU Join: The query must use a LEFT JOIN to connect the sepsis cohort to the 'icustays' table on 'hadm_id' to avoid losing patients who were not in the ICU.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Output",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stratification-logic",
+          "requirements": "Stratification Logic: The query must use CASE statements to create two distinct groups for length of stay ('1-4 Days', '5-8 Days') and ICU status ('ICU Stay', 'No ICU Stay').",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-count-calculation",
+          "requirements": "Patient Count Calculation: The final query must calculate the number of unique patients in each group using COUNT(DISTINCT p.subject_id).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ultrasound-count-per-admission",
+          "requirements": "Ultrasound Count per Admission: The query must count the number of ultrasound procedures for each admission, correctly handling cases with zero procedures.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-ultrasound-calculation",
+          "requirements": "Mean Ultrasound Calculation: The query must calculate the average number of ultrasounds per admission for each group using AVG(p.ultrasound_count).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-ordering",
+          "requirements": "Final Grouping and Ordering: The final SELECT statement must group results by 'los_group' and 'icu_status' and order them for clear presentation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

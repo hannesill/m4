@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction for Male Inpatients with Lower GI Bleeding",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using the condition `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately filter for patients aged 68 to 78 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-selection-lgi-bleed",
+          "requirements": "Condition Selection for Lower GI Bleed: The query must use appropriate ICD-9 and ICD-10 codes (e.g., '578%', 'K92.1%', 'K92.2%') to identify patients with lower GI bleeding.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics for Lab Instability and Outcomes",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-instability-score-calculation",
+          "requirements": "Lab Instability Score Calculation: The query must define and calculate a lab instability score by summing critical lab events within the first 72 hours of admission.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must correctly compute the 90th percentile of the lab instability score for the defined patient cohort using a function like APPROX_QUANTILES.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-tier-cohort-identification",
+          "requirements": "Top-Tier Cohort Identification: The query must correctly identify the 'top-tier' cohort as patients with an instability score greater than the calculated 90th percentile.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-tier-outcome-metrics",
+          "requirements": "Top-Tier Outcome Metrics: The query must calculate the mortality rate and average length of stay specifically for the identified top-tier cohort.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "comparative-analysis",
+      "requirements": "Comparative Analysis of Critical Lab Rates",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "top-tier-critical-rate-calculation",
+          "requirements": "Top-Tier Critical Rate Calculation: The query must correctly calculate the proportion of top-tier patients affected by each critical lab event.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "general-population-critical-rate-calculation",
+          "requirements": "General Population Critical Rate Calculation: The query must calculate the proportion of all inpatients (not just the LGI bleed cohort) affected by each critical lab event for comparison.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "relative-risk-calculation",
+          "requirements": "Relative Risk Calculation: The query must compute the relative risk by dividing the top-tier critical rate by the general population critical rate for each lab test.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Data Integrity",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join admissions, patients, diagnoses_icd, and labevents tables using appropriate keys (subject_id, hadm_id).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filtering-72h",
+          "requirements": "Temporal Filtering (72h): The query must filter lab events to only include those occurring within the first 72 hours from the admission time.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "handling-of-null-scores",
+          "requirements": "Handling of Null Scores: The query must use COALESCE(instability_score, 0) to ensure patients with no critical lab events are assigned a score of zero, not NULL.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

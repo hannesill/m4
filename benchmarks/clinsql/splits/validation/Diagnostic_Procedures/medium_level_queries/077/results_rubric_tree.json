@@ -1,0 +1,156 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p25-column-exists",
+              "requirements": "Column for 25th percentile exists (e.g., p25_ultrasounds)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-column-exists",
+              "requirements": "Column for 50th percentile exists (e.g., p50_ultrasounds)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-column-exists",
+              "requirements": "Column for 75th percentile exists (e.g., p75_ultrasounds)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-grouping-column-exists",
+              "requirements": "Column for Length of Stay grouping exists (e.g., stay_category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-grouping-column-exists",
+              "requirements": "Column for ICU status grouping exists (e.g., icu_status)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in required columns (percentiles and groupings)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "p25-ultrasound-validation",
+          "requirements": "Exist Column Related to 25th percentile of ultrasounds (e.g., p25_ultrasounds)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-p25",
+              "requirements": "Clinically Plausible (0.0-5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-p25",
+              "requirements": "Acceptable Range (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p50-ultrasound-validation",
+          "requirements": "Exist Column Related to 50th percentile of ultrasounds (e.g., p50_ultrasounds)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-p50",
+              "requirements": "Clinically Plausible (0.0-8.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-p50",
+              "requirements": "Acceptable Range (0.0-3.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p75-ultrasound-validation",
+          "requirements": "Exist Column Related to 75th percentile of ultrasounds (e.g., p75_ultrasounds)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-p75",
+              "requirements": "Clinically Plausible (0.0-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-p75",
+              "requirements": "Acceptable Range (0.0-5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

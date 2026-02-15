@@ -1,0 +1,4 @@
+metric,value,unit
+Percentile Rank for Score 85,88.24,%
+Avg ICU LOS (Top Quartile),9.32,days
+Mortality Rate (Top Quartile),80.0,%

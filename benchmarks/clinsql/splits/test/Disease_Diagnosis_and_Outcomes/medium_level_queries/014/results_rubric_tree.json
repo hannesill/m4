@@ -1,0 +1,187 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-mortality",
+              "requirements": "A column for mortality rate must exist (e.g., 'mortality_rate_percent', 'in_hospital_death_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-median-los",
+              "requirements": "A column for median length of stay must exist (e.g., 'median_los_days', 'median_los').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-ckd",
+              "requirements": "A column for CKD prevalence must exist (e.g., 'ckd_prevalence_percent', 'ckd_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-diabetes",
+              "requirements": "A column for diabetes prevalence must exist (e.g., 'diabetes_prevalence_percent', 'dm_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-icu-group",
+              "requirements": "A column for ICU grouping must exist (e.g., 'severity_group', 'icu_status').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-los-group",
+              "requirements": "A column for LOS grouping must exist (e.g., 'los_category', 'los_group').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in the answer-relevant columns ('mortality_rate_percent', 'median_los_days', 'ckd_prevalence_percent', 'diabetes_prevalence_percent').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation of the 'mortality_rate_percent' column.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0-100%). For this elderly HF cohort, a more refined plausible range is 0.5-50%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (1-40%). Non-ICU mortality should be lower than ICU mortality within similar LOS groups. Values are 1.86, 2.9, 7.39 (non-ICU) and 32.79, 11.62, 17.32 (ICU).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-validation",
+          "requirements": "Validation of the 'median_los_days' column.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-los-plausible",
+              "requirements": "Clinically Plausible (1-90 days).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-acceptable",
+              "requirements": "Acceptable Range (1-20 days). Median LOS should fall within or near the bounds of its category (e.g., 1-3 for '1-3 Days'). Values are 2, 5, 11, 2, 5, 12.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ckd-prevalence-validation",
+          "requirements": "Validation of the 'ckd_prevalence_percent' column.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "ckd-prevalence-plausible",
+              "requirements": "Clinically Plausible (0-100%). For this elderly HF cohort, a more refined plausible range is 20-80%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ckd-prevalence-acceptable",
+              "requirements": "Acceptable Range (40-70%). CKD is highly prevalent in this population. Values are 51.85, 57.95, 61.34, 54.73, 52.11, 52.65.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "diabetes-prevalence-validation",
+          "requirements": "Validation of the 'diabetes_prevalence_percent' column.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "diabetes-prevalence-plausible",
+              "requirements": "Clinically Plausible (0-100%). For this elderly HF cohort, a more refined plausible range is 20-70%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "diabetes-prevalence-acceptable",
+              "requirements": "Acceptable Range (35-55%). Diabetes is a common comorbidity. Values are 44.87, 46.26, 47.94, 43.19, 40.61, 40.64.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

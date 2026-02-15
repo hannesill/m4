@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-quintile-stratification",
+              "requirements": "Column exists for quintile stratification (e.g., 'diagnostic_intensity_quintile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg-procedures",
+              "requirements": "Column exists for average diagnostic procedure count (e.g., 'avg_diagnostic_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg-los",
+              "requirements": "Column exists for average hospital length of stay (e.g., 'avg_hospital_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-mortality",
+              "requirements": "Column exists for hospital mortality percentage (e.g., 'hospital_mortality_percent')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL or Empty values in the output columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "avg-diagnostic-procedures-validation",
+          "requirements": "Validate column for average diagnostic procedure count",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-avg-procedures",
+              "requirements": "Clinically Plausible: Average procedure count should be between 0 and 50",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-avg-procedures",
+              "requirements": "Acceptable Range: Average procedure count should be between 0.1 and 20.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-hospital-los-validation",
+          "requirements": "Validate column for average hospital length of stay",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-avg-los",
+              "requirements": "Clinically Plausible: Average hospital LOS for ICU PE patients should be between 1 and 150 days",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-avg-los",
+              "requirements": "Acceptable Range: Average hospital LOS should be between 5.0 and 40.0 days",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hospital-mortality-validation",
+          "requirements": "Validate column for hospital mortality percentage",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-mortality",
+              "requirements": "Clinically Plausible: Mortality must be a percentage between 0% and 100%",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-mortality",
+              "requirements": "Acceptable Range: Hospital mortality for this cohort should be between 5.0% and 45.0%",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,160 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the target cohort of female inpatients aged 68-78 with HHS and the general inpatient comparison group.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "hhs-target-cohort-definition",
+          "requirements": "Defines the specific HHS cohort using demographic and diagnostic criteria.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "gender-selection",
+              "requirements": "Gender Selection: The query correctly filters for female patients using `pat.gender = 'F'`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "age-range-selection",
+              "requirements": "Age Range Selection: The query correctly calculates age at admission and filters for patients aged between 68 and 78 years.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hhs-condition-identification",
+              "requirements": "HHS Condition Identification: The query correctly identifies HHS admissions by filtering on relevant ICD-9 and ICD-10 codes (e.g., '2502%', 'E100%', 'E110%', 'E130%').",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-group-definition",
+          "requirements": "Cohort Group Definition: The query correctly uses a flag (e.g., `is_target_cohort`) to distinguish between the HHS target cohort and the general inpatient population for comparative analysis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly implements the logic for medication complexity and hyperkalemia risk.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-time-window",
+          "requirements": "Medication Time Window: The query correctly filters prescriptions to the first 72 hours of admission using `pres.starttime BETWEEN pb.admittime AND DATETIME_ADD(pb.admittime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-logic",
+          "requirements": "Medication Complexity Logic: The query correctly calculates medication complexity as the count of distinct drugs (`COUNT(DISTINCT pres.drug)`) within the 72-hour window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hyperkalemia-risk-identification",
+          "requirements": "Hyperkalemia Risk Identification: The query correctly identifies patients with a risk of drug interaction by counting at least two distinct categories of hyperkalemia-risk medications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, diagnoses, and prescriptions.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-tables-join",
+          "requirements": "Core Tables Join: The query correctly joins `admissions`, `patients`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to build the initial cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-data-join",
+          "requirements": "Medication Data Join: The query correctly performs a LEFT JOIN from the patient base to the `prescriptions` table on `hadm_id` to include all patients, even those without medications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates and presents the final metrics for comparison between the two cohorts.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final query correctly groups results by the cohort flag (`is_target_cohort`) to produce separate metrics for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "med-complexity-distribution",
+          "requirements": "Medication Complexity Distribution: The query correctly uses `APPROX_QUANTILES` to show the distribution of medication complexity scores.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-percentile-rank-calculation",
+          "requirements": "Median Percentile Rank Calculation: The query correctly calculates the median percentile rank of complexity for patients with hyperkalemia risk, using a combination of `PERCENT_RANK` and `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percent-affected-calculation",
+          "requirements": "Percent Affected Calculation: The query correctly calculates the percentage of patients with hyperkalemia risk using `AVG(has_hyperk_interaction_risk) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-los-mortality",
+          "requirements": "Top-Quartile LOS and Mortality: The query correctly identifies the top quartile of medication complexity using `NTILE` and calculates the average LOS and mortality rate for that specific subgroup.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

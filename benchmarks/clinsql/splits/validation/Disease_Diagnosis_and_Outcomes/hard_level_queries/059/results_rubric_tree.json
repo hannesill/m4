@@ -1,0 +1,326 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "dka-risk-score-column-exists",
+              "requirements": "Column Exists for DKA Cohort Mean Risk Score",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "dka-mortality-column-exists",
+              "requirements": "Column Exists for DKA Cohort 30-Day Mortality Rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-percentile-column-exists",
+              "requirements": "Column Exists for Risk Percentile",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "dka-aki-rate-column-exists",
+              "requirements": "Column Exists for DKA Cohort AKI Rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-aki-rate-column-exists",
+              "requirements": "Column Exists for General Cohort AKI Rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "dka-ards-rate-column-exists",
+              "requirements": "Column Exists for DKA Cohort ARDS Rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-ards-rate-column-exists",
+              "requirements": "Column Exists for General Cohort ARDS Rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "dka-survivor-los-column-exists",
+              "requirements": "Column Exists for DKA Cohort Survivor LOS",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-survivor-los-column-exists",
+              "requirements": "Column Exists for General Cohort Survivor LOS",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in Answer Columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "dka-mean-risk-score-validation",
+          "requirements": "Validate Value for DKA Mean Risk Score (e.g., dka_cohort_mean_risk_score)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "dka-mean-risk-score-plausible",
+              "requirements": "Clinically Plausible (0-40)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "dka-mean-risk-score-acceptable",
+              "requirements": "Acceptable Range (5-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "dka-mortality-rate-validation",
+          "requirements": "Validate Value for DKA 30d Mortality Rate (e.g., dka_cohort_30d_mortality_rate_pct)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "dka-mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "dka-mortality-rate-acceptable",
+              "requirements": "Acceptable Range (2-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "risk-percentile-validation",
+          "requirements": "Validate Value for Risk Percentile (e.g., risk_percentile_for_matched_profile)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "risk-percentile-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-percentile-acceptable",
+              "requirements": "Acceptable Range (50-99)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "dka-aki-rate-validation",
+          "requirements": "Validate Value for DKA AKI Rate (e.g., dka_cohort_aki_rate_pct)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "dka-aki-rate-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "dka-aki-rate-acceptable",
+              "requirements": "Acceptable Range (25-70)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "general-aki-rate-validation",
+          "requirements": "Validate Value for General Cohort AKI Rate (e.g., general_cohort_aki_rate_pct)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "general-aki-rate-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-aki-rate-acceptable",
+              "requirements": "Acceptable Range (5-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "dka-ards-rate-validation",
+          "requirements": "Validate Value for DKA ARDS Rate (e.g., dka_cohort_ards_rate_pct)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "dka-ards-rate-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "dka-ards-rate-acceptable",
+              "requirements": "Acceptable Range (0.5-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "general-ards-rate-validation",
+          "requirements": "Validate Value for General Cohort ARDS Rate (e.g., general_cohort_ards_rate_pct)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "general-ards-rate-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-ards-rate-acceptable",
+              "requirements": "Acceptable Range (0.1-2)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "dka-survivor-los-validation",
+          "requirements": "Validate Value for DKA Survivor LOS (e.g., dka_cohort_survivor_los_days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "dka-survivor-los-plausible",
+              "requirements": "Clinically Plausible (1-90)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "dka-survivor-los-acceptable",
+              "requirements": "Acceptable Range (4-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "general-survivor-los-validation",
+          "requirements": "Validate Value for General Cohort Survivor LOS (e.g., general_cohort_survivor_los_days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "general-survivor-los-plausible",
+              "requirements": "Clinically Plausible (1-90)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-survivor-los-acceptable",
+              "requirements": "Acceptable Range (3-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

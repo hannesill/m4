@@ -1,0 +1,4 @@
+discharge_category,total_admissions,admissions_los_ge_7_days,proportion_los_ge_7_days_pct,percentile_rank_of_10_day_los
+Discharged Home,7852,941,11.98,94.54
+Discharged to Facility,621,309,49.76,69.89
+In-Hospital Mortality,227,107,47.14,65.64

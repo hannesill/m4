@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the age at admission and filter for patients aged between 61 and 71.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "chest-pain-diagnosis",
+          "requirements": "Chest Pain Diagnosis: The query must filter admissions based on a diagnosis of chest pain, correctly handling both ICD-9 ('786.5%') and ICD-10 ('R07%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identification and Categorization of Troponin Levels",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "troponin-lab-event-identification",
+          "requirements": "Troponin Lab Event Identification: The query must correctly identify High Sensitivity Troponin T lab events using `itemid = 51003`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initial-troponin-selection",
+          "requirements": "Initial Troponin Selection: The query must use a window function (`ROW_NUMBER`) partitioned by admission and ordered by time to select only the first troponin measurement for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-value-categorization",
+          "requirements": "Troponin Value Categorization: The query must use a CASE statement to correctly categorize troponin values into 'Normal' (<0.014), 'Borderline' (0.014-0.052), and 'Myocardial Injury' (>0.052).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly Joining MIMIC-IV Tables",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must correctly join the `admissions` and `diagnoses_icd` tables on `hadm_id` to link diagnoses to specific admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-lab-event-join",
+          "requirements": "Admission-Lab Event Join: The query must correctly join the patient cohort with the `labevents` table on `hadm_id` to retrieve lab results for the relevant admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculation of Percentage Distribution",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The query must group the final results by the created `troponin_category` to count admissions in each category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "count-aggregation",
+          "requirements": "Count Aggregation: The query must count the number of admissions (`hadm_id`) within each troponin category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-distribution-calculation",
+          "requirements": "Percentage Distribution Calculation: The query must accurately calculate the percentage of total admissions for each category, using a window function (`SUM() OVER()`) or equivalent logic for the denominator.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output must be ordered logically by troponin category severity ('Normal', 'Borderline', 'Myocardial Injury').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

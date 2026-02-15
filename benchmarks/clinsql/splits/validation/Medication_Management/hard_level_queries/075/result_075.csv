@@ -1,0 +1,4 @@
+complexity_tertile,number_of_patients,min_complexity_score,max_complexity_score,avg_complexity_score,avg_los_days,mortality_rate_pct,readmission_rate_30day_pct,pct_with_high_risk_interaction
+1,287,34,111,86.3,3.2,0.35,34.15,0.0
+2,286,111,147,127.7,6.1,0.7,29.72,0.0
+3,286,148,314,193.4,10.9,8.39,27.97,0.0

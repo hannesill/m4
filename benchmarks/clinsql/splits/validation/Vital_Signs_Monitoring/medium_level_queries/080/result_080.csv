@@ -1,0 +1,5 @@
+map_category,number_of_stays,mean_of_stay_averages,median_of_stay_averages,p25_of_stay_averages,p75_of_stay_averages,iqr_of_stay_averages
+< 65 mmHg (Hypotensive),142,58.04,61.0,57.0,63.49,6.49
+65-74 mmHg (Low Normal),1029,71.09,71.5,69.1,73.34,4.24
+75-84 mmHg (Normal),1310,79.76,79.57,77.33,82.23,4.9
+>= 85 mmHg (High),903,93.24,91.1,87.67,96.33,8.67

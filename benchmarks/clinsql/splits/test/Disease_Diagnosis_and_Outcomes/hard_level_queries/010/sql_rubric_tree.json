@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-at-admission-calculation",
+          "requirements": "Age at Admission Calculation: The query must accurately calculate the patient's age at the time of admission using the formula `(EXTRACT(YEAR FROM adm.admittime) - pat.anchor_year) + pat.anchor_age`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-filtering",
+          "requirements": "Age Range Filtering: The query must filter the cohort to include only patients aged 39 to 49 at the time of admission (`age_at_admission BETWEEN 39 AND 49`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-selection",
+          "requirements": "Inpatient Selection: The query must correctly select inpatient admissions by joining the `patients` and `admissions` tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must join the admissions cohort with `diagnoses_icd` on `hadm_id` to access diagnosis codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "dka-identification",
+          "requirements": "DKA Identification: The query must correctly identify patients with Diabetic Ketoacidosis (DKA) using a flag (`has_dka`) based on a comprehensive set of ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cardiovascular-complication-identification",
+          "requirements": "Cardiovascular Complication Identification: The query must correctly identify cardiovascular complications using a flag (`has_cardio_complication`) based on specified ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "neurologic-complication-identification",
+          "requirements": "Neurologic Complication Identification: The query must correctly identify neurologic complications using a flag (`has_neuro_complication`) based on specified ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly handle both ICD-9 and ICD-10 codes by checking the `icd_version` column in its conditional logic.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "thirty-day-mortality-calculation",
+          "requirements": "30-Day Mortality Calculation: The query must correctly calculate 30-day mortality by considering both in-hospital deaths (`hospital_expire_flag`) and post-discharge deaths within 30 days (`DATETIME_DIFF(fa.dod, fa.dischtime, DAY) BETWEEN 0 AND 30`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "survivor-los-calculation",
+          "requirements": "Survivor LOS Calculation: The query must calculate the mean length of stay (LOS) exclusively for patients who survived the hospital admission, using a conditional average `AVG(CASE WHEN hospital_expire_flag = 0 THEN los_days END)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "custom-risk-score-logic",
+          "requirements": "Custom Risk Score Logic: The query must implement the specified custom risk score formula, incorporating age, critical illnesses, and complication flags.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dka-cohort-risk-percentile",
+          "requirements": "DKA Cohort Risk Percentile: The query must correctly calculate the risk percentile within the DKA cohort using `PERCENT_RANK() OVER (ORDER BY risk_score)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "main-cohort-comparison-aggregation",
+          "requirements": "Main Cohort Comparison Aggregation: The query must group results into 'DKA Cohort' and 'General Cohort' and calculate the specified average metrics (risk score, mortality, complication rates, survivor LOS).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "target-profile-percentile-aggregation",
+          "requirements": "Target Profile Percentile Aggregation: The query must isolate the DKA cohort, filter for patients aged 44, and calculate the average risk percentile for this specific profile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

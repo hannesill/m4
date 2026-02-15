@@ -1,0 +1,4 @@
+troponin_category,admission_count
+Normal (<= 0.04 ng/mL),301
+Borderline (> 0.04 to 0.1 ng/mL),320
+Elevated (> 0.1 ng/mL),1349

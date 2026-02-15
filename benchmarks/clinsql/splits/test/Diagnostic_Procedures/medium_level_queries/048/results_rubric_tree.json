@@ -1,0 +1,125 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "grouping-column-exists-los-stay",
+              "requirements": "Exists a column for grouping by length of stay (e.g., 'stay_group', 'los_category')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "grouping-column-exists-diagnosis-type",
+              "requirements": "Exists a column for grouping by diagnosis type (e.g., 'diagnosis_type', 'hf_status')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "metric-column-exists-admission-count",
+              "requirements": "Exists a column for the count of admissions (e.g., 'admission_count', 'num_admissions')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "metric-column-exists-avg-imaging",
+              "requirements": "Exists a column for the average MRI/CT procedures per admission (e.g., 'avg_mri_ct_per_admission', 'mean_imaging_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values-in-key-columns",
+          "requirements": "No NULL/Empty values in key metric columns ('admission_count', 'avg_mri_ct_per_admission')",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "admission-count-validation",
+          "requirements": "Validation for Admission Count Column (e.g., `admission_count`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "admission-count-plausible-range",
+              "requirements": "Admission counts are clinically plausible (10, 10000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admission-count-acceptable-range",
+              "requirements": "Admission counts are within an acceptable range (100, 2500)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-imaging-validation",
+          "requirements": "Validation for Average MRI/CT Column (e.g., `avg_mri_ct_per_admission`)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-imaging-plausible-range",
+              "requirements": "Average MRI/CT per admission is clinically plausible (0.0, 2.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-imaging-acceptable-range",
+              "requirements": "Average MRI/CT per admission is within an acceptable range (0.0, 0.2)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

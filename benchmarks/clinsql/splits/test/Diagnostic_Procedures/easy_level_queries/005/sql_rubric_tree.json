@@ -1,0 +1,103 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged 57 to 67 using `p.anchor_age BETWEEN 57 AND 67`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies the correct medical codes for echocardiography procedures.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "echocardiography-icd9-selection",
+          "requirements": "ICD-9 Echocardiography Code Selection: The query must correctly identify the ICD-9 code for echocardiography procedures, such as `pr.icd_code = '88.72'` when `pr.icd_version = 9`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "echocardiography-icd10-selection",
+          "requirements": "ICD-10 Echocardiography Code Selection: The query must correctly identify ICD-10 codes for echocardiography. The implementation incorrectly uses `pr.icd_code LIKE 'B21%'` which corresponds to HIV disease, not an echocardiography procedure.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-selection",
+          "requirements": "Table Selection: The query must join the `patients` and `procedures_icd` tables to link patient demographics with their recorded procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between `patients` and `procedures_icd` tables must be correctly performed on `p.subject_id = pr.subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-patient-distinct-procedure-count",
+          "requirements": "Per-Patient Distinct Procedure Count: The query must group results by patient (`GROUP BY p.subject_id`) and count the number of unique procedures per patient using `COUNT(DISTINCT pr.icd_code)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must calculate the 75th percentile from the per-patient procedure counts using `APPROX_QUANTILES(procedure_count, 100)[OFFSET(75)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

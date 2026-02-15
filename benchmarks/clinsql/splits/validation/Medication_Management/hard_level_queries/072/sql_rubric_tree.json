@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Identifies the correct patient population based on demographics and primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Correctly filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly filters for patients aged 84 to 94 at the time of admission using the calculated age.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dka-diagnosis-selection",
+          "requirements": "DKA Diagnosis Selection: Correctly identifies patients with a DKA diagnosis using an EXISTS subquery on the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dka-icd-codes",
+          "requirements": "DKA ICD Codes: Accurately filters for both ICD-9 ('2501%') and ICD-10 ('E1010', 'E1110', 'E1310') codes for DKA.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly implements logic for temporal constraints and medication-based risk.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-time-window",
+          "requirements": "Medication Time Window: Filters prescriptions to include only those started within the first 48 hours of admission using `pr.starttime <= DATETIME_ADD(dc.admittime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hyperkalemia-risk-drug-identification",
+          "requirements": "Hyperkalemia-Risk Drug Identification: Correctly identifies at least four classes of hyperkalemia-risk drugs using a CASE statement and string matching.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "drug-interaction-logic",
+          "requirements": "Drug Interaction Logic: Correctly flags patients with a risk interaction by counting if two or more distinct risk-drug classes were administered.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, diagnoses, and prescriptions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: Correctly joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-prescriptions-join",
+          "requirements": "Cohort-Prescriptions Join: Correctly joins the DKA cohort with the `prescriptions` table on `hadm_id` to link medications to the specific hospital stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculates and reports the required metrics and comparisons.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "metric-calculation-base",
+          "requirements": "Metric Calculation Base: Correctly calculates per-patient LOS, medication complexity score, and the hyperkalemia risk flag before final aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-and-quartile-calculation",
+          "requirements": "Percentile and Quartile Calculation: Correctly uses `PERCENT_RANK()` and `NTILE(4)` window functions to rank patients by medication complexity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stratification-by-risk-interaction",
+          "requirements": "Stratification by Risk Interaction: Correctly groups results by the `has_hyperkalemia_risk_interaction` flag to compare the two cohorts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-reporting",
+          "requirements": "Top Quartile Reporting: Correctly filters and reports metrics for patients in the top complexity quartile (`complexity_quartile = 1`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-and-output",
+          "requirements": "Final Aggregation and Output: Correctly calculates and formats the average complexity, percentile, LOS, and mortality for each stratum, and combines results with `UNION ALL`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

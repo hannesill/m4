@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-regimen_type",
+              "requirements": "Column 'regimen_type' or similar exists, identifying the insulin regimen.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-admission_initiation_pct",
+              "requirements": "Column 'admission_initiation_pct' or similar exists, reporting the percentage of initiation in the first 72h.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-discharge_initiation_pct",
+              "requirements": "Column 'discharge_initiation_pct' or similar exists, reporting the percentage of initiation in the final 48h.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-absolute_difference_pct_points",
+              "requirements": "Column 'absolute_difference_pct_points' or similar exists, reporting the absolute percentage point difference.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the key result columns ('admission_initiation_pct', 'discharge_initiation_pct', 'absolute_difference_pct_points').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "admission-initiation-pct-validation",
+          "requirements": "Validation of 'admission_initiation_pct' values",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "admission-initiation-pct-plausible",
+              "requirements": "Values are within a plausible range [0.0, 100.0].",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admission-initiation-pct-acceptable",
+              "requirements": "Values are within an acceptable range for this cohort [0.0, 30.0].",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "discharge-initiation-pct-validation",
+          "requirements": "Validation of 'discharge_initiation_pct' values",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "discharge-initiation-pct-plausible",
+              "requirements": "Values are within a plausible range [0.0, 100.0].",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "discharge-initiation-pct-acceptable",
+              "requirements": "Values are within an acceptable range for this cohort [0.0, 20.0].",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "absolute-difference-pct-points-validation",
+          "requirements": "Validation of 'absolute_difference_pct_points' values",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "absolute-difference-pct-points-plausible",
+              "requirements": "Values are within a plausible range [0.0, 100.0].",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-difference-pct-points-acceptable",
+              "requirements": "Values are within an acceptable range [0.0, 30.0].",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

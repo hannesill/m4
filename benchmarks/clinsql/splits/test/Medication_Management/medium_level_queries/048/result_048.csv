@@ -1,0 +1,5 @@
+regimen_class,total_patients,patients_on_regimen_early,percent_on_regimen_early,patients_on_regimen_late,percent_on_regimen_late,continued_count,initiated_late_count,discontinued_count
+Basal,3138,27,0.9,1,0.0,0,1,27
+Bolus,3138,244,7.8,26,0.8,19,7,225
+Basal-Bolus,3138,26,0.8,0,0.0,0,0,26
+Sliding_Scale,3138,0,0.0,0,0.0,0,0,0

@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query correctly calculates age at admission and filters for the range 64-74 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 64 AND 74`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-diagnosis-inclusion",
+          "requirements": "Sepsis Diagnosis Inclusion: The query correctly identifies patients with a sepsis diagnosis using `d.icd_code = '99591' OR d.icd_code LIKE 'A41%'` in an `EXISTS` clause.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "septic-shock-exclusion",
+          "requirements": "Septic Shock Exclusion: The query correctly excludes patients with a septic shock diagnosis using `d.icd_code = '78552' OR d.icd_code = 'R6521'` in a `NOT EXISTS` clause.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "ckd-identification",
+          "requirements": "CKD Identification: The query correctly flags patients with Chronic Kidney Disease using ICD-9 ('585%') and ICD-10 ('N18%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-identification",
+          "requirements": "Diabetes Identification: The query correctly flags patients with Diabetes using a comprehensive set of ICD-9 ('250%') and ICD-10 ('E08%' to 'E11%', 'E13%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay (LOS) Calculation: The query calculates LOS in days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY)` and handles non-positive values with `GREATEST`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query correctly joins `patients` and `admissions` tables on `subject_id` to form the initial cohort.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnoses-table-linkage",
+          "requirements": "Diagnoses Table Linkage: The query correctly links to the `diagnoses_icd` table on `hadm_id` for identifying conditions and comorbidities.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-aggregation",
+          "requirements": "Comorbidity Aggregation: The query correctly aggregates comorbidity flags at the admission level using `GROUP BY sc.hadm_id, sc.hospital_expire_flag, sc.length_of_stay`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-quartile-calculation",
+          "requirements": "LOS Quartile Calculation: The query correctly partitions the cohort into four quartiles based on length of stay using `NTILE(4) OVER (ORDER BY cwc.length_of_stay)`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: The final query correctly groups results by `los_quartile` to calculate metrics per quartile.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation-mortality",
+          "requirements": "Metric Calculation (Mortality): The query calculates the in-hospital mortality rate as a percentage using `AVG(CAST(hospital_expire_flag AS FLOAT64)) * 100`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation-comorbidities",
+          "requirements": "Metric Calculation (Comorbidities): The query correctly calculates CKD and diabetes prevalence rates using `AVG(CAST(has_ckd AS FLOAT64)) * 100` and `AVG(CAST(has_diabetes AS FLOAT64)) * 100`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

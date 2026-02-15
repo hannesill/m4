@@ -1,0 +1,2 @@
+target_map_value_mmhg,percentile_rank_of_target_map,total_icu_stays_in_cohort,cohort_mean_of_avg_map,cohort_stddev_of_avg_map,cohort_min_avg_map,cohort_p25_avg_map,cohort_p50_avg_map,cohort_p75_avg_map,cohort_max_avg_map
+85,73.93,3590,79.63,10.49,31.0,72.81,78.23,85.53,165.82

@@ -1,0 +1,4 @@
+complexity_tertile,num_patients_in_stratum,min_complexity_score,max_complexity_score,avg_complexity_score,avg_los_days,mortality_rate_pct,readmission_rate_30d_pct
+1,28,0,19,13.18,15.46,3.57,50.0
+2,28,19,30,25.04,18.39,0.0,60.71
+3,27,30,53,37.15,26.74,7.41,48.15

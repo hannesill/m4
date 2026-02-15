@@ -1,0 +1,229 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "base-cohort-filtering",
+          "requirements": "Initial demographic filtering for female patients aged 57-67.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "gender-selection",
+              "requirements": "Filters for female patients using `p.gender = 'F'`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "age-range-selection",
+              "requirements": "Correctly calculates age at admission and filters for the range 57 to 67 years using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 57 AND 67`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "sepsis-condition-filtering",
+          "requirements": "Identifies and includes patients with a diagnosis of sepsis or septic shock.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "sepsis-cohort-inclusion",
+              "requirements": "The query correctly filters the cohort to include only admissions with sepsis or septic shock using `WHERE s.has_sepsis = 1 OR s.has_septic_shock = 1`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sepsis-identification",
+          "requirements": "Flags admissions with sepsis using appropriate ICD-9 ('99591') and ICD-10 ('A41%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "septic-shock-identification",
+          "requirements": "Flags admissions with septic shock using appropriate ICD-9 ('78552') and ICD-10 ('R6521') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-severity-logic",
+          "requirements": "Correctly assigns patients to 'Septic Shock' or 'Sepsis (without shock)' groups, prioritizing septic shock if both are present.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Joins admissions, patients, and diagnoses_icd tables to build the initial cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "admissions-patients-join",
+              "requirements": "Correctly joins `admissions` and `patients` tables on `subject_id`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "diagnoses-join",
+              "requirements": "Correctly joins the cohort with `diagnoses_icd` on `hadm_id`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "charlson-table-join",
+          "requirements": "Correctly joins the sepsis cohort with the `charlson` derived table on `hadm_id` to get the comorbidity index.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "scaffold-join",
+          "requirements": "Uses a LEFT JOIN from a complete strata scaffold to the cohort data to ensure all groups are present in the final output, even if they have no patients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stratification-logic",
+          "requirements": "Correctly stratifies patients based on LOS and Charlson index.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "los-grouping",
+              "requirements": "Calculates length of stay and correctly groups it into '\u22647 days' and '>7 days'.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "charlson-grouping",
+              "requirements": "Correctly groups the Charlson index into '\u22643', '4\u20135', and '>5'.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-calculation",
+          "requirements": "Calculates mortality rates for each LOS group within the primary strata.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-le-7",
+              "requirements": "Correctly calculates the mortality rate (%) for the LOS \u22647 days group using `SUM(IF(los_group = '\u22647 days', hospital_expire_flag, 0))` / `COUNTIF(los_group = '\u22647 days')`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-gt-7",
+              "requirements": "Correctly calculates the mortality rate (%) for the LOS >7 days group using `SUM(IF(los_group = '>7 days', hospital_expire_flag, 0))` / `COUNTIF(los_group = '>7 days')`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "difference-calculation",
+          "requirements": "Calculates absolute and relative differences in mortality between LOS groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "absolute-difference",
+              "requirements": "Correctly calculates the absolute difference between the mortality rates of the two LOS groups.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-difference",
+              "requirements": "Correctly calculates the relative difference (ratio) between the mortality rates of the two LOS groups.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "The final result is correctly grouped by `sepsis_severity` and `charlson_group`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

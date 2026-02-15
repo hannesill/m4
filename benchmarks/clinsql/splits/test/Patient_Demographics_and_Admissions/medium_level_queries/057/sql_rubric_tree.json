@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients by using the condition p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged 40 to 50 using the condition p.anchor_age BETWEEN 40 AND 50.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: The query must join with the 'icustays' table to correctly identify hospital admissions that included an ICU stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "discharge-outcome-stratification",
+          "requirements": "Discharge Outcome Stratification: The query must use a CASE statement or similar logic to correctly categorize patients into 'In-Hospital Mortality', 'Discharged to Hospice', and 'Discharged Home' based on 'hospital_expire_flag' and 'discharge_location' fields.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-filter",
+          "requirements": "Outcome Filter: The query must filter out records where the discharge outcome is not one of the specified categories (e.g., using 'discharge_outcome IS NOT NULL').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: The query must correctly join the 'patients' and 'admissions' tables on 'subject_id' to link patient demographics with admission details.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-icu-join",
+          "requirements": "Admissions-ICU Join: The query must correctly join the result of the patient cohort with the 'icustays' table on 'hadm_id' to filter for ICU admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-validity-filter",
+          "requirements": "Data Validity Filter: The query must include filters to ensure valid length of stay calculations, such as checking for non-null admission/discharge times and that discharge is after admission (e.g., a.dischtime > a.admittime).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final query must group the results by the categorized 'discharge_outcome' to perform stratified analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "LOS Calculation: The query must accurately calculate the length of stay in days using a function like DATETIME_DIFF on 'dischtime' and 'admittime'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-percentile-calculation",
+          "requirements": "LOS Percentile Calculation: The query must use an appropriate function (e.g., APPROX_QUANTILES) to calculate the 50th, 75th, 90th, and 95th percentiles of length of stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-percentage-calculation",
+          "requirements": "LOS Percentage Calculation: The query must calculate the percentage of stays that are less than or equal to 7 days, correctly using a conditional count and division.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

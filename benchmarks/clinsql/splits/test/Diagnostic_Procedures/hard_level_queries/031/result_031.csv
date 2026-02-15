@@ -1,0 +1,6 @@
+procedure_burden_quintile,num_icu_stays,avg_procedure_count,min_procedures_in_quintile,max_procedures_in_quintile,mortality_rate_percent,avg_hospital_los_days,readmission_rate_30d_percent
+1,7,0.43,0,2,0.0,11.0,0.0
+2,6,2.83,2,3,0.0,4.5,33.33
+3,6,3.67,3,4,16.67,8.2,16.67
+4,6,6.33,5,7,0.0,13.8,16.67
+5,6,10.17,7,14,0.0,17.3,16.67

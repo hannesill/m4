@@ -1,0 +1,240 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "Column for mortality rate exists (e.g., 'mortality_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists",
+              "requirements": "Columns for discharge percentages exist (e.g., 'discharge_home_pct', 'discharge_snf_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tertiary-column-exists",
+              "requirements": "Columns for absolute and relative mortality differences exist (e.g., 'abs_mortality_diff', 'rel_mortality_diff')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-column-exists",
+              "requirements": "Columns for Charlson and LOS groups exist (e.g., 'charlson_group', 'los_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key metric columns (mortality, discharge percentages). Some nulls are acceptable in diff columns for the first group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate column 'mortality_rate_pct'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0-25). Mortality should not be excessively high for this cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0.5-10.0). Based on the values, expected mortality for HF patients stratified this way.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "discharge-home-validation",
+          "requirements": "Validate column 'discharge_home_pct'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "discharge-home-plausible",
+              "requirements": "Clinically Plausible (20-95). A significant portion should go home.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "discharge-home-acceptable",
+              "requirements": "Acceptable Range (40-85). Based on the CSV, values range from ~50-80%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "discharge-rehab-validation",
+          "requirements": "Validate column 'discharge_rehab_pct'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "discharge-rehab-plausible",
+              "requirements": "Clinically Plausible (0-30). Rehab is a possible but not majority destination.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "discharge-rehab-acceptable",
+              "requirements": "Acceptable Range (0-10). The provided data shows 0%, which is low but possible.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "discharge-snf-validation",
+          "requirements": "Validate column 'discharge_snf_pct'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "discharge-snf-plausible",
+              "requirements": "Clinically Plausible (0-40). SNF is a common discharge for sicker HF patients.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "discharge-snf-acceptable",
+              "requirements": "Acceptable Range (1-25). Based on CSV, values are between ~2-20%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "discharge-hospice-validation",
+          "requirements": "Validate column 'discharge_hospice_pct'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "discharge-hospice-plausible",
+              "requirements": "Clinically Plausible (0-10). Hospice is for a small subset of end-stage patients.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "discharge-hospice-acceptable",
+              "requirements": "Acceptable Range (0-5). Based on CSV, values are between 0-2.4%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "abs-mort-diff-validation",
+          "requirements": "Validate column 'abs_mortality_diff_vs_prev_los_group'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "abs-mort-diff-plausible",
+              "requirements": "Clinically Plausible (0-10). The absolute percentage point difference should not be huge.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "abs-mort-diff-acceptable",
+              "requirements": "Acceptable Range (0-5). Based on the CSV values.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "rel-mort-diff-validation",
+          "requirements": "Validate column 'rel_mortality_diff_pct_vs_prev_los_group'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "rel-mort-diff-plausible",
+              "requirements": "Clinically Plausible (0-500). Relative difference can be large if the base rate is small.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "rel-mort-diff-acceptable",
+              "requirements": "Acceptable Range (5-300). Based on the range seen in the CSV.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

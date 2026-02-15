@@ -1,0 +1,1 @@
+Male, 75, with heart failure: among male ICU patients 70–80 with heart failure, what is diagnostic intensity in first 72 ICU hours (mean, median, 75th and 95th percentiles)? Compare to general ICU population; report mean ICU LOS and hospital mortality.

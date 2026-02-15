@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "copd-diagnosis-selection",
+          "requirements": "COPD Diagnosis Selection: The query must correctly filter for COPD diagnoses using both ICD-9 (e.g., '490%'-'492%', '496%') and ICD-10 (e.g., 'J40%'-'J44%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "creatinine-lab-test-selection",
+          "requirements": "Creatinine Lab Test Selection: The query must correctly identify serum creatinine lab tests using `le.itemid = 50912`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "plausible-value-filtering",
+          "requirements": "Plausible Value Filtering: The query should filter out physiologically implausible creatinine values, for instance by using a BETWEEN clause like `le.valuenum BETWEEN 0.5 AND 10`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-diagnosis-join",
+          "requirements": "Patient-Diagnosis Join: The query must correctly join the `patients` and `diagnoses_icd` tables on `subject_id` to link patient demographics with diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-lab-linkage",
+          "requirements": "Admission-Lab Linkage: The query must correctly link lab events to the selected cohort's hospital admissions using `hadm_id` (e.g., via an IN clause or JOIN).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "peak-creatinine-per-admission",
+          "requirements": "Peak Creatinine per Admission: The query must first calculate the maximum creatinine value for each individual hospital admission by grouping by `hadm_id` and using `MAX(le.valuenum)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "overall-maximum-calculation",
+          "requirements": "Overall Maximum Calculation: The query must then find the maximum value from the per-admission peaks to determine the overall maximum peak creatinine across all relevant admissions, using a final `MAX()` aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to a reasonable number of decimal places, such as `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

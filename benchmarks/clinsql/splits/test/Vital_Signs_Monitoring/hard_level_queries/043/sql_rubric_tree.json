@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "respiratory-failure-identification",
+          "requirements": "Respiratory Failure Identification: Correctly identifies patients with respiratory failure using both ICD-9 codes starting with '5188' and ICD-10 codes starting with 'J96'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "target-cohort-demographics",
+          "requirements": "Target Cohort Demographics: Accurately filters for the target cohort of male patients aged 40-50 using a CASE statement or equivalent logic.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparison-cohort-definition",
+          "requirements": "Comparison Cohort Definition: Correctly defines the comparison group as all other patients with respiratory failure who do not meet the target cohort's age and gender criteria.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation",
+          "requirements": "Age Calculation: Accurately calculates patient age at the time of ICU admission by using anchor_age, anchor_year, and the ICU intime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Vital Instability",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "vital-sign-selection",
+          "requirements": "Vital Sign Selection: Selects correct itemids for Heart Rate (220045) and Mean Arterial Pressure (220052, 225312, 224690) from the chartevents table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-event-definition",
+          "requirements": "Abnormal Event Definition: Correctly defines hypotensive events (MAP < 65) and tachycardic events (Heart Rate > 100) using CASE statements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-instability-index-calculation",
+          "requirements": "Vital Instability Index Calculation: Correctly calculates the Vital Instability Index per patient as the sum of all identified hypotensive and tachycardic events.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "time-window-filter",
+          "requirements": "Time Window Filter: Filters vital sign events to include only those that occurred within the first 48 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly joins icustays, patients, and admissions tables using subject_id and hadm_id to construct the base patient details.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-table-join",
+          "requirements": "Diagnosis Table Join: Correctly joins with diagnoses_icd on hadm_id to filter for the respiratory failure condition.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "events-table-join",
+          "requirements": "Events Table Join: Correctly joins chartevents on stay_id to link vital sign measurements to the correct ICU stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Output",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final aggregation correctly groups results by the defined 'cohort_group' to compare the two populations.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: Correctly calculates the 25th, 50th, 75th, and 95th percentiles of the Vital Instability Index for the target cohort using APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stddev-calculation",
+          "requirements": "Standard Deviation Calculation: Correctly calculates the standard deviation of the Vital Instability Index using STDDEV.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-metrics-aggregation",
+          "requirements": "Comparative Metrics Aggregation: Correctly calculates the average hypotensive burden, tachycardic burden, ICU LOS, and mortality rate for both cohorts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

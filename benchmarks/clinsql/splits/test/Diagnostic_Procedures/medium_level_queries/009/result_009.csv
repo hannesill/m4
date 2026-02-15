@@ -1,0 +1,5 @@
+stay_category,icu_status,total_admissions,p25_imaging_procedures,p50_imaging_procedures,p75_imaging_procedures
+1-4 Days,ICU Stay,7,0,0,1
+1-4 Days,No ICU Stay,63,0,0,0
+5-7 Days,ICU Stay,1,0,0,0
+5-7 Days,No ICU Stay,2,0,0,0

@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients (p.gender = 'M').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates age at the time of admission and filters for the range 43-53.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-diagnosis-selection",
+          "requirements": "Identifies hospital admissions for Acute Myocardial Infarction (AMI) using ICD-9 codes starting with '410' and ICD-10 codes starting with 'I21' or 'I22'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Filters admissions to a length of stay between 1 and 7 days, inclusive.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Correctly uses INNER JOINs to link patients, admissions, and diagnoses_icd tables on subject_id and hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Correctly uses a LEFT JOIN to link the admission cohort to the procedures_icd table, ensuring admissions with zero procedures are retained for accurate counting.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "imaging-procedure-identification",
+          "requirements": "Identifies radiography/CT procedures by filtering for both ICD-9 procedure codes (LIKE '87%') and specific ICD-10-PCS codes (e.g., 'B' prefix for imaging).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-type-stratification",
+          "requirements": "Stratifies AMI as 'Primary' vs 'Secondary' by checking if the minimum diagnosis sequence number (MIN(seq_num)) for an admission's AMI codes is 1.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stay-category-stratification",
+          "requirements": "Stratifies admissions into '1-3 days' and '4-7 days' categories using a CASE statement on the calculated length_of_stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-procedure-count",
+          "requirements": "Aggregates and counts the number of imaging procedures per unique hospital admission (GROUP BY hadm_id).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-stratified-grouping",
+          "requirements": "Groups the final aggregated results by the two stratification columns: diagnosis_type and stay_category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-iqr-calculation",
+          "requirements": "Uses an approximation function like APPROX_QUANTILES to compute the median (50th percentile) and interquartile range (75th percentile - 25th percentile) for the procedure counts in each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

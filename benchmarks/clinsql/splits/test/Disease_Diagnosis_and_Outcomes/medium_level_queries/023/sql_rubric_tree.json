@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at admission and filter for the range 52-62 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 52 AND 62`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stroke-cohort-exclusivity",
+          "requirements": "Stroke Cohort Exclusivity: The query must ensure that the final cohort includes only patients with either ischemic or hemorrhagic stroke, but not both, using a condition like `(is_ischemic_stroke = 1 AND is_hemorrhagic_stroke = 0) OR (is_hemorrhagic_stroke = 1 AND is_ischemic_stroke = 0)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stroke-identification",
+          "requirements": "Stroke Identification: The query must correctly identify both ischemic (ICD-9: '433', '434'; ICD-10: 'I63') and hemorrhagic (ICD-9: '430'-'432'; ICD-10: 'I60'-'I62') strokes using ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-identification",
+          "requirements": "Comorbidity Identification: The query must accurately identify CKD (ICD-9: '585'; ICD-10: 'N18') and Diabetes (ICD-9: '250'; ICD-10: 'E08'-'E11', 'E13') using the correct ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-count-calculation",
+          "requirements": "Comorbidity Count Calculation: The query must calculate the total number of unique diagnoses per admission using `COUNT(DISTINCT d.icd_code)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join `patients` with `admissions` and then with `diagnoses_icd`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The query must use `subject_id` to link patients and admissions, and `hadm_id` to link admissions to diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: The query must calculate the length of stay in days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY)` and handle potential negative values with `GREATEST`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "comorbidity-tertile-partition",
+          "requirements": "Comorbidity Tertile Partition: The query must correctly partition patients into three comorbidity tertiles using `NTILE(3) OVER (PARTITION BY ... ORDER BY comorbidity_count)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-categorization",
+          "requirements": "LOS Categorization: The query must categorize length of stay into '< 8 Days' and '>= 8 Days' based on the calculated `length_of_stay`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Final Grouping Logic: The query must group results by `stroke_type`, `los_category`, and `comorbidity_burden` to perform the final aggregations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation",
+          "requirements": "Metric Calculation: The query must correctly calculate in-hospital mortality (%), CKD prevalence (%), and diabetes prevalence (%) using `AVG(...) * 100.0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

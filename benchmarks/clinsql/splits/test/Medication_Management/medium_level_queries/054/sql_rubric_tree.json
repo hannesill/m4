@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at the time of admission and filter for the range 56-66.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-selection",
+          "requirements": "Inpatient Selection: The query must correctly identify inpatient admissions by joining patients and admissions tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-selection",
+          "requirements": "Comorbidity Selection: The query must filter for patients diagnosed with both diabetes and heart failure.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: The query must correctly filter for admissions with a duration of at least 48 hours to ensure the 'first 48 hours' window is meaningful.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "diabetes-code-selection",
+          "requirements": "Diabetes Code Selection: The query must correctly identify diabetes using both ICD-9 ('250%') and ICD-10 ('E10%', 'E11%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-code-selection",
+          "requirements": "Heart Failure Code Selection: The query must correctly identify heart failure using both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "glp1-agonist-identification",
+          "requirements": "GLP-1 Agonist Identification: The query must identify GLP-1 receptor agonists by searching for relevant drug names (e.g., semaglutide, liraglutide, etc.) in the prescriptions table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join `patients`, `admissions`, and `diagnoses_icd` to create the initial cohort. A LEFT JOIN must be used to link `prescriptions` to ensure all cohort admissions are retained.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching-diagnoses",
+          "requirements": "Key Matching for Diagnoses: The query must correctly join the admissions and diagnoses tables twice on `hadm_id` to independently check for diabetes and heart failure.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "distinct-admissions-selection",
+          "requirements": "Distinct Admissions Selection: The query must use `SELECT DISTINCT` on `hadm_id` in the cohort construction to prevent duplicate admissions resulting from multiple diagnosis codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "early-medication-window",
+          "requirements": "Early Medication Window: The query must correctly define the 'first 48 hours' time window using a DATETIME_DIFF between `rx.starttime` and `adm.admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-medication-window",
+          "requirements": "Discharge Medication Window: The query must correctly define the 'final 24 hours' time window using a DATETIME_DIFF between `adm.dischtime` and `rx.starttime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-flagging-logic",
+          "requirements": "Medication Flagging Logic: The query must use `MAX` and `CASE` statements to create flags (1/0) indicating if a GLP-1 agonist was administered within each time window for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-calculation",
+          "requirements": "Prevalence Calculation: The query must correctly calculate the prevalence percentages for both time windows by dividing the sum of flags by the total count of cohort admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "net-change-calculation",
+          "requirements": "Net Change Calculation: The query must calculate the net change by subtracting the early prevalence percentage from the discharge prevalence percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: The final output must be rounded to two decimal places and include counts, prevalence percentages, and the net change.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

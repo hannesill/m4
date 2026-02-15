@@ -1,0 +1,1 @@
+For my 82-year-old female patient: among female patients 77–87 undergoing dialysis, what's the IQR of first ICU length of stay (days)?

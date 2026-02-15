@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction for Pulmonary Embolism",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Correctly filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly filters patients with an admission age between 53 and 63.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-type-filter",
+          "requirements": "Admission Type Filter: Implicitly selects inpatients by joining `patients` and `admissions` tables for hospital stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-identification-pe",
+          "requirements": "Condition Identification (PE): Correctly identifies patients with Pulmonary Embolism using a subquery on `diagnoses_icd`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "pe-icd-code-selection",
+          "requirements": "PE ICD Code Selection: Correctly identifies both ICD-9 ('4151') and ICD-10 ('I26') codes for Pulmonary Embolism.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-definition",
+          "requirements": "Critical Lab Definition: Correctly implements the logic in a CASE statement to flag specific lab `itemid`s as critical based on their `valuenum` ranges.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Temporal Filtering",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-join",
+          "requirements": "Patient-Demographics Join: Correctly joins `patients` and `admissions` on `subject_id` to link patient demographics with admission details.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "labs-admissions-join",
+          "requirements": "Labs-Admissions Join: Correctly joins the admissions/cohort data with `labevents` on `hadm_id` to link labs to specific hospital stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-lab-filter",
+          "requirements": "Temporal Lab Filter: Correctly filters lab events to the first 72 hours of admission using `charttime BETWEEN admittime AND DATETIME_ADD(admittime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Calculations",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: Correctly calculates the 72-hour lab instability score by summing the `is_critical` flags for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: Correctly uses `PERCENTILE_CONT(instability_score, 0.75) OVER ()` to calculate the 75th percentile of the instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-cohort-filter",
+          "requirements": "High-Risk Cohort Filter: Correctly filters for patients with an instability score greater than or equal to the calculated 75th percentile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metrics-calculation",
+          "requirements": "Outcome Metrics Calculation: Correctly calculates mortality rate, mean LOS, and critical lab rate for the high-risk cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparison-group-metrics",
+          "requirements": "Comparison Group Metrics: Correctly calculates the critical lab rate for the general inpatient population in the 72-hour window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: Correctly selects and rounds the required five metrics in the final SELECT statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

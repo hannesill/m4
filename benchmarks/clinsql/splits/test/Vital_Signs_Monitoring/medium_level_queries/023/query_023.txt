@@ -1,0 +1,1 @@
+I have a 67-year-old female ICU patient. Among female ICU patients aged 62–72, show first-24h per-measurement temperature categories (<36.0 / 36.0–37.9 / ≥38.0°C) with mean, median, IQR and AKI rate.

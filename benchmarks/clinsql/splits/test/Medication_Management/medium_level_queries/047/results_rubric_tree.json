@@ -1,0 +1,241 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "med-class-column-exists",
+              "requirements": "Column exists for medication class (e.g., 'med_class')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "total-patients-column-exists",
+              "requirements": "Column exists for total patients (e.g., 'total_patients')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pct-on-med-first-24h-column-exists",
+              "requirements": "Column exists for percentage on medication in the first 24h (e.g., 'pct_on_med_first_24h')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pct-on-med-last-24h-column-exists",
+              "requirements": "Column exists for percentage on medication in the last 24h (e.g., 'pct_on_med_last_24h')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-continued-column-exists",
+              "requirements": "Column exists for count of continued medications (e.g., 'count_continued')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-initiated-late-column-exists",
+              "requirements": "Column exists for count of late-initiated medications (e.g., 'count_initiated_late')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-discontinued-column-exists",
+              "requirements": "Column exists for count of discontinued medications (e.g., 'count_discontinued')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in specified columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "total-patients-validation",
+          "requirements": "Validation of 'total_patients' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "total-patients-plausible",
+              "requirements": "Clinically Plausible (100-5000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "total-patients-acceptable",
+              "requirements": "Acceptable Range (200-2000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "pct-on-med-first-24h-validation",
+          "requirements": "Validation of 'pct_on_med_first_24h' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "pct-on-med-first-24h-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pct-on-med-first-24h-acceptable",
+              "requirements": "Acceptable Range (5-95)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "pct-on-med-last-24h-validation",
+          "requirements": "Validation of 'pct_on_med_last_24h' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "pct-on-med-last-24h-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pct-on-med-last-24h-acceptable",
+              "requirements": "Acceptable Range (5-95)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "count-continued-validation",
+          "requirements": "Validation of 'count_continued' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "count-continued-plausible",
+              "requirements": "Clinically Plausible (0-5000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-continued-acceptable",
+              "requirements": "Acceptable Range (10-1000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "count-initiated-late-validation",
+          "requirements": "Validation of 'count_initiated_late' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "count-initiated-late-plausible",
+              "requirements": "Clinically Plausible (0-2000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-initiated-late-acceptable",
+              "requirements": "Acceptable Range (1-500)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "count-discontinued-validation",
+          "requirements": "Validation of 'count_discontinued' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "count-discontinued-plausible",
+              "requirements": "Clinically Plausible (0-5000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-discontinued-acceptable",
+              "requirements": "Acceptable Range (10-1000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

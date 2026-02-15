@@ -1,0 +1,9 @@
+icu_status,los_quartile_range,n,in_hospital_mortality_rate_pct,abs_mortality_diff_from_q1_pct_points,rel_mortality_diff_from_q1_pct,mech_vent_prevalence_pct,vasopressor_prevalence_pct,rrt_prevalence_pct
+Non-ICU,Q1 (1-3 days),837,0.36,,,0.0,0.0,0.0
+Non-ICU,Q2 (3-5 days),837,0.24,-0.12,-33.33,0.0,0.0,0.0
+Non-ICU,Q3 (5-8 days),836,0.72,0.36,100.24,0.0,0.0,0.0
+Non-ICU,Q4 (8-92 days),836,1.91,1.56,433.97,0.0,0.0,0.0
+ICU,Q1 (1-6 days),417,19.42,,,34.53,35.01,5.04
+ICU,Q2 (6-11 days),417,11.51,-7.91,-40.74,50.12,46.52,6.24
+ICU,Q3 (11-19 days),417,13.67,-5.76,-29.63,52.52,47.48,10.07
+ICU,Q4 (19-140 days),416,17.07,-2.36,-12.13,59.86,59.37,18.03

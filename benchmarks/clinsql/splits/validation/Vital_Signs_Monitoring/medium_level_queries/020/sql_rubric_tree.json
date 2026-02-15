@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters the patient cohort to include only females (p.gender = 'F').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for patients aged between 58 and 68 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration-and-filtering",
+      "requirements": "Data Integration and Clinical Event Filtering",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icu-stay-linkage",
+          "requirements": "ICU Stay Linkage: Correctly joins the patient cohort with the `icustays` table on `hadm_id` to isolate relevant ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "map-concept-selection",
+          "requirements": "MAP Concept Selection: Identifies Mean Arterial Pressure measurements by correctly filtering `chartevents` using `itemid`s (220052, 52).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filtering",
+          "requirements": "Temporal Filtering: Restricts MAP measurements to the first 48 hours of the ICU stay using `charttime <= DATETIME_ADD(isc.intime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-validation",
+          "requirements": "Value Validation: Applies a plausible range filter (e.g., BETWEEN 30 AND 200) to MAP values to exclude erroneous data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-aggregation",
+          "requirements": "Per-Stay Aggregation: Correctly groups MAP measurements by `stay_id` and calculates the average MAP for each stay using AVG(valuenum).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: Accurately computes the percentile rank of the target MAP value (85 mmHg) using a formula like `COUNTIF(avg_map <= 85) / COUNT(stay_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting",
+      "requirements": "Output Formatting and Supplementary Statistics",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "rounding-results",
+          "requirements": "Rounding Results: Appropriately rounds the final percentile and other statistical values to enhance readability (e.g., using ROUND() with 2 decimal places).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "supplementary-stats",
+          "requirements": "Supplementary Statistics: Provides additional descriptive statistics for the cohort's mean MAP, such as total count, mean, standard deviation, and quartiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

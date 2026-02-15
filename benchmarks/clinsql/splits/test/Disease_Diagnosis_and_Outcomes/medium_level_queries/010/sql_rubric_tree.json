@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "base-demographic-filtering",
+          "requirements": "Filters for male patients aged 78-88 using patients and admissions tables.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-diagnosis-identification",
+          "requirements": "Correctly identifies Acute Myocardial Infarction (AMI) using both ICD-9 ('410%') and ICD-10 ('I21', 'I22') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "exclusion-criteria-application",
+          "requirements": "Correctly excludes patients with shock or respiratory failure using relevant ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-cohort-assembly",
+          "requirements": "Successfully combines demographic, diagnosis, and exclusion criteria to form the final patient cohort for analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Stratification",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation-and-stratification",
+          "requirements": "Calculates Length of Stay (LOS) and correctly stratifies patients into quartiles using NTILE(4) OVER (ORDER BY length_of_stay).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-burden-calculation",
+          "requirements": "Calculates a comorbidity score (e.g., by counting distinct ICD codes) and stratifies it into low, medium, and high categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-prevalence-identification",
+          "requirements": "Correctly identifies CKD and Diabetes using both ICD-9 and ICD-10 codes to prepare for prevalence calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-metrics",
+      "requirements": "Final Aggregation and Metric Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Groups results by LOS quartile and comorbidity burden for stratified analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Calculates the in-hospital mortality rate per stratum using SUM(hospital_expire_flag) and COUNT(*).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "confidence-interval-calculation",
+          "requirements": "Correctly implements the Wilson score interval formula to calculate the 95% confidence interval for the mortality rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-rate-calculation",
+          "requirements": "Calculates the prevalence rates for CKD and Diabetes within each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "query-readability-and-formatting",
+      "requirements": "Query Readability and Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cte-usage",
+          "requirements": "Effectively uses Common Table Expressions (CTEs) to structure the query logically, enhancing readability and maintainability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Formats the final output by rounding percentages and ordering the results logically by LOS quartile and comorbidity burden.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

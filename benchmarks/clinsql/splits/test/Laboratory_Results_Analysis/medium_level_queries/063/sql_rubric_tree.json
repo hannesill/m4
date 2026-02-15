@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the age at admission and filter for patients aged between 84 and 94 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-diagnosis-selection",
+          "requirements": "ACS Diagnosis Selection: The query must filter for admissions with a diagnosis of Acute Coronary Syndrome (ACS) by checking for appropriate ICD-9 or ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "troponin-i-identification",
+          "requirements": "Troponin I Identification: The query must correctly identify Troponin I lab events using `itemid = 50911`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initial-troponin-logic",
+          "requirements": "Initial Troponin Logic: The query must correctly identify the first (initial) Troponin I measurement for each admission, typically using `ROW_NUMBER()` ordered by `charttime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-uln-calculation",
+          "requirements": "Troponin ULN Calculation: The query must calculate the 99th percentile upper limit of normal (ULN) for initial Troponin I values using `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-uln-filter",
+          "requirements": "Troponin ULN Filter: The query must correctly filter the patient cohort to include only those whose initial Troponin I value exceeds the calculated 99th percentile ULN.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "demographic-admission-join",
+          "requirements": "Demographic-Admission Join: The query must correctly join the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must correctly join the admissions-related data with `diagnoses_icd` on `hadm_id` to identify ACS diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-lab-join",
+          "requirements": "Admission-Lab Join: The query must correctly join the ACS admission cohort with lab event data (Troponin) on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "count-calculation",
+          "requirements": "Count Calculation: The query must report the count of unique patients (`COUNT(DISTINCT subject_id)`) and total admissions (`COUNT(hadm_id)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-calculation",
+          "requirements": "Mean Calculation: The query must calculate the mean of the initial Troponin I values using `AVG()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-calculation",
+          "requirements": "Median Calculation: The query must calculate the median (50th percentile) of the initial Troponin I values using `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "iqr-calculation",
+          "requirements": "IQR Calculation: The query must calculate the Interquartile Range (IQR) by finding the 75th and 25th percentiles and computing their difference.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

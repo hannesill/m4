@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the initial patient population based on demographics and primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter for patient age between 68 and 78 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-diagnosis-filtering",
+          "requirements": "ACS Diagnosis Filtering: The query must join with `diagnoses_icd` and filter for admissions with an Acute Coronary Syndrome (ACS) diagnosis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly implements the clinical logic for ACS diagnosis and initial Troponin measurement.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "acs-code-selection",
+          "requirements": "ACS Code Selection: The query must correctly select ICD-9 codes (LIKE '410%', '4111') and ICD-10 codes (LIKE 'I200%', 'I21%', 'I22%', etc.) for ACS.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-measurement-identification",
+          "requirements": "Troponin Measurement Identification: The query must correctly identify Troponin I measurements by filtering `labevents` using `itemid = 50911`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initial-troponin-logic",
+          "requirements": "Initial Troponin Logic: The query must use a window function (e.g., ROW_NUMBER) ordered by `charttime` to isolate the first Troponin measurement for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-value-filtering",
+          "requirements": "Troponin Value Filtering: The query must filter the final cohort for admissions where the initial Troponin I value is greater than 0.04 ng/mL.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, admissions, diagnoses, and lab results.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-admission-join",
+          "requirements": "Demographic-Admission Join: The query must correctly join `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must correctly join the admissions-related CTE/table with `diagnoses_icd` on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-lab-join",
+          "requirements": "Cohort-Lab Join: The query must correctly join the ACS cohort with the initial Troponin results on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final aggregation and calculation of the requested metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-count-calculation",
+          "requirements": "Patient Count Calculation: The query must calculate the total number of unique patients using `COUNT(DISTINCT subject_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-count-calculation",
+          "requirements": "Admission Count Calculation: The query must calculate the total number of admissions using `COUNT(hadm_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "statistical-aggregations",
+          "requirements": "Statistical Aggregations: The query must correctly calculate the mean, standard deviation, minimum, and maximum of the initial Troponin I values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

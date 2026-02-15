@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction in 'index_admissions' CTE",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters for patients aged 77-87 at admission time using a dynamic calculation (p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 77 AND 87.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insurance-filter",
+          "requirements": "Filters for patients with 'Medicare' insurance using a.insurance = 'Medicare'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-source-filter",
+          "requirements": "Filters for patients admitted from a Skilled Nursing Facility (SNF) using admission_location LIKE '%SNF%' or similar logic.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "principal-diagnosis-filter",
+          "requirements": "Filters for the principal diagnosis by ensuring d.seq_num = 1.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Acute Respiratory Failure",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "Correctly handles both ICD-9 and ICD-10 versions for diagnosis codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acute-respiratory-failure-code-selection",
+          "requirements": "Accurately selects codes for acute respiratory failure, including ICD-9 '51881' and ICD-10 'J960%'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Readmission Logic",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Correctly joins 'patients', 'admissions', and 'diagnoses_icd' tables on subject_id and hadm_id to define the index cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-identification-logic",
+          "requirements": "Uses a window function (e.g., LEAD) partitioned by subject_id and ordered by admittime to find the next admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-time-window",
+          "requirements": "Calculates the time difference between the index discharge and next admission, correctly identifying readmissions within a 30-day window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Calculations",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "readmission-rate-calculation",
+          "requirements": "Correctly calculates the 30-day readmission rate as a percentage using SAFE_DIVIDE(SUM(is_readmitted_30_days), COUNT(*)) * 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-los-calculation-readmitted",
+          "requirements": "Calculates the median length of stay for readmitted patients using APPROX_QUANTILES on a conditionally filtered 'los_days' column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-los-calculation-not-readmitted",
+          "requirements": "Calculates the median length of stay for non-readmitted patients using APPROX_QUANTILES on a conditionally filtered 'los_days' column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-los-gt-8-days",
+          "requirements": "Calculates the percentage of index stays longer than 8 days using a conditional sum and SAFE_DIVIDE.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

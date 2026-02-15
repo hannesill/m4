@@ -1,0 +1,1 @@
+For benchmarking my 70-year-old female ICU patient: among female ICU stays age 65–75, summarize per-measurement systolic BP in first 24h by categories (<140; 140–159; ≥160) giving mean, median, IQR.

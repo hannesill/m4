@@ -1,0 +1,175 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "Exists column for stratification (e.g., los_group)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists",
+              "requirements": "Exists columns for mortality rates (e.g., mortality_rate_with_ckd_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in mortality rate columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stratification-group-validation",
+          "requirements": "Stratification by LOS group exists (e.g., los_group)",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stratification-group-plausible",
+              "requirements": "At least two distinct LOS groups are present",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-ckd-validation",
+          "requirements": "Exist columns for mortality rate stratified by CKD (e.g., mortality_rate_with_ckd_pct, mortality_rate_without_ckd_pct)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-ckd-plausible",
+              "requirements": "Mortality rate is clinically plausible (0-50%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-ckd-acceptable",
+              "requirements": "Mortality rate is within acceptable range for elderly sepsis patients (2-30%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-diabetes-validation",
+          "requirements": "Exist columns for mortality rate stratified by diabetes (e.g., mortality_rate_with_diabetes_pct, mortality_rate_without_diabetes_pct)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-diabetes-plausible",
+              "requirements": "Mortality rate is clinically plausible (0-50%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-diabetes-acceptable",
+              "requirements": "Mortality rate is within acceptable range for elderly sepsis patients (2-30%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-afib-validation",
+          "requirements": "Exist columns for mortality rate stratified by AFib (e.g., mortality_rate_with_afib_pct, mortality_rate_without_afib_pct)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-afib-plausible",
+              "requirements": "Mortality rate is clinically plausible (0-50%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-afib-acceptable",
+              "requirements": "Mortality rate is within acceptable range for elderly sepsis patients (2-30%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-htn-validation",
+          "requirements": "Exist columns for mortality rate stratified by hypertension (e.g., mortality_rate_with_htn_pct, mortality_rate_without_htn_pct)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-htn-plausible",
+              "requirements": "Mortality rate is clinically plausible (0-50%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-htn-acceptable",
+              "requirements": "Mortality rate is within acceptable range for elderly sepsis patients (2-30%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

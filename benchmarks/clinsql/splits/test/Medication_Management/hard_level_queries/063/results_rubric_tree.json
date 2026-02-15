@@ -1,0 +1,265 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-patient-group",
+              "requirements": "Column exists for patient groups (e.g., patient_group)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg-med-complexity",
+              "requirements": "Column exists for average medication complexity (e.g., avg_med_complexity)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-med-complexity-quartiles",
+              "requirements": "Columns exist for medication complexity quartiles (p25, p50, p75)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg-los-overall",
+              "requirements": "Column exists for overall average LOS (e.g., avg_los_days_overall)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-mortality-rate-overall",
+              "requirements": "Column exists for overall mortality rate (e.g., mortality_rate_overall_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg-los-top-quartile",
+              "requirements": "Column exists for top-quartile average LOS (e.g., avg_los_top_quartile)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-mortality-rate-top-quartile",
+              "requirements": "Column exists for top-quartile mortality rate (e.g., mortality_rate_top_quartile_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in required columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "med-complexity-validation",
+          "requirements": "Validate medication complexity metrics (mean, p25, p50, p75)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "med-complexity-plausible",
+              "requirements": "Complexity values are clinically plausible (1 to 50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "med-complexity-acceptable",
+              "requirements": "Complexity values are within acceptable range (5 to 40)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "med-complexity-quartile-logic",
+              "requirements": "Complexity quartiles follow logical order (p25 <= p50 <= p75)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "overall-los-validation",
+          "requirements": "Validate overall average length of stay (LOS)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "overall-los-plausible",
+              "requirements": "LOS is clinically plausible (1 to 50 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "overall-los-acceptable",
+              "requirements": "LOS is within acceptable range (4 to 30 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "overall-mortality-validation",
+          "requirements": "Validate overall mortality rate",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "overall-mortality-plausible",
+              "requirements": "Mortality rate is plausible (0% to 50%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "overall-mortality-acceptable",
+              "requirements": "Mortality rate is in acceptable range (1% to 30%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-quartile-los-validation",
+          "requirements": "Validate top-quartile average LOS",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "top-quartile-los-plausible",
+              "requirements": "Top-quartile LOS is clinically plausible (3 to 60 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-quartile-los-acceptable",
+              "requirements": "Top-quartile LOS is within acceptable range (8 to 40 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-quartile-los-logic",
+              "requirements": "Top-quartile LOS is greater than or equal to overall average LOS",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-quartile-mortality-validation",
+          "requirements": "Validate top-quartile mortality rate",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "top-quartile-mortality-plausible",
+              "requirements": "Top-quartile mortality is plausible (0% to 70%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-quartile-mortality-acceptable",
+              "requirements": "Top-quartile mortality is in acceptable range (2% to 50%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-quartile-mortality-logic",
+              "requirements": "Top-quartile mortality is greater than or equal to overall mortality",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "group-comparison-logic",
+          "requirements": "Validate logical relationships between patient groups",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "icu-vs-baseline-los-mortality",
+              "requirements": "ICU group shows higher LOS and mortality than Baseline group",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-vs-baseline-med-complexity",
+              "requirements": "ICU group shows higher medication complexity than Baseline group",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

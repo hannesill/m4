@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients by checking `p.gender = 'F'` in the `sepsis_cohort_admissions` CTE.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the age at admission and filter for patients between 43 and 53 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-condition-identification",
+          "requirements": "Sepsis Condition Identification: The query must use a subquery to filter for admissions with relevant ICD-9 or ICD-10 codes for sepsis (e.g., 'R652', 'A41', '99591', '99592', '78552').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation of Instability Score",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "critical-lab-definition",
+          "requirements": "Critical Lab Definition: The query must define the set of critical labs and their thresholds, for example by using a CTE with UNION ALL.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-filtering",
+          "requirements": "Critical Lab Filtering: The query must filter `labevents` to identify values outside the defined critical high/low thresholds, correctly handling one-sided limits (NULLs).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-constraint-72h",
+          "requirements": "72-Hour Temporal Constraint: The query must limit the `labevents` to the first 72 hours of the admission using a condition like `le.charttime BETWEEN a.admittime AND TIMESTAMP_ADD(a.admittime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and CTE Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-labs-join",
+          "requirements": "Cohort-to-Labs Join: The query must correctly LEFT JOIN the `sepsis_cohort_admissions` with the filtered critical lab events (`all_critical_labs_72h`) on `hadm_id` to ensure all cohort patients are retained.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-demographics-join",
+          "requirements": "Patient Demographics Join: The query must INNER JOIN the `admissions` and `patients` tables on `subject_id` to access both admission and demographic data.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must calculate the per-admission instability score by counting the critical lab events using `COUNT(acl.lab_name)` and grouping by admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "25th Percentile Calculation: The query must calculate the 25th percentile of the instability score for the sepsis cohort using `APPROX_QUANTILES(instability_score, 100)[OFFSET(25)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-metrics-calculation",
+          "requirements": "Cohort Metrics Calculation: The query must correctly compute the average instability score, average LOS, and mortality rate for the sepsis cohort using `AVG()` functions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "general-cohort-metric-calculation",
+          "requirements": "General Cohort Metric Calculation: The query must correctly compute the average critical events per admission for the general population, for instance using `SAFE_DIVIDE` on counts from `all_critical_labs_72h` and `admissions`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

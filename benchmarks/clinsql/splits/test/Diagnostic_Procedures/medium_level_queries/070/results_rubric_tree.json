@@ -1,0 +1,159 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p25-column-exists",
+              "requirements": "Column for 25th percentile of imaging count exists (e.g., p25_imaging_count)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-column-exists",
+              "requirements": "Column for 50th percentile of imaging count exists (e.g., p50_imaging_count)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-column-exists",
+              "requirements": "Column for 75th percentile of imaging count exists (e.g., p75_imaging_count)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stay-category-column-exists",
+              "requirements": "Column for stay category exists (e.g., stay_category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-status-column-exists",
+              "requirements": "Column for ICU status exists (e.g., icu_status)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in percentile columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "p25-validation",
+          "requirements": "Validate values in the 25th percentile column (e.g., p25_imaging_count)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-p25",
+              "requirements": "Values are clinically plausible (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-p25",
+              "requirements": "Values are in the acceptable range (0-2)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p50-validation",
+          "requirements": "Validate values in the 50th percentile column (e.g., p50_imaging_count)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-p50",
+              "requirements": "Values are clinically plausible (0-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-p50",
+              "requirements": "Values are in the acceptable range (1-5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p75-validation",
+          "requirements": "Validate values in the 75th percentile column (e.g., p75_imaging_count)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-p75",
+              "requirements": "Values are clinically plausible (0-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-p75",
+              "requirements": "Values are in the acceptable range (1-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

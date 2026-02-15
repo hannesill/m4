@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using `p.gender = 'M'` in the WHERE clause.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate age at admission and filter for the 60-70 year range using a condition like `age_at_admission BETWEEN 60 AND 70`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "postoperative-complication-selection",
+          "requirements": "Postoperative Complication Selection: The query must correctly identify admissions with postoperative complications by checking for specific ICD codes in the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "postop-complication-icd-version-handling",
+          "requirements": "Postoperative Complication ICD Version Handling: The query must check the `icd_version` column and apply distinct logic for ICD-9 (e.g., '996'-'999') and ICD-10 (e.g., 'T80'-'T88') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-status-determination",
+          "requirements": "ICU Status Determination: The query must correctly classify admissions as 'ICU' or 'Non-ICU' based on the presence of a matching `hadm_id` in the `icustays` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-group-stratification",
+          "requirements": "Length of Stay (LOS) Group Stratification: The query must use a CASE statement to correctly categorize patients into LOS groups: '1-3 days', '4-7 days', and '>=8 days'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "charlson-group-stratification",
+          "requirements": "Charlson Group Stratification: The query must use a CASE statement to correctly categorize patients into Charlson score groups: '<=3', '4-5', and '>5'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-patient-admission-join",
+          "requirements": "Core Patient-Admission Join: The query must correctly join the `patients` and `admissions` tables on `subject_id` to link demographic data with hospital stay information.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "charlson-score-join",
+          "requirements": "Charlson Score Join: The query must correctly join with the `charlson` table using `hadm_id` to retrieve the comorbidity index for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The query must group results by `icu_status`, `los_group`, and `charlson_group` to stratify the output correctly.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "count-calculation",
+          "requirements": "Count (N) Calculation: The query must correctly calculate the number of admissions in each group using `COUNT(hadm_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Mortality Rate Calculation: The query must calculate the in-hospital mortality percentage using the formula `SUM(hospital_expire_flag) * 100.0 / COUNT(hadm_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-time-to-death-calculation",
+          "requirements": "Median Time-to-Death Calculation: The query must calculate the median time to death (approximated by LOS for deceased patients) using `APPROX_QUANTILES` on `length_of_stay` where `hospital_expire_flag = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters admissions for male inpatients aged 58-68 with T2DM, heart failure, and an admission duration of at least 72 hours.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 58-68.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-length-filter",
+          "requirements": "Admission Length Filter: Filters admissions to include only those lasting 72 hours or longer using `DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 72`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-diagnosis-filter",
+          "requirements": "T2DM Diagnosis Filter: Identifies patients with Type 2 Diabetes Mellitus by correctly querying ICD codes for both ICD-9 ('250.%') and ICD-10 ('E11%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-filter",
+          "requirements": "Heart Failure Diagnosis Filter: Identifies patients with heart failure by correctly querying ICD codes for both ICD-9 ('428%') and ICD-10 ('I50%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies GLP-1 agonist administrations and categorizes them into specified time windows relative to admission and discharge.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "glp1-agonist-identification",
+          "requirements": "GLP-1 Agonist Identification: Correctly identifies GLP-1 agonist prescriptions using a list of relevant drug names (e.g., 'semaglutide', 'liraglutide').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-72h-window-logic",
+          "requirements": "First 72h Window Logic: Correctly identifies prescriptions started within the first 72 hours of admission using `DATETIME_DIFF` between `rx.starttime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-12h-window-logic",
+          "requirements": "Final 12h Window Logic: Correctly identifies prescriptions started within the final 12 hours of admission using `DATETIME_DIFF` between `dischtime` and `rx.starttime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, admissions, diagnoses, and prescriptions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: Correctly joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: Correctly performs two separate joins from `admissions` to `diagnoses_icd` on `hadm_id` to filter for T2DM and heart failure concurrently.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-prescriptions-join",
+          "requirements": "Cohort-Prescriptions Join: Correctly joins the patient cohort with the `prescriptions` table on `hadm_id` to identify medications administered during the stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "summary-join-logic",
+          "requirements": "Summary Join Logic: Uses a LEFT JOIN from the full `patient_cohort` to the `timed_prescriptions` to ensure all cohort members are included in the final count, even those without a GLP-1 prescription.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly aggregates data to calculate the required percentages and their absolute difference.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-medication-flagging",
+          "requirements": "Per-Admission Medication Flagging: Uses `MAX` and `GROUP BY hadm_id` to correctly flag whether at least one GLP-1 was started in each time window for a given admission, preventing double-counting.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "total-cohort-count",
+          "requirements": "Total Cohort Count: Correctly calculates the total number of unique admissions in the cohort (`total_admissions_in_cohort`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: Correctly calculates the percentage of patients initiated on GLP-1s in each time window by dividing the medication counts by the total cohort count and multiplying by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "absolute-difference-calculation",
+          "requirements": "Absolute Difference Calculation: Correctly calculates the absolute difference in percentage points between the two time windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "null-handling",
+          "requirements": "Null Handling: Uses `NULLIF` to prevent division-by-zero errors in percentage calculations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

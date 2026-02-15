@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters for male TIA patients aged 64-74 with a length of stay between 1 and 7 days.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter patient age to be between 64 and 74 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-tia",
+          "requirements": "Primary Condition (TIA): The query must filter for TIA diagnoses using both ICD-9 ('435%') and ICD-10 ('G45%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: The query must filter admissions to have a length of stay between 1 and 7 days using `DATETIME_DIFF`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, admissions, diagnoses, ICU stays, and procedures.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-tables-join",
+          "requirements": "Core Tables Join: The query must correctly join `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to build the initial cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-join",
+          "requirements": "ICU Stay Join: The query must use a LEFT JOIN on `icustays` using `hadm_id` to correctly identify admissions with an ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedures-join",
+          "requirements": "Procedures Join: The query must use a LEFT JOIN on `procedures_icd` using `hadm_id` to link procedures to the correct admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies ultrasound/echocardiogram procedures and stratifies patients by length of stay and ICU status.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ultrasound-echo-code-selection",
+          "requirements": "Ultrasound/Echocardiogram Code Selection: The query must correctly identify ultrasound/echocardiogram procedures using both ICD-9 (e.g., '88.7%') and ICD-10 (e.g., 'B' and '4' in specific positions) codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stay-category-stratification",
+          "requirements": "Stay Category Stratification: The query must use a CASE statement to stratify admissions into '1-3 Day Stay' and '4-7 Day Stay' categories based on length of stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-status-stratification",
+          "requirements": "ICU Status Stratification: The query must use a CASE statement based on the `icustays` join to stratify admissions into 'ICU Admission' and 'No ICU Admission' categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly aggregates the data to calculate the mean number of procedures per admission for each stratum.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-procedure-count",
+          "requirements": "Per-Admission Procedure Count: The query must first group by `hadm_id` and use `COUNT(pr.icd_code)` to count the number of procedures for each individual admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Final Grouping Logic: The query must group the final results by `stay_category` and `icu_status` to perform the stratified analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "average-calculation",
+          "requirements": "Average Calculation: The query must use `AVG(ultrasound_count)` to calculate the mean number of procedures per admission for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query should round the final average to two decimal places and include supplementary columns like total admissions, min, and max counts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

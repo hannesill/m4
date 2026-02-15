@@ -1,0 +1,6 @@
+metric,value,description
+Avg LOS (days) for Top Tier (>=P95),10.3,Average length of stay for the 61 patients in the top tier.
+P95 Instability Score (Target Cohort),4,95th percentile of the number of unique critically abnormal lab systems in the first 72h for male ACS patients aged 87-97.
+Avg Critical Lab Events per Patient (General Population),1.1,The average number of total critical lab events per patient in the general inpatient population within the first 72h.
+In-Hospital Mortality (%) for Top Tier (>=P95),45.9,In-hospital mortality rate for the 61 patients in the top tier.
+Avg Critical Lab Events per Patient (Top Tier),14.49,The average number of total critical lab events (not unique systems) per patient in the top-tier group within the first 72h.

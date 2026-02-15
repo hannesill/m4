@@ -1,0 +1,103 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients with an age between 73 and 83 using `p.anchor_age BETWEEN 73 AND 83`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identification of Mechanical Circulatory Support Devices",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "device-code-selection",
+          "requirements": "Mechanical Circulatory Support Device Code Selection: The query must filter for relevant device codes from the `procedureevents` table using `pe.itemid IN (224154, 225443, 228177, 225309, 225308, 225301, 225302, 225303, 225304, 225305)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The `patients` and `procedureevents` tables must be joined.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join must correctly use `subject_id` to link patients to their procedures (`p.subject_id = pe.subject_id`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculation of Median Devices per Hospitalization",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The query must group results to count devices per unit of analysis. The query groups by `subject_id`, which incorrectly aggregates across all hospitalizations instead of per hospitalization.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "distinct-count-function",
+          "requirements": "Distinct Count Function: The query must use `COUNT(DISTINCT pe.itemid)` to count the unique number of devices within each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-calculation",
+          "requirements": "Median Calculation: The final query must calculate the median of the per-group counts using an approximation function like `APPROX_QUANTILES(procedure_count, 2)[OFFSET(1)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

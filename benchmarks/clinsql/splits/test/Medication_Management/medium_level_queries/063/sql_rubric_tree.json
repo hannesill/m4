@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the specific patient population based on demographics and diagnoses.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at admission and filter for the range 45-55.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-selection-diabetes",
+          "requirements": "Diabetes Diagnosis Selection: The query must filter for patients with a diagnosis of diabetes using appropriate ICD-9 ('250%') and ICD-10 ('E10%', 'E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-selection-heart-failure",
+          "requirements": "Heart Failure Diagnosis Selection: The query must filter for patients with a diagnosis of heart failure using appropriate ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-type-and-length",
+          "requirements": "Admission Type and Length of Stay Filter: The query correctly limits the cohort to inpatients by using the admissions table and ensures a minimum length of stay of 72 hours for valid time window analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, diagnoses, and medication prescriptions.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-join",
+          "requirements": "Patient and Admissions Join: The query must join `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnoses-join",
+          "requirements": "Diagnoses Join: The query must self-join `diagnoses_icd` twice to the `admissions` table on `hadm_id` to concurrently check for both diabetes and heart failure.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescriptions-join",
+          "requirements": "Prescriptions Join: The query must join the `patient_cohort` CTE with the `prescriptions` table on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies and categorizes antidiabetic medications.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "medication-selection",
+          "requirements": "Antidiabetic Medication Selection: The query correctly filters the `prescriptions` table for insulin and a representative list of oral antidiabetic agents (e.g., metformin, glipizide, glyburide, etc.).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-classification",
+          "requirements": "Medication Classification: The query must use a CASE statement to categorize selected drugs into 'Insulin' and 'Oral Agent' classes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates medication initiation rates within specified time windows and the difference between them.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-12h-window-logic",
+          "requirements": "First 12h Window Logic: The query must correctly identify medication initiations within the first 12 hours of admission using `DATETIME_DIFF(rx.starttime, pc.admittime, HOUR) BETWEEN 0 AND 12`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-72h-window-logic",
+          "requirements": "Final 72h Window Logic: The query must correctly identify medication initiations within the final 72 hours before discharge using `DATETIME_DIFF(pc.dischtime, rx.starttime, HOUR) BETWEEN 0 AND 72`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-level-initiation-flag",
+          "requirements": "Patient-Level Initiation Flagging: The query must correctly use `MAX()` grouped by `subject_id` and `medication_class` to determine if a patient initiated a class of medication within each window, avoiding double-counting.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rate-calculation",
+          "requirements": "Initiation Rate Calculation: The query must calculate the initiation rate as a percentage by dividing the number of patients initiated by the total number of patients in the cohort, handling potential division by zero.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-point-difference",
+          "requirements": "Percentage Point Difference Calculation: The query must calculate the absolute difference in percentage points between the first 12h rate and the final 72h rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

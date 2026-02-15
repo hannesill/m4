@@ -1,0 +1,1 @@
+I have a 48-year-old man to evaluate. Among male Medicare patients aged 43–53 admitted from the emergency department with a principal diagnosis of diabetic ketoacidosis on initial presentation (index admissions), how many admissions meet these criteria in the dataset?

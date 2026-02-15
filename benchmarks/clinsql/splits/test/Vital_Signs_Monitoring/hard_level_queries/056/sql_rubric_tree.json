@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at the time of ICU admission and filter for the range of 74 to 84 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-identification",
+          "requirements": "Condition Identification: The query must filter for patients diagnosed with hemorrhagic stroke by correctly identifying relevant ICD-9 ('430', '431', '432') and ICD-10 ('I60', 'I61', 'I62') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "instability-metric-calculation",
+      "requirements": "Instability Metric Calculation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "time-window-filtering",
+          "requirements": "Time Window Filtering: The query must correctly limit the analysis of chartevents to the first 48 hours of each patient's ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-measurement-extraction",
+          "requirements": "Vitals Measurement Extraction: The query must correctly identify and extract SpO2, temperature, and respiratory rate measurements using the appropriate itemids.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "unit-conversion",
+          "requirements": "Unit Conversion: The query must correctly convert temperature from Fahrenheit to Celsius for specific itemids to ensure a consistent scale.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hourly-aggregation",
+          "requirements": "Hourly Aggregation: The query must aggregate vital signs into hourly averages using `DATETIME_TRUNC` and `GROUP BY`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-flags-generation",
+          "requirements": "Abnormal Flags Generation: The query must generate flags for each hour based on the specified clinical thresholds (fever > 38.5\u00b0C, SpO2 < 90%, RR > 20).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-summation",
+          "requirements": "Instability Score Summation: The query must calculate the total hours of instability for each patient by summing up hours where any of the three abnormal conditions are met.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join the `patients`, `admissions`, and `icustays` tables on `subject_id` and `hadm_id` to build the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-table-join",
+          "requirements": "Vitals Table Join: The query must correctly join the `chartevents` table with the patient cohort on `stay_id` to link vital signs to the correct ICU stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Output",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must calculate the 90th percentile of the instability score for the entire cohort using `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "decile-ranking",
+          "requirements": "Decile Ranking: The query must rank patients into deciles based on their instability score using the `NTILE(10)` window function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-filtering",
+          "requirements": "Top Decile Filtering: The query must correctly filter for the top decile of patients (instability_decile = 1) to perform the secondary analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-aggregation",
+          "requirements": "Final Metric Aggregation: The query must calculate and report the required metrics (n, mean ICU LOS, mortality%, mean hours of fever, hypoxemia, and tachypnea) for the top decile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query should present the results clearly, potentially using UNION ALL to show metrics for both the top decile and the entire cohort, with descriptive labels.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

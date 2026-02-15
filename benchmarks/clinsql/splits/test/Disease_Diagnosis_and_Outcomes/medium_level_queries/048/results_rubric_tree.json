@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "los-stratum-column-exists",
+              "requirements": "Column for LOS stratification exists (e.g., 'los_stratum', 'los_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column for mortality rate exists (e.g., 'mortality_rate_pct', 'in_hospital_mortality')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ckd-column-exists",
+              "requirements": "Column for CKD prevalence exists (e.g., 'ckd_prevalence_pct', 'ckd_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "diabetes-column-exists",
+              "requirements": "Column for diabetes prevalence exists (e.g., 'diabetes_prevalence_pct', 'dm_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns (mortality, ckd, diabetes)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate mortality rate values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Values for 'mortality_rate_pct' are clinically plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Values for 'mortality_rate_pct' are in the acceptable range for this cohort (1-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ckd-prevalence-validation",
+          "requirements": "Validate CKD prevalence values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "ckd-prevalence-plausible",
+              "requirements": "Values for 'ckd_prevalence_pct' are clinically plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ckd-prevalence-acceptable",
+              "requirements": "Values for 'ckd_prevalence_pct' are in the acceptable range for this cohort (20-75)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "diabetes-prevalence-validation",
+          "requirements": "Validate diabetes prevalence values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "diabetes-prevalence-plausible",
+              "requirements": "Values for 'diabetes_prevalence_pct' are clinically plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "diabetes-prevalence-acceptable",
+              "requirements": "Values for 'diabetes_prevalence_pct' are in the acceptable range for this cohort (25-80)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

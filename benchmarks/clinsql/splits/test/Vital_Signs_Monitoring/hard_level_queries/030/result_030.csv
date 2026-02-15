@@ -1,0 +1,3 @@
+target_cohort_p95_instability_index,group_name,num_patients,avg_hypotension_episodes,avg_tachycardia_episodes,avg_icu_los_days,mortality_rate
+100,General ICU Population,94458,6.805098562323949,8.039086154692974,3.6299332585094755,0.12015922420546761
+100,Top Quartile Target Cohort,232,12.004310344827587,38.452586206896555,8.600574712643668,0.34913793103448276

@@ -1,0 +1,78 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "The output must contain a column for the IQR of serum lactate (e.g., `iqr_serum_lactate`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "The `iqr_serum_lactate` column must not contain any null or empty values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "column-related-validation-1",
+          "requirements": "Validation of the calculated IQR for serum lactate.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-1",
+              "requirements": "The IQR for serum lactate must be clinically plausible. Since lactate levels can range from <1 to >15 mmol/L in sepsis, a wide IQR is possible. The range should be non-negative. A value of 8.4 is plausible, though high, suggesting significant lactate variability near discharge. Plausible range: 0 to 15.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-1",
+              "requirements": "The IQR for serum lactate should be within an acceptable range for patients recovering from sepsis on discharge day. While high values are possible, an IQR is more typically expected to be lower as patients stabilize. An IQR of 8.4 is high but not impossible. Acceptable range: 0.5 to 10.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

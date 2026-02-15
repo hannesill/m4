@@ -1,0 +1,2 @@
+target_heart_rate_value,total_icu_stays_in_cohort,stays_at_or_below_target,percentile_rank_of_90_bpm,cohort_mean_avg_hr,cohort_stddev_avg_hr,p25_avg_hr,p50_median_avg_hr,p75_avg_hr
+90,4319,2528,58.53,87.14,15.25,76.26666666666667,86.52,97.2083333333333

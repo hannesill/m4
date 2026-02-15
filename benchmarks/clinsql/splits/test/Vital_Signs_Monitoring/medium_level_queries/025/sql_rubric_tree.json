@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the patient population for the analysis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates and filters patient age to be between 82 and 92 years at the time of admission using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 82 AND 92`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: Correctly identifies ICU stays for the defined patient cohort by joining with the `icustays` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics with clinical events.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: Joins `patients` and `admissions` tables on `subject_id` to link demographic data with hospital admission information.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-icustay-join",
+          "requirements": "Admission-ICU Stay Join: Joins the patient cohort with `icustays` on `hadm_id` to isolate relevant ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icustay-chartevents-join",
+          "requirements": "ICU Stay-Chartevents Join: Joins `icustays` with `chartevents` on `stay_id` to retrieve temperature measurements for each ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies and filters for the specific clinical event (temperature) within a defined timeframe.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temperature-code-selection",
+          "requirements": "Temperature Code Selection: Selects temperature measurements by filtering `chartevents` using the correct itemids: `ce.itemid IN (223762, 676)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-24h",
+          "requirements": "Temporal Filter (First 24h): Restricts temperature measurements to the first 24 hours of the ICU stay using `ce.charttime BETWEEN isf.intime AND DATETIME_ADD(isf.intime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-filtering",
+          "requirements": "Value Filtering: Applies a reasonable range filter for temperature values (`ce.valuenum BETWEEN 34 AND 42`) to exclude erroneous data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs correct aggregation and calculations to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-aggregation",
+          "requirements": "Per-Stay Aggregation: Correctly calculates the average temperature per ICU stay by grouping by `stay_id` and using `AVG(valuenum)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: Accurately calculates the percentile rank of a 37.5\u00b0C average temperature using a formula equivalent to `100 * (COUNTIF(avg_temp_c <= 37.5) / COUNT(stay_id))`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "supplementary-statistics",
+          "requirements": "Supplementary Statistics: Provides additional descriptive statistics such as total count, quartiles (P25, P50, P75), and overall mean for context.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

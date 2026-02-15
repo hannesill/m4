@@ -1,0 +1,4 @@
+sbp_category,total_patients_in_category,percent_of_total_patients,mi_patient_count,mi_rate_percent
+< 140 mmHg,4385,87.98,315,7.18
+140-159 mmHg,530,10.63,25,4.72
+>= 160 mmHg,69,1.38,6,8.7

@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-columns-exist",
+              "requirements": "Columns exist for primary AKI cohort metrics (e.g., median risk score, risk percentile, mortality rate).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-columns-exist",
+              "requirements": "Columns exist for cohort comparison and identification (e.g., cohort profile, ARDS rate, survivor LOS).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in cells that are expected to contain results for each cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "median-risk-score-validation",
+          "requirements": "Validate Median Risk Score (and IQR) for the AKI cohort. The result format should be similar to 'median (Q1-Q3)'.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-risk-score-plausible",
+              "requirements": "Median risk score is clinically plausible (1-100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-risk-score-acceptable",
+              "requirements": "Median risk score is in the acceptable range for elderly AKI patients (10-40).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "risk-percentile-validation",
+          "requirements": "Validate the risk score percentile for the AKI cohort.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "risk-percentile-plausible",
+              "requirements": "Percentile is plausible (0-100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-percentile-acceptable",
+              "requirements": "Percentile is in the acceptable range, indicating higher risk than the general population (60-95).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate 30-day mortality rate for the AKI cohort.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Mortality rate (%) is plausible (0-100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Mortality rate for elderly AKI inpatients is in the acceptable range (10.0-30.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ards-rate-validation",
+          "requirements": "Validate ARDS rates for both AKI and general cohorts.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "ards-rate-plausible",
+              "requirements": "ARDS rates (%) are clinically plausible (0-20).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ards-rate-acceptable-aki",
+              "requirements": "ARDS rate for the AKI cohort is in an acceptable range (0.2-2.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ards-rate-comparison-correct",
+              "requirements": "ARDS rate for the AKI cohort is higher than the rate for the general cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "survivor-los-validation",
+          "requirements": "Validate average survivor Length of Stay (LOS) for both cohorts.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "survivor-los-plausible",
+              "requirements": "Average LOS in days is clinically plausible (1-90).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "survivor-los-acceptable-aki",
+              "requirements": "Average LOS for the AKI cohort is in an acceptable range (5-15).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "survivor-los-acceptable-general",
+              "requirements": "Average LOS for the general cohort is in an acceptable range (3-10).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "survivor-los-comparison-correct",
+              "requirements": "Average LOS for the AKI cohort is longer than for the general cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

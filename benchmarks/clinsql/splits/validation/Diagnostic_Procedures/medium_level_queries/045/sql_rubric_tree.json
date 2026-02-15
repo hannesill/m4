@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters for patients aged 78-88 at admission using a calculated age: `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 78 AND 88`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dvt-condition-identification",
+          "requirements": "Identifies DVT using appropriate ICD-9 (`4534%`) and ICD-10 (`I801%`, `I802%`, `I803%`) codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-pre-filtering",
+          "requirements": "Correctly filters admissions to a length of stay between 1 and 8 days using `DATETIME_DIFF`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "noninvasive-diagnostic-identification",
+          "requirements": "Identifies noninvasive diagnostic procedures using relevant ICD-9 (`87%`, `88%`, `89.5%`) and ICD-10 (`B%`, `4A%`) codes within a LEFT JOIN.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "Correctly flags admissions with an ICU stay using a LEFT JOIN to `icustays` and a conditional aggregation (`MAX(CASE WHEN ...)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Correctly INNER JOINs `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "optional-data-joins",
+          "requirements": "Correctly uses LEFT JOIN for `icustays` and `procedures_icd` to avoid incorrectly excluding admissions without these events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-aggregation",
+          "requirements": "Correctly groups by `hadm_id` in a subquery or CTE to count the number of diagnostic procedures (`num_diagnostics`) for each individual admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-categorization",
+          "requirements": "Creates correct stratification groups '1-4 Day Stay' vs '5-8 Day Stay' and 'ICU Stay' vs 'No ICU Stay' using CASE statements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Correctly groups the final results by the generated `los_group` and `icu_status` categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation",
+          "requirements": "Calculates the final metrics: a count of entities (e.g., `COUNT(DISTINCT subject_id)`) and the average diagnostics per admission (`AVG(ad.num_diagnostics)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

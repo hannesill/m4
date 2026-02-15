@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction for Acute Ischemic Stroke",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at admission and filter for the range 78-88.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stroke-diagnosis-selection",
+          "requirements": "Diagnosis Selection: The query must filter for acute ischemic stroke using both ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "critical-lab-definition",
+          "requirements": "Critical Lab Definition: The query must correctly define the set of critical lab tests and their respective upper/lower bounds using a CTE or similar structure.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "out-of-range-lab-identification",
+          "requirements": "Out-of-Range Lab Identification: The query must correctly identify lab events where `valuenum` falls outside the defined critical bounds.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Filtering",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `admissions`, `patients`, and `diagnoses_icd` to form the initial patient cohort.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-data-integration",
+          "requirements": "Lab Data Integration: The query must correctly join the `labevents` table with the patient cohort and critical lab definitions.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-72h",
+          "requirements": "72-Hour Temporal Filter: The query must filter `labevents` to include only those within the first 72 hours of admission.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Reporting",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must calculate the per-admission 'instability_score' by counting the number of critical lab events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "min-instability-score",
+          "requirements": "Minimum Instability Score: The final output must correctly report the minimum instability score for the cohort using `MIN()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "general-inpatient-comparison",
+          "requirements": "General Inpatient Comparison: The query must calculate the average number of critical lab events per admission for the general inpatient population as a comparator.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-and-mortality-calculation",
+          "requirements": "LOS and Mortality Calculation: The query must correctly calculate the average length of stay and the in-hospital mortality rate for the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

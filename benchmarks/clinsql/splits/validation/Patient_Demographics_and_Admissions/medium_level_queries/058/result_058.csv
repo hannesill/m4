@@ -1,0 +1,4 @@
+discharge_category,total_admissions,mean_los_days,p25_los_days,p50_los_median,p75_los_days,p90_los_days,p95_los_days,percentile_rank_of_5_day_stay
+Discharged Home,1257,5.81,2,3,6,12,17,69.4
+Discharged to Facility,105,16.25,7,11,18,32,62,16.2
+In-Hospital Mortality,102,11.43,2,7,19,29,32,44.1

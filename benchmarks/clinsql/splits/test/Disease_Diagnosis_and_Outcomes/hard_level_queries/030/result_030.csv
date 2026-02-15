@@ -1,0 +1,6 @@
+risk_quintile,number_of_patients,avg_risk_score,mortality_30day_rate_percent,major_complication_rate_percent,median_survivor_los_days
+1,124,7.93,3.23,0.0,2
+2,124,12.83,8.06,0.0,3
+3,123,16.88,11.38,0.0,4
+4,123,22.72,17.89,0.0,6
+5,123,36.08,24.39,39.84,13

@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 35-45 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-diagnosis-selection",
+          "requirements": "ACS Diagnosis Selection: Correctly identifies Acute Coronary Syndrome (ACS) admissions using both ICD-9 ('410%', '4111') and ICD-10 ('I20.0%', 'I21%', 'I22%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filtering",
+          "requirements": "Length of Stay Filtering: Correctly filters admissions to include only those with a length of stay between 1 and 7 days using `DATETIME_DIFF`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to build the initial patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Procedure Table Join: Correctly performs a LEFT JOIN from the patient cohort to `procedures_icd` on `hadm_id` to include all cohort admissions, even those without an ultrasound.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "distinct-admissions-identification",
+          "requirements": "Distinct Admissions Identification: Uses `DISTINCT` on `hadm_id` to ensure that each admission is counted only once in the initial cohort, preventing duplication from multiple diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "ultrasound-code-selection",
+          "requirements": "Ultrasound/Echo Code Selection: Correctly identifies ultrasound and echocardiography procedures using both ICD-9 ('8872') and ICD-10 ('B21%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: Correctly uses the `icd_version` column to differentiate between ICD-9 and ICD-10 codes for both diagnoses and procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-categorization",
+          "requirements": "LOS Categorization: Uses a CASE statement to correctly categorize admissions into '1-3 Day Stay' and '4-7 Day Stay' groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ultrasound-count-per-admission",
+          "requirements": "Ultrasound Count per Admission: Correctly counts the number of ultrasound procedures for each admission using `COUNT(proc.icd_code)` and groups by admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-aggregation",
+          "requirements": "Final Grouping and Aggregation: Correctly groups the final results by `stay_category` to perform the final aggregations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-count-calculation",
+          "requirements": "Patient Count Calculation: Correctly calculates the number of unique patients per category using `COUNT(DISTINCT uc.subject_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-ultrasound-calculation",
+          "requirements": "Mean Ultrasound Calculation: Correctly calculates the mean ultrasounds per admission for each category using `AVG(uc.ultrasound_count)` and rounds the result.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

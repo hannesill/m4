@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate and filter for patient age at admission between 50 and 60 years using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 50 AND 60`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-diagnosis-selection",
+          "requirements": "ACS Diagnosis Selection: The query must identify admissions with an ACS diagnosis using the correct ICD-9 (e.g., '410%', '4111') and ICD-10 codes (e.g., 'I200%', 'I21%', 'I22%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-cohort-filter",
+          "requirements": "Length of Stay Cohort Filter: The query must correctly filter admissions to include only those with a length of stay between 1 and 8 days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY) BETWEEN 1 AND 8`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "diagnosis-type-stratification",
+          "requirements": "Diagnosis Type Stratification: The query must correctly stratify ACS as 'Primary Diagnosis' vs 'Secondary Diagnosis' by evaluating `MIN(d.seq_num) = 1` for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-category-stratification",
+          "requirements": "Length of Stay Category Stratification: The query must correctly stratify admissions into '1-4 days' and '5-8 days' categories based on the calculated length of stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-procedure-identification",
+          "requirements": "Diagnostic Procedure Identification: The query must identify diagnostic procedures using appropriate ICD-9 ('87%', '88%') and ICD-10 ('B%') code patterns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `patients`, `admissions`, and `diagnoses_icd` tables to create the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Procedure Table Join: The query must correctly perform a LEFT JOIN between the admission details and `procedures_icd` table on `hadm_id` to include patients with and without procedures.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-procedure-count",
+          "requirements": "Per-Admission Procedure Count: The query must first group by `hadm_id` to count the number of diagnostic procedures for each individual admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Final Grouping Logic: The query must group the final results by `diagnosis_type` and `los_category` for stratified analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must use `APPROX_QUANTILES(..., 4)` to correctly calculate the 25th, 50th, and 75th percentiles of procedure counts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

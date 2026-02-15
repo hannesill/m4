@@ -1,0 +1,5 @@
+medication_class,total_cohort_admissions,early_window_initiations,late_window_initiations,early_initiation_rate_pct,late_initiation_rate_pct,net_change_pp
+ACEi/ARB/ARNI,4261,1121,102,26.31,2.39,-23.91
+Antidiabetic,4261,3691,8,86.62,0.19,-86.44
+Beta-Blocker,4261,2852,36,66.93,0.84,-66.09
+Loop Diuretic,4261,2626,78,61.63,1.83,-59.8

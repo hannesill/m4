@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for patients aged between 70 and 80.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-patient-identification",
+          "requirements": "ICU Patient Identification: Correctly joins with the `icustays` table to identify ICU patients.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sbp-measurement-identification",
+          "requirements": "SBP Measurement Identification: Correctly identifies Systolic Blood Pressure measurements using relevant itemids (e.g., 220050, 51) from `chartevents`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-24h",
+          "requirements": "Temporal Filter (First 24h): Filters SBP measurements to the first 24 hours of the ICU stay using `DATETIME_DIFF` between `charttime` and `intime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stroke-diagnosis-identification",
+          "requirements": "Stroke Diagnosis Identification: Accurately identifies stroke diagnoses using both ICD-9 ('430', '431', '433', '434', '436') and ICD-10 ('I60', 'I61', 'I62', 'I63') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly joins `patients`, `admissions`, and `icustays` tables on `subject_id` and `hadm_id` to build the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "measurement-data-join",
+          "requirements": "Measurement Data Join: Correctly joins the patient cohort with `chartevents` on `stay_id` to link patients to their SBP measurements.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-data-join",
+          "requirements": "Diagnosis Data Join: Correctly performs a LEFT JOIN between the categorized patients and stroke diagnoses on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "max-sbp-calculation",
+          "requirements": "Maximum SBP Calculation: Correctly calculates the maximum SBP for each patient's ICU stay using `MAX(sbp_value)` and groups by `stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sbp-categorization",
+          "requirements": "SBP Categorization: Accurately categorizes patients based on their maximum SBP using a CASE statement into four specified groups (<130, 130-139, 140-159, >=160).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-of-patients-calculation",
+          "requirements": "Percentage of Patients Calculation: Correctly calculates the percentage of patients in each SBP category using a window function `SUM(...) OVER ()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stroke-rate-calculation",
+          "requirements": "Stroke Rate Calculation: Correctly calculates the stroke rate per SBP category by counting distinct patients with a stroke and dividing by the total distinct patients in that category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-output",
+          "requirements": "Final Grouping and Output: Groups the final results by SBP category and provides the required columns: `sbp_category`, `number_of_patients`, `percent_of_total_patients`, and `stroke_rate_percent`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,208 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "Columns for Vital Instability Index statistics (stddev, percentiles), hypotensive/tachycardic burden, ICU LOS, and mortality must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key metric columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "stddev-instability-index-validation",
+          "requirements": "Validation for 'stddev_instability_index'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "stddev-instability-index-plausible",
+              "requirements": "Clinically Plausible (5.0 - 50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stddev-instability-index-acceptable",
+              "requirements": "Acceptable Range (15.0 - 30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p50-instability-index-validation",
+          "requirements": "Validation for 'p50_instability_index' (Median)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p50-instability-index-plausible",
+              "requirements": "Clinically Plausible (2.0 - 40.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-instability-index-acceptable",
+              "requirements": "Acceptable Range (10.0 - 25.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentile-order-validation",
+          "requirements": "Validation for percentile order (p25 <= p50 <= p75 <= p95)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentile-order-plausible",
+              "requirements": "Clinically Plausible (Monotonically increasing)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-hypotensive-episodes-validation",
+          "requirements": "Validation for 'avg_hypotensive_episodes'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-hypotensive-episodes-plausible",
+              "requirements": "Clinically Plausible (0.0 - 50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-hypotensive-episodes-acceptable",
+              "requirements": "Acceptable Range (5.0 - 20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-tachycardic-episodes-validation",
+          "requirements": "Validation for 'avg_tachycardic_episodes'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-tachycardic-episodes-plausible",
+              "requirements": "Clinically Plausible (0.0 - 50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-tachycardic-episodes-acceptable",
+              "requirements": "Acceptable Range (5.0 - 25.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-icu-los-hours-validation",
+          "requirements": "Validation for 'avg_icu_los_hours'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-icu-los-hours-plausible",
+              "requirements": "Clinically Plausible (48.0 - 720.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-icu-los-hours-acceptable",
+              "requirements": "Acceptable Range (100.0 - 300.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-percent-validation",
+          "requirements": "Validation for 'mortality_rate_percent'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-percent-plausible",
+              "requirements": "Clinically Plausible (5.0 - 60.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-percent-acceptable",
+              "requirements": "Acceptable Range (15.0 - 35.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

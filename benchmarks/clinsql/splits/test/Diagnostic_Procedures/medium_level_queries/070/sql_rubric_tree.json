@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Calculates patient age at admission and filters for the range 59-69 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 59 AND 69`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-condition",
+          "requirements": "Identifies patients with heart failure by filtering `diagnoses_icd` for ICD-9 codes starting with '428' or ICD-10 codes starting with 'I50'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-stay-filter",
+          "requirements": "Restricts the analysis to admissions with a length of stay between 1 and 8 days, inclusive, using `hf.length_of_stay BETWEEN 1 AND 8`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-integration",
+          "requirements": "Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to form the base cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-integration",
+          "requirements": "Uses a `LEFT JOIN` on `hadm_id` to connect `admissions` with `icustays` to identify ICU usage without excluding non-ICU admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-data-integration",
+          "requirements": "Uses a `LEFT JOIN` on `hadm_id` to connect the patient cohort with `procedures_icd` to count imaging procedures without excluding admissions that had none.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "imaging-procedure-selection",
+          "requirements": "Selects radiography/CT procedures by filtering `procedures_icd` for ICD-9 codes `LIKE '87%'` or `'88.0%'` and ICD-10 codes `LIKE 'B0%'` or `'B2%'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-status-logic",
+          "requirements": "Creates a categorical variable `icu_status` using a `CASE` statement to distinguish between admissions with and without an associated ICU stay (`icu.stay_id IS NOT NULL`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-categorization",
+          "requirements": "Categorizes admissions into '1-4 Day Stay' and '5-8 Day Stay' groups based on the calculated `length_of_stay`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-aggregation",
+          "requirements": "Correctly counts the number of imaging procedures for each individual admission by using `COUNT(proc.icd_code)` and grouping by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-cohort-grouping",
+          "requirements": "Groups the final result set by `stay_category` and `icu_status` to prepare for percentile aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Calculates the 25th, 50th, and 75th percentiles of the per-admission imaging count using `APPROX_QUANTILES(imaging_count, 100)` with the appropriate offsets.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the specific patient cohort based on demographics, insurance, admission type, and principal diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'` or `aa.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for patients aged between 51 and 61, using a formula like `(anchor_age + EXTRACT(YEAR FROM admittime) - anchor_year) BETWEEN 51 AND 61`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insurance-filter",
+          "requirements": "Insurance Filter: Filters for patients with Medicare insurance using `insurance = 'Medicare'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-source-filter",
+          "requirements": "Admission Source Filter: Filters for patients admitted via the Emergency Department using `UPPER(admission_location) LIKE '%EMERGENCY%'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "principal-diagnosis-filter",
+          "requirements": "Principal Diagnosis Filter: Restricts diagnoses to the primary one for the admission using `d.seq_num = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies acute pancreatitis using appropriate ICD codes.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: Correctly filters on both `icd_version = 9` and `icd_version = 10` for comprehensive code selection.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acute-pancreatitis-code-selection",
+          "requirements": "Acute Pancreatitis Code Selection: Accurately selects ICD-9 codes (e.g., `LIKE '5770%'`) and ICD-10 codes (e.g., `LIKE 'K85%'`) for acute pancreatitis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient, admission, and diagnosis data.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: Correctly joins the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: Correctly joins the `admissions` (or a CTE based on it) and `diagnoses_icd` tables on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates the required metrics for the specified patient cohort.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "readmission-logic",
+          "requirements": "Readmission Logic: Correctly identifies 30-day readmissions using a window function like `LEAD()` and checking if the next admission is within 30 days of the index discharge.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-rate-calculation",
+          "requirements": "Readmission Rate Calculation: Correctly calculates the 30-day readmission rate as a percentage, typically using `AVG(is_readmitted_30_day) * 100.0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay (LOS) Calculation: Correctly calculates the length of stay for the index admission in days, for instance using `DATETIME_DIFF(dischtime, admittime, HOUR) / 24.0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-los-calculation",
+          "requirements": "Median LOS Calculation: Correctly calculates the median LOS for both readmitted and non-readmitted groups, using a function like `APPROX_QUANTILES` with conditional logic.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "long-stay-percentage-calculation",
+          "requirements": "Long-Stay Percentage Calculation: Correctly calculates the percentage of stays longer than 9 days using a formula like `COUNTIF(los_days > 9) * 100.0 / COUNT(*)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

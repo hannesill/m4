@@ -1,0 +1,1 @@
+For my 49-year-old female patient: among female inpatients aged 44-54 with elective admissions, report LOS distribution (n, mean, 25th/50th/75th/90th percentiles) stratified by discharged alive vs in-hospital mortality.

@@ -1,0 +1,1 @@
+I am evaluating an 85‑year‑old female inpatient with hepatic failure. Among female inpatients aged 80–90 with hepatic failure, calculate a 7‑day medication complexity score, stratify cohort into tertiles, and report LOS, in‑hospital mortality and 30‑day readmission rates per tertile.

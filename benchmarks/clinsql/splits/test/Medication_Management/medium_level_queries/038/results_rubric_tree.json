@@ -1,0 +1,233 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-early-pct-exists",
+              "requirements": "A column representing the early prevalence percentage of GLP-1s exists (e.g., prevalence_early_pct).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-discharge-pct-exists",
+              "requirements": "A column representing the discharge prevalence percentage of GLP-1s exists (e.g., prevalence_discharge_pct).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiation-early-pct-exists",
+              "requirements": "A column representing the early initiation rate percentage of GLP-1s exists (e.g., initiation_early_pct).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiation-discharge-pct-exists",
+              "requirements": "A column representing the discharge initiation rate percentage of GLP-1s exists (e.g., initiation_discharge_pct).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-change-exists",
+              "requirements": "A column representing the change (absolute or relative) in prevalence exists (e.g., prevalence_absolute_change_pct, prevalence_relative_change_pct).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiation-change-exists",
+              "requirements": "A column representing the change (absolute or relative) in initiation rate exists (e.g., initiation_absolute_change_pct, initiation_relative_change_pct).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key answer columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "prevalence-early-pct-validation",
+          "requirements": "Validate early prevalence percentage (e.g., prevalence_early_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-early-pct-plausible",
+              "requirements": "Clinically Plausible Range (0.0 to 15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-early-pct-acceptable",
+              "requirements": "Acceptable Range (0.0 to 5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "prevalence-discharge-pct-validation",
+          "requirements": "Validate discharge prevalence percentage (e.g., prevalence_discharge_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-discharge-pct-plausible",
+              "requirements": "Clinically Plausible Range (0.0 to 15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-discharge-pct-acceptable",
+              "requirements": "Acceptable Range (0.0 to 5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "initiation-early-pct-validation",
+          "requirements": "Validate early initiation percentage (e.g., initiation_early_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "initiation-early-pct-plausible",
+              "requirements": "Clinically Plausible Range (0.0 to 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiation-early-pct-acceptable",
+              "requirements": "Acceptable Range (0.0 to 3.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "initiation-discharge-pct-validation",
+          "requirements": "Validate discharge initiation percentage (e.g., initiation_discharge_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "initiation-discharge-pct-plausible",
+              "requirements": "Clinically Plausible Range (0.0 to 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiation-discharge-pct-acceptable",
+              "requirements": "Acceptable Range (0.0 to 3.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "prevalence-change-validation",
+          "requirements": "Validate prevalence change percentage (e.g., prevalence_absolute_change_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-change-plausible",
+              "requirements": "Clinically Plausible Range (-15.0 to 15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-change-acceptable",
+              "requirements": "Acceptable Range (-5.0 to 5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "initiation-change-validation",
+          "requirements": "Validate initiation change percentage (e.g., initiation_absolute_change_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "initiation-change-plausible",
+              "requirements": "Clinically Plausible Range (-10.0 to 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiation-change-acceptable",
+              "requirements": "Acceptable Range (-3.0 to 3.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

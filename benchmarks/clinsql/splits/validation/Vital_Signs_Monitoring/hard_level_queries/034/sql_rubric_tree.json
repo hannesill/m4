@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the cohort of female ICU patients aged 60-70 with a diagnosis of mixed shock.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate the patient's age at ICU admission and filter for the range 60-70 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mixed-shock-identification",
+          "requirements": "Mixed Shock Identification: The query must filter for patients with a diagnosis of mixed shock by using the correct ICD-9 and ICD-10 codes ('78559', 'R578').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, diagnoses, and ICU measurements.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-and-diagnosis-join",
+          "requirements": "Joins for Cohort Definition: The query must correctly join `icustays`, `patients`, `admissions`, and `diagnoses_icd` to build the initial patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-join",
+          "requirements": "Vitals Data Join: The query must join the patient cohort with `chartevents` on `stay_id` to access vital sign measurements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates the instability score, ranks patients, and computes the required cohort and sub-group statistics.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filtering-48h",
+          "requirements": "Temporal Filtering (First 48h): The query must filter `chartevents` data to include only measurements from the first 48 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must correctly calculate the instability score as the sum of the coefficients of variation for heart rate, MAP, and respiratory rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-percentile-calculation",
+          "requirements": "Cohort 95th Percentile Calculation: The query must use `PERCENTILE_CONT` or an equivalent function to calculate the 95th percentile of the instability score across the entire cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "decile-ranking",
+          "requirements": "Decile Ranking: The query must use `NTILE(10)` to rank patients into deciles based on their instability score to identify the top decile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metrics-calculation",
+          "requirements": "Outcome Metrics Calculation: The query must correctly calculate hypotension/tachycardia episodes, ICU LOS, and mortality rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-output-generation",
+      "requirements": "Final Output Generation: The query must present the results in the requested comparison format, showing metrics for the top decile and the entire cohort.",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "comparison-structure",
+          "requirements": "Comparison Structure: The query must use `UNION ALL` to combine results for the top decile and the entire cohort into two distinct rows.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "correct-aggregation-and-column-display",
+          "requirements": "Correct Aggregation and Column Display: The final SELECT statements must correctly aggregate and label all requested metrics: cohort 95th percentile score, hypotension, tachycardia, ICU LOS, and mortality.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,298 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "Column 'metric' exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists",
+              "requirements": "Column 'value' exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in 'value' column",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "medication-complexity-distribution-validation",
+          "requirements": "Validation of Medication Complexity Distribution values from the 'Overall Complexity Distribution' row",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mean-complexity-validation",
+              "requirements": "Validation for Mean Complexity",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "mean-complexity-plausible",
+                  "requirements": "Clinically Plausible (5.0-50.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "mean-complexity-acceptable",
+                  "requirements": "Acceptable Range (15.0-35.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "min-complexity-validation",
+              "requirements": "Validation for Min Complexity",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "min-complexity-plausible",
+                  "requirements": "Clinically Plausible (0.0-20.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "min-complexity-acceptable",
+                  "requirements": "Acceptable Range (0.0-10.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "max-complexity-validation",
+              "requirements": "Validation for Max Complexity",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "max-complexity-plausible",
+                  "requirements": "Clinically Plausible (20.0-100.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "max-complexity-acceptable",
+                  "requirements": "Acceptable Range (40.0-80.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "stddev-complexity-validation",
+              "requirements": "Validation for StdDev of Complexity",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "stddev-complexity-plausible",
+                  "requirements": "Clinically Plausible (1.0-30.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "stddev-complexity-acceptable",
+                  "requirements": "Acceptable Range (5.0-20.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "drug-risk-prevalence-validation",
+          "requirements": "Validation of Drug Risk Prevalence percentages from the 'Interaction Risk Prevalence' row",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "qt-risk-prevalence-validation",
+              "requirements": "Validation for QT Risk Prevalence (%)",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "qt-risk-prevalence-plausible",
+                  "requirements": "Clinically Plausible (0.0-100.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "qt-risk-prevalence-acceptable",
+                  "requirements": "Acceptable Range (20.0-50.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "bleeding-risk-prevalence-validation",
+              "requirements": "Validation for Bleeding Risk Prevalence (%)",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "bleeding-risk-prevalence-plausible",
+                  "requirements": "Clinically Plausible (0.0-100.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "bleeding-risk-prevalence-acceptable",
+                  "requirements": "Acceptable Range (70.0-100.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "top-quartile-outcomes-validation",
+          "requirements": "Validation of Outcomes for Top Complexity Quartile from the 'Top Quartile (Complexity) Outcomes' row",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "top-quartile-los-validation",
+              "requirements": "Validation for Top Quartile Average LOS (days)",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "top-quartile-los-plausible",
+                  "requirements": "Clinically Plausible (1.0-90.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "top-quartile-los-acceptable",
+                  "requirements": "Acceptable Range (7.0-20.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "top-quartile-mortality-validation",
+              "requirements": "Validation for Top Quartile Mortality (%)",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "top-quartile-mortality-plausible",
+                  "requirements": "Clinically Plausible (0.0-100.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "top-quartile-mortality-acceptable",
+                  "requirements": "Acceptable Range (10.0-35.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "icu-comparison-validation",
+          "requirements": "Validation of ICU Comparison Metrics from 'Comparative Stats' row",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "icu-avg-complexity-validation",
+              "requirements": "Validation for ICU Average Complexity",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "icu-avg-complexity-plausible",
+                  "requirements": "Clinically Plausible (5.0-60.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "icu-avg-complexity-acceptable",
+                  "requirements": "Acceptable Range (20.0-45.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

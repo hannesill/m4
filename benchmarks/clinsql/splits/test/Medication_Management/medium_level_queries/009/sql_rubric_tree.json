@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter for patient age between 68 and 78 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-diagnosis-filter",
+          "requirements": "Diabetes Diagnosis Filter: The query must join with the diagnoses table and filter for ICD codes related to diabetes (e.g., '250%', 'E10%', 'E11%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-filter",
+          "requirements": "Heart Failure Diagnosis Filter: The query must join with the diagnoses table and filter for ICD codes related to heart failure (e.g., '428%', 'I50%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-duration-filter",
+          "requirements": "Admission Duration Filter: The query correctly filters out admissions shorter than 48 hours to ensure meaningful 'first 24h' and 'final 24h' periods.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join patients, admissions, and diagnoses_icd tables using subject_id and hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-table-join",
+          "requirements": "Medication Table Join: The query must correctly join the identified patient cohort with the prescriptions table on hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-identification",
+          "requirements": "Medication Identification: The query must filter the prescriptions table for relevant medications (insulin and a representative list of oral agents).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-classification",
+          "requirements": "Medication Classification: The query must use a CASE statement or similar logic to categorize identified medications into 'Insulin' and 'Oral Agents'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-initiation-logic",
+          "requirements": "Medication Initiation Logic: The query must correctly identify the first administration time of each medication class for each admission using MIN(starttime).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-24h-initiation-count",
+          "requirements": "First 24h Initiation Count: The query must correctly count patients initiated on medication within the first 24 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "last-24h-initiation-count",
+          "requirements": "Last 24h Initiation Count: The query must correctly count patients initiated on medication within the final 24 hours of their admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-and-total-logic",
+          "requirements": "Grouping and Total Logic: The query must correctly group results by medication class and use a valid method (e.g., CROSS JOIN) to establish the total cohort size for percentage calculations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: The query must accurately calculate the initiation rate percentages for both time windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-point-difference",
+          "requirements": "Percentage-Point Difference Calculation: The query must calculate the absolute percentage-point difference between the final 24h and first 24h rates.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+risk_quintile,cohort_size,mortality_rate_30_day_pct,major_complication_rate_pct,median_survivor_los_days
+1,166,25.3,0.0,3
+2,166,21.08,0.0,4
+3,166,21.69,0.0,7
+4,166,31.93,0.0,8
+5,165,38.79,20.0,18

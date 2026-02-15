@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-rank-column-exists",
+              "requirements": "Column exists for average composite risk percentile (e.g., 'avg_percentile_rank_for_93_yo', 'risk_percentile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "Column exists for 30-day mortality rate (e.g., 'mortality_rate_30_day_pct', 'death_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "aki-rate-column-exists",
+              "requirements": "Column exists for AKI rate (e.g., 'aki_rate_pct', 'aki_percentage')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ards-rate-column-exists",
+              "requirements": "Column exists for ARDS rate (e.g., 'ards_rate_pct', 'ards_percentage')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-survival-column-exists",
+              "requirements": "Column exists for median survival of decedents (e.g., 'median_survival_days_for_deceased', 'median_survival_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "percentile-rank-validation",
+          "requirements": "Validation for Average Composite Risk Percentile",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentile-rank-plausible",
+              "requirements": "Clinically Plausible as a percentile (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-acceptable",
+              "requirements": "Acceptable Range for a high-risk 93-year-old patient (50-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation for 30-Day Cohort Mortality Rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible as a percentage (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range for a very elderly AMI, post-ICU cohort (15-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "aki-rate-validation",
+          "requirements": "Validation for Cohort AKI Rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "aki-rate-plausible",
+              "requirements": "Clinically Plausible as a percentage (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "aki-rate-acceptable",
+              "requirements": "Acceptable Range for an elderly AMI, post-ICU cohort (20-75)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ards-rate-validation",
+          "requirements": "Validation for Cohort ARDS Rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "ards-rate-plausible",
+              "requirements": "Clinically Plausible as a percentage (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ards-rate-acceptable",
+              "requirements": "Acceptable Range for an elderly AMI, post-ICU cohort (0.1-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-survival-validation",
+          "requirements": "Validation for Median Survival of Decedents (days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-survival-plausible",
+              "requirements": "Clinically Plausible, assuming a 30-day mortality window (0-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-survival-acceptable",
+              "requirements": "Acceptable Range for a high-risk cohort dying within 30 days (1-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

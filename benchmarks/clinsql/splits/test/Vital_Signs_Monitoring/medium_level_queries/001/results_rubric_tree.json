@@ -1,0 +1,109 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-category",
+              "requirements": "Primary Column Exists (e.g., sbp_category, blood_pressure_group)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-count",
+              "requirements": "Secondary Column Exists (e.g., patient_count, number_of_patients)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns (e.g., sbp_category, patient_count)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "category-validation",
+          "requirements": "Validate SBP Categories (e.g., sbp_category)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "category-count-check",
+              "requirements": "Correct number of SBP categories (3)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "category-name-check",
+              "requirements": "Category names match or are semantically equivalent to '<140', '140-159', '>=160'",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "patient-count-validation",
+          "requirements": "Validate Patient Counts (e.g., patient_count)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-patient-count",
+              "requirements": "Patient counts are clinically plausible (1 to 20000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-patient-count",
+              "requirements": "Patient counts are within an acceptable range (10 to 10000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

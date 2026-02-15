@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `pat.gender = 'F'` in the `BaseAdmissions` CTE.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the age at admission and filter for patients between 48 and 58 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-selection",
+          "requirements": "Inpatient Selection: The query must correctly join the `patients` and `admissions` tables to select inpatient stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hemorrhagic-stroke-identification",
+          "requirements": "Hemorrhagic Stroke Identification: The query must correctly identify patients with a hemorrhagic stroke diagnosis from the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query correctly uses both ICD-9 ('430%', '431%', '432%') and ICD-10 ('I60%', 'I61%', 'I62%') codes for hemorrhagic stroke.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-time-window",
+          "requirements": "Medication Time Window: The query must filter prescriptions to the first 48 hours of admission using `pres.starttime <= TIMESTAMP_ADD(adm.admittime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "serotonergic-drug-identification",
+          "requirements": "Serotonergic Drug Identification: The query must use a CASE statement or similar logic to correctly flag a comprehensive list of serotonergic drugs based on string matching.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Statistics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-complexity-calculation",
+          "requirements": "Medication Complexity Calculation: The query must calculate medication complexity as the count of distinct drugs per patient (`COUNT(DISTINCT meds.drug)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "serotonergic-interaction-risk",
+          "requirements": "Serotonergic Interaction Risk Flag: The query must correctly identify patients taking two or more distinct serotonergic drugs (`COUNT(DISTINCT CASE WHEN ... >= 2)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complexity-quartile-calculation",
+          "requirements": "Complexity Quartile Calculation: The query must use a window function like `NTILE(4)` partitioned by cohort to correctly assign patients to medication complexity quartiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-aggregation",
+          "requirements": "Outcome Aggregation: The query must correctly calculate average LOS and mortality rate for the specified subgroups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration-and-output",
+      "requirements": "Database Integration and Output Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join all necessary tables (`patients`, `admissions`, `diagnoses_icd`, `prescriptions`) using appropriate keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-union",
+          "requirements": "Final Grouping and Union: The query must use `GROUP BY` and `UNION ALL` to structure the final output into the requested comparison groups and subgroups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query must generate readable cohort and subgroup labels and round numeric outputs as requested.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

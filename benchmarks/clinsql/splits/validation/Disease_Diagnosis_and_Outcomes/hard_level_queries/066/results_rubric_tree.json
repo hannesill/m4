@@ -1,0 +1,233 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-mean-risk-score",
+              "requirements": "Column exists for mean risk score (e.g., 'mean_risk_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-mortality-rate",
+              "requirements": "Column exists for 90-day mortality rate (e.g., 'mortality_rate_90_day_perc')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-aki-rate",
+              "requirements": "Column exists for AKI rate (e.g., 'aki_rate_perc')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-ards-rate",
+              "requirements": "Column exists for ARDS rate (e.g., 'ards_rate_perc')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-los",
+              "requirements": "Column exists for length of stay (e.g., 'survivor_mean_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-risk-percentile",
+              "requirements": "Column exists for matched-profile risk percentile (e.g., 'matched_profile_risk_percentile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values-in-target-row",
+          "requirements": "No NULL/Empty values in key metric columns for the target cohort row",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mean-risk-score-validation",
+          "requirements": "Validate 'mean_risk_score' for the target PE cohort (row 'Target_PE_High_Comorbidity')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-risk-score-plausible",
+              "requirements": "Clinically Plausible (10-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-risk-score-acceptable",
+              "requirements": "Acceptable Range (20-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate 'mortality_rate_90_day_perc' for the target PE cohort",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (10-95)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (30-75)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "aki-rate-validation",
+          "requirements": "Validate 'aki_rate_perc' for the target PE cohort",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "aki-rate-plausible",
+              "requirements": "Clinically Plausible (5-80)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "aki-rate-acceptable",
+              "requirements": "Acceptable Range (25-65)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ards-rate-validation",
+          "requirements": "Validate 'ards_rate_perc' for the target PE cohort",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "ards-rate-plausible",
+              "requirements": "Clinically Plausible (0-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ards-rate-acceptable",
+              "requirements": "Acceptable Range (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-validation",
+          "requirements": "Validate 'survivor_mean_los_days' for the target PE cohort",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "los-plausible",
+              "requirements": "Clinically Plausible (1-90)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-acceptable",
+              "requirements": "Acceptable Range (7-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "risk-percentile-validation",
+          "requirements": "Validate 'matched_profile_risk_percentile'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "risk-percentile-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-percentile-acceptable",
+              "requirements": "Acceptable Range (25-99)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

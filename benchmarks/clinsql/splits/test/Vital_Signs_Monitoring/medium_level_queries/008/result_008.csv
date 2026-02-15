@@ -1,0 +1,2 @@
+target_map_value,total_stays_in_cohort,stays_with_map_lte_75,percentile_rank_of_75,cohort_mean_of_avg_map,cohort_stddev_of_avg_map,min_map,p25_map,p50_map_median,p75_map,max_map
+75,1540,525,34.09,79.95,11.43,3.0,73.09,78.88,86.04,129.5

@@ -1,0 +1,169 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-filtering",
+          "requirements": "Initial demographic filtering for female patients and correct age calculation at admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "gender-selection",
+              "requirements": "Filters for female patients using `p.gender = 'F'`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "age-calculation",
+              "requirements": "Accurately calculates patient age at admission using `p.anchor_age` and the difference between `a.admittime` and `p.anchor_year`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "age-range-and-condition-filtering",
+          "requirements": "Filters the initial cohort by the correct age range and primary diagnosis of cardiac arrest.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "age-range-selection",
+              "requirements": "Filters for patients with an age at admission between 76 and 86.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cardiac-arrest-diagnosis",
+              "requirements": "Identifies patients with a cardiac arrest diagnosis using appropriate ICD-9 ('4275') and ICD-10 ('I46%') codes.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medication-complexity-calculation",
+      "requirements": "Calculates a medication complexity score for each patient based on prescriptions within the first 7 days of hospitalization.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-medication-filtering",
+          "requirements": "Correctly filters prescriptions to include only those administered within the first 7 days of the hospital admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complexity-feature-extraction",
+          "requirements": "Extracts features for the complexity score, including unique drug/route counts, total prescriptions, and high-risk medication classes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complexity-score-formula",
+          "requirements": "Correctly applies the specified weighted formula to calculate the `med_complexity_score`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quintile-stratification",
+          "requirements": "Stratifies patients into 5 quintiles based on the calculated `med_complexity_score` using NTILE(5).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "outcome-metrics-calculation",
+      "requirements": "Calculates all required patient outcomes, including LOS, mortality, and readmission.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Correctly calculates the length of stay (LOS) in days using the difference between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "in-hospital-mortality",
+          "requirements": "Correctly identifies in-hospital mortality using the `hospital_expire_flag`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "30-day-readmission",
+          "requirements": "Correctly calculates the 30-day readmission flag by comparing discharge and subsequent admission times for each patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-output",
+      "requirements": "Final aggregation of results by complexity quintile and formatting the output as specified.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Groups the final results by `complexity_quintile`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aggregation-functions",
+          "requirements": "Correctly uses COUNT, AVG, MIN, and MAX to calculate the required metrics for each quintile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Rounds the final metrics to the specified decimal places and presents all required columns in the final output.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

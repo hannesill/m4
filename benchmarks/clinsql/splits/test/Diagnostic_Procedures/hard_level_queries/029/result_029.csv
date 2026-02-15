@@ -1,0 +1,5 @@
+diagnostic_load_quartile,num_patients,avg_procedure_count,avg_hospital_los_days,mortality_rate_percent,readmission_rate_30d_percent
+1,1015,118.78,7.85,16.55,16.35
+2,1015,191.72,9.56,9.06,13.5
+3,1014,246.9,12.14,12.62,17.06
+4,1014,409.25,16.58,28.3,16.86

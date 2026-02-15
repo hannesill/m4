@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-joins-for-cohort",
+          "requirements": "Table Joins for Cohort: Correctly joins patients, admissions, and icustays tables to link patient demographics with ICU stay information.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters the cohort to include only female patients (p.gender = 'F').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters for patients aged 75-85 at the time of admission using the formula (p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 75 AND 85.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-data-extraction",
+      "requirements": "Clinical Data Extraction and Filtering",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sbp-measurement-identification",
+          "requirements": "Systolic Blood Pressure Identification: Correctly identifies systolic blood pressure measurements from chartevents using the appropriate itemids (220050, 51).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-48h",
+          "requirements": "Temporal Filter (First 48 Hours): Filters measurements to include only those taken within the first 48 hours of an ICU stay (DATETIME_DIFF(ce.charttime, pc.intime, HOUR) BETWEEN 0 AND 48).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "plausible-value-filtering",
+          "requirements": "Plausible Value Filtering: Excludes clinically implausible systolic BP values by filtering valuenum BETWEEN 50 AND 250.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-aggregation",
+          "requirements": "Per-Stay Aggregation: Correctly calculates the average systolic BP for each individual ICU stay by grouping by stay_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: Accurately calculates the percentile rank of a value (140 mmHg) by counting stays at or below the target and dividing by the total number of stays in the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting-and-supplementary-stats",
+      "requirements": "Output Formatting and Supplementary Statistics",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "final-value-rounding",
+          "requirements": "Final Value Rounding: Appropriately rounds the final percentile rank and other statistical outputs to two decimal places.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inclusion-of-descriptive-statistics",
+          "requirements": "Inclusion of Descriptive Statistics: Provides additional descriptive statistics for the cohort's average SBP, such as mean, standard deviation, min, max, and quartiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

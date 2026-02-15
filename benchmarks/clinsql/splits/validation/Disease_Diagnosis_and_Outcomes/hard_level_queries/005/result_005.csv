@@ -1,0 +1,3 @@
+cohort_name,total_patients,median_risk_score,iqr_risk_score,mortality_30_day_rate_pct,major_complication_rate_pct,survivor_los_avg_days,risk_percentile_of_matched_profile
+Comparison: All Females 43-53,38046,,,,1.0,4.1,
+"Target: Females 43-53, HF, Post-ICU",429,11.5,8.0,10.49,12.82,13.5,97.0

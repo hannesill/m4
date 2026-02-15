@@ -1,0 +1,5 @@
+stay_group,diagnosis_type,admission_count,avg_mri_ct_per_admission
+1-3 Day Stay,Primary Diagnosis,177,0.0
+4-7 Day Stay,Primary Diagnosis,176,0.02
+1-3 Day Stay,Secondary Diagnosis,1186,0.03
+4-7 Day Stay,Secondary Diagnosis,1079,0.05

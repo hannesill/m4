@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients with an `anchor_age` between 60 and 70.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Atorvastatin Prescription Filtering",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "drug-name-selection",
+          "requirements": "Drug Name Selection: The query must correctly identify 'atorvastatin' prescriptions, typically using a case-insensitive match like `LOWER(pr.drug) LIKE '%atorvastatin%'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "drug-dose-unit-selection",
+          "requirements": "Drug Dose Unit Selection: The query must specify the dose unit as 'mg' using `pr.dose_unit_rx = 'mg'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "drug-dosage-range-selection",
+          "requirements": "Drug Dosage Range Selection: The query must accurately filter for dosages of 40 mg or 80 mg, correctly handling potential range values in `dose_val_rx` (e.g., using `REGEXP_CONTAINS`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must join the `patients` and `prescriptions` tables.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join must be correctly performed on `subject_id` to link patients to their prescriptions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: IQR Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "prescription-duration-calculation",
+          "requirements": "Prescription Duration Calculation: The query must calculate the duration of each prescription in days using `DATE_DIFF` between `stoptime` and `starttime` and filter for valid, non-zero durations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-calculation",
+          "requirements": "Quartile Calculation: The query must use an appropriate function like `APPROX_QUANTILES` to determine the first (Q1) and third (Q3) quartiles of the prescription durations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "iqr-computation",
+          "requirements": "IQR Computation: The query must calculate the Interquartile Range by subtracting the first quartile from the third quartile (Q3 - Q1).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final IQR value must be rounded to an appropriate number of decimal places (e.g., two) as a single numeric output.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

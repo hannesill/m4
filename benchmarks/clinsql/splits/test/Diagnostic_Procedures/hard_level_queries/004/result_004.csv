@@ -1,0 +1,3 @@
+cohort,number_of_stays,p25_procedure_burden,p50_procedure_burden,p90_procedure_burden,avg_icu_los_days,in_hospital_mortality_pct
+General ICU,85242,2,4,11,3.5083413510426933,11.115412590037776
+"Intracranial Hemorrhage (Female, 50-60)",394,3,6,13,6.9912225042301195,18.78172588832487

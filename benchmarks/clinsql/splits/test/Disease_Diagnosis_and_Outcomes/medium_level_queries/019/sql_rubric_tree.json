@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the base cohort of patients based on demographics and primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates and filters patient age to be between 53 and 63 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis",
+          "requirements": "Heart Failure Diagnosis: Identifies patients with a heart failure diagnosis using ICD-9 ('428%') or ICD-10 ('I50%') codes via a subquery or join.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "valid-admission-filter",
+          "requirements": "Valid Admission Filter: Excludes admissions with NULL `admittime` or `dischtime` to ensure valid length-of-stay calculations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly calculates the Charlson Comorbidity Index for each patient admission.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "charlson-component-identification",
+          "requirements": "Charlson Component Identification: Correctly flags the presence of 17 comorbidities for each admission using appropriate ICD-9 and ICD-10 code patterns.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "charlson-score-calculation",
+          "requirements": "Charlson Score Calculation: Correctly sums the weighted comorbidity flags to produce a final Charlson Index score for each admission.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient data, admissions, diagnoses, and Charlson scores.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Joins `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to build the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "charlson-data-join",
+          "requirements": "Charlson Data Join: Correctly integrates the calculated Charlson scores back to the main cohort using `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly stratifies the cohort, calculates requested metrics, and formats the final output.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-stratification",
+          "requirements": "Cohort Stratification: Correctly groups patients into Length of Stay (1-3, 4-7, >=8 days) and Charlson Index (<=3, 4-5, >5) categories.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Mortality Rate Calculation: Calculates in-hospital mortality as a percentage for each stratum, grouped by LOS and Charlson score.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-difference-calculation",
+          "requirements": "LOS Difference Calculation: Correctly computes both absolute and relative mortality differences between consecutive LOS groups within each Charlson category using window functions.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-destination-analysis",
+          "requirements": "Discharge Destination Analysis: Correctly categorizes discharge locations and calculates the percentage for home, rehab, SNF, and hospice within each stratum.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: Presents all required columns and correctly orders the results first by Charlson group and then by LOS group.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

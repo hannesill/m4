@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Calculates patient age at admission and filters for the range 77-87 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 77 AND 87`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-filter",
+          "requirements": "Identifies asthma exacerbation admissions by filtering on both ICD-9 ('493__1', '493__2') and ICD-10 ('J45%1') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Pre-filters admissions to a length of stay between 1 and 8 days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY) BETWEEN 1 AND 8`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling-imaging",
+          "requirements": "Uses the `pr.icd_version` column to correctly apply filtering logic for both ICD-9 and ICD-10 imaging codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd9-imaging-code-selection",
+          "requirements": "Correctly identifies ICD-9 codes for CT/MRI procedures using `pr.icd_code LIKE '87%' OR pr.icd_code LIKE '88.9%'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd10-imaging-code-selection",
+          "requirements": "Correctly identifies ICD-10 codes for CT/MRI procedures using `pr.icd_code LIKE 'B%' AND SUBSTR(pr.icd_code, 4, 1) IN ('0', '1', '2', '3')`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-tables-join",
+          "requirements": "Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-status-integration",
+          "requirements": "Uses a `LEFT JOIN` from `admissions` to `icustays` on `hadm_id` to correctly identify both ICU and non-ICU admissions for stratification.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-integration",
+          "requirements": "Uses a `LEFT JOIN` from the admissions cohort to `procedures_icd` to ensure admissions with zero imaging procedures are included in the counts.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-imaging-count",
+          "requirements": "Correctly calculates the number of imaging procedures for each unique admission (`hadm_id`) using `COUNT()` and `GROUP BY hadm_id` before final aggregation.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stratification-logic",
+          "requirements": "Correctly creates and groups by the two required stratification layers: ICU status (`icu_status`) and length of stay (`los_category`).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation",
+          "requirements": "Applies `AVG`, `MIN`, `MAX` on per-admission counts and `COUNT` of admissions, grouped by the defined strata, to produce the final summary statistics.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

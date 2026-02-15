@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate patient age at the time of admission and filter for the range 42-52 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 42 AND 52`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: The query must isolate the first ICU stay for each hospital admission using `ROW_NUMBER() OVER (PARTITION BY a.hadm_id ORDER BY i.intime)` and filtering for `rn = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ami-diagnosis-identification",
+          "requirements": "AMI Diagnosis Identification: The query must correctly identify Acute Myocardial Infarction (AMI) by filtering `diagnoses_icd` for both ICD-9 (LIKE '410%') and ICD-10 (LIKE 'I21%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-definition",
+          "requirements": "Cohort Definition: The query must use the AMI diagnosis to correctly create two distinct cohorts ('AMI (42-52, Male)' and 'Age-Matched Control (42-52, Male)') using a CASE statement based on the LEFT JOIN to the AMI admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `patients`, `admissions`, and `icustays` tables on their respective keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-data-join",
+          "requirements": "Procedure Data Join: The query must LEFT JOIN `procedureevents` on `stay_id` to link procedures to the correct ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-procedure-filter",
+          "requirements": "Temporal Procedure Filter: The query must correctly filter procedures to the first 72 hours of the ICU stay using a condition like `pe.starttime BETWEEN s.intime AND DATETIME_ADD(s.intime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-stay-metric-calculation",
+          "requirements": "Per-Stay Metric Calculation: The query must correctly calculate 'diagnostic_intensity_72h' as `COUNT(DISTINCT pe.itemid)` and 'hospital_los_days' using `DATETIME_DIFF` divided by 24.0 on a per-admission basis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-cohort-aggregation",
+          "requirements": "Final Cohort Aggregation: The query must group by the defined cohorts and accurately calculate the 90th percentile of diagnostic intensity using `APPROX_QUANTILES`, the average hospital LOS, and the in-hospital mortality percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

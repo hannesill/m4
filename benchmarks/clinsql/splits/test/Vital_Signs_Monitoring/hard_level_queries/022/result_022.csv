@@ -1,0 +1,6 @@
+metric,value,unit,description
+Percentile Rank for Score of 85,98.95,%,Percentile rank of a hypothetical instability score of 85 within the cohort.
+Avg ICU LOS (Most Unstable Quartile),5.25,Days,Average ICU Length of Stay for the most unstable quartile (top 25%).
+Mortality Rate (Most Unstable Quartile),50.76,%,In-hospital mortality rate for the most unstable quartile (top 25%).
+Patient Count (Most Unstable Quartile),262.0,Patients,Number of patients in the most unstable quartile.
+Patient Count (Total Cohort),1045.0,Patients,"Total number of patients in the Male, 85-95, ARF cohort."

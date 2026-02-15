@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'` to match the demographic criteria.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 76 and 86 using `p.anchor_age BETWEEN 76 AND 86`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "nitrate-medication-selection",
+          "requirements": "Nitrate Medication Selection: The query must correctly identify nitrate medications by filtering the `drug` column using patterns like `LOWER(pr.drug) LIKE '%nitroglycerin%' OR LOWER(pr.drug) LIKE '%isosorbide%'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "route-of-administration-selection",
+          "requirements": "Route of Administration Selection: The query must filter for intravenous ('IV') or oral ('PO') routes using `pr.route IN ('IV', 'PO')`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the `patients` and `prescriptions` tables to link patient demographics with their medication records.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between `patients` and `prescriptions` tables must be on `subject_id` (`p.subject_id = pr.subject_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "duration-calculation",
+          "requirements": "Duration Calculation: The query must calculate the duration of each prescription in days by finding the difference between `stoptime` and `starttime` using `DATE_DIFF(DATE(pr.stoptime), DATE(pr.starttime), DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-validity-filters",
+          "requirements": "Data Validity Filters: The query should include filters to ensure data quality, such as `pr.starttime IS NOT NULL`, `pr.stoptime IS NOT NULL`, and that the duration is non-negative.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-aggregation",
+          "requirements": "Percentile Aggregation: The query must use `APPROX_QUANTILES` to calculate the 25th percentile of the prescription durations, specifically `APPROX_QUANTILES(..., 100)[OFFSET(25)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

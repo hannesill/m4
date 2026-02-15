@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients (e.g., p.gender = 'F').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at admission and filter for the range 50-60.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-selection-diabetes",
+          "requirements": "Diagnosis Selection for Diabetes: The query must filter for patients with a diagnosis of diabetes using appropriate ICD-9 and ICD-10 codes (e.g., 'E10%', 'E11%', '250%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-selection-heart-failure",
+          "requirements": "Diagnosis Selection for Heart Failure: The query must filter for patients with a diagnosis of heart failure using appropriate ICD-9 and ICD-10 codes (e.g., 'I50%', '428%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: The query must ensure the hospital stay is long enough to have non-overlapping early and late 72-hour windows (e.g., >= 144 hours).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "glp1-drug-identification",
+          "requirements": "GLP-1 Drug Identification: The query must correctly identify injectable GLP-1 medications from the prescriptions table using drug names (e.g., semaglutide, liraglutide, etc.).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "early-initiation-window",
+          "requirements": "Early Initiation Window: The query must correctly identify prescriptions initiated within the first 72 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "late-initiation-window",
+          "requirements": "Late Initiation Window: The query must correctly identify prescriptions initiated within the final 72 hours before discharge.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join 'patients', 'admissions', and 'diagnoses_icd' tables to build the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-table-join",
+          "requirements": "Medication Table Join: The query must correctly join the patient cohort with the 'prescriptions' table to identify drug administrations.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "join-key-consistency",
+          "requirements": "Join Key Consistency: The query must use the correct keys for all joins (e.g., subject_id, hadm_id).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-denominator-calculation",
+          "requirements": "Cohort Denominator Calculation: The query must accurately calculate the total number of unique admissions in the patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "window-numerator-calculation",
+          "requirements": "Window Numerator Calculation: The query must correctly count the number of unique admissions with a GLP-1 initiation in the early and late windows respectively.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initiation-rate-calculation",
+          "requirements": "Initiation Rate Calculation: The query must correctly calculate the initiation rates for both early and late windows as percentages.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "absolute-change-calculation",
+          "requirements": "Absolute Change Calculation: The query must correctly calculate the absolute change between the late and early initiation rates.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "relative-change-calculation",
+          "requirements": "Relative Change Calculation: The query must correctly calculate the relative change in rates, using the early rate as the baseline.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

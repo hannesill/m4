@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters and defines the target (ACS with ICU stay) and control (general inpatient) cohorts.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query accurately filters for patients aged 67 to 77 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "target-cohort-definition",
+          "requirements": "Target Cohort Definition: The query correctly identifies the target cohort by requiring both an ACS diagnosis (`has_acs_flag = 1`) and a record of an ICU stay (`ia.hadm_id IS NOT NULL`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "control-cohort-definition",
+          "requirements": "Control Cohort Definition: The query correctly defines the control group as female inpatients aged 67-77 who do not meet the full criteria for the target group.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Ensures correct joining of necessary tables to construct patient profiles.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must join the `patients` and `admissions` tables on `subject_id` to link demographic data with admission events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must link admission records to diagnoses using `hadm_id` to identify clinical conditions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-icu-join",
+          "requirements": "Admission-ICU Join: The query must link admission records to ICU stays using `hadm_id` to identify patients who had an ICU stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Translates clinical conditions into correct ICD codes, handling different versions.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query correctly handles both ICD-9 and ICD-10 codes by using the `icd_version` column in its filtering logic.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-code-selection",
+          "requirements": "ACS Code Selection: The query correctly identifies Acute Coronary Syndrome (ACS) using appropriate codes for ICD-9 (e.g., '410%') and ICD-10 (e.g., 'I21%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cardiac-complication-code-selection",
+          "requirements": "Cardiac Complication Code Selection: The query correctly identifies cardiac complications using codes for both ICD-9 (e.g., '427.5%', '428%') and ICD-10 (e.g., 'I46%', 'I50%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "neurologic-complication-code-selection",
+          "requirements": "Neurologic Complication Code Selection: The query correctly identifies neurologic complications using codes for both ICD-9 (e.g., '43%') and ICD-10 (e.g., 'I6%', 'G93.1').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly computes all required metrics and comparisons.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-grouping",
+          "requirements": "Cohort Grouping: The final aggregation correctly uses `GROUP BY cohort_group` to produce separate metrics for the target and control cohorts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-calculation",
+          "requirements": "Risk Score Calculation: The query implements a custom risk score based on a weighted sum of clinical factors, and correctly calculates its average per cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-30-day-calculation",
+          "requirements": "30-Day Mortality Calculation: The query correctly defines a 30-day mortality flag based on the patient's date of death and admission time, and calculates the average rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "survivor-los-calculation",
+          "requirements": "Survivor LOS Calculation: The query correctly calculates the mean length of stay (LOS) exclusively for patients who survived their hospitalization (`hospital_expire_flag = 0`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-of-profile-calculation",
+          "requirements": "Matched Profile Percentile Calculation: The query correctly calculates the percentile rank for a median-risk profile within the target cohort, using appropriate window functions like `PERCENTILE_CONT` and `PERCENT_RANK`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

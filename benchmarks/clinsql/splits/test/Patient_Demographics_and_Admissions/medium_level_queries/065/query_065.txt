@@ -1,0 +1,1 @@
+For female inpatients aged 75–85 on general wards (non-ICU), report mean and SD of hospital length of stay (days), stratified by Discharged Home, Discharged to Hospice, and In‑Hospital Mortality.

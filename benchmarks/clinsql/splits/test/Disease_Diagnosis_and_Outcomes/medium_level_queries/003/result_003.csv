@@ -1,0 +1,13 @@
+stroke_type,los_category,comorbidity_burden,total_admissions,total_deaths,mortality_rate_pct,median_los_days,mech_vent_prevalence_pct,vasopressor_prevalence_pct,rrt_prevalence_pct
+Hemorrhagic,>5 days,Low (0-2),15,0,0.0,7,6.7,6.7,0.0
+Hemorrhagic,≤5 days,Low (0-2),19,1,5.26,3,5.3,0.0,0.0
+Hemorrhagic,>5 days,Medium (3-5),31,0,0.0,10,19.4,6.5,0.0
+Hemorrhagic,≤5 days,Medium (3-5),35,8,22.86,2,14.3,5.7,0.0
+Hemorrhagic,>5 days,High (>5),232,22,9.48,15,46.1,21.6,4.7
+Hemorrhagic,≤5 days,High (>5),108,27,25.0,3,27.8,16.7,4.6
+Ischemic,>5 days,Low (0-2),2,0,0.0,6,0.0,0.0,0.0
+Ischemic,≤5 days,Low (0-2),18,0,0.0,2,0.0,0.0,0.0
+Ischemic,>5 days,Medium (3-5),7,0,0.0,6,14.3,0.0,0.0
+Ischemic,≤5 days,Medium (3-5),79,2,2.53,2,5.1,2.5,0.0
+Ischemic,>5 days,High (>5),192,21,10.94,12,37.0,28.1,5.7
+Ischemic,≤5 days,High (>5),200,7,3.5,3,6.5,4.0,0.0

@@ -1,0 +1,6 @@
+score_quintile,num_admissions,avg_complexity_score,avg_los_days,mortality_rate_percent,readmission_rate_30d_percent,count_with_anticoag_opioid_interaction
+1,1380,17.15,2.92,4.13,6.23,67
+2,1380,26.85,4.35,2.75,8.41,249
+3,1379,35.35,5.85,5.37,9.86,448
+4,1379,46.71,7.69,12.55,9.5,723
+5,1379,81.94,14.41,26.11,8.41,1104

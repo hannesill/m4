@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "patient-count-column-exists",
+              "requirements": "Column Exists: Patient Count (e.g., 'patient_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admission-count-column-exists",
+              "requirements": "Column Exists: Admission Count (e.g., 'admission_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-troponin-column-exists",
+              "requirements": "Column Exists: Mean Initial Troponin T (e.g., 'mean_initial_troponin_t')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-troponin-column-exists",
+              "requirements": "Column Exists: Median Initial Troponin T (e.g., 'median_initial_troponin_t')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-troponin-column-exists",
+              "requirements": "Column Exists: IQR Initial Troponin T (e.g., 'iqr_initial_troponin_t')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in Answer-Relevant Columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-count-validation",
+          "requirements": "Validate Patient Count",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "patient-count-plausible",
+              "requirements": "Clinically Plausible (10-10000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "patient-count-acceptable",
+              "requirements": "Acceptable Range (500-2500)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "admission-count-validation",
+          "requirements": "Validate Admission Count",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "admission-count-plausible",
+              "requirements": "Clinically Plausible (10-12000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admission-count-acceptable",
+              "requirements": "Acceptable Range (500-3000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mean-troponin-validation",
+          "requirements": "Validate Mean Initial Troponin T",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-troponin-plausible",
+              "requirements": "Clinically Plausible (0.015-10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-troponin-acceptable",
+              "requirements": "Acceptable Range (0.2-2.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-troponin-validation",
+          "requirements": "Validate Median Initial Troponin T",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-troponin-plausible",
+              "requirements": "Clinically Plausible (0.015-8.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-troponin-acceptable",
+              "requirements": "Acceptable Range (0.1-1.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-troponin-validation",
+          "requirements": "Validate IQR Initial Troponin T",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "iqr-troponin-plausible",
+              "requirements": "Clinically Plausible (0.0-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-troponin-acceptable",
+              "requirements": "Acceptable Range (0.1-3.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

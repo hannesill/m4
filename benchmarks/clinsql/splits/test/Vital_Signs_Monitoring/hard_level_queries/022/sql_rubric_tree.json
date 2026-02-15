@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "base-demographic-filtering",
+          "requirements": "Base Cohort Filtering: The query must correctly filter patients based on gender ('M') and age (anchor_age BETWEEN 85 AND 95).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "clinical-condition-filtering",
+          "requirements": "Clinical Condition Filtering: The query must correctly join with a subquery that identifies patients with acute respiratory failure.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "arf-diagnosis-coding",
+          "requirements": "Acute Respiratory Failure Diagnosis Coding: Correctly identifies ARF using both ICD-9 ('51881', '51882', '51884') and ICD-10 ('J960', 'J962') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-sign-selection",
+          "requirements": "Vital Sign Selection: Correctly identifies all required vital signs using their specific itemids from the chartevents table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-sign-abnormality-logic",
+          "requirements": "Vital Sign Abnormality Logic: Implements a CASE statement to correctly flag each vital sign as abnormal based on specified clinical thresholds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Core Table Joins: The query must correctly join patients, admissions, and icustays tables on subject_id and hadm_id to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-24-hour-temporal-filter",
+          "requirements": "First 24-Hour Temporal Filter: Vital signs must be filtered to the first 24 hours of the ICU stay using a condition like 'charttime BETWEEN intime AND end_time_24h'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "null-handling-instability-score",
+          "requirements": "Null Handling for Instability Score: Uses COALESCE to correctly assign a score of 0 to patients with no abnormal vital signs.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must correctly group by stay_id and sum the 'is_abnormal' flags to calculate a total instability score per patient.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-ranking",
+          "requirements": "Quartile Ranking: Correctly uses NTILE(4) over the instability scores in descending order to identify the most unstable quartile.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: Accurately calculates the percentile rank of a score of 85 using a formula like (COUNTIF(score < 85) * 100.0) / COUNT(*).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-outcome-aggregation",
+          "requirements": "Quartile Outcome Aggregation: Correctly calculates the average ICU LOS and in-hospital mortality specifically for the most unstable quartile (quartile = 1).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

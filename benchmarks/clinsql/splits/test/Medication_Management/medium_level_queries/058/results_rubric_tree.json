@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "The result is presented in a valid CSV format.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column names relevant to the question exist.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-medication",
+              "requirements": "A column identifying the medication class exists (e.g., 'medication_class').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-early-rate",
+              "requirements": "A column for the early initiation rate exists (e.g., 'early_initiation_rate_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-late-rate",
+              "requirements": "A column for the late initiation rate exists (e.g., 'late_initiation_rate_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-net-change",
+              "requirements": "A column for the net change in percentage points exists (e.g., 'net_change_pp').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "There are no NULL or empty values in the key answer columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "early-initiation-rate-validation",
+          "requirements": "Validation of the 'early_initiation_rate_pct' column.",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "early-initiation-rate-plausible",
+              "requirements": "Values are clinically plausible (0.0-100.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "early-initiation-rate-acceptable",
+              "requirements": "Values are in an acceptable range (e.g., Insulin initiation rate is much higher than others).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "late-initiation-rate-validation",
+          "requirements": "Validation of the 'late_initiation_rate_pct' column.",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "late-initiation-rate-plausible",
+              "requirements": "Values are clinically plausible (0.0-100.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "late-initiation-rate-acceptable",
+              "requirements": "Values are in an acceptable range (generally low for most classes).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "net-change-validation",
+          "requirements": "Validation of the 'net_change_pp' column.",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "net-change-plausible",
+              "requirements": "Values are clinically plausible (-100.0 to 100.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-acceptable",
+              "requirements": "Net change for Insulin is strongly negative, while others are near zero or slightly positive.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

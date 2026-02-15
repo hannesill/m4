@@ -1,0 +1,4 @@
+temperature_category,number_of_icu_stays,mean_avg_temp,median_avg_temp,iqr_avg_temp,mi_stays_count,mi_rate_percent
+Hypothermic (<36.0 C),101,35.44,35.55,0.6,22,21.78
+Normothermic (36.0-37.9 C),332,36.7,36.66,0.61,63,18.98
+Febrile (>=38.0 C),16,38.43,38.31,0.45,11,68.75

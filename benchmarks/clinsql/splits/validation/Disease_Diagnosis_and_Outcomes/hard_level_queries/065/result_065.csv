@@ -1,0 +1,3 @@
+cohort_name,total_patients,median_risk_score,iqr_risk_score,mortality_90_day_rate_pct,major_complication_rate_pct,avg_survivor_los_days,matched_profile_risk_percentile
+Target_DVT_High_Comorbidity,713,21,17,27.283372365339574,8.196721311475393,12.17889317889318,50.83055280007214
+General_Inpatient_Population,223106,10,10,7.31635217931775,3.1440778638484006,4.562678260478047,

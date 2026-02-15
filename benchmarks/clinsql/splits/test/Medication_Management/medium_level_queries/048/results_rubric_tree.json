@@ -1,0 +1,225 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "regimen-class-column-exists",
+              "requirements": "Column indicating insulin regimen class exists (e.g., 'regimen_class')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percent-early-column-exists",
+              "requirements": "Column for percentage on regimen early exists (e.g., 'percent_on_regimen_early')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percent-late-column-exists",
+              "requirements": "Column for percentage on regimen late exists (e.g., 'percent_on_regimen_late')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "continued-count-column-exists",
+              "requirements": "Column for continued regimen count exists (e.g., 'continued_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiated-late-count-column-exists",
+              "requirements": "Column for late initiated regimen count exists (e.g., 'initiated_late_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "discontinued-count-column-exists",
+              "requirements": "Column for discontinued regimen count exists (e.g., 'discontinued_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "percent-early-validation",
+          "requirements": "Validate column 'percent_on_regimen_early'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percent-early-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percent-early-acceptable",
+              "requirements": "Acceptable Range (0-30). Expect percentages for any single regimen to be a subset of the total cohort, not a majority.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percent-late-validation",
+          "requirements": "Validate column 'percent_on_regimen_late'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percent-late-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percent-late-acceptable",
+              "requirements": "Acceptable Range (0-30). Similar to early percentages, expecting a subset.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "continued-count-validation",
+          "requirements": "Validate column 'continued_count'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "continued-count-plausible",
+              "requirements": "Clinically Plausible (>=0). Count cannot be negative.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "continued-count-acceptable",
+              "requirements": "Acceptable Range (0-500). The count of patients continuing a regimen should be less than the total number of patients on that regimen early or late.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "initiated-late-count-validation",
+          "requirements": "Validate column 'initiated_late_count'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "initiated-late-count-plausible",
+              "requirements": "Clinically Plausible (>=0). Count cannot be negative.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiated-late-count-acceptable",
+              "requirements": "Acceptable Range (0-500). The count of patients starting a regimen late should be less than the total number of patients on that regimen late.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "discontinued-count-validation",
+          "requirements": "Validate column 'discontinued_count'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "discontinued-count-plausible",
+              "requirements": "Clinically Plausible (>=0). Count cannot be negative.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "discontinued-count-acceptable",
+              "requirements": "Acceptable Range (0-500). The count of patients discontinuing a regimen should be less than the total number of patients on that regimen early.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "sliding-scale-zero-validation",
+          "requirements": "Validate Sliding Scale values. Sliding scale as a standalone regimen is uncommon and often part of other regimens, so zero counts are expected and plausible.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "sliding-scale-zero-acceptable",
+              "requirements": "Acceptable Value (0). All metrics for 'Sliding_Scale' being zero is clinically acceptable.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

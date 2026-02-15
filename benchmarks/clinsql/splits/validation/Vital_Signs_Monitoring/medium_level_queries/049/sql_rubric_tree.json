@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters the cohort to include only female patients (`p.gender = 'F'`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at the time of admission and filters for the 38-48 age range using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 38 AND 48`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: Identifies all ICU stays associated with the filtered patient admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-concept-implementation",
+      "requirements": "Clinical Concept Implementation: Systolic Blood Pressure Measurement",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sbp-code-selection",
+          "requirements": "Systolic Blood Pressure Code Selection: Correctly identifies systolic blood pressure measurements using the appropriate itemids (e.g., 220050, 51).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-48h",
+          "requirements": "Temporal Filter for First 48 Hours: Restricts SBP measurements to the first 48 hours of each ICU stay using a condition like `ce.charttime BETWEEN icu.intime AND DATETIME_ADD(icu.intime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "plausible-value-filtering",
+          "requirements": "Plausible Value Filtering: Includes a range filter on SBP values (e.g., `ce.valuenum BETWEEN 40 AND 250`) to exclude erroneous data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-join-logic",
+          "requirements": "Demographic Join Logic: Correctly joins `patients`, `admissions`, and `icustays` tables on `subject_id` and `hadm_id` to form the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "events-join-logic",
+          "requirements": "Events Join Logic: Correctly joins the identified ICU stays with the `chartevents` table on `stay_id` to link patients to their SBP measurements.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-sbp-average",
+          "requirements": "Per-Stay SBP Average: Correctly calculates the average systolic blood pressure for each individual ICU stay by grouping by `stay_id` and using `AVG(ce.valuenum)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: Accurately calculates the percentile rank of the value 130 by counting stays with an average SBP at or below 130 and dividing by the total number of stays in the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "safe-division",
+          "requirements": "Safe Division: Uses `SAFE_DIVIDE` to prevent division-by-zero errors when calculating the percentile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

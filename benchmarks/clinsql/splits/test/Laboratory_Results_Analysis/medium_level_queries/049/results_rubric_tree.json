@@ -1,0 +1,236 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-for-cohort-size",
+              "requirements": "Column exists for cohort size (e.g., number_of_patients)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-for-uln",
+              "requirements": "Column exists for 99th percentile ULN (e.g., troponin_t_99pct_uln)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-for-p25",
+              "requirements": "Column exists for 25th percentile value (e.g., p25_value)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-for-median",
+              "requirements": "Column exists for median value (e.g., p50_median_value)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-for-p75",
+              "requirements": "Column exists for 75th percentile value (e.g., p75_value)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-for-min-value",
+              "requirements": "Column exists for minimum value (e.g., min_value)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-for-max-value",
+              "requirements": "Column exists for maximum value (e.g., max_value)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-size-validation",
+          "requirements": "Validation for cohort size ('number_of_patients')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "cohort-size-plausible",
+              "requirements": "Clinically Plausible (1-5000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-size-acceptable",
+              "requirements": "Acceptable Range (20-200)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "uln-validation",
+          "requirements": "Validation for 99th percentile ULN ('troponin_t_99pct_uln')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "uln-plausible",
+              "requirements": "Clinically Plausible (0.01-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "uln-acceptable",
+              "requirements": "Acceptable Range (0.04-10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentile-and-range-validation",
+          "requirements": "Validation for Troponin T value percentiles and range",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "min-value-plausible",
+              "requirements": "Clinically Plausible minimum value (0.01-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-value-acceptable",
+              "requirements": "Acceptable minimum value (0.04-10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-value-plausible",
+              "requirements": "Clinically Plausible 25th percentile value (0.01-150.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-value-acceptable",
+              "requirements": "Acceptable 25th percentile value (0.05-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-value-plausible",
+              "requirements": "Clinically Plausible median value (0.01-200.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-value-acceptable",
+              "requirements": "Acceptable median value (0.06-20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-value-plausible",
+              "requirements": "Clinically Plausible 75th percentile value (0.01-250.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-value-acceptable",
+              "requirements": "Acceptable 75th percentile value (0.07-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-value-plausible",
+              "requirements": "Clinically Plausible maximum value (0.1-500.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-value-acceptable",
+              "requirements": "Acceptable maximum value (1.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

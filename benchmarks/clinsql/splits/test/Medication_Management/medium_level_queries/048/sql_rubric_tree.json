@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates and filters for patient age between 65 and 75 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Filters for inpatient stays of at least 96 hours using `DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 96`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-filtering",
+          "requirements": "Correctly filters for patients with both diabetes and heart failure diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "correct-table-joins",
+          "requirements": "Correctly joins patients, admissions, and diagnoses_icd tables to construct the initial cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-table-self-join-logic",
+          "requirements": "Correctly joins the diagnoses_icd table twice on hadm_id to independently filter for diabetes and heart failure for the same hospital admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescriptions-join",
+          "requirements": "Correctly joins the prescriptions table to the patient cohort on hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "diabetes-code-selection",
+          "requirements": "Identifies diabetes using appropriate ICD-9 ('250%') and ICD-10 ('E08'-'E11', 'E13') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-code-selection",
+          "requirements": "Identifies heart failure using appropriate ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insulin-regimen-classification",
+          "requirements": "Accurately classifies insulin prescriptions into 'Basal', 'Bolus', and 'Sliding_Scale' categories using a CASE statement based on drug names and dose instructions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "time-window-definition",
+          "requirements": "Correctly defines the 'early' (first 48 hours) and 'late' (final 48 hours) time windows for insulin administration.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "regimen-flag-generation",
+          "requirements": "Generates flags indicating if a patient received each insulin regimen within the early and late windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "basal-bolus-identification",
+          "requirements": "Correctly identifies a 'Basal-Bolus' regimen by checking for the presence of both Basal and Bolus insulin within the same time window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Correctly calculates the percentage of patients on each regimen for both the early and late windows, using the total cohort size as the denominator.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "transition-counting",
+          "requirements": "Correctly calculates the counts for regimen transitions (e.g., continued, initiated late, discontinued) between the early and late windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

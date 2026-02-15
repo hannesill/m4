@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation for ICH Lab Instability Analysis",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly filters patients' age between 74 and 84 using `p.anchor_age BETWEEN 74 AND 84`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "case-control-definition",
+          "requirements": "Case/Control Definition: Uses a flag (`is_ich_case`) derived from a LEFT JOIN to correctly distinguish between ICH cases and age/gender-matched controls within a single base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ich-diagnosis-identification",
+          "requirements": "ICH Diagnosis Identification: Correctly identifies Intracranial Hemorrhage admissions by querying the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: Accurately handles both ICD-9 ('430', '431', '432') and ICD-10 ('I60', 'I61', 'I62') codes for ICH diagnosis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-abnormality-definition",
+          "requirements": "Lab Abnormality Definition: Correctly defines lab abnormalities by comparing `valuenum` against specified upper and lower normal bounds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-time-window",
+          "requirements": "Lab Time Window: Restricts lab events to the initial 72-hour period from admission time using `DATETIME_ADD(bc.admittime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-instability-score-calculation",
+          "requirements": "Lab Instability Score Calculation: Correctly calculates the lab instability score as the count of distinct abnormal lab names per hospital admission (`COUNT(DISTINCT lab_name)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quintile-stratification",
+          "requirements": "Quintile Stratification: Correctly stratifies the ICH cohort into 5 groups (quintiles) based on the lab instability score using `NTILE(5) OVER (ORDER BY lab_instability_score)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-calculation-by-quintile",
+          "requirements": "Outcome Calculation by Quintile: Correctly calculates and groups average LOS and mortality rate per instability quintile for the ICH cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-lab-rate-analysis",
+          "requirements": "Comparative Lab Rate Analysis: Correctly calculates and compares the percentage of patients with each abnormal lab between the ICH case group and the control group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Query Structure",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins `admissions`, `patients`, `diagnoses_icd`, and `labevents` tables using appropriate keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cte-structuring",
+          "requirements": "CTE Structuring: Effectively uses Common Table Expressions (CTEs) to logically segment the query into understandable steps (e.g., cohort definition, lab analysis, final aggregation).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: Presents the final results clearly, with quintile-based outcomes and a nested array for the lab abnormality comparison.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

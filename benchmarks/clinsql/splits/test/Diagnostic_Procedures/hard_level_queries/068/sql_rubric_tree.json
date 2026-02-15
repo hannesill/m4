@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Calculates patient age at admission using `p.anchor_age + EXTRACT(YEAR FROM fs.admittime) - p.anchor_year` and filters for the range `BETWEEN 77 AND 87`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "asthma-exacerbation-diagnosis",
+          "requirements": "Identifies patients with an asthma exacerbation diagnosis using a subquery on `diagnoses_icd` with ICD-9 code `LIKE '493%2'` or ICD-10 code `LIKE 'J45%1'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-identification",
+          "requirements": "Selects only the first ICU stay for each hospital admission using `ROW_NUMBER() OVER (PARTITION BY a.hadm_id ORDER BY i.intime)` and filtering for `rn = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "admissions-icustays-join",
+          "requirements": "Correctly joins `admissions` and `icustays` tables on `hadm_id` to link ICU stays to hospital admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-demographics-join",
+          "requirements": "Correctly joins the `patients` table on `subject_id` to access demographic data like gender and anchor age.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-procedures-join",
+          "requirements": "Uses a `LEFT JOIN` to connect the `cohort` to `procedureevents` on `stay_id`, ensuring all patients are retained regardless of procedure status.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-variable-derivation",
+      "requirements": "Derivation of Clinical Variables",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "procedure-burden-time-window",
+          "requirements": "Restricts procedures to the first 72 hours of the ICU stay using `pe.starttime BETWEEN c.intime AND DATETIME_ADD(c.intime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-count-logic",
+          "requirements": "Calculates the procedure burden by counting unique procedures per stay using `COUNT(DISTINCT pe.itemid)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hospital-los-calculation",
+          "requirements": "Calculates hospital length of stay in days using `DATETIME_DIFF(dischtime, admittime, HOUR) / 24.0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "quartile-stratification",
+          "requirements": "Stratifies patients into four quartiles based on their procedure count using `NTILE(4) OVER (ORDER BY procedure_count)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Groups the final results by `procedure_quartile` to calculate metrics for each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metric-aggregation",
+          "requirements": "Correctly calculates the required outcome metrics: mean procedure count (`AVG(procedure_count)`), mean hospital LOS (`AVG(hospital_los_days)`), and hospital mortality percentage (`AVG(CAST(hospital_expire_flag AS FLOAT64)) * 100`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

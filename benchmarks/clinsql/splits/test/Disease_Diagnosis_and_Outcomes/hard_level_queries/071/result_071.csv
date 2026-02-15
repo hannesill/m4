@@ -1,0 +1,3 @@
+cohort,patient_admission_count,median_risk_score,iqr_risk_score,mortality_90_day_rate_pct,major_complication_rate_pct,median_survivor_los_days,target_median_risk_percentile_in_control
+Target: AMI with ICU,969,41,13,29.721362229102166,1.0319917440660475,9,
+Control: General Population,46414,13,10,9.225664670142653,0.10557159477743719,3,99.33209807385703

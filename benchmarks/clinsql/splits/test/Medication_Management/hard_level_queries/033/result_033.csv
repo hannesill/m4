@@ -1,0 +1,3 @@
+interaction_group,number_of_patients,avg_med_complexity_score,p25_med_complexity_score,p50_med_complexity_score,p75_med_complexity_score,avg_overall_complexity_percentile,avg_los_days_all,mortality_rate_all,patients_in_top_quartile,avg_los_days_top_quartile,mortality_rate_top_quartile
+QT_and_Bleeding_Risk,749,23.85,19,23,28,0.559,10.72,0.232,240,11.21,0.371
+Matched_Cohort,1273,20.38,15,20,25,0.436,11.37,0.275,265,12.75,0.408

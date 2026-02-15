@@ -1,0 +1,112 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 82 and 92 using `p.anchor_age BETWEEN 82 AND 92`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Identification and Calculation of Maximum MAP per Stay",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "map-code-selection",
+          "requirements": "MAP Code Selection: The query must correctly identify Mean Arterial Pressure (MAP) measurements by filtering `itemid` using codes 220052 and 456.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "map-value-filtering",
+          "requirements": "MAP Value Filtering: The query must apply a clinically reasonable range filter to the MAP values, such as `valuenum BETWEEN 40 AND 140`, to exclude outliers.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "max-map-per-stay-calculation",
+          "requirements": "Max MAP per Stay Calculation: The query must group by `stay_id` and `subject_id` and calculate the maximum MAP for each stay using `MAX(valuenum)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the `patients` table with the intermediate results containing MAP values.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between the `patients` table and the MAP data must be on `subject_id` to link patient demographics with their clinical events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Final Aggregation and Calculation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "median-calculation",
+          "requirements": "Median Calculation: The query must calculate the median of the maximum MAP values using an appropriate function like `APPROX_QUANTILES(..., 2)[OFFSET(1)]`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final median value should be rounded to two decimal places using `ROUND(..., 2)`.",
+          "weight": 1,
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

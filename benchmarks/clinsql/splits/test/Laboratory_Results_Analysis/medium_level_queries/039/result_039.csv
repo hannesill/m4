@@ -1,0 +1,4 @@
+troponin_category,admission_count,percentage_of_total,mean_troponin,median_troponin,p25_troponin,p75_troponin,iqr_troponin
+Normal,139,64.35,0.0197,0.02,0.01,0.03,0.02
+Borderline,50,23.15,0.0682,0.06,0.06,0.08,0.02
+Myocardial Injury,27,12.5,0.7274,0.26,0.13,0.53,0.4

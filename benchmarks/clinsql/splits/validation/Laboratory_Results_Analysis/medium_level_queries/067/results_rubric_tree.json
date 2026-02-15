@@ -1,0 +1,303 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-patient-count",
+              "requirements": "Column exists for total patient count (e.g., 'total_patients')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-admission-count",
+              "requirements": "Column exists for total admission count (e.g., 'total_admissions')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg-age",
+              "requirements": "Column exists for average age (e.g., 'avg_age')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg-los",
+              "requirements": "Column exists for average length of stay (e.g., 'avg_length_of_stay_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg-troponin",
+              "requirements": "Column exists for average first troponin (e.g., 'avg_first_troponin_t')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-min-troponin",
+              "requirements": "Column exists for minimum first troponin (e.g., 'min_first_troponin_t')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-max-troponin",
+              "requirements": "Column exists for maximum first troponin (e.g., 'max_first_troponin_t')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-stddev-troponin",
+              "requirements": "Column exists for standard deviation of first troponin (e.g., 'stddev_first_troponin_t')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-mortality-rate",
+              "requirements": "Column exists for in-hospital mortality rate (e.g., 'in_hospital_mortality_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in required columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-count-validation",
+          "requirements": "Validate total patient count (total_patients: 554)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "patient-count-plausible",
+              "requirements": "Clinically Plausible (10-5000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "patient-count-acceptable",
+              "requirements": "Acceptable Range (200-1500)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "admission-count-validation",
+          "requirements": "Validate total admission count (total_admissions: 664)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "admission-count-plausible",
+              "requirements": "Clinically Plausible (10-6000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admission-count-acceptable",
+              "requirements": "Acceptable Range (200-2000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-age-validation",
+          "requirements": "Validate average age (avg_age: 57.8)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-age-plausible",
+              "requirements": "Clinically Plausible (52-62)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-age-acceptable",
+              "requirements": "Acceptable Range (55-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validate average length of stay (avg_length_of_stay_days: 9.4)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Clinically Plausible (1-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Acceptable Range (3-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-troponin-validation",
+          "requirements": "Validate average first troponin (avg_first_troponin_t: 1.115)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-troponin-plausible",
+              "requirements": "Clinically Plausible (0.01-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-troponin-acceptable",
+              "requirements": "Acceptable Range (0.1-5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate in-hospital mortality rate (in_hospital_mortality_rate_pct: 6.63)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (2-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "min-troponin-validation",
+          "requirements": "Validate minimum first troponin (min_first_troponin_t: 0.02)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "min-troponin-plausible",
+              "requirements": "Clinically Plausible (>=0.01)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-troponin-acceptable",
+              "requirements": "Acceptable Range (0.01-0.1)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "max-troponin-validation",
+          "requirements": "Validate maximum first troponin (max_first_troponin_t: 24.31)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "max-troponin-plausible",
+              "requirements": "Clinically Plausible (1.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-troponin-acceptable",
+              "requirements": "Acceptable Range (5.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

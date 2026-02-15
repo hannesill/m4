@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Accurately define the target cohort of male inpatients aged 75-85 with a diagnosis of hepatic failure.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at the time of admission and filter for the range 75-85.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-identification",
+          "requirements": "Condition Identification: The query must identify patients with hepatic failure by correctly filtering on a set of relevant ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-setting-filter",
+          "requirements": "Inpatient Setting Filter: The query correctly uses admission and hospital-related tables (`admissions`, `diagnoses_icd`) to restrict the cohort to inpatients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly define and apply clinical concepts like hepatic failure codes, instability score, and critical lab values.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must distinguish between ICD-9 and ICD-10 versions when selecting hepatic failure codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hepatic-failure-code-selection",
+          "requirements": "Hepatic Failure Code Selection: The query must use appropriate ICD codes for hepatic failure (e.g., '570', '572.2', 'K72', 'K71.11').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-definitions-and-thresholds",
+          "requirements": "Lab Definitions and Thresholds: The query must correctly define a set of labs and their critical value thresholds to form the basis of the instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-48h",
+          "requirements": "Temporal Filter (First 48 Hours): The query must filter lab events to include only those that occurred within the first 48 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly join tables to link patient demographics, diagnoses, and lab events.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must correctly join the `admissions` table with the `diagnoses_icd` table (or a CTE derived from it) on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-lab-join",
+          "requirements": "Admission-Lab Join: The query must correctly join the `labevents` and `admissions` tables on `hadm_id` to establish the temporal context for lab results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculate the required metrics: instability score, mortality, LOS, and comparative lab frequencies.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must calculate the score for each patient by counting the number of unique labs with critical values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-summary-metrics",
+          "requirements": "Cohort Summary Metrics Calculation: The query must correctly calculate the maximum instability score, average LOS, and mortality rate for the target cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-group-identification",
+          "requirements": "Comparative Group Identification: The query must correctly identify and flag a 'general inpatient' population for comparison of critical lab frequencies.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-frequency-comparison",
+          "requirements": "Critical Frequency Comparison: The query must calculate and compare the percentage of patients with critical labs between the target cohort and the general population.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

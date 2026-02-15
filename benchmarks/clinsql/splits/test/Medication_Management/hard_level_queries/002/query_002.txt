@@ -1,0 +1,1 @@
+I'm evaluating a 72-year-old man with AMI. Among male inpatients aged 67-77 with AMI, stratified into tertiles by first-24-hour medication complexity score, report per tertile: admission count, score range and mean, mean LOS (days), in-hospital mortality%, and 30-day readmission%.

@@ -1,0 +1,5 @@
+los_group,day1_icu_status,total_admissions,total_deaths,mortality_rate_percent,median_length_of_stay_days
+>7 days,ICU Day 1,201,20,9.95,16
+>7 days,Non-ICU Day 1,375,32,8.53,15
+≤7 days,ICU Day 1,143,27,18.88,5
+≤7 days,Non-ICU Day 1,416,9,2.16,4

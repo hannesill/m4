@@ -1,0 +1,2 @@
+cohort_description,patient_count,admission_count,mean_initial_troponin_t,median_initial_troponin_t,iqr_initial_troponin_t,min_initial_troponin_t,max_initial_troponin_t,mean_los_days,median_los_days,in_hospital_mortality_rate_pct
+"Female Patients, Age 67-77, with ACS and Elevated Initial Troponin T",1279,1548,0.929,0.25,0.67,0.02,51.84,9.1,6.000000000,10.08

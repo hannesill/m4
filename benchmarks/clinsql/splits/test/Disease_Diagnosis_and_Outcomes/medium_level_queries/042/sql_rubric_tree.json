@@ -1,0 +1,168 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the specific patient group based on demographics, primary diagnosis, and exclusion criteria.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-filtering",
+          "requirements": "Demographic Filtering: Accurately filters for male patients aged 69-79.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "gender-selection",
+              "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "age-range-selection",
+              "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 69-79 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 69 AND 79`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "primary-condition-filter",
+          "requirements": "Primary Condition (AMI): Uses an `EXISTS` clause to select admissions with a diagnosis of Acute Myocardial Infarction (AMI).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "exclusion-criteria-filter",
+          "requirements": "Exclusion Criteria (Shock/Respiratory Failure): Uses a `NOT EXISTS` clause to exclude admissions with diagnoses of shock or respiratory failure.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Accurately translates clinical conditions into correct ICD-9 and ICD-10 codes.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "ami-code-selection",
+          "requirements": "AMI Code Selection: Correctly identifies AMI using both ICD-9 ('410%') and ICD-10 ('I21%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "shock-code-selection",
+          "requirements": "Shock Code Selection: Correctly identifies shock using ICD-9 ('785.5%') and ICD-10 ('R57.%', 'R65.21') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "respiratory-failure-code-selection",
+          "requirements": "Respiratory Failure Code Selection: Correctly identifies respiratory failure using ICD-9 ('518.81', '518.82', '518.84') and ICD-10 ('J96.%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: Properly distinguishes between ICD versions within the conditional logic for all inclusion and exclusion diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics with admission and diagnosis information.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins `admissions` and `patients` tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: Consistently uses `subject_id` to join patient-level data and `hadm_id` to link admission-level data across subqueries.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates, stratifies, and aggregates the required metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation-and-stratification",
+          "requirements": "LOS Calculation and Stratification: Calculates Length of Stay (LOS) in days and correctly assigns admissions to the specified buckets (1-3, 4-7, >=8 days).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-location-categorization",
+          "requirements": "Discharge Location Categorization: Correctly groups various discharge locations into broader categories (Home, Rehab, SNF, Hospice, Other).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-and-aggregation",
+          "requirements": "Grouping and Aggregation: Groups results by LOS bucket and computes required metrics: mortality rate, median LOS, and discharge destination counts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation",
+          "requirements": "Metric Calculation: Correctly calculates mortality rate (AVG), median LOS (APPROX_QUANTILES), and discharge counts (COUNTIF).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Ensures all LOS buckets are present in the final output, handles nulls with COALESCE, rounds percentages, and orders results correctly.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

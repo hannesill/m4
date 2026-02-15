@@ -1,0 +1,254 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-filtering",
+          "requirements": "Initial demographic filtering for age and gender.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "gender-selection",
+              "requirements": "Gender Selection: Correctly filters for male patients using `p.gender = 'M'`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "age-calculation",
+              "requirements": "Age Calculation: Accurately calculates patient age at admission using `p.anchor_age`, `p.anchor_year`, and `a.admittime`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "age-range-selection",
+              "requirements": "Age Range Selection: Correctly filters for admissions where the patient's age is between 77 and 87 years.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hf-admission-identification",
+          "requirements": "Heart Failure Admission Identification: Correctly identifies admissions with a diagnosis of heart failure.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "hf-icd-code-selection",
+              "requirements": "HF ICD Code Selection: Selects admissions using both ICD-9 ('428%') and ICD-10 ('I50%') codes for heart failure.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "unique-hf-admissions",
+              "requirements": "Unique HF Admissions: Ensures that each heart failure admission is counted only once using `DISTINCT` on the admission identifier.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "los-calculation-and-categorization",
+          "requirements": "Length of Stay Calculation and Categorization: Correctly calculates LOS and groups it into specified categories.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "los-calculation",
+              "requirements": "LOS Calculation: Correctly calculates length of stay in days using `DATETIME_DIFF` between `dischtime` and `admittime`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-categorization",
+              "requirements": "LOS Categorization: Uses a `CASE` statement to correctly segment LOS into '1-3 Days', '4-7 Days', and '>=8 Days'.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-filter",
+              "requirements": "LOS Filter: Excludes admissions with a length of stay less than 1 day from the final analysis (`length_of_stay >= 1`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-admission-detection",
+          "requirements": "ICU Admission Detection: Correctly identifies ICU admission on day 1 using a subquery on the `icustays` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-identification",
+          "requirements": "Comorbidity Identification: Correctly identifies admissions with diagnoses of CKD and Diabetes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "ckd-identification",
+              "requirements": "CKD Identification: Uses a subquery with correct ICD codes ('N18%', '585%') to flag admissions with Chronic Kidney Disease.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "diabetes-identification",
+              "requirements": "Diabetes Identification: Uses a subquery with correct ICD codes ('E10%', 'E11%', '250%') to flag admissions with Diabetes.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "patient-admission-join",
+              "requirements": "Patient-Admission Join: Correctly joins `patients` and `admissions` tables on `subject_id`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admission-diagnosis-join",
+              "requirements": "Admission-Diagnosis Join: Correctly joins the patient cohort with `diagnoses_icd` on `hadm_id` to identify HF.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "subquery-linkage",
+          "requirements": "Subquery Linkage: Correctly links subqueries for ICU and comorbidity checks to the main query using `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: Correctly groups the final result set by ICU status (`severity_group`) and LOS category (`los_category`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation",
+          "requirements": "Metric Calculation: Correctly calculates all required metrics for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "mortality-calculation",
+              "requirements": "Mortality Calculation: Calculates in-hospital mortality as a percentage using `AVG(hospital_expire_flag) * 100`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-calculation",
+              "requirements": "Median LOS Calculation: Calculates the median length of stay using `APPROX_QUANTILES`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ckd-prevalence-calculation",
+              "requirements": "CKD Prevalence Calculation: Calculates CKD prevalence as a percentage using `AVG(has_ckd) * 100`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "diabetes-prevalence-calculation",
+              "requirements": "Diabetes Prevalence Calculation: Calculates Diabetes prevalence as a percentage using `AVG(has_diabetes) * 100`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query properly rounds percentage outputs and orders the results for readability.",
+          "weight": 1,
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

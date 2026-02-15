@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-for-instability-score-exists",
+              "requirements": "Column exists for stay instability score (e.g., instability_score_cv_sum)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-for-decile-exists",
+              "requirements": "Column exists for instability decile (e.g., instability_decile)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-for-abnormal-vital-count-exists",
+              "requirements": "Column exists for abnormal vital count (e.g., abnormal_vitals_count)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-for-icu-los-exists",
+              "requirements": "Column exists for ICU length of stay (e.g., icu_los_days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-for-in-hospital-mortality-exists",
+              "requirements": "Column exists for in-hospital mortality (e.g., hospital_expire_flag)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "instability-score-validation",
+          "requirements": "Validation for stay instability score (CV sum)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "instability-score-plausible",
+              "requirements": "Clinically Plausible (0.1 - 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-score-acceptable",
+              "requirements": "Acceptable Range (0.5 - 6.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "instability-decile-validation",
+          "requirements": "Validation for instability decile",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "instability-decile-plausible",
+              "requirements": "Clinically Plausible (1 - 10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-decile-acceptable",
+              "requirements": "Acceptable Range (8 - 10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "abnormal-vitals-count-validation",
+          "requirements": "Validation for abnormal vital count",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "abnormal-vitals-count-plausible",
+              "requirements": "Clinically Plausible (0 - 288)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "abnormal-vitals-count-acceptable",
+              "requirements": "Acceptable Range (1 - 150)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "Validation for ICU length of stay",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "icu-los-plausible",
+              "requirements": "Clinically Plausible (0.1 - 150.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-acceptable",
+              "requirements": "Acceptable Range (0.2 - 40.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-flag-validation",
+          "requirements": "Validation for in-hospital mortality flag",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-flag-plausible",
+              "requirements": "Clinically Plausible (0 or 1)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-flag-acceptable",
+              "requirements": "Acceptable Range (0 or 1)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

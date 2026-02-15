@@ -1,0 +1,103 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "answer-column-exists",
+              "requirements": "A column representing the mean number of imaging procedures exists (e.g., 'avg_imaging_procedures', 'mean_radiography_cts').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-columns-exist",
+              "requirements": "Columns for stratifying by length of stay and diagnosis priority exist (e.g., 'stay_category', 'diagnosis_priority').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL or empty values in the key answer and stratification columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "row-count-validation",
+          "requirements": "Correct number of rows based on stratification.",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "correct-number-of-rows",
+              "requirements": "Result has 4 rows, one for each combination of stay length (2) and diagnosis priority (2).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "average-imaging-validation",
+          "requirements": "Validation for the column representing 'avg_imaging_procedures' or equivalent.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg-imaging-plausible",
+              "requirements": "Values for average imaging procedures are within a clinically plausible range (0.0 to 5.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-imaging-acceptable",
+              "requirements": "Values for average imaging procedures are within an acceptable range (0.0 to 1.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Identifies the correct patient cohort based on demographics, insurance, admission source, and principal diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'` or `aa.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate the patient's age at admission and filter for the range 61-71 using a `BETWEEN` clause.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insurance-filter",
+          "requirements": "Insurance Filter: The query must filter for patients with 'Medicare' insurance.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-source-filter",
+          "requirements": "Admission Source Filter: The query must filter for admissions from a skilled nursing facility (SNF) using a case-insensitive pattern match like `UPPER(aa.admission_location) LIKE '%SNF%'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "principal-diagnosis-filter",
+          "requirements": "Principal Diagnosis Filter: The query must identify the principal diagnosis by filtering `diagnoses_icd` where `seq_num = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies the medical concept of 'Acute Kidney Injury' using appropriate ICD codes.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly handle both ICD-9 and ICD-10 versions using the `icd_version` column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-code-selection",
+          "requirements": "AKI Code Selection: The query must select the correct ICD-9 ('584%') and ICD-10 ('N17%') codes for Acute Kidney Injury.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables and prepares data for analysis.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "admissions-patients-join",
+          "requirements": "Admissions-Patients Join: The query must perform an INNER JOIN between the `admissions` and `patients` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: The query must perform an INNER JOIN between the admissions data and `diagnoses_icd` on `hadm_id` to link diagnoses to specific hospital stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculates the required metrics based on the identified patient cohort and index admissions.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "readmission-logic",
+          "requirements": "30-Day Readmission Logic: The query must correctly identify a 30-day readmission by finding the next admission date and checking if the difference from the index discharge date is within 30 days.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "index-los-calculation",
+          "requirements": "Index LOS Calculation: The query must calculate the length of stay for the index admission, typically by finding the difference between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-calculations",
+          "requirements": "Final Metric Calculations: The query must compute the three required metrics: 30-day readmission rate, median LOS for readmitted vs non-readmitted patients, and the percentage of stays > 6 days.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-los-stratification",
+          "requirements": "Median LOS Stratification: The query must correctly calculate the median LOS separately for the readmitted and non-readmitted groups using conditional aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

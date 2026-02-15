@@ -1,0 +1,1 @@
+I'm evaluating a 70‑year‑old female. Among female ICU patients 65–75 with pulmonary embolism, stratify first ICU‑stay diagnostic procedure counts within 72 hours into quartiles and report N, mean procedure count, mean ICU LOS (days), and hospital mortality (%) per quartile.

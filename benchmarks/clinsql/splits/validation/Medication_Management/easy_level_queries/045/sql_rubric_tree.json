@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using the condition p.gender = 'M'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients within the 57-67 age range using a condition like p.anchor_age BETWEEN 57 AND 67.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "dapt-identification",
+      "requirements": "DAPT (Dual Antiplatelet Therapy) Identification",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "identify-dapt-admissions",
+          "requirements": "DAPT Admission Identification: The query must correctly identify hospital admissions (hadm_id) where DAPT was administered, requiring co-prescription of Aspirin and a P2Y12 inhibitor.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aspirin-identification",
+          "requirements": "Aspirin Identification: The query must check for the presence of aspirin prescriptions using a case-insensitive search (e.g., LOWER(drug) LIKE '%aspirin%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "p2y12-inhibitor-identification",
+          "requirements": "P2Y12 Inhibitor Identification: The query must check for the presence of at least one P2Y12 inhibitor (clopidogrel, ticagrelor, or prasugrel) using a case-insensitive search.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the 'patients' and 'prescriptions' tables, and integrate the CTE identifying DAPT admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between 'patients' and 'prescriptions' must be on 'subject_id', and the join with the admissions CTE must be on 'hadm_id'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "duration-calculation",
+          "requirements": "Prescription Duration Calculation: The query must calculate the duration of each prescription in days by taking the difference between 'stoptime' and 'starttime'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-validity-filters",
+          "requirements": "Data Validity Filters: The query must include filters to ensure prescription start and end times are not null and the calculated duration is non-negative.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "iqr-calculation",
+          "requirements": "IQR Calculation: The query must calculate the Interquartile Range (IQR) by finding the difference between the third and first quartiles of the prescription durations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-function-usage",
+          "requirements": "Quartile Function Usage: The query must correctly use a function like APPROX_QUANTILES(duration_days, 4) and select the correct array offsets for Q3 and Q1.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be a single numeric value, rounded appropriately.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

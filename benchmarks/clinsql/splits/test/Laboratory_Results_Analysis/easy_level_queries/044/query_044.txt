@@ -1,0 +1,1 @@
+For a 94-year-old male stroke patient: among male ischemic stroke admissions, what's the IQR of serum glucose on discharge day?

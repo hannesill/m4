@@ -1,0 +1,13 @@
+severity_group,los_group,comorbidity_group,number_of_admissions,mortality_rate_pct,mortality_rate_ci95_lower,mortality_rate_ci95_upper,mech_vent_prevalence_pct,vasopressor_prevalence_pct,rrt_prevalence_pct
+Lower-Severity (No ICU),<=7 days,0-1,151,0.0,0.0,2.48,0.0,0.0,0.0
+Lower-Severity (No ICU),<=7 days,2,308,0.65,0.18,2.34,0.0,0.0,0.0
+Lower-Severity (No ICU),<=7 days,>=3,1449,0.28,0.11,0.71,0.0,0.0,0.0
+Lower-Severity (No ICU),>7 days,0-1,25,0.0,0.0,13.32,0.0,0.0,0.0
+Lower-Severity (No ICU),>7 days,2,43,0.0,0.0,8.2,0.0,0.0,0.0
+Lower-Severity (No ICU),>7 days,>=3,357,0.56,0.15,2.02,0.0,0.0,0.0
+Higher-Severity (ICU),<=7 days,0-1,33,6.06,1.68,19.61,39.39,0.0,3.03
+Higher-Severity (ICU),<=7 days,2,77,3.9,1.33,10.84,40.26,0.0,0.0
+Higher-Severity (ICU),<=7 days,>=3,303,8.25,5.65,11.9,32.34,0.0,1.98
+Higher-Severity (ICU),>7 days,0-1,36,0.0,0.0,9.64,58.33,0.0,5.56
+Higher-Severity (ICU),>7 days,2,79,2.53,0.7,8.77,65.82,0.0,10.13
+Higher-Severity (ICU),>7 days,>=3,443,10.38,7.88,13.57,53.5,0.0,12.87

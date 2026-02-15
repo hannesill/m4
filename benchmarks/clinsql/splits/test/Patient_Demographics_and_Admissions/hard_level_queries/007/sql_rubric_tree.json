@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction (Index Admissions)",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-filtering",
+          "requirements": "Demographic Filtering: Correctly filters for male patients ('M'), with 'Medicare' insurance, and within the age range of 83-93 at the time of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-context-filtering",
+          "requirements": "Admission Context Filtering: Correctly identifies admissions originating from the Emergency Department (e.g., admission_location LIKE '%EMERGENCY%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-diagnosis-selection",
+          "requirements": "Primary Diagnosis Selection: Accurately identifies the principal diagnosis by filtering on `seq_num = 1` in the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "tia-concept-identification",
+          "requirements": "TIA Concept Identification: Correctly filters for Transient Ischemic Attack (TIA) using appropriate ICD-9 ('435%') and ICD-10 ('G45%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Metric Calculation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "readmission-logic",
+          "requirements": "Readmission Logic: Correctly identifies a 30-day readmission by finding the next admission for each patient and checking if it occurs within 30 days of the index admission's discharge date.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay (LOS) Calculation: Accurately calculates the index admission's length of stay in days using the difference between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-aggregation",
+          "requirements": "Final Metric Aggregation: Correctly calculates all three requested metrics: 30-day readmission rate, median LOS for readmitted vs. non-readmitted patients, and the percentage of stays longer than 10 days.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins the `admissions`, `patients`, and `diagnoses_icd` tables to construct the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching-integrity",
+          "requirements": "Key Matching Integrity: Consistently uses `subject_id` and `hadm_id` as the joining keys between the respective tables to maintain relational integrity.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "query-structure-and-efficiency",
+      "requirements": "Query Structure and Efficiency",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cte-usage",
+          "requirements": "CTE Usage: Effectively uses Common Table Expressions (CTEs) to structure the query logically, separating cohort selection, readmission logic, and final aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "window-function-application",
+          "requirements": "Window Function Application: Correctly applies the `LEAD` window function partitioned by `subject_id` to efficiently find the subsequent admission for readmission analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

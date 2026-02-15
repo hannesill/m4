@@ -1,0 +1,191 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Constructs the initial ICU patient cohort based on demographic and admission criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "icu-patient-identification",
+          "requirements": "Correctly identifies ICU patients by joining the `patients`, `admissions`, and `icustays` tables on `subject_id` and `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Filters the cohort to include only male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Accurately filters for patients aged 68-78 at the time of ICU admission using a calculation like `(p.anchor_age + EXTRACT(YEAR FROM i.intime) - p.anchor_year) BETWEEN 68 AND 78`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "Selects only the first ICU stay for each hospital admission using a window function like `ROW_NUMBER()` and `QUALIFY rn = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-criteria-application",
+      "requirements": "Applies the core clinical criteria (vasopressor use) and calculates the diagnostic load.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "vasopressor-code-selection",
+          "requirements": "Correctly identifies vasopressor administrations by filtering `inputevents` using a list of specific `itemid`s (e.g., 221906, 221289, etc.).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vasopressor-time-window",
+          "requirements": "Restricts vasopressor administration to the first 72 hours of the ICU stay using `ie.starttime BETWEEN i.intime AND DATETIME_ADD(i.intime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vasopressor-cohort-application",
+          "requirements": "Filters the main patient cohort to only include stays with vasopressor administration, correctly using an `INNER JOIN` on `stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-event-quantification",
+          "requirements": "Counts all lab events (including repeats) from the `labevents` table occurring within the first 72 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-event-quantification",
+          "requirements": "Counts all imaging procedures (including repeats) by filtering `procedureevents` and `d_items` for `category = 'Imaging'` within the first 72 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "total-diagnostic-load-summation",
+          "requirements": "Correctly sums the lab and imaging counts to create the `procedure_count`, using `COALESCE` to handle cases with zero events of either type.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "outcome-definition",
+      "requirements": "Defines and calculates the clinical outcomes: LOS, mortality, and 30-day readmission.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "hospital-los-calculation",
+          "requirements": "Calculates hospital length of stay using `DATETIME_DIFF(c.dischtime, c.admittime, DAY)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "in-hospital-mortality-flag",
+          "requirements": "Correctly uses the `hospital_expire_flag` from the `admissions` table as the indicator for in-hospital mortality.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "thirty-day-readmission-logic",
+          "requirements": "Correctly implements the logic to flag 30-day readmissions for each hospital admission.",
+          "weight": 0,
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "readmission-window-function",
+              "requirements": "Uses the `LEAD(admittime)` window function partitioned by `subject_id` and ordered by `admittime` to find the subsequent admission.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-time-constraint",
+              "requirements": "Calculates the time difference between the current `dischtime` and the next `admittime` and flags as readmission if it's less than or equal to 30 days.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "statistical-analysis-and-reporting",
+      "requirements": "Performs the final stratification, aggregation, and reporting of results.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "quartile-stratification",
+          "requirements": "Correctly stratifies patients into four quartiles based on the `procedure_count` using `NTILE(4) OVER (ORDER BY procedure_count)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Groups the final results by the calculated `diagnostic_load_quartile` for aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metric-aggregation",
+          "requirements": "Correctly calculates the required metrics for each quartile: `COUNT(*)` for patient numbers, and `AVG()` for procedure count, LOS, mortality, and 30-day readmission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting-and-presentation",
+          "requirements": "Presents the final data clearly by rounding numerical results and ordering the output by `diagnostic_load_quartile`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

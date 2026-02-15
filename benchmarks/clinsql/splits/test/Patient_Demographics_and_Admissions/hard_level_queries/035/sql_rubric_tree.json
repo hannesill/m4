@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the cohort of male Medicare patients, aged 68-78, admitted from a SNF with a principal diagnosis of UTI.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-filtering",
+          "requirements": "Patient Demographics Filtering: Accurately filters patients based on gender ('M'), age (68-78), and insurance ('Medicare').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-source-filtering",
+          "requirements": "Admission Source Filtering: Correctly identifies admissions from a Skilled Nursing Facility (SNF) using patterns like '%SNF%' or '%SKILLED NURSING%'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "principal-diagnosis-filtering",
+          "requirements": "Principal Diagnosis Filtering: Correctly isolates the principal diagnosis by joining `diagnoses_icd` and filtering for `seq_num = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies the clinical concept of a Urinary Tract Infection (UTI) using appropriate ICD codes.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "uti-icd-code-selection",
+          "requirements": "UTI ICD Code Selection: Accurately filters for UTI diagnoses using a combination of ICD-9 ('5990%', '595%', '590%') and ICD-10 ('N390%', 'N30%', 'N10%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly associate ICD codes with their respective versions (e.g., `d.icd_version = 9` or `d.icd_version = 10`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Properly joins tables and calculates necessary intermediate values like age and next admission time.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins `admissions`, `patients`, and `diagnoses_icd` tables using the appropriate keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation",
+          "requirements": "Age Calculation: Accurately calculates the patient's age at the time of admission using `anchor_age`, `anchor_year`, and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-window-logic",
+          "requirements": "Readmission Window Logic: Correctly identifies the next admission for each patient using the `LEAD` window function partitioned by `subject_id` and ordered by `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final calculations to answer the specific clinical questions about readmission rates, LOS, and stay duration.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "readmission-rate-calculation",
+          "requirements": "30-Day Readmission Rate Calculation: Correctly calculates the 30-day readmission rate by checking if the next admission falls within 30 days of the index discharge and averaging the result.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay (LOS) Calculation: Correctly calculates the index length of stay in days by finding the difference between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-los-calculation",
+          "requirements": "Median LOS Calculation: Correctly calculates the median LOS for both readmitted and non-readmitted cohorts using `APPROX_QUANTILES` and conditional logic.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "long-stay-percentage",
+          "requirements": "Long Stay Percentage: Correctly calculates the percentage of stays longer than 6 days using `COUNTIF(los_days > 6)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

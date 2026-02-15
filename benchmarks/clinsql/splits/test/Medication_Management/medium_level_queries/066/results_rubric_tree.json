@@ -1,0 +1,140 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-prevalence_first_72h_pct",
+              "requirements": "Column exists for prevalence of GLP-1 initiation in the first 72 hours (e.g., 'prevalence_first_72h_pct', 'early_initiation_percent')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-prevalence_final_12h_pct",
+              "requirements": "Column exists for prevalence of GLP-1 initiation in the final 12 hours (e.g., 'prevalence_final_12h_pct', 'late_initiation_percent')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-absolute_difference_pp",
+              "requirements": "Column exists for the absolute difference in percentage points (e.g., 'absolute_difference_pp', 'diff_pct_points')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the answer-specific columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "prevalence_first_72h_pct-validation",
+          "requirements": "Validation for 'prevalence_first_72h_pct'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "prevalence_first_72h_pct-plausible",
+              "requirements": "Clinically Plausible (0.0 - 20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence_first_72h_pct-acceptable",
+              "requirements": "Acceptable Range (0.01 - 5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "prevalence_final_12h_pct-validation",
+          "requirements": "Validation for 'prevalence_final_12h_pct'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "prevalence_final_12h_pct-plausible",
+              "requirements": "Clinically Plausible (0.0 - 20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence_final_12h_pct-acceptable",
+              "requirements": "Acceptable Range (0.0 - 5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "absolute_difference_pp-validation",
+          "requirements": "Validation for 'absolute_difference_pp'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "absolute_difference_pp-plausible",
+              "requirements": "Clinically Plausible (0.0 - 20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute_difference_pp-acceptable",
+              "requirements": "Acceptable Range (0.0 - 5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

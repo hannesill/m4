@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the specific patient population based on demographics and clinical diagnoses.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-filtering",
+          "requirements": "Demographic Filtering: Accurately filters the patient cohort by gender ('M') and age (36-46 years).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-diagnosis-filtering",
+          "requirements": "T2DM Diagnosis Filtering: Correctly identifies patients with Type 2 Diabetes Mellitus using appropriate ICD-9 ('250%' excluding specific subtypes) and ICD-10 ('E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-filtering",
+          "requirements": "Heart Failure Diagnosis Filtering: Correctly identifies patients with Heart Failure using appropriate ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-duration-filtering",
+          "requirements": "Admission Duration Filtering: Correctly filters for admissions with a duration of at least 48 hours to ensure the validity of the late-initiation window.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly classifies antidiabetic medications and identifies the first instance of their administration.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "antidiabetic-class-mapping",
+          "requirements": "Antidiabetic Class Mapping: Uses a CASE statement or similar logic to accurately map drug names from the prescriptions table to their respective therapeutic classes (e.g., 'metformin' to 'Metformin').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-initiation-identification",
+          "requirements": "First Initiation Identification: Correctly identifies the first time each medication class was prescribed for each admission using MIN(starttime) grouped by hadm_id and medication_class.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates initiation rates for specified time windows and the net change.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "early-initiation-window",
+          "requirements": "Early Initiation Window: Correctly identifies medication initiations occurring within the first 12 hours of admission (DATETIME_DIFF(first_starttime, admittime, HOUR) <= 12).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "late-initiation-window",
+          "requirements": "Late Initiation Window: Correctly identifies medication initiations occurring within the final 48 hours before discharge, ensuring no overlap with the early window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rate-calculation",
+          "requirements": "Rate Calculation: Correctly calculates the initiation rate (%) for both early and late windows by dividing the count of initiations by the total number of patients in the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "net-change-calculation",
+          "requirements": "Net Change Calculation: Correctly calculates the net change in percentage points (pp) by subtracting the early initiation rate from the late initiation rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration-and-formatting",
+      "requirements": "Database Integration and Formatting: Properly joins tables and formats the final output for clarity.",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins patients, admissions, diagnoses_icd, and prescriptions tables using subject_id and hadm_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complete-medication-class-reporting",
+          "requirements": "Complete Medication Class Reporting: Ensures all relevant antidiabetic medication classes are included in the final output, even those with zero initiations, using a LEFT JOIN from a master list of classes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Presents the final results with clear column names and rounds percentage values to a reasonable precision.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

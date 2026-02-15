@@ -1,0 +1,1 @@
+I have a 75‑year‑old woman to evaluate. Among female Medicare patients aged 70–80 admitted from the emergency department with a principal diagnosis (index admission) of acute pancreatitis, how many index admissions occurred overall in this dataset during the study period?

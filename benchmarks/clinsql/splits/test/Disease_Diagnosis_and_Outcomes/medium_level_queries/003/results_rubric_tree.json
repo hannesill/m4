@@ -1,0 +1,178 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "The output must contain columns for mortality rate, median LOS, and prevalence of mechanical ventilation, vasopressors, and RRT.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists",
+              "requirements": "The output must contain columns for stratifying by stroke type, LOS category, and comorbidity burden.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key metric and stratification columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate column related to mortality rate (e.g., mortality_rate_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Mortality rate should be clinically plausible (0-50%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Mortality rate should be within an acceptable range for stroke patients (0-30%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-validation",
+          "requirements": "Validate column related to median LOS (e.g., median_los_days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "median-los-plausible",
+              "requirements": "Median LOS should be clinically plausible (1-60 days).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-acceptable",
+              "requirements": "Median LOS should be within an acceptable range for stroke patients (2-20 days).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mech-vent-validation",
+          "requirements": "Validate column related to mechanical ventilation prevalence (e.g., mech_vent_prevalence_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mech-vent-plausible",
+              "requirements": "Mechanical ventilation prevalence should be clinically plausible (0-70%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mech-vent-acceptable",
+              "requirements": "Mechanical ventilation prevalence should be within an acceptable range (0-50%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "vasopressor-validation",
+          "requirements": "Validate column related to vasopressor prevalence (e.g., vasopressor_prevalence_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "vasopressor-plausible",
+              "requirements": "Vasopressor prevalence should be clinically plausible (0-60%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "vasopressor-acceptable",
+              "requirements": "Vasopressor prevalence should be within an acceptable range (0-35%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "rrt-validation",
+          "requirements": "Validate column related to RRT prevalence (e.g., rrt_prevalence_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "rrt-plausible",
+              "requirements": "RRT prevalence should be clinically plausible (0-30%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "rrt-acceptable",
+              "requirements": "RRT prevalence should be within an acceptable range (0-10%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

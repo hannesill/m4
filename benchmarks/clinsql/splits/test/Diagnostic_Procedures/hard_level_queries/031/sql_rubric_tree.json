@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters the patient cohort to include only males (p.gender = 'M').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters for patients aged between 66 and 76 at the time of admission (age_at_admission BETWEEN 66 AND 76).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hhs-diagnosis-identification",
+          "requirements": "Identifies admissions with a Hyperosmolar Hyperglycemic State (HHS) diagnosis by correctly filtering on both ICD-9 (LIKE '2502%') and ICD-10 (LIKE 'E100%', 'E110%', 'E130%', 'E140%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-selection",
+          "requirements": "Correctly identifies ICU patients and isolates the first ICU stay for each hospital admission using a window function like `ROW_NUMBER()` partitioned by admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Correctly joins all necessary tables: patients, admissions, diagnoses_icd, icustays, and procedureevents.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Uses the correct primary keys for joins (subject_id, hadm_id, stay_id) to maintain data integrity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "handling-missing-procedures",
+          "requirements": "Uses a LEFT JOIN to connect the patient cohort with procedures and COALESCE to ensure patients with zero procedures are included in the analysis with a count of 0.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "procedure-burden-calculation",
+          "requirements": "Calculates the procedure burden by counting procedures from `procedureevents` within the first 48 hours of the ICU admission time.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-flag-calculation",
+          "requirements": "Correctly calculates a 30-day readmission flag for each admission, typically using a LEAD window function to find the next admission time.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hospital-los-calculation",
+          "requirements": "Calculates the hospital length of stay in days using the difference between discharge and admission times.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-quintile-stratification",
+          "requirements": "Correctly stratifies the cohort into five quintiles based on the 48-hour procedure count using the NTILE(5) window function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-reporting",
+      "requirements": "Final Aggregation and Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-by-quintile",
+          "requirements": "Groups the final result set by the calculated procedure burden quintile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metric-aggregation",
+          "requirements": "Correctly aggregates all required metrics per quintile: COUNT(stay_id), AVG/MIN/MAX of procedures, AVG(hospital_expire_flag), AVG(hospital_los), and AVG(readmission_30d_flag).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting-and-scaling",
+          "requirements": "Formats the final output correctly by rounding numerical values and scaling mortality and readmission rates to percentages (multiplying by 100).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

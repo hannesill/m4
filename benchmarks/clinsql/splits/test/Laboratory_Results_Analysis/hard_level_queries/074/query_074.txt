@@ -1,0 +1,1 @@
+For a 42-year-old man with heart failure, among male inpatients aged 37–47 within the first 72 hours what is the maximum laboratory instability score (unique critically abnormal lab types)? Compare critical-event rate to general inpatients, and report LOS and mortality.

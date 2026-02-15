@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `gender = 'M'` to define the primary cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients by age at admission between 63 and 73 years (`age_at_admission BETWEEN 63 AND 73`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "septic-shock-filter",
+          "requirements": "Septic Shock Filter: The query must filter the cohort for patients with septic shock, using the derived `is_septic_shock = 1` flag.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-count-filter",
+          "requirements": "Comorbidity Count Filter: The query must filter for patients with more than 15 diagnoses (`comorbidity_count > 15`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "septic-shock-icd-selection",
+          "requirements": "Septic Shock ICD Selection: The query must correctly identify septic shock using both ICD-9 ('99592', '78552') and ICD-10 ('R6521', 'A419') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-count-logic",
+          "requirements": "Comorbidity Counting Logic: The query must accurately count the number of unique diagnoses per admission using `COUNT(DISTINCT icd_code)` grouped by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "90-day-mortality-calculation",
+          "requirements": "90-Day Mortality Calculation: The query must correctly calculate 90-day post-discharge mortality by comparing the date of death (`dod`) with 90 days after the discharge time (`dischtime`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-calculation",
+          "requirements": "Risk Score Calculation: The query must correctly implement the specified risk score formula: `(age_at_admission * 0.5) + (comorbidity_count * 2.5)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the `patients` and `admissions` tables on `subject_id` to link demographic data with admission events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must correctly perform a `LEFT JOIN` from the admissions-level data to the aggregated diagnosis data (`diagnosis_flags`) on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-at-admission-calculation",
+          "requirements": "Age at Admission Calculation: The query must correctly calculate the patient's age at the time of admission using `anchor_age`, `anchor_year`, and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: The query must correctly calculate the length of stay in days using `DATETIME_DIFF` between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-comparison-grouping",
+          "requirements": "Cohort Comparison Grouping: The query must correctly group results into 'Target Cohort' and 'General Inpatient Population' to enable comparison.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-aggregation",
+          "requirements": "Metric Aggregation: The query must correctly calculate mean risk score, 90-day mortality rate, and major complication rate for each cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "survivor-los-logic",
+          "requirements": "Survivor LOS Logic: The query must correctly calculate the average length of stay for survivors only by excluding deceased patients (`hospital_expire_flag = 0`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: The query must use `PERCENT_RANK()` to calculate the risk score percentile and correctly filter for the specific profile's risk score (74) using a `QUALIFY` clause or equivalent.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-structuring",
+          "requirements": "Final Output Structuring: The query must use `UNION ALL` to combine the summary statistics and the individual profile percentile into a unified final report.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+cohort_description,total_patients,total_admissions,avg_age,avg_length_of_stay_days,in_hospital_mortality_rate_percent,avg_initial_troponin_t,stddev_initial_troponin_t,min_initial_troponin_t,p25_initial_troponin_t,median_initial_troponin_t,p75_initial_troponin_t,max_initial_troponin_t
+Male Patients (64-74) with Chest Pain and Elevated Initial Troponin T,274,325,69.0,5.9,2.15,0.233,0.947,0.02,0.03,0.06,0.14,10.58

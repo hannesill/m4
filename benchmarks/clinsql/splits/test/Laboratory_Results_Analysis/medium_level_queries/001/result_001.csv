@@ -1,0 +1,4 @@
+troponin_category,patient_count,percentage_of_patients,avg_troponin_t_ng_ml,min_troponin_t_ng_ml,max_troponin_t_ng_ml
+Normal,3,1.58,0.01,0.01,0.01
+Borderline,24,12.63,0.0304,0.02,0.04
+Elevated,167,87.89,1.1946,0.05,23.99

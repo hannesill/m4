@@ -1,0 +1,1 @@
+For a 40-year-old male inpatient with acute pancreatitis, among male inpatients aged 35–45, stratify into risk-score quartiles (diagnosis count plus 5×major complication flags) and report in-hospital mortality, major complication rate, and median survivor LOS for each quartile and overall.

@@ -1,0 +1,3 @@
+medication_class,patients_in_early_period,patients_in_discharge_period,prevalence_early_pct,prevalence_discharge_pct,net_change_pp,total_cohort_patients
+Insulin,1762,865,82.57,40.53,-42.03999999999999,2134
+Oral Agent,56,79,2.62,3.7,1.08,2134

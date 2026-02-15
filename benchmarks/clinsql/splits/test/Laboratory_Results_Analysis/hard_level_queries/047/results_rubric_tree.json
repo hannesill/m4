@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-p90-instability-score",
+              "requirements": "Column exists for the 90th percentile instability score.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-top-tier-mortality",
+              "requirements": "Column exists for the mortality rate of the high-instability cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-top-tier-los",
+              "requirements": "Column exists for the mean length of stay (LOS) of the high-instability cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-top-tier-lab-rate",
+              "requirements": "Column exists for the critical lab rate in the high-instability cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-general-pop-lab-rate",
+              "requirements": "Column exists for the critical lab rate in the general inpatient population.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in the answer-relevant columns (`p90_instability_score`, `top_tier_avg_los_days`, `top_tier_mortality_rate`, `critical_event_rate_top_tier`, `critical_event_rate_general_pop`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-validation",
+          "requirements": "Validation for 90th percentile instability score (e.g., `p90_instability_score`). The score is an integer count of deranged vitals/labs.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "instability-score-plausible",
+              "requirements": "Clinically Plausible (0-20). The score is a count of unstable parameters.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-score-acceptable",
+              "requirements": "Acceptable Range (5-15). A high percentile for a critically ill ARDS cohort is expected to be substantially elevated.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation for mortality rate in the high-instability cohort (e.g., `top_tier_mortality_rate`).",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0). Mortality is a rate.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0.2-0.9). Elderly ARDS patients with high instability have a very high mortality risk.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-validation",
+          "requirements": "Validation for mean length of stay in the high-instability cohort (e.g., `top_tier_avg_los_days`).",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "los-plausible",
+              "requirements": "Clinically Plausible (1.0-100.0). ICU stays can be long, but not multiple years on average.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-acceptable",
+              "requirements": "Acceptable Range (5.0-30.0). ARDS in the elderly requires prolonged ICU care, but exceptionally high average LOS could indicate cohort contamination with chronic vent patients.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-tier-lab-rate-validation",
+          "requirements": "Validation for critical lab rate in the high-instability cohort (e.g., `critical_event_rate_top_tier`). This rate could be per patient or per day.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "top-tier-lab-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-50.0). Multiple critical labs per patient are expected in this cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-tier-lab-rate-acceptable",
+              "requirements": "Acceptable Range (0.1-15.0). A high but not astronomically high rate of critical labs is expected.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "general-pop-lab-rate-validation",
+          "requirements": "Validation for critical lab rate in the general inpatient population (e.g., `critical_event_rate_general_pop`).",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "general-pop-lab-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-5.0). The rate should be much lower than the critically ill cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-pop-lab-rate-acceptable",
+              "requirements": "Acceptable Range (0.001-0.5). This reflects the lower acuity of the general inpatient population compared to a specific ARDS cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

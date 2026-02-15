@@ -1,0 +1,5 @@
+score_quartile,num_patients,avg_instability_score_0_100,avg_los_days,mortality_rate,ami_group_critical_rate,control_group_critical_rate
+1,50,5.34,4.5,0.02,0.361,0.152
+2,50,18.18,4.5,0.02,0.361,0.152
+3,50,34.28,6.1,0.1,0.361,0.152
+4,49,65.64,14.1,0.122,0.361,0.152

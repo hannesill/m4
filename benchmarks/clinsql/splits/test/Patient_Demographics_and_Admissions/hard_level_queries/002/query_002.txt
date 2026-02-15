@@ -1,0 +1,1 @@
+I am evaluating an 82‑year‑old man. Among male Medicare beneficiaries aged 77–87 admitted from the emergency department with a principal diagnosis of pneumonia, what is the total number of index admissions meeting these criteria in this dataset during study period?

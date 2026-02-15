@@ -1,0 +1,4 @@
+troponin_category,patient_count,percentage_of_total,in_hospital_mortality_rate_percent
+Normal,52,57.14,1.92
+Borderline,22,24.18,0.0
+Elevated,17,18.68,11.76

@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly filter for patients aged between 42 and 52 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dvt-diagnosis-selection",
+          "requirements": "DVT Diagnosis Selection: The query must identify patients with DVT by correctly filtering on both ICD-9 ('4534%') and ICD-10 ('I824%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-type-filter",
+          "requirements": "Admission Type Filter: The query should correctly identify inpatient admissions. The use of the admissions table implicitly handles this.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-lab-filter",
+          "requirements": "Temporal Lab Filter: The query must filter lab events to include only those that occurred within the first 72 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-instability-score-calculation",
+          "requirements": "Lab Instability Score Calculation: The query must accurately calculate the instability score by summing the weights of critical lab results for each patient based on specified thresholds and itemids.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must correctly compute the 95th percentile of the instability score for the DVT cohort using an appropriate quantile function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-tier-cohort-identification",
+          "requirements": "Top-Tier Cohort Identification: The query must correctly identify the subgroup of patients with an instability score greater than or equal to the calculated 95th percentile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-tier-outcome-metrics",
+          "requirements": "Top-Tier Outcome Metrics: The query must correctly calculate the average mortality rate and mean length of stay for the top-tier cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-lab-rate-calculation",
+          "requirements": "Comparative Lab Rate Calculation: The query must correctly calculate and compare the critical lab rates between the target DVT cohort and the general inpatient population.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `admissions`, `patients`, and `diagnoses_icd` tables to build the initial DVT cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-data-join",
+          "requirements": "Lab Data Join: The query must correctly join `labevents` with `admissions` to align lab chart times with admission times for temporal filtering.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "lab-itemid-selection",
+          "requirements": "Lab ItemID Selection: The query must correctly filter for the six specified lab itemids (50912, 51003, 50983, 50971, 50931, 51006) used to calculate the instability score.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-value-logic",
+          "requirements": "Critical Lab Value Logic: The query must implement the correct thresholds for each lab itemid to determine if a result is critical, as defined in the instability score.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: The query must correctly calculate the length of stay in days by finding the difference between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

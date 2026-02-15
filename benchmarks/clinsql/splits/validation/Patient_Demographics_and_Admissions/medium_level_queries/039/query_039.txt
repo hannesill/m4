@@ -1,0 +1,1 @@
+For a 42-year-old woman, among female urgent/emergency admissions aged 37–47, report LOS mean, 25th/50th/75th percentiles and percentile rank of a 7‑day stay by discharge outcome (home/facility/in-hospital death).

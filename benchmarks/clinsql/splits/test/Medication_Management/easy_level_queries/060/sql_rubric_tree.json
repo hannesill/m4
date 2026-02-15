@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients by using the condition p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter the patient cohort to an age range of 38-48 using p.anchor_age BETWEEN 38 AND 48.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: ACE Inhibitor Identification",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ace-inhibitor-identification",
+          "requirements": "ACE Inhibitor Identification: The query must identify ACE inhibitor drugs by using pattern matching (e.g., LIKE '%lisinopril%') on the 'drug' column of the prescriptions table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "case-insensitive-matching",
+          "requirements": "Case-Insensitive Matching: The query should use the LOWER() function on the 'drug' column to ensure case-insensitive matching for drug names.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the 'patients' and 'prescriptions' tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between 'patients' and 'prescriptions' must be on the 'subject_id' key (p.subject_id = pr.subject_id).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Prescription Duration Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-data-validation",
+          "requirements": "Temporal Data Validation: The query must ensure that both 'starttime' and 'stoptime' are not null to prevent errors in duration calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "duration-calculation",
+          "requirements": "Duration Calculation: The query must calculate the duration of each prescription in days using DATE_DIFF(DATE(pr.stoptime), DATE(pr.starttime), DAY).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "duration-validity-check",
+          "requirements": "Duration Validity Check: The query should filter for durations greater than zero to ensure only valid prescription periods are considered.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "maximum-duration-aggregation",
+          "requirements": "Maximum Duration Aggregation: The query must use the MAX() aggregation function to find the longest prescription duration among all qualifying records.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

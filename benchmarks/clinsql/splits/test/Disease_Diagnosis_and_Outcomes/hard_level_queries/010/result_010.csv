@@ -1,0 +1,4 @@
+result_type,metric_name,metric_1_name,metric_1_value,metric_2_name,metric_2_value,metric_3_name,metric_3_value,metric_4_name,metric_4_value,metric_5_name,metric_5_value,metric_6_name,metric_6_value
+Cohort Comparison,"General Cohort (Male, 39-49)",Num Admissions,31380,Mean Risk Score,12.97,30d Mortality Rate (%),1.89,Cardio Complication Rate (%),2.03,Neuro Complication Rate (%),2.9,Mean Survivor LOS (Days),4.07
+Cohort Comparison,"DKA Cohort (Male, 39-49)",Num Admissions,226,Mean Risk Score,14.78,30d Mortality Rate (%),2.21,Cardio Complication Rate (%),4.87,Neuro Complication Rate (%),3.54,Mean Survivor LOS (Days),8.08
+Profile-Specific Percentile,"Risk Percentile for Matched Profile (Male, 44, DKA)",Avg Percentile for 44 y/o,56.19,,,,,,,,,,

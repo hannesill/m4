@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the patient population based on demographics, stay order, and clinical conditions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the 90-100 range.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: Correctly identifies the first ICU stay for each hospital admission using a window function like `ROW_NUMBER()`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hepatic-failure-cohort-filter",
+          "requirements": "Hepatic Failure Condition: Includes a filter for hepatic failure using diagnosis codes (e.g., in an `EXISTS` clause on `diagnoses_icd`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient, admission, ICU, and diagnosis data.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly joins `icustays`, `admissions`, and `patients` tables on `subject_id` and/or `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-integration",
+          "requirements": "Procedure Table Integration: Uses a LEFT JOIN for `procedureevents` on `stay_id` to ensure patients with zero procedures are included in the count.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-and-temporal-logic",
+      "requirements": "Medical Concept and Temporal Logic Implementation: Correctly applies clinical definitions, codes, and time constraints.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hepatic-failure-code-selection",
+          "requirements": "Hepatic Failure Code Selection: Correctly uses both ICD-9 ('570%', '571%', '572%', '573%') and ICD-10 ('K70%'-'K76%') codes for hepatic failure.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "distinct-procedure-identification",
+          "requirements": "Distinct Procedure Identification: Correctly identifies and counts distinct diagnostic procedures from `procedureevents` using `COUNT(DISTINCT pe.itemid)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-time-window",
+          "requirements": "Procedure Time Window: Correctly filters procedures to the initial 72 hours of the ICU stay using the `intime` from the icustays table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics-and-reporting",
+      "requirements": "Clinical Analytics and Reporting: Performs stratification and calculates final metrics as requested.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "quartile-calculation",
+          "requirements": "Quartile Calculation: Correctly calculates the quartile boundaries for the number of distinct procedures using `APPROX_QUANTILES(..., 4)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-stratification",
+          "requirements": "Quartile Stratification: Correctly assigns each stay to one of four quartiles based on their procedure count and the calculated boundaries using a CASE statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-aggregation",
+          "requirements": "Final Metric Aggregation: Correctly groups by quartile and calculates all required metrics: patient count, procedure stats (min/max/mean), average LOS, and mortality %.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation-logic",
+          "requirements": "LOS Calculation Logic: Correctly calculates hospital length of stay in days using admission and discharge times.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-calculation-logic",
+          "requirements": "Mortality Calculation Logic: Correctly calculates in-hospital mortality as a percentage using `hospital_expire_flag`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-ordering",
+          "requirements": "Final Ordering: Orders the results by the diagnostic intensity quartile for clear presentation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

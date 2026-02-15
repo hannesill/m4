@@ -1,0 +1,168 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation for ACS Lab Instability Analysis",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction for ACS and Control Groups",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "base-cohort-definition",
+          "requirements": "Base Cohort Definition: Correctly selects inpatients aged 53-63 by calculating age at admission using `admittime`, `anchor_year`, and `anchor_age`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-cohort-identification",
+          "requirements": "ACS Cohort Identification: Correctly filters the base cohort for female patients with a diagnosis of Acute Coronary Syndrome (ACS).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "acs-gender-filter",
+              "requirements": "Gender Filter: Correctly filters for female patients using `b.gender = 'F'`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acs-diagnosis-filter",
+              "requirements": "ACS Diagnosis Filter: Accurately identifies ACS using both ICD-9 (410%, 4111) and ICD-10 (I21%, I22%, I200) codes.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "control-cohort-definition",
+          "requirements": "Control Cohort Definition: Correctly defines the control cohort by selecting patients from the base population who are not in the ACS cohort, using a LEFT JOIN and IS NULL check.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Lab Instability",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-event-selection",
+          "requirements": "Lab Event Selection: Correctly joins `labevents` with the base admissions to identify relevant lab tests.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-72hr",
+          "requirements": "72-Hour Temporal Filter: Accurately filters lab events to those occurring within the first 72 hours of admission using `charttime BETWEEN admittime AND DATETIME_ADD(admittime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-identification",
+          "requirements": "Critical Lab Value Identification: Correctly identifies critical lab events by applying specified value thresholds to the correct lab `itemid`s.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-categorization",
+          "requirements": "Lab Categorization: Uses a CASE statement to correctly group various `itemid`s into standardized lab categories (e.g., Sodium, Potassium).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: Correctly calculates the lab instability score for each ACS patient by counting the distinct critical lab categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-stratification",
+          "requirements": "Quartile Stratification: Correctly stratifies the ACS cohort into four quartiles based on the instability score using `NTILE(4) OVER (ORDER BY instability_score)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-outcome-aggregation",
+          "requirements": "ACS Outcome Aggregation: Correctly calculates per-quartile metrics: average length of stay and in-hospital mortality rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-comparison-rates",
+          "requirements": "Cohort Comparison Rate Calculation: Correctly calculates the rate of each critical lab event for both the ACS and control cohorts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting",
+      "requirements": "Output Formatting and Structure",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "long-format-union",
+          "requirements": "Long-Format Union: Correctly uses UNION ALL to combine the quartile analysis and cohort comparison into a single long-format output table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-structure",
+          "requirements": "Column Structure: Final output includes the required columns (`stratum`, `metric_name`, `metric_value`) with appropriate data types and a `sort_order` column for organization.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-ordering",
+          "requirements": "Final Ordering: Correctly orders the final result set by `sort_order`, `stratum`, and `metric_name` for clear presentation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

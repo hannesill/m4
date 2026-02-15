@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the initial patient population based on demographics and primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at admission and filter for the 44-54 range using `BETWEEN 44 AND 54`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hf-diagnosis-filter",
+          "requirements": "Heart Failure Diagnosis Filter: The query must filter for patients with a Heart Failure diagnosis using an EXISTS clause on `diagnoses_icd` and appropriate ICD codes (`428%` or `I50%`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies specific clinical events and scores.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "organ-support-identification",
+          "requirements": "Organ Support Identification: The query must correctly identify mechanical ventilation, vasopressors, and RRT from `procedureevents` using the correct `itemid`s.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "charlson-score-categorization",
+          "requirements": "Charlson Score Categorization: The query must use a CASE statement to correctly stratify the `charlson_comorbidity_index` into '0-1', '2', and '>=3' groups, handling NULLs with COALESCE.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient data, diagnoses, and interventions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "initial-cohort-join",
+          "requirements": "Initial Cohort Join: The query must correctly INNER JOIN `admissions` and `patients` tables on `subject_id` to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-join",
+          "requirements": "ICU Stay Join: The query must LEFT JOIN the `icustays` table on `hadm_id` to distinguish between ICU and non-ICU admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "charlson-data-join",
+          "requirements": "Charlson Data Join: The query must LEFT JOIN the `charlson` derived table on `hadm_id` to access comorbidity scores.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "organ-support-join",
+          "requirements": "Organ Support Join: The query must LEFT JOIN the `organ_support` CTE on `hadm_id` to integrate intervention flags.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly stratifies data and calculates final metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stratification-logic",
+          "requirements": "Stratification Logic: The query must create groups for ICU status ('severity_group'), length of stay ('los_group'), and Charlson score ('comorbidity_group').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-calculation",
+          "requirements": "Mortality Calculation: The query must calculate in-hospital mortality percentage using `SUM(hospital_expire_flag)` and `COUNT(hadm_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "confidence-interval-calculation",
+          "requirements": "Confidence Interval Calculation: The query must correctly implement the Wilson score interval formula to calculate the 95% confidence interval for mortality.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-calculation",
+          "requirements": "Prevalence Calculation: The query must calculate the prevalence percentage for mechanical ventilation, vasopressors, and RRT using `AVG()` on the created flags.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-ordering",
+          "requirements": "Final Grouping and Ordering: The query must GROUP BY all stratification columns and correctly order the final output.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

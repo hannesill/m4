@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-early-column-exists",
+              "requirements": "Column for early prevalence exists (e.g., 'prevalence_early_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-discharge-column-exists",
+              "requirements": "Column for discharge prevalence exists (e.g., 'prevalence_discharge_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-column-exists",
+              "requirements": "Column for net change exists (e.g., 'net_change_pp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "drug-class-column-exists",
+              "requirements": "Column for drug class exists (e.g., 'drug_class')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns (prevalence, net change)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "prevalence-early-validation",
+          "requirements": "Validation of Early Prevalence Column (e.g., 'prevalence_early_pct')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-early-plausible",
+              "requirements": "Clinically Plausible Range for early prevalence (0.0 to 30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-early-acceptable",
+              "requirements": "Acceptable Range for early prevalence (0.05 to 5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "prevalence-discharge-validation",
+          "requirements": "Validation of Discharge Prevalence Column (e.g., 'prevalence_discharge_pct')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-discharge-plausible",
+              "requirements": "Clinically Plausible Range for discharge prevalence (0.0 to 20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-discharge-acceptable",
+              "requirements": "Acceptable Range for discharge prevalence (0.01 to 2.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "net-change-validation",
+          "requirements": "Validation of Net Change Column (e.g., 'net_change_pp')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "net-change-plausible",
+              "requirements": "Clinically Plausible Range for net change (-30.0 to 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-acceptable",
+              "requirements": "Acceptable Range for net change (-5.0 to -0.01)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

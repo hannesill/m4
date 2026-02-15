@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-num_patients",
+              "requirements": "Column exists for number of patients (e.g., 'num_patients', 'n_patients', 'patient_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg_procedure_count",
+              "requirements": "Column exists for average procedure count (e.g., 'avg_procedure_count', 'mean_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg_hospital_los_days",
+              "requirements": "Column exists for average hospital length of stay (e.g., 'avg_hospital_los_days', 'mean_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-in_hospital_mortality_percent",
+              "requirements": "Column exists for in-hospital mortality rate (e.g., 'in_hospital_mortality_percent', 'mortality_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "num_patients-validation",
+          "requirements": "Validation for number of patients per quartile",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "num_patients-clinically-plausible",
+              "requirements": "Clinically Plausible (1-1000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "num_patients-acceptable-range",
+              "requirements": "Acceptable Range (10-250)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg_procedure_count-validation",
+          "requirements": "Validation for average procedure count per quartile",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg_procedure_count-clinically-plausible",
+              "requirements": "Clinically Plausible (0-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_procedure_count-acceptable-range",
+              "requirements": "Acceptable Range (0.5-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg_hospital_los_days-validation",
+          "requirements": "Validation for average hospital LOS (days) per quartile",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg_hospital_los_days-clinically-plausible",
+              "requirements": "Clinically Plausible (1-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_hospital_los_days-acceptable-range",
+              "requirements": "Acceptable Range (4-40)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "in_hospital_mortality_percent-validation",
+          "requirements": "Validation for in-hospital mortality percent per quartile",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "in_hospital_mortality_percent-clinically-plausible",
+              "requirements": "Clinically Plausible [0, 100]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "in_hospital_mortality_percent-acceptable-range",
+              "requirements": "Acceptable Range (1-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

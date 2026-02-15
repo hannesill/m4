@@ -1,0 +1,6 @@
+instability_quintile,num_patients,min_score_in_quintile,max_score_in_quintile,avg_instability_score,avg_los_days,mortality_rate,cohort_quintile_critical_rate,general_population_critical_rate
+1,39,0,0,0.0,5.76,0.051,0.0,0.077
+2,39,0,0,0.0,6.04,0.051,0.0,0.077
+3,38,0,1,0.53,4.01,0.026,0.042,0.077
+4,38,2,5,3.03,6.61,0.105,0.172,0.077
+5,38,6,19,9.58,8.91,0.263,0.361,0.077

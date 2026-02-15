@@ -1,0 +1,170 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "The output must contain a column for cohort grouping (e.g., 'cohort_group'), and columns for each requested metric: instability score (median, p25, p75, p95), tachycardia burden, hypotension burden, ICU LOS, and mortality.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "instability-score-validation",
+          "requirements": "Validate Instability Score Metrics (p25, median, p75, p95)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "instability-score-plausible",
+              "requirements": "Values for instability score percentiles must be between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-score-acceptable",
+              "requirements": "Values for instability score percentiles should be between 0.1 and 0.6, reflecting typical ranges for ICU patients.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "tachycardia-burden-validation",
+          "requirements": "Validate Tachycardia Burden Proportion",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "tachycardia-burden-plausible",
+              "requirements": "Average tachycardia burden proportion must be between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachycardia-burden-acceptable",
+              "requirements": "Average tachycardia burden proportion should be between 0.05 and 0.5 for this ICU cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hypotension-burden-validation",
+          "requirements": "Validate Hypotension Burden Proportion",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "hypotension-burden-plausible",
+              "requirements": "Average hypotension burden proportion must be between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hypotension-burden-acceptable",
+              "requirements": "Average hypotension burden proportion should be between 0.05 and 0.4 for this ICU cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "Validate ICU Length of Stay (Days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "icu-los-plausible",
+              "requirements": "Average ICU LOS must be a positive value, plausibly between 1 and 90 days.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-acceptable",
+              "requirements": "Average ICU LOS for this cohort is expected to be between 2 and 15 days.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate Mortality Rate",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Mortality rate must be between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Mortality rate for this general ICU cohort is expected to be between 0.05 and 0.35.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

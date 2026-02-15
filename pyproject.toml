@@ -49,6 +49,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0", # Additional JWT support with crypto
     "httpx>=0.24.0", # Modern HTTP client for OAuth2 token validation
     "duckdb>=1.4.1",
+    "datasets>=4.5.0",
 ]
 
 [dependency-groups]

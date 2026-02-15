@@ -1,0 +1,2 @@
+patients_los_le5,mortality_pct_los_le5,ckd_prevalence_pct_los_le5,diabetes_prevalence_pct_los_le5,patients_los_gt5,mortality_pct_los_gt5,ckd_prevalence_pct_los_gt5,diabetes_prevalence_pct_los_gt5,abs_mortality_diff_pct_points,rel_mortality_diff_percent
+656,1.83,21.49,44.82,476,3.57,35.92,64.5,1.74,95.24

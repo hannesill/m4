@@ -1,0 +1,5 @@
+los_category,icu_status,number_of_admissions,mean_imaging_procedures,min_imaging_procedures,max_imaging_procedures
+1-4 Day Stay,ICU Stay,2,0.0,0,0
+1-4 Day Stay,No ICU Stay,27,0.0,0,0
+5-8 Day Stay,ICU Stay,3,0.0,0,0
+5-8 Day Stay,No ICU Stay,7,0.0,0,0

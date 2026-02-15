@@ -1,0 +1,1 @@
+I'm evaluating a 79-year-old man. Among men 74–84, what's the median of each stay's minimum temperature (°F)?

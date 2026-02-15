@@ -1,0 +1,5 @@
+stay_category,diagnosis_type,num_admissions,p25_imaging_procedures,p50_imaging_procedures,p75_imaging_procedures
+1-4 Day Stay,Primary Diagnosis,563,0,0,0
+1-4 Day Stay,Secondary Diagnosis,5219,0,0,0
+5-7 Day Stay,Primary Diagnosis,251,0,0,0
+5-7 Day Stay,Secondary Diagnosis,2264,0,0,0

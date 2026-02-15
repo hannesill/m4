@@ -1,0 +1,5 @@
+los_group,day1_icu_status,total_admissions,total_deaths,mortality_rate_pct,ckd_prevalence_pct,diabetes_prevalence_pct
+>7 days,ICU on Day 1,801,91,11.36,48.31,52.81
+>7 days,Non-ICU on Day 1,1414,97,6.86,59.12,57.71
+≤7 days,ICU on Day 1,528,76,14.39,52.46,53.79
+≤7 days,Non-ICU on Day 1,1925,32,1.66,53.61,54.03

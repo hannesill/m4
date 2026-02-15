@@ -1,0 +1,1 @@
+Patient is female, 86. Among female inpatients age 81–91 with AKI, compare medication complexity score distribution and outcomes for those with both CNS‑depressant and nephrotoxic drugs versus other AKI patients. Report quartiles, mean complexity, overall LOS and mortality, and top‑quartile LOS and mortality.

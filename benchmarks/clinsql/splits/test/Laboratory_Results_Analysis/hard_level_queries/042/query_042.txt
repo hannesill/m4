@@ -1,0 +1,1 @@
+For a 78‑year‑old man with ICH: among male inpatients 73–83 with ICH, compute 48‑hour instability score (count of abnormal lab types), stratify into quartiles, report count, mean LOS and mortality per quartile, and compare critical rates to all inpatients.

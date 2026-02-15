@@ -1,0 +1,4 @@
+los_bucket,N,mortality_rate_pct,median_los_days,discharge_home_count,discharge_rehab_count,discharge_snf_count,discharge_hospice_count,discharge_home_pct,discharge_rehab_pct,discharge_snf_pct,discharge_hospice_pct
+1-3 days,905,7.29,2,706,0,37,8,78.01,0.0,4.09,0.88
+4-7 days,808,8.42,5,548,0,140,12,67.82,0.0,17.33,1.49
+>=8 days,1207,8.45,12,448,0,371,26,37.12,0.0,30.74,2.15

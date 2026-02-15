@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters for patients within the 81-91 age range using `p.anchor_age BETWEEN 81 AND 91`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-diagnosis-filter",
+          "requirements": "Restricts the diagnosis to the primary one by filtering for `d.seq_num = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Acute Kidney Injury",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "aki-code-identification",
+          "requirements": "Correctly identifies acute kidney injury using a combined OR condition for both ICD-9 (`d.icd_code LIKE '584%'`) and ICD-10 (`d.icd_code LIKE 'N17%'`) codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "Correctly uses the `d.icd_version` column to associate the correct code format with the correct version number (9 or 10).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Correctly joins the `patients` table with the `admissions` table on `subject_id` to link demographic data with hospital stay information.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Correctly joins the admission data with the `diagnoses_icd` table on `hadm_id` to link hospital stays with diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics for Length-of-Stay IQR",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Correctly calculates the length of stay in days using `DATE_DIFF(DATE(a.dischtime), DATE(a.admittime), DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-validity-check",
+          "requirements": "Ensures data integrity for LOS calculation by filtering for non-null `admittime` and `dischtime` and for a non-negative stay duration.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "iqr-aggregation",
+          "requirements": "Uses the `APPROX_QUANTILES` function on the length of stay with 4 buckets to find the quartiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "iqr-computation",
+          "requirements": "Correctly computes the Interquartile Range (IQR) by subtracting the first quartile (`OFFSET(1)`) from the third quartile (`OFFSET(3)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

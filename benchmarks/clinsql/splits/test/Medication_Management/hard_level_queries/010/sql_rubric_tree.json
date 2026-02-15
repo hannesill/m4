@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter patient age to be between 61 and 71 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hemorrhagic-stroke-diagnosis",
+          "requirements": "Hemorrhagic Stroke Diagnosis: The query must identify patients with a hemorrhagic stroke diagnosis using appropriate ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-24h-medication-filter",
+          "requirements": "First 24-Hour Medication Filter: The query must correctly identify medications administered within the first 24 hours of admission using `starttime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-medication-classification",
+          "requirements": "High-Risk Medication Classification: The query must use a CASE statement to categorize medications into predefined high-risk classes based on drug names.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-score-calculation",
+          "requirements": "Medication Complexity Score Calculation: The query must correctly calculate the medication complexity score based on counts of distinct drugs, routes, and high-risk classes with appropriate weights (1, 2, 3).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "correct-table-joins",
+          "requirements": "Correct Table Joins: The query must correctly join `admissions`, `patients`, `diagnoses_icd`, and `prescriptions` tables using appropriate keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-logic",
+          "requirements": "30-Day Readmission Logic: The query must correctly identify 30-day readmissions by using a window function like LEAD to find the next admission time per patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: The query must accurately calculate the length of stay in days using `DATETIME_DIFF` between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "quintile-stratification",
+          "requirements": "Quintile Stratification: The query must use the NTILE(5) window function to stratify patients into five quintiles based on the medication complexity score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: The final result set must be grouped by the complexity quintile to report per-quintile metrics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-aggregation",
+          "requirements": "Outcome Aggregation: The query must correctly calculate the count of patients, mean complexity score, average LOS, in-hospital mortality rate, and 30-day readmission rate for each quintile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output columns must be correctly named and numerical results rounded as specified in the query.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

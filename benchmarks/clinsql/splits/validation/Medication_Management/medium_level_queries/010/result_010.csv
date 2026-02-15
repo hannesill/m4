@@ -1,0 +1,8 @@
+med_class,initiation_rate_first_12h_pct,initiation_rate_final_48h_pct,net_change_pp
+Metformin,1.25,2.03,0.77
+Thiazolidinedione,0.07,0.14,0.07
+DPP-4 Inhibitor,0.0,0.05,0.05
+GLP-1 Agonist,0.0,0.05,0.05
+SGLT2 Inhibitor,0.12,0.05,-0.07
+Sulfonylurea,1.5,0.97,-0.53
+Insulin,79.93,1.21,-78.72

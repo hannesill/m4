@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for male patients using `p.gender = 'M'` in the `age_matched_cohort` CTE.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query accurately filters for patients aged between 54 and 64 by calculating age at admission and applying `BETWEEN 54 AND 64`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hf-cohort-identification",
+          "requirements": "Heart Failure Cohort Identification: The query correctly identifies heart failure admissions by filtering `diagnoses_icd` for the relevant ICD codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly distinguish and handle both ICD-9 and ICD-10 codes for heart failure using an OR condition on the `icd_version` column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hf-icd-code-selection",
+          "requirements": "Heart Failure ICD Code Selection: The query correctly selects heart failure codes using `SUBSTR(icd_code, 1, 3) = '428'` for ICD-9 and `SUBSTR(icd_code, 1, 3) = 'I50'` for ICD-10.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-instability-definition",
+          "requirements": "Lab Instability Definition: The query correctly defines a set of critical labs and their thresholds in the `lab_definitions` CTE and uses them to count distinct critical lab events per patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `patients` and `admissions` on `subject_id` to establish the base patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-data-integration",
+          "requirements": "Lab Data Integration: The query correctly joins `labevents` with the patient cohort on `hadm_id` to link lab results to specific hospital stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-logic",
+          "requirements": "Temporal Filter Logic: The query must correctly filter lab events to the first 48 hours of admission using `DATETIME_DIFF(le.charttime, fc.admittime, HOUR) BETWEEN 0 AND 48`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "p95-threshold-calculation",
+          "requirements": "P95 Threshold Calculation: The query must correctly calculate the 95th percentile instability score specifically for the heart failure cohort using `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-tier-hf-grouping",
+          "requirements": "Top-Tier HF Grouping: The query must correctly identify the high-risk HF group by comparing individual instability scores to the calculated P95 threshold.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-calculations",
+          "requirements": "Outcome Calculations: The query correctly calculates in-hospital mortality and mean LOS for the top-tier HF group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-rate-calculation",
+          "requirements": "Comparative Rate Calculation: The query correctly calculates and compares the critical lab rates between the top-tier HF group and the age-matched control group using `SAFE_DIVIDE`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

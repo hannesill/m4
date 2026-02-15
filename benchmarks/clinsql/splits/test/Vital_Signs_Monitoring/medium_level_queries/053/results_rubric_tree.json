@@ -1,0 +1,211 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "sbp-category-column-exists",
+              "requirements": "Exists a column for SBP categories (e.g., 'sbp_category', 'bp_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "measurement-count-column-exists",
+              "requirements": "Exists a column for the count of measurements (e.g., 'measurement_count', 'n_sbp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-sbp-column-exists",
+              "requirements": "Exists a column for the mean SBP (e.g., 'mean_sbp', 'avg_sbp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-sbp-column-exists",
+              "requirements": "Exists a column for the median SBP (e.g., 'median_sbp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-sbp-column-exists",
+              "requirements": "Exists a column for the IQR of SBP (e.g., 'iqr_sbp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "measurement-count-validation",
+          "requirements": "Validate values in the measurement count column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "measurement-count-plausible",
+              "requirements": "Clinically Plausible (Value > 0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "measurement-count-acceptable",
+              "requirements": "Acceptable Range (Value > 100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mean-sbp-validation",
+          "requirements": "Validate values in the mean SBP column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-sbp-plausible",
+              "requirements": "Clinically Plausible (50-250 mmHg)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-sbp-acceptable-cat1",
+              "requirements": "Acceptable Range for '<140' category (90-139)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-sbp-acceptable-cat2",
+              "requirements": "Acceptable Range for '140-159' category (140-159)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-sbp-acceptable-cat3",
+              "requirements": "Acceptable Range for '>=160' category (160-200)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-sbp-validation",
+          "requirements": "Validate values in the median SBP column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-sbp-plausible",
+              "requirements": "Clinically Plausible (50-250 mmHg)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-sbp-acceptable-cat1",
+              "requirements": "Acceptable Range for '<140' category (90-139)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-sbp-acceptable-cat2",
+              "requirements": "Acceptable Range for '140-159' category (140-159)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-sbp-acceptable-cat3",
+              "requirements": "Acceptable Range for '>=160' category (160-200)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-sbp-validation",
+          "requirements": "Validate values in the SBP IQR column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "iqr-sbp-plausible",
+              "requirements": "Clinically Plausible (0-100 mmHg)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-sbp-acceptable",
+              "requirements": "Acceptable Range (5-40 mmHg)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+complexity_quintile,number_of_patients,avg_medication_complexity_score,avg_length_of_stay_days,in_hospital_mortality_rate_percent,readmission_rate_30_day_percent
+1,201,15.57,6.28,14.93,16.92
+2,201,26.43,8.29,10.45,15.92
+3,201,33.23,11.01,14.93,15.42
+4,201,40.25,13.13,16.92,15.42
+5,201,54.6,17.99,32.84,13.93

@@ -1,0 +1,1 @@
+My 42‑year‑old female: among female ICU patients aged 37–47 with ARDS (first ICU stay), what is the minimum diagnostic utilization (distinct procedures during first 72 hours)? Compare to all ICU patients and report P75/P90, mean hospital LOS and in‑hospital mortality.

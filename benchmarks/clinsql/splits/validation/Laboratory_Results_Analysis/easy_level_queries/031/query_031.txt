@@ -1,0 +1,1 @@
+For male patients who had an ICU stay, what's the 75th percentile of serum potassium measured on hospital discharge day?

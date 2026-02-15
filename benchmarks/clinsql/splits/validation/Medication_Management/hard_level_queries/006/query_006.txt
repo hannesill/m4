@@ -1,0 +1,1 @@
+For a 42‑year‑old man with a postoperative ICU admission, among male inpatients aged 37–47, compute medication complexity over the first 72 hours, stratify into quintiles, and report LOS, in‑hospital mortality, and 30‑day readmission rates per quintile and estimate his risk.

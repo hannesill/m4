@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates patient age at admission and filters for the range 65-75 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 65 AND 75`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-identification",
+          "requirements": "Correctly identifies the first ICU stay per hospital admission using `ROW_NUMBER() OVER (PARTITION BY a.hadm_id ORDER BY i.intime)` and filtering for `rn = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "pulmonary-embolism-identification",
+          "requirements": "Correctly identifies patients with pulmonary embolism by checking both ICD-9 ('4151%') and ICD-10 ('I26%') codes and using the `icd_version` column.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-procedure-definition",
+          "requirements": "Identifies diagnostic procedures by counting distinct `itemid`s from the `procedureevents` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "base-cohort-tables-join",
+          "requirements": "Correctly joins `patients`, `admissions`, and `icustays` tables on `subject_id` and `hadm_id` to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-data-join",
+          "requirements": "Correctly links the cohort to the `diagnoses_icd` table on `hadm_id` to filter for pulmonary embolism.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-data-join",
+          "requirements": "Correctly uses a `LEFT JOIN` to connect the cohort with `procedureevents` on `stay_id`, ensuring patients with no procedures are not excluded.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "procedure-temporal-constraint",
+          "requirements": "Correctly filters procedures to those occurring within the first 72 hours of the ICU stay using `pe.starttime BETWEEN pc.intime AND DATETIME_ADD(pc.intime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation-per-stay",
+          "requirements": "Correctly calculates per-stay metrics: ICU LOS in days and the count of unique diagnostic procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-stratification",
+          "requirements": "Correctly stratifies patients into four quartiles based on the diagnostic procedure count using `NTILE(4) OVER (ORDER BY cm.diagnostic_intensity_72hr)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-and-metrics",
+          "requirements": "Correctly groups results by quartile and calculates the required final metrics: N, mean procedure count, mean ICU LOS, and hospital mortality percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

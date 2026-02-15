@@ -1,0 +1,4 @@
+discharge_category,number_of_patients,mean_los_days,stddev_los_days,percentile_rank_of_5_days
+Discharged Home,1709,4.64,4.71,65.42
+Discharged to Facility,546,12.32,10.83,19.05
+In-Hospital Mortality,251,11.99,14.04,39.44

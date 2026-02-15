@@ -1,0 +1,1 @@
+For my 94‑year‑old male patient, among men age 89–99 with non‑emergent admissions, report mean, median, p75, p90 LOS by discharge (home, hospice, in‑hospital death) and percent with LOS <5 days.

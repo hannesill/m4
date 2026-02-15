@@ -1,0 +1,5 @@
+stay_duration_group,icu_status,number_of_admissions,avg_imaging_procedures,min_imaging_procedures,max_imaging_procedures
+1-4 Day Stay,No ICU Stay,77,0.16,0,3
+1-4 Day Stay,ICU Stay,35,0.4,0,5
+5-7 Day Stay,No ICU Stay,20,0.35,0,2
+5-7 Day Stay,ICU Stay,13,0.69,0,3

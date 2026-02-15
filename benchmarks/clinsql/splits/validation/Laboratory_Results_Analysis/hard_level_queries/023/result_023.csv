@@ -1,0 +1,10 @@
+metric,value,comparison_group,control_group_value,description
+Rate of Critical Sodium,0.095,Top Tier AMI (Score >= P75),0.014,Rate of patients with Na+ < 125 or > 155. Control group is all inpatients aged 90-100.
+"P75 Instability Score (AMI Females 90-100, First 48h)",1,--,--,The 75th percentile of the number of critical lab events in the first 48h for the target cohort.
+Rate of Critical Lactate (>4.0),0.189,Top Tier AMI (Score >= P75),0.015,Rate of patients with Lactate > 4.0 mmol/L. Control group is all inpatients aged 90-100.
+Rate of Critical WBC,0.289,Top Tier AMI (Score >= P75),0.041,Rate of patients with WBC < 2.0 or > 20.0 K/uL. Control group is all inpatients aged 90-100.
+Rate of Critical Platelets (<50),0.025,Top Tier AMI (Score >= P75),0.008,Rate of patients with Platelets < 50 K/uL. Control group is all inpatients aged 90-100.
+Rate of Critical Creatinine (>2.0),0.582,Top Tier AMI (Score >= P75),0.099,Rate of patients with Creatinine > 2.0 mg/dL. Control group is all inpatients aged 90-100.
+Average Length of Stay (Days),7.35,Top Tier AMI (Score >= P75),--,Average hospital length of stay in days for the top tier group.
+Rate of Critical Potassium,0.144,Top Tier AMI (Score >= P75),0.027,Rate of patients with K+ < 3.0 or > 6.0. Control group is all inpatients aged 90-100.
+In-Hospital Mortality Rate,0.264,Top Tier AMI (Score >= P75),--,Proportion of patients in the top tier who died during the hospital admission.

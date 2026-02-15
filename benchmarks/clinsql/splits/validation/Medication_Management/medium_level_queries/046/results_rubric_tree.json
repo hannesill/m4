@@ -1,0 +1,164 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-first-24hr-pct-column-exists",
+              "requirements": "Column exists for prevalence in the first 24 hours (e.g., 'prevalence_first_24hr_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-last-24hr-pct-column-exists",
+              "requirements": "Column exists for prevalence in the last 24 hours (e.g., 'prevalence_last_24hr_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-pp-column-exists",
+              "requirements": "Column exists for net change in percentage points (e.g., 'net_change_pp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns ('prevalence_first_24hr_pct', 'prevalence_last_24hr_pct', 'net_change_pp')",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "prevalence-first-24hr-validation",
+          "requirements": "Validation for 'prevalence_first_24hr_pct'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-first-24hr-plausible",
+              "requirements": "Clinically Plausible (0.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-first-24hr-acceptable-insulin",
+              "requirements": "Acceptable Range for Insulin (40.0 - 95.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-first-24hr-acceptable-oral",
+              "requirements": "Acceptable Range for Oral Agent (1.0 - 30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "prevalence-last-24hr-validation",
+          "requirements": "Validation for 'prevalence_last_24hr_pct'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-last-24hr-plausible",
+              "requirements": "Clinically Plausible (0.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-last-24hr-acceptable-insulin",
+              "requirements": "Acceptable Range for Insulin (5.0 - 50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-last-24hr-acceptable-oral",
+              "requirements": "Acceptable Range for Oral Agent (1.0 - 20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "net-change-validation",
+          "requirements": "Validation for 'net_change_pp'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "net-change-plausible",
+              "requirements": "Clinically Plausible (-100.0 to 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-acceptable-insulin",
+              "requirements": "Acceptable Range for Insulin (-80.0 to -10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-acceptable-oral",
+              "requirements": "Acceptable Range for Oral Agent (-20.0 to 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

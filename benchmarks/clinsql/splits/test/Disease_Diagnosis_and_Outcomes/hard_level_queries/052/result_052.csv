@@ -1,0 +1,5 @@
+risk_quartile,total_admissions,avg_risk_score,cohort_mortality_90day_rate_pct,broader_pop_90day_mortality_pct,major_complication_rate_pct,median_survivor_los_days
+1,236,4.4,16.1,11.38,0.0,4
+2,236,19.7,13.14,11.38,7.63,4
+3,235,33.9,16.6,11.38,20.0,5
+4,235,56.2,31.49,11.38,56.17,6

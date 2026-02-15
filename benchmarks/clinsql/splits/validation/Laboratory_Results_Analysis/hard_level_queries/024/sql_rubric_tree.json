@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Correctly filters for female patients using `p.gender = 'F'` in the `target_cohort_admissions` CTE.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for the range 53-63 years using a `BETWEEN` clause.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cardiac-arrest-condition-filter",
+          "requirements": "Cardiac Arrest Condition Filter: Identifies patients with a cardiac arrest diagnosis using an `EXISTS` or `JOIN` on `diagnoses_icd` and correctly selects both ICD-9 ('4275') and ICD-10 ('I46%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-time-window-filter",
+          "requirements": "Lab Time Window Filter: Restricts lab events to the first 48 hours post-admission using `DATETIME_DIFF(le.charttime, a.admittime, HOUR) BETWEEN 0 AND 48`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-value-logic",
+          "requirements": "Critical Lab Value Logic: Implements the `CASE` statement to correctly identify critical lab values based on specified `itemid`s and their abnormal ranges.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: Correctly calculates the `instability_score` for each patient in the cohort by summing the `is_critical` flags, using a `LEFT JOIN` and `COALESCE` to handle patients with no critical labs.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "90th Percentile Calculation: Correctly computes the 90th percentile of the instability score using `PERCENTILE_CONT(instability_score, 0.9) OVER()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-cohort-identification",
+          "requirements": "High-Risk Cohort Identification: Filters for the high-risk group by selecting patients with an `instability_score` greater than or equal to the calculated 90th percentile value.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-outcome-aggregation",
+          "requirements": "High-Risk Outcome Aggregation: Correctly calculates the count, mortality rate (`AVG(hospital_expire_flag)`), and mean LOS for the identified high-risk cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-lab-frequency-analysis",
+          "requirements": "Comparative Lab Frequency Analysis: Correctly calculates and compares the critical lab frequency for the high-risk cohort against the general inpatient population who had relevant labs, using `SAFE_DIVIDE`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "query-structure-and-integration",
+      "requirements": "Query Structure and Integration",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cte-organization",
+          "requirements": "CTE Organization: The query is well-structured using Common Table Expressions (CTEs) to logically separate steps like cohort definition, lab analysis, and final aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-assembly",
+          "requirements": "Final Output Assembly: The final SELECT statement correctly joins the results from various CTEs to present all required metrics in a single output.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

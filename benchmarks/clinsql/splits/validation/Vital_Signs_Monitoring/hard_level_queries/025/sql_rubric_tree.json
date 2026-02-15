@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the specific patient cohort based on demographics and primary condition.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Accurately calculates and filters patient age to be between 55 and 65 at the time of ICU admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cardiac-arrest-condition-selection",
+          "requirements": "Cardiac Arrest Condition Selection: Identifies patients with a cardiac arrest diagnosis using ICD codes '4275%' (ICD-9) or 'I46%' (ICD-10).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Data Integration: Correctly joins all necessary tables to link patient demographics, diagnoses, and ICU events.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-demographic-joins",
+          "requirements": "Core Demographic Joins: Correctly joins `icustays`, `patients`, and `admissions` tables on `subject_id` and `hadm_id` to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-data-linkage",
+          "requirements": "Diagnosis Data Linkage: Correctly links diagnosis data from `diagnoses_icd` to the cohort using `hadm_id`, typically via a subquery or join.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-data-integration",
+          "requirements": "Vitals Data Integration: Correctly joins the `chartevents` table to the cohort stays using `stay_id` to associate vital signs with the correct ICU stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "instability-score-calculation",
+      "requirements": "Instability Score Calculation: Implements the logic to calculate the vital-sign instability score.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-vitals-filter",
+          "requirements": "Temporal Vitals Filter: Filters `chartevents` to include only events within the first 24 hours of the ICU stay using `DATETIME_ADD(cs.intime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-sign-item-selection",
+          "requirements": "Vital Sign Item Selection: Selects the correct set of `itemid`s (220045, 220179, 220052, 220210, 220277) for the vital signs required for the score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-value-logic",
+          "requirements": "Abnormal Value Logic: Correctly implements the `CASE` statement with the specified thresholds to identify and count abnormal vital sign measurements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "score-normalization",
+          "requirements": "Score Normalization: Normalizes the count of abnormal vitals by the total number of measurements for that stay using `SAFE_DIVIDE(SUM(...), COUNT(*)) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-sufficiency-filter",
+          "requirements": "Data Sufficiency Filter: Filters out stays with an insufficient number of vital sign measurements using a `HAVING` clause (e.g., `HAVING COUNT(*) >= 10`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-analytics-and-reporting",
+      "requirements": "Final Analytics and Reporting: Computes and reports the final requested metrics based on the calculated instability scores.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icu-los-calculation",
+          "requirements": "ICU LOS Calculation: Correctly calculates the ICU length of stay in days using `DATETIME_DIFF` between `outtime` and `intime` and scaling by 24.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "decile-ranking",
+          "requirements": "Decile Ranking: Uses `NTILE(10) OVER (ORDER BY instability_score DESC)` to rank patients into deciles based on instability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-of-70",
+          "requirements": "Percentile Rank of Score 70: Correctly calculates the percentile of a score of 70 using a formula like `COUNTIF(instability_score < 70) / COUNT(*)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-los-aggregation",
+          "requirements": "Top Decile LOS Aggregation: Calculates the average ICU LOS specifically for the most unstable decile (`instability_decile = 1`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-mortality-aggregation",
+          "requirements": "Top Decile Mortality Aggregation: Calculates the average mortality rate (`hospital_expire_flag`) specifically for the most unstable decile, expressed as a percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+discharge_category,total_patients,count_los_ge_7_days,count_los_ge_14_days,proportion_los_ge_7_pct,proportion_los_ge_14_pct
+Discharged Home,5463,1162,232,21.27,4.25
+Discharged to Facility,3432,1417,416,41.29,12.12
+In-Hospital Mortality,293,151,87,51.54,29.69

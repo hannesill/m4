@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-readmission-rate",
+              "requirements": "Column Exists for 30-day readmission rate (e.g., `readmission_rate_30_day_pct`, `readmission_rate`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-median-los-readmitted",
+              "requirements": "Column Exists for median LOS for readmitted patients (e.g., `median_los_readmitted_days`, `median_los_readmitted`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-median-los-not-readmitted",
+              "requirements": "Column Exists for median LOS for non-readmitted patients (e.g., `median_los_not_readmitted_days`, `median_los_nonreadmitted`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-pct-los-gt-6",
+              "requirements": "Column Exists for percentage of index stays >6 days (e.g., `pct_index_los_gt_6_days`, `percent_los_over_6`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "readmission-rate-validation",
+          "requirements": "Validate 30-day readmission rate for AKI patients from SNF",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "readmission-rate-plausible",
+              "requirements": "Value for readmission rate is clinically plausible (1.0-60.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-rate-acceptable",
+              "requirements": "Value for readmission rate is in acceptable range (15.0-40.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-readmitted-validation",
+          "requirements": "Validate median LOS for readmitted AKI patients",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-los-readmitted-plausible",
+              "requirements": "Value for median LOS (readmitted) is clinically plausible (1.0-20.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-readmitted-acceptable",
+              "requirements": "Value for median LOS (readmitted) is in acceptable range (4.0-12.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-not-readmitted-validation",
+          "requirements": "Validate median LOS for non-readmitted AKI patients",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-los-not-readmitted-plausible",
+              "requirements": "Value for median LOS (not readmitted) is clinically plausible (1.0-15.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-not-readmitted-acceptable",
+              "requirements": "Value for median LOS (not readmitted) is in acceptable range (3.0-8.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "pct-los-gt-6-validation",
+          "requirements": "Validate percentage of index stays >6 days for AKI patients",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "pct-los-gt-6-plausible",
+              "requirements": "Value for percent LOS >6 days is clinically plausible (10.0-80.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pct-los-gt-6-acceptable",
+              "requirements": "Value for percent LOS >6 days is in acceptable range (30.0-60.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

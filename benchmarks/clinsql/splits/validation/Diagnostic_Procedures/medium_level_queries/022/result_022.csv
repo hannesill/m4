@@ -1,0 +1,5 @@
+stay_category,admission_category,number_of_admissions,avg_diagnostics_per_admission,min_diagnostics_per_admission,max_diagnostics_per_admission
+1-4 days,ED/Urgent,321,0.52,0,4
+1-4 days,Elective,79,0.33,0,3
+5-7 days,ED/Urgent,262,0.47,0,5
+5-7 days,Elective,69,0.45,0,3

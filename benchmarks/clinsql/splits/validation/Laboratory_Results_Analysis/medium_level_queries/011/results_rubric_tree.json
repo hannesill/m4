@@ -1,0 +1,110 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "category-column-exists",
+              "requirements": "Column for troponin categories exists (e.g., 'troponin_category', 'hs-tnt_level', 'category')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-column-exists",
+              "requirements": "Column for percentage distribution exists (e.g., 'percentage_of_admissions', 'percent_distribution')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns ('troponin_category', 'percentage_of_admissions')",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "percentage-distribution-validation",
+          "requirements": "Validation of the percentage distribution column (e.g., 'percentage_of_admissions')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentage-plausible-range",
+              "requirements": "Values for percentage distribution are within a plausible range (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-acceptable-range-normal",
+              "requirements": "The 'Normal' category percentage (5.49) is within an acceptable range (1-20). Low prevalence is expected for this specific cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-acceptable-range-borderline",
+              "requirements": "The 'Borderline' category percentage (45.73) is within an acceptable range (20-65). This is often a large group.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-acceptable-range-injury",
+              "requirements": "The 'Myocardial Injury' category percentage (48.78) is within an acceptable range (20-70). This is a common finding in patients with chest pain warranting admission.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-sum-validation",
+              "requirements": "The sum of percentages is close to 100 (98-102) to account for rounding.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

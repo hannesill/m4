@@ -1,0 +1,136 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly filters patients aged between 45 and 55 using `p.anchor_age BETWEEN 45 AND 55`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Pneumonia and Creatinine",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "pneumonia-diagnosis-identification",
+          "requirements": "Pneumonia Diagnosis Identification: Correctly identifies pneumonia admissions by filtering on ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd-version-handling",
+              "requirements": "ICD Version Handling: The query must correctly distinguish between ICD-9 and ICD-10 codes using `dx.icd_version`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pneumonia-code-selection",
+              "requirements": "Pneumonia Code Selection: The query correctly filters for pneumonia using specific ICD-9 codes ('480'-'486') and ICD-10 codes ('J12'-'J18').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "creatinine-measurement-identification",
+          "requirements": "Creatinine Measurement Identification: Correctly identifies serum creatinine lab events using `le.itemid = 50912`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins patients, admissions, diagnoses_icd, and labevents tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: Ensures joins use correct keys: subject_id for patient-admission link and hadm_id for admission-diagnosis/labevents links.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filtering-logic",
+          "requirements": "Temporal Filtering Logic: Correctly filters lab events to the first 24 hours of admission using `le.charttime BETWEEN adm.admittime AND TIMESTAMP_ADD(adm.admittime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "intermediate-aggregation",
+          "requirements": "Intermediate Aggregation: Calculates the average creatinine per admission (`hadm_id`) within a CTE or subquery.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation",
+          "requirements": "Final Aggregation: Calculates the standard deviation of the per-admission average creatinine values using `STDDEV()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result is correctly rounded to two decimal places using `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

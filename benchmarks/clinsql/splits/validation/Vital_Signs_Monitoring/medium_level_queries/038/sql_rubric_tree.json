@@ -1,0 +1,120 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the initial patient population based on demographics and ICU stay.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "join-patient-demographics-and-icu-stays",
+          "requirements": "Join Logic: The query must correctly join the `patients`, `admissions`, and `icustays` tables using `subject_id` and `hadm_id` to link patient demographics with their ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate patient age at the time of admission and filter for ages between 66 and 76.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies invasively ventilated patients and their relevant blood pressure measurements.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "invasive-ventilation-identification",
+          "requirements": "Invasive Ventilation Identification: The query must correctly identify patients who received invasive ventilation by filtering `chartevents` for relevant item IDs (e.g., 220339, 223849, 223835, etc.) using an EXISTS clause or equivalent logic.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sbp-measurement-selection",
+          "requirements": "Systolic Blood Pressure Measurement Selection: The query must select systolic blood pressure measurements by filtering `chartevents` using the correct item IDs (e.g., 220050, 51).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sbp-data-quality-filtering",
+          "requirements": "SBP Data Quality Filtering: The query should include filters to ensure the quality of SBP measurements, such as excluding null values and applying a reasonable physiological range (e.g., BETWEEN 40 AND 250).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "temporal-filtering",
+      "requirements": "Temporal Filtering: Applies the correct time constraints to the analysis.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "first-6-hours-sbp",
+          "requirements": "First 6 Hours SBP Measurement: The query must accurately filter for systolic blood pressure measurements that occurred within the first 6 hours of the patient's ICU admission time.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final statistical analysis to answer the clinical question.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "interquartile-range-calculation",
+          "requirements": "Interquartile Range Calculation: The query must calculate the interquartile range (IQR) of systolic blood pressure, defined as the difference between the 75th and 25th percentiles.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quantile-function-usage",
+          "requirements": "Quantile Function Usage: The query must correctly use a quantile approximation function (e.g., `APPROX_QUANTILES`) to compute the 25th, 50th, and 75th percentiles from the SBP measurements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output values should be rounded to one decimal place for clarity, and the columns should be appropriately named.",
+          "weight": 1,
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

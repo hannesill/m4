@@ -1,0 +1,183 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-tertile",
+              "requirements": "Column for stratification by tertile exists (e.g., 'complexity_tertile', 'tertile').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-los",
+              "requirements": "Column for Length of Stay exists (e.g., 'avg_los_days', 'los').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mortality",
+              "requirements": "Column for in-hospital mortality rate exists (e.g., 'mortality_rate_pct', 'in_hospital_mortality').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-readmission",
+              "requirements": "Column for 30-day readmission rate exists (e.g., 'readmission_rate_30day_pct', 'readmit_30d_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns (tertile, LOS, mortality, readmission).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "tertile-stratification-validation",
+          "requirements": "Result is stratified into 3 tertiles",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "row-count-is-3",
+              "requirements": "Result has exactly 3 rows for 3 tertiles",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-validation",
+          "requirements": "Validate average Length of Stay (LOS) per tertile",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-los",
+              "requirements": "Average LOS values are clinically plausible (0 < value < 60 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-los",
+              "requirements": "Average LOS values are within an acceptable range (2.0-25.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "trend-validation-los",
+              "requirements": "Average LOS shows an increasing trend with increasing complexity tertile",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validate in-hospital mortality rate per tertile",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-mortality",
+              "requirements": "Mortality rates are clinically plausible (0.0% - 50.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-mortality",
+              "requirements": "Mortality rates are within an acceptable range (0.0% - 30.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "trend-validation-mortality",
+              "requirements": "Mortality rate shows an increasing or stable-then-increasing trend with complexity tertile",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "readmission-validation",
+          "requirements": "Validate 30-day readmission rate per tertile",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-readmission",
+              "requirements": "Readmission rates are clinically plausible (0.0% - 75.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-readmission",
+              "requirements": "Readmission rates are within an acceptable range (10.0% - 40.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

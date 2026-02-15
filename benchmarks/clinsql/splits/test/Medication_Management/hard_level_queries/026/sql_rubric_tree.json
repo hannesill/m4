@@ -1,0 +1,168 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters for patients aged 76 to 86 at the time of admission using the calculated age `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 76 AND 86`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-selection",
+          "requirements": "Correctly identifies inpatient stays by using the `admissions` table as the base for the cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pneumonia-diagnosis-filter",
+          "requirements": "Filters for admissions with a pneumonia diagnosis by correctly joining with the `pneumonia_admissions` CTE on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "pneumonia-code-identification",
+          "requirements": "Correctly identifies pneumonia diagnoses using both ICD-9 and ICD-10 codes with appropriate version filtering.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd9-pneumonia-codes",
+              "requirements": "Selects correct ICD-9 codes for pneumonia (e.g., '480'-'486').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd10-pneumonia-codes",
+              "requirements": "Selects correct ICD-10 codes for pneumonia (e.g., 'J12'-'J18').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "medication-complexity-calculation",
+          "requirements": "Correctly calculates medication complexity as the count of unique drugs using `COUNT(DISTINCT pr.drug)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-time-window",
+          "requirements": "Restricts medication complexity calculation to the first 7 days of the hospital admission using a `DATETIME_ADD` interval.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-join",
+          "requirements": "Correctly joins `admissions` and `patients` tables on `subject_id` to link demographic data.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescription-data-join",
+          "requirements": "Correctly joins cohort data with the `prescriptions` table on `hadm_id`. A LEFT JOIN is appropriately used to retain patients with no medications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-data-join",
+          "requirements": "Correctly integrates the 30-day readmission flag by joining the `readmissions_flag` CTE back to the main cohort on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "readmission-logic",
+          "requirements": "Correctly calculates the 30-day readmission flag using a window function (`LEAD`) partitioned by `subject_id` and ordered by admission time.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-calculation",
+          "requirements": "Correctly calculates Length of Stay (LOS), in-hospital mortality, and handles nulls for complexity/readmission with COALESCE.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "tertile-stratification",
+          "requirements": "Correctly stratifies admissions into three groups (tertiles) based on medication complexity score using `NTILE(3) OVER (ORDER BY med_complexity_score)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-and-output",
+          "requirements": "Correctly groups results by `complexity_tertile` and reports all required metrics: admission count, min/avg/max complexity, avg LOS, mortality %, and readmission %.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the primary patient group based on demographics, primary conditions, and admission type.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients, typically using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate the patient's age at admission and filter for the range 43-53.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-filter",
+          "requirements": "Heart Failure Filter: The query must identify patients with a heart failure diagnosis using appropriate ICD-9 ('428') or ICD-10 ('I50') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-filter",
+          "requirements": "ICU Stay Filter: The query must restrict the final cohort to patients who had an ICU stay during their hospital admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Translates clinical definitions for complications and risk factors into correct SQL logic.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly use the `icd_version` field to differentiate between ICD-9 and ICD-10 code logic for all relevant diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complication-code-selection",
+          "requirements": "Complication Code Selection: The query must accurately identify ICD-9/10 codes for multi-organ failure, septic shock, acute MI, and respiratory failure to be used in risk scoring.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-count-logic",
+          "requirements": "Diagnosis Count Logic: The query must correctly count the total number of unique diagnoses per admission (`COUNT(DISTINCT icd_code)`) for use in the risk score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all required MIMIC tables to link patient, admission, diagnosis, and ICU data.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join `admissions`, `patients`, `diagnoses_icd`, and `icustays` tables.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The query must consistently use appropriate keys (`subject_id`, `hadm_id`) for all joins to ensure data integrity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "join-type-selection",
+          "requirements": "Join Type Selection: The query must use an appropriate join strategy (e.g., INNER for required tables, LEFT for optional ones like icustays before final filtering) to construct the dataset correctly.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs all required calculations and aggregations to produce the final metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-score-calculation",
+          "requirements": "Risk Score Calculation: The query must correctly implement the weighted formula for `risk_score`, including all components and the `LEAST(100, ...)` cap.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metrics-calculation",
+          "requirements": "Outcome Metrics Calculation: The query must accurately calculate 30-day mortality, the major complication rate, and the average length of stay for survivors.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "statistical-aggregation",
+          "requirements": "Statistical Aggregation: The query must correctly calculate the median and IQR of the risk score for the target cohort using `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-analysis-logic",
+          "requirements": "Comparative Analysis Logic: The query must correctly calculate the risk score percentile rank by comparing the target cohort's average risk against the general female population aged 43-53.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-grouping",
+          "requirements": "Cohort Grouping: The query must properly structure the final output to show separate statistics for the target and comparison cohorts, typically using `UNION ALL`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

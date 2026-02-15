@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies and separates the two main patient populations for analysis: the specific target group and the general comparison group.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "postoperative-patient-identification",
+          "requirements": "Post-Operative Patient Identification: Filters for hospital admissions that are postoperative by checking the `services` table for surgical service types (e.g., using `LOWER(curr_service) LIKE '%surg%'`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: Correctly identifies only the first ICU stay for each hospital admission using a window function like `ROW_NUMBER() OVER(PARTITION BY hadm_id ORDER BY intime)` and filtering for the first rank.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-group-definition",
+          "requirements": "Cohort Group Definition: Correctly defines the 'Target' group as male patients aged 63-73 and all other postoperative patients as the 'Comparison' group using a CASE statement.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Data Integration: Ensures all necessary tables from the MIMIC-IV database are joined correctly to construct the patient cohort and retrieve relevant clinical data.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly joins `icustays`, `admissions`, and `patients` tables using `hadm_id` and `subject_id` to link stay information with patient demographics and hospital outcomes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-data-join",
+          "requirements": "Vitals Data Join: Correctly joins `chartevents` with the main patient cohort using `stay_id` to associate vital sign measurements with specific ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the complex analytical steps required to calculate the instability score, rank patients, and generate the final comparative summary.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "vital-sign-processing",
+          "requirements": "Vital Sign Processing: Extracts temperature, SpO2, and respiratory rate from `chartevents` within the first 72 hours of the ICU stay, unifying temperature units and applying basic cleaning.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-computation",
+          "requirements": "Instability Score Computation: Calculates a composite instability score by (1) computing the standard deviation of each vital sign per stay, (2) calculating population-level normalization factors (mean, stddev), and (3) summing the Z-scores of each vital's variability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-quartile-ranking",
+          "requirements": "Instability Quartile Ranking: Uses `NTILE(4)` partitioned by cohort group and ordered by the instability score to stratify patients into quartiles, correctly identifying the top quartile (`instability_quartile = 1`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-episode-and-outcome-calculation",
+          "requirements": "Abnormal Episode & Outcome Calculation: Correctly counts abnormal episodes (fever > 38.5, SpO2 < 90, RR > 20) using `COUNTIF` and calculates ICU LOS and in-hospital mortality.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-comparative-aggregation",
+          "requirements": "Final Comparative Aggregation: Aggregates the data into the two final groups ('Target Group' from the top instability quartile and 'Comparison Group'), calculating average outcomes for each.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-output-generation",
+      "requirements": "Final Output Generation: Presents the final results clearly, including the specific 95th percentile calculation for the target group.",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "percentile-score-calculation",
+          "requirements": "95th Percentile Score Calculation: Correctly calculates the 95th percentile of the instability score for the target group using `APPROX_QUANTILES` and displays it in the appropriate row.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Presents the final two-row summary with clear labels, rounded values, and logical ordering (`group_name`, `patient_count`, outcome metrics, etc.).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

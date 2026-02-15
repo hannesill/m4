@@ -1,0 +1,5 @@
+drug_class,total_cohort_admissions,patients_early,patients_discharge,prevalence_early_pct,prevalence_discharge_pct,net_change_pp
+Sulfonylureas,2537,60,12,2.36,0.47,-1.89
+Metformin,2537,55,14,2.17,0.55,-1.62
+SGLT2 Inhibitors,2537,14,4,0.55,0.16,-0.39
+DPP-4 Inhibitors,2537,2,1,0.08,0.04,-0.04

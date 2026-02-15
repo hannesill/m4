@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Key metric columns exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mean_risk_score-column-exists",
+              "requirements": "Column for 'mean_risk_score' exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality_rate_90_day-column-exists",
+              "requirements": "Column for 'mortality_rate_90_day' exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "major_complication_rate-column-exists",
+              "requirements": "Column for 'major_complication_rate' exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_survivor_los-column-exists",
+              "requirements": "Column for 'avg_survivor_los_days' exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "profile_risk_percentile-column-exists",
+              "requirements": "Column for 'profile_risk_percentile' exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "Key metrics are not NULL/Empty in their respective rows",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mean-risk-score-validation",
+          "requirements": "Validation of mean_risk_score for the target cohort",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mean-risk-score-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-risk-score-acceptable",
+              "requirements": "Acceptable Range for high-risk septic shock cohort (70-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-90-day-validation",
+          "requirements": "Validation of 90-day mortality rate for the target cohort",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range for high-risk septic shock cohort (25-65%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "major-complication-rate-validation",
+          "requirements": "Validation of major complication rate for the target cohort",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "complication-rate-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "complication-rate-acceptable",
+              "requirements": "Acceptable Range for septic shock cohort (80-100%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-survivor-los-validation",
+          "requirements": "Validation of average survivor LOS for the target cohort",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "survivor-los-plausible",
+              "requirements": "Clinically Plausible (1-100 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "survivor-los-acceptable",
+              "requirements": "Acceptable Range for septic shock survivors (12-35 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "profile-risk-percentile-validation",
+          "requirements": "Validation of risk percentile for the specific patient profile",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-acceptable",
+              "requirements": "Acceptable Range for a high-risk profile (80-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

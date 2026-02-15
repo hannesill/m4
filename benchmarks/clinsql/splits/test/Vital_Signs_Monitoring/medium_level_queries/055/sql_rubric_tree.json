@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation",
+          "requirements": "The query must correctly calculate the patient's age at the time of their ICU stay using `p.anchor_age`, `ie.intime`, and `p.anchor_year`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "The query must filter the calculated age to the range of 87 to 97 years, inclusive, using a `BETWEEN` clause or equivalent logic.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-icustay-join",
+          "requirements": "The query must correctly join the `patients` and `icustays` tables on `subject_id` to link demographic data to ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icustay-chartevents-join",
+          "requirements": "The query must correctly join the identified ICU stays with the `chartevents` table on `stay_id` to access clinical measurements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-event-identification",
+      "requirements": "Clinical Event Identification and Filtering for SpO2",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "spo2-concept-selection",
+          "requirements": "The query must correctly identify SpO2 measurements using `itemid = 220277`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter",
+          "requirements": "The query must filter SpO2 measurements to only those recorded within the first 24 hours of the ICU stay, using a function like `DATETIME_DIFF` between `charttime` and `intime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-quality-filter",
+          "requirements": "The query must include filters to ensure data quality, such as removing null values (`valuenum IS NOT NULL`) and applying a clinically plausible range filter for SpO2 (e.g., 70-100).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-aggregation",
+          "requirements": "The query must calculate the average SpO2 per ICU stay by grouping the filtered `chartevents` data by `stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "The query must correctly calculate the percentile rank for a value of 88 using the formula for the proportion of stays with an average SpO2 less than 88.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "descriptive-statistics-output",
+          "requirements": "The query should output additional descriptive statistics for the cohort's average SpO2 values, such as count, mean, standard deviation, and quartiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

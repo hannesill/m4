@@ -1,0 +1,7 @@
+p90_instability_score,top_tier_patient_count,top_tier_mortality_rate,top_tier_avg_los_days,critical_lab_test,top_tier_critical_event_count,top_tier_proportion_of_patients_affected,general_pop_critical_event_count,general_pop_proportion_of_patients_affected,relative_risk_vs_general_pop
+1,52,0.231,12.5,Creatinine,153,0.731,61636,0.036,20.0
+1,52,0.231,12.5,Potassium,8,0.115,4748,0.007,15.9
+1,52,0.231,12.5,Platelet Count,6,0.058,6656,0.005,11.8
+1,52,0.231,12.5,Hemoglobin,25,0.25,24740,0.031,8.2
+1,52,0.231,12.5,"Potassium, Whole Blood",2,0.019,1944,0.003,7.2
+1,52,0.231,12.5,White Blood Cells,4,0.038,9440,0.006,6.0

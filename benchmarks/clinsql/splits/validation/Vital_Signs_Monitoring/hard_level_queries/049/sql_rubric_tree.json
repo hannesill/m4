@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sepsis-diagnosis-selection",
+          "requirements": "Sepsis Diagnosis Selection: Correctly identifies patients with sepsis by filtering the diagnoses_icd table using a combination of ICD-9 (e.g., '038%', '99591', '99592') and ICD-10 (e.g., 'A40%', 'A41%', 'R65.2%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query correctly filters for patients aged between 78 and 88 years using `pat.anchor_age BETWEEN 78 AND 88`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Instability Score Calculation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "vitals-temporal-filter",
+          "requirements": "Vitals Temporal Filter: Filters vital signs to the first 24 hours of the ICU stay using `ce.charttime >= icu.intime AND ce.charttime <= DATETIME_ADD(icu.intime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-item-selection",
+          "requirements": "Vitals Item Selection: Correctly identifies itemids for heart rate, blood pressures, respiratory rate, temperature, and SpO2.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormality-thresholds",
+          "requirements": "Abnormality Thresholds: A CASE statement correctly defines the thresholds for abnormal vital signs (e.g., heart rate < 60 or > 100).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "score-aggregation",
+          "requirements": "Score Aggregation: Correctly calculates the instability score per stay_id by summing the binary abnormal flags.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins icustays, patients, admissions, and diagnoses_icd (via sepsis_cohort CTE) to construct the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-join-logic",
+          "requirements": "Vitals Join Logic: Correctly joins chartevents with the ICU cohort on stay_id to link vital signs to the correct patient stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-cohort-join",
+          "requirements": "Final Cohort Join: Uses a LEFT JOIN to combine the main icu_cohort with the calculated instability scores, ensuring all patients in the cohort are retained even if they have no vitals data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Output",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: Correctly calculates the percentile rank for a score of 85 using a formula like `COUNT(score < 85) / COUNT(all scores)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-calculation",
+          "requirements": "Quartile Calculation: Uses the NTILE(4) window function over the instability score to assign patients to quartiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-4-filtering",
+          "requirements": "Quartile 4 Filtering: Correctly filters the cohort to quartile 4 to calculate specific outcomes for that group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-los-calculation",
+          "requirements": "ICU LOS Calculation: Correctly calculates the mean ICU length of stay in days for the specified quartile using DATETIME_DIFF and AVG.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Mortality Rate Calculation: Correctly calculates the mean hospital mortality rate for the specified quartile by averaging the hospital_expire_flag.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

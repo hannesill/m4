@@ -1,0 +1,179 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-risk-quintile",
+              "requirements": "Column Exists for Risk Stratification (e.g., risk_quintile)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-mortality",
+              "requirements": "Column Exists for 30-Day Mortality Rate (e.g., mortality_rate_30_day_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-cardio",
+              "requirements": "Column Exists for Cardiovascular Complication Rate (e.g., cardio_complication_rate_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-neuro",
+              "requirements": "Column Exists for Neurologic Complication Rate (e.g., neuro_complication_rate_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-los",
+              "requirements": "Column Exists for Median LOS Among Survivors (e.g., median_survivor_los_days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in Answer-Relevant Columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate 30-Day Mortality Rate Values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible Range for 30-Day Mortality Rate (%) in this cohort (0-75)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range for 30-Day Mortality Rate (%) based on risk stratification (5-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cardio-complication-validation",
+          "requirements": "Validate Cardiovascular Complication Rate Values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "cardio-complication-plausible",
+              "requirements": "Clinically Plausible Range for Cardiovascular Complication Rate (%) in this cohort (0-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cardio-complication-acceptable",
+              "requirements": "Acceptable Range for Cardiovascular Complication Rate (%) based on risk stratification (0-45)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "neuro-complication-validation",
+          "requirements": "Validate Neurologic Complication Rate Values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "neuro-complication-plausible",
+              "requirements": "Clinically Plausible Range for Neurologic Complication Rate (%) in this cohort (0-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "neuro-complication-acceptable",
+              "requirements": "Acceptable Range for Neurologic Complication Rate (%) based on risk stratification (0-40)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-validation",
+          "requirements": "Validate Median LOS Among Survivors Values",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "los-plausible",
+              "requirements": "Clinically Plausible Range for Median Survivor LOS (days) for pneumonia (1-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-acceptable",
+              "requirements": "Acceptable Range for Median Survivor LOS (days) in this cohort (2-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

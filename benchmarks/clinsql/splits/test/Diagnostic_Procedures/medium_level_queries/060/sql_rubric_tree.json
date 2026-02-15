@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the initial patient population based on demographics and primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters for patients aged 49-59 at the time of admission using the standard MIMIC age calculation `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-heart-failure-selection",
+          "requirements": "Primary Heart Failure Selection: Identifies admissions where heart failure is the primary diagnosis by filtering for `d.seq_num = 1` and using appropriate ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient data with admissions, diagnoses, ICU stays, and procedures.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joining",
+          "requirements": "Core Table Joining: Correctly INNER JOINs `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "supplementary-table-joining",
+          "requirements": "Supplementary Table Joining: Correctly LEFT JOINs `icustays` and `procedures_icd` on `hadm_id` to include optional ICU and procedure data without incorrectly excluding admissions from the cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Accurately translates clinical concepts into executable SQL logic.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: Correctly calculates LOS in days using `DATETIME_DIFF` between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: Correctly determines if an admission included an ICU stay by checking for a corresponding `stay_id` in the `icustays` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-procedure-identification",
+          "requirements": "Imaging Procedure Identification: Correctly filters for CT/MRI procedures using both ICD-9 (e.g., '88.0%', '87.41%') and ICD-10 (e.g., 'B' prefix with specific modality characters) codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly distinguish and handle both ICD-9 and ICD-10 codes for both diagnoses and procedures by checking the `icd_version` column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the required stratifications and aggregations to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-filtering-and-stratification",
+          "requirements": "LOS Filtering and Stratification: Filters admissions to the 1-7 day LOS range and correctly stratifies them into '1-4 Days' and '5-7 Days' groups using a CASE statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-use-stratification",
+          "requirements": "ICU Use Stratification: Correctly stratifies admissions based on whether an ICU stay occurred, creating 'ICU Stay' and 'No ICU Stay' groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-admission-imaging-count",
+          "requirements": "Per-Admission Imaging Count: Correctly counts the total number of identified CT/MRI procedures for each individual admission (`hadm_id`) before the final aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-aggregation",
+          "requirements": "Final Metric Aggregation: Correctly calculates the final admission count (`COUNT(hadm_id)`) and mean imaging scans (`AVG(imaging_count)`) after grouping by the LOS and ICU strata.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

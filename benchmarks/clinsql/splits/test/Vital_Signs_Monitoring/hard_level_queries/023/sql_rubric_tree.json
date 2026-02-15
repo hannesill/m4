@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "icu-patient-identification",
+          "requirements": "Identifies the primary cohort from the `icustays` table, which represents individual ICU admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates patient age at ICU admission and filters for the range 55-65.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hfnc-identification",
+          "requirements": "Correctly identifies HFNC usage by filtering `chartevents` for `itemid = 227287`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hfnc-temporal-constraint",
+          "requirements": "Restricts HFNC identification to the first 24 hours of the ICU stay (`DATETIME_DIFF(ce.charttime, cohort.intime, HOUR) <= 24`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-grouping",
+          "requirements": "Accurately categorizes patients into 'HFNC_Target' and 'Control' groups based on HFNC usage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Outcome Calculation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "vitals-selection-first-24h",
+          "requirements": "Selects Heart Rate (220045) and MAP (220052, 220181) from chartevents within the first 24 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Correctly calculates the instability score as the sum of the coefficients of variation for HR and MAP.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "tachycardia-hypotension-burden",
+          "requirements": "Calculates tachycardia burden (HR > 100) and hypotension burden (MAP < 65) as proportions of total measurements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-los-mortality-calculation",
+          "requirements": "Calculates ICU length of stay and mortality rate per cohort group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-output",
+      "requirements": "Final Aggregation and Output Formatting",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-by-cohort",
+          "requirements": "Groups the final results by the 'HFNC_Target' and 'Control' cohort groups.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-quantiles",
+          "requirements": "Outputs the median, p25, p75, and p95 for the instability score using APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-averaging",
+          "requirements": "Correctly calculates the average for tachycardia burden, hypotension burden, ICU LOS, and mortality rate for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

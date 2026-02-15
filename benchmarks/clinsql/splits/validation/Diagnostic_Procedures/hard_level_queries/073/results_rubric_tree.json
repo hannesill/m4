@@ -1,0 +1,233 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "num-patients-column-exists",
+              "requirements": "Column Exists for Number of Patients (e.g., 'num_patients', 'patient_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-procedure-count-column-exists",
+              "requirements": "Column Exists for Minimum Procedure Count (e.g., 'min_procedure_count', 'min_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-procedure-count-column-exists",
+              "requirements": "Column Exists for Maximum Procedure Count (e.g., 'max_procedure_count', 'max_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-procedure-count-column-exists",
+              "requirements": "Column Exists for Average Procedure Count (e.g., 'avg_procedure_count', 'mean_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-column-exists",
+              "requirements": "Column Exists for Average Hospital LOS (e.g., 'avg_hospital_los_days', 'mean_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column Exists for In-Hospital Mortality (e.g., 'in_hospital_mortality_pct', 'mortality_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in Answer-Relevant Columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "num-patients-validation",
+          "requirements": "Exist Column Related to Number of Patients",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "num-patients-plausible",
+              "requirements": "Clinically Plausible (1-200)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "num-patients-acceptable",
+              "requirements": "Acceptable Range (5-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "min-procedure-count-validation",
+          "requirements": "Exist Column Related to Minimum Procedure Count",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "min-procedure-count-plausible",
+              "requirements": "Clinically Plausible (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-procedure-count-acceptable",
+              "requirements": "Acceptable Range (0-5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "max-procedure-count-validation",
+          "requirements": "Exist Column Related to Maximum Procedure Count",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "max-procedure-count-plausible",
+              "requirements": "Clinically Plausible (1-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-procedure-count-acceptable",
+              "requirements": "Acceptable Range (2-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-procedure-count-validation",
+          "requirements": "Exist Column Related to Average Procedure Count",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-procedure-count-plausible",
+              "requirements": "Clinically Plausible (0-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-procedure-count-acceptable",
+              "requirements": "Acceptable Range (0.5-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Exist Column Related to Average Hospital Length of Stay (Days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Clinically Plausible (1-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Acceptable Range (5-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Exist Column Related to In-hospital Mortality Percentage",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-acceptable",
+              "requirements": "Acceptable Range (15-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

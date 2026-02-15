@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation for Asthma Exacerbation Cohort Analysis",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the primary patient group based on demographics and diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter patient age to be between 39 and 49 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-type-selection",
+          "requirements": "Admission Type Selection: The query must identify inpatient admissions by selecting from the 'admissions' table. The question implies inpatient.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-filtering",
+          "requirements": "Diagnosis Filtering: The query must use a subquery or join to filter for admissions associated with an asthma exacerbation diagnosis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly translates clinical concepts like 'asthma exacerbation' and 'lab instability' into SQL logic.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly handle both ICD-9 and ICD-10 codes for asthma exacerbation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "asthma-exacerbation-code-selection",
+          "requirements": "Asthma Exacerbation Code Selection: The query must use appropriate ICD codes (e.g., ICD-9: '493__1', '493__2'; ICD-10: 'J45_%1') to identify asthma exacerbation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-definition",
+          "requirements": "Critical Lab Definition: The query must define a set of critical lab events with specific item IDs and high/low thresholds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-event-identification",
+          "requirements": "Critical Lab Event Identification: The query logic must correctly identify lab values that fall outside the defined critical thresholds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Ensures correct joining of tables and temporal filtering to link patient data with clinical events.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-diagnosis-join",
+          "requirements": "Demographic-Diagnosis Join: The query must correctly link patient demographics from 'patients' and 'admissions' tables to their diagnoses in 'diagnoses_icd'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-lab-event-join",
+          "requirements": "Admission-Lab Event Join: The query must correctly join the identified cohort admissions with lab events based on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-48h",
+          "requirements": "Temporal Filter (48 hours): The query must filter lab events to only include those occurring within the first 48 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final calculations and aggregations as required by the clinical question.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must count the number of critical lab events per admission to create an 'instability_score'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-75-calculation",
+          "requirements": "75th Percentile Calculation: The query must calculate the 75th percentile of the instability score using APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-events-per-admission",
+          "requirements": "Cohort Events per Admission: The query must calculate the average number of critical events per admission for the specified asthma cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "general-events-per-admission",
+          "requirements": "General Inpatient Events per Admission: The query must calculate the average number of critical events per admission for the general inpatient population for comparison.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-los-calculation",
+          "requirements": "Cohort LOS Calculation: The query must calculate the average length of stay for the asthma cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-mortality-calculation",
+          "requirements": "Cohort Mortality Calculation: The query must calculate the in-hospital mortality rate for the asthma cohort using the 'hospital_expire_flag'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the primary 'Female, 50-60, ICH' cohort and the 'General ICU' comparison group.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "first-icu-stay-identification",
+          "requirements": "First ICU Stay Identification: The query must isolate the first ICU stay for each hospital admission using ROW_NUMBER() partitioned by hadm_id and ordered by intime.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients (gender = 'F') as part of the primary cohort definition.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate patient age at admission and filter for patients between 50 and 60 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ich-diagnosis-filter",
+          "requirements": "ICH Diagnosis Filter: The query must use the pre-filtered 'ich_admissions' CTE to identify patients diagnosed with Intracranial Hemorrhage.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-grouping-logic",
+          "requirements": "Cohort Grouping Logic: A CASE statement must be used to correctly label patients as either 'Female, 50-60, ICH' or 'General ICU'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Translates clinical concepts like ICH and procedure burden into specific SQL logic.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ich-code-selection",
+          "requirements": "ICH Code Selection: The query must correctly identify ICH by filtering diagnoses_icd for both ICD-9 ('430', '431', '432') and ICD-10 ('I60', 'I61', 'I62') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-burden-definition",
+          "requirements": "Procedure Burden Definition: The query must define procedure burden by counting the number of distinct procedures (COUNT(DISTINCT pe.itemid)) from the procedureevents table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-temporal-filter",
+          "requirements": "Procedure Temporal Filter: The query must constrain procedure events to the initial 72 hours of the ICU stay using a BETWEEN clause on starttime and a 72-hour interval from intime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables to link patient demographics, diagnoses, and ICU events.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-data-linkage",
+          "requirements": "Core Data Linkage: The query must correctly join admissions, icustays, and patients tables using hadm_id and subject_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-data-linkage",
+          "requirements": "Cohort Data Linkage: The query must use LEFT JOINs to connect the base patient list with 'ich_admissions' and 'procedure_burden' to ensure all patients are retained for the 'General ICU' cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-event-linkage",
+          "requirements": "Procedure Event Linkage: The query must join the ICU stay information with 'procedureevents' using stay_id to correctly attribute procedures to a specific stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final calculations and aggregations for the specified metrics.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: The query must group the final results by the 'cohort_group' column to produce separate metrics for each cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metrics-calculation",
+          "requirements": "Outcome Metrics Calculation: The query must correctly calculate the average hospital length of stay and the in-hospital mortality percentage for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-burden-statistics",
+          "requirements": "Procedure Burden Statistics: The query must correctly calculate the 25th, 50th, 90th percentiles and the maximum procedure burden using APPROX_QUANTILES and MAX functions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "null-handling",
+          "requirements": "Null Handling: The query should use COALESCE to correctly handle patients with no procedures, ensuring their procedure burden is counted as 0.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

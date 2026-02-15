@@ -1,0 +1,151 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "survival-status-column-exists",
+              "requirements": "A column grouping by survival status exists (e.g., survival_status, discharge_disposition)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-column-exists",
+              "requirements": "A column for mean length of stay exists (e.g., mean_los_days, avg_los)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stddev-los-column-exists",
+              "requirements": "A column for standard deviation of length of stay exists (e.g., stddev_los_days, std_los)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percent-los-lt7-column-exists",
+              "requirements": "A column for the percentage of admissions with LOS < 7 days exists (e.g., percentile_rank_of_7_days, percent_los_lt_7)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in the answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mean-los-validation",
+          "requirements": "Validation for Mean Length of Stay (mean_los_days)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mean-los-plausible",
+              "requirements": "Clinically Plausible (1.0-30.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-acceptable",
+              "requirements": "Acceptable Range (5.0-20.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "stddev-los-validation",
+          "requirements": "Validation for Standard Deviation of Length of Stay (stddev_los_days)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stddev-los-plausible",
+              "requirements": "Clinically Plausible (1.0-40.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stddev-los-acceptable",
+              "requirements": "Acceptable Range (5.0-25.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percent-los-lt7-validation",
+          "requirements": "Validation for Percent with LOS < 7 days (percentile_rank_of_7_days)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "percent-los-lt7-plausible",
+              "requirements": "Clinically Plausible (10.0-90.0 percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percent-los-lt7-acceptable",
+              "requirements": "Acceptable Range (30.0-70.0 percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

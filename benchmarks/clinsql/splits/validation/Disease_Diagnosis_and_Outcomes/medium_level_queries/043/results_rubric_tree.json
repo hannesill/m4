@@ -1,0 +1,210 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "grouping-columns-exist",
+              "requirements": "Grouping columns for ICU status, LOS, and Charlson score exist",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "A column for mortality rate (e.g., 'mortality_rate_pct') exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-ci-columns-exist",
+              "requirements": "Columns for mortality confidence intervals (e.g., 'mortality_rate_ci95_lower', 'mortality_rate_ci95_upper') exist",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mech-vent-prevalence-column-exists",
+              "requirements": "A column for mechanical ventilation prevalence (e.g., 'mech_vent_prevalence_pct') exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "vasopressor-prevalence-column-exists",
+              "requirements": "A column for vasopressor prevalence (e.g., 'vasopressor_prevalence_pct') exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "rrt-prevalence-column-exists",
+              "requirements": "A column for RRT prevalence (e.g., 'rrt_prevalence_pct') exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in primary answer columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate columns related to mortality rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-ci-validation",
+          "requirements": "Validate columns related to mortality 95% CI",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-ci-plausible",
+              "requirements": "Clinically Plausible (0-75)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-ci-acceptable",
+              "requirements": "Acceptable Range (0-40)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mech-vent-prevalence-validation",
+          "requirements": "Validate column related to mechanical ventilation prevalence (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mech-vent-prevalence-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mech-vent-prevalence-acceptable",
+              "requirements": "Acceptable Range (0-80)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "vasopressor-prevalence-validation",
+          "requirements": "Validate column related to vasopressor prevalence (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "vasopressor-prevalence-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "vasopressor-prevalence-acceptable",
+              "requirements": "Acceptable Range (0-70)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "rrt-prevalence-validation",
+          "requirements": "Validate column related to RRT prevalence (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "rrt-prevalence-plausible",
+              "requirements": "Clinically Plausible (0-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "rrt-prevalence-acceptable",
+              "requirements": "Acceptable Range (0-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

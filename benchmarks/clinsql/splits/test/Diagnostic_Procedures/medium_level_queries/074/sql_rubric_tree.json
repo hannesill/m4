@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters for the primary patient cohort based on demographics, diagnosis, and admission criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged 40 to 50 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ischemic-stroke-diagnosis",
+          "requirements": "Ischemic Stroke Diagnosis: The query must identify patients with an ischemic stroke diagnosis using both ICD-9 ('434%') and ICD-10 ('I63%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: The query must restrict the cohort to admissions with a length of stay between 1 and 7 days.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation",
+          "requirements": "Age Calculation: The query correctly calculates the patient's age at the time of admission using a formula like `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient demographics, admissions, diagnoses, procedures, and ICU stays.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-integration",
+          "requirements": "Cohort Table Integration: Correctly performs INNER JOINs between `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to build the initial cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "events-table-integration",
+          "requirements": "Events Table Integration: Correctly performs LEFT JOINs from the patient cohort to `procedures_icd` and `icustays` on `hadm_id` to ensure no admissions are lost if they lack imaging or an ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Accurately identifies and quantifies imaging procedures and ICU stays for each admission.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "imaging-procedure-identification",
+          "requirements": "Imaging Procedure Identification: Correctly filters for imaging procedures by checking `icd_version` and using appropriate ICD-9 ('87%', '88%') and ICD-10 ('B%') code patterns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: Correctly identifies if an admission included an ICU stay, for example by checking for a non-null `stay_id` from the `icustays` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-quantification",
+          "requirements": "Procedure Quantification: Correctly counts the number of imaging procedures for each admission using `COUNT()` and grouping by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final stratification and aggregation to produce the required output metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stay-duration-stratification",
+          "requirements": "Stay Duration Stratification: Correctly buckets the `length_of_stay` into '1-4 Day Stay' and '5-7 Day Stay' groups using a CASE statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-status-stratification",
+          "requirements": "ICU Status Stratification: Correctly stratifies admissions into 'ICU Stay' and 'No ICU Stay' groups based on the identified ICU flag.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Final Grouping Logic: The query must group the final results by the two stratification columns (`stay_duration_group`, `icu_status`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aggregate-metric-calculation",
+          "requirements": "Aggregate Metric Calculation: Correctly calculates the mean, min, and max imaging procedures per admission and the number of admissions for each group using AVG, MIN, MAX, and COUNT.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

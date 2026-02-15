@@ -1,0 +1,5 @@
+stay_category,icu_status,total_admissions,p25_ultrasounds,p50_ultrasounds,p75_ultrasounds
+1-3 days,ICU Stay,82,0,0,0
+1-3 days,No ICU Stay,6,0,0,0
+4-7 days,ICU Stay,193,0,0,0
+4-7 days,No ICU Stay,14,0,0,0

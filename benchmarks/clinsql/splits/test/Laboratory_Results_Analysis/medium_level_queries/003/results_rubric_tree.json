@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "min-troponin-column-exists",
+              "requirements": "Column Exists for Minimum Troponin T value (e.g., 'min_troponin_t_ng_ml')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-troponin-column-exists",
+              "requirements": "Column Exists for 25th Percentile Troponin T value (e.g., 'p25_troponin_t')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-troponin-column-exists",
+              "requirements": "Column Exists for 50th Percentile (Median) Troponin T value (e.g., 'p50_median_troponin_t')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-troponin-column-exists",
+              "requirements": "Column Exists for 75th Percentile Troponin T value (e.g., 'p75_troponin_t')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-troponin-column-exists",
+              "requirements": "Column Exists for Maximum Troponin T value (e.g., 'max_troponin_t_ng_ml')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in Answer-Relevant Columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "min-troponin-validation",
+          "requirements": "Validation of Minimum Troponin T (ng/mL)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "min-troponin-plausible",
+              "requirements": "Clinically Plausible (0.014-1.0). Must be > ULN (~0.014).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-troponin-acceptable",
+              "requirements": "Acceptable Range (0.015-0.1)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p25-troponin-validation",
+          "requirements": "Validation of 25th Percentile Troponin T (ng/mL)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p25-troponin-plausible",
+              "requirements": "Clinically Plausible (0.015-2.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-troponin-acceptable",
+              "requirements": "Acceptable Range (0.03-0.2)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p50-troponin-validation",
+          "requirements": "Validation of 50th Percentile Troponin T (ng/mL)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p50-troponin-plausible",
+              "requirements": "Clinically Plausible (0.02-5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-troponin-acceptable",
+              "requirements": "Acceptable Range (0.05-0.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p75-troponin-validation",
+          "requirements": "Validation of 75th Percentile Troponin T (ng/mL)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p75-troponin-plausible",
+              "requirements": "Clinically Plausible (0.03-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-troponin-acceptable",
+              "requirements": "Acceptable Range (0.1-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "max-troponin-validation",
+          "requirements": "Validation of Maximum Troponin T (ng/mL)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "max-troponin-plausible",
+              "requirements": "Clinically Plausible (0.1-50.0). Extremely high values can occur in severe MI.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-troponin-acceptable",
+              "requirements": "Acceptable Range (1.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

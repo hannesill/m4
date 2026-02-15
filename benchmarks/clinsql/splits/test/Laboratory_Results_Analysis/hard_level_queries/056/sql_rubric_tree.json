@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly filter for patients aged 55-65 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "asthma-diagnosis-filter",
+          "requirements": "Asthma Diagnosis Filter: The query must correctly identify patient admissions with an asthma diagnosis using ICD-9 codes (LIKE '493%') and ICD-10 codes (LIKE 'J45%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Logic",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-lab-filter",
+          "requirements": "Temporal Lab Filter: The query must correctly filter lab events to within the first 48 hours of admission using a time difference calculation on `charttime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-instability-score-calculation",
+          "requirements": "Lab Instability Score Calculation: The query must correctly define critical lab thresholds and count the number of lab results outside these ranges for each patient in the target cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must calculate the 95th percentile of the instability score for the target cohort using an appropriate approximation function like `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-tier-cohort-identification",
+          "requirements": "Top-Tier Cohort Identification: The query must successfully identify the subset of patients whose instability score is at or above the calculated 95th percentile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "outcome-metrics-calculation",
+      "requirements": "Outcome Metrics Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-and-mortality-calculation",
+          "requirements": "LOS and Mortality Calculation: The query must correctly calculate the average Length of Stay (LOS) and mortality rate for the top-tier cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-rate-comparison",
+          "requirements": "Critical Lab Rate Comparison: The query must calculate and compare the critical lab rate for the top-tier cohort against the rate for the general inpatient population.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Structure",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "correct-table-joins",
+          "requirements": "Correct Table Joins: The query must accurately join `admissions`, `patients`, `diagnoses_icd`, and `labevents` tables using appropriate keys like `subject_id` and `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "query-structure",
+          "requirements": "Query Structure: The query should use Common Table Expressions (CTEs) to logically structure the steps, from cohort definition to final metric calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-assembly",
+          "requirements": "Final Output Assembly: The final SELECT statement must correctly combine results from all preceding CTEs to produce the requested metrics in a single output row.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "regimen-type-column-exists",
+              "requirements": "Column exists for insulin regimen type (e.g., 'regimen_type', 'insulin_regimen')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-early-column-exists",
+              "requirements": "Column exists for prevalence in the first 24 hours (e.g., 'prevalence_early_24h_pct', 'pct_first_24h')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-late-column-exists",
+              "requirements": "Column exists for prevalence in the final 12 hours (e.g., 'prevalence_late_12h_pct', 'pct_final_12h')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-column-exists",
+              "requirements": "Column exists for percentage-point change (e.g., 'net_change_pp', 'change_pct_point')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "column-related-validation-prevalence-early",
+          "requirements": "Validate column 'prevalence_early_24h_pct'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-prevalence-early",
+              "requirements": "Clinically Plausible (0.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-prevalence-early",
+              "requirements": "Acceptable Range (0.0 - 50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "column-related-validation-prevalence-late",
+          "requirements": "Validate column 'prevalence_late_12h_pct'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-prevalence-late",
+              "requirements": "Clinically Plausible (0.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-prevalence-late",
+              "requirements": "Acceptable Range (0.0 - 50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "column-related-validation-net-change",
+          "requirements": "Validate column 'net_change_pp'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-net-change",
+              "requirements": "Clinically Plausible (-100.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-net-change",
+              "requirements": "Acceptable Range (-50.0 - 50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

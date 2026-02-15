@@ -1,0 +1,5 @@
+rr_category,patient_count,stroke_patient_count,stroke_rate_percent
+< 12 (Bradypnea),26,5,19.23
+12-20 (Normal),2011,512,25.46
+21-29 (Tachypnea),745,112,15.03
+>= 30 (Severe Tachypnea),61,8,13.11

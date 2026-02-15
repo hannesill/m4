@@ -1,0 +1,183 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-risk-quintile",
+              "requirements": "Column for risk quintile exists (e.g., 'risk_quintile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-patient-count",
+              "requirements": "Column for patient count exists (e.g., 'total_patients', 'N')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-mortality-rate",
+              "requirements": "Column for 30-day post-discharge mortality rate exists (e.g., 'mortality_30day_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-ards-rate",
+              "requirements": "Column for ARDS co-occurrence rate exists (e.g., 'ards_co_occurrence_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-median-los",
+              "requirements": "Column for median survivor length of stay exists (e.g., 'median_survivor_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key result columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-count-validation",
+          "requirements": "Validation of Patient Count per Quintile ('total_patients')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "plausible-patient-count",
+              "requirements": "Clinically Plausible (10-10000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-patient-count",
+              "requirements": "Acceptable Range (200-1000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation of 30-Day Post-Discharge Mortality Rate ('mortality_30day_rate_pct')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "plausible-mortality-rate",
+              "requirements": "Clinically Plausible (0-60%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-mortality-rate",
+              "requirements": "Acceptable Range (1-35%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ards-rate-validation",
+          "requirements": "Validation of ARDS Co-occurrence Rate ('ards_co_occurrence_rate_pct')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "plausible-ards-rate",
+              "requirements": "Clinically Plausible (0-100%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-ards-rate",
+              "requirements": "Acceptable Range (0-20%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-validation",
+          "requirements": "Validation of Median Survivor LOS ('median_survivor_los_days')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "plausible-median-los",
+              "requirements": "Clinically Plausible (1-100 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-median-los",
+              "requirements": "Acceptable Range (2-30 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

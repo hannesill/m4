@@ -1,0 +1,2 @@
+reference_sbp_value,total_stays_in_cohort,stays_at_or_below_130,percentile_rank_of_130,cohort_mean_avg_sbp,cohort_stddev_avg_sbp,cohort_min_avg_sbp,cohort_max_avg_sbp,p25_avg_sbp,p50_median_avg_sbp,p75_avg_sbp
+130,1121,900,80.29,117.26,15.57,62.33,185.5,106.71,115.73,126.94

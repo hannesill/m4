@@ -1,0 +1,5 @@
+map_category,patient_count,stroke_patient_count,stroke_rate_percent
+< 65,724,156,21.55
+65 - 74,1018,261,25.64
+75 - 84,1163,315,27.09
+>= 85,1208,330,27.32

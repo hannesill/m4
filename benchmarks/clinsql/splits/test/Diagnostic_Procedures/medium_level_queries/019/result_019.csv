@@ -1,0 +1,3 @@
+stay_category,patient_count,avg_procedures_per_admission,min_procedures_per_admission,max_procedures_per_admission
+1-4 Day Stay,281,0.04,0,4
+5-7 Day Stay,121,0.05,0,1

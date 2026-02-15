@@ -1,0 +1,6 @@
+complexity_quintile,num_patients,min_complexity_score,avg_complexity_score,max_complexity_score,avg_los_days,mortality_rate_pct,readmission_30d_rate_pct
+1,595,0.0,19.43,25.5,8.2,3.36,18.15
+2,595,26.0,29.39,33.0,9.65,3.87,19.83
+3,595,33.0,36.88,40.5,10.64,6.05,22.52
+4,595,40.5,46.18,52.5,14.24,9.41,21.01
+5,595,52.5,62.94,110.5,16.53,14.96,17.65

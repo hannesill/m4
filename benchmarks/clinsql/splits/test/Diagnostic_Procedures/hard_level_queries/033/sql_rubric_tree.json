@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the primary patient group based on demographics, clinical condition, and ICU stay history.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "first-icu-stay-identification",
+          "requirements": "Correctly identifies the first ICU stay for each hospital admission using a window function like `ROW_NUMBER()` partitioned by `hadm_id` and ordered by `intime`, and subsequently filtering for the first record (e.g., `rn = 1`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Filters the patient cohort to include only males, as specified by `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Accurately calculates patient age at the time of admission and filters for patients aged between 37 and 47 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 37 AND 47`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pneumonia-diagnosis-filter",
+          "requirements": "Correctly filters for patients with a pneumonia diagnosis by checking for relevant codes in both ICD-9 (e.g., `LIKE '486%'`) and ICD-10 (e.g., `LIKE 'J18%'`) within the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Data Integration: Correctly joins all required tables from the `hosp` and `icu` schemas to construct the patient cohort and link relevant events.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-demographic-joins",
+          "requirements": "Correctly joins `icustays`, `admissions`, and `patients` tables using their respective primary keys (`hadm_id`, `subject_id`) to link patient demographics and admission data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Correctly joins the identified patient cohort to the `procedureevents` table on `stay_id` to associate procedures with specific ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Accurately translates clinical concepts like temporal constraints and procedure definitions into SQL logic.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "procedure-time-constraint",
+          "requirements": "Restricts procedure analysis to the first 48 hours of the ICU stay using a condition like `pe.starttime BETWEEN c.intime AND DATETIME_ADD(c.intime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "distinct-procedure-quantification",
+          "requirements": "Correctly counts the number of *distinct* procedures for each patient stay using `COUNT(DISTINCT pe.itemid)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final calculations and aggregations to produce the requested stratified report.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-patient-metric-calculation",
+          "requirements": "Correctly calculates the ICU length of stay in days for each patient (e.g., `DATETIME_DIFF(c.outtime, c.intime, HOUR) / 24.0`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quintile-stratification",
+          "requirements": "Uses the `NTILE(5)` window function, correctly ordered by the procedure count (`ORDER BY pm.procedure_count`), to stratify patients into five quintiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-aggregation",
+          "requirements": "Groups the final results by `procedure_quintile` and accurately calculates the required metrics: mean procedure count (`AVG(procedure_count)`), mean ICU LOS (`AVG(icu_los_days)`), and hospital mortality percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

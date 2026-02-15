@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the primary and secondary patient cohorts based on demographics, diagnosis, and comorbidity.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters for patients aged between 79 and 89 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pe-diagnosis-filter",
+          "requirements": "Pulmonary Embolism Filter: Correctly filters the cohort to include only patients with a confirmed diagnosis of Pulmonary Embolism (`has_pe = 1`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-quartile-filter",
+          "requirements": "Comorbidity Quartile Filter: Correctly filters the cohort to the top quartile of comorbidity burden using `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Ensures correct joining of tables to link patient demographics with clinical data.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: Correctly joins the 'patients' and 'admissions' tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: Correctly joins the admission-level data with aggregated diagnosis data on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Derives clinical variables and scores from raw data.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: Correctly handles both ICD-9 and ICD-10 codes for identifying PE, complications, and critical illnesses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pe-identification",
+          "requirements": "Pulmonary Embolism Identification: Accurately identifies PE using the specified ICD-9 ('41511', '41513', '41519') and ICD-10 ('I26') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complication-identification",
+          "requirements": "Complication Identification: Correctly flags cardiac and neurologic complications using the specified ICD code ranges.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-score-calculation",
+          "requirements": "Comorbidity Score Calculation: Correctly implements the formula for `comorbidity_score` as `(diagnosis_count + (critical_illness_count * 5))`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "composite-risk-score-calculation",
+          "requirements": "Composite Risk Score Calculation: Correctly calculates the `composite_risk_score` using min-max normalization and weighting for age and comorbidity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final aggregations and calculations to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "30-day-mortality-flag",
+          "requirements": "30-Day Mortality Flag: Correctly calculates `is_deceased_30_day` using both `hospital_expire_flag` and a 30-day window post-discharge.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: Correctly uses `PERCENT_RANK()` over the `composite_risk_score` to determine patient ranking.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-specific-percentile-extraction",
+          "requirements": "Age-Specific Percentile Extraction: Correctly calculates the average percentile rank specifically for 84-year-old patients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-rate-aggregation",
+          "requirements": "Outcome Rate Aggregation: Correctly calculates the 30-day mortality, cardiac complication, and neurologic complication rates as percentages using `AVG()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-survival-calculation",
+          "requirements": "Median Survival Calculation: Correctly calculates the median survival days using `APPROX_QUANTILES` within a subquery.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

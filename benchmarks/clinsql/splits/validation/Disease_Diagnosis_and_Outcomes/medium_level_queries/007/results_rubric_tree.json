@@ -1,0 +1,210 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "Column exists for in-hospital mortality rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "abs-mortality-diff-column-exists",
+              "requirements": "Column exists for absolute mortality difference",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "rel-mortality-diff-column-exists",
+              "requirements": "Column exists for relative mortality difference",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mv-prevalence-column-exists",
+              "requirements": "Column exists for mechanical ventilation (MV) prevalence",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "vaso-prevalence-column-exists",
+              "requirements": "Column exists for vasopressor (vaso) prevalence",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "rrt-prevalence-column-exists",
+              "requirements": "Column exists for renal replacement therapy (RRT) prevalence",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No unexpected NULL/Empty values in result columns (Note: Nulls for difference columns in reference groups are expected and acceptable)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate values in the mortality rate column (e.g., 'mortality_rate_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible Range for Mortality Rate %: Values should be between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range for Mortality Rate %: Values in non-ICU groups are expected to be <5%. Values in ICU groups are expected to be between 1% and 40%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-diff-validation",
+          "requirements": "Validate values in the absolute and relative mortality difference columns (e.g., 'abs_mortality_diff_vs_short_los', 'rel_mortality_diff_vs_short_los_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-diff-plausible",
+              "requirements": "Clinically Plausible Range for Mortality Differences: Absolute difference should be between -100 and 100. Relative difference can be negative and exceed -100% (e.g., if baseline is small). Plausible upper bound for relative difference is high but extreme values (>500%) warrant review.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-diff-acceptable",
+              "requirements": "Acceptable Range for Mortality Differences: Absolute difference should generally be within -25 to 25. Relative difference should generally be within -100% to 300%, reflecting expected variations between short and long LOS.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mv-prevalence-validation",
+          "requirements": "Validate values in the mechanical ventilation prevalence column (e.g., 'prevalence_mv_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mv-prevalence-plausible",
+              "requirements": "Clinically Plausible Range for MV Prevalence %: Values should be between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mv-prevalence-acceptable",
+              "requirements": "Acceptable Range for MV Prevalence %: Non-ICU prevalence should be near 0%. ICU prevalence is expected to be between 10% and 60%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "vaso-prevalence-validation",
+          "requirements": "Validate values in the vasopressor prevalence column (e.g., 'prevalence_vaso_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "vaso-prevalence-plausible",
+              "requirements": "Clinically Plausible Range for Vasopressor Prevalence %: Values should be between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "vaso-prevalence-acceptable",
+              "requirements": "Acceptable Range for Vasopressor Prevalence %: Non-ICU prevalence should be near 0%. ICU prevalence is expected to be between 20% and 70% for heart failure patients.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "rrt-prevalence-validation",
+          "requirements": "Validate values in the RRT prevalence column (e.g., 'prevalence_rrt_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "rrt-prevalence-plausible",
+              "requirements": "Clinically Plausible Range for RRT Prevalence %: Values should be between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "rrt-prevalence-acceptable",
+              "requirements": "Acceptable Range for RRT Prevalence %: Non-ICU prevalence should be near 0%. ICU prevalence is expected to be between 1% and 30%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

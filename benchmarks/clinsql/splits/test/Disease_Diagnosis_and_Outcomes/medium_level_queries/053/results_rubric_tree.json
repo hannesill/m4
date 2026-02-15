@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-mortality",
+              "requirements": "Column for mortality rate exists (e.g., 'mortality_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-comorbidity",
+              "requirements": "Column for average comorbidity count exists (e.g., 'avg_comorbidity_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-abs-diff",
+              "requirements": "Column for absolute mortality difference exists (e.g., 'absolute_mortality_difference_vs_prev_los_bucket')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-rel-diff",
+              "requirements": "Column for relative mortality difference exists (e.g., 'relative_mortality_difference_vs_prev_los_bucket_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-unexpected-null-empty-values",
+          "requirements": "No unexpected NULL/Empty values in primary answer columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation for mortality rate (%) column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0-70%). Mortality for pneumonia is significant but rarely exceeds this range for the overall cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0-50%). Given the ICU/non-ICU stratification, a peak mortality around 42% is high but acceptable for a specific subgroup.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-comorbidity-count-validation",
+          "requirements": "Validation for average comorbidity count column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-comorbidity-count-plausible",
+              "requirements": "Clinically Plausible (1-35). Patients with pneumonia, especially those requiring ICU care, are expected to have multiple comorbidities.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-comorbidity-count-acceptable",
+              "requirements": "Acceptable Range (5-30). The observed range of ~9-25 is well within clinical expectations for this cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "absolute-difference-validation",
+          "requirements": "Validation for absolute mortality difference column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "absolute-difference-plausible",
+              "requirements": "Clinically Plausible (-50 to 50). The absolute change in mortality percentage points between LOS buckets should be within this range.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-difference-acceptable",
+              "requirements": "Acceptable Range (-40 to 20). The observed values (e.g., -33.8, 17.19) are within an acceptable range for this type of analysis.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "relative-difference-validation",
+          "requirements": "Validation for relative mortality difference (%) column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "relative-difference-plausible",
+              "requirements": "Clinically Plausible (-100 to 500). A 100% drop is possible if mortality goes to zero. Increases can be large if the base rate is small.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-difference-acceptable",
+              "requirements": "Acceptable Range (-100 to 200). The observed values (e.g., -100, 59.28) fit within this expected range.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

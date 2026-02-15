@@ -1,0 +1,212 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation for Pneumonia Outcomes",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "base-demographic-filtering",
+          "requirements": "Initial filtering for female patients aged 79-89 at the time of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "gender-selection",
+              "requirements": "Correctly filters for female patients using `p.gender = 'F'`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "age-range-selection",
+              "requirements": "Correctly calculates and filters for patient age between 79 and 89 years at admission.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "pneumonia-diagnosis-identification",
+          "requirements": "Identifies hospital admissions for community-acquired or aspiration pneumonia using appropriate ICD codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "pneumonia-icd-code-selection",
+              "requirements": "Selects correct ICD-9 ('486', '5070') and ICD-10 ('J18%', 'J69.0%') codes for pneumonia.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pneumonia-type-categorization",
+              "requirements": "Accurately categorizes admissions into 'Aspiration Pneumonia' or 'Community-Acquired Pneumonia'.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "day-1-icu-identification",
+          "requirements": "Correctly identifies patients admitted to the ICU within the first 24 hours of hospital admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mechanical-ventilation-identification",
+          "requirements": "Correctly identifies patients who received mechanical ventilation using ICD-9 and ICD-10 procedure codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vasopressor-identification",
+          "requirements": "Correctly identifies patients who received vasopressors using relevant itemids from the inputevents table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rrt-identification",
+          "requirements": "Correctly identifies patients who received Renal Replacement Therapy (RRT) using ICD-9 and ICD-10 procedure codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Correctly joins admissions, patients, diagnoses_icd, icustays, procedures_icd, and inputevents tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Uses correct keys (subject_id, hadm_id) for all joins to ensure data integrity.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stratification-logic",
+          "requirements": "Correctly stratifies the cohort by length of stay (LOS) and day-1 ICU status.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "los-stratification",
+              "requirements": "Correctly groups patients into LOS groups of '<=7 days' and '>7 days'.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-stratification",
+              "requirements": "Correctly groups patients into 'Day-1 ICU' and 'No Day-1 ICU' status.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "grouping-and-aggregation",
+          "requirements": "Correctly groups results and calculates the required metrics for each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "final-grouping",
+              "requirements": "Groups the final output by pneumonia_type, los_group, and day1_icu_status.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "metric-calculation",
+              "requirements": "Correctly calculates in-hospital mortality and prevalence rates for mech vent, vasopressors, and RRT using AVG and COUNT.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Presents all possible strata combinations and handles null/zero counts correctly.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "strata-template-usage",
+              "requirements": "Uses a strata template and LEFT JOIN to ensure all combinations are present in the output, even with zero patients.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "null-handling",
+              "requirements": "Uses COALESCE to correctly report 0 for metrics in strata with no patients.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

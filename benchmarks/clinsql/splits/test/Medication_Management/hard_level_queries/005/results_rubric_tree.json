@@ -1,0 +1,210 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "quintile-column-exists",
+              "requirements": "Column for quintile stratification exists (e.g., 'complexity_quintile').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "num-patients-column-exists",
+              "requirements": "Column for the number of patients in each stratum exists (e.g., 'num_patients_in_stratum').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-complexity-column-exists",
+              "requirements": "Column for average medication complexity score exists (e.g., 'avg_complexity_score').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-column-exists",
+              "requirements": "Column for average length of stay exists (e.g., 'avg_los_days').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column for in-hospital mortality rate exists (e.g., 'mortality_rate_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-column-exists",
+              "requirements": "Column for 30-day readmission rate exists (e.g., 'readmission_rate_30d_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in specified columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "num-patients-validation",
+          "requirements": "Validation for patient count per stratum (e.g., 'num_patients_in_stratum')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "num-patients-plausible",
+              "requirements": "Clinically Plausible (20-1000). The number of patients in each quintile should be substantial but not exceed the total expected cohort size.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "num-patients-acceptable",
+              "requirements": "Acceptable Range (100-300). Based on the specificity of the cohort (hepatic failure in a narrow age range), the count per quintile is expected to be in this range.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-complexity-score-validation",
+          "requirements": "Validation for average medication complexity score (e.g., 'avg_complexity_score')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-complexity-score-plausible",
+              "requirements": "Clinically Plausible (5-500). Medication complexity scores can vary widely, but extreme values are unlikely for an average.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-complexity-score-acceptable",
+              "requirements": "Acceptable Range (20-250). For a cohort with hepatic failure, medication regimens are expected to be complex, leading to higher average scores.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validation for average length of stay (e.g., 'avg_los_days')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Clinically Plausible (1-90). Average LOS for inpatients can range from a day to several months.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Acceptable Range (5-25). Patients with hepatic failure typically have extended hospital stays, and those with higher medication complexity are expected to stay longer.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation for in-hospital mortality rate (e.g., 'mortality_rate_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0-100). Mortality must be a percentage.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (1-60). Hepatic failure is a severe condition with significant mortality, especially in cohorts with high medication complexity, which often correlates with sicker patients.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "readmission-rate-validation",
+          "requirements": "Validation for 30-day readmission rate (e.g., 'readmission_rate_30d_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "readmission-rate-plausible",
+              "requirements": "Clinically Plausible (0-100). Readmission rate must be a percentage.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-rate-acceptable",
+              "requirements": "Acceptable Range (5-50). Patients with hepatic failure have a high risk of readmission due to the chronic and severe nature of their illness.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

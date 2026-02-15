@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for female patients using `p.gender = 'F'` in the `patients` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query accurately filters for patients aged 69-79 at the time of admission using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 69 AND 79`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gi-bleed-condition-filter",
+          "requirements": "GI Bleed Condition Filter: The query correctly includes only hospital admissions that have a diagnosis code for either an upper or lower GI bleed.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gi-bleed-icd-code-selection",
+          "requirements": "GI Bleed ICD Code Selection: The query correctly identifies upper and lower GI bleed admissions by checking for specific ICD-9 and ICD-10 codes in the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query properly handles both ICD-9 and ICD-10 codes by checking the `icd_version` column when identifying GI bleeds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "bleed-type-assignment",
+          "requirements": "Bleed Type Assignment: A 'bleed_type' (Upper or Lower GI Bleed) is correctly assigned to each qualifying admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query correctly joins `admissions`, `patients`, `diagnoses_icd`, and `icustays` tables to construct the patient cohort and identify clinical events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The query correctly uses `subject_id` to link `patients` and `admissions`, and `hadm_id` to link `admissions`, `diagnoses_icd`, and `icustays`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-bucketing",
+          "requirements": "Length of Stay Bucketing: The query correctly calculates and categorizes the length of stay into '1-2 days', '3-5 days', '6-9 days', and '>=10 days' based on admission and discharge times.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "day-1-icu-status",
+          "requirements": "Day-1 ICU Status: The query accurately determines if a patient was admitted to the ICU within the first 24 hours of hospital admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aggregation-logic",
+          "requirements": "Aggregation Logic: The query correctly groups results by bleed type, LOS bucket, and day-1 ICU status to calculate stratified metrics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Mortality Rate Calculation: The query correctly computes the in-hospital mortality rate as a percentage for each group using the `hospital_expire_flag`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-admission-rate-calculation",
+          "requirements": "ICU Admission Rate Calculation: The query correctly computes the overall ICU admission rate as a percentage for each group, based on any ICU stay during the admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complete-strata-reporting",
+          "requirements": "Complete Strata Reporting: The query uses a pre-built strata grid and a LEFT JOIN to ensure all combinations of bleed type, LOS bucket, and ICU status are reported, even those with zero admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

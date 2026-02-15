@@ -1,0 +1,36 @@
+instability_quintile,num_patients,min_score_in_quintile,max_score_in_quintile,avg_instability_score,avg_los_days,mortality_rate_percent,lab_abnormality_rate_comparison
+1,173,0,1,0.21,3.2,31.21,"[{'lab_name': 'Bicarbonate', 'ich_case_abnormality_percent': 48.9, 'control_group_abnormality_percent': 43.46, 'difference_percent': 5.44}
+ {'lab_name': 'Creatinine', 'ich_case_abnormality_percent': 33.68, 'control_group_abnormality_percent': 34.63, 'difference_percent': -0.95}
+ {'lab_name': 'Hemoglobin', 'ich_case_abnormality_percent': 66.43, 'control_group_abnormality_percent': 69.83, 'difference_percent': -3.4}
+ {'lab_name': 'Platelets', 'ich_case_abnormality_percent': 20.21, 'control_group_abnormality_percent': 22.28, 'difference_percent': -2.07}
+ {'lab_name': 'Potassium', 'ich_case_abnormality_percent': 35.08, 'control_group_abnormality_percent': 22.7, 'difference_percent': 12.38}
+ {'lab_name': 'Sodium', 'ich_case_abnormality_percent': 32.98, 'control_group_abnormality_percent': 23.68, 'difference_percent': 9.31}
+ {'lab_name': 'WBC', 'ich_case_abnormality_percent': 42.28, 'control_group_abnormality_percent': 32.22, 'difference_percent': 10.06}]"
+2,172,1,2,1.63,6.8,8.14,"[{'lab_name': 'Bicarbonate', 'ich_case_abnormality_percent': 48.9, 'control_group_abnormality_percent': 43.46, 'difference_percent': 5.44}
+ {'lab_name': 'Creatinine', 'ich_case_abnormality_percent': 33.68, 'control_group_abnormality_percent': 34.63, 'difference_percent': -0.95}
+ {'lab_name': 'Hemoglobin', 'ich_case_abnormality_percent': 66.43, 'control_group_abnormality_percent': 69.83, 'difference_percent': -3.4}
+ {'lab_name': 'Platelets', 'ich_case_abnormality_percent': 20.21, 'control_group_abnormality_percent': 22.28, 'difference_percent': -2.07}
+ {'lab_name': 'Potassium', 'ich_case_abnormality_percent': 35.08, 'control_group_abnormality_percent': 22.7, 'difference_percent': 12.38}
+ {'lab_name': 'Sodium', 'ich_case_abnormality_percent': 32.98, 'control_group_abnormality_percent': 23.68, 'difference_percent': 9.31}
+ {'lab_name': 'WBC', 'ich_case_abnormality_percent': 42.28, 'control_group_abnormality_percent': 32.22, 'difference_percent': 10.06}]"
+3,172,2,3,2.84,9.3,8.72,"[{'lab_name': 'Bicarbonate', 'ich_case_abnormality_percent': 48.9, 'control_group_abnormality_percent': 43.46, 'difference_percent': 5.44}
+ {'lab_name': 'Creatinine', 'ich_case_abnormality_percent': 33.68, 'control_group_abnormality_percent': 34.63, 'difference_percent': -0.95}
+ {'lab_name': 'Hemoglobin', 'ich_case_abnormality_percent': 66.43, 'control_group_abnormality_percent': 69.83, 'difference_percent': -3.4}
+ {'lab_name': 'Platelets', 'ich_case_abnormality_percent': 20.21, 'control_group_abnormality_percent': 22.28, 'difference_percent': -2.07}
+ {'lab_name': 'Potassium', 'ich_case_abnormality_percent': 35.08, 'control_group_abnormality_percent': 22.7, 'difference_percent': 12.38}
+ {'lab_name': 'Sodium', 'ich_case_abnormality_percent': 32.98, 'control_group_abnormality_percent': 23.68, 'difference_percent': 9.31}
+ {'lab_name': 'WBC', 'ich_case_abnormality_percent': 42.28, 'control_group_abnormality_percent': 32.22, 'difference_percent': 10.06}]"
+4,172,3,4,3.85,10.7,24.42,"[{'lab_name': 'Bicarbonate', 'ich_case_abnormality_percent': 48.9, 'control_group_abnormality_percent': 43.46, 'difference_percent': 5.44}
+ {'lab_name': 'Creatinine', 'ich_case_abnormality_percent': 33.68, 'control_group_abnormality_percent': 34.63, 'difference_percent': -0.95}
+ {'lab_name': 'Hemoglobin', 'ich_case_abnormality_percent': 66.43, 'control_group_abnormality_percent': 69.83, 'difference_percent': -3.4}
+ {'lab_name': 'Platelets', 'ich_case_abnormality_percent': 20.21, 'control_group_abnormality_percent': 22.28, 'difference_percent': -2.07}
+ {'lab_name': 'Potassium', 'ich_case_abnormality_percent': 35.08, 'control_group_abnormality_percent': 22.7, 'difference_percent': 12.38}
+ {'lab_name': 'Sodium', 'ich_case_abnormality_percent': 32.98, 'control_group_abnormality_percent': 23.68, 'difference_percent': 9.31}
+ {'lab_name': 'WBC', 'ich_case_abnormality_percent': 42.28, 'control_group_abnormality_percent': 32.22, 'difference_percent': 10.06}]"
+5,172,4,7,5.45,12.4,37.21,"[{'lab_name': 'Bicarbonate', 'ich_case_abnormality_percent': 48.9, 'control_group_abnormality_percent': 43.46, 'difference_percent': 5.44}
+ {'lab_name': 'Creatinine', 'ich_case_abnormality_percent': 33.68, 'control_group_abnormality_percent': 34.63, 'difference_percent': -0.95}
+ {'lab_name': 'Hemoglobin', 'ich_case_abnormality_percent': 66.43, 'control_group_abnormality_percent': 69.83, 'difference_percent': -3.4}
+ {'lab_name': 'Platelets', 'ich_case_abnormality_percent': 20.21, 'control_group_abnormality_percent': 22.28, 'difference_percent': -2.07}
+ {'lab_name': 'Potassium', 'ich_case_abnormality_percent': 35.08, 'control_group_abnormality_percent': 22.7, 'difference_percent': 12.38}
+ {'lab_name': 'Sodium', 'ich_case_abnormality_percent': 32.98, 'control_group_abnormality_percent': 23.68, 'difference_percent': 9.31}
+ {'lab_name': 'WBC', 'ich_case_abnormality_percent': 42.28, 'control_group_abnormality_percent': 32.22, 'difference_percent': 10.06}]"

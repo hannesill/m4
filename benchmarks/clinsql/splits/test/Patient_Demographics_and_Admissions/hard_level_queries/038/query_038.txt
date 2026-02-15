@@ -1,0 +1,1 @@
+I'm evaluating a 95-year-old man. Among male Medicare patients aged 90–100 admitted as transfers from another hospital with a principal diagnosis of end-stage renal disease (ICD-9 585.6 or ICD-10 N18.6), how many admissions occur in the dataset during the study period?

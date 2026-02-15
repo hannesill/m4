@@ -1,0 +1,7 @@
+cohort_name,subgroup,num_patients,complexity_score_quartiles,avg_complexity_percentile,avg_los_days,mortality_rate_percent
+Comparison: All Other Multi-Trauma,Interaction Risk Present,1814,[ 5 16 21 27 54],69.7,10.79,2.59
+Comparison: All Other Multi-Trauma,No Interaction Risk,26600,[ 0  9 15 21 63],46.3,8.31,3.99
+Comparison: All Other Multi-Trauma,Top 25% Complexity,7104,[21 23 26 30 63],,14.21,8.6
+Target: Female 68-78 Multi-Trauma,Interaction Risk Present,267,[ 8 16 21 25 58],64.0,9.7,2.62
+Target: Female 68-78 Multi-Trauma,No Interaction Risk,2649,[ 0 10 16 22 67],46.2,9.57,4.3
+Target: Female 68-78 Multi-Trauma,Top 25% Complexity,729,[22 24 26 30 67],,14.17,9.74

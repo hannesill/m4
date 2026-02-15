@@ -1,0 +1,3 @@
+group_name,patient_count,avg_instability_score,target_group_95th_percentile_score,avg_fever_episodes_72h,avg_hypoxemia_episodes_72h,avg_tachypnea_episodes_72h,avg_icu_los_days,in_hospital_mortality_percent
+Target Group (Most Unstable Quartile),1254,2.48,3.18,0.68,1.39,26.0,4.93,10.45
+Comparison Group (Other Post-Op Patients),21434,-0.02,,0.28,0.65,18.08,4.41,6.88

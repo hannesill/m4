@@ -1,0 +1,225 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients, typically using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at the time of admission and filter for the range 43-53. The correct implementation is `(p.anchor_age + DATETIME_DIFF(a.admittime, DATETIME(p.anchor_year, 1, 1, 0, 0, 0), YEAR)) BETWEEN 43 AND 53`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "transplant-diagnosis-identification",
+          "requirements": "Transplant Diagnosis Identification: The query must filter for admissions that have an associated transplant diagnosis code.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd9-transplant-code",
+              "requirements": "ICD-9 Code Selection: The query correctly identifies ICD-9 transplant codes, such as `d.icd_code LIKE 'V42%'`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd10-transplant-code",
+              "requirements": "ICD-10 Code Selection: The query correctly identifies ICD-10 transplant codes, such as `d.icd_code LIKE 'Z94%'`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medication-analysis-and-scoring",
+      "requirements": "Medication Analysis and Scoring",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-temporal-filtering",
+          "requirements": "Medication Temporal Filtering: Filters prescriptions to include only those administered within the first 7 days of the hospital admission (`pr.starttime <= DATETIME_ADD(tc.admittime, INTERVAL 7 DAY)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-drug-classification",
+          "requirements": "High-Risk Drug Classification: Uses a CASE statement or similar logic to correctly identify a pre-defined list of high-risk medications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-score-calculation",
+          "requirements": "Medication Complexity Score Calculation: Correctly implements the specified weighted formula: `(COUNT(DISTINCT drug) * 1) + (COUNT(DISTINCT route) * 2) + (COUNT(DISTINCT high-risk-drug) * 3)`. Also correctly handles patients with no medications, e.g., using `COALESCE`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "outcomes-and-stratification",
+      "requirements": "Outcomes Calculation and Stratification",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay Calculation: Correctly calculates the length of stay in days using `DATETIME_DIFF(tc.dischtime, tc.admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "thirty-day-readmission-calculation",
+          "requirements": "30-Day Readmission Calculation: Correctly identifies readmissions within 30 days of discharge.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "next-admission-identification",
+              "requirements": "Next Admission Identification: Uses a window function like `LEAD(a.admittime) OVER (PARTITION BY a.subject_id ORDER BY a.admittime)` to find the subsequent admission for each patient.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "readmission-flag-logic",
+              "requirements": "Readmission Flag Logic: Creates a flag based on whether the time difference between the next admission and the current discharge is less than or equal to 30 days.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "quartile-stratification",
+          "requirements": "Quartile Stratification: Correctly uses `NTILE(4) OVER (ORDER BY medication_complexity_score)` to stratify patients into four quartiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-reporting",
+      "requirements": "Final Aggregation and Reporting",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-by-quartile",
+          "requirements": "Grouping by Quartile: The final aggregation must group results by the calculated complexity quartile (`GROUP BY complexity_quartile`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-patient-count",
+          "requirements": "Metric - Patient Count: Correctly calculates the number of patients in each quartile using `COUNT()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-avg-complexity-score",
+          "requirements": "Metric - Average Complexity Score: Correctly calculates the mean complexity score for each quartile using `AVG(medication_complexity_score)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-avg-los",
+          "requirements": "Metric - Average Length of Stay: Correctly calculates the mean LOS for each quartile using `AVG(los_days)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-mortality-rate",
+          "requirements": "Metric - In-Hospital Mortality Rate: Correctly calculates the in-hospital mortality rate for each quartile using `AVG(hospital_expire_flag)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-readmission-rate",
+          "requirements": "Metric - 30-Day Readmission Rate: Correctly calculates the 30-day readmission rate for each quartile using `AVG(readmitted_30_days_flag)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "formatting-and-presentation",
+      "requirements": "Formatting and Presentation",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "rounding-of-metrics",
+          "requirements": "Rounding of Metrics: The query should use a function like `ROUND()` to format the final average values for readability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-conversion",
+          "requirements": "Percentage Conversion: Correctly converts mortality and readmission rates to percentages, typically by multiplying by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-ordering",
+          "requirements": "Final Ordering: The final result set must be ordered by the complexity quartile (`ORDER BY complexity_quartile`) for logical presentation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

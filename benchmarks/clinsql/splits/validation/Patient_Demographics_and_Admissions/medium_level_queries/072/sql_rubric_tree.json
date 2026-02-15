@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter the patient age between 74 and 84 years using `p.anchor_age BETWEEN 74 AND 84`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "service-type-selection",
+          "requirements": "Service Type Selection: The query must filter for medicine inpatients by checking the service type, e.g., `s.curr_service LIKE '%MED%'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initial-service-filter",
+          "requirements": "Initial Service Filter: The query must correctly identify the initial service of the hospital admission to ensure the patient was admitted to a medicine service, for example by filtering for the minimum transfer time for the admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the `patients`, `admissions`, and `services` tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The query must use the correct keys for joining: `subject_id` between `patients` and `admissions`, and `hadm_id` between `admissions` and `services`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay Calculation: The query must accurately calculate the length of stay in days using the difference between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-outcome-stratification",
+          "requirements": "Discharge Outcome Stratification: The query must correctly categorize discharge outcomes into 'In-Hospital Mortality', 'Discharged Home', and 'Discharged to Hospice' using a CASE statement based on `hospital_expire_flag` and `discharge_location`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The query must group the final results by the created discharge outcome categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-los-calculation",
+          "requirements": "Mean LOS Calculation: The query must compute the mean length of stay using `AVG(length_of_stay_days)` for each outcome group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-los-calculation",
+          "requirements": "Median LOS Calculation: The query must compute the median length of stay, for instance using `APPROX_QUANTILES(length_of_stay_days, 100)[OFFSET(50)]`, for each outcome group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "proportion-los-calculation",
+          "requirements": "Proportion of LOS <= 5 Days Calculation: The query must calculate the proportion of admissions with a length of stay of 5 days or less, for example using `COUNTIF(length_of_stay_days <= 5) / COUNT(*)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting-and-filtering",
+      "requirements": "Output Formatting and Filtering",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "final-outcome-filtering",
+          "requirements": "Final Outcome Filtering: The query must filter the final output to include only the specified discharge outcomes ('Discharged Home', 'Discharged to Hospice', 'In-Hospital Mortality').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "numeric-rounding",
+          "requirements": "Numeric Rounding: The query should round the calculated mean and proportion to an appropriate number of decimal places for readability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

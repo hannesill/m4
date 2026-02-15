@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the two patient groups (HHS and age-matched controls) based on demographics and clinical conditions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pwa.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 78 and 88 at the time of admission using `pwa.age_at_admission BETWEEN 78 AND 88`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-patient-selection",
+          "requirements": "ICU Patient Selection: The query must correctly identify ICU patients by using the `icustays` table as a primary source for the cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-group-definition",
+          "requirements": "Cohort Group Definition: The query must correctly label patients as 'HHS_Target' or 'Age_Matched_Control' based on the presence of an HHS diagnosis, using a LEFT JOIN and a CASE statement.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies HHS diagnoses, specific vital signs, and the time window for analysis.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hhs-diagnosis-identification",
+          "requirements": "HHS Diagnosis Identification: The query must correctly identify HHS diagnoses using both ICD-9 ('2502%') and ICD-10 ('E110', 'E130') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-sign-selection",
+          "requirements": "Vital Sign Selection: The query must select the correct set of itemids corresponding to Heart Rate, SBP, MAP, Respiratory Rate, Temperature, and SpO2.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-48h",
+          "requirements": "Temporal Filter (First 48 Hours): The query must filter vital signs to include only those recorded within the first 48 hours of the ICU stay (`charttime BETWEEN cd.intime AND DATETIME_ADD(cd.intime, INTERVAL 48 HOUR)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Ensures correct joining of tables to link patient demographics, admissions, diagnoses, and ICU events.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must join `patients` and `admissions` tables on `subject_id` to calculate age at admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-vitals-join",
+          "requirements": "Cohort-Vitals Join: The query must join the defined cohort with `chartevents` on `stay_id` to link vital signs to specific ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-hhs-join",
+          "requirements": "Cohort-HHS Join: The query must use a LEFT JOIN to connect the ICU cohort to the HHS admissions on `hadm_id` to allow for the control group definition.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correct calculation and aggregation of the requested clinical metrics.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must calculate a composite instability score based on the sum of coefficients of variation for specified vital signs.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-vital-burden-calculation",
+          "requirements": "Abnormal Vital Burden Calculation: The query must correctly flag abnormal vitals based on specified thresholds and calculate the mean of these flags per stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must calculate the 25th, 50th, and 75th percentiles for the instability score using `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metrics-calculation",
+          "requirements": "Outcome Metrics Calculation: The query must correctly calculate the average ICU length of stay and the mortality rate per cohort group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: The final aggregation must group results by `cohort_group` to compare HHS vs. Control patients.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

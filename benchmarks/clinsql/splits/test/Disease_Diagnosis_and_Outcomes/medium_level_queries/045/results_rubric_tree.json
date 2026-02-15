@@ -1,0 +1,195 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-mortality",
+              "requirements": "Column Exists for In-Hospital Mortality Rate (e.g., 'in_hospital_mortality_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-mech-vent",
+              "requirements": "Column Exists for Mechanical Ventilation Prevalence (e.g., 'mech_vent_prevalence_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-vasopressor",
+              "requirements": "Column Exists for Vasopressor Prevalence (e.g., 'vasopressor_prevalence_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-rrt",
+              "requirements": "Column Exists for RRT Prevalence (e.g., 'rrt_prevalence_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-column-exists-pneumonia",
+              "requirements": "Column Exists for Pneumonia Type (e.g., 'pneumonia_type')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-column-exists-los",
+              "requirements": "Column Exists for Length of Stay (e.g., 'los_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-column-exists-icu",
+              "requirements": "Column Exists for Day-1 ICU Status (e.g., 'day1_icu_status')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in Answer-Relevant Columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate In-Hospital Mortality Rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-mortality",
+              "requirements": "Clinically Plausible Range (0.0 - 60.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-mortality",
+              "requirements": "Acceptable Range (1.0 - 45.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mech-vent-validation",
+          "requirements": "Validate Mechanical Ventilation Prevalence (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-mech-vent",
+              "requirements": "Clinically Plausible Range (0.0 - 70.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-mech-vent",
+              "requirements": "Acceptable Range (0.1 - 55.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "vasopressor-validation",
+          "requirements": "Validate Vasopressor Prevalence (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-vasopressor",
+              "requirements": "Clinically Plausible Range (0.0 - 65.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-vasopressor",
+              "requirements": "Acceptable Range (0.0 - 50.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "rrt-validation",
+          "requirements": "Validate RRT Prevalence (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-rrt",
+              "requirements": "Clinically Plausible Range (0.0 - 20.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-rrt",
+              "requirements": "Acceptable Range (0.5 - 10.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

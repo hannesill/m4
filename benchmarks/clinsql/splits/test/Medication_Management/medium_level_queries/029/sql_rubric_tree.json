@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for patients between 69 and 79 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-diagnosis-selection",
+          "requirements": "T2DM Diagnosis Selection: Correctly identifies patients with Type 2 Diabetes Mellitus using an EXISTS subquery with appropriate ICD-9 ('250__0', '250__2') and ICD-10 ('E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-selection",
+          "requirements": "Heart Failure Diagnosis Selection: Correctly identifies patients with heart failure using an EXISTS subquery with appropriate ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-duration-filter",
+          "requirements": "Admission Duration Filter: Includes a filter to ensure the hospital admission is at least 72 hours long, which is necessary for the 'last 72 hours' calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-join",
+          "requirements": "Patient Demographics Join: Correctly joins `admissions` and `patients` tables on `subject_id` to link demographic data with hospital stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-data-join",
+          "requirements": "Medication Data Join: Correctly joins the `patient_cohort` CTE with the `prescriptions` table on `hadm_id` to associate medications with the correct hospital admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-reporting-join",
+          "requirements": "Final Reporting Join: Correctly performs a LEFT JOIN from a complete list of `medication_classes` to the patient-level summary to ensure all drug classes are reported, even with zero prevalence.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies drug classes and time windows for medication administration.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "drug-class-mapping",
+          "requirements": "Drug Class Mapping: Uses a CASE statement to accurately map drug names from the `prescriptions` table to the seven specified medication classes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-72h-window-logic",
+          "requirements": "First 72h Window Logic: Correctly calculates if a medication was administered within the first 72 hours of admission using `DATETIME_DIFF` between `rx.starttime` and `pc.admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "last-72h-window-logic",
+          "requirements": "Last 72h Window Logic: Correctly calculates if a medication was administered within the last 72 hours of admission using `DATETIME_DIFF` between `pc.dischtime` and `rx.starttime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Reporting",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-level-aggregation",
+          "requirements": "Patient-Level Aggregation: Correctly groups by `hadm_id` and `medication_class` and uses `LOGICAL_OR` to determine if a patient received a drug class within each time window at least once.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation-logic",
+          "requirements": "Percentage Calculation Logic: Correctly calculates the percentage of patients by counting distinct `hadm_id`s for each drug class and dividing by the total cohort size.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "total-cohort-count",
+          "requirements": "Total Cohort Count: Correctly calculates the total number of unique patients in the cohort to use as the denominator for the percentage calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output is grouped by medication class and includes columns for prevalence in the first and last 72 hours, with percentages rounded to two decimal places.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

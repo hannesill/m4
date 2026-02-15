@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using the condition p.gender = 'M'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pneumonia-diagnosis-identification",
+          "requirements": "Pneumonia Diagnosis Identification: The query must identify hospital admissions associated with a pneumonia diagnosis from the diagnoses_icd table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "pneumonia-icd-code-selection",
+          "requirements": "Pneumonia ICD Code Selection: The query must correctly filter for pneumonia using both ICD-9 ('480'-'483', '485', '486', '5070') and ICD-10 ('J12'-'J18') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "glucose-measurement-identification",
+          "requirements": "Glucose Measurement Identification: The query must correctly identify serum glucose lab events using the specific itemid (e.g., le.itemid = 50931).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-24h",
+          "requirements": "Temporal Filter (First 24 Hours): The query must accurately filter lab events to within the first 24 hours of the admission time using admittime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join patients, admissions, and labevents tables to link patient demographics with their lab results within specific admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-cte-join",
+          "requirements": "Cohort CTE Join: The main query logic must join with the pneumonia_admissions CTE on hadm_id to restrict analysis to the correct patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-quality-filter",
+          "requirements": "Data Quality Filter: The query should filter out null or clinically implausible glucose values (e.g., valuenum IS NOT NULL AND valuenum BETWEEN 50 AND 500).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-glucose-average",
+          "requirements": "Per-Admission Glucose Average: The query must calculate the average glucose value for each individual hospital admission using AVG() and GROUP BY hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "75th Percentile Calculation: The query must calculate the 75th percentile of the per-admission mean glucose values using a function like APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to a reasonable number of decimal places (e.g., 2) for clarity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

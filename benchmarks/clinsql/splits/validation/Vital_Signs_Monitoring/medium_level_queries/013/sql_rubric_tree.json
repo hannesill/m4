@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients (p.gender = 'M').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate and filter patient age to be between 51 and 61 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-patient-identification",
+          "requirements": "ICU Patient Identification: The query must correctly join patients to ICU stays to ensure the cohort consists only of ICU patients.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "spo2-measurement-selection",
+          "requirements": "SpO2 Measurement Selection: The query must correctly identify SpO2 measurements using the specific itemid (220277).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-code-selection",
+          "requirements": "AKI Code Selection: The query must filter for both ICD-9 ('584%') and ICD-10 ('N17%') codes for Acute Kidney Injury.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filter-first-48h",
+          "requirements": "Temporal Filter (First 48 Hours): The query must filter SpO2 measurements to only those recorded within the first 48 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-stay-spo2-aggregation",
+          "requirements": "Per-Stay SpO2 Aggregation: The query must calculate the average SpO2 for each individual ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "spo2-categorization",
+          "requirements": "SpO2 Categorization: The query must use a CASE statement to correctly categorize the average SpO2 into four distinct bins: <90, 90-92, 93-95, and >95.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration-and-final-output",
+      "requirements": "Data Integration and Final Output",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "spo2-and-aki-join",
+          "requirements": "SpO2 and AKI Data Join: The query must correctly perform a LEFT JOIN between the per-stay SpO2 data and the AKI diagnosis data on hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: The final aggregation must group results by the created spo2_category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-calculation",
+          "requirements": "Final Metric Calculation: The query must accurately calculate the total patient count, AKI patient count, and AKI rate per SpO2 category, using COUNT(DISTINCT subject_id).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output must be ordered logically by SpO2 category and the AKI rate must be rounded to two decimal places.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

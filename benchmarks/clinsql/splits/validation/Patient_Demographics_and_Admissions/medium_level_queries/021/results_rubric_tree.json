@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "Exists a column for discharge grouping (e.g., 'discharge_group', 'destination')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-1",
+              "requirements": "Exists a column for mean Length of Stay (e.g., 'mean_los', 'avg_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-2",
+              "requirements": "Exists a column for standard deviation of Length of Stay (e.g., 'stddev_los', 'sd_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-3",
+              "requirements": "Exists a column for percent of LOS <= 7 days (e.g., 'percentile_rank_of_7_days', 'percent_los_le_7')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key columns ('discharge_group', 'mean_los', 'stddev_los', 'percentile_rank_of_7_days')",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mean-los-validation",
+          "requirements": "Validation of 'mean_los' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-los-plausible",
+              "requirements": "Values are clinically plausible for surgical inpatients aged 67-77 (1.0 to 30.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-acceptable",
+              "requirements": "Values are within a clinically acceptable range (Home: 3.0-8.0, Facility: 6.0-15.0, Mortality: 8.0-25.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "stddev-los-validation",
+          "requirements": "Validation of 'stddev_los' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "stddev-los-plausible",
+              "requirements": "Values are clinically plausible (1.0 to 40.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stddev-los-acceptable",
+              "requirements": "Values are within a clinically acceptable range (Home: 3.0-10.0, Facility: 5.0-15.0, Mortality: 10.0-30.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percent-los-le7-validation",
+          "requirements": "Validation of 'percentile_rank_of_7_days' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percent-los-le7-plausible",
+              "requirements": "Values are plausible percentages (0.0 to 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percent-los-le7-acceptable",
+              "requirements": "Values are within an acceptable range (Home: 60-95%, Facility: 30-70%, Mortality: 20-60%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

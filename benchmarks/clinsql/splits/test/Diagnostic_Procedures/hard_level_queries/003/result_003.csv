@@ -1,0 +1,3 @@
+cohort,n_stays,p25_diag_intensity,p75_diag_intensity,p95_diag_intensity,avg_hospital_los_days,mortality_pct
+"Female, 84-94, ARDS",46,2,5,11,8.71376811594203,49.99999999999999
+General ICU Population,85242,2,6,11,10.105120812901365,11.11541259003778

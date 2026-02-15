@@ -1,0 +1,140 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p90-diagnostic-load-column-exists",
+              "requirements": "Column related to 90th percentile of diagnostic procedures exists (e.g., `p90_diagnostic_load_first_72h`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-icu-los-column-exists",
+              "requirements": "Column related to average ICU length of stay exists (e.g., `avg_icu_los_days`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "in-hospital-mortality-column-exists",
+              "requirements": "Column related to in-hospital mortality percentage exists (e.g., `in_hospital_mortality_pct`)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "p90-diagnostic-load-validation",
+          "requirements": "Validation for 90th percentile of diagnostic procedures",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p90-diagnostic-load-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-diagnostic-load-acceptable",
+              "requirements": "Acceptable Range (5-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-icu-los-validation",
+          "requirements": "Validation for average ICU length of stay (days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-icu-los-plausible",
+              "requirements": "Clinically Plausible (0.5-90)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-icu-los-acceptable",
+              "requirements": "Acceptable Range (2-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "in-hospital-mortality-validation",
+          "requirements": "Validation for in-hospital mortality percentage",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "in-hospital-mortality-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "in-hospital-mortality-acceptable",
+              "requirements": "Acceptable Range (3-40)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "cohort-definition",
+      "requirements": "Cohort Definition and Comparison Setup",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at ICU admission and filters for the range 82-92 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "arf-diagnosis-selection",
+          "requirements": "Acute Respiratory Failure Diagnosis: Filters for patients with acute respiratory failure using appropriate ICD-9 ('51881', '51882', '51884') and ICD-10 ('J960') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparison-group-logic",
+          "requirements": "Comparison Group Logic: Correctly uses a LEFT JOIN and a CASE statement to create a flag (`is_target_cohort`) that separates the target cohort from the general ICU population for comparison.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly joins `icustays`, `patients`, `diagnoses_icd`, and `admissions` using `subject_id` and `hadm_id` to construct the patient cohort and link outcomes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "clinical-data-join",
+          "requirements": "Clinical Data Join: Correctly joins `chartevents` to `icustays` on `stay_id` to link vital signs to specific ICU admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculation of Instability Score and Outcomes",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "vital-sign-selection",
+          "requirements": "Vital Sign Selection: Identifies the correct itemids for Heart Rate (220045) and Mean Arterial Pressure (220052, 220181, 225312) from `chartevents`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filtering",
+          "requirements": "Temporal Filtering: Filters vital signs to the first 72 hours of the ICU stay using `v.charttime BETWEEN icu.intime AND DATETIME_ADD(icu.intime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-burden-calculation",
+          "requirements": "Instability Burden Calculation: Correctly calculates individual burdens for hypotension (MAP < 65) and tachycardia (HR > 100) as a ratio of unstable measurements to total measurements for each vital sign.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "composite-score-creation",
+          "requirements": "Composite Score Creation: Computes the composite instability score by summing the individual hypotension and tachycardia burdens, using COALESCE to handle nulls.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-variable-derivation",
+          "requirements": "Outcome Variable Derivation: Correctly calculates ICU length of stay in days and identifies the `hospital_expire_flag` for mortality.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-reporting",
+      "requirements": "Final Aggregation and Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-for-comparison",
+          "requirements": "Grouping for Comparison: Groups the final results by the cohort identifier (`cohort_group`) to produce separate outputs for the target and general ICU populations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-statistics",
+          "requirements": "Instability Score Statistics: For the target cohort, calculates the 25th, 50th, and 75th percentiles of the instability score using `APPROX_QUANTILES` and computes the IQR.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-metrics-calculation",
+          "requirements": "Comparative Metrics Calculation: Calculates the average values for individual burdens, ICU LOS, and mortality for both cohorts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

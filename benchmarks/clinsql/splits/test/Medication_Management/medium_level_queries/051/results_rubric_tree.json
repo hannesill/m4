@@ -1,0 +1,175 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "med-class-column-exists",
+              "requirements": "A column grouping by medication class exists (e.g., 'med_class').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "early-rate-column-exists",
+              "requirements": "A column for early medication rates exists (e.g., 'initiation_rate_early_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "late-rate-column-exists",
+              "requirements": "A column for late medication rates exists (e.g., 'initiation_rate_late_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "transition-columns-exist",
+              "requirements": "Columns representing patient transitions exist (e.g., 'transition_continued', 'transition_discontinued').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key result columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "early-rate-validation",
+          "requirements": "Validate early initiation rates (e.g., 'initiation_rate_early_pct').",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "early-rate-plausible",
+              "requirements": "Values are between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "early-rate-insulin-acceptable",
+              "requirements": "Insulin early rate is between 40.0 and 90.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "early-rate-oral-acceptable",
+              "requirements": "Oral Agents early rate is between 0.1 and 15.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "late-rate-validation",
+          "requirements": "Validate late initiation rates (e.g., 'initiation_rate_late_pct').",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "late-rate-plausible",
+              "requirements": "Values are between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "late-rate-insulin-acceptable",
+              "requirements": "Insulin late rate is between 15.0 and 50.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "late-rate-oral-acceptable",
+              "requirements": "Oral Agents late rate is between 0.5 and 15.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "transition-counts-validation",
+          "requirements": "Validate transition counts (e.g., 'transition_continued', 'transition_discontinued').",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "transition-counts-plausible",
+              "requirements": "All transition count values are non-negative integers.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "transition-insulin-continued-acceptable",
+              "requirements": "Count for 'Insulin' -> 'transition_continued' is clinically reasonable (>100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "transition-oral-never-prescribed-acceptable",
+              "requirements": "Count for 'Oral Agents' -> 'transition_never_prescribed' is the largest for that group (>1000).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

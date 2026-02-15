@@ -1,0 +1,133 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-mortality",
+              "requirements": "Column Exists: A column related to 'in_hospital_mortality_rate_pct' must be present.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-comorbidity",
+              "requirements": "Column Exists: A column related to 'average_comorbidity_count' must be present.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "grouping-column-exists-sepsis-severity",
+              "requirements": "Column Exists: A grouping column for sepsis severity must be present.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "grouping-column-exists-los",
+              "requirements": "Column Exists: A grouping column for LOS buckets must be present.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "grouping-column-exists-admission-type",
+              "requirements": "Column Exists: A grouping column for admission type must be present.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in the answer-relevant columns ('in_hospital_mortality_rate_pct', 'average_comorbidity_count').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation for 'in_hospital_mortality_rate_pct'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible Range: Values must be between 0 and 100, as it is a percentage.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range: For non-zero groups, mortality should generally fall between 1% and 80%. Specifically, septic shock mortality should be significantly higher than sepsis without shock.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "comorbidity-count-validation",
+          "requirements": "Validation for 'average_comorbidity_count'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "comorbidity-count-plausible",
+              "requirements": "Clinically Plausible Range: Mean comorbidity count should be between 0 and 50 for this cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comorbidity-count-acceptable",
+              "requirements": "Acceptable Range: For this older, septic cohort, the average count should generally be between 5 and 35. Counts are expected to be higher for septic shock and longer LOS.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

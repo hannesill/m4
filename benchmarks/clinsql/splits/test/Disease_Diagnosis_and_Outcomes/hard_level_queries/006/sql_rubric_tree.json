@@ -1,0 +1,103 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Identifies the initial patient cohort based on demographics and the primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "demographic-filtering",
+          "requirements": "Filters for female patients aged 70-80 at the time of admission using the standard MIMIC-IV age calculation formula.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-diagnosis-filtering",
+          "requirements": "Correctly identifies hospital admissions for lower GI bleeding by joining with the diagnoses_icd table and filtering for ICD-9 code '5781' or ICD-10 codes 'K921' or 'K922'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "risk-stratification-and-outcome-definition",
+      "requirements": "Risk Stratification and Outcome Definition: Defines complications, calculates a composite risk score, stratifies patients into quintiles, and computes primary outcomes.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "complication-identification",
+          "requirements": "Identifies the presence of specific complications (multi-organ failure, septic shock, MI, respiratory failure) using appropriate ICD-9 and ICD-10 codes within CASE statements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-variable-calculation",
+          "requirements": "Correctly calculates length of stay (dischtime - admittime) and 90-day mortality (death within 90 days of admission time).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "composite-risk-score",
+          "requirements": "Constructs a composite, weighted risk score based on the identified complications, such as ' (co.has_multi_organ_failure * 20) + (co.has_septic_shock * 20) + ...'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quintile-creation",
+          "requirements": "Uses the NTILE(5) window function over the composite risk score to stratify patients into five risk quintiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-analytics-and-reporting",
+      "requirements": "Final Analytics and Reporting: Aggregates the data by risk quintile and calculates the final requested metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-and-ordering",
+          "requirements": "Groups the final results by risk quintile and orders the output accordingly.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quintile-metrics-calculation",
+          "requirements": "For each quintile, correctly calculates N (COUNT), 90-day mortality rate (AVG), and major complication rate (AVG), where the major complication flag is properly defined (e.g., using GREATEST).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-survivor-los-calculation",
+          "requirements": "Calculates the median length of stay specifically for 90-day survivors, typically using a conditional aggregation like 'APPROX_QUANTILES(CASE WHEN is_90_day_mortality = 0 THEN los_days END, 100)[OFFSET(50)]'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

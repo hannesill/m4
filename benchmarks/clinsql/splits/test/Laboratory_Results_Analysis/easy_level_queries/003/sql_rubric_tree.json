@@ -1,0 +1,136 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients who are 64 years old at the time of admission. The provided query omits this filter.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-diagnosis-selection",
+          "requirements": "ACS Diagnosis Selection: The query must correctly identify admissions for Acute Coronary Syndrome (ACS) by filtering on appropriate ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd-9-acs-codes",
+              "requirements": "ICD-9 ACS Codes: The query must select relevant ICD-9 codes for ACS, such as '410%' or '411.1%'.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd-10-acs-codes",
+              "requirements": "ICD-10 ACS Codes: The query must select relevant ICD-10 codes for ACS, such as 'I20.0%', 'I21%', or 'I22%'.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration for Cohort and Labs",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join the `admissions`, `patients`, and `diagnoses_icd` tables to build the initial patient cohort.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-data-join",
+          "requirements": "Lab Data Join: The query must join the `labevents` table with the ACS admissions cohort using `hadm_id` to link lab results to the correct encounters.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Troponin",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "troponin-itemid-selection",
+          "requirements": "Troponin ItemID Selection: The query must identify serum troponin tests by filtering `labevents` on the correct `itemid`s (e.g., 51003, 51002, 52598).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-filtering",
+          "requirements": "Value Filtering: The query must exclude null or invalid troponin values using conditions like `le.valuenum IS NOT NULL` and a reasonable range filter (e.g., `BETWEEN 0.01 AND 100`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "peak-troponin-calculation",
+          "requirements": "Peak Troponin Calculation: The query must calculate the peak troponin for each admission using `MAX(le.valuenum)` and grouping by `hadm_id`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "75th Percentile Calculation: The query must use an appropriate function, like `APPROX_QUANTILES`, to calculate the 75th percentile of the peak troponin values.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to a reasonable number of decimal places, such as two, using the `ROUND` function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

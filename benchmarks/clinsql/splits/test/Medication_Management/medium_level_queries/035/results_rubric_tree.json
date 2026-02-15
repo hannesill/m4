@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "early-prevalence-column-exists",
+              "requirements": "Column exists for early window (first 48h) GLP-1 RA prescription prevalence percentage (e.g., 'early_prevalence_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "final-prevalence-column-exists",
+              "requirements": "Column exists for final window (final 12h) GLP-1 RA prescription prevalence percentage (e.g., 'final_prevalence_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-change-column-exists",
+              "requirements": "Column exists for absolute change in prevalence percentage points (e.g., 'absolute_change_pct_points').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-change-column-exists",
+              "requirements": "Column exists for relative change in prevalence percentage (e.g., 'relative_change_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns ('early_prevalence_pct', 'final_prevalence_pct', 'absolute_change_pct_points', 'relative_change_pct').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "early-prevalence-validation",
+          "requirements": "Validate 'early_prevalence_pct' column value.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "early-prevalence-plausible",
+              "requirements": "Value for early window GLP-1 RA prevalence is clinically plausible (0.0 to 10.0%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "early-prevalence-acceptable",
+              "requirements": "Value for early window GLP-1 RA prevalence is within an acceptable range for this cohort (0.05 to 2.5%). The value 0.145 is acceptable.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "final-prevalence-validation",
+          "requirements": "Validate 'final_prevalence_pct' column value.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "final-prevalence-plausible",
+              "requirements": "Value for final window GLP-1 RA prevalence is clinically plausible (0.0 to 10.0%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "final-prevalence-acceptable",
+              "requirements": "Value for final window GLP-1 RA prevalence is within an acceptable range for this cohort (0.0 to 2.5%). The value 0.0 is acceptable.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "absolute-change-validation",
+          "requirements": "Validate 'absolute_change_pct_points' column value.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "absolute-change-plausible",
+              "requirements": "Value for absolute change is mathematically plausible (-10.0 to 10.0 percentage points).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-change-acceptable",
+              "requirements": "Value for absolute change is within an acceptable range (-2.5 to 2.5 percentage points). The value -0.145 is acceptable.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "relative-change-validation",
+          "requirements": "Validate 'relative_change_pct' column value.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "relative-change-plausible",
+              "requirements": "Value for relative change is mathematically plausible (e.g., -100.0 to a large positive number if final prevalence is higher). A value of -100.0 is plausible.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-change-acceptable",
+              "requirements": "Value for relative change is consistent with the prevalence values. Given early=0.145 and final=0.0, the relative change is indeed -100.0%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

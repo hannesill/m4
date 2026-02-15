@@ -1,0 +1,165 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction for ACS Admissions",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "base-cohort-filtering",
+          "requirements": "Initial demographic filtering for male patients aged 87-97.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "Partial (sum of children)",
+          "sub_tasks": [
+            {
+              "id": "gender-selection",
+              "requirements": "Filters for male patients using `p.gender = 'M'`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0"
+            },
+            {
+              "id": "age-range-selection",
+              "requirements": "Correctly calculates and filters patient age at admission to be between 87 and 97 years.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0"
+            }
+          ]
+        },
+        {
+          "id": "acs-admission-identification",
+          "requirements": "Identifies hospital admissions for suspected Acute Coronary Syndrome (ACS).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "Partial (sum of children)",
+          "sub_tasks": [
+            {
+              "id": "icd-version-handling",
+              "requirements": "Differentiates between ICD-9 and ICD-10 codes using the `icd_version` column.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0"
+            },
+            {
+              "id": "acs-icd-code-selection",
+              "requirements": "Selects appropriate ICD-9 (e.g., '410%', '4111') and ICD-10 (e.g., 'I21', 'I22', 'I200') codes for ACS.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Identification and Categorization of Index Troponin T",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "index-troponin-identification",
+          "requirements": "Correctly identifies the first Troponin T lab event (itemid 51003) for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-ordering",
+          "requirements": "Uses a window function like ROW_NUMBER() ordered by charttime to isolate the earliest troponin measurement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-categorization",
+          "requirements": "Correctly categorizes troponin values into 'Normal/Minimal' (<=0.04), 'Borderline' (>0.04 and <=0.10), and 'Elevated' (>0.10).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Correctly Joining and Integrating Data from Multiple Tables",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Correctly joins the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Correctly joins the cohort with `diagnoses_icd` on `hadm_id` to filter by condition.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-labevents-join",
+          "requirements": "Correctly joins the ACS cohort with `labevents` on `hadm_id` to access troponin results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Final Aggregation and Calculation of Requested Metrics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Groups the final results by the created `troponin_category`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-counts",
+          "requirements": "Calculates the total count of admissions for each troponin category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Calculates the percentage of total admissions for each category, correctly using a window function over the counts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Calculates the in-hospital mortality rate for each category using `AVG(hospital_expire_flag)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

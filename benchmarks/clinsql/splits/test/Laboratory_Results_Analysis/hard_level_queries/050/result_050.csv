@@ -1,0 +1,4 @@
+ards_75th_percentile_score,patient_category,number_of_patients,avg_instability_score,avg_length_of_stay_days,mortality_rate,avg_critical_events_per_patient
+6.0,Top Tier ARDS (>=75th Pct),18,6.333333333333333,32.0,0.3333333333333333,9.222222222222221
+6.0,Control Group (Non-ARDS),34850,1.4624390243902436,4.003156384505023,0.007919655667144908,0.2516499282639885
+6.0,Lower Tier ARDS (<75th Pct),36,3.7777777777777777,18.749999999999996,0.16666666666666669,0.8611111111111112

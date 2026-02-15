@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates the patient's age at the time of admission and filters for the range 69-79.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ich-diagnosis-selection",
+          "requirements": "Identifies Intracranial Hemorrhage (ICH) by correctly filtering for both ICD-9 ('430', '431', '432') and ICD-10 ('I60', 'I61', 'I62') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "base-table-joins",
+          "requirements": "Correctly joins the `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to form the initial cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cte-integration",
+          "requirements": "Successfully integrates the main `ich_cohort` with the `complication_and_comorbidity_flags` CTE using `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-variable-derivation",
+      "requirements": "Clinical Variable Derivation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "major-complication-identification",
+          "requirements": "Flags admissions with major complications by using a CASE statement to identify relevant ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-calculation",
+          "requirements": "Computes a composite risk score by combining the major complication flag with the count of distinct diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "thirty-day-mortality-calculation",
+          "requirements": "Correctly calculates 30-day mortality by checking for both in-hospital death (`hospital_expire_flag`) and death within 30 days of discharge.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "analytical-stratification-and-aggregation",
+      "requirements": "Analytical Stratification and Aggregation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-quintile-stratification",
+          "requirements": "Stratifies admissions into five quintiles using the `NTILE(5)` window function, correctly ordered by the calculated `risk_score`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Groups the final results by `risk_quintile` to enable reporting of metrics for each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metric-aggregation",
+          "requirements": "Correctly calculates the number of admissions (`n`), 30-day mortality percentage, and major complication percentage per quintile using `COUNT` and `AVG`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-survivor-los-aggregation",
+          "requirements": "Calculates the median length of stay for survivors only, by using conditional logic (`IF` or `CASE`) within the `APPROX_QUANTILES` function to exclude non-survivors.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

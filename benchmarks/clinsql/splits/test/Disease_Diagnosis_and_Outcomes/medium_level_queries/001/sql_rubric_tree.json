@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using the condition p.gender = 'M'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the age at admission and filter for patients aged between 67 and 77 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-selection",
+          "requirements": "Primary Condition Selection: The query must correctly identify and filter for admissions with acute decompensated heart failure using the appropriate ICD codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "acute-hf-icd-code-selection",
+          "requirements": "Acute HF ICD Code Selection: Correctly identifies acute decompensated heart failure using specific ICD-9 ('42821', '42823', '42831', '42833', '42841', '42843') and ICD-10 ('I5021', 'I5023', 'I5031', 'I5033', 'I5041', 'I5043') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ckd-icd-code-selection",
+          "requirements": "CKD ICD Code Selection: Correctly identifies Chronic Kidney Disease using wildcard searches for ICD-9 (LIKE '585%') and ICD-10 (LIKE 'N18%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-icd-code-selection",
+          "requirements": "Diabetes ICD Code Selection: Correctly identifies Diabetes using wildcard searches for ICD-9 (LIKE '250%') and ICD-10 (LIKE 'E10%' or LIKE 'E11%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins patients, admissions, and diagnoses_icd tables to link patient demographics with their diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: Consistently uses subject_id to join patients and admissions, and hadm_id to join admissions and diagnoses_icd.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-stratification",
+          "requirements": "Length of Stay Stratification: Correctly calculates the length of stay and stratifies it into '\u22647 days' and '>7 days' groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-status-stratification",
+          "requirements": "ICU Status Stratification: Correctly identifies if a patient was admitted to the ICU on day 1 (within 24 hours of hospital admission) using the icustays table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final result must be grouped by the two stratification columns: los_group and day1_icu_status.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation",
+          "requirements": "Metric Calculation: Correctly calculates mortality (%), CKD prevalence (%), and diabetes prevalence (%) for each stratum using SUM and COUNT, and formats the output as a percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

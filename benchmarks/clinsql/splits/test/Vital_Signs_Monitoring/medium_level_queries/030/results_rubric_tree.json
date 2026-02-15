@@ -1,0 +1,210 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "temperature-category-column-exists",
+              "requirements": "Exists a column for temperature classification (e.g., 'temperature_category')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-column-exists",
+              "requirements": "Exists a column for the number of ICU stays (e.g., 'number_of_icu_stays')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-temp-column-exists",
+              "requirements": "Exists a column for the mean of the average temperature (e.g., 'mean_avg_temp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-temp-column-exists",
+              "requirements": "Exists a column for the median of the average temperature (e.g., 'median_avg_temp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-temp-column-exists",
+              "requirements": "Exists a column for the IQR of the average temperature (e.g., 'iqr_avg_temp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mi-rate-column-exists",
+              "requirements": "Exists a column for the MI rate (e.g., 'mi_rate_percent')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in the identified columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "count-validation",
+          "requirements": "Validation of the number of ICU stays column ('number_of_icu_stays')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "count-plausible",
+              "requirements": "Clinically Plausible (1-10000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-acceptable",
+              "requirements": "Acceptable Range (10-1500)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mean-temp-validation",
+          "requirements": "Validation of the mean temperature column ('mean_avg_temp')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mean-temp-plausible",
+              "requirements": "Clinically Plausible (32.0-42.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-temp-acceptable",
+              "requirements": "Acceptable Range (35.0-39.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-temp-validation",
+          "requirements": "Validation of the median temperature column ('median_avg_temp')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "median-temp-plausible",
+              "requirements": "Clinically Plausible (32.0-42.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-temp-acceptable",
+              "requirements": "Acceptable Range (35.0-39.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-temp-validation",
+          "requirements": "Validation of the IQR of temperature column ('iqr_avg_temp')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "iqr-temp-plausible",
+              "requirements": "Clinically Plausible (0.0-5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-temp-acceptable",
+              "requirements": "Acceptable Range (0.1-2.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mi-rate-validation",
+          "requirements": "Validation of the MI rate column ('mi_rate_percent')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mi-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mi-rate-acceptable",
+              "requirements": "Acceptable Range (5.0-75.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

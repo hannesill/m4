@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "early-initiation-rate-column-exists",
+              "requirements": "Column Exists for Early Initiation Rate (e.g., 'early_initiation_rate_pct', 'first_72h_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "late-initiation-rate-column-exists",
+              "requirements": "Column Exists for Late Initiation Rate (e.g., 'late_initiation_rate_pct', 'final_72h_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-change-column-exists",
+              "requirements": "Column Exists for Absolute Change in Rate (e.g., 'absolute_change_in_rate_pct', 'abs_change')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-change-column-exists",
+              "requirements": "Column Exists for Relative Change in Rate (e.g., 'relative_change_in_rate_pct', 'rel_change')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-related columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "early-initiation-rate-validation",
+          "requirements": "Validate Early (first 72h) Initiation Rate Percentage",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "early-rate-clinically-plausible",
+              "requirements": "Clinically Plausible (0.0 - 20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "early-rate-acceptable-range",
+              "requirements": "Acceptable Range (0.05 - 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "late-initiation-rate-validation",
+          "requirements": "Validate Late (final 72h) Initiation Rate Percentage",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "late-rate-clinically-plausible",
+              "requirements": "Clinically Plausible (0.0 - 20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "late-rate-acceptable-range",
+              "requirements": "Acceptable Range (0.0 - 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "absolute-change-validation",
+          "requirements": "Validate Absolute Change in Initiation Rate Percentage",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "absolute-change-clinically-plausible",
+              "requirements": "Clinically Plausible (-20.0 - 20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-change-acceptable-range",
+              "requirements": "Acceptable Range (-10.0 - 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "relative-change-validation",
+          "requirements": "Validate Relative Change in Initiation Rate Percentage",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "relative-change-clinically-plausible",
+              "requirements": "Clinically Plausible (Value can be any real number, including -100% to positive infinity, but check for extreme outliers)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-change-acceptable-range",
+              "requirements": "Acceptable Range (-100.0 - 1000.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

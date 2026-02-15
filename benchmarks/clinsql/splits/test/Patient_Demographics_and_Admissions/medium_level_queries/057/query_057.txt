@@ -1,0 +1,1 @@
+For my 45-year-old female patient: among female ICU admissions aged 40–50, report LOS percentiles (p50, p75, p90, p95) by discharge outcome (home, hospice, in‑hospital death) and % ≤7 days.

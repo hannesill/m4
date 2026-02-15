@@ -1,0 +1,233 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "median-risk-score-column-exists",
+              "requirements": "Column exists for median risk score (e.g., 'median_risk_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-risk-score-column-exists",
+              "requirements": "Column exists for IQR risk score (e.g., 'iqr_risk_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "Column exists for 30-day mortality rate (e.g., 'mortality_30_day_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "complication-rate-column-exists",
+              "requirements": "Column exists for major complication rate (e.g., 'major_complication_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-column-exists",
+              "requirements": "Column exists for average survivor LOS (e.g., 'survivor_los_avg_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-percentile-column-exists",
+              "requirements": "Column exists for risk percentile (e.g., 'risk_percentile_of_matched_profile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values-in-target-row",
+          "requirements": "No NULL/Empty Values in the target cohort's answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "median-risk-score-validation",
+          "requirements": "Validate Median Risk Score (e.g., 'median_risk_score')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-risk-score-plausible",
+              "requirements": "Clinically Plausible (0.1-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-risk-score-acceptable",
+              "requirements": "Acceptable Range (5.0-25.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-risk-score-validation",
+          "requirements": "Validate IQR Risk Score (e.g., 'iqr_risk_score')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "iqr-risk-score-plausible",
+              "requirements": "Clinically Plausible (0.1-40.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-risk-score-acceptable",
+              "requirements": "Acceptable Range (3.0-20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate 30-Day Mortality Rate % (e.g., 'mortality_30_day_rate_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.1-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range for HF+ICU cohort (5.0-25.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "complication-rate-validation",
+          "requirements": "Validate Major Complication Rate % (e.g., 'major_complication_rate_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "complication-rate-plausible",
+              "requirements": "Clinically Plausible (0.1-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "complication-rate-acceptable",
+              "requirements": "Acceptable Range for HF+ICU cohort (5.0-35.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "survivor-los-validation",
+          "requirements": "Validate Average Survivor LOS in days (e.g., 'survivor_los_avg_days')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "survivor-los-plausible",
+              "requirements": "Clinically Plausible (1.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "survivor-los-acceptable",
+              "requirements": "Acceptable Range for post-ICU HF cohort (7.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "risk-percentile-validation",
+          "requirements": "Validate Risk Percentile (e.g., 'risk_percentile_of_matched_profile')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "risk-percentile-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-percentile-acceptable",
+              "requirements": "Acceptable Range for high-risk cohort (80.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

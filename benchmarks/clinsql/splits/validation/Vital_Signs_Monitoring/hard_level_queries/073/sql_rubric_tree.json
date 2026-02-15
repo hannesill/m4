@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "ich-diagnosis-selection",
+          "requirements": "Intracranial Hemorrhage (ICH) Diagnosis Selection: The query must correctly identify hospital admissions with an ICH diagnosis using both ICD-9 codes ('430', '431', '432') and ICD-10 codes ('I60', 'I61', 'I62').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using the condition p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients to be between 47 and 57 years old using p.anchor_age BETWEEN 47 AND 57.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: The query must correctly isolate the first ICU stay for each hospital admission using a window function like ROW_NUMBER() partitioned by hadm_id and ordered by intime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Score Calculation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filter-vitals",
+          "requirements": "Temporal Filter for Vitals: The query must correctly filter vital sign measurements (chartevents) to the first 72 hours of the ICU stay using DATETIME_ADD(cs.intime, INTERVAL 72 HOUR).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-sign-selection",
+          "requirements": "Vital Sign Selection: The query must select the correct set of vital signs by filtering on specific itemids (220045, 220179, 220050, 220210, 220277, 223761).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-event-logic",
+          "requirements": "Abnormal Event Logic: The query must correctly implement the logic to identify abnormal vital sign events using a CASE statement with the specified value ranges for each itemid.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must correctly calculate the instability score for each stay by summing the abnormal events (SUM(is_abnormal)) after grouping by stay_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-metrics-calculation",
+      "requirements": "Final Metrics Calculation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank of Score 75: The query must calculate the percentile rank for a score of 75. The implementation uses SAFE_DIVIDE(COUNTIF(instability_score < 75), (COUNT(*) - 1)), which correctly reflects the definition.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "decile-identification",
+          "requirements": "Top Decile Identification: The query must correctly identify the top decile of patients based on instability score using NTILE(10) OVER (ORDER BY instability_score).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-los-calculation",
+          "requirements": "Top Decile Average ICU LOS: The query must calculate the average ICU length of stay for the top decile cohort by averaging the DATETIME_DIFF between outtime and intime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-mortality-calculation",
+          "requirements": "Top Decile Mortality Rate: The query must calculate the mortality rate for the top decile cohort by averaging the hospital_expire_flag.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join icustays, patients, admissions, diagnoses_icd, and chartevents tables to construct the cohort and retrieve necessary data.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching-integrity",
+          "requirements": "Key Matching Integrity: The query must use the correct keys for joins (subject_id, hadm_id, stay_id) to ensure data integrity across the different MIMIC-IV tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the primary patient group based on demographics and the primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `gender = 'F'` in the `patients` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly filters for patients with an `anchor_age` between 74 and 84.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-pe",
+          "requirements": "Identifies hospital admissions with a Pulmonary Embolism (PE) diagnosis by filtering `diagnoses_icd` for both ICD-9 ('4151%') and ICD-10 ('I26%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Translates clinical questions and definitions into specific SQL logic and calculations.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-time-window",
+          "requirements": "Restricts medication analysis to the first 24 hours of admission using `DATETIME_DIFF(p.starttime, adm.admittime, HOUR) BETWEEN 0 AND 24`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-definition",
+          "requirements": "Calculates medication complexity using the specific formula `COUNT(DISTINCT drug) + COUNT(DISTINCT route)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "qt-drug-identification",
+          "requirements": "Identifies patients on QT-prolonging drugs using a `CASE` statement with `LIKE` clauses for a list of relevant drug names.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "bleeding-risk-drug-identification",
+          "requirements": "Identifies patients on bleeding-risk drugs using a `CASE` statement with `LIKE` clauses for a list of relevant drug names.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins multiple tables to create the analytical dataset.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-assembly-join",
+          "requirements": "Correctly assembles the PE cohort by joining `admissions`, `patients`, and `diagnoses_icd` tables (or their CTEs) using `subject_id` and `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-data-integration",
+          "requirements": "Integrates prescription data by joining the `prescriptions` table with the patient cohort on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "summary-stats-reintegration",
+          "requirements": "Uses a `LEFT JOIN` to reintegrate medication summary statistics back into the main cohort, ensuring all patients are retained even if they have no medications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-cohort-integration",
+          "requirements": "Correctly creates the comparative ICU cohort by joining `icustays` with `admissions` and then with `prescriptions`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final calculations and aggregations to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "complexity-distribution-calculation",
+          "requirements": "Calculates the distribution statistics (Avg, Min, Max, StdDev) for medication complexity on the PE cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-prevalence-calculation",
+          "requirements": "Calculates the prevalence of QT and bleeding risk as a percentage for the PE cohort using `AVG(flag) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-and-quartile-calculation",
+          "requirements": "Correctly implements `PERCENT_RANK()` and `NTILE(4)` window functions over medication complexity to enable stratified analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-outcome-analysis",
+          "requirements": "Filters the cohort to the top complexity quartile (`complexity_quartile = 1`) to calculate average LOS and mortality for that subgroup.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-icu-analysis",
+          "requirements": "Calculates and presents the comparative metrics (Avg Complexity, QT Risk %, Bleeding Risk %) from the general ICU population.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-structuring",
+          "requirements": "Uses `UNION ALL` to structure the final output into a multi-metric report with clear labels and formatted values using `FORMAT()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

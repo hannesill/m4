@@ -1,0 +1,3 @@
+cohort_wide_90th_percentile_score,risk_group,num_patients,avg_icu_los_hours,mortality_rate_percent,avg_instability_score,avg_fever_hours,avg_hypoxemia_hours,avg_tachypnea_hours
+32,Condition_Matched_Cohort_All,711,129.14767932489454,24.75386779184248,12.9746835443038,0.25316455696202533,0.5738396624472574,12.528832630098455
+32,Top_10_Percent_Unstable,72,207.4861111111111,37.50000000000001,37.59722222222222,0.7500000000000001,0.7777777777777777,37.27777777777779

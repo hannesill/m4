@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the specific patient cohort (ICH, male, 60-70, first ICU stay) and the general ICU population for comparison.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "first-icu-stay-identification",
+          "requirements": "First ICU Stay Identification: Correctly isolates the first ICU stay for each hospital admission using a window function like ROW_NUMBER() and filtering on the result.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for male patients (`p.gender = 'M'`) as part of the primary cohort definition.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query accurately calculates patient age at the time of admission and filters for the 60-70 year range for the primary cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ich-cohort-identification",
+          "requirements": "ICH Cohort Identification: The specific cohort is correctly identified by checking for a matching intracranial hemorrhage diagnosis (e.g., `ich.hadm_id IS NOT NULL`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly translates clinical concepts like 'intracranial hemorrhage' and 'procedure burden' into SQL logic.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ich-diagnosis-coding",
+          "requirements": "ICH Diagnosis Coding: Accurately identifies intracranial hemorrhage by filtering on both ICD-9 ('430%', '431%', '432%') and ICD-10 ('I60%', 'I61%', 'I62%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-burden-definition",
+          "requirements": "Procedure Burden Definition: Defines procedure burden as the count of unique procedures within the specified timeframe (`COUNT(DISTINCT pe.itemid)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-temporal-constraint",
+          "requirements": "Procedure Temporal Constraint: Correctly limits the procedure count to the first 72 hours from ICU admission time (`pe.starttime BETWEEN icu.intime AND DATETIME_ADD(icu.intime, INTERVAL 72 HOUR)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Properly joins all necessary tables from different schemas (icu, hosp) to construct the analytical dataset.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "base-patient-joins",
+          "requirements": "Base Patient Joins: Correctly joins `icustays`, `admissions`, and `patients` tables to link stay information with demographic and hospital admission data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "clinical-data-joins",
+          "requirements": "Clinical Data Joins: Correctly uses LEFT JOINs to integrate the pre-calculated ICH admissions and procedure burden CTEs, ensuring no patients from the general cohort are lost.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "event-level-join",
+          "requirements": "Event-Level Join: Correctly joins `icustays` with `procedureevents` on `stay_id` to associate procedures with the correct ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final aggregations and calculations required to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-grouping",
+          "requirements": "Cohort Grouping: The final aggregation correctly groups results by the 'cohort' column to produce separate metrics for the ICH and General ICU populations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-percentile-calculation",
+          "requirements": "Procedure Percentile Calculation: Correctly computes the 75th percentile for procedure burden using an appropriate function like `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-los-calculation",
+          "requirements": "ICU LOS Calculation: Correctly calculates the average ICU length of stay in days, including the unit conversion from hours.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Mortality Rate Calculation: Correctly calculates the average in-hospital mortality rate as a percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

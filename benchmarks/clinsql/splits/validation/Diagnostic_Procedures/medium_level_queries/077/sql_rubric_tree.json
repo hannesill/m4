@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters for patients aged 57-67 by calculating age at admission using anchor_age, anchor_year, and admittime.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "septic-shock-condition",
+          "requirements": "Identifies admissions with a septic shock diagnosis using ICD-9 code '78552' or ICD-10 code 'R6521'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-los-filter",
+          "requirements": "Restricts the cohort to admissions with a length of stay between 1 and 7 days using DATETIME_DIFF.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Identification of Ultrasound Procedures",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "procedure-table-join",
+          "requirements": "Uses a LEFT JOIN to the procedures_icd table to include admissions both with and without ultrasound procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "Correctly handles both ICD-9 and ICD-10 codes by checking the pr.icd_version field within the join condition.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ultrasound-code-selection",
+          "requirements": "Selects ultrasound procedures using appropriate LIKE patterns for both ICD-9 (e.g., '887%') and ICD-10 (e.g., 'B__4%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Correctly joins patients, admissions, and diagnoses_icd tables to form the initial cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Consistently uses subject_id and hadm_id as the joining keys between the respective hospital tables.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-status-determination",
+          "requirements": "Determines ICU status using an EXISTS subquery that checks for a matching hadm_id in the icustays table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-and-icu-stratification",
+          "requirements": "Stratifies admissions into LOS categories ('1-3 days', '4-7 days') and ICU status ('ICU Stay', 'No ICU Stay') using CASE statements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-admission-ultrasound-count",
+          "requirements": "Calculates the count of ultrasound procedures for each individual admission (hadm_id) before final aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Groups the final results by the created stay_category and icu_status to perform analysis on each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Calculates the 25th, 50th, and 75th percentiles of ultrasound counts per admission using APPROX_QUANTILES(..., 4).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

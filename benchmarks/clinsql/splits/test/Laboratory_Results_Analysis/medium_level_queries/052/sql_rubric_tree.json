@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies male patients aged 76-86 with an AMI diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters for patients aged 76-86 at the time of admission using a calculation like `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 76 AND 86`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-diagnosis-selection",
+          "requirements": "AMI Diagnosis Selection: Identifies admissions with an Acute Myocardial Infarction diagnosis by checking for relevant ICD-9 ('410%') or ICD-10 ('I21%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies and processes the first Troponin I lab event for each patient in the cohort.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "troponin-i-identification",
+          "requirements": "Troponin I Identification: Selects Troponin I lab events using the correct itemid (`le.itemid = 50911`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-troponin-logic",
+          "requirements": "First Troponin Logic: Uses a window function like `ROW_NUMBER() OVER(PARTITION BY c.hadm_id ORDER BY le.charttime ASC)` to isolate the first recorded Troponin I value for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-value-categorization",
+          "requirements": "Troponin Value Categorization: Implements a CASE statement to correctly classify Troponin I values into 'Normal' (<=0.04), 'Borderline' (>0.04 and <0.40), and 'Elevated' (>=0.40) categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, admissions, diagnoses, and lab events.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly joins `patients` and `admissions` on `subject_id` to establish the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-and-diagnosis-joins",
+          "requirements": "Lab and Diagnosis Joins: Correctly joins the cohort with `diagnoses_icd` and `labevents` on `hadm_id` to link diagnoses and lab results to specific hospital admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculates and presents the required statistical distribution for the troponin categories.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: Groups the final results by `troponin_category` to aggregate statistics for each category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "statistical-calculations",
+          "requirements": "Statistical Calculations: Correctly computes the count, percentage, mean, median, and IQR for each troponin category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "correct-output-format",
+          "requirements": "Correct Output Format: Presents all requested metrics (counts, percentages, mean, median, IQR) in the final output, appropriately rounded and ordered.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

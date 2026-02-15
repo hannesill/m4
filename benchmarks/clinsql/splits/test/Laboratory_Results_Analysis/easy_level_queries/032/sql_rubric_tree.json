@@ -1,0 +1,144 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-selection",
+          "requirements": "Age Selection: The query must filter for patients who are 90 years old. An age filter, such as on `p.anchor_age`, is required.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "copd-diagnosis-selection",
+          "requirements": "COPD Diagnosis Selection: The query must correctly identify patients with a COPD diagnosis by filtering on relevant ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd-version-handling",
+              "requirements": "ICD Version Handling: The query must handle both ICD-9 and ICD-10 versions using `dx.icd_version` in the filtering logic.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "copd-code-selection",
+              "requirements": "COPD Code Selection: The query should select appropriate COPD codes, such as '491%', '492%', '496%' for ICD-9 and 'J44%' for ICD-10.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "creatinine-lab-event-selection",
+          "requirements": "Creatinine Lab Event Selection: The query must select serum creatinine measurements by filtering on the correct itemid (e.g., `le.itemid = 50912`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-24-hour-filter",
+          "requirements": "First 24-Hour Filter: The query must correctly restrict lab events to the first 24 hours of the hospital admission using a time-based comparison between `le.charttime` and `adm.admittime`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-validation",
+          "requirements": "Value Validation: The query should filter out null or invalid lab values, for instance by using `le.valuenum IS NOT NULL` and a reasonable range check like `BETWEEN 0.5 AND 10`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the `patients`, `admissions`, `diagnoses_icd`, and `labevents` tables to link patient demographics, diagnoses, and lab results.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The joins must use the correct keys: `subject_id` between patients and admissions, and `hadm_id` between admissions and both diagnoses_icd and labevents.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-averaging",
+          "requirements": "Per-Admission Averaging: The query must first calculate the average creatinine for each hospital admission using `AVG(le.valuenum)` grouped by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-stddev-calculation",
+          "requirements": "Final Standard Deviation Calculation: The query must calculate the standard deviation of the per-admission averages using the `STDDEV()` function on the result of the initial aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to a reasonable number of decimal places (e.g., 2) using `ROUND()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

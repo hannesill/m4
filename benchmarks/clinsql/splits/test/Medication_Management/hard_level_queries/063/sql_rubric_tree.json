@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates and filters for patient age at admission between 48 and 58.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pneumonia-diagnosis-selection",
+          "requirements": "Pneumonia Diagnosis Selection: Correctly identifies pneumonia admissions using a comprehensive list of ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-deduplication",
+          "requirements": "Admission Deduplication: Uses GROUP BY on the `pneumonia_admissions` CTE to ensure each admission is represented only once, preventing duplication from multiple diagnosis codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-time-filter",
+          "requirements": "Medication Time Filter: Filters prescriptions to only those administered within the first 24 hours of admission using `pr.starttime BETWEEN pa.admittime AND TIMESTAMP_ADD(pa.admittime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "serotonergic-drug-identification",
+          "requirements": "Serotonergic Drug Identification: Correctly identifies a list of serotonergic drugs using a CASE statement and string matching on the `drug` name.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "serotonergic-interaction-risk-logic",
+          "requirements": "Serotonergic Interaction Risk Logic: Correctly defines interaction risk as taking two or more distinct serotonergic drugs using `COUNT(DISTINCT CASE WHEN is_serotonergic = 1 THEN drug END) >= 2`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-definition",
+          "requirements": "Medication Complexity Definition: Defines medication complexity as the count of distinct drugs per admission using `COUNT(DISTINCT drug)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables using appropriate keys (`subject_id`, `hadm_id`) to build the initial patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-and-icu-joins",
+          "requirements": "Medication and ICU Joins: Correctly integrates medication data (`prescriptions`) and ICU data (`icustays`) with the main pneumonia cohort using `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "left-join-handling",
+          "requirements": "LEFT JOIN Handling: Appropriately uses LEFT JOINs when combining the main cohort with medication scores and ICU data to ensure all pneumonia patients are retained, even if they have no medications or ICU stay. Uses COALESCE to handle NULLs.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-group-categorization",
+          "requirements": "Patient Group Categorization: Correctly assigns patients into mutually exclusive groups ('Serotonergic_Interaction_Risk', 'ICU_Patient_No_Interaction', 'Baseline_Non_ICU') using a CASE statement.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-distribution",
+          "requirements": "Medication Complexity Distribution: Calculates the mean, 25th, 50th, and 75th percentiles of medication complexity for each group using AVG and APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "overall-outcome-metrics",
+          "requirements": "Overall Outcome Metrics: Correctly calculates overall average Length of Stay (LOS) and mortality rate for each patient group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-identification",
+          "requirements": "Top-Quartile Identification: Correctly identifies patients in the top quartile of medication complexity within each group using PERCENT_RANK() window function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-outcome-metrics",
+          "requirements": "Top-Quartile Outcome Metrics: Correctly calculates average LOS and mortality specifically for the top-quartile patients using conditional aggregation (AVG(IF(...))).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-output",
+          "requirements": "Final Grouping and Output: The final query groups by the defined `patient_group` and presents all required metrics in the specified format.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

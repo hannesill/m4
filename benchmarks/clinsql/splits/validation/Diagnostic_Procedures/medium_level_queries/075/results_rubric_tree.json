@@ -1,0 +1,156 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-p25",
+              "requirements": "Column exists for 25th percentile of procedures (e.g., 'p25_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-p50",
+              "requirements": "Column exists for 50th percentile of procedures (e.g., 'p50_median_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-p75",
+              "requirements": "Column exists for 75th percentile of procedures (e.g., 'p75_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-diag-type",
+              "requirements": "Column exists for diagnosis type stratification (e.g., 'diagnosis_type')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-stay-cat",
+              "requirements": "Column exists for length of stay stratification (e.g., 'stay_category')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key percentile and stratification columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "column-related-validation-p25",
+          "requirements": "Validate values for the 25th percentile of procedures (e.g., 'p25_procedures')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-p25",
+              "requirements": "Clinically Plausible (0-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-p25",
+              "requirements": "Acceptable Range (0-3)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "column-related-validation-p50",
+          "requirements": "Validate values for the 50th percentile (median) of procedures (e.g., 'p50_median_procedures')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-p50",
+              "requirements": "Clinically Plausible (0-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-p50",
+              "requirements": "Acceptable Range (0-5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "column-related-validation-p75",
+          "requirements": "Validate values for the 75th percentile of procedures (e.g., 'p75_procedures')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-p75",
+              "requirements": "Clinically Plausible (0-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-p75",
+              "requirements": "Acceptable Range (1-8)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

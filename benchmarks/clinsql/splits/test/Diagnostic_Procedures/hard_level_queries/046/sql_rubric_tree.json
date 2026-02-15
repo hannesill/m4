@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "first-icu-stay-identification",
+          "requirements": "First ICU Stay Identification: Correctly identifies the first ICU stay for each hospital admission using a window function like `ROW_NUMBER() OVER (PARTITION BY a.hadm_id ORDER BY i.intime)` and filtering for the first rank (e.g., `rn = 1`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "target-cohort-gender-filter",
+          "requirements": "Target Cohort Gender Filter: The `CASE` statement for cohort definition must correctly filter for female patients (e.g., `icu.gender = 'F'`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "target-cohort-age-filter",
+          "requirements": "Target Cohort Age Filter: The `CASE` statement for cohort definition must accurately filter patients aged 37-47 using the calculated age at admission (e.g., `icu.age_at_admission BETWEEN 37 AND 47`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "target-cohort-ards-filter",
+          "requirements": "Target Cohort ARDS Filter: The `CASE` statement for cohort definition must correctly use the pre-calculated ARDS flag to identify patients with the condition (e.g., `ards.has_ards_dx = 1`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparison-cohort-definition",
+          "requirements": "Comparison Cohort Definition: The query must use an `ELSE` clause to correctly categorize all other first-ICU-stay patients into a general comparison group (e.g., `ELSE 'General ICU'`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ards-icd-code-selection",
+          "requirements": "ARDS ICD Code Selection: Correctly identifies ARDS by checking for both ICD-9 code '51882' and ICD-10 code 'J80' within the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-utilization-definition",
+          "requirements": "Diagnostic Utilization Definition: Correctly defines diagnostic utilization as the count of distinct procedures from the `procedureevents` table (e.g., `COUNT(DISTINCT pe.itemid)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-time-window-filter",
+          "requirements": "Procedure Time Window Filter: Accurately restricts procedures to the first 72 hours of the ICU stay using a time-based filter like `pe.starttime BETWEEN icu.intime AND DATETIME_ADD(icu.intime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-join-logic",
+          "requirements": "Core Table Join Logic: Correctly joins `admissions`, `icustays`, and `patients` tables using their respective primary keys (`hadm_id`, `subject_id`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "optional-data-join-logic",
+          "requirements": "Optional Data Join Logic: Uses `LEFT JOIN` to connect the main patient cohort with `ards_diagnoses` and `procedure_counts` to ensure patients without ARDS or procedures are retained for the 'General ICU' comparison group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation-logic",
+          "requirements": "Age Calculation Logic: Correctly calculates patient age at the time of admission using a combination of anchor age, anchor year, and admission year (e.g., `p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-grouping-logic",
+          "requirements": "Cohort Grouping Logic: The final aggregation must group results by the generated `cohort` column to compare the 'ARDS (Female, 37-47)' group against the 'General ICU' group.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "utilization-metrics-calculation",
+          "requirements": "Utilization Metrics Calculation: Correctly calculates the minimum, 75th percentile, and 90th percentile of diagnostic utilization using `MIN()` and `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metrics-calculation",
+          "requirements": "Outcome Metrics Calculation: Correctly calculates the average hospital length of stay in days and the in-hospital mortality as a percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

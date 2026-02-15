@@ -1,0 +1,1 @@
+I have an 84-year-old woman. Among female patients 79–89 with heart failure, what's the IQR of first-admission LOS (days)?

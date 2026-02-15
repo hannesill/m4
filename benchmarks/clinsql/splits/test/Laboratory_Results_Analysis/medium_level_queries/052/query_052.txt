@@ -1,0 +1,1 @@
+For an 81-year-old male, among male patients aged 76–86 admitted with AMI, what's the distribution of first Troponin I (≤0.04 normal; 0.04–0.40 borderline; ≥0.40 elevated)? Provide counts, percentages, mean, median, IQR.

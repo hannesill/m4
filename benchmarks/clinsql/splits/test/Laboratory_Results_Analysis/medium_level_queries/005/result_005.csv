@@ -1,0 +1,4 @@
+troponin_category,patient_count
+Normal (< 0.014 ng/mL),9
+Borderline (0.014-0.052 ng/mL),46
+Myocardial Injury (> 0.052 ng/mL),266

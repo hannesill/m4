@@ -1,0 +1,168 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the cohort of male patients aged 44-54 with a Pulmonary Embolism diagnosis, limited to their first ICU stay.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients (e.g., `p.gender = 'M'`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at the time of admission and filters for the 44-54 range (e.g., `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 44 AND 54`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pe-diagnosis-selection",
+          "requirements": "Pulmonary Embolism (PE) Diagnosis Selection: Filters for patients with a PE diagnosis using both ICD-9 ('4151%') and ICD-10 ('I26%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: Correctly identifies only the first ICU stay for each hospital admission, typically using a window function like `ROW_NUMBER()` ordered by `intime`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Ensures correct table joins to link patient demographics, admissions, diagnoses, ICU stays, and procedures.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: Correctly joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-linkage",
+          "requirements": "Admission-Diagnosis Linkage: Correctly links admissions to diagnoses via `hadm_id`, for instance within an `EXISTS` clause.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-icustay-join",
+          "requirements": "Admission-ICU Stay Join: Correctly joins the cohort with `icustays` on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icustay-procedure-join",
+          "requirements": "ICU Stay-Procedure Join: Uses a `LEFT JOIN` from `icustays` to `procedureevents` on `stay_id` to include patients with zero procedures.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "diagnostic-intensity-calculation",
+      "requirements": "Diagnostic Intensity Calculation: Correctly quantifies the number of distinct procedures performed within the first 72 hours of the ICU stay.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filter-72hr",
+          "requirements": "Temporal Filter (72 hours): Filters procedures to the first 72 hours of the ICU stay (e.g., `pe.starttime BETWEEN fis.intime AND DATETIME_ADD(fis.intime, INTERVAL 72 HOUR)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "distinct-procedure-count",
+          "requirements": "Distinct Procedure Count: Correctly counts the number of unique procedures per patient using `COUNT(DISTINCT pe.itemid)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly stratifies patients into quintiles and calculates the specified final metrics for each group.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "quintile-stratification",
+          "requirements": "Quintile Stratification: Correctly uses `NTILE(5)` over the diagnostic procedure count to create quintiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Final Grouping Logic: Groups the final results by the calculated quintile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculations",
+          "requirements": "Metric Calculations: Accurately computes all required final metrics for each quintile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "AVG",
+          "sub_tasks": [
+            {
+              "id": "avg-procedure-aggregation",
+              "requirements": "Average Procedure Count: Calculates the average number of diagnostic procedures using `AVG(diagnostic_proc_count)`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-calculation",
+              "requirements": "Average Hospital LOS Calculation: Correctly calculates the average hospital length of stay in days, e.g., `AVG(DATETIME_DIFF(dischtime, admittime, HOUR) / 24.0)`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-percent-calculation",
+              "requirements": "Mortality Percentage Calculation: Correctly calculates the hospital mortality percentage, e.g., `AVG(CAST(hospital_expire_flag AS FLOAT64)) * 100`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

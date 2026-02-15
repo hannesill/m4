@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "troponin-category-column-exists",
+              "requirements": "Column for Troponin category exists (e.g., 'troponin_category', 'troponin_level').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admission-count-column-exists",
+              "requirements": "Column for admission count exists (e.g., 'patient_admission_count', 'count').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-column-exists",
+              "requirements": "Column for percentage of total exists (e.g., 'percentage_of_total', 'percent_admissions').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "Column for in-hospital mortality rate exists (e.g., 'in_hospital_mortality_rate_percent', 'mortality_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the specified columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "admission-count-validation",
+          "requirements": "Validate patient admission counts per troponin category.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "admission-count-plausible",
+              "requirements": "Clinically Plausible (1 - 100000). Admission counts must be positive integers.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admission-count-acceptable",
+              "requirements": "Acceptable Range (100 - 5000). Based on a large hospital system, a significant number of ACS admissions is expected for this cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentage-of-total-validation",
+          "requirements": "Validate the percentage of total admissions per category.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentage-plausible",
+              "requirements": "Clinically Plausible (0.1 - 100.0). Percentages must be within this range.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentage-acceptable",
+              "requirements": "Acceptable Range (5.0 - 80.0). Expecting elevated troponin to be the most common category, but other categories should not be excessively rare.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate the in-hospital mortality rate per category.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.1 - 50.0). In-hospital mortality for ACS in this elderly cohort is significant but unlikely to exceed 50%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (2.0 - 20.0). Mortality should be higher in the elevated troponin group compared to normal/borderline.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

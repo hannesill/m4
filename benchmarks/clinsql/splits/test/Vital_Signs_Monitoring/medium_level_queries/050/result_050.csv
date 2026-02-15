@@ -1,0 +1,2 @@
+percentile_rank_of_110_bpm,total_icu_stays_in_cohort,population_mean_avg_hr,population_stddev_avg_hr,p25_avg_hr,p50_avg_hr_median,p75_avg_hr,p90_avg_hr,min_avg_hr_in_cohort,max_avg_hr_in_cohort
+94.44,10157,84.08,15.12,73.5,82.63,93.63,104.08,33.65,154.58

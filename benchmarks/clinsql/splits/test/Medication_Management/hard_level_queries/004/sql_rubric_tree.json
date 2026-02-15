@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients by using the condition p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the age at admission and filter for patients between 48 and 58 years old using a BETWEEN clause.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ischemic-stroke-condition",
+          "requirements": "Ischemic Stroke Condition: The query must join with a subquery that identifies admissions with an ischemic stroke diagnosis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ischemic-stroke-icd-codes",
+          "requirements": "Ischemic Stroke ICD Codes: The query must correctly identify ischemic stroke using both ICD-9 (LIKE '433%1' or '434%1') and ICD-10 (LIKE 'I63%') codes, checking the icd_version.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "nti-drug-identification",
+          "requirements": "NTI Drug Identification: The query must create a list of Narrow Therapeutic Index (NTI) drugs to check for interactions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cyp3a4-drug-identification",
+          "requirements": "CYP3A4 Drug Identification: The query must create lists for both CYP3A4 inhibitors and inducers to check for interactions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "interaction-logic",
+          "requirements": "Interaction Logic: The query must correctly identify concurrent administrations of NTI drugs and CYP3A4 inhibitors/inducers by checking for overlapping medication time intervals.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the patients and admissions tables on subject_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must correctly link admissions to diagnoses on hadm_id to identify the stroke cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-prescription-join",
+          "requirements": "Admission-Prescription Join: The query must correctly join admissions with prescriptions on hadm_id to analyze medication data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "complexity-score-calculation",
+          "requirements": "Complexity Score Calculation: The query must implement the specified custom logic to calculate the medication_complexity_score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-and-quartile-ranking",
+          "requirements": "Percentile and Quartile Ranking: The query must use NTILE(100) to calculate complexity percentile and NTILE(4) for quartiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The query must group results by the patient cohort (General, Target) and interaction risk group (true, false) to perform comparative analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation",
+          "requirements": "Final Aggregation: The query must calculate and round the average complexity score, percentile, LOS, and mortality rate for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-reporting",
+          "requirements": "Top Quartile Reporting: The query must correctly filter for the top quartile (where target_complexity_quartile = 4) and report their specific LOS and mortality metrics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-union",
+          "requirements": "Output Union: The query must combine the results from the general cohort, target cohort, and top quartile analysis using UNION ALL.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

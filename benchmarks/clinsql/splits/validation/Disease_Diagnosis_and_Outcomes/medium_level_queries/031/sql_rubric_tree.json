@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must calculate patient age at admission and filter for the range 53-63 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-inclusion",
+          "requirements": "Condition Inclusion: The cohort must be restricted to patients having a diagnosis of either sepsis or septic shock.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Sepsis and Septic Shock",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sepsis-icd-codes",
+          "requirements": "Sepsis Code Selection: Correctly identifies sepsis using ICD-9 code '99591' and ICD-10 code 'A41'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "septic-shock-icd-codes",
+          "requirements": "Septic Shock Code Selection: Correctly identifies septic shock using ICD-9 code '78552' and ICD-10 code 'R65.21'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-categorization",
+          "requirements": "Diagnosis Categorization: Uses a CASE statement to correctly prioritize and label patients as 'Septic Shock' over 'Sepsis' if both conditions are present.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-grouping",
+          "requirements": "Length of Stay Grouping: Correctly calculates LOS in days and categorizes it into '\u22647 days' and '>7 days'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins admissions, patients, and diagnoses_icd (via a CTE) tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: Uses subject_id to link patients and admissions, and hadm_id to link admissions and diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final result set must be grouped by sepsis severity ('Sepsis' vs 'Septic Shock').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-count-per-los-group",
+          "requirements": "Patient Count (N): Correctly calculates the number of patients in each LOS group (\u22647 and >7 days) using COUNTIF.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "In-Hospital Mortality Rate (%): Correctly calculates the mortality percentage for each LOS group using SUM(hospital_expire_flag) and COUNTIF, multiplied by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-time-to-death-calculation",
+          "requirements": "Median Time-to-Death: Correctly calculates the median time-to-death (using LOS as proxy) for non-survivors in each LOS group using APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "absolute-mortality-difference",
+          "requirements": "Absolute Mortality Difference: Correctly calculates the absolute difference between the mortality rates of the two LOS groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "relative-mortality-difference",
+          "requirements": "Relative Mortality Difference: Correctly calculates the relative difference in mortality rates between the two LOS groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

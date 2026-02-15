@@ -1,0 +1,163 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-stratum",
+              "requirements": "Column 'stratum' or equivalent must exist, representing the analysis group (quartile or lab test).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-metric_name",
+              "requirements": "Column 'metric_name' or equivalent must exist, describing the metric being reported.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-metric_value",
+              "requirements": "Column 'metric_value' or equivalent must exist, containing the calculated result.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns ('stratum', 'metric_name', 'metric_value').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate 'In-Hospital Mortality Rate (%)' per quartile for ACS cohort.",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Values must be between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Values should generally be between 0 and 30, and should trend upwards with increasing instability quartiles.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validate 'Avg Length of Stay (Days)' per quartile for ACS cohort.",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Values must be greater than 0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Values should be between 1 and 30, and should trend upwards with increasing instability quartiles.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "acs-cohort-rate-validation",
+          "requirements": "Validate 'ACS Cohort Rate (%)' for critical labs.",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "acs-rate-plausible",
+              "requirements": "Values must be between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acs-rate-acceptable",
+              "requirements": "Values should be between 0 and 70.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "control-cohort-rate-validation",
+          "requirements": "Validate 'Control Cohort Rate (%)' for critical labs.",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "control-rate-plausible",
+              "requirements": "Values must be between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "control-rate-acceptable",
+              "requirements": "Values should be between 0 and 30, and generally lower than the corresponding ACS cohort rates.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

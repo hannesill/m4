@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "The query must correctly calculate the age at admission and filter for patients between 83 and 93 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-diagnosis-filter",
+          "requirements": "The query must identify patients with Type 2 Diabetes Mellitus using both ICD-9 ('250.x0', '250.x2') and ICD-10 ('E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hf-diagnosis-filter",
+          "requirements": "The query must identify patients with Heart Failure using both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-duration-filter",
+          "requirements": "The query must filter for admissions with a duration of at least 48 hours to ensure the analysis windows are valid.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "insulin-regimen-identification",
+          "requirements": "The query must correctly identify basal, bolus, and sliding-scale insulin types based on drug name keywords.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "early-initiation-window",
+          "requirements": "The query must correctly define the early initiation window as the first 48 hours after admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "late-initiation-window",
+          "requirements": "The query must correctly define the late initiation window as the final 12 hours before discharge.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "basal-bolus-logic",
+          "requirements": "The query must correctly identify a basal-bolus regimen by checking for the concurrent initiation of both basal and bolus insulins within the same time window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "correct-table-joins",
+          "requirements": "The query must correctly join patients, admissions, diagnoses_icd, and prescriptions tables using appropriate keys (subject_id, hadm_id).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "self-join-for-diagnoses",
+          "requirements": "The query must correctly use self-joins or equivalent logic on the diagnoses_icd table to ensure patients have both T2DM and HF diagnoses for the same admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "left-join-for-regimens",
+          "requirements": "The query must use a LEFT JOIN from the final patient cohort to the regimen data to ensure all cohort patients are included in the final count, even if they received no insulin.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Output",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-regimen-flagging",
+          "requirements": "The query must aggregate prescription data by hadm_id to correctly flag whether each insulin regimen was initiated within the specified time windows for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "The query must correctly calculate the percentage of patients on each regimen by dividing the regimen count by the total number of patients in the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "net-change-calculation",
+          "requirements": "The query must correctly calculate the net change as the difference in percentage points between the late and early initiation rates.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "The final output must be structured with columns for regimen type, early percentage, late percentage, and net change, and be ordered logically.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

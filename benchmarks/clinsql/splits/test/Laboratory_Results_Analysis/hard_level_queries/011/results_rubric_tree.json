@@ -1,0 +1,215 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-avg_instability_score",
+              "requirements": "Column exists for mean laboratory instability score (e.g., 'avg_instability_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-critical_event_frequency",
+              "requirements": "Column exists for critical event frequency (e.g., 'critical_event_frequency')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg_length_of_stay_days",
+              "requirements": "Column exists for average length of stay (e.g., 'avg_length_of_stay_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-in_hospital_mortality_rate",
+              "requirements": "Column exists for in-hospital mortality rate (e.g., 'in_hospital_mortality_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key columns ('avg_instability_score', 'critical_event_frequency', 'avg_length_of_stay_days', 'in_hospital_mortality_rate')",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "avg-instability-score-validation",
+          "requirements": "Validate 'avg_instability_score' for AKI cohort",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg-instability-score-plausible",
+              "requirements": "Clinically Plausible (0.5 to 8.0). A non-zero score is expected for AKI patients, but it shouldn't be extremely high on average.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-instability-score-acceptable",
+              "requirements": "Acceptable Range (1.5 to 4.5). AKI patients typically have several lab derangements within 72 hours.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "critical-event-frequency-validation",
+          "requirements": "Validate 'critical_event_frequency' for AKI cohort",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "critical-event-frequency-plausible",
+              "requirements": "Clinically Plausible (0.01 to 0.40). The frequency of critical lab events should be a fraction, higher than controls.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "critical-event-frequency-acceptable",
+              "requirements": "Acceptable Range (0.05 to 0.20). AKI patients have a significantly higher rate of critical labs compared to a general population.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validate 'avg_length_of_stay_days' for AKI cohort",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Clinically Plausible (3.0 to 30.0 days). AKI significantly increases length of stay.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Acceptable Range (6.0 to 15.0 days). Expected average LOS for an AKI admission is over a week.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "in-hospital-mortality-validation",
+          "requirements": "Validate 'in_hospital_mortality_rate' for AKI cohort",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "in-hospital-mortality-plausible",
+              "requirements": "Clinically Plausible (0.01 to 0.35). AKI is associated with a significant increase in mortality risk.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "in-hospital-mortality-acceptable",
+              "requirements": "Acceptable Range (0.04 to 0.15). In-hospital mortality for AKI is substantial but typically below 15% for this age group.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-comparison-validation",
+          "requirements": "Validate the relationship between AKI and Control cohorts",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "comparison-los",
+              "requirements": "Length of stay for AKI cohort must be greater than for Control cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comparison-mortality",
+              "requirements": "Mortality rate for AKI cohort must be greater than for Control cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comparison-instability-score",
+              "requirements": "Instability score for AKI cohort must be greater than for Control cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "comparison-critical-frequency",
+              "requirements": "Critical event frequency for AKI cohort must be greater than for Control cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

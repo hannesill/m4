@@ -1,0 +1,6 @@
+patient_group,interaction_risk_group,num_patients,avg_complexity_score,avg_percentile_rank,avg_los_days,mortality_rate
+General (Female 48-58),false,44436,64.74,0.499,4.25,0.012
+General (Female 48-58),true,807,152.29,0.8,13.43,0.022
+Target (Ischemic Stroke),Top Quartile,122,243.98,0.979,22.51,0.205
+Target (Ischemic Stroke),false,472,107.98,0.651,9.13,0.072
+Target (Ischemic Stroke),true,18,217.39,0.882,19.22,0.111

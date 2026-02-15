@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged 55 to 65 using `pat.anchor_age BETWEEN 55 AND 65`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pneumonia-diagnosis-filtering",
+          "requirements": "Pneumonia Diagnosis Filtering: The query must correctly identify patients with a pneumonia diagnosis by filtering `diagnoses_icd`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation (Instability Score)",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "pneumonia-icd-code-selection",
+          "requirements": "Pneumonia ICD Code Selection: The query correctly filters for pneumonia using both ICD-9 ('480'-'486') and ICD-10 ('J12'-'J18') code ranges.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-sign-selection",
+          "requirements": "Vital Sign Selection: The query must select the correct vital signs from `chartevents` using a specific list of itemids for the instability score calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-vitals-logic",
+          "requirements": "Abnormal Vitals Logic: The query must implement a CASE statement to correctly flag vital signs as abnormal based on predefined clinical thresholds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-24h",
+          "requirements": "Temporal Filter for First 24h: The query must restrict vital sign measurements to the first 24 hours of the ICU stay using a `BETWEEN` clause on `charttime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `icustays`, `patients`, `admissions`, and the `pneumonia_cohort` CTE to construct the main patient group.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "chartevents-join",
+          "requirements": "Chartevents Join: The query must correctly join `chartevents` to the patient cohort on `stay_id` to link vital signs to specific ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-aggregation",
+          "requirements": "Instability Score Aggregation: The query must correctly calculate the total instability score per `stay_id` by summing the `is_abnormal` flags.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: The query must calculate the percentile rank of a score of 60 by dividing the count of scores less than 60 by the total count of scores.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "decile-ranking",
+          "requirements": "Decile Ranking: The query must use `NTILE(10) OVER(ORDER BY instability_score DESC)` to rank patients into deciles based on their instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "unstable-decile-outcome-calculation",
+          "requirements": "Unstable Decile Outcome Calculation: The query must filter for the most unstable decile (`instability_decile = 1`) and calculate the average ICU LOS and mortality rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

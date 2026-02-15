@@ -1,0 +1,117 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-rr-category",
+              "requirements": "Column exists for Respiratory Rate (RR) category (e.g., 'rr_category', 'respiratory_rate_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-patient-count",
+              "requirements": "Column exists for patient count (e.g., 'patient_count', 'num_patients')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-stroke-rate",
+              "requirements": "Column exists for stroke rate (e.g., 'stroke_rate_percent', 'stroke_percentage')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns (`rr_category`, `patient_count`, `stroke_rate_percent`)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-count-validation",
+          "requirements": "Validate values in patient count column (e.g., 'patient_count')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "patient-count-plausible",
+              "requirements": "Values are clinically plausible (all counts >= 0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "patient-count-acceptable",
+              "requirements": "Values are in an acceptable range (e.g., normal RR group has the highest count, severe tachypnea/bradypnea the lowest).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "stroke-rate-validation",
+          "requirements": "Validate values in stroke rate column (e.g., 'stroke_rate_percent')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "stroke-rate-plausible",
+              "requirements": "Values are clinically plausible (0-100 for a percentage).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stroke-rate-acceptable",
+              "requirements": "Values are in an acceptable range for an ICU cohort (e.g., 5-35%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

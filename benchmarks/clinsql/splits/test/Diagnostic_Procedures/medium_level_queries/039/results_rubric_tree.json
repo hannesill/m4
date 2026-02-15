@@ -1,0 +1,143 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mean-imaging-column-exists",
+              "requirements": "Column for mean imaging procedures exists (e.g., 'mean_imaging_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-imaging-column-exists",
+              "requirements": "Column for minimum imaging procedures exists (e.g., 'min_imaging_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-imaging-column-exists",
+              "requirements": "Column for maximum imaging procedures exists (e.g., 'max_imaging_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mean-imaging-validation",
+          "requirements": "Validation of Mean CT/MRI per Admission (column 'mean_imaging_procedures')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mean-imaging-plausible",
+              "requirements": "Clinically Plausible (0.0 - 10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-imaging-acceptable",
+              "requirements": "Acceptable Range (0.0 - 2.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "min-imaging-validation",
+          "requirements": "Validation of Minimum CT/MRI per Admission (column 'min_imaging_procedures')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "min-imaging-plausible",
+              "requirements": "Clinically Plausible (0 - 5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-imaging-acceptable",
+              "requirements": "Acceptable Range (0 - 1)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "max-imaging-validation",
+          "requirements": "Validation of Maximum CT/MRI per Admission (column 'max_imaging_procedures')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "max-imaging-plausible",
+              "requirements": "Clinically Plausible (0 - 15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-imaging-acceptable",
+              "requirements": "Acceptable Range (0 - 5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

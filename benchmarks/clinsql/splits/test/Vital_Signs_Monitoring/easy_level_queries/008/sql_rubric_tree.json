@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'` to match the specified cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Restricts the patient cohort to the specified age range using `p.anchor_age BETWEEN 52 AND 62`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-event-identification",
+      "requirements": "Clinical Event Identification and Filtering",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "respiratory-rate-code-selection",
+          "requirements": "Respiratory Rate Code Selection: Correctly identifies respiratory rate measurements by filtering `ce.itemid` using the appropriate codes (e.g., IN (220210, 615)).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "plausibility-filtering",
+          "requirements": "Plausibility Filtering: Applies a reasonable range filter on the measurement value (e.g., `ce.valuenum BETWEEN 5 AND 50`) to exclude erroneous data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patients-to-icustays-join",
+          "requirements": "Patients to ICUSTAYS Join: Correctly joins the `patients` and `icustays` tables on `subject_id` to link patient demographics with their ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icustays-to-chartevents-join",
+          "requirements": "ICUSTAYS to CHARTEVENTS Join: Correctly joins the `icustays` and `chartevents` tables on `stay_id` to link ICU stays with recorded clinical events.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "temporal-constraint",
+          "requirements": "Temporal Constraint: Correctly filters events to 'ICU day 2 or later' using a time difference calculation, such as `TIMESTAMP_DIFF(ce.charttime, icu.intime, DAY) >= 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aggregation-function",
+          "requirements": "Aggregation Function: Uses the `MAX()` function on the `valuenum` column to find the maximum respiratory rate.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Applies `ROUND()` to the final result for clear presentation, as specified by the query.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

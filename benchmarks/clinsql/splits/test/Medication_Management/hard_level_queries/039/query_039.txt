@@ -1,0 +1,1 @@
+I'm caring for a 92‑year‑old woman with intracranial hemorrhage. In female inpatients aged 87–97 with ICH, stratify by medication complexity (unique drugs + routes in first 48 hours) into quartiles and report admissions, score ranges, LOS, mortality%, and 30‑day readmission%.

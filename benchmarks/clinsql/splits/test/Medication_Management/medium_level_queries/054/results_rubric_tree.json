@@ -1,0 +1,140 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "early-prevalence-column-exists",
+              "requirements": "Column exists for early prevalence percentage (e.g., 'early_prevalence_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "discharge-prevalence-column-exists",
+              "requirements": "Column exists for discharge prevalence percentage (e.g., 'discharge_prevalence_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-column-exists",
+              "requirements": "Column exists for net change in percentage points (e.g., 'net_change_pp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "early-prevalence-validation",
+          "requirements": "Validation of early GLP-1 use prevalence column ('early_prevalence_pct')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "early-prevalence-plausible",
+              "requirements": "Value is clinically plausible (0.0% to 15.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "early-prevalence-acceptable",
+              "requirements": "Value is within acceptable range (0.0% to 5.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "discharge-prevalence-validation",
+          "requirements": "Validation of discharge GLP-1 use prevalence column ('discharge_prevalence_pct')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "discharge-prevalence-plausible",
+              "requirements": "Value is clinically plausible (0.0% to 15.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "discharge-prevalence-acceptable",
+              "requirements": "Value is within acceptable range (0.0% to 5.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "net-change-validation",
+          "requirements": "Validation of net change in prevalence column ('net_change_pp')",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "net-change-plausible",
+              "requirements": "Value is clinically plausible (-15.0 to 15.0 percentage points)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-acceptable",
+              "requirements": "Value is within acceptable range (-5.0 to 5.0 percentage points)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

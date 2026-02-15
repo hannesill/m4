@@ -1,0 +1,3 @@
+cohort_name,number_of_patients,mean_risk_score,mortality_rate_90_day_perc,aki_rate_perc,ards_rate_perc,survivor_mean_los_days,matched_profile_avg_risk_score,matched_profile_risk_percentile
+General_Inpatient_Population,545497,12.06,7.35,13.42,0.23,4.34,,
+Target_PE_High_Comorbidity,146,30.16,57.53,50.0,0.0,11.52,30.16,47.38

@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-stay-category",
+              "requirements": "Column indicating stay duration category exists (e.g., 'stay_category', 'los_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mean-ultrasounds",
+              "requirements": "Column for mean ultrasounds per admission exists (e.g., 'mean_ultrasounds_per_admission', 'avg_us_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-min-ultrasounds",
+              "requirements": "Column for minimum ultrasounds per admission exists (e.g., 'min_ultrasounds_per_admission', 'min_us_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-max-ultrasounds",
+              "requirements": "Column for maximum ultrasounds per admission exists (e.g., 'max_ultrasounds_per_admission', 'max_us_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL or empty values in the key answer columns ('stay_category', 'mean_ultrasounds_per_admission', 'min_ultrasounds_per_admission', 'max_ultrasounds_per_admission')",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mean-ultrasounds-validation",
+          "requirements": "Validation of the 'mean_ultrasounds_per_admission' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-ultrasounds-plausible-range",
+              "requirements": "Values are clinically plausible (0.0 - 5.0). It is unlikely for a patient in this cohort to receive more than 5 ultrasounds on average during a short stay.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-ultrasounds-acceptable-range",
+              "requirements": "Values are in an acceptable range (0.0 - 2.0). Given the short stay and diagnosis, a low average number of ultrasounds is expected. A value of 0.0 is possible but on the extreme low end.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "min-ultrasounds-validation",
+          "requirements": "Validation of the 'min_ultrasounds_per_admission' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "min-ultrasounds-plausible-range",
+              "requirements": "Values are clinically plausible (0 - 2). The minimum number of procedures cannot be negative and must be an integer.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-ultrasounds-acceptable-range",
+              "requirements": "Value must be 0. It is almost certain that at least one patient in this cohort did not receive an ultrasound during their admission.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "max-ultrasounds-validation",
+          "requirements": "Validation of the 'max_ultrasounds_per_admission' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "max-ultrasounds-plausible-range",
+              "requirements": "Values are clinically plausible (0 - 10). It's possible for a single patient to receive multiple ultrasounds, but a very high number is unlikely in a 1-7 day stay.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-ultrasounds-acceptable-range",
+              "requirements": "Values are in an acceptable range (0 - 5). A value of 0, implying no ultrasounds for any patient, is surprising but possible. A small positive integer is more expected.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

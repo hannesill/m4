@@ -1,0 +1,207 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "The output CSV file is generated.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "The output CSV file contains the necessary columns to answer the clinical question.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-icu_status",
+              "requirements": "A column for ICU vs. non-ICU status exists (e.g., 'icu_status').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-los_quartile",
+              "requirements": "A column for LOS quartiles exists (e.g., 'los_quartile_range').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-mortality_rate",
+              "requirements": "A column for in-hospital mortality rate exists (e.g., 'in_hospital_mortality_rate_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-abs_mortality_diff",
+              "requirements": "A column for absolute mortality difference from Q1 exists (e.g., 'abs_mortality_diff_from_q1_pct_points').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-rel_mortality_diff",
+              "requirements": "A column for relative mortality difference from Q1 exists (e.g., 'rel_mortality_diff_from_q1_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-mech_vent_prevalence",
+              "requirements": "A column for mechanical ventilation prevalence exists (e.g., 'mech_vent_prevalence_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-vasopressor_prevalence",
+              "requirements": "A column for vasopressor prevalence exists (e.g., 'vasopressor_prevalence_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-rrt_prevalence",
+              "requirements": "A column for RRT prevalence exists (e.g., 'rrt_prevalence_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-unexpected-null-empty-values",
+          "requirements": "There are no unexpected NULL/Empty values in the answer-relevant columns. Nulls are permissible for difference calculations in the baseline Q1 rows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation of the 'in_hospital_mortality_rate_pct' column values.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Values are clinically plausible (0.0 - 100.0%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Values are within an acceptable range for this cohort (e.g., Non-ICU: 0-10%; ICU: 5-40%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mech-vent-validation",
+          "requirements": "Validation of the 'mech_vent_prevalence_pct' column values.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mech-vent-plausible",
+              "requirements": "Values are clinically plausible (0.0 - 100.0%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mech-vent-acceptable",
+              "requirements": "Values are within an acceptable range for this cohort (e.g., Non-ICU: 0-5%; ICU: 20-75%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "vasopressor-validation",
+          "requirements": "Validation of the 'vasopressor_prevalence_pct' column values.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "vasopressor-plausible",
+              "requirements": "Values are clinically plausible (0.0 - 100.0%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "vasopressor-acceptable",
+              "requirements": "Values are within an acceptable range for this cohort (e.g., Non-ICU: 0-5%; ICU: 20-75%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "rrt-validation",
+          "requirements": "Validation of the 'rrt_prevalence_pct' column values.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "rrt-plausible",
+              "requirements": "Values are clinically plausible (0.0 - 100.0%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "rrt-acceptable",
+              "requirements": "Values are within an acceptable range for this cohort (e.g., Non-ICU: 0-5%; ICU: 2-30%).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

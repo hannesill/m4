@@ -1,0 +1,183 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "Primary column for metric names exists (e.g., 'metric', 'description')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists",
+              "requirements": "Secondary column for metric values exists (e.g., 'value')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in value column for required metrics",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "p95-instability-score-validation",
+          "requirements": "Validate the 'P95 Instability Score' for the target cohort",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p95-instability-score-plausible",
+              "requirements": "Clinically Plausible (1-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p95-instability-score-acceptable",
+              "requirements": "Acceptable Range (2-8)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-toptier-validation",
+          "requirements": "Validate the 'Avg LOS (days) for Top Tier (>=P95)'",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg-los-toptier-plausible",
+              "requirements": "Clinically Plausible (1-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-toptier-acceptable",
+              "requirements": "Acceptable Range (5-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-toptier-validation",
+          "requirements": "Validate the 'In-Hospital Mortality (%) for Top Tier (>=P95)'",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-toptier-plausible",
+              "requirements": "Clinically Plausible (5-90)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-toptier-acceptable",
+              "requirements": "Acceptable Range (25-65)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-events-toptier-validation",
+          "requirements": "Validate the 'Avg Critical Lab Events per Patient (Top Tier)'",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg-events-toptier-plausible",
+              "requirements": "Clinically Plausible (2-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-events-toptier-acceptable",
+              "requirements": "Acceptable Range (8-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-events-general-validation",
+          "requirements": "Validate the 'Avg Critical Lab Events per Patient (General Population)'",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg-events-general-plausible",
+              "requirements": "Clinically Plausible (0.1-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-events-general-acceptable",
+              "requirements": "Acceptable Range (0.5-4)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

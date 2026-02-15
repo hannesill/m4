@@ -1,0 +1,4 @@
+discharge_outcome,number_of_admissions,median_los_days,q1_los_days,q3_los_days,iqr_los_days
+Discharged Home,8521,3.0,2.0,5.0,3.0
+Discharged to Hospice,379,7.0,4.0,11.0,7.0
+In-Hospital Mortality,903,4.0,2.0,9.0,7.0

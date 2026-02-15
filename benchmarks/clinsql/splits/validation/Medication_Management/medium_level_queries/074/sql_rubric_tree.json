@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the population of female inpatients aged 48-58 with both diabetes and heart failure.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Correctly filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 48-58 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 48 AND 58`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-diagnosis-filter",
+          "requirements": "Diabetes Diagnosis Filter: Correctly identifies patients with a diabetes diagnosis using relevant ICD-9 ('250%') and ICD-10 ('E10%', 'E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-filter",
+          "requirements": "Heart Failure Diagnosis Filter: Correctly identifies patients with a heart failure diagnosis using relevant ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-duration-filter",
+          "requirements": "Admission Duration Filter: Includes a filter to ensure admissions are at least 36 hours long (`DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 36`) to allow for non-overlapping 24h and 12h time windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies subcutaneous GLP-1 medications administered during the hospital stay.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "glp1-drug-identification",
+          "requirements": "GLP-1 Drug Identification: Correctly identifies GLP-1 agonist medications (e.g., liraglutide, semaglutide) using `LOWER(rx.drug) LIKE ...`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "route-of-administration-filter",
+          "requirements": "Route of Administration Filter: Correctly filters for subcutaneous route using `LOWER(rx.route) = 'sc'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescription-in-admission-filter",
+          "requirements": "Prescription In-Admission Filter: Ensures that the prescription start time falls within the admission period using `rx.starttime BETWEEN pc.admittime AND pc.dischtime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables to link patient demographics, admissions, diagnoses, and prescriptions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly joins `patients`, `admissions`, and `prescriptions` tables on `subject_id` and/or `hadm_id` as appropriate.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-table-joins",
+          "requirements": "Diagnosis Table Joins: Correctly performs two separate self-joins to `diagnoses_icd` on `hadm_id` to independently check for diabetes and heart failure diagnoses within the same admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-to-analysis-join",
+          "requirements": "Cohort to Analysis Join: Uses a LEFT JOIN from the final patient cohort to the medication exposure data to ensure all cohort patients are included in the denominator, even if they did not receive a GLP-1.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculates the prevalence of GLP-1 starts in the specified time windows.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-24h-window-logic",
+          "requirements": "First 24h Window Logic: Correctly identifies prescriptions started within the first 24 hours of admission using a `DATETIME_DIFF` on `rx.starttime` and `pc.admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-12h-window-logic",
+          "requirements": "Final 12h Window Logic: Correctly identifies prescriptions started within the final 12 hours of admission using a `DATETIME_DIFF` on `pc.dischtime` and `rx.starttime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-level-aggregation",
+          "requirements": "Admission-Level Aggregation: Correctly aggregates multiple prescriptions per admission to a single flag per time window using `MAX()` grouped by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-calculation",
+          "requirements": "Prevalence Calculation: Correctly calculates prevalence as a percentage by dividing the count of exposed admissions by the total number of cohort admissions, and handles potential division by zero.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Correctly rounds the final percentages to two decimal places and presents them in separate columns as requested.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

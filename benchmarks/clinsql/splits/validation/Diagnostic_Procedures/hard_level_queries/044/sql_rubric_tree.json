@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the primary patient group based on demographics, diagnosis, and ICU stay criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Calculates patient age at admission and filters for the range 82\u201392 years, e.g., `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 82 AND 92`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "Correctly identifies the first ICU stay for each hospital admission using a window function like `ROW_NUMBER() OVER (PARTITION BY a.hadm_id ORDER BY i.intime)` and filtering for the first entry.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cardiogenic-shock-identification",
+          "requirements": "Identifies patients with cardiogenic shock by correctly filtering on both ICD-9 (e.g., `78551%`) and ICD-10 (e.g., `R570%`) codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, admissions, ICU stays, diagnoses, and procedures.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Correctly joins `patients`, `admissions`, and `icustays` tables on `subject_id` and `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-table-join",
+          "requirements": "Integrates diagnosis data by joining the cohort with `diagnoses_icd` on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Uses a `LEFT JOIN` to connect the cohort to `procedureevents` on `stay_id`, ensuring patients without procedures are retained for analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs calculations and statistical analysis as required by the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "procedure-burden-calculation",
+          "requirements": "Calculates procedure burden by counting distinct procedures (`COUNT(DISTINCT pe.itemid)`) that occurred within the first 24 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hospital-los-calculation",
+          "requirements": "Calculates hospital length of stay in days, e.g., using `DATETIME_DIFF(dischtime, admittime, HOUR) / 24.0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quintile-stratification",
+          "requirements": "Correctly stratifies the patient cohort into five groups (quintiles) based on the calculated procedure count using `NTILE(5) OVER (ORDER BY procedure_count)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-outcome-aggregation",
+          "requirements": "Aggregates results by quintile, correctly calculating mean procedure count, mean hospital LOS, and in-hospital mortality percentage for each quintile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

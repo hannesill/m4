@@ -1,0 +1,1 @@
+What's the 75th-percentile hospital length of stay for admissions with primary upper GI bleeding in a 70-year-old man?

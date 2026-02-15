@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "base-age-cohort-creation",
+          "requirements": "Base Age Cohort Creation: Correctly identifies all inpatients aged 65-75 by joining admissions and patients tables and calculating age at admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pancreatitis-cohort-filtering",
+          "requirements": "Pancreatitis Cohort Filtering: Correctly filters the base age cohort for female patients with a diagnosis of acute pancreatitis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "control-cohort-creation",
+          "requirements": "Control Cohort Creation: Correctly defines the control cohort as all inpatients from the base age cohort (65-75), without gender or diagnosis restrictions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "pancreatitis-icd-coding",
+          "requirements": "Acute Pancreatitis ICD Coding: Correctly identifies acute pancreatitis using both ICD-9 ('5770') and ICD-10 ('K85%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-definition",
+          "requirements": "Critical Lab Definition: Implements a CASE statement to correctly flag individual lab events as critical based on their itemid and value ranges.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-time-window",
+          "requirements": "Lab Time Window: Restricts lab events to the first 48 hours after admission using a TIMESTAMP_ADD function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Calculations",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: Correctly calculates the instability score as the count of distinct critical lab itemids per patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quintile-stratification",
+          "requirements": "Quintile Stratification: Uses the NTILE(5) window function to stratify patients into quintiles based on their instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metrics-aggregation",
+          "requirements": "Outcome Metrics Aggregation: Correctly calculates patient count, mean instability score, mean LOS, and mortality rate per quintile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-comparison-rate-calculation",
+          "requirements": "Cohort Comparison Rate Calculation: Correctly calculates the percentage of patients with each critical lab for both the pancreatitis and control cohorts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration-and-formatting",
+      "requirements": "Database Integration and Final Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins all necessary tables (admissions, patients, diagnoses_icd, labevents, d_labitems) using appropriate keys (subject_id, hadm_id, itemid).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Uses UNION ALL and sorting logic to structure the final output into the requested multi-part report format.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

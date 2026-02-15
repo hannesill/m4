@@ -1,0 +1,287 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "temperature-category-column-exists",
+              "requirements": "Column exists for temperature category (e.g., temperature_category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "patient-count-column-exists",
+              "requirements": "Column exists for unique patient count (e.g., unique_patient_count)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "measurement-count-column-exists",
+              "requirements": "Column exists for measurement count (e.g., measurement_count)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-temp-column-exists",
+              "requirements": "Column exists for mean temperature (e.g., mean_temp_c)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-temp-column-exists",
+              "requirements": "Column exists for median temperature (e.g., median_temp_c)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-temp-column-exists",
+              "requirements": "Column exists for IQR of temperature (e.g., iqr_temp_c)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mi-rate-column-exists",
+              "requirements": "Column exists for MI rate (e.g., mi_rate_percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key columns (category, counts, stats, rate)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mean-temp-validation",
+          "requirements": "Validation of mean temperature column ('mean_temp_c')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mean-temp-plausible",
+              "requirements": "Clinically Plausible (25.0-45.0 C)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-temp-acceptable-hypothermic",
+              "requirements": "Acceptable Range for Hypothermic category (33.0-35.9 C)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-temp-acceptable-normothermic",
+              "requirements": "Acceptable Range for Normothermic category (36.5-37.5 C)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-temp-acceptable-febrile",
+              "requirements": "Acceptable Range for Febrile category (38.0-39.5 C)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-temp-validation",
+          "requirements": "Validation of median temperature column ('median_temp_c')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "median-temp-plausible",
+              "requirements": "Clinically Plausible (25.0-45.0 C)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-temp-acceptable-hypothermic",
+              "requirements": "Acceptable Range for Hypothermic category (34.0-35.9 C)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-temp-acceptable-normothermic",
+              "requirements": "Acceptable Range for Normothermic category (36.6-37.4 C)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-temp-acceptable-febrile",
+              "requirements": "Acceptable Range for Febrile category (38.0-39.0 C)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-temp-validation",
+          "requirements": "Validation of IQR temperature column ('iqr_temp_c')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "iqr-temp-plausible",
+              "requirements": "Clinically Plausible (0.0-5.0 C)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-temp-acceptable",
+              "requirements": "Acceptable Range (0.1-2.5 C)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "patient-count-validation",
+          "requirements": "Validation of unique patient count column ('unique_patient_count')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "patient-count-plausible",
+              "requirements": "Plausible Range (1-5000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "patient-count-acceptable",
+              "requirements": "Acceptable Range (10-1000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "measurement-count-validation",
+          "requirements": "Validation of measurement count column ('measurement_count')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "measurement-count-plausible",
+              "requirements": "Plausible Range (1-100000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "measurement-count-acceptable",
+              "requirements": "Acceptable Range (10-20000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "measurement-gt-patient-count",
+              "requirements": "Measurement count must be >= unique patient count",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mi-rate-validation",
+          "requirements": "Validation of MI rate column ('mi_rate_percent')",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mi-rate-plausible",
+              "requirements": "Plausible Rate Range (0.0-100.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mi-rate-acceptable",
+              "requirements": "Acceptable Rate Range for elderly ICU cohort (5.0-50.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

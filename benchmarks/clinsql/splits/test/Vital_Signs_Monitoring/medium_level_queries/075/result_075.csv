@@ -1,0 +1,5 @@
+map_category,patient_count,stroke_count,stroke_rate_percent
+< 65 mmHg,261,10,3.83
+65 - 74 mmHg,1965,117,5.95
+75 - 84 mmHg,2379,224,9.42
+>= 85 mmHg,1324,260,19.64

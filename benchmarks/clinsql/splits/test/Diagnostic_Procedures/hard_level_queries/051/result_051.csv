@@ -1,0 +1,3 @@
+cohort,num_admissions,stddev_diagnostic_utilization,p75_diagnostic_utilization,p95_diagnostic_utilization,in_hospital_mortality_pct,avg_hospital_los_days
+"Sepsis, Male, Age 90-100",381,2.7427735993960307,5,9,34.908136482939625,9.35094050743657
+General ICU Population,84861,3.399192957124067,6,11,11.008590518612786,10.108506852382122

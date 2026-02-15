@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients by checking `p.gender = 'F'` to match the clinical question.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at admission and filter for the 45-55 age range using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 45 AND 55`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `patients`, `admissions`, and `icustays` tables to build the initial patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-key-matching",
+          "requirements": "Cohort Key Matching: The joins must use the correct keys: `p.subject_id = a.subject_id` and `a.hadm_id = ie.hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "measurements-join",
+          "requirements": "Measurements Join: The query must join the patient cohort with `chartevents` using `stay_id` to link patients to their ICU measurements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sbp-code-selection",
+          "requirements": "SBP Code Selection: The query must identify Systolic Blood Pressure measurements by filtering `chartevents.itemid` using the correct codes (220050, 220179, 51).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter",
+          "requirements": "Temporal Filter: The query must accurately filter SBP measurements to the first 24 hours of the ICU stay using `ce.charttime BETWEEN pc.intime AND DATETIME_ADD(pc.intime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sbp-value-plausibility",
+          "requirements": "SBP Value Plausibility: The query must include a plausible range filter for SBP values (e.g., `ce.valuenum BETWEEN 40 AND 300`) to exclude erroneous data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Aggregation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-sbp-average",
+          "requirements": "Per-Stay SBP Average: The query must correctly calculate the average SBP for each ICU stay using `AVG(valuenum)` and grouping by `subject_id` and `stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sbp-categorization",
+          "requirements": "SBP Categorization: The query must use a CASE statement to accurately categorize the average SBP into three distinct groups: `< 140`, `140-159`, and `>= 160`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-patient-count",
+          "requirements": "Final Patient Count: The query must report the final count of unique patients per SBP category using `COUNT(DISTINCT subject_id)` and grouping by `sbp_category`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output must be ordered logically by SBP category to ensure clear and readable results.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

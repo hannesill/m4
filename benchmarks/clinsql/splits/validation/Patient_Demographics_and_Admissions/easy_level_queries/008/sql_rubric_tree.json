@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the initial patient population based on demographic criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients with an age between 52 and 62 using `p.anchor_age BETWEEN 52 AND 62`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies PCI procedures and isolates the first PCI event for each patient.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "pci-procedure-identification",
+          "requirements": "PCI Procedure Identification: The query must correctly identify PCI procedures by filtering on relevant ICD-9 and ICD-10 codes (e.g., '0066', '3606', '3607', '027%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-pci-isolation",
+          "requirements": "First PCI Isolation: The query must correctly identify the first PCI admission for each patient using a window function like `ROW_NUMBER() OVER (PARTITION BY subject_id ORDER BY admittime)` and filtering for the first occurrence.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, admissions, and procedures.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must join `patients` and `admissions` tables on `subject_id` to link patient demographics with their hospital stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-admission-join",
+          "requirements": "Procedure-Admission Join: The query must correctly link PCI procedures from `procedures_icd` to specific admissions using `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates the 30-day readmission logic and final rate.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "next-admission-identification",
+          "requirements": "Next Admission Identification: The query must use a window function like `LEAD(admittime) OVER (PARTITION BY subject_id ORDER BY admittime)` to find the subsequent admission for each patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-time-window",
+          "requirements": "Readmission Time Window: The query must accurately calculate the time difference between the discharge of the first PCI and the next admission, filtering for a 30-day window using `DATE_DIFF(DATE(next_admittime), DATE(dischtime), DAY) <= 30`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-rate-calculation",
+          "requirements": "Final Rate Calculation: The query must compute the final average 30-day readmission rate using `AVG()` on a binary flag representing readmission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

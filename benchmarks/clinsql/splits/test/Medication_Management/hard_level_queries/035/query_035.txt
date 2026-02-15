@@ -1,0 +1,1 @@
+Patient: 45-year-old woman. Among female inpatients aged 40–50 with neutropenic fever, stratify admissions by medication complexity score (first 48 hours) into quartiles and report per quartile: patient count, mean/min/max score, mean LOS, mortality %, and 30-day readmission %.

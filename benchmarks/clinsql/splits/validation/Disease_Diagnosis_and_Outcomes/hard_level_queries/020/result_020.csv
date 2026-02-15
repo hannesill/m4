@@ -1,0 +1,6 @@
+risk_quintile,patient_count,in_hospital_mortality_rate_pct,major_complication_rate_pct,median_survivor_los_days
+1,316,4.43,0.0,3
+2,315,6.35,0.0,4
+3,315,4.44,0.0,4
+4,315,6.35,1.27,3
+5,315,9.84,4.13,6

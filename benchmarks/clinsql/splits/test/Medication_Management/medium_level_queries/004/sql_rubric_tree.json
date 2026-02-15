@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the cohort of male inpatients aged 45-55 with diagnoses of T2DM and Heart Failure.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the age at admission and filter for patients between 45 and 55 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-diagnosis-selection",
+          "requirements": "T2DM Diagnosis Selection: The query must filter for patients with a diagnosis of Type 2 Diabetes Mellitus by joining `diagnoses_icd` and using appropriate ICD codes (e.g., 'E11%', '250%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-selection",
+          "requirements": "Heart Failure Diagnosis Selection: The query must filter for patients with a diagnosis of Heart Failure by joining `diagnoses_icd` and using appropriate ICD codes (e.g., 'I50%', '428%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-stay-filter",
+          "requirements": "Inpatient Stay Filter: The query correctly filters for inpatient stays by ensuring `admittime` and `dischtime` are not null, and includes a plausible length of stay (>=72h).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies and categorizes GLP-1 prescriptions according to specific time windows relative to the hospital admission.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "glp1-drug-identification",
+          "requirements": "GLP-1 Drug Identification: The query must accurately identify GLP-1 agonist prescriptions by searching for relevant drug names (e.g., semaglutide, liraglutide) in the `prescriptions` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "early-prescription-window",
+          "requirements": "Early Prescription Window: The query must use a CASE statement with DATETIME_DIFF to correctly identify GLP-1 prescriptions started within the first 72 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "late-prescription-window",
+          "requirements": "Late Prescription Window: The query must use a CASE statement with DATETIME_DIFF to correctly identify GLP-1 prescriptions active within the last 48 hours before discharge.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescription-aggregation-per-admission",
+          "requirements": "Prescription Aggregation per Admission: The query must use MAX() and GROUP BY hadm_id to correctly flag admissions where at least one GLP-1 was administered in each time window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient demographics, admission details, diagnoses, and prescriptions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `patients` and `admissions` on `subject_id`, and `admissions` with `diagnoses_icd` on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescription-join",
+          "requirements": "Prescription Join: The query must correctly join the patient cohort with the `prescriptions` table on `hadm_id` to analyze medication data.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-summary-join",
+          "requirements": "Final Summary Join: The query must use a LEFT JOIN to connect the full patient cohort with the GLP-1 prescription data to ensure all patients are included in the denominator.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates and reports the final percentages and the net change as requested.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-count-calculation",
+          "requirements": "Cohort Count Calculation: The query must correctly calculate the total number of admissions in the patient cohort to serve as the denominator.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-count-calculation",
+          "requirements": "Metric Count Calculation: The query must use COUNTIF to correctly count the number of admissions meeting the early and late prescription criteria.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: The query must correctly calculate the percentages for early and late prescriptions, handle potential division by zero, and scale the result to 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "net-change-calculation",
+          "requirements": "Net Change Calculation: The query must accurately calculate the net change by subtracting the early initiation percentage from the late prevalence percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

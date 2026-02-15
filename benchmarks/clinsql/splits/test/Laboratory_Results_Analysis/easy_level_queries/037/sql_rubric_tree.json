@@ -1,0 +1,144 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-diagnosis-selection",
+          "requirements": "Sepsis Diagnosis Selection: The query must identify patients with a sepsis diagnosis by correctly filtering the diagnoses_icd table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd-version-handling",
+              "requirements": "ICD Version Handling: The query must correctly handle both ICD-9 and ICD-10 codes by filtering on the `d.icd_version` column.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd9-sepsis-codes",
+              "requirements": "ICD-9 Sepsis Codes: The query must accurately select ICD-9 codes for sepsis (e.g., '99591', '99592').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd10-sepsis-codes",
+              "requirements": "ICD-10 Sepsis Codes: The query must accurately select ICD-10 codes for sepsis using a pattern match (e.g., `d.icd_code LIKE 'A41%'`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-diagnosis-join",
+          "requirements": "Patient-Diagnosis Join: The query must correctly join the `patients` and `diagnoses_icd` tables on `subject_id` to link demographics with diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-lab-join",
+          "requirements": "Cohort-Lab Join: The query must correctly join the identified sepsis admissions with the `labevents` table on `hadm_id` to access lab results.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "platelet-code-selection",
+          "requirements": "Platelet Code Selection: The query must correctly identify platelet count lab tests using the appropriate itemid (e.g., `le.itemid = 51265`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-filtering",
+          "requirements": "Value Filtering: The query should filter out null or invalid platelet values to ensure data quality (e.g., `le.valuenum IS NOT NULL` and `le.valuenum BETWEEN 10 AND 1000`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "peak-value-calculation",
+          "requirements": "Peak Value Calculation: The query must calculate the peak (maximum) platelet count for each hospital admission using `MAX(le.valuenum)`. ",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-by-admission",
+          "requirements": "Grouping by Admission: The query must group the lab results by `hadm_id` to correctly calculate the peak value per admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must calculate the 75th percentile of the peak platelet counts using an appropriate function like `APPROX_QUANTILES(..., 100)[OFFSET(75)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to an integer value as requested by the query's use of `ROUND(..., 0)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

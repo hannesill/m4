@@ -1,0 +1,13 @@
+sepsis_severity,los_bucket,admission_type_group,number_of_admissions,in_hospital_mortality_rate_pct,average_comorbidity_count
+Septic Shock,1-3 days,Non-Emergent,57,68.42,21.61
+Septic Shock,1-3 days,Emergent,0,0.0,0.0
+Septic Shock,4-7 days,Non-Emergent,117,29.91,24.37
+Septic Shock,4-7 days,Emergent,0,0.0,0.0
+Septic Shock,>=8 days,Non-Emergent,411,30.17,30.75
+Septic Shock,>=8 days,Emergent,0,0.0,0.0
+Sepsis without Septic Shock,1-3 days,Non-Emergent,223,5.38,14.26
+Sepsis without Septic Shock,1-3 days,Emergent,0,0.0,0.0
+Sepsis without Septic Shock,4-7 days,Non-Emergent,395,5.82,18.48
+Sepsis without Septic Shock,4-7 days,Emergent,0,0.0,0.0
+Sepsis without Septic Shock,>=8 days,Non-Emergent,637,8.95,24.73
+Sepsis without Septic Shock,>=8 days,Emergent,0,0.0,0.0

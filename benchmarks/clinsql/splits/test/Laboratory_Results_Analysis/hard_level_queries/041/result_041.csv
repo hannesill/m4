@@ -1,0 +1,6 @@
+metric,value,description
+P95 Instability Score Threshold for HF Cohort,1,The instability score at the 95th percentile for male HF patients aged 54-64.
+In-Hospital Mortality Rate,7.98%,For Top Tier HF (>=P95) group.
+Average Length of Stay (Days),9.8,For Top Tier HF (>=P95) group.
+Critical Lab Rate,3.25%,"For Age-Matched Control (All M, 54-64) group. (Rate of critical results among labs measured)."
+Critical Lab Rate,15.05%,For Top Tier HF (>=P95) group. (Rate of critical results among labs measured).

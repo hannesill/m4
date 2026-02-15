@@ -1,0 +1,119 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "medication-class-column-exists",
+              "requirements": "A column identifying the medication class exists (e.g., 'medication_class').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "first-72h-pct-column-exists",
+              "requirements": "A column for initiation percentage in the first 72 hours exists (e.g., 'initiation_prevalence_first_72h_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "final-72h-pct-column-exists",
+              "requirements": "A column for initiation percentage in the final 72 hours exists (e.g., 'initiation_prevalence_final_72h_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns ('initiation_prevalence_first_72h_pct', 'initiation_prevalence_final_72h_pct').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-72h-pct-validation",
+          "requirements": "Validation of the 'initiation_prevalence_first_72h_pct' column values.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "first-72h-pct-plausible",
+              "requirements": "Values are within a plausible range (0-100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "first-72h-pct-acceptable",
+              "requirements": "Values are within an acceptable range based on clinical context (e.g., Insulin: 40-95, Oral Agents: 1-25). Inpatients with T2D and HF are often started on insulin due to acute illness and stress hyperglycemia.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "final-72h-pct-validation",
+          "requirements": "Validation of the 'initiation_prevalence_final_72h_pct' column values.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "final-72h-pct-plausible",
+              "requirements": "Values are within a plausible range (0-100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "final-72h-pct-acceptable",
+              "requirements": "Values are within an acceptable range based on clinical context (e.g., Insulin: 15-60, Oral Agents: 3-30). Insulin initiation may decrease while oral agents might be started or adjusted in preparation for discharge.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

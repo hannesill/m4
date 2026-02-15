@@ -1,0 +1,211 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stratum-column-exists",
+              "requirements": "Column for stratification exists (e.g., 'stratum', 'group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-complexity-score-column-exists",
+              "requirements": "Column for average medication complexity score exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-complexity-percentile-column-exists",
+              "requirements": "Column for average medication complexity percentile exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-column-exists",
+              "requirements": "Column for average length of stay exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "Column for mortality rate exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "avg-complexity-score-validation",
+          "requirements": "Validate values for average medication complexity score",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-complexity-score-plausible",
+              "requirements": "Values are clinically plausible",
+              "sequential": false,
+              "critical": false,
+              "scoring": {
+                "type": "range",
+                "min": 5,
+                "max": 60
+              },
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-complexity-score-acceptable",
+              "requirements": "Values are within a clinically acceptable range",
+              "sequential": false,
+              "critical": false,
+              "scoring": {
+                "type": "range",
+                "min": 15,
+                "max": 45
+              },
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-complexity-percentile-validation",
+          "requirements": "Validate values for average medication complexity percentile",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-complexity-percentile-plausible",
+              "requirements": "Values are plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": {
+                "type": "range",
+                "min": 0,
+                "max": 100
+              },
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-complexity-percentile-acceptable",
+              "requirements": "Values are within a clinically acceptable range",
+              "sequential": false,
+              "critical": false,
+              "scoring": {
+                "type": "range",
+                "min": 20,
+                "max": 95
+              },
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validate values for average length of stay (days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Values are clinically plausible for DKA in the elderly",
+              "sequential": false,
+              "critical": false,
+              "scoring": {
+                "type": "range",
+                "min": 2,
+                "max": 30
+              },
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Values are within a clinically acceptable range for DKA in the elderly",
+              "sequential": false,
+              "critical": false,
+              "scoring": {
+                "type": "range",
+                "min": 4,
+                "max": 15
+              },
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate values for mortality rate (%)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Values are clinically plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": {
+                "type": "range",
+                "min": 0,
+                "max": 100
+              },
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Values are within a clinically acceptable range for DKA in the elderly",
+              "sequential": false,
+              "critical": false,
+              "scoring": {
+                "type": "range",
+                "min": 2,
+                "max": 25
+              },
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

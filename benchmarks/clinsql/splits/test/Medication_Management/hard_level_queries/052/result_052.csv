@@ -1,0 +1,3 @@
+patient_group,total_patients,avg_med_complexity_score_72hr,complexity_score_distribution,median_percentile_rank_of_risk_patients,percent_with_hyperk_risk_interaction,top_quartile_avg_los_days,top_quartile_mortality_rate_percent
+"Target Cohort (Female, 68-78, HHS)",39,28.999999999999993,[16 21 27 38 48],0.5789473684210527,23.076923076923077,11.555555555555554,0.0
+General Inpatient Population,545989,16.5322707966641,[ 0 10 16 23 84],0.7348494838714404,9.950383615787112,8.494391818135254,5.863865139893182

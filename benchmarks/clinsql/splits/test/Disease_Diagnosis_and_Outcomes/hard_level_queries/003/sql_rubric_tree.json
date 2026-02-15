@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "pe-condition-identification",
+          "requirements": "Pulmonary Embolism Identification: Correctly identifies PE admissions from 'diagnoses_icd' using both ICD-9 ('415.1%') and ICD-10 ('I26%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `pat.gender = 'F'` in the `cohort_base` CTE.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters for patients aged 70-80 using `(pat.anchor_age + EXTRACT(YEAR FROM adm.admittime) - pat.anchor_year) BETWEEN 70 AND 80`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-join",
+          "requirements": "Cohort Join: Correctly inner joins `patients`, `admissions`, and the `pe_admissions` CTE to form the primary PE cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "aki-identification",
+          "requirements": "AKI Identification: Correctly identifies Acute Kidney Injury using ICD-9 ('584%') and ICD-10 ('N17%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ards-identification",
+          "requirements": "ARDS Identification: Correctly identifies Acute Respiratory Distress Syndrome using ICD-9 ('518.82', '518.5') and ICD-10 ('J80') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-comorbidities",
+          "requirements": "Risk Score Comorbidities: Correctly identifies sepsis, MI, CKD, and cancer using both ICD-9 and ICD-10 codes for risk score calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "death-date-handling",
+          "requirements": "Death Date Handling: Correctly determines the patient's death date by coalescing `adm.deathtime` and `pat.dod`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins `patients` and `admissions` on `subject_id`, and `cohort_base` with `diagnoses_flags` on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cross-join-for-comparison",
+          "requirements": "Cross Join for Comparison Metric: Appropriately uses a CROSS JOIN to apply the single-value `general_pop_90d_mortality_rate` to each quintile row in the final result set.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "risk-score-calculation",
+          "requirements": "Risk Score Calculation: Correctly computes the `risk_score` based on a weighted sum of age and comorbidities (sepsis, cancer, MI, CKD).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-stratification",
+          "requirements": "Risk Stratification: Correctly uses `NTILE(5) OVER (ORDER BY risk_score)` to stratify patients into quintiles.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pe-cohort-mortality",
+          "requirements": "PE Cohort Mortality: Correctly calculates 90-day mortality for the PE cohort per quintile using `DATETIME_DIFF(cb.deathtime, cb.admittime, DAY) <= 90`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "general-pop-mortality",
+          "requirements": "General Population Mortality: Correctly calculates the 90-day mortality for the general 70-80 female population as a separate comparison metric.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-ards-rates",
+          "requirements": "AKI/ARDS Rates Calculation: Correctly computes the per-quintile rates for AKI and ARDS using `AVG()` on the respective flag columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-survivor-los",
+          "requirements": "Median Survivor LOS: Correctly calculates median LOS for survivors only, using `APPROX_QUANTILES` on `los_days` where `is_dead_at_90_days` is false.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

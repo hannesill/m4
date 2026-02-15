@@ -1,0 +1,120 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction in CTE SepsisAdmissions",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 90 and 100 using `pat.anchor_age BETWEEN 90 AND 100`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-identification",
+          "requirements": "Sepsis Identification: The query must identify patients with sepsis based on ICD codes.",
+          "weight": 3,
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "icd-version-handling",
+              "requirements": "ICD Version Handling: The query must correctly distinguish between ICD-9 and ICD-10 versions using `dx.icd_version`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "sepsis-icd9-selection",
+              "requirements": "Sepsis ICD-9 Code Selection: The query must correctly identify sepsis using specific ICD-9 codes ('99591', '99592', '78552').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "sepsis-icd10-selection",
+              "requirements": "Sepsis ICD-10 Code Selection: The query must correctly identify sepsis using ICD-10 code patterns ('A41%' or 'R65.2%').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Data Flow",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "initial-table-joins",
+          "requirements": "Initial Table Joins: The query must correctly join `admissions`, `patients`, and `diagnoses_icd` tables to link demographics with diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cte-to-icu-join",
+          "requirements": "CTE to ICU Join: The query must correctly join the `SepsisAdmissions` CTE with the `icustays` table on `hadm_id` to link sepsis admissions to ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "distinct-admissions",
+          "requirements": "Distinct Admissions: The query should use `DISTINCT adm.hadm_id` within the CTE to ensure each unique sepsis admission is counted only once before joining to ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Calculation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "standard-deviation-calculation",
+          "requirements": "Standard Deviation Calculation: The query must use an appropriate standard deviation function, such as `STDDEV_SAMP`, on the ICU length of stay (`icu.los`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-data-cleaning",
+          "requirements": "LOS Data Cleaning: The query should include a filter to exclude null or non-positive ICU LOS values (e.g., `icu.los IS NOT NULL AND icu.los > 0`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

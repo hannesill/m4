@@ -1,0 +1,13 @@
+icu_group,los_bucket,comorbidity_burden,number_of_admissions,mortality_rate_percent,ckd_prevalence_percent,diabetes_prevalence_percent
+Non-ICU,<=5 days,Low,310,0.65,3.55,20.65
+Non-ICU,<=5 days,Medium,199,1.51,12.56,43.22
+Non-ICU,<=5 days,High,76,0.0,34.21,69.74
+Non-ICU,>5 days,Low,44,4.55,2.27,20.45
+Non-ICU,>5 days,Medium,77,1.3,12.99,29.87
+Non-ICU,>5 days,High,89,4.49,21.35,51.69
+ICU,<=5 days,Low,143,9.79,3.5,13.29
+ICU,<=5 days,Medium,113,23.01,7.96,26.55
+ICU,<=5 days,High,65,49.23,24.62,44.62
+ICU,>5 days,Low,86,2.33,2.33,9.3
+ICU,>5 days,Medium,194,6.7,6.19,18.56
+ICU,>5 days,High,353,18.98,22.95,43.91

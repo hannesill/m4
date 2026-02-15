@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation for Hemorrhagic Stroke Lab Instability Analysis",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the cohort of male inpatients aged 40-50 with a diagnosis of hemorrhagic stroke.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate patient age at admission and filter for the 40-50 age range.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-selection",
+          "requirements": "Condition Selection: The query must filter for diagnoses of hemorrhagic stroke using both ICD-9 ('430', '431', '432') and ICD-10 ('I60', 'I61', 'I62') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, diagnoses, and lab results.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `admissions`, `patients`, and `diagnoses_icd` tables to define the initial patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-data-join",
+          "requirements": "Lab Data Join: The query must join `labevents` with `admissions` to correctly anchor lab results to specific hospital stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly implements the logic for identifying and analyzing lab instability.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-panel-definition",
+          "requirements": "Lab Panel Definition: The query must define a specific panel of labs with their corresponding normal/abnormal thresholds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-time-window",
+          "requirements": "Lab Time Window: The query must restrict lab events to the first 72 hours of the admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-lab-logic",
+          "requirements": "Abnormal Lab Logic: The query must correctly implement CASE logic to flag lab values as abnormal based on the defined thresholds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the required calculations and stratifications to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must calculate the lab instability score as a count of unique abnormal labs per patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-stratification",
+          "requirements": "Quartile Stratification: The query must use NTILE(4) to stratify the target cohort into quartiles based on the instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-calculation",
+          "requirements": "Outcome Calculation: The query must calculate average length of stay (LOS) and mortality rate for each quartile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormality-rate-comparison",
+          "requirements": "Abnormality Rate Comparison: The query must calculate and compare per-lab abnormal rates between the target cohort and the general inpatient population.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting",
+      "requirements": "Output Formatting and Readability",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "use-of-ctes",
+          "requirements": "Use of CTEs: The query should use Common Table Expressions (CTEs) to structure the logic for clarity and maintainability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-structure",
+          "requirements": "Final Output Structure: The final result set should clearly present the outcomes per quartile and the per-lab abnormality rates.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

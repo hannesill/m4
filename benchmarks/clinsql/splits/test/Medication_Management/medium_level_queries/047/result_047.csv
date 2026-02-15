@@ -1,0 +1,5 @@
+med_class,total_patients,pct_on_med_first_24h,pct_on_med_last_24h,count_continued,count_initiated_late,count_discontinued
+ACEi/ARB/ARNI,682,26.7,7.6,19,33,163
+Antidiabetic,682,85.3,26.1,173,5,409
+Beta-Blocker,682,63.8,14.2,65,32,370
+Loop Diuretic,682,44.1,21.8,102,47,199

@@ -1,0 +1,210 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-quintile",
+              "requirements": "Column exists for risk quintile stratification (e.g., 'risk_quintile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-pe-mortality",
+              "requirements": "Column exists for PE cohort 90-day mortality rate (e.g., 'pe_cohort_90d_mortality_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-general-mortality",
+              "requirements": "Column exists for general population 90-day mortality rate (e.g., 'general_pop_90d_mortality_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-aki",
+              "requirements": "Column exists for AKI rate (e.g., 'aki_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-ards",
+              "requirements": "Column exists for ARDS rate (e.g., 'ards_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-los",
+              "requirements": "Column exists for median survivor length of stay (e.g., 'median_survivor_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "pe-mortality-rate-validation",
+          "requirements": "Validation for PE Cohort 90-Day Mortality Rate",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "pe-mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.01 - 0.75). Mortality in a high-risk elderly PE cohort is significant but shouldn't approach 100%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pe-mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0.05 - 0.55). Given the risk stratification, rates should span from moderately low to very high across quintiles.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "general-mortality-rate-validation",
+          "requirements": "Validation for General Population 90-Day Mortality Rate",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "general-mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.01 - 0.30). Mortality for general inpatients aged 70-80 is lower than the PE cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0.05 - 0.15). Expect a relatively stable and lower background mortality rate.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "aki-rate-validation",
+          "requirements": "Validation for AKI Rate",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "aki-rate-plausible",
+              "requirements": "Clinically Plausible (0.0 - 0.70). AKI is a common complication in severe illness like PE, especially in the elderly.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "aki-rate-acceptable",
+              "requirements": "Acceptable Range (0.10 - 0.40). The rates should reflect a significant but not universal complication.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ards-rate-validation",
+          "requirements": "Validation for ARDS Rate",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "ards-rate-plausible",
+              "requirements": "Clinically Plausible (0.0 - 0.30). ARDS is a severe but less common complication of PE than AKI.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ards-rate-acceptable",
+              "requirements": "Acceptable Range (0.0 - 0.10). Expect low rates, especially as it may not occur in all risk quintiles.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-validation",
+          "requirements": "Validation for Median Survivor Length of Stay",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "los-plausible",
+              "requirements": "Clinically Plausible (1 - 45 days). Hospital stays for PE can be short or prolonged due to complications.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-acceptable",
+              "requirements": "Acceptable Range (3 - 15 days). Median LOS for survivors is typically within this range for this condition.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

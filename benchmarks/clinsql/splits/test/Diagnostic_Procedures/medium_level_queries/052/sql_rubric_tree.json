@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters for patients aged 73 to 83 using the calculated age `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 73 AND 83`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "multi-trauma-definition",
+          "requirements": "Identifies multi-trauma admissions by requiring at least two distinct trauma-related ICD codes (ICD-9 '800'-'999' or ICD-10 'S'/'T') per admission using `HAVING COUNT(DISTINCT icd_code) >= 2`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-type-selection",
+          "requirements": "Filters for admissions that are either emergency or elective using `(a.admission_type LIKE '%EMER%' OR a.admission_type = 'ELECTIVE')`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-selection",
+          "requirements": "Filters for admissions with a length of stay between 1 and 7 days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY) BETWEEN 1 AND 7`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Ultrasound Identification",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "ultrasound-icd9-selection",
+          "requirements": "Correctly identifies ICD-9 codes for ultrasound procedures using the pattern `pr.icd_code LIKE '88.7%'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ultrasound-icd10-selection",
+          "requirements": "Correctly identifies ICD-10 codes for ultrasound procedures using the logic `SUBSTR(pr.icd_code, 1, 1) = 'B' AND SUBSTR(pr.icd_code, 3, 1) = '4'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "Distinguishes between ICD-9 and ICD-10 versions for both trauma and procedure codes using the `icd_version` column in the respective WHERE clauses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Correctly joins the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "trauma-condition-join",
+          "requirements": "Correctly joins the main query with the `trauma_counts` CTE on `hadm_id` to filter for multi-trauma admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-join-type",
+          "requirements": "Uses a `LEFT JOIN` to connect admissions with `procedures_icd` to ensure admissions without any ultrasounds are included in the final aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "admission-stratification",
+          "requirements": "Creates `admission_category` and `stay_category` columns using `CASE` statements to stratify by admission type (ED vs. Elective) and length of stay (1-3 vs. 4-7 days).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-admission-ultrasound-count",
+          "requirements": "Correctly counts the number of ultrasound procedures for each unique admission by grouping on `hadm_id` in the `ultrasound_counts` CTE.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-stratified-aggregation",
+          "requirements": "Aggregates the per-admission counts by grouping on `admission_category` and `stay_category` for the final output.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation",
+          "requirements": "Calculates the mean, min, and max number of ultrasounds per admission using `AVG(num_ultrasounds)`, `MIN(num_ultrasounds)`, and `MAX(num_ultrasounds)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

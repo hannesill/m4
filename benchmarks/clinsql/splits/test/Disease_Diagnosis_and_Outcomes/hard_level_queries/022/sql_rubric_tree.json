@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the primary patient group based on demographics and the main clinical condition.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Correctly filters for female patients using the condition `bpa.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly filters patients to be between 40 and 50 years of age at admission using `bpa.age_at_admission BETWEEN 40 AND 50`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-cohort-filter",
+          "requirements": "AKI Cohort Filter: Correctly includes only patients with a diagnosis of AKI by using an INNER JOIN with the `aki_diagnoses` CTE.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "valid-admission-filter",
+          "requirements": "Valid Admission Filter: Ensures admissions have non-null start and end times (`dischtime IS NOT NULL AND admittime IS NOT NULL`) for accurate length-of-stay and post-discharge calculations.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly translates clinical concepts like diagnoses and risk scores into SQL logic.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "aki-code-identification",
+          "requirements": "AKI Code Identification: Accurately identifies AKI using both ICD-9 ('584%') and ICD-10 ('N17%') codes from the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ards-code-identification",
+          "requirements": "ARDS Code Identification: Accurately identifies ARDS using both ICD-9 ('51882') and ICD-10 ('J80') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-quantification",
+          "requirements": "Comorbidity Quantification: Correctly calculates a comorbidity count for each admission using `COUNT(DISTINCT icd_code)` grouped by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "composite-risk-score-logic",
+          "requirements": "Composite Risk Score Logic: Correctly implements the composite risk score formula: `(comorbidity_count * 5) + (is_ards * 50)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables and calculates necessary fields from raw data.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: Correctly joins the `patients` and `admissions` tables on `subject_id` to link patient demographics with admission data.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "feature-join-strategy",
+          "requirements": "Feature Join Strategy: Correctly uses LEFT JOIN for optional features (`ards_diagnoses`, `comorbidities`) to avoid dropping patients from the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dynamic-age-calculation",
+          "requirements": "Dynamic Age Calculation: Correctly computes patient age at admission using anchor values (`anchor_age`, `anchor_year`) and the admission time.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final stratification, aggregation, and calculation of requested metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-quintile-stratification",
+          "requirements": "Risk Quintile Stratification: Correctly stratifies the cohort into 5 quintiles using `NTILE(5)` ordered by the `composite_risk_score`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-grouping",
+          "requirements": "Final Output Grouping: Correctly groups the final results by `risk_quintile` to report metrics per stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "30-Day Mortality Calculation: Correctly defines the 30-day post-discharge mortality flag and calculates the average rate per quintile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ards-rate-calculation",
+          "requirements": "ARDS Co-occurrence Calculation: Correctly calculates the ARDS co-occurrence percentage per quintile using `AVG(is_ards) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "survivor-los-calculation",
+          "requirements": "Median Survivor LOS Calculation: Correctly calculates the median length of stay for survivors only, using `APPROX_QUANTILES` on a conditionally filtered set (`IF(hospital_expire_flag = 0, los_days, NULL)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

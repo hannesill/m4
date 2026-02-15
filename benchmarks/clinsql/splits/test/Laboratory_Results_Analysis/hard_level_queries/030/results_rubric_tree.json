@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p75-instability-score-column-exists",
+              "requirements": "Column exists for 75th-percentile lab instability score (e.g., 'p75_instability_score_first_48h')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-critical-events-column-exists",
+              "requirements": "Column exists for cohort average critical lab events (e.g., 'cohort_avg_critical_events_per_admission')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-critical-events-column-exists",
+              "requirements": "Column exists for general inpatient average critical lab events (e.g., 'general_avg_critical_events_per_admission')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-los-column-exists",
+              "requirements": "Column exists for cohort average length of stay (e.g., 'cohort_avg_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-mortality-column-exists",
+              "requirements": "Column exists for cohort in-hospital mortality rate (e.g., 'cohort_mortality_rate_percent')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "p75-instability-score-validation",
+          "requirements": "Validate the column for 75th-percentile lab instability score",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p75-instability-score-plausible",
+              "requirements": "Value is clinically plausible (0-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-instability-score-acceptable",
+              "requirements": "Value is in the acceptable range (1-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-critical-events-validation",
+          "requirements": "Validate the column for cohort average critical lab events per admission",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "cohort-critical-events-plausible",
+              "requirements": "Value is clinically plausible (0-5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-critical-events-acceptable",
+              "requirements": "Value is in the acceptable range (0.05-1.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "general-critical-events-validation",
+          "requirements": "Validate the column for general inpatient average critical lab events per admission",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "general-critical-events-plausible",
+              "requirements": "Value is clinically plausible (0-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-critical-events-acceptable",
+              "requirements": "Value is in the acceptable range (0.1-2.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-los-validation",
+          "requirements": "Validate the column for cohort average length of stay in days",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "cohort-los-plausible",
+              "requirements": "Value is clinically plausible (1-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-los-acceptable",
+              "requirements": "Value is in the acceptable range (2-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-mortality-validation",
+          "requirements": "Validate the column for cohort in-hospital mortality rate in percent",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "cohort-mortality-plausible",
+              "requirements": "Value is clinically plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-mortality-acceptable",
+              "requirements": "Value is in the acceptable range (0-5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

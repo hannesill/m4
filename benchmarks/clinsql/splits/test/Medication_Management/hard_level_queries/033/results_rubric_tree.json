@@ -1,0 +1,179 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-interaction-group",
+              "requirements": "Column for patient stratification exists (e.g., 'interaction_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-med-complexity-distribution",
+              "requirements": "Columns for medication complexity distribution exist (e.g., 'avg_med_complexity_score', 'p25_med_complexity_score', 'p75_med_complexity_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-percentile-rank",
+              "requirements": "Column for medication complexity percentile rank exists (e.g., 'avg_overall_complexity_percentile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-los-top-quartile",
+              "requirements": "Column for average length of stay for the top quartile exists (e.g., 'avg_los_days_top_quartile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mortality-top-quartile",
+              "requirements": "Column for mortality rate for the top quartile exists (e.g., 'mortality_rate_top_quartile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "med-complexity-validation",
+          "requirements": "Validate medication complexity score distribution values (e.g., avg, p25, p50, p75)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "med-complexity-plausible",
+              "requirements": "Clinically Plausible (1 to 50): Scores for this elderly, septic cohort should be elevated but not extreme.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "med-complexity-acceptable",
+              "requirements": "Acceptable Range (10 to 35): Expected average and quartile values for a complex cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentile-rank-validation",
+          "requirements": "Validate medication complexity percentile rank (e.g., 'avg_overall_complexity_percentile')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentile-rank-plausible",
+              "requirements": "Clinically Plausible (0.0 to 1.0): Percentile values must be between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-acceptable",
+              "requirements": "Acceptable Range (0.2 to 0.8): Averages should not be at the extreme ends of the distribution for these group sizes.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-top-quartile-validation",
+          "requirements": "Validate average length of stay for top quartile (e.g., 'avg_los_days_top_quartile')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "los-top-quartile-plausible",
+              "requirements": "Clinically Plausible (1 to 60 days): Hospital stays for septic elderly patients can be long but rarely exceed two months.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-top-quartile-acceptable",
+              "requirements": "Acceptable Range (5 to 25 days): Expected average LOS for a high-risk, medically complex septic group.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-top-quartile-validation",
+          "requirements": "Validate mortality rate for top quartile (e.g., 'mortality_rate_top_quartile')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-top-quartile-plausible",
+              "requirements": "Clinically Plausible (0.0 to 1.0): Mortality rate must be a value between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-top-quartile-acceptable",
+              "requirements": "Acceptable Range (0.15 to 0.60): Mortality is high in this cohort (elderly, sepsis, high med complexity), but a rate over 60% would be unusually high for an average.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

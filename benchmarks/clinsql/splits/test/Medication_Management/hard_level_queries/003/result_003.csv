@@ -1,0 +1,8 @@
+patient_group,interaction_risk_group,num_patients,avg_complexity_score,avg_percentile_rank,avg_los_days,mortality_rate
+General (Male 39-49),Bleeding,3424,58.44,0.68,4.54,0.007
+General (Male 39-49),Both,193,73.02,0.801,5.58,0.016
+General (Male 39-49),None,27099,36.68,0.47,4.04,0.011
+General (Male 39-49),QT,1078,68.06,0.762,5.93,0.016
+Target (Status Epilepticus),Bleeding,6,94.67,0.843,15.17,0.167
+Target (Status Epilepticus),None,25,88.52,0.832,11.28,0.08
+Target (Status Epilepticus),Top Quartile,7,143.29,0.991,19.29,0.286

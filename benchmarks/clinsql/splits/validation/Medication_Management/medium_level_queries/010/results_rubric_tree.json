@@ -1,0 +1,172 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "The output is a CSV file",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-med-class",
+              "requirements": "A column identifying the medication class exists (e.g., 'med_class')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-init-12h",
+              "requirements": "A column for initiation rate in the first 12h exists (e.g., 'initiation_rate_first_12h_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-init-48h",
+              "requirements": "A column for initiation rate in the final 48h exists (e.g., 'initiation_rate_final_48h_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-net-change",
+              "requirements": "A column for the net percentage point change exists (e.g., 'net_change_pp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "initiation-rate-first-12h-validation",
+          "requirements": "Validation of 'initiation_rate_first_12h_pct' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "initiation-rate-first-12h-plausible",
+              "requirements": "Values are clinically plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiation-rate-first-12h-acceptable-insulin",
+              "requirements": "Insulin initiation rate is in the acceptable range for inpatients (e.g., 20.0-90.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiation-rate-first-12h-acceptable-non-insulin",
+              "requirements": "Non-insulin oral agent initiation rates are in the acceptable range for inpatients (e.g., 0.0-10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "initiation-rate-final-48h-validation",
+          "requirements": "Validation of 'initiation_rate_final_48h_pct' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "initiation-rate-final-48h-plausible",
+              "requirements": "Values are clinically plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiation-rate-final-48h-acceptable-insulin",
+              "requirements": "Insulin initiation rate near discharge is in the acceptable range (e.g., 0.0-20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "initiation-rate-final-48h-acceptable-non-insulin",
+              "requirements": "Non-insulin oral agent initiation rates near discharge are in the acceptable range (e.g., 0.0-10.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "net-change-validation",
+          "requirements": "Validation of 'net_change_pp' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "net-change-plausible",
+              "requirements": "Values are mathematically plausible (-100.0 to 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-acceptable-insulin",
+              "requirements": "Net change for Insulin is a large negative value, reflecting a shift from acute inpatient management (e.g., -90.0 to -20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-acceptable-non-insulin",
+              "requirements": "Net change for oral agents is a small positive or negative value, reflecting transitions to outpatient regimens (e.g., -5.0 to 5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

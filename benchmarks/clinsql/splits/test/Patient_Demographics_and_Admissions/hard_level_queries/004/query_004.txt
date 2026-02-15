@@ -1,0 +1,1 @@
+I have a 90-year-old female patient. Among female Medicare patients aged 85–95 who were transferred from another hospital with a principal diagnosis of osteomyelitis, how many index admissions meet these criteria in the MIMIC‑IV dataset during the study period?

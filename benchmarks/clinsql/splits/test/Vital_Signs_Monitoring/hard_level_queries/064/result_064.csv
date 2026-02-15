@@ -1,0 +1,3 @@
+cohort_name,num_patients,avg_instability_score,p95_instability_score_for_target_group,avg_hypotension_episodes,avg_tachycardia_episodes,avg_icu_los_days,mortality_rate
+"Control (All, 45-55)",10919,19.040369568474528,,3.5564612143969234,6.2821686967671,3.4991566688036135,0.07876179137283636
+"Target Top Quartile (Male, 45-55, ARF, Top 25% Instability)",394,33.67070618766954,38.78249649484673,5.576142131979694,11.667512690355329,7.883481764206958,0.31218274111675137

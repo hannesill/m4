@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 44 and 54 using `p.anchor_age BETWEEN 44 AND 54`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must join the `patients` table with the `chartevents` table to link demographics to clinical measurements.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between `patients` and `chartevents` must be correctly performed on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-event-selection",
+      "requirements": "Clinical Event Selection",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "heart-rate-code-selection",
+          "requirements": "Heart Rate Code Selection: The query must correctly identify heart rate measurements by filtering `itemid` using the appropriate codes (e.g., 220045, 211).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-filtering",
+          "requirements": "Value Filtering: The query must filter out null values (`ce.valuenum IS NOT NULL`) and apply a clinically plausible range filter (e.g., `ce.valuenum BETWEEN 30 AND 200`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "temporal-and-aggregation-logic",
+      "requirements": "Temporal and Aggregation Logic",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-measurement-identification",
+          "requirements": "First Measurement Identification: The query must correctly identify the earliest heart rate measurement time for each stay, typically using a window function like `MIN(ce.charttime) OVER (PARTITION BY ce.stay_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "time-window-filter",
+          "requirements": "Time Window Filter: The query must filter events to include only those that occurred within 24 hours of the first identified measurement time.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation",
+          "requirements": "Final Aggregation: The query must calculate the minimum heart rate from the filtered 24-hour data using `MIN(valuenum)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output must be a single numeric value, rounded to two decimal places.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

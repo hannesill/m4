@@ -1,0 +1,233 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "col-mean-risk-score-exists",
+              "requirements": "Column for mean risk score exists (e.g., 'mean_risk_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "col-mortality-30-day-exists",
+              "requirements": "Column for 30-day mortality rate exists (e.g., 'mortality_30_day_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "col-cardiac-comp-exists",
+              "requirements": "Column for cardiac complication rate exists (e.g., 'cardiac_complication_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "col-neuro-comp-exists",
+              "requirements": "Column for neurologic complication rate exists (e.g., 'neurologic_complication_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "col-survivor-los-exists",
+              "requirements": "Column for survivor mean LOS exists (e.g., 'survivor_mean_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "col-percentile-exists",
+              "requirements": "Column for matched-profile percentile exists (e.g., 'percentile_of_matched_profile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mean-risk-score-validation",
+          "requirements": "Validate Mean Risk Score for the Target Cohort (ACS Post-ICU)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-risk-score-plausible",
+              "requirements": "Clinically Plausible (0, 70)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-risk-score-acceptable",
+              "requirements": "Acceptable Range (15.0, 35.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate 30-Day Mortality Rate (%) for the Target Cohort (ACS Post-ICU)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0, 100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (10.0, 30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cardiac-comp-rate-validation",
+          "requirements": "Validate Cardiac Complication Rate (%) for the Target Cohort (ACS Post-ICU)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "cardiac-comp-rate-plausible",
+              "requirements": "Clinically Plausible (0, 100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cardiac-comp-rate-acceptable",
+              "requirements": "Acceptable Range (40.0, 75.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "neuro-comp-rate-validation",
+          "requirements": "Validate Neurologic Complication Rate (%) for the Target Cohort (ACS Post-ICU)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "neuro-comp-rate-plausible",
+              "requirements": "Clinically Plausible (0, 100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "neuro-comp-rate-acceptable",
+              "requirements": "Acceptable Range (10.0, 25.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "survivor-los-validation",
+          "requirements": "Validate Survivor Mean LOS (days) for the Target Cohort (ACS Post-ICU)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "survivor-los-plausible",
+              "requirements": "Clinically Plausible (1, 60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "survivor-los-acceptable",
+              "requirements": "Acceptable Range (8.0, 20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentile-validation",
+          "requirements": "Validate Matched-Profile Percentile",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentile-plausible",
+              "requirements": "Clinically Plausible (0, 100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-acceptable",
+              "requirements": "Acceptable Range (10.0, 90.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

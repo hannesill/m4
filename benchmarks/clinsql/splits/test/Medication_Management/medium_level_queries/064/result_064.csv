@@ -1,0 +1,6 @@
+medication_class,initiation_rate_first_72h_pct,initiation_rate_last_48h_pct
+DPP-4 Inhibitors,0.09,0.02
+Metformin,2.88,2.34
+SGLT2 Inhibitors,0.59,0.2
+Sulfonylureas,3.36,2.25
+Thiazolidinediones,0.18,0.07

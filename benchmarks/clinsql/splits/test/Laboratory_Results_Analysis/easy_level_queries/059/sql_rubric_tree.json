@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "sepsis-admission-identification",
+          "requirements": "Sepsis Admission Identification: The query must correctly identify hospital admissions for sepsis by filtering the 'diagnoses_icd' table for relevant ICD-9 ('99591', '99592') and ICD-10 ('A40%', 'A41%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using the condition p.gender = 'M'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "platelet-measurement-identification",
+          "requirements": "Platelet Measurement Identification: The query must correctly identify platelet count measurements by filtering 'labevents' using itemid = 51265.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-day-filter",
+          "requirements": "Discharge Day Filter: The query must accurately filter lab events to only those that occurred on the patient's day of discharge using a condition like DATE(le.charttime) = DATE(adm.dischtime).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "plausible-value-filtering",
+          "requirements": "Plausible Value Filtering: The query should apply a reasonable range filter (e.g., BETWEEN 10 AND 1000) on 'valuenum' to exclude erroneous platelet count values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join 'admissions', 'patients', 'diagnoses_icd', and 'labevents' tables using the appropriate keys (subject_id and hadm_id) to link patient demographics, diagnoses, and lab results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "latest-daily-measurement-selection",
+          "requirements": "Latest Daily Measurement Selection: The query must correctly identify the latest platelet measurement on the discharge day for each admission, for instance by using a window function like ROW_NUMBER() and filtering for the first row.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must accurately calculate the 75th percentile of the selected platelet counts using a function like APPROX_QUANTILES(valuenum, 100)[OFFSET(75)].",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to a reasonable precision, for example using ROUND(..., 2).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-for-los-category-exists",
+              "requirements": "A column representing the Length of Stay (LOS) categories (e.g., 'los_category', 'los_group') exists.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-for-mortality-rate-exists",
+              "requirements": "A column representing the mortality rate as a percentage (e.g., 'mortality_rate_percent') exists.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-for-mortality-ci-lower-exists",
+              "requirements": "A column representing the lower bound of the 95% confidence interval for mortality (e.g., 'mortality_ci_95_lower') exists.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-for-mortality-ci-upper-exists",
+              "requirements": "A column representing the upper bound of the 95% confidence interval for mortality (e.g., 'mortality_ci_95_upper') exists.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-for-median-time-to-death-exists",
+              "requirements": "A column representing the median time to death in days (e.g., 'median_time_to_death_days_for_deceased') exists.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in the specified columns ('los_category', 'mortality_rate_percent', 'mortality_ci_95_lower', 'mortality_ci_95_upper', 'median_time_to_death_days_for_deceased').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation for mortality rate percentage",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Mortality rate is clinically plausible (0.5-25.0%). In-hospital mortality for this high-risk elderly cohort is significant but should not exceed 25%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Mortality rate is within an acceptable range (2.0-15.0%). Based on clinical studies, this is a more expected range for this specific population.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-ci-validation",
+          "requirements": "Validation for 95% Confidence Intervals for mortality",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-ci-plausible",
+              "requirements": "Confidence interval bounds are plausible (0.1-30.0%). The range should be positive and not excessively wide.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-ci-acceptable",
+              "requirements": "Confidence interval bounds are within an acceptable range (1.0-20.0%) and the upper bound is greater than the lower bound.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-time-to-death-validation",
+          "requirements": "Validation for median time to death in days",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-time-to-death-plausible",
+              "requirements": "Median time to death is clinically plausible (1-30 days). Deaths occur during the hospital stay, which can extend, but medians are unlikely to be extremely long.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-time-to-death-acceptable",
+              "requirements": "Median time to death is within an acceptable range (1-21 days) and generally increases with the LOS category.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

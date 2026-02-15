@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-definition-logic",
+          "requirements": "Defines the two cohorts ('Target_DVT_High_Comorbidity' and 'General_Inpatient_Population') using a CASE statement.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must correctly filter for male patients (ab.gender = 'M') as a condition for inclusion in the 'Target_DVT_High_Comorbidity' cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged 71-81 at the time of admission (ab.age_at_admission BETWEEN 71 AND 81) for the target cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dvt-condition-filter",
+          "requirements": "DVT Condition Filter: The query must filter for admissions with a DVT diagnosis (af.has_dvt = 1) to define the target cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-comorbidity-proxy-filter",
+          "requirements": "High Comorbidity Filter: The query must define 'high comorbidity' using a proxy of more than 5 distinct diagnoses per admission (af.diagnosis_count > 5).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "dvt-code-identification",
+          "requirements": "DVT Code Identification: Correctly identifies DVT codes for both ICD-9 and ICD-10 using CASE statements and SUBSTR on icd_code.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "major-complication-code-identification",
+          "requirements": "Major Complication Code Identification: Correctly identifies a list of major complication codes for both ICD-9 and ICD-10.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-flag-aggregation",
+          "requirements": "Diagnosis Flag Aggregation: Correctly aggregates diagnosis flags per admission (hadm_id) using MAX() to create has_dvt and has_major_complication flags.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-proxy-calculation",
+          "requirements": "Comorbidity Proxy Calculation: Correctly calculates the number of unique diagnoses per admission using COUNT(DISTINCT icd_code).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: Correctly joins the 'patients' and 'admissions' tables on 'subject_id' to link patient demographics with admission details.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: Correctly joins the admission-level data with diagnosis-level features on 'hadm_id'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "age-at-admission-calculation",
+          "requirements": "Age at Admission Calculation: Correctly calculates patient age at admission by combining 'anchor_age', 'anchor_year', and 'admittime'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-90-day-calculation",
+          "requirements": "90-Day Mortality Calculation: Correctly flags 90-day post-discharge mortality using a CASE statement and DATETIME_DIFF between 'dod' and 'dischtime'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-calculation",
+          "requirements": "Risk Score Calculation: Implements the specified custom risk score formula: (diagnosis_count + (major_complication_count * 10)).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "survivor-los-calculation",
+          "requirements": "Survivor LOS Calculation: Correctly isolates the length of stay for survivors by setting LOS to NULL for non-survivors.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-aggregation",
+          "requirements": "Final Output Aggregation: Correctly groups by cohort and applies aggregation functions (APPROX_QUANTILES, AVG) to calculate all required metrics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-percentile-calculation",
+          "requirements": "Risk Percentile Calculation: Correctly calculates the risk percentile for a 76-year-old patient profile using a subquery with PERCENT_RANK() over the target cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

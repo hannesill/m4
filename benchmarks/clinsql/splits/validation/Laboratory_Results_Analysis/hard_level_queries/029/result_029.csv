@@ -1,0 +1,7 @@
+p75_instability_score,top_tier_mortality_rate,top_tier_avg_los_days,critical_lab_rate_comparison
+1,0.0,8.140625,"[{'lab_name': 'Glucose', 'top_tier_hhs_critical_rate': 0.08333333333333333, 'general_inpatients_critical_rate': 0.0022021373052346516}
+ {'lab_name': 'WBC', 'top_tier_hhs_critical_rate': 0.0, 'general_inpatients_critical_rate': 0.02651123905296674}
+ {'lab_name': 'Creatinine', 'top_tier_hhs_critical_rate': 0.2711864406779661, 'general_inpatients_critical_rate': 0.05393783825433736}
+ {'lab_name': 'Sodium', 'top_tier_hhs_critical_rate': 0.13333333333333333, 'general_inpatients_critical_rate': 0.004278176274570954}
+ {'lab_name': 'Potassium', 'top_tier_hhs_critical_rate': 0.01694915254237288, 'general_inpatients_critical_rate': 0.004723880235145263}
+ {'lab_name': 'Bicarbonate', 'top_tier_hhs_critical_rate': 0.03389830508474576, 'general_inpatients_critical_rate': 0.004057690541943595}]"

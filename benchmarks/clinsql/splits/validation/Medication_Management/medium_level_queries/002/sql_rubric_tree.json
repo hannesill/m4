@@ -1,0 +1,195 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-demographics-filtering",
+          "requirements": "Filters for patient demographics including age and gender.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "gender-selection",
+              "requirements": "Correctly filters for female patients using `p.gender = 'F'`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "age-range-selection",
+              "requirements": "Correctly calculates and filters patient age to be between 59 and 69 years at the time of admission.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-condition-filtering",
+          "requirements": "Filters for patients with diagnoses of both Type 2 Diabetes and Heart Failure.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "t2dm-diagnosis-selection",
+              "requirements": "Correctly identifies Type 2 Diabetes using relevant ICD-9 ('250%') and ICD-10 ('E11%') codes.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hf-diagnosis-selection",
+              "requirements": "Correctly identifies Heart Failure using relevant ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+              "sequential_order": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "admission-duration-filter",
+          "requirements": "Correctly filters for inpatient admissions lasting at least 48 hours using `DATETIME_DIFF`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables to build the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-table-join",
+          "requirements": "Correctly joins the identified patient cohort with the `prescriptions` table on `hadm_id` to analyze medication administration.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-integration-join",
+          "requirements": "Correctly performs a LEFT JOIN between the final patient cohort and the medication summary to ensure all patients in the cohort are included in the final counts.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "glp1-drug-identification",
+          "requirements": "Correctly identifies injectable GLP-1 agonists by name from the `prescriptions` table, including brand and generic names.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-window-logic",
+          "requirements": "Correctly implements the logic to identify medication administration within the two specified time windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "first-48h-window",
+              "requirements": "Correctly identifies GLP-1 use within the first 48 hours of admission using `DATETIME_DIFF(rx.starttime, cohort.admittime, HOUR)`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "last-12h-window",
+              "requirements": "Correctly identifies GLP-1 use within the final 12 hours of admission using `DATETIME_DIFF(cohort.dischtime, rx.starttime, HOUR)`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "patient-level-aggregation",
+          "requirements": "Correctly aggregates medication flags at the patient-admission level (`hadm_id`) using `MAX` and `GROUP BY` before the final calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metrics-calculation",
+          "requirements": "Calculates the final prevalence and difference metrics from the aggregated data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "prevalence-calculation",
+              "requirements": "Correctly calculates prevalence for both time windows as a percentage, using the total cohort count as the denominator.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-difference-calculation",
+              "requirements": "Correctly calculates the absolute percentage point difference between the two prevalence rates.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "null-handling",
+              "requirements": "Uses `NULLIF` to prevent division-by-zero errors and `COALESCE` to handle patients with no GLP-1 prescriptions.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

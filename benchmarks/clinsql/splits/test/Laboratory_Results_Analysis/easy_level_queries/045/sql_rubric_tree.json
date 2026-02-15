@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using the condition p.gender = 'M'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sepsis-diagnosis-identification",
+          "requirements": "Sepsis Diagnosis Identification: The query must identify sepsis admissions by filtering the diagnoses_icd table for both ICD-9 ('99591') and ICD-10 ('A41%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "creatinine-lab-event-selection",
+          "requirements": "Creatinine Lab Event Selection: The query must select creatinine lab results by filtering on the correct itemid (50912).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-filtering",
+          "requirements": "Value Filtering: The query should apply a plausible range filter (e.g., BETWEEN 0.5 AND 10) on valuenum to exclude erroneous data and handle NULLs.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "sepsis-cohort-join",
+          "requirements": "Sepsis Cohort Join: The query must correctly join the identified sepsis admissions (using hadm_id) with the labevents table to link lab results to the correct cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-demographics-join",
+          "requirements": "Patient Demographics Join: The query must join the patients and labevents tables on subject_id to link demographic information (like gender) to lab events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "index-creatinine-identification",
+          "requirements": "Index Creatinine Identification: The query must use a window function (ROW_NUMBER) partitioned by hadm_id and ordered by charttime to identify the first creatinine measurement for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "index-value-filtering",
+          "requirements": "Index Value Filtering: The query must filter the results from the window function to include only the index measurement (e.g., WHERE rn = 1).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation",
+          "requirements": "Final Aggregation: The query must calculate the maximum value from the set of index creatinine measurements using the MAX() function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

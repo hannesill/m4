@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Restricts the cohort to patients aged 84-94 using `p.anchor_age BETWEEN 84 AND 94`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-diagnosis-filter",
+          "requirements": "Identifies the primary diagnosis by filtering for `d.seq_num = 1` to isolate admissions where UGIB is the main reason for hospitalization.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies Upper Gastrointestinal Bleed (UGIB) admissions by correctly filtering for both ICD-9 and ICD-10 diagnosis codes.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "icd9-ugib-selection",
+          "requirements": "Correctly identifies UGIB using the ICD-9 code pattern `d.icd_version = 9 AND d.icd_code LIKE '578%'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd10-ugib-selection",
+          "requirements": "Correctly identifies UGIB using a combination of specific ICD-10 codes (`IN ('K92.0', 'K92.1', 'K92.2')`) and code prefixes (`SUBSTR(...) IN (...)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Correctly joins the `patients`, `admissions`, and `diagnoses_icd` tables to link patient demographics with admission diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Uses the correct keys for joining: `subject_id` for `patients`/`admissions` and `hadm_id` for `admissions`/`diagnoses_icd`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-validity-check",
+          "requirements": "Ensures data quality by filtering out null admission/discharge times (`IS NOT NULL`) and non-positive length of stay values (`DATE_DIFF(...) >= 0`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation-per-admission",
+          "requirements": "Calculates the length of stay (LOS) in days for each unique hospital admission (`hadm_id`) using `DATE_DIFF` on admission and discharge times and groups the results by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "iqr-calculation",
+          "requirements": "Computes the Interquartile Range (IQR) of the calculated LOS values by using `APPROX_QUANTILES(..., 4)` to find the 75th (`OFFSET(3)`) and 25th (`OFFSET(1)`) percentiles and subtracting the results.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

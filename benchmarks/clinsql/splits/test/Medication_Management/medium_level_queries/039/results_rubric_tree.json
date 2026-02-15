@@ -1,0 +1,175 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-first-24h-column-exists",
+              "requirements": "A column representing the prevalence of GLP-1 use in the first 24 hours exists (e.g., 'prevalence_first_24h_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-last-48h-column-exists",
+              "requirements": "A column representing the prevalence of GLP-1 use in the final 48 hours exists (e.g., 'prevalence_last_48h_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-change-column-exists",
+              "requirements": "A column representing the absolute change in prevalence exists (e.g., 'absolute_change_in_prevalence_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-change-column-exists",
+              "requirements": "A column representing the relative change in prevalence exists (e.g., 'relative_change_in_prevalence_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns (`prevalence_first_24h_pct`, `prevalence_last_48h_pct`, `absolute_change_in_prevalence_pct`, `relative_change_in_prevalence_pct`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "prevalence-first-24h-validation",
+          "requirements": "Validate the value for 'prevalence_first_24h_pct'.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-first-24h-plausible",
+              "requirements": "Value is clinically plausible (0.0 to 20.0). GLP-1s are not typically initiated for acute HF/T2DM inpatients, so prevalence should be low.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-first-24h-acceptable",
+              "requirements": "Value is within an acceptable range (0.0 to 5.0). Reflects patients continuing home meds, but new initiations are rare.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "prevalence-last-48h-validation",
+          "requirements": "Validate the value for 'prevalence_last_48h_pct'.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-last-48h-plausible",
+              "requirements": "Value is clinically plausible (0.0 to 20.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-last-48h-acceptable",
+              "requirements": "Value is within an acceptable range (0.0 to 5.0). Similar to early window, usage is not expected to be high.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "absolute-change-validation",
+          "requirements": "Validate the value for 'absolute_change_in_prevalence_pct'.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "absolute-change-plausible",
+              "requirements": "Value is clinically plausible (-20.0 to 20.0). Change is expected to be minimal.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-change-acceptable",
+              "requirements": "Value is within an acceptable range (-5.0 to 5.0). Drastic shifts in GLP-1 use during an admission are unlikely.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "relative-change-validation",
+          "requirements": "Validate the value for 'relative_change_in_prevalence_pct'.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "relative-change-plausible",
+              "requirements": "Value is plausible. Given low prevalence, any small change can lead to large relative changes, so a wide range is possible (e.g., -100.0 to 500.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "relative-change-acceptable",
+              "requirements": "Value is acceptable. A value of -100.0 is acceptable if the initial prevalence is very low and later prevalence is zero. A large positive value is also acceptable if initiation occurs.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

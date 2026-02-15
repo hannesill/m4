@@ -1,0 +1,241 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "avg_complexity_score-column-exists",
+              "requirements": "A column reporting average medication complexity score exists (e.g., `avg_complexity_score`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "complexity_score_quartiles-column-exists",
+              "requirements": "A column reporting medication complexity score quartiles exists (e.g., `complexity_score_quartiles`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_los_days-column-exists",
+              "requirements": "A column reporting overall average length of stay exists (e.g., `avg_los_days`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality_rate_pct-column-exists",
+              "requirements": "A column reporting overall mortality rate exists (e.g., `mortality_rate_pct`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top_quartile_avg_los-column-exists",
+              "requirements": "A column reporting top-quartile average length of stay exists (e.g., `top_quartile_avg_los`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top_quartile_mortality_rate_pct-column-exists",
+              "requirements": "A column reporting top-quartile mortality rate exists (e.g., `top_quartile_mortality_rate_pct`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the answer-relevant columns (`avg_complexity_score`, `complexity_score_quartiles`, `avg_los_days`, `mortality_rate_pct`, `top_quartile_avg_los`, `top_quartile_mortality_rate_pct`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "avg-complexity-validation",
+          "requirements": "Validate values for average medication complexity score.",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-complexity-plausible",
+              "requirements": "Values are clinically plausible (1.0 - 150.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-complexity-acceptable",
+              "requirements": "Values are in the acceptable range (10.0 - 70.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validate values for overall average length of stay (days).",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Values are clinically plausible (1.0 - 90.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Values are in the acceptable range (3.0 - 20.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate values for overall mortality rate (%).",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Values are clinically plausible (0.0 - 100.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Values are in the acceptable range (1.0 - 40.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-quartile-los-validation",
+          "requirements": "Validate values for top-quartile average length of stay (days).",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "top-quartile-los-plausible",
+              "requirements": "Values are clinically plausible (2.0 - 180.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-quartile-los-acceptable",
+              "requirements": "Values are in the acceptable range (5.0 - 40.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "top-quartile-mortality-validation",
+          "requirements": "Validate values for top-quartile mortality rate (%).",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "top-quartile-mortality-plausible",
+              "requirements": "Values are clinically plausible (0.0 - 100.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "top-quartile-mortality-acceptable",
+              "requirements": "Values are in the acceptable range (2.0 - 50.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-comparison-validation",
+          "requirements": "Validate the relationship between the two cohorts.",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "cohort-comparison-complexity",
+              "requirements": "The 'CNS + Nephrotoxic' cohort has a higher average complexity score than the 'General AKI' cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-comparison-los",
+              "requirements": "The 'CNS + Nephrotoxic' cohort has a higher average LOS than the 'General AKI' cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-comparison-mortality",
+              "requirements": "The 'CNS + Nephrotoxic' cohort has a higher mortality rate than the 'General AKI' cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients (p.gender = 'M').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately filter for patients with an age at admission between 40 and 50 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-diagnosis-inclusion",
+          "requirements": "AMI Diagnosis Inclusion: The query must correctly identify patients with an Acute Myocardial Infarction (AMI) diagnosis using relevant ICD-9 ('410%') and ICD-10 ('I21%', 'I22%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "shock-respiratory-failure-exclusion",
+          "requirements": "Shock/Respiratory Failure Exclusion: The query must correctly exclude patients with diagnoses of shock (e.g., '785.5%', 'R57%') or respiratory failure (e.g., '518.81', '518.82', '518.84', '799.1', 'J96%', 'R09.2').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Stratification",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the 'patients' and 'admissions' tables on 'subject_id'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-linkage",
+          "requirements": "Admission-Diagnosis Linkage: The query must correctly link admissions to diagnoses using 'hadm_id' within EXISTS subqueries.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-icu-linkage",
+          "requirements": "Admission-ICU Linkage: The query must correctly link admissions to ICU stays using 'hadm_id' to determine day-1 ICU status.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-concept-implementation",
+      "requirements": "Clinical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay (LOS) Calculation: The query must correctly calculate the length of stay in days using DATETIME_DIFF between 'dischtime' and 'admittime'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-group-stratification",
+          "requirements": "LOS Group Stratification: The query must correctly stratify patients into two groups based on whether their length of stay is '<= 5 days' or '> 5 days'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "day1-icu-status-logic",
+          "requirements": "Day-1 ICU Status Logic: The query must correctly determine if a patient was admitted to the ICU within the first 24 hours of hospital admission (icu.intime <= DATETIME_ADD(fc.admittime, INTERVAL 24 HOUR)).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Output",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The query must group the final results by 'los_group' and 'day1_icu_status' to report metrics for each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Mortality Rate Calculation: The query must correctly calculate the in-hospital mortality rate as a percentage (100.0 * SUM(hospital_expire_flag) / COUNT(*)).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-los-calculation",
+          "requirements": "Median LOS Calculation: The query must correctly calculate the median length of stay for each group using an appropriate percentile function like APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-columns",
+          "requirements": "Output Columns: The final output must include the two grouping columns (los_group, day1_icu_status) and the requested metrics (mortality rate, median LOS).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

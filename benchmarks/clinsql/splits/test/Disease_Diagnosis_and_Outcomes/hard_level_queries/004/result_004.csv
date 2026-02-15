@@ -1,0 +1,5 @@
+risk_quartile,patient_count,avg_risk_score,in_hospital_mortality_rate_pct,cardiac_complication_rate_pct,neuro_complication_rate_pct,median_survivor_los_days
+1,88,13.66,6.82,1.14,3.41,5
+2,87,24.54,9.2,1.15,12.64,7
+3,87,36.17,19.54,1.15,18.39,12
+4,87,60.38,20.69,5.75,27.59,17

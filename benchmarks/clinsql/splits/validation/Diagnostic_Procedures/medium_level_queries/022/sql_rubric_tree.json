@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the initial patient cohort based on demographics and primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-selection",
+          "requirements": "Age Selection: The query must calculate the patient's age at the time of admission and filter for patients approximately 74 years old (e.g., within a range like 69-79).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis",
+          "requirements": "Heart Failure Diagnosis: The query must identify patients with a heart failure diagnosis using both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-pre-filter",
+          "requirements": "Length of Stay Pre-filter: The query must filter admissions to include only those with a length of stay between 1 and 7 days.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Ensures that all necessary tables are joined correctly with the proper keys and join types.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join the `admissions`, `patients`, and `diagnoses_icd` tables to build the initial cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Procedure Table Join: The query must use a `LEFT JOIN` to connect the patient cohort to the `procedures_icd` table to include admissions with zero relevant procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "join-key-accuracy",
+          "requirements": "Join Key Accuracy: All joins must use the correct keys (`subject_id` for patient data and `hadm_id` for admission-specific data).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly translates clinical concepts like admission types, length of stay, and diagnostic procedures into SQL logic.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "admission-type-categorization",
+          "requirements": "Admission Type Categorization: The query must use a CASE statement to stratify admissions into 'ED/Urgent' and 'Elective' categories based on the `admission_type` column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-categorization",
+          "requirements": "Length of Stay Categorization: The query must use a CASE statement with `DATETIME_DIFF` to stratify admissions into '1-4 days' and '5-7 days' categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-code-selection",
+          "requirements": "Diagnostic Code Selection: The query must filter for non-invasive diagnostic procedures by correctly handling `icd_version` and selecting appropriate ICD-9 (e.g., '87%', '88%', '89.52') and ICD-10 (e.g., 'B%', '4A%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly performs calculations and aggregations to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-procedure-count",
+          "requirements": "Per-Admission Procedure Count: The query must first count the number of diagnostic procedures for each individual admission (`hadm_id`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-stratification-grouping",
+          "requirements": "Final Stratification Grouping: The final aggregation must group results by both `stay_category` and `admission_category` to provide the required stratified output.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "average-calculation",
+          "requirements": "Average Calculation: The query must calculate the mean number of diagnostics per admission for each stratum using `AVG(pc.num_diagnostic_procedures)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-strata-filtering",
+          "requirements": "Final Strata Filtering: The query must filter the final results to include only the 'ED/Urgent' and 'Elective' admission categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

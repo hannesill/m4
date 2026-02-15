@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters for patients aged 48-58 at the time of admission using `(pat.anchor_age + EXTRACT(YEAR FROM adm.admittime) - pat.anchor_year) BETWEEN 48 AND 58`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-diagnosis-selection",
+          "requirements": "T2DM Diagnosis Selection: Identifies patients with Type 2 Diabetes Mellitus using ICD-9 ('250%' excluding T1DM variants) and ICD-10 ('E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hf-diagnosis-selection",
+          "requirements": "Heart Failure Diagnosis Selection: Identifies patients with Heart Failure using both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-type-and-duration",
+          "requirements": "Admission Type and Duration: Implicitly selects inpatients by using the admissions table and correctly filters for a minimum length of stay of 72 hours using `DATETIME_DIFF(adm.dischtime, adm.admittime, HOUR) >= 72`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "glp1-drug-identification",
+          "requirements": "GLP-1 Drug Identification: Identifies injectable GLP-1 agonists by searching for relevant drug names (generic and brand) in the `drug` column of the `prescriptions` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "injection-route-specification",
+          "requirements": "Injection Route Specification: Correctly filters for the subcutaneous route of administration using `LOWER(rx.route) = 'sc'` to identify injectable medications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-and-admissions-join",
+          "requirements": "Patient Demographics and Admissions Join: Correctly joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnoses-join",
+          "requirements": "Diagnoses Join: Correctly joins the `admissions` table with the `diagnoses_icd` table (aliased for each condition) on `hadm_id` to link diagnoses to specific hospital stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescriptions-join",
+          "requirements": "Prescriptions Join: Correctly joins the patient cohort with the `prescriptions` table on `hadm_id` to link medications to hospital stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-cohort-and-prescriptions-join",
+          "requirements": "Final Cohort and Prescriptions Join: Uses a LEFT JOIN to connect the final patient cohort with the aggregated prescription data, ensuring all patients in the cohort are included in the final count, regardless of whether they received a GLP-1.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-72h-initiation-logic",
+          "requirements": "First 72h Initiation Logic: Correctly identifies GLP-1 initiation within the first 72 hours of admission using a time difference calculation `DATETIME_DIFF(rx.starttime, cohort.admittime, HOUR) BETWEEN 0 AND 72`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "last-48h-initiation-logic",
+          "requirements": "Last 48h Initiation Logic: Correctly identifies GLP-1 initiation within the last 48 hours of admission using a time difference calculation `DATETIME_DIFF(cohort.dischtime, rx.starttime, HOUR) BETWEEN 0 AND 48`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-admission-flagging",
+          "requirements": "Per-Admission Flagging: Correctly groups by `hadm_id` and uses `MAX(CASE ... END)` to create binary flags indicating if an initiation occurred at any point within each time window for a given admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rate-calculation",
+          "requirements": "Rate Calculation: Correctly calculates the initiation rates as percentages by dividing the sum of initiation flags by the total count of admissions in the cohort and multiplying by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "absolute-difference-calculation",
+          "requirements": "Absolute Difference Calculation: Correctly calculates the absolute difference in percentage points (pp) between the last 48h rate and the first 72h rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

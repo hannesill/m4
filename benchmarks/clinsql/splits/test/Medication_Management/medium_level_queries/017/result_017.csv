@@ -1,0 +1,5 @@
+med_class,total_cohort_patients,prevalence_early_pct,prevalence_final_pct,count_continued,count_initiated,count_discontinued
+ACEi/ARB/ARNI,195,28.21,11.28,12,10,43
+Antidiabetic,195,94.87,51.79,101,0,84
+Beta-Blocker,195,63.08,17.95,29,6,94
+Loop Diuretic,195,68.21,44.62,80,7,53

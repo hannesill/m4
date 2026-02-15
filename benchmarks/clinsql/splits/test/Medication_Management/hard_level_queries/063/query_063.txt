@@ -1,0 +1,1 @@
+For a 53‑year‑old male with pneumonia: among male inpatients 48–58, using meds in the first 24 hours, report medication complexity distribution (mean, p25/p50/p75) and compare overall LOS and mortality for serotonergic‑interaction risk versus ICU patients; report top‑quartile LOS and mortality.

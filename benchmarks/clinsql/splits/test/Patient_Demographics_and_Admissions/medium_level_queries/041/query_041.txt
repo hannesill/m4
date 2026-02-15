@@ -1,0 +1,1 @@
+For my 93-year-old male patient: among patients aged 88–98 with elective admissions (postoperative proxy), report mean, median (p50), p75, p90 LOS by discharge outcome (home; SNF/rehab/LTACH; in-hospital death) and percent with LOS ≤7 days.

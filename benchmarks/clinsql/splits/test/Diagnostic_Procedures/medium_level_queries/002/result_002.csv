@@ -1,0 +1,5 @@
+stay_category,icu_status,total_admissions,avg_ultrasounds_per_admission,min_ultrasounds,max_ultrasounds
+1-3 Day Stay,ICU Admission,5,0.0,0,0
+1-3 Day Stay,No ICU Admission,154,0.0,0,0
+4-7 Day Stay,ICU Admission,12,0.0,0,0
+4-7 Day Stay,No ICU Admission,25,0.0,0,0

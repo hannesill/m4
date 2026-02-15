@@ -1,0 +1,140 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-first-48h-column-exists",
+              "requirements": "A column for GLP-1 prevalence in the first 48h exists (e.g., 'prevalence_pct_first_48h').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-last-12h-column-exists",
+              "requirements": "A column for GLP-1 prevalence in the final 12h exists (e.g., 'prevalence_pct_last_12h').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-difference-column-exists",
+              "requirements": "A column for the absolute percentage point difference exists (e.g., 'absolute_difference_pp').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the answer-relevant columns ('prevalence_pct_first_48h', 'prevalence_pct_last_12h', 'absolute_difference_pp').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "prevalence-first-48h-validation",
+          "requirements": "Validate the value in the column 'prevalence_pct_first_48h'.",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-first-48h-plausible",
+              "requirements": "Clinically Plausible (0.0 - 15.0). GLP-1 use in inpatients is uncommon, so prevalence should be low.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-first-48h-acceptable",
+              "requirements": "Acceptable Range (0.0 - 2.0). Given the short window and inpatient setting, a very low prevalence is expected.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "prevalence-last-12h-validation",
+          "requirements": "Validate the value in the column 'prevalence_pct_last_12h'.",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-last-12h-plausible",
+              "requirements": "Clinically Plausible (0.0 - 15.0). Similar to the first 48h, use is expected to be low.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-last-12h-acceptable",
+              "requirements": "Acceptable Range (0.0 - 2.0). Use near discharge is also expected to be infrequent.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "absolute-difference-validation",
+          "requirements": "Validate the value in the column 'absolute_difference_pp'.",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "absolute-difference-plausible",
+              "requirements": "Clinically Plausible (0.0 - 15.0). The difference cannot be larger than the maximum plausible prevalence.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-difference-acceptable",
+              "requirements": "Acceptable Range (0.0 - 2.0). The difference is expected to be small, reflecting low overall use.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

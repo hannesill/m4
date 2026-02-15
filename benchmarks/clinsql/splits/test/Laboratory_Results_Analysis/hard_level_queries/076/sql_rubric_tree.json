@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the primary patient group based on demographics and diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged 87 to 97 using `age_at_admission BETWEEN 87 AND 97`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-diagnosis-filtering",
+          "requirements": "ACS Diagnosis Filtering: The query must correctly identify ACS patients using specific ICD-9 ('410%', '411.1%') and ICD-10 ('I21%', 'I20.0') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-diagnosis-selection",
+          "requirements": "Primary Diagnosis Selection: The query must use `QUALIFY ROW_NUMBER() OVER(PARTITION BY adm.hadm_id ORDER BY dx.seq_num) = 1` to ensure the ACS diagnosis is prioritized.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Defines and applies clinical logic for lab instability.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "critical-lab-definition",
+          "requirements": "Critical Lab Definition: The query must define critical low and high thresholds for a set of relevant labs (e.g., Potassium, Sodium, Troponin) in the `lab_definitions` CTE.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-event-identification",
+          "requirements": "Critical Lab Event Identification: The query must correctly identify lab events where `valuenum` is outside the defined critical ranges.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-constraint-72hr",
+          "requirements": "72-Hour Temporal Constraint: The query must filter lab events to only those occurring within the first 72 hours of admission using `BETWEEN adm.admittime AND DATETIME_ADD(adm.admittime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient data, admissions, diagnoses, and lab results.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `admissions`, `patients`, and `diagnoses_icd` tables on their respective keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-data-joins",
+          "requirements": "Lab Data Joins: The query must correctly join `labevents` with `admissions` on `hadm_id` and with the `lab_definitions` CTE on `itemid`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs calculations and aggregations to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must calculate the lab instability score as the count of unique critically abnormal lab systems using `COUNT(DISTINCT crit.label)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must calculate the 95th percentile of the instability score using `APPROX_QUANTILES(instability_score, 100)[OFFSET(95)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-tier-cohort-identification",
+          "requirements": "Top-Tier Cohort Identification: The query must filter for patients with an instability score greater than or equal to the calculated 95th percentile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-tier-metrics",
+          "requirements": "Top-Tier Metrics Calculation: The query must correctly calculate the average LOS and in-hospital mortality for the top-tier cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-analysis",
+          "requirements": "Comparative Analysis of Critical Events: The query must correctly calculate and compare the average number of critical lab events per patient for the top-tier cohort versus the general inpatient population.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting",
+      "requirements": "Output Formatting and Presentation",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "final-output-union",
+          "requirements": "Final Output Union: The query must use `UNION ALL` to combine all distinct metrics into a single, well-formatted output table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "descriptive-labels",
+          "requirements": "Descriptive Labels: The final output must include clear, descriptive labels for each metric and its corresponding value.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

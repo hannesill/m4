@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate and filter for patient age between 38 and 48 at the time of admission using a formula like `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 38 AND 48`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-diagnosis-selection",
+          "requirements": "AKI Diagnosis Selection: The query must identify admissions with an Acute Kidney Injury (AKI) diagnosis by checking for ICD-9 codes starting with '584' or ICD-10 codes starting with 'N17'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: The query must limit the initial cohort to admissions with a length of stay between 1 and 7 days, using a condition like `DATETIME_DIFF(a.dischtime, a.admittime, DAY) BETWEEN 1 AND 7`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stay-category-stratification",
+          "requirements": "Stay Category Stratification: The query must correctly categorize admissions into '1-4 Day Stay' and '5-7 Day Stay' groups using a CASE statement based on the calculated length of stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-status-stratification",
+          "requirements": "ICU Status Stratification: The query must correctly stratify admissions based on ICU use ('ICU Stay' vs 'No ICU Stay') by checking for the existence of a matching record in the `icustays` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "non-invasive-diagnostic-selection",
+          "requirements": "Non-Invasive Diagnostic Selection: The query must identify non-invasive diagnostic procedures by filtering for relevant ICD-9 (e.g., '87%', '88%', '89%') and ICD-10 (e.g., 'B%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-tables-join",
+          "requirements": "Core Tables Join: The query must correctly join `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-table-join",
+          "requirements": "ICU Table Join: A LEFT JOIN to the `icustays` table on `hadm_id` is required to correctly classify all admissions, including those without an ICU stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedures-table-join",
+          "requirements": "Procedures Table Join: A LEFT JOIN to the `procedures_icd` table on `hadm_id` is required to ensure admissions with zero diagnostic procedures are included in the counts.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-procedure-count",
+          "requirements": "Per-Admission Procedure Count: The query must first aggregate data to count the number of non-invasive diagnostic procedures for each individual admission (`hadm_id`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-logic",
+          "requirements": "Final Grouping Logic: The final aggregation must group results by `stay_category` and `icu_status` to produce the stratified comparison.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-functions",
+          "requirements": "Final Aggregation Functions: The query must calculate the mean, min, and max of the per-admission procedure counts using AVG(), MIN(), and MAX() functions in the final select statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

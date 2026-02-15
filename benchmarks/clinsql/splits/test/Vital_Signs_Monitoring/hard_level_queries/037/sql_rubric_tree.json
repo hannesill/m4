@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients (b.gender = 'M').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 45 and 55 (b.age_at_icu_admission BETWEEN 45 AND 55).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis",
+          "requirements": "Heart Failure Diagnosis: The query must identify patients with a heart failure diagnosis by joining with the icd_hf CTE.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: The query must correctly identify and filter for the first ICU stay for each hospital admission using ROW_NUMBER() and filtering where stay_rank = 1.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-code-selection-hf",
+          "requirements": "ICD Code Selection for Heart Failure: Correctly filters for both ICD-9 ('428') and ICD-10 ('I50') codes for heart failure.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-vitals-identification",
+          "requirements": "Instability Vitals Identification: Correctly selects the itemids for heart rate (220045), MAP (220052, 220181, 225312), and respiratory rate (220210, 224690).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-thresholds-logic",
+          "requirements": "Instability Thresholds Logic: The query must apply the correct thresholds for tachycardia (>100), hypotension (<65), and tachypnea (>20) using CASE statements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "time-window-72h",
+          "requirements": "Time Window for Vitals: The query must restrict vital sign measurements to the first 72 hours of the ICU stay (ce.charttime BETWEEN icu.intime AND DATETIME_ADD(icu.intime, INTERVAL 72 HOUR)).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "base-table-joins",
+          "requirements": "Base Table Joins: Correctly joins icustays, patients, and admissions tables on their respective keys (subject_id and hadm_id).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-table-join",
+          "requirements": "Vitals Table Join: Correctly joins chartevents with the base ICU stays data on stay_id to link measurements to patients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "composite-instability-score-calculation",
+          "requirements": "Composite Instability Score Calculation: Correctly calculates the composite score by summing the counts of tachycardia, hypotension, and tachypnea episodes per stay_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "p99-percentile-calculation",
+          "requirements": "99th Percentile Calculation: Correctly calculates the 99th percentile of the composite score for the heart failure cohort using PERCENTILE_CONT(...) OVER().",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "unstable-quartile-identification",
+          "requirements": "Unstable Quartile Identification: Correctly identifies the most unstable quartile using NTILE(4) OVER(ORDER BY composite_instability_score DESC).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "unstable-quartile-analysis",
+          "requirements": "Unstable Quartile Analysis: Correctly filters for the top quartile (instability_quartile = 1) and calculates average instability episodes, ICU LOS, and mortality.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "general-icu-analysis",
+          "requirements": "General ICU Population Analysis: Correctly calculates the average instability episodes, ICU LOS, and mortality for the entire ICU population for comparison.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-union",
+          "requirements": "Final Output Union: Correctly combines the results from the unstable HF cohort and the general ICU population using UNION ALL.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

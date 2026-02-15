@@ -1,0 +1,1 @@
+I have a 93-year-old man. Among male patients aged 88–98 on their first ICU stay with pneumonia, stratify first 72-hour diagnostic procedure counts into quintiles and report average procedure count, average ICU LOS (days), and in-hospital mortality% per quintile.

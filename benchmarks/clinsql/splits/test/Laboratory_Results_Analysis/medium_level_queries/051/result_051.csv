@@ -1,0 +1,4 @@
+troponin_category,patient_admission_count,percentage_of_patients,avg_length_of_stay_days
+Normal,47,2.59,6.5
+Borderline,518,28.51,8.8
+Myocardial Injury,1252,68.9,8.4

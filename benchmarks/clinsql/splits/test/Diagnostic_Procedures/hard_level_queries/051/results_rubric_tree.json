@@ -1,0 +1,234 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stddev-diagnostic-utilization-exists",
+              "requirements": "Column exists for standard deviation of diagnostic utilization",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-diagnostic-utilization-exists",
+              "requirements": "Column exists for 75th percentile of diagnostic utilization",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p95-diagnostic-utilization-exists",
+              "requirements": "Column exists for 95th percentile of diagnostic utilization",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "in-hospital-mortality-exists",
+              "requirements": "Column exists for in-hospital mortality percentage",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-exists",
+              "requirements": "Column exists for average length of stay (LOS)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "num-admissions-exists",
+              "requirements": "Column exists for number of admissions",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-row-validation",
+          "requirements": "Validate metrics for 'Sepsis, Male, Age 90-100' cohort",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "stddev-diagnostic-utilization-validation",
+              "requirements": "Validate standard deviation of diagnostic utilization (2.74)",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "stddev-plausible",
+                  "requirements": "Clinically Plausible (0.0-20.0)",
+                  "scoring": "1/0",
+                  "critical": false,
+                  "sub_tasks": []
+                },
+                {
+                  "id": "stddev-acceptable",
+                  "requirements": "Acceptable Range (1.0-5.0)",
+                  "scoring": "1/0",
+                  "critical": false,
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "p75-diagnostic-utilization-validation",
+              "requirements": "Validate 75th percentile of diagnostic utilization (5)",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "p75-plausible",
+                  "requirements": "Clinically Plausible (0-50)",
+                  "scoring": "1/0",
+                  "critical": false,
+                  "sub_tasks": []
+                },
+                {
+                  "id": "p75-acceptable",
+                  "requirements": "Acceptable Range (3-10)",
+                  "scoring": "1/0",
+                  "critical": false,
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "p95-diagnostic-utilization-validation",
+              "requirements": "Validate 95th percentile of diagnostic utilization (9)",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "p95-plausible",
+                  "requirements": "Clinically Plausible (1-60)",
+                  "scoring": "1/0",
+                  "critical": false,
+                  "sub_tasks": []
+                },
+                {
+                  "id": "p95-acceptable",
+                  "requirements": "Acceptable Range (7-15)",
+                  "scoring": "1/0",
+                  "critical": false,
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "in-hospital-mortality-validation",
+              "requirements": "Validate in-hospital mortality percentage (34.91)",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "mortality-plausible",
+                  "requirements": "Clinically Plausible (0.0-100.0)",
+                  "scoring": "1/0",
+                  "critical": false,
+                  "sub_tasks": []
+                },
+                {
+                  "id": "mortality-acceptable",
+                  "requirements": "Acceptable Range (25.0-60.0)",
+                  "scoring": "1/0",
+                  "critical": false,
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "avg-los-validation",
+              "requirements": "Validate average hospital LOS in days (9.35)",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "los-plausible",
+                  "requirements": "Clinically Plausible (1.0-100.0)",
+                  "scoring": "1/0",
+                  "critical": false,
+                  "sub_tasks": []
+                },
+                {
+                  "id": "los-acceptable",
+                  "requirements": "Acceptable Range (5.0-20.0)",
+                  "scoring": "1/0",
+                  "critical": false,
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "num-admissions-validation",
+              "requirements": "Validate number of admissions (381)",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "admissions-plausible",
+                  "requirements": "Clinically Plausible (10-2000)",
+                  "scoring": "1/0",
+                  "critical": false,
+                  "sub_tasks": []
+                },
+                {
+                  "id": "admissions-acceptable",
+                  "requirements": "Acceptable Range (100-800)",
+                  "scoring": "1/0",
+                  "critical": false,
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-selection-and-joins",
+          "requirements": "Selects and joins patients, admissions, and icustays tables on subject_id and hadm_id to create the base cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Filters the cohort to include only male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation-and-filter",
+          "requirements": "Calculates patient age at admission and filters for patients between 40 and 50 years old.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for SBP and MI",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sbp-measurement-selection",
+          "requirements": "Identifies Systolic Blood Pressure measurements by filtering chartevents for the correct itemids (220050, 220179).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-constraint-sbp",
+          "requirements": "Restricts SBP measurements to the first 48 hours of the ICU stay using DATETIME_DIFF on charttime and intime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mi-diagnosis-identification",
+          "requirements": "Identifies Myocardial Infarction diagnoses by correctly filtering for both ICD-9 ('410%') and ICD-10 ('I21%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Aggregation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "sbp-aggregation-and-categorization",
+          "requirements": "Calculates the per-stay mean SBP and correctly categorizes it into '< 140', '140-159', and '>= 160' using a CASE statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Groups the final results by SBP category to perform the required aggregations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-percentage-calculation",
+          "requirements": "Calculates the percentage of total patients in each SBP category using a window function `SUM() OVER ()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mi-rate-calculation",
+          "requirements": "Correctly calculates the MI rate per category as a percentage by dividing the MI count by the total patients in that category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Data Integrity",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "join-mi-to-cohort",
+          "requirements": "Uses a LEFT JOIN to correctly link MI diagnoses to the patient cohort, ensuring all patients are retained regardless of MI status.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "plausibility-filter",
+          "requirements": "Applies a plausible value range filter for SBP measurements (e.g., BETWEEN 50 AND 300).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Presents the final results with clear column aliases and appropriate rounding for percentages, ordered logically by SBP category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

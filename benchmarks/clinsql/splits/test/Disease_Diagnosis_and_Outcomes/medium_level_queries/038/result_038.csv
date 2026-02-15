@@ -1,0 +1,5 @@
+severity_group,los_group,patient_count,mortality_rate_pct,ckd_prevalence_pct,diabetes_prevalence_pct
+Lower-Severity (Non-ICU),<8 days,7044,1.12,40.67,39.72
+Lower-Severity (Non-ICU),>=8 days,1615,2.11,53.25,44.71
+Higher-Severity (ICU),<8 days,1489,20.28,37.27,37.07
+Higher-Severity (ICU),>=8 days,1464,14.34,43.17,37.98

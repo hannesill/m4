@@ -1,0 +1,1 @@
+I am evaluating a 45‑year‑old woman with AKI. Among female inpatients 40–50 with AKI, stratify by composite risk (5×comorbidities +50 if ARDS) into quintiles and report per quintile: N; 30‑day post‑discharge mortality %; ARDS co‑occurrence %; median survivor LOS (days).

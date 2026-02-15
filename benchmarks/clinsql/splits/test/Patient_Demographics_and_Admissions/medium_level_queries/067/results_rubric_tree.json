@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "grouping-column-exists",
+              "requirements": "Exists column related to discharge category (e.g., 'discharge_category', 'disposition')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-ge7-proportion-column-exists",
+              "requirements": "Exists column related to proportion with LOS >= 7 days (e.g., 'proportion_los_ge_7_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-ge14-proportion-column-exists",
+              "requirements": "Exists column related to proportion with LOS >= 14 days (e.g., 'proportion_los_ge_14_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-percentile-column-exists",
+              "requirements": "Exists column related to 7-day LOS percentile (e.g., 'percentile_rank_of_7_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "los-ge7-proportion-validation",
+          "requirements": "Validation for column related to 'proportion_los_ge_7_days'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "los-ge7-proportion-plausible",
+              "requirements": "Values are clinically plausible (0.0 - 1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-ge7-proportion-acceptable",
+              "requirements": "Values are in the acceptable range (0.1 - 0.7)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-ge14-proportion-validation",
+          "requirements": "Validation for column related to 'proportion_los_ge_14_days'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "los-ge14-proportion-plausible",
+              "requirements": "Values are clinically plausible (0.0 - 1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-ge14-proportion-acceptable",
+              "requirements": "Values are in the acceptable range (0.05 - 0.45)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-percentile-validation",
+          "requirements": "Validation for column related to 'percentile_rank_of_7_days'",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "los-percentile-plausible",
+              "requirements": "Values are clinically plausible (0.0 - 1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-percentile-acceptable",
+              "requirements": "Values are in the acceptable range (0.3 - 0.9)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

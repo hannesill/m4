@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for the range 75-85 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 75 AND 85`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-filter",
+          "requirements": "Primary Condition Filter: Identifies patients with COPD exacerbation using specific ICD-9/10 codes `dx.icd_code IN ('49121', 'J441')`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "major-complication-identification",
+          "requirements": "Major Complication Identification: Correctly identifies and counts distinct major complication types using a CASE statement and a comprehensive list of ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-90-day-logic",
+          "requirements": "90-Day Mortality Logic: Accurately calculates a 90-day mortality flag by checking both in-hospital death (`hospital_expire_flag`) and post-discharge death within 90 days (`dod <= DATE_ADD(dischtime, INTERVAL 90 DAY)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-calculation",
+          "requirements": "Risk Score Calculation: Implements the specified composite risk score formula: `(age_at_admission - 75) * 5 + LEAST(COALESCE(num_major_complications, 0), 2) * 25`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: Correctly joins the `patients` and `admissions` tables on `subject_id` to link demographic data with hospital stay information.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: Correctly joins the patient cohort with the `diagnoses_icd` table on `hadm_id` to identify conditions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-complication-join",
+          "requirements": "Cohort-Complication Join: Uses a `LEFT JOIN` to connect the `copd_cohort` with aggregated complication data (`complications_agg`) to ensure no patients are lost if they have no complications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-stratification",
+          "requirements": "Risk Stratification: Correctly stratifies the cohort into four quartiles based on the composite risk score using `NTILE(4) OVER (ORDER BY risk_score)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-grouping-and-reporting",
+          "requirements": "Quartile Grouping and Reporting: Groups the final results by `risk_quartile` to report metrics per stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-aggregation",
+          "requirements": "Metric Aggregation: Correctly calculates per-quartile 90-day mortality and major complication rates using `AVG()` and percentage formatting.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-survivor-los-aggregation",
+          "requirements": "Median Survivor LOS Aggregation: Correctly calculates the median length of stay for survivors only, using `APPROX_QUANTILES` with a conditional `IF(q.mortality_90day_flag = 0, ...)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "broader-population-metric-calculation",
+          "requirements": "Broader Population Metric Calculation: Accurately calculates the 90-day mortality for the broader 75-85 female population in a separate CTE and includes it in the final output.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+I have a 50‑year‑old female inpatient to evaluate. Among female inpatients aged 45–55 with multi‑trauma, compute medication complexity over the first 7 days, stratify into tertiles, and report admissions, mean/min/max score, mean LOS, mortality%, and 30‑day readmission% per tertile.

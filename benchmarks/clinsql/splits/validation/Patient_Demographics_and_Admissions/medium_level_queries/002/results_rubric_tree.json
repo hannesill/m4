@@ -1,0 +1,285 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "discharge-group-column-exists",
+              "requirements": "A column grouping by discharge disposition must exist (e.g., 'discharge_group', 'discharge_location').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-column-exists",
+              "requirements": "A column for mean length of stay must exist (e.g., 'mean_los_days', 'avg_los').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-los-column-exists",
+              "requirements": "A column for the 25th percentile of LOS must exist (e.g., 'p25_los_days', 'los_25th_percentile').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-los-column-exists",
+              "requirements": "A column for the 50th percentile (median) of LOS must exist (e.g., 'p50_los_days_median', 'median_los').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-column-exists",
+              "requirements": "A column for the 75th percentile of LOS must exist (e.g., 'p75_los_days', 'los_75th_percentile').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-los-column-exists",
+              "requirements": "A column for the 90th percentile of LOS must exist (e.g., 'p90_los_days', 'los_90th_percentile').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percent-los-lte-10-column-exists",
+              "requirements": "A column for the percentage of stays less than or equal to 10 days must exist (e.g., 'percentile_rank_of_10_day_los', 'percent_los_lte_10').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in any of the required columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "validate-discharge-group-values",
+          "requirements": "Validate discharge group categories and values.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "discharge-home-row-validation",
+              "requirements": "Validate metrics for 'Discharged Home' group.",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "mean-los-home-validation",
+                  "requirements": "Validate 'mean_los_days' for 'Discharged Home' group.",
+                  "sequential": false,
+                  "sub_tasks": [
+                    {
+                      "id": "mean-los-home-plausible",
+                      "requirements": "Clinically Plausible (2.0-10.0 days)",
+                      "sequential": false,
+                      "critical": false,
+                      "scoring": "1/0",
+                      "sub_tasks": []
+                    },
+                    {
+                      "id": "mean-los-home-acceptable",
+                      "requirements": "Acceptable Range (4.0-6.5 days)",
+                      "sequential": false,
+                      "critical": false,
+                      "scoring": "1/0",
+                      "sub_tasks": []
+                    }
+                  ]
+                },
+                {
+                  "id": "percent-los-lte-10-home-validation",
+                  "requirements": "Validate 'percent_los_lte_10' for 'Discharged Home' group.",
+                  "sequential": false,
+                  "sub_tasks": [
+                    {
+                      "id": "percent-los-lte-10-home-plausible",
+                      "requirements": "Clinically Plausible (70.0-100.0 %)",
+                      "sequential": false,
+                      "critical": false,
+                      "scoring": "1/0",
+                      "sub_tasks": []
+                    },
+                    {
+                      "id": "percent-los-lte-10-home-acceptable",
+                      "requirements": "Acceptable Range (85.0-95.0 %)",
+                      "sequential": false,
+                      "critical": false,
+                      "scoring": "1/0",
+                      "sub_tasks": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "discharge-facility-row-validation",
+              "requirements": "Validate metrics for 'Discharged to Facility' group.",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "mean-los-facility-validation",
+                  "requirements": "Validate 'mean_los_days' for 'Discharged to Facility' group.",
+                  "sequential": false,
+                  "sub_tasks": [
+                    {
+                      "id": "mean-los-facility-plausible",
+                      "requirements": "Clinically Plausible (5.0-20.0 days)",
+                      "sequential": false,
+                      "critical": false,
+                      "scoring": "1/0",
+                      "sub_tasks": []
+                    },
+                    {
+                      "id": "mean-los-facility-acceptable",
+                      "requirements": "Acceptable Range (8.0-13.0 days)",
+                      "sequential": false,
+                      "critical": false,
+                      "scoring": "1/0",
+                      "sub_tasks": []
+                    }
+                  ]
+                },
+                {
+                  "id": "percent-los-lte-10-facility-validation",
+                  "requirements": "Validate 'percent_los_lte_10' for 'Discharged to Facility' group.",
+                  "sequential": false,
+                  "sub_tasks": [
+                    {
+                      "id": "percent-los-lte-10-facility-plausible",
+                      "requirements": "Clinically Plausible (40.0-90.0 %)",
+                      "sequential": false,
+                      "critical": false,
+                      "scoring": "1/0",
+                      "sub_tasks": []
+                    },
+                    {
+                      "id": "percent-los-lte-10-facility-acceptable",
+                      "requirements": "Acceptable Range (60.0-80.0 %)",
+                      "sequential": false,
+                      "critical": false,
+                      "scoring": "1/0",
+                      "sub_tasks": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "mortality-row-validation",
+              "requirements": "Validate metrics for 'In-Hospital Mortality' group.",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "mean-los-mortality-validation",
+                  "requirements": "Validate 'mean_los_days' for 'In-Hospital Mortality' group.",
+                  "sequential": false,
+                  "sub_tasks": [
+                    {
+                      "id": "mean-los-mortality-plausible",
+                      "requirements": "Clinically Plausible (4.0-25.0 days)",
+                      "sequential": false,
+                      "critical": false,
+                      "scoring": "1/0",
+                      "sub_tasks": []
+                    },
+                    {
+                      "id": "mean-los-mortality-acceptable",
+                      "requirements": "Acceptable Range (8.0-14.0 days)",
+                      "sequential": false,
+                      "critical": false,
+                      "scoring": "1/0",
+                      "sub_tasks": []
+                    }
+                  ]
+                },
+                {
+                  "id": "percent-los-lte-10-mortality-validation",
+                  "requirements": "Validate 'percent_los_lte_10' for 'In-Hospital Mortality' group.",
+                  "sequential": false,
+                  "sub_tasks": [
+                    {
+                      "id": "percent-los-lte-10-mortality-plausible",
+                      "requirements": "Clinically Plausible (35.0-85.0 %)",
+                      "sequential": false,
+                      "critical": false,
+                      "scoring": "1/0",
+                      "sub_tasks": []
+                    },
+                    {
+                      "id": "percent-los-lte-10-mortality-acceptable",
+                      "requirements": "Acceptable Range (55.0-75.0 %)",
+                      "sequential": false,
+                      "critical": false,
+                      "scoring": "1/0",
+                      "sub_tasks": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "validate-percentile-order",
+          "requirements": "Validate that LOS percentiles are in ascending order for each row (p25 <= p50 <= p75 <= p90).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "validate-mean-los-order",
+          "requirements": "Validate the relative order of mean LOS: Home < Facility and Home < Mortality.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

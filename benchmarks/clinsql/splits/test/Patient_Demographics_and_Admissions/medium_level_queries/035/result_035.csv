@@ -1,0 +1,4 @@
+discharge_group,number_of_admissions,median_los_days,iqr_los_days,percentile_rank_of_14_day_los
+Discharged Home,9944,3,3,97.1
+In-Hospital Mortality,188,6,11,78.2
+Discharged to Facility,581,6,6,86.1

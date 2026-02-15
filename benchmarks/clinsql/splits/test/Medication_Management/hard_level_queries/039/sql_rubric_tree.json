@@ -1,0 +1,144 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the initial patient cohort based on demographics and primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the age at admission and filter for patients aged between 87 and 97 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ich-diagnosis-filtering",
+          "requirements": "Intracranial Hemorrhage (ICH) Diagnosis Filtering: The query must filter for admissions with a diagnosis of ICH using a subquery on the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly implements the clinical logic for ICH diagnosis and medication complexity.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ich-icd-code-selection",
+          "requirements": "ICH ICD Code Selection: The query must correctly identify ICH codes for both ICD-9 (430-432) and ICD-10 (I60-I62) using LIKE patterns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-time-window",
+          "requirements": "Medication Time Window: The query must correctly filter prescriptions to include only those administered within the first 48 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-score-calculation",
+          "requirements": "Medication Complexity Score Calculation: The query must define medication complexity as the sum of distinct drug names and distinct routes (`COUNT(DISTINCT drug) + COUNT(DISTINCT route)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Ensures correct joining of tables to link patient demographics, diagnoses, medications, and outcomes.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `patients` and `admissions` tables on `subject_id` to form the base cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-data-join",
+          "requirements": "Medication Data Join: The query must join the `prescriptions` table with the initial cohort on `hadm_id` to link medications to specific admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcomes-data-join",
+          "requirements": "Outcomes Data Join: The query must use LEFT JOINs to integrate medication complexity and readmission data with the primary cohort, ensuring no patients are lost if they have no medications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates, stratifies, and aggregates the final outcome metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "readmission-logic",
+          "requirements": "30-Day Readmission Logic: The query must correctly identify 30-day readmissions using a window function like `LEAD` partitioned by `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-stratification",
+          "requirements": "Quartile Stratification: The query must use `NTILE(4)` over the medication complexity score to stratify admissions into four quartiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-and-metrics",
+          "requirements": "Final Aggregation and Metrics: The query must group by the calculated quartile and correctly compute all required metrics: admission count, score ranges, average LOS, mortality %, and 30-day readmission %.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query should present the final metrics clearly, rounding percentages and averages as specified.",
+          "weight": 1,
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

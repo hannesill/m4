@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies admissions for male patients aged 90-100 with a TIA diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for the range 90-100.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "tia-diagnosis-filtering",
+          "requirements": "TIA Diagnosis Filtering: Filters admissions based on both ICD-9 ('435%') and ICD-10 ('G45%') codes for Transient Ischemic Attack (TIA).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient demographics, admission details, diagnoses, and procedures.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly performs INNER JOINs on `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to build the initial TIA admission cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Procedure Table Join: Correctly uses a LEFT JOIN to connect the TIA admissions cohort to the `procedures_icd` table on `hadm_id`, ensuring all relevant admissions are included, even those without imaging procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly calculates length of stay, categorizes stays, and identifies diagnostic imaging procedures.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: Accurately computes the length of stay in days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-procedure-identification",
+          "requirements": "Imaging Procedure Identification: Correctly identifies diagnostic imaging procedures by filtering on both ICD-9 (codes starting with '87' or '88') and ICD-10 (codes starting with 'B').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Accurately calculates and aggregates the required metrics (mean, min, max) for each stay duration category.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stay-duration-categorization",
+          "requirements": "Stay Duration Categorization: Uses a CASE statement to correctly classify admissions into '1-3 Day Stay' and '4-7 Day Stay' categories based on the calculated length of stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-admission-procedure-count",
+          "requirements": "Per-Admission Procedure Count: Correctly counts the number of imaging procedures for each individual admission by grouping by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-filtering",
+          "requirements": "Final Grouping and Filtering: Groups the results by `stay_category` and filters the output to only include the '1-3 Day Stay' and '4-7 Day Stay' groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-functions",
+          "requirements": "Final Aggregation Functions: Correctly applies AVG, MIN, and MAX functions to the per-admission procedure counts to compute the final required metrics for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

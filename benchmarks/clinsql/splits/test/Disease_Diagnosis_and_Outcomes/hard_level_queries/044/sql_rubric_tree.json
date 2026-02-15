@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients (p.gender = 'F').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 59 and 69 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-filtering",
+          "requirements": "Primary Condition Filtering: The query must correctly identify patients with a cardiac arrest diagnosis using both ICD-9 ('4275') and ICD-10 ('I46%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "baseline-cohort-definition",
+          "requirements": "Baseline Cohort Definition: The query must define a separate baseline cohort of all female patients aged 59-69, irrespective of cardiac arrest diagnosis, for the baseline mortality calculation.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the 'patients' and 'admissions' tables on 'subject_id' to link demographic data with admission events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must join admission data with the 'diagnoses_icd' table on 'hadm_id' to access patient diagnoses for filtering and scoring.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "composite-risk-score-calculation",
+          "requirements": "Composite Risk Score Calculation: The query must accurately implement the specific point-based logic in the CASE statement, handling both ICD-9 and ICD-10 codes for various conditions to create the primary risk score component.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-count-risk-component",
+          "requirements": "Comorbidity Count Risk Component: The query must correctly calculate and add the secondary risk component based on the count of distinct diagnosis codes (COUNT(DISTINCT dx.icd_code) * 0.5).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complication-flagging-logic",
+          "requirements": "Complication Flagging Logic: The query must correctly implement flags for 'has_cardiovascular_complication' and 'has_neurologic_complication' using the specified ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-calculation-logic",
+          "requirements": "30-Day Mortality Calculation Logic: The query must correctly calculate 30-day mortality by checking for in-hospital death ('hospital_expire_flag' = 1) and post-discharge death within 30 days (DATE_DIFF(c.dod, c.dischtime, DAY) BETWEEN 0 AND 30).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-based-stratification",
+          "requirements": "Risk-Based Stratification: The query must use NTILE(4) to correctly stratify the cardiac arrest cohort into quartiles based on the 'composite_risk_score'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-grouping",
+          "requirements": "Quartile Grouping: The final aggregation must group results by the calculated 'risk_quartile'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-rate-calculation",
+          "requirements": "Outcome Rate Calculation: The query must correctly calculate the average rates for 30-day mortality, cardiovascular complications, and neurologic complications for each quartile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-survivor-los-calculation",
+          "requirements": "Median Survivor LOS Calculation: The query must calculate the median length of stay specifically for survivors (is_survivor = 1) using a conditional expression within an approximation function like APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "baseline-metric-reporting",
+          "requirements": "Baseline Metric Reporting: The query must correctly calculate and report the baseline 30-day mortality for the separate baseline cohort alongside the quartile-stratified results.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "The result is a CSV file or can be correctly interpreted as a CSV.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-mortality",
+              "requirements": "A column representing mortality rate/percentage (e.g., `mortality_rate_percent`, `mortality_pct`) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-ci-lower",
+              "requirements": "A column representing the lower bound of the confidence interval (e.g., `ci_95_lower_bound`, `ci_lower`) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-ci-upper",
+              "requirements": "A column representing the upper bound of the confidence interval (e.g., `ci_95_upper_bound`, `ci_upper`) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-column-exists-icu",
+              "requirements": "A column for stratifying by ICU status (e.g., `icu_status`, `is_icu`) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-column-exists-los",
+              "requirements": "A column for stratifying by Length of Stay (LOS) (e.g., `los_category`, `los_group`) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stratification-column-exists-comorbidity",
+              "requirements": "A column for stratifying by comorbidity burden (e.g., `comorbidity_burden`, `charlson_group`) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "There are no NULL or empty values in the key result columns (`mortality_rate_percent`, `ci_95_lower_bound`, `ci_95_upper_bound`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate the `mortality_rate_percent` column values.",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Mortality rate is clinically plausible (0.0-100.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Mortality rate is within an acceptable range for stroke patients (0.0-75.0), accounting for high-risk subgroups.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ci-lower-bound-validation",
+          "requirements": "Validate the `ci_95_lower_bound` column values.",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "ci-lower-plausible",
+              "requirements": "The lower bound of the CI is clinically plausible (0.0-100.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ci-lower-acceptable",
+              "requirements": "The lower bound of the CI is within an acceptable range (0.0-65.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ci-upper-bound-validation",
+          "requirements": "Validate the `ci_95_upper_bound` column values.",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "ci-upper-plausible",
+              "requirements": "The upper bound of the CI is clinically plausible (0.0-100.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ci-upper-acceptable",
+              "requirements": "The upper bound of the CI is within an acceptable range (0.0-85.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

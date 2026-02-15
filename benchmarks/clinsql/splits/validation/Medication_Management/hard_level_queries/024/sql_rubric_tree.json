@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the patient population based on demographics and multi-trauma criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Correctly filters for female patients (`p.gender = 'F'`) as part of the primary cohort definition.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates patient age at admission and filters for the 68-78 year range.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "multi-trauma-identification",
+          "requirements": "Identifies multi-trauma admissions by requiring at least two distinct 3-character ICD codes (`COUNT(DISTINCT SUBSTR(icd_code, 1, 3)) >= 2`) from defined trauma categories.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-stratification",
+          "requirements": "Uses a CASE statement to create two distinct analysis cohorts: 'Target: Female 68-78 Multi-Trauma' and 'Comparison: All Other Multi-Trauma'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Translates clinical concepts like medication complexity and serotonergic risk into SQL logic.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-24h-temporal-filter",
+          "requirements": "Filters prescriptions to only those administered within the first 24 hours of hospital admission (`pr.starttime BETWEEN pc.admittime AND DATETIME_ADD(pc.admittime, INTERVAL 24 HOUR)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-definition",
+          "requirements": "Defines medication complexity by counting the number of distinct drugs (`COUNT(DISTINCT pr.drug)`) within the specified timeframe.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "serotonergic-risk-logic",
+          "requirements": "Implements the logic to identify serotonergic interaction risk by checking for the presence of two or more distinct drugs from a specified list.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to construct the analytical dataset.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "join-patients-admissions",
+          "requirements": "Correctly joins the 'patients' and 'admissions' tables on 'subject_id' to link demographic data with admission records.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "join-admissions-diagnoses",
+          "requirements": "Correctly joins admission data with trauma diagnoses from `diagnoses_icd` on 'hadm_id' via a pre-filtered CTE.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "join-cohort-prescriptions",
+          "requirements": "Correctly performs a LEFT JOIN on the 'prescriptions' table using 'hadm_id' to associate medications with patient admissions without losing patients who have no prescriptions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final calculations, ranking, and aggregations to answer the clinical question.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "complexity-ranking",
+          "requirements": "Uses window functions `PERCENT_RANK()` and `NTILE(4)` partitioned by cohort to correctly calculate each patient's complexity percentile and quartile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-calculation",
+          "requirements": "Accurately calculates Length of Stay (LOS) in days and the hospital mortality rate from the appropriate flags and timestamps.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "subgroup-analysis-aggregation",
+          "requirements": "Correctly groups results by cohort and serotonergic interaction risk to compare outcomes between these subgroups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-analysis-reporting",
+          "requirements": "Uses a `UNION ALL` clause to generate a separate aggregated report for patients in the top complexity quartile (`complexity_quartile = 1`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

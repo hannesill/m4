@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction (HHS Cohort)",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates and filters for patient age between 50 and 60 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hhs-diagnosis-filter",
+          "requirements": "Identifies patients with Hyperosmolar Hyperglycemic State (HHS) using an EXISTS clause on the diagnoses_icd table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hhs-icd-code-selection",
+          "requirements": "Correctly selects both ICD-9 ('2502%') and ICD-10 ('E1_0%') codes for HHS.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-concept-implementation",
+      "requirements": "Clinical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-instability-definition",
+          "requirements": "Defines the set of six critical labs and their respective low/high thresholds using a CTE or similar structure.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-48h-lab-filter",
+          "requirements": "Filters lab events to the first 48 hours of admission using DATETIME_DIFF and the admittime from the admissions table.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Calculates the instability score as the count of distinct lab itemids that fall outside the defined critical thresholds.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "null-score-handling",
+          "requirements": "Correctly handles patients with no qualifying labs by assigning a score of 0 using COALESCE.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Metrics",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "percentile-calculation",
+          "requirements": "Calculates the 75th percentile of the instability score for the HHS cohort using APPROX_QUANTILES.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-cohort-identification",
+          "requirements": "Correctly identifies the high-risk cohort as admissions with an instability score greater than or equal to the calculated 75th percentile.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-mortality-calculation",
+          "requirements": "Calculates the average mortality rate for the high-risk cohort using hospital_expire_flag.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-los-calculation",
+          "requirements": "Calculates the average length of stay (LOS) in days for the high-risk cohort.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "comparative-analysis",
+      "requirements": "Comparative Analysis of Lab Rates",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "comparison-cohort-definition",
+          "requirements": "Correctly separates labs into two groups: those from high-risk HHS patients and those from the general inpatient population.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rate-calculation-logic",
+          "requirements": "Calculates the critical lab rate for each group as the count of critical labs divided by the total count of labs for that group, using COUNTIF and SAFE_DIVIDE.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-structuring",
+          "requirements": "Presents the final comparison as a nested array of structs, with each struct containing the lab name and the rates for both cohorts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+My 60-year-old female ICU patient has an instability score of 60 from the first 24 hours. Among female ICU patients aged 55–65 with pneumonia, what percentile is this score? Also report ICU LOS and mortality for the most unstable decile.

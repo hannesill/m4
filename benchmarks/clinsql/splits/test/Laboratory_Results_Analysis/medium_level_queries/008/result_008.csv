@@ -1,0 +1,4 @@
+troponin_category,admission_count,percentage_of_admissions,in_hospital_deaths,in_hospital_mortality_rate_pct
+Normal/Minimal,132,13.61,10,7.58
+Borderline,180,18.56,20,11.11
+Elevated,658,67.84,112,17.02

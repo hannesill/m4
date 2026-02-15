@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-stay-category",
+              "requirements": "Primary column for stay categorization exists (e.g., 'stay_category')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-avg",
+              "requirements": "Column for average procedures exists (e.g., 'avg_imaging_procedures_per_admission')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-min",
+              "requirements": "Column for minimum procedures exists (e.g., 'min_imaging_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-max",
+              "requirements": "Column for maximum procedures exists (e.g., 'max_imaging_procedures')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key columns ('stay_category', 'avg_imaging_procedures_per_admission', 'min_imaging_procedures', 'max_imaging_procedures')",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "avg-procedures-validation",
+          "requirements": "Validate average imaging procedures column (e.g., 'avg_imaging_procedures_per_admission')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-procedures-plausible",
+              "requirements": "Values are clinically plausible (0.0 - 5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-procedures-acceptable",
+              "requirements": "Values are in the acceptable range (0.0 - 2.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "min-procedures-validation",
+          "requirements": "Validate minimum imaging procedures column (e.g., 'min_imaging_procedures')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "min-procedures-plausible",
+              "requirements": "Values are clinically plausible (0 - 2)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-procedures-acceptable",
+              "requirements": "Values are in the acceptable range (0 - 0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "max-procedures-validation",
+          "requirements": "Validate maximum imaging procedures column (e.g., 'max_imaging_procedures')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "max-procedures-plausible",
+              "requirements": "Values are clinically plausible (0 - 20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-procedures-acceptable",
+              "requirements": "Values are in the acceptable range (1 - 10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

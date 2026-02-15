@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 81 and 91 years at the time of admission using the calculated age `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 81 AND 91`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-diagnosis-selection",
+          "requirements": "T2DM Diagnosis Selection: The query must identify patients with Type 2 Diabetes Mellitus using both ICD-9 ('250.x0' or '250.x2') and ICD-10 ('E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-selection",
+          "requirements": "Heart Failure Diagnosis Selection: The query must identify patients with heart failure using both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-filter",
+          "requirements": "Inpatient Filter: The query correctly uses the `admissions` table to select for inpatient encounters, confirmed by joining `diagnoses_icd` on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: The query correctly filters for admissions with a length of stay of at least 72 hours using `DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 72`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-classification",
+          "requirements": "Medication Classification: The query must use a CASE statement to correctly classify drugs into the five specified oral antidiabetic classes based on string matching of drug names.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "oral-route-filter",
+          "requirements": "Oral Route Filter: The query must filter prescriptions to include only oral routes ('po', 'po/ng', 'po/gt').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to build the patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-table-join",
+          "requirements": "Medication Table Join: The query must join the identified patient cohort with the `prescriptions` table on `hadm_id` to link patients to their medication records.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "time-window-definition",
+          "requirements": "Time Window Definition: The query must correctly define the 'first 72h' and 'final 48h' time windows for medication administration using DATETIME_DIFF and conditional logic within the aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-counting-per-window",
+          "requirements": "Patient Counting Per Window: The query must use `COUNT(DISTINCT hadm_id)` within conditional cases to accurately count unique patients receiving a medication class in each time window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-calculation",
+          "requirements": "Prevalence Calculation: The query must calculate the prevalence for each time window by dividing the patient count for a given class by the total number of patients in the cohort, and expressing it as a percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "absolute-difference-calculation",
+          "requirements": "Absolute Difference Calculation: The query must calculate the absolute percentage point difference between the 'final 48h' prevalence and the 'first 72h' prevalence.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-and-output",
+          "requirements": "Grouping and Output: The final query must group results by `medication_class` and output the class name, prevalence percentages, and the absolute difference.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

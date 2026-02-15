@@ -1,0 +1,1 @@
+As I evaluate a 77-year-old woman, among female Medicare patients aged 72–82 admitted via the emergency department with a principal diagnosis of acute pancreatitis (discharged index admissions), how many total admissions are in that cohort in the MIMIC-IV dataset, please?

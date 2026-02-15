@@ -1,0 +1,1 @@
+I’m evaluating a 48‑year‑old man. Among male inpatients aged 43–53 with hepatic failure, compute medication complexity score over the first 72 hours, stratify into quintiles, and report per quintile: n, min/max/mean score, mean LOS, in‑hospital mortality%, and 30‑day readmission%.

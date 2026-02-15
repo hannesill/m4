@@ -1,0 +1,4 @@
+stratum,num_patients,avg_complexity_score,avg_complexity_percentile,avg_los_days,mortality_rate_percent
+Risk Interaction Present,18,30.44,59.6,8.4,5.6
+Risk Interaction Absent,19,22.79,37.3,7.2,15.8
+All Patients in Top Quartile,10,37.9,86.9,9.8,10.0

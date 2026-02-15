@@ -1,0 +1,2 @@
+cohort_description,total_admissions_in_cohort,in_hospital_mortality_rate_pct,aki_rate_pct,ards_rate_pct,median_survival_days_for_deceased,risk_score_min,risk_score_p25,risk_score_median,risk_score_p75,risk_score_p90,risk_score_max
+"Female patients, aged 59-69, with Heart Failure",7216,3.7,30.02,0.22,8,0,0,0,10,10,55

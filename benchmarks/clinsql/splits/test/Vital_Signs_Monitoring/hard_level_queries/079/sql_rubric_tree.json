@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients with `anchor_age BETWEEN 81 AND 91`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-patient-selection",
+          "requirements": "ICU Patient Selection: The query must correctly select patient stays from the `icustays` table, establishing the base cohort of ICU patients.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hfnc-identification",
+          "requirements": "HFNC Identification: The query must identify High-Flow Nasal Cannula use by filtering `chartevents` for `itemid = 227287` and `valuenum > 0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hfnc-temporal-constraint",
+          "requirements": "HFNC Temporal Constraint: The query must restrict HFNC identification to the first 48 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-sign-selection",
+          "requirements": "Vital Sign Selection for Score: The query must correctly select the five specific vital signs (itemids 220045, 220179, 220210, 220277, 223762) needed to calculate the instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-temporal-constraint",
+          "requirements": "Vitals Temporal Constraint: The query must restrict the selected vital signs to the first 48 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-logic",
+          "requirements": "Instability Score Logic: The query must use a CASE statement to correctly identify and flag abnormal vital sign measurements based on the specified ranges.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "composite-score-aggregation",
+          "requirements": "Composite Score Aggregation: The query must aggregate the abnormal flags for each `stay_id` using `SUM()` to create the `composite_instability_score`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: The query must use `CUME_DIST()` over the instability scores to calculate the percentile rank.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "decile-calculation",
+          "requirements": "Decile Calculation: The query must use `NTILE(10) OVER (ORDER BY composite_instability_score DESC)` to identify the top decile of patients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-los-calculation",
+          "requirements": "ICU LOS Calculation: The query must calculate ICU length of stay using `DATETIME_DIFF` between `outtime` and `intime` and correctly convert it to days for the final output.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-calculation",
+          "requirements": "Mortality Calculation: The query must calculate the average of `hospital_expire_flag` and multiply by 100 to report hospital mortality as a percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Output",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "correct-table-joins",
+          "requirements": "Correct Table Joins: The query must correctly join `icustays`, `patients`, `chartevents`, and `admissions` tables using appropriate keys (`subject_id`, `stay_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: The query must use `UNION ALL` to present the two distinct metrics (percentile rank and top decile outcomes) in the requested format.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-filtering",
+          "requirements": "Top Decile Filtering: The final aggregation for LOS and mortality must be correctly filtered to `score_decile = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

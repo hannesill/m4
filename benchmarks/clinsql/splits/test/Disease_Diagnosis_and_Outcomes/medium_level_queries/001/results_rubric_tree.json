@@ -1,0 +1,156 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column exists for in-hospital mortality percentage (e.g., mortality_rate_pct, mortality_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ckd-prevalence-column-exists",
+              "requirements": "Column exists for CKD prevalence percentage (e.g., ckd_prevalence_pct, ckd_rate)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "diabetes-prevalence-column-exists",
+              "requirements": "Column exists for diabetes prevalence percentage (e.g., diabetes_prevalence_pct, diabetes_rate)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-stratification-column-exists",
+              "requirements": "Column exists for LOS stratification (e.g., los_group, los_category)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-stratification-column-exists",
+              "requirements": "Column exists for day-1 ICU status stratification (e.g., day1_icu_status, icu_status)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key result columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate values in the mortality rate column (e.g., mortality_rate_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Mortality rate is clinically plausible (0.0-40.0%) for this high-risk cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Mortality rate is within an acceptable range (1.0-20.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ckd-prevalence-validation",
+          "requirements": "Validate values in the CKD prevalence column (e.g., ckd_prevalence_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "ckd-prevalence-plausible",
+              "requirements": "CKD prevalence is clinically plausible (20.0-80.0%) for this elderly HF cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ckd-prevalence-acceptable",
+              "requirements": "CKD prevalence is within an acceptable range (40.0-65.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "diabetes-prevalence-validation",
+          "requirements": "Validate values in the diabetes prevalence column (e.g., diabetes_prevalence_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "diabetes-prevalence-plausible",
+              "requirements": "Diabetes prevalence is clinically plausible (25.0-85.0%) for this elderly HF cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "diabetes-prevalence-acceptable",
+              "requirements": "Diabetes prevalence is within an acceptable range (45.0-65.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

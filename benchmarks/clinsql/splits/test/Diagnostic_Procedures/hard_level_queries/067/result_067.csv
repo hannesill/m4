@@ -1,0 +1,3 @@
+cohort,num_stays,avg_diagnostic_intensity,median_diagnostic_intensity,p75_diagnostic_intensity,p95_diagnostic_intensity,avg_icu_los_days,hospital_mortality_pct
+"Heart Failure (M, 70-80)",3771,5.7629276054097,5,9,14,4.321565897639903,16.096526120392497
+General ICU Population,81471,5.154656258055083,4,8,13,3.470693637952107,10.884854733586117

@@ -1,0 +1,3 @@
+cohort_group,total_patients,mean_risk_score,percentile_of_matched_profile,mortality_30_day_rate_pct,cardiac_complication_rate_pct,neurologic_complication_rate_pct,survivor_mean_los_days
+Target: ACS Post-ICU (67-77F),936,22.85,34.22,20.41,57.59,16.45,12.31
+Control: General Inpatient (67-77F),50718,3.17,34.22,4.04,19.3,9.46,5.02

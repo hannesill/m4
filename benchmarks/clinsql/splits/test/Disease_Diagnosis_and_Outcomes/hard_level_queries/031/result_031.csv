@@ -1,0 +1,5 @@
+risk_quartile,total_patients,in_hospital_mortality_rate,cardiovascular_complication_rate,neurologic_complication_rate,median_survivor_los_days
+1,19,0.0,5.26,5.26,2
+2,18,0.0,5.56,5.56,3
+3,18,5.56,0.0,5.56,5
+4,18,11.11,22.22,22.22,6

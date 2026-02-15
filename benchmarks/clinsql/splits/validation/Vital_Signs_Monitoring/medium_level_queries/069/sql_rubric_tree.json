@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identify female ICU patients within the specified age range.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate the patient's age at admission and filter for ages between 41 and 51.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: The query must join with the `icustays` table to restrict the cohort to patients with at least one ICU stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identify and process respiratory rate measurements and stroke diagnoses.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "respiratory-rate-identification",
+          "requirements": "Respiratory Rate Identification: The query must use the correct item IDs for respiratory rate from the chartevents table (e.g., 220210, 615).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-48h",
+          "requirements": "Temporal Filter (First 48h): The query must filter respiratory rate measurements to only include those taken within the first 48 hours of the ICU stay intime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stroke-code-selection",
+          "requirements": "Stroke Code Selection: The query must correctly identify stroke diagnoses by filtering on both ICD-9 ('430'-'438') and ICD-10 ('I6%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly join tables to link patient demographics, ICU stays, clinical events, and diagnoses.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-integration",
+          "requirements": "Patient Demographics Integration: The query must correctly join `patients`, `admissions`, and `icustays` tables on `subject_id` and `hadm_id` to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "clinical-events-join",
+          "requirements": "Clinical Events Join: The query must join the patient cohort with `chartevents` on `stay_id` to associate RR measurements with the correct ICU stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnoses-join",
+          "requirements": "Diagnoses Join: The query must use a LEFT JOIN to connect the patient cohort with stroke diagnoses on `hadm_id`, ensuring all patients are retained regardless of stroke status.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly aggregate data to calculate average respiratory rate and stroke rates per category.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "average-rr-calculation",
+          "requirements": "Average RR Calculation: The query must calculate the average respiratory rate per ICU stay using AVG() and group by `stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rr-categorization",
+          "requirements": "RR Categorization: A CASE statement must be used to correctly classify the average RR into the four specified categories: <12, 12-20, 21-29, and >=30.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-and-grouping",
+          "requirements": "Final Aggregation and Grouping: The final query must group results by the RR category to count patients and calculate stroke rates.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stroke-rate-calculation",
+          "requirements": "Stroke Rate Calculation: The query must correctly calculate the stroke rate as the sum of stroke cases divided by the total number of patients in each category, using `COUNT(DISTINCT subject_id)` to avoid overcounting.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

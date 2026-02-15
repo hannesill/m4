@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction for ICH Patients",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Calculates age at admission and filters for the range 73-83 years using `(pat.anchor_age + DATETIME_DIFF(...)) BETWEEN 73 AND 83`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ich-diagnosis-selection",
+          "requirements": "Identifies patients with Intracerebral Hemorrhage (ICH) by filtering on specific ICD-9 ('430', '431', '432') and ICD-10 ('I60', 'I61', 'I62') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "instability-score-calculation",
+      "requirements": "Calculation of the 48-Hour Instability Score",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-panel-definition",
+          "requirements": "Correctly defines a panel of labs with their associated `itemid` and normal range boundaries (`lower_bound`, `upper_bound`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-event-temporal-filtering",
+          "requirements": "Filters lab events to only include those that occurred within the first 48 hours of admission using `le.charttime BETWEEN adm.admittime AND TIMESTAMP_ADD(adm.admittime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-lab-identification",
+          "requirements": "Correctly identifies abnormal lab values by comparing `valuenum` against the defined `lower_bound` and `upper_bound` for each lab type.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-level-abnormality-aggregation",
+          "requirements": "Aggregates lab events to the patient-lab level, correctly identifying if a patient had at least one abnormal value for each lab type using `MAX(is_abnormal)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-instability-score-summation",
+          "requirements": "Calculates the final instability score for each patient in the ICH cohort by summing the counts of unique abnormal lab types (`SUM(had_abnormal_value)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Stratification and Outcome Analysis",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "quartile-stratification",
+          "requirements": "Stratifies the ICH cohort into four quartiles based on the calculated instability score using `NTILE(4) OVER (ORDER BY sc.instability_score)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-outcome-calculation",
+          "requirements": "Correctly calculates per-quartile metrics: patient count, average length of stay (LOS), and mortality rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-rate-comparison-logic",
+          "requirements": "Computes and compares the rate of abnormal labs between the ICH cohort and the general inpatient population for each lab type.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Data Integrity",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Correctly joins `admissions`, `patients`, `diagnoses_icd`, and `labevents` tables using appropriate keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "all-inpatients-cohort-definition",
+          "requirements": "Implicitly defines a general inpatient cohort in the `critical_rate_comparison` CTE to correctly calculate the general population critical rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting",
+      "requirements": "Final Output Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "union-of-reports",
+          "requirements": "Combines the two separate analyses (quartile outcomes and critical rate comparison) into a single output table using `UNION ALL`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "report-structuring",
+          "requirements": "Structures the final output into a long format with columns for `report_type`, `stratum`, and pairs of metric names and values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-stay_category",
+              "requirements": "Column for length of stay stratification exists (e.g., 'stay_category', 'los_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-diagnosis_type",
+              "requirements": "Column for diagnosis type stratification exists (e.g., 'diagnosis_type', 'primary_or_secondary')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg_procedures_per_admission",
+              "requirements": "Column for mean procedures exists (e.g., 'avg_procedures_per_admission', 'mean_diag_proc')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-min_procedures",
+              "requirements": "Column for min procedures exists (e.g., 'min_procedures', 'min_diag_proc')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-max_procedures",
+              "requirements": "Column for max procedures exists (e.g., 'max_procedures', 'max_diag_proc')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key metric columns (e.g., 'avg_procedures_per_admission', 'min_procedures', 'max_procedures')",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "avg-procedures-validation",
+          "requirements": "Validate values for mean diagnostic procedures per admission (e.g., 'avg_procedures_per_admission')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-procedures-plausible",
+              "requirements": "Values for mean procedures are clinically plausible [0, 20]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-procedures-acceptable",
+              "requirements": "Values for mean procedures are within an acceptable range [0, 8]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "min-procedures-validation",
+          "requirements": "Validate values for minimum diagnostic procedures per admission (e.g., 'min_procedures')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "min-procedures-plausible",
+              "requirements": "Values for min procedures are clinically plausible [0, 5]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-procedures-acceptable",
+              "requirements": "Values for min procedures are within an acceptable range [0, 1]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "max-procedures-validation",
+          "requirements": "Validate values for maximum diagnostic procedures per admission (e.g., 'max_procedures')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "max-procedures-plausible",
+              "requirements": "Values for max procedures are clinically plausible [0, 50]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-procedures-acceptable",
+              "requirements": "Values for max procedures are within an acceptable range [1, 25]",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

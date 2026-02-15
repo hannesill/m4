@@ -1,0 +1,1 @@
+For my 50-year-old female patient, among female ICU patients aged 45–55, report counts of unique patients by per-stay average SBP over the first 24 hours: <140, 140–159, ≥160 mmHg.

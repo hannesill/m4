@@ -1,0 +1,1 @@
+Asking for my 95‑year‑old female ICU patient: among female ICU patients aged 90–100, by first‑24h per‑stay average SpO2 (<90, 90–92, 93–95, >95), give N, mean, median, IQR and AKI rate.

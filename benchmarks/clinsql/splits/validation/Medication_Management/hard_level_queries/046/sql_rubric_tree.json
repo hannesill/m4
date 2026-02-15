@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the cohort of female inpatients aged 45-55 with a diagnosis of multi-trauma.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "base-cohort-definition",
+          "requirements": "Base Cohort Definition: The query must join the 'patients' and 'admissions' tables and correctly filter for female patients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation-and-filter",
+          "requirements": "Age Calculation and Filter: The query must accurately calculate the age at admission and filter for patients between 45 and 55 years old.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "multi-trauma-identification",
+          "requirements": "Multi-Trauma Identification: The query must correctly identify patients with multi-trauma by counting at least two distinct trauma-related ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-cohort-assembly",
+          "requirements": "Final Cohort Assembly: The query must correctly join the base cohort with the multi-trauma admissions to form the final patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly implements the definitions for multi-trauma, medication complexity, and clinical outcomes.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "trauma-icd-code-selection",
+          "requirements": "Trauma ICD Code Selection: The query must use appropriate ICD-9 (800-999) and ICD-10 (S% or T%) codes to identify trauma diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-score-calculation",
+          "requirements": "Medication Complexity Score Calculation: The query must calculate the score based on the specified formula involving distinct drugs, routes, and IV drugs.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-time-window",
+          "requirements": "Medication Time Window: The query must correctly filter prescriptions to the first 7 days from admission time.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-flag-calculation",
+          "requirements": "30-Day Readmission Flag Calculation: The query must correctly calculate the 30-day readmission flag using a window function partitioned by patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient demographics, diagnoses, medications, and outcomes.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "primary-table-joins",
+          "requirements": "Primary Table Joins: The query must correctly join 'patients', 'admissions', 'diagnoses_icd', and 'prescriptions' tables using appropriate keys (subject_id, hadm_id).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-data-integration",
+          "requirements": "Outcome Data Integration: The query must use LEFT JOINs to integrate medication complexity scores and readmission flags to ensure all patients from the target cohort are retained.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly stratifies patients and calculates the required final metrics per stratum.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "tertile-stratification",
+          "requirements": "Tertile Stratification: The query must use the NTILE(3) window function to stratify patients into tertiles based on the medication complexity score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: The final query must group results by the calculated 'complexity_tertile'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aggregation-and-metrics",
+          "requirements": "Aggregation and Metrics: The query must correctly calculate the count of admissions, mean/min/max complexity score, mean LOS, mortality percentage, and 30-day readmission percentage for each tertile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query must round the calculated averages and percentages to two decimal places as specified.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

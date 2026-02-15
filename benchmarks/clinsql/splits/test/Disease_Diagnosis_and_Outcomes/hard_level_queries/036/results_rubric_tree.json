@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-risk-percentile",
+              "requirements": "A column for composite risk percentile exists (e.g., 'risk_percentile_rank', 'risk_percentile').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mortality",
+              "requirements": "A column for cohort in-hospital mortality percentage exists (e.g., 'cohort_in_hospital_mortality_pct', 'mortality_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-complication",
+              "requirements": "A column for cohort major complication percentage exists (e.g., 'cohort_major_complication_pct', 'complication_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-survival",
+              "requirements": "A column for cohort median survival days exists (e.g., 'cohort_median_survival_days_deceased', 'median_survival').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the answer-relevant columns ('risk_percentile_rank', 'cohort_in_hospital_mortality_pct', 'cohort_major_complication_pct', 'cohort_median_survival_days_deceased').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-percentile-validation",
+          "requirements": "Validation for the 'risk_percentile_rank' column.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-risk-percentile",
+              "requirements": "Clinically Plausible: Value must be between 0.0 and 100.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-risk-percentile",
+              "requirements": "Acceptable Range: Value must be between 0.0 and 100.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-pct-validation",
+          "requirements": "Validation for the 'cohort_in_hospital_mortality_pct' column.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-mortality-pct",
+              "requirements": "Clinically Plausible: Value for this high-risk cohort should be between 5.0 and 60.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-mortality-pct",
+              "requirements": "Acceptable Range: Based on the high-risk cohort (elderly, pneumonia, top-quartile comorbidity), the value is expected to be between 15.0 and 35.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "complication-pct-validation",
+          "requirements": "Validation for the 'cohort_major_complication_pct' column.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-complication-pct",
+              "requirements": "Clinically Plausible: Value for this high-risk cohort should be between 5.0 and 60.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-complication-pct",
+              "requirements": "Acceptable Range: Based on the high-risk cohort, the value is expected to be between 10.0 and 30.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "survival-days-validation",
+          "requirements": "Validation for the 'cohort_median_survival_days_deceased' column.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-survival-days",
+              "requirements": "Clinically Plausible: Median survival for deceased patients should be between 3.0 and 60.0 days.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-survival-days",
+              "requirements": "Acceptable Range: For this cohort, median survival for those who died is expected to be between 7.0 and 21.0 days.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

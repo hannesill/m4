@@ -1,0 +1,140 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-diagnostic-intensity",
+              "requirements": "Column Exists for 90th percentile of diagnostic intensity (e.g., p90_diagnostic_intensity, p90_distinct_procedures)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-los",
+              "requirements": "Column Exists for Mean Hospital LOS (e.g., avg_hospital_los_days, mean_los_days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-mortality",
+              "requirements": "Column Exists for In-Hospital Mortality (e.g., in_hospital_mortality_pct, mortality_rate_percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "diagnostic-intensity-validation",
+          "requirements": "Validation for 90th percentile of diagnostic intensity",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "diagnostic-intensity-plausible",
+              "requirements": "Clinically Plausible (1-40 procedures)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "diagnostic-intensity-acceptable",
+              "requirements": "Acceptable Range (8-20 procedures)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hospital-los-validation",
+          "requirements": "Validation for mean hospital LOS",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "hospital-los-plausible",
+              "requirements": "Clinically Plausible (2-60 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hospital-los-acceptable",
+              "requirements": "Acceptable Range (7-20 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "in-hospital-mortality-validation",
+          "requirements": "Validation for in-hospital mortality",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "in-hospital-mortality-plausible",
+              "requirements": "Clinically Plausible (1-70%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "in-hospital-mortality-acceptable",
+              "requirements": "Acceptable Range (5-25%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

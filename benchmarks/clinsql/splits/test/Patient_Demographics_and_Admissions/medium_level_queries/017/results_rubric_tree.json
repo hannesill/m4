@@ -1,0 +1,307 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "discharge-category-column-exists",
+              "requirements": "Column Exists for Discharge Category (e.g., discharge_category, discharge_disposition)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-column-exists",
+              "requirements": "Column Exists for Mean LOS in Days (e.g., mean_los_days, avg_los)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-column-exists",
+              "requirements": "Column Exists for Median (p50) LOS in Days (e.g., median_los_days_p50, p50_los)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-column-exists",
+              "requirements": "Column Exists for 75th Percentile LOS in Days (e.g., percentile_75_los_days, p75_los)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-los-column-exists",
+              "requirements": "Column Exists for 90th Percentile LOS in Days (e.g., percentile_90_los_days, p90_los)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mean-los-validation",
+          "requirements": "Validation of Mean Length of Stay (LOS) in Days",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mean-los-home-plausible",
+              "requirements": "Discharged Home: Clinically Plausible Mean LOS (1.0-20.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-home-acceptable",
+              "requirements": "Discharged Home: Acceptable Mean LOS (3.0-10.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-facility-plausible",
+              "requirements": "Discharged to Facility: Clinically Plausible Mean LOS (5.0-60.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-facility-acceptable",
+              "requirements": "Discharged to Facility: Acceptable Mean LOS (10.0-25.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-death-plausible",
+              "requirements": "In-Hospital Mortality: Clinically Plausible Mean LOS (2.0-60.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-death-acceptable",
+              "requirements": "In-Hospital Mortality: Acceptable Mean LOS (7.0-20.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-los-validation",
+          "requirements": "Validation of Median (p50) Length of Stay (LOS) in Days",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "median-los-home-plausible",
+              "requirements": "Discharged Home: Clinically Plausible Median LOS (1.0-15.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-home-acceptable",
+              "requirements": "Discharged Home: Acceptable Median LOS (2.0-7.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-facility-plausible",
+              "requirements": "Discharged to Facility: Clinically Plausible Median LOS (3.0-50.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-facility-acceptable",
+              "requirements": "Discharged to Facility: Acceptable Median LOS (7.0-18.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-death-plausible",
+              "requirements": "In-Hospital Mortality: Clinically Plausible Median LOS (1.0-50.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-los-death-acceptable",
+              "requirements": "In-Hospital Mortality: Acceptable Median LOS (4.0-14.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p75-los-validation",
+          "requirements": "Validation of 75th Percentile Length of Stay (LOS) in Days",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p75-los-home-plausible",
+              "requirements": "Discharged Home: Clinically Plausible p75 LOS (2.0-25.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-home-acceptable",
+              "requirements": "Discharged Home: Acceptable p75 LOS (4.0-12.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-facility-plausible",
+              "requirements": "Discharged to Facility: Clinically Plausible p75 LOS (5.0-70.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-facility-acceptable",
+              "requirements": "Discharged to Facility: Acceptable p75 LOS (12.0-30.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-death-plausible",
+              "requirements": "In-Hospital Mortality: Clinically Plausible p75 LOS (3.0-70.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-death-acceptable",
+              "requirements": "In-Hospital Mortality: Acceptable p75 LOS (10.0-25.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p90-los-validation",
+          "requirements": "Validation of 90th Percentile Length of Stay (LOS) in Days",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p90-los-home-plausible",
+              "requirements": "Discharged Home: Clinically Plausible p90 LOS (3.0-40.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-los-home-acceptable",
+              "requirements": "Discharged Home: Acceptable p90 LOS (8.0-20.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-los-facility-plausible",
+              "requirements": "Discharged to Facility: Clinically Plausible p90 LOS (10.0-90.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-los-facility-acceptable",
+              "requirements": "Discharged to Facility: Acceptable p90 LOS (20.0-45.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-los-death-plausible",
+              "requirements": "In-Hospital Mortality: Clinically Plausible p90 LOS (5.0-90.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-los-death-acceptable",
+              "requirements": "In-Hospital Mortality: Acceptable p90 LOS (18.0-40.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

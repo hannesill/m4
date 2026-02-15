@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using the condition p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at the time of admission and filter for the range 88\u201398 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 88 AND 98`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: The query must correctly identify unique ICU stays for patients by joining the patients, admissions, and icustays tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hfnc-identification",
+          "requirements": "High-Flow Nasal Cannula (HFNC) Identification: The query must filter for patients on HFNC by selecting the correct itemids (226732, 227287) from the chartevents table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gcs-total-identification",
+          "requirements": "GCS Total Identification: The query must identify Glasgow Coma Scale total scores by filtering chartevents for the correct itemid (226758).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filtering-logic",
+          "requirements": "Temporal Filtering for GCS: The query must correctly filter for GCS measurements recorded on ICU day 2 or later, defined as 24 hours or more after ICU admission time (`DATETIME_DIFF(ce.charttime, hs.intime, HOUR) >= 24`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gcs-value-validation",
+          "requirements": "GCS Value Validation: The query must filter out null or invalid GCS scores by ensuring `ce.valuenum` is not null and falls within the valid range of 3 to 15.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-calculation",
+          "requirements": "Median Calculation: The query must correctly calculate the median of the filtered GCS total scores using an appropriate function like `APPROX_QUANTILES(gcs_total, 2)[OFFSET(1)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "supportive-analysis",
+      "requirements": "Supportive Analysis and Output Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-count",
+          "requirements": "Patient Count: The query should count the number of unique patients who meet all criteria, using `COUNT(DISTINCT stay_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "measurement-count",
+          "requirements": "Measurement Count: The query should count the total number of valid GCS measurements using `COUNT(gcs_total)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

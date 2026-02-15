@@ -1,0 +1,280 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "in-hospital-mortality-rate-exists",
+              "requirements": "Column exists for in-hospital mortality rate (e.g., 'in_hospital_mortality_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "aki-rate-exists",
+              "requirements": "Column exists for AKI rate (e.g., 'aki_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ards-rate-exists",
+              "requirements": "Column exists for ARDS rate (e.g., 'ards_rate_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-survival-exists",
+              "requirements": "Column exists for median survival among deceased (e.g., 'median_survival_days_for_deceased')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-score-min-exists",
+              "requirements": "Column exists for minimum risk score (e.g., 'risk_score_min')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-score-p25-exists",
+              "requirements": "Column exists for 25th percentile risk score (e.g., 'risk_score_p25')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-score-median-exists",
+              "requirements": "Column exists for median risk score (e.g., 'risk_score_median')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-score-p75-exists",
+              "requirements": "Column exists for 75th percentile risk score (e.g., 'risk_score_p75')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-score-p90-exists",
+              "requirements": "Column exists for 90th percentile risk score (e.g., 'risk_score_p90')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-score-max-exists",
+              "requirements": "Column exists for maximum risk score (e.g., 'risk_score_max')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "in-hospital-mortality-rate-validation",
+          "requirements": "Validate In-Hospital Mortality Rate (%)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "in-hospital-mortality-plausible",
+              "requirements": "Clinically Plausible (0.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "in-hospital-mortality-acceptable",
+              "requirements": "Acceptable Range (1.0-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "aki-rate-validation",
+          "requirements": "Validate AKI Rate (%)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "aki-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-80.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "aki-rate-acceptable",
+              "requirements": "Acceptable Range (15.0-45.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "ards-rate-validation",
+          "requirements": "Validate ARDS Rate (%)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "ards-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "ards-rate-acceptable",
+              "requirements": "Acceptable Range (0.1-5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-survival-deceased-validation",
+          "requirements": "Validate Median Survival (days) for Deceased",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "median-survival-plausible",
+              "requirements": "Clinically Plausible (1-60)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-survival-acceptable",
+              "requirements": "Acceptable Range (3-21)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "risk-score-distribution-validation",
+          "requirements": "Validate Risk Score Distribution",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "risk-score-min-validation",
+              "requirements": "Validate Minimum Risk Score",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "risk-score-min-plausible",
+                  "requirements": "Clinically Plausible (0-10)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "risk-score-min-acceptable",
+                  "requirements": "Acceptable Range (0-5)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "risk-score-max-validation",
+              "requirements": "Validate Maximum Risk Score",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "risk-score-max-plausible",
+                  "requirements": "Clinically Plausible (10-100)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "risk-score-max-acceptable",
+                  "requirements": "Acceptable Range (20-80)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "risk-score-percentile-consistency-validation",
+              "requirements": "Validate that percentiles are logically ordered (min <= P25 <= median <= P75 <= P90 <= max)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

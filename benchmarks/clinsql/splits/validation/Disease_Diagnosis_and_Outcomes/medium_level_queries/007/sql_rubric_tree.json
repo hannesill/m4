@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter patient age at admission to be between 51 and 61 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis",
+          "requirements": "Heart Failure Diagnosis Selection: The query must identify patients with a heart failure diagnosis using an EXISTS subquery on `diagnoses_icd` with ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "comorbidity-burden-definition",
+          "requirements": "Comorbidity Burden Definition: The query must calculate comorbidity count by counting distinct ICD codes while correctly excluding the primary heart failure codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-burden-categorization",
+          "requirements": "Comorbidity Burden Categorization: The query must use a CASE statement to stratify comorbidity counts into 'Low', 'Medium', and 'High' categories based on the specified thresholds (0-10, 11-20, >20).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "organ-support-identification",
+          "requirements": "Organ Support Identification: The query must correctly identify the use of mechanical ventilation, vasopressors, and RRT by checking for specific itemids in `procedureevents` and `inputevents`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly INNER JOIN `patients` and `admissions` on `subject_id` to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "feature-table-joins",
+          "requirements": "Feature Table Joins: The query must use LEFT JOINs from the main cohort to the ICU, comorbidity, and organ support CTEs on `hadm_id` to prevent patient loss.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "organ-support-table-joins",
+          "requirements": "Organ Support Table Joins: The query must correctly join `icustays`, `procedureevents`, and `inputevents` on `stay_id` to link interventions to ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stratification-logic",
+          "requirements": "Stratification Logic: The query must define and use CASE statements to create the required comparison groups: ICU vs. No ICU, LOS <8 vs. >=8 days.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final aggregation must GROUP BY `severity_level`, `comorbidity_burden`, and `los_group` to calculate metrics for each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-calculation",
+          "requirements": "Outcome Calculation: The query must correctly calculate in-hospital mortality and the prevalence of MV, vasopressors, and RRT as percentages using AVG().",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-difference-calculation",
+          "requirements": "Mortality Difference Calculation: The query must use window functions (LAG) to compute absolute and relative mortality differences between LOS groups within each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

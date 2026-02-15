@@ -1,0 +1,146 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter the patient cohort to an age range of 37 to 47 years using `p.anchor_age BETWEEN 37 AND 47`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "dapt-identification",
+          "requirements": "DAPT Identification: The query must correctly identify hospital admissions where Dual Antiplatelet Therapy (DAPT) was administered, requiring both a P2Y12 inhibitor and aspirin.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "p2y12-inhibitor-selection",
+              "requirements": "P2Y12 Inhibitor Selection: Correctly identifies at least one P2Y12 inhibitor (clopidogrel, ticagrelor, or prasugrel) from the prescriptions table.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "aspirin-selection",
+              "requirements": "Aspirin Selection: Correctly identifies aspirin from the prescriptions table.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "first-admission-logic",
+          "requirements": "First Admission Logic: The query must correctly isolate the first hospital admission for each patient within the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "admission-ranking",
+              "requirements": "Admission Ranking: Uses a window function like `ROW_NUMBER() OVER(PARTITION BY p.subject_id ORDER BY a.admittime ASC)` to rank admissions chronologically for each patient.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "first-admission-filtering",
+              "requirements": "First Admission Filtering: Filters the ranked results to include only the first admission (e.g., `WHERE admission_rank = 1`).",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the `patients`, `admissions`, and `prescriptions` (via a CTE) tables to link patient demographics with their prescription history and admission details.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "patients-admissions-join",
+              "requirements": "Join `patients` and `admissions` tables on `subject_id`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admissions-prescriptions-join",
+              "requirements": "Join `admissions` table with the `prescriptions` data (e.g., `dapt_admissions` CTE) on `hadm_id`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-indicator-selection",
+          "requirements": "Mortality Indicator Selection: The query must correctly select the `hospital_expire_flag` from the `admissions` table as the indicator for in-hospital mortality.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "standard-deviation-calculation",
+          "requirements": "Standard Deviation Calculation: The query must compute the sample standard deviation of the mortality flag using `STDDEV_SAMP(hospital_expire_flag)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using the condition `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Restricts the patient cohort to the age range of 75-85 years using `p.anchor_age BETWEEN 75 AND 85`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "dual-diagnosis-logic",
+          "requirements": "Correctly identifies hospital admissions (`hadm_id`) with a record of BOTH Ischemic Heart Disease/ACS AND COPD using a `GROUP BY hadm_id` and a `HAVING` clause with two distinct `SUM(CASE WHEN ...)` conditions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ihd-acs-code-selection",
+          "requirements": "Accurately filters for Ischemic Heart Disease/ACS by checking for ICD-9 codes ('410'-'414') and ICD-10 codes ('I20'-'I25') while handling the `icd_version`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "copd-code-selection",
+          "requirements": "Accurately filters for COPD by checking for ICD-9 codes ('491'-'496') and ICD-10 codes (`J44%`) while handling the `icd_version`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Correctly joins the `patients` and `admissions` tables on `subject_id` to link demographic data with admission records.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-admissions-join",
+          "requirements": "Correctly joins the `admissions` table with the CTE `admissions_with_both_diagnoses` on `hadm_id` to filter for the relevant cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Calculates the length of stay for each admission in days using `DATE_DIFF(DATE(a.dischtime), DATE(a.admittime), DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-integrity-filtering",
+          "requirements": "Includes filters to ensure data quality for LOS calculation, such as checking for non-null `admittime` and `dischtime` and ensuring a non-negative duration.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Computes the 75th percentile of the length of stay using `APPROX_QUANTILES(...)[OFFSET (75)]` and rounds the final result.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

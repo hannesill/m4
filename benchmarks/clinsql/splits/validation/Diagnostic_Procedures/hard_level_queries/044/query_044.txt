@@ -1,0 +1,1 @@
+I'm evaluating an 87‑year‑old man. Among male ICU patients aged 82–92 with cardiogenic shock, stratify first‑24‑hour procedure burden into quintiles and report for each quintile mean procedure count, mean hospital LOS in days, and in‑hospital mortality percentage.

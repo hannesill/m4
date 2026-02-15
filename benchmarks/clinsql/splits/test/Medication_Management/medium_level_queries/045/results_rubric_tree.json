@@ -1,0 +1,199 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-medication_class",
+              "requirements": "Primary column for medication category exists (e.g., 'medication_class')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-prevalence_early_pct",
+              "requirements": "Secondary column for early prevalence exists (e.g., 'prevalence_early_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-prevalence_discharge_pct",
+              "requirements": "Secondary column for discharge prevalence exists (e.g., 'prevalence_discharge_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-net_change_pp",
+              "requirements": "Secondary column for net change exists (e.g., 'net_change_pp')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "early-prevalence-validation",
+          "requirements": "Validation of Early Prevalence ('prevalence_early_pct')",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-early-prevalence-insulin",
+              "requirements": "Clinically Plausible Insulin Prevalence (Early): Value for 'Insulin' is between 10.0 and 95.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-early-prevalence-insulin",
+              "requirements": "Acceptable Insulin Prevalence (Early): Value for 'Insulin' is between 60.0 and 90.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "clinically-plausible-early-prevalence-oral",
+              "requirements": "Clinically Plausible Oral Agent Prevalence (Early): Value for 'Oral Agent' is between 0.0 and 20.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-early-prevalence-oral",
+              "requirements": "Acceptable Oral Agent Prevalence (Early): Value for 'Oral Agent' is between 1.0 and 10.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "discharge-prevalence-validation",
+          "requirements": "Validation of Discharge Prevalence ('prevalence_discharge_pct')",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-discharge-prevalence-insulin",
+              "requirements": "Clinically Plausible Insulin Prevalence (Discharge): Value for 'Insulin' is between 10.0 and 80.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-discharge-prevalence-insulin",
+              "requirements": "Acceptable Insulin Prevalence (Discharge): Value for 'Insulin' is between 25.0 and 60.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "clinically-plausible-discharge-prevalence-oral",
+              "requirements": "Clinically Plausible Oral Agent Prevalence (Discharge): Value for 'Oral Agent' is between 0.0 and 25.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-discharge-prevalence-oral",
+              "requirements": "Acceptable Oral Agent Prevalence (Discharge): Value for 'Oral Agent' is between 1.0 and 15.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "net-change-validation",
+          "requirements": "Validation of Net Change ('net_change_pp')",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-net-change-insulin",
+              "requirements": "Clinically Plausible Net Change (Insulin): Value for 'Insulin' is between -70.0 and 10.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-net-change-insulin",
+              "requirements": "Acceptable Net Change (Insulin): Value for 'Insulin' is between -60.0 and -20.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "clinically-plausible-net-change-oral",
+              "requirements": "Clinically Plausible Net Change (Oral Agent): Value for 'Oral Agent' is between -10.0 and 20.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-net-change-oral",
+              "requirements": "Acceptable Net Change (Oral Agent): Value for 'Oral Agent' is between 0.0 and 10.0",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,210 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "A column grouping by medication class exists (e.g., 'med_class')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-prevalence-early",
+              "requirements": "A column for early prevalence percentage exists (e.g., 'prevalence_early_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-prevalence-final",
+              "requirements": "A column for final prevalence percentage exists (e.g., 'prevalence_final_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-count-continued",
+              "requirements": "A column for the count of continued patients exists (e.g., 'count_continued')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-count-initiated",
+              "requirements": "A column for the count of initiated patients exists (e.g., 'count_initiated')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-count-discontinued",
+              "requirements": "A column for the count of discontinued patients exists (e.g., 'count_discontinued')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key result columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "prevalence-early-validation",
+          "requirements": "Validation for early prevalence percentage (e.g., 'prevalence_early_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "prevalence-early-plausible",
+              "requirements": "Values must be between 0 and 100",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-early-acceptable",
+              "requirements": "Values are expected to be between 10 and 100",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "prevalence-final-validation",
+          "requirements": "Validation for final prevalence percentage (e.g., 'prevalence_final_pct')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "prevalence-final-plausible",
+              "requirements": "Values must be between 0 and 100",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-final-acceptable",
+              "requirements": "Values are expected to be between 5 and 90",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "count-continued-validation",
+          "requirements": "Validation for count of continued patients (e.g., 'count_continued')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "count-continued-plausible",
+              "requirements": "Values must be non-negative integers (>=0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-continued-acceptable",
+              "requirements": "Values are expected to be between 5 and 150",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "count-initiated-validation",
+          "requirements": "Validation for count of initiated patients (e.g., 'count_initiated')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "count-initiated-plausible",
+              "requirements": "Values must be non-negative integers (>=0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-initiated-acceptable",
+              "requirements": "Values are expected to be between 0 and 50",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "count-discontinued-validation",
+          "requirements": "Validation for count of discontinued patients (e.g., 'count_discontinued')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "count-discontinued-plausible",
+              "requirements": "Values must be non-negative integers (>=0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-discontinued-acceptable",
+              "requirements": "Values are expected to be between 10 and 150",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

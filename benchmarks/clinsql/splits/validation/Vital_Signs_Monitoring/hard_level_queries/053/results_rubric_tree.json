@@ -1,0 +1,299 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-avg_instability_score",
+              "requirements": "Column related to mean instability score exists (e.g., 'avg_instability_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-p25_instability_score",
+              "requirements": "Column related to 25th percentile instability score exists (e.g., 'p25_instability_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-p50_instability_score",
+              "requirements": "Column related to 50th percentile instability score exists (e.g., 'p50_instability_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-p75_instability_score",
+              "requirements": "Column related to 75th percentile instability score exists (e.g., 'p75_instability_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-p95_instability_score",
+              "requirements": "Column related to 95th percentile instability score exists (e.g., 'p95_instability_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg_hypotensive_episodes_burden",
+              "requirements": "Column related to mean hypotension burden exists (e.g., 'avg_hypotensive_episodes_burden')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg_tachycardic_episodes_burden",
+              "requirements": "Column related to mean tachycardia burden exists (e.g., 'avg_tachycardic_episodes_burden')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg_icu_los_hours",
+              "requirements": "Column related to mean ICU LOS exists (e.g., 'avg_icu_los_hours')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-mortality_rate",
+              "requirements": "Column related to mortality rate exists (e.g., 'mortality_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "instability-score-validation",
+          "requirements": "Validation of Instability Score metrics",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-instability-score-plausible",
+              "requirements": "Mean Instability Score is clinically plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-instability-score-acceptable",
+              "requirements": "Mean Instability Score is in an acceptable range (3.0-30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-instability-score-plausible",
+              "requirements": "25th Percentile Instability Score is clinically plausible (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-instability-score-acceptable",
+              "requirements": "50th Percentile Instability Score is in an acceptable range (0.0-20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-instability-score-acceptable",
+              "requirements": "75th Percentile Instability Score is in an acceptable range (2.0-40.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p95-instability-score-acceptable",
+              "requirements": "95th Percentile Instability Score is in an acceptable range (10.0-60.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "burden-metrics-validation",
+          "requirements": "Validation of Hypotension and Tachycardia Burden metrics",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "hypotension-burden-plausible",
+              "requirements": "Mean Hypotension Burden is clinically plausible (0.0-24.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hypotension-burden-acceptable",
+              "requirements": "Mean Hypotension Burden is in an acceptable range (0.5-8.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachycardia-burden-plausible",
+              "requirements": "Mean Tachycardia Burden is clinically plausible (0.0-24.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachycardia-burden-acceptable",
+              "requirements": "Mean Tachycardia Burden is in an acceptable range (2.0-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-mortality-validation",
+          "requirements": "Validation of ICU LOS and Mortality metrics",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "icu-los-plausible",
+              "requirements": "Mean ICU LOS (hours) is clinically plausible (24.0-1000.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-acceptable",
+              "requirements": "Mean ICU LOS (hours) is in an acceptable range (48.0-300.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Mortality Rate is clinically plausible (0.0-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Mortality Rate is in an acceptable range (0.05-0.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-comparison-validation",
+          "requirements": "Validation of relative differences between Shock and No-Shock cohorts",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "shock-higher-instability",
+              "requirements": "Shock cohort has higher mean instability score than No-Shock cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "shock-higher-hypotension",
+              "requirements": "Shock cohort has higher mean hypotension burden than No-Shock cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "shock-higher-tachycardia",
+              "requirements": "Shock cohort has higher mean tachycardia burden than No-Shock cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "shock-higher-los",
+              "requirements": "Shock cohort has higher mean ICU LOS than No-Shock cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "shock-higher-mortality",
+              "requirements": "Shock cohort has higher mortality rate than No-Shock cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

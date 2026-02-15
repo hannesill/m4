@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the cohort of female patients aged 50-60 with a TIA diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Accurately calculates and filters for patient age between 50 and 60 at the time of admission using the formula `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 50 AND 60`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "tia-diagnosis-selection",
+          "requirements": "Identifies TIA admissions by filtering diagnoses_icd for both ICD-9 (e.g., `d.icd_code LIKE '435%'`) and ICD-10 (e.g., `d.icd_code LIKE 'G45%'`) codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient demographics, admissions, diagnoses, and procedures.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Correctly joins 'patients', 'admissions', and 'diagnoses_icd' tables using subject_id and hadm_id to form the initial cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Uses a LEFT JOIN to connect the TIA admissions cohort to the 'procedures_icd' table on hadm_id, ensuring admissions without imaging procedures are not dropped from the analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly derives key clinical variables required for the analysis.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Correctly calculates the length of stay in days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-procedure-identification",
+          "requirements": "Correctly identifies CT/MRI procedures by filtering 'procedures_icd' for both ICD-9 (`pr.icd_code LIKE '87.%'` OR `pr.icd_code LIKE '88.9%'`) and ICD-10 (`pr.icd_code LIKE 'B_2%'` OR `pr.icd_code LIKE 'B_3%'`) codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the correct aggregations and calculations to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-imaging-count",
+          "requirements": "Aggregates procedures to the admission level by counting imaging codes (`COUNT(pr.icd_code)`) and grouping by hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-grouping-and-filtering",
+          "requirements": "Categorizes admissions into '1-3 Day Stay' and '4-7 Day Stay' using a CASE statement and correctly filters the final result set for these specific LOS ranges (`ic.length_of_stay BETWEEN 1 AND 7`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-calculation",
+          "requirements": "Correctly calculates the two final metrics per LOS group: 1) patient count using `COUNT(DISTINCT ic.subject_id)`, and 2) the rounded average of imaging procedures per admission using `ROUND(AVG(ic.imaging_procedure_count), 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

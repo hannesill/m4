@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-instability-quartile",
+              "requirements": "A column representing the instability score quartiles (e.g., instability_quartile) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-avg-instability-score",
+              "requirements": "A column representing the average lab instability score (e.g., avg_instability_score) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-avg-los",
+              "requirements": "A column representing the average length of stay (e.g., avg_los_days) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mortality",
+              "requirements": "A column representing the mortality rate (e.g., mortality_rate) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-target-abnormal-rate",
+              "requirements": "A column representing the per-lab abnormal rate for the target cohort (e.g., target_cohort_abnormal_rate) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-general-abnormal-rate",
+              "requirements": "A column representing the per-lab abnormal rate for the general inpatient population (e.g., general_pop_abnormal_rate) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key result columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-quartile-validation",
+          "requirements": "Validate the column containing instability score quartiles.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "instability-quartile-plausible",
+              "requirements": "Quartile values must be integers from 1 to 4.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-instability-score-validation",
+          "requirements": "Validate the column containing the average lab instability score.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-instability-score-plausible",
+              "requirements": "Clinically Plausible: Average instability score (count of unique abnormal labs) should be between 0 and 15.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-instability-score-acceptable",
+              "requirements": "Acceptable Range: Average instability score should be between 0.1 and 10.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-los-validation",
+          "requirements": "Validate the column containing the average length of stay (LOS).",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-los-plausible",
+              "requirements": "Clinically Plausible: Average LOS for hemorrhagic stroke inpatients should be between 1 and 90 days.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-los-acceptable",
+              "requirements": "Acceptable Range: Average LOS should be between 3 and 45 days, and should generally increase with higher instability.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate the column containing the mortality rate.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible: Mortality rate must be between 0.0 and 1.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range: Mortality rate for this cohort should be between 0.01 and 0.6.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "abnormal-rate-validation",
+          "requirements": "Validate columns containing per-lab abnormal rates.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "abnormal-rate-plausible",
+              "requirements": "Clinically Plausible: All abnormal rates must be between 0.0 and 1.0.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "abnormal-rate-acceptable",
+              "requirements": "Acceptable Range: Abnormal rates for common labs should generally be between 0.05 and 0.8.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

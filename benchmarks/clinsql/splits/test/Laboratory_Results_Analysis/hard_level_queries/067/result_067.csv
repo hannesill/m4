@@ -1,0 +1,43 @@
+sort_order,stratum,metric_name,metric_value
+1,1,Avg Instability Score,0.0
+1,1,Avg Length of Stay (Days),6.314606741573034
+1,1,In-Hospital Mortality Rate (%),1.498127340823971
+1,1,Max Score in Quartile,0.0
+1,1,Min Score in Quartile,0.0
+1,1,Number of Patients,267.0
+1,2,Avg Instability Score,0.6554307116104868
+1,2,Avg Length of Stay (Days),6.704119850187268
+1,2,In-Hospital Mortality Rate (%),2.9962546816479407
+1,2,Max Score in Quartile,1.0
+1,2,Min Score in Quartile,0.0
+1,2,Number of Patients,267.0
+1,3,Avg Instability Score,1.2434456928838953
+1,3,Avg Length of Stay (Days),8.06741573033708
+1,3,In-Hospital Mortality Rate (%),3.3707865168539333
+1,3,Max Score in Quartile,2.0
+1,3,Min Score in Quartile,1.0
+1,3,Number of Patients,267.0
+1,4,Avg Instability Score,3.4756554307116105
+1,4,Avg Length of Stay (Days),12.98876404494382
+1,4,In-Hospital Mortality Rate (%),14.606741573033707
+1,4,Max Score in Quartile,8.0
+1,4,Min Score in Quartile,2.0
+1,4,Number of Patients,267.0
+2,Anion Gap,ACS Cohort Rate (%),14.138576779026218
+2,Anion Gap,Control Cohort Rate (%),4.283682580830993
+2,BUN,ACS Cohort Rate (%),18.632958801498127
+2,BUN,Control Cohort Rate (%),8.210916684669115
+2,Creatinine,ACS Cohort Rate (%),18.352059925093634
+2,Creatinine,Control Cohort Rate (%),8.723986462158853
+2,Glucose,ACS Cohort Rate (%),7.209737827715355
+2,Glucose,Control Cohort Rate (%),2.402426730035285
+2,Lactate,ACS Cohort Rate (%),6.367041198501873
+2,Lactate,Control Cohort Rate (%),1.6859292863829483
+2,Potassium,ACS Cohort Rate (%),5.056179775280898
+2,Potassium,Control Cohort Rate (%),1.901058543961979
+2,Sodium,ACS Cohort Rate (%),2.3408239700374533
+2,Sodium,Control Cohort Rate (%),0.9496291495643407
+2,Troponin-T,ACS Cohort Rate (%),52.99625468164793
+2,Troponin-T,Control Cohort Rate (%),2.8092820623604813
+2,WBC,ACS Cohort Rate (%),9.269662921348315
+2,WBC,Control Cohort Rate (%),5.35752862389285

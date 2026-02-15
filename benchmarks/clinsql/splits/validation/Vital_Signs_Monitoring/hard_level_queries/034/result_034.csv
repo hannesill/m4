@@ -1,0 +1,3 @@
+comparison_group,cohort_p95_instability_score,num_patients,avg_instability_score,avg_hypotension_episodes,avg_tachycardia_episodes,avg_icu_los_days,mortality_rate
+"Entire Cohort (Female, 60-70, Mixed Shock)",0.7197869018866127,370,0.4941340537503744,8.067567567567567,11.21891891891892,5.103490990990991,0.2783783783783783
+Top Decile (Highest Instability),0.7197869018866127,37,0.9001552878202982,10.405405405405407,13.567567567567567,4.2792792792792795,0.3243243243243244

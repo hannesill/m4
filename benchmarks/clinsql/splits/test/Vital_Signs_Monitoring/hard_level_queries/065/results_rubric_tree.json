@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-p90-instability-score",
+              "requirements": "A column representing the 90th percentile of the instability score exists (e.g., `p90_instability_score`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg-hypotension",
+              "requirements": "A column representing average hypotension episodes exists (e.g., `avg_hypotension_episodes`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg-tachycardia",
+              "requirements": "A column representing average tachycardia episodes exists (e.g., `avg_tachycardia_episodes`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg-icu-los",
+              "requirements": "A column representing average ICU length of stay exists (e.g., `avg_icu_los_days`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-mortality-rate",
+              "requirements": "A column representing the mortality rate exists (e.g., `mortality_rate`).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-validation",
+          "requirements": "Validation for the 90th percentile instability score column (e.g., `p90_instability_score`).",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "instability-score-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0). The score is a composite, likely normalized.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "instability-score-acceptable",
+              "requirements": "Acceptable Range (0.2-0.8). For a 90th percentile in a high-risk group, a moderate to high score is expected.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hypotension-episodes-validation",
+          "requirements": "Validation for average hypotension episodes column (e.g., `avg_hypotension_episodes`).",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "hypotension-episodes-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0). Episodes are counted over 48 hours.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hypotension-episodes-acceptable",
+              "requirements": "Acceptable Range (1.0-50.0). High-risk RRT patients will have many episodes, but a non-RRT cohort will have fewer.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "tachycardia-episodes-validation",
+          "requirements": "Validation for average tachycardia episodes column (e.g., `avg_tachycardia_episodes`).",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "tachycardia-episodes-plausible",
+              "requirements": "Clinically Plausible (0.0-150.0). Tachycardia can be frequent in critically ill patients.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachycardia-episodes-acceptable",
+              "requirements": "Acceptable Range (1.0-100.0). Similar to hypotension, the RRT group is expected to have a higher count.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "Validation for average ICU LOS column (e.g., `avg_icu_los_days`).",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "icu-los-plausible",
+              "requirements": "Clinically Plausible (0.5-90.0). ICU stays can be very long for this cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-acceptable",
+              "requirements": "Acceptable Range (2.0-30.0). RRT patients have prolonged stays, while the comparison group should have shorter stays.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validation for the mortality rate column (e.g., `mortality_rate`).",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0). The value must be a rate between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0.05-0.90). Mortality is high in elderly RRT patients, but lower in the non-RRT group.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

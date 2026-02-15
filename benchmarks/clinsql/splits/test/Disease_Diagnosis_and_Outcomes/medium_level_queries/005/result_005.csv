@@ -1,0 +1,19 @@
+severity_level,los_category,charlson_category,total_admissions,total_deaths,avg_comorbidity_count,mortality_rate_percent,ci_95_lower,ci_95_upper
+Lower Severity (No ICU),1-3 days,<=3,356,2,11.7,0.56,0.15,2.02
+Lower Severity (No ICU),1-3 days,4-5,185,1,14.8,0.54,0.1,3.0
+Lower Severity (No ICU),1-3 days,>5,70,0,16.9,0.0,0.0,5.2
+Lower Severity (No ICU),4-7 days,<=3,145,0,13.8,0.0,0.0,2.58
+Lower Severity (No ICU),4-7 days,4-5,128,0,17.5,0.0,0.0,2.91
+Lower Severity (No ICU),4-7 days,>5,60,0,18.5,0.0,0.0,6.02
+Lower Severity (No ICU),>=8 days,<=3,82,0,17.2,0.0,0.0,4.48
+Lower Severity (No ICU),>=8 days,4-5,69,0,22.0,0.0,0.0,5.27
+Lower Severity (No ICU),>=8 days,>5,62,0,24.9,0.0,0.0,5.83
+Higher Severity (ICU),1-3 days,<=3,46,2,13.6,4.35,1.2,14.53
+Higher Severity (ICU),1-3 days,4-5,22,3,17.4,13.64,4.75,33.34
+Higher Severity (ICU),1-3 days,>5,15,5,21.3,33.33,15.18,58.29
+Higher Severity (ICU),4-7 days,<=3,99,4,14.2,4.04,1.58,9.93
+Higher Severity (ICU),4-7 days,4-5,40,2,19.2,5.0,1.38,16.5
+Higher Severity (ICU),4-7 days,>5,18,2,25.4,11.11,3.1,32.8
+Higher Severity (ICU),>=8 days,<=3,161,7,22.0,4.35,2.12,8.7
+Higher Severity (ICU),>=8 days,4-5,71,6,24.8,8.45,3.93,17.24
+Higher Severity (ICU),>=8 days,>5,49,6,28.8,12.24,5.73,24.24

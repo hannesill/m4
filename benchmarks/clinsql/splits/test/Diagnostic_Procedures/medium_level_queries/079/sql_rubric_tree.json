@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter for patient ages between 71 and 81 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 71 AND 81`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lgib-diagnosis-identification",
+          "requirements": "LGIB Diagnosis Identification: The query must correctly identify admissions with a Lower GI Bleed (LGIB) diagnosis by filtering on both ICD-9 ('5781', '5693') and ICD-10 ('K921', 'K922', 'K625') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-cohort-joins",
+          "requirements": "Core Cohort Joins: The query must correctly INNER JOIN the `admissions`, `patients`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-data-join",
+          "requirements": "Imaging Data Join: The query must use a LEFT JOIN to connect the cohort (`lgib_admissions`) with the `procedures_icd` table to ensure admissions without imaging procedures are included in the count.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "diagnosis-priority-logic",
+          "requirements": "Diagnosis Priority Logic: The query must correctly determine if LGIB is a primary or secondary diagnosis by finding the minimum `seq_num` for the LGIB diagnosis and using a CASE statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-procedure-selection",
+          "requirements": "Imaging Procedure Selection: The query must correctly identify radiography/CT procedures by filtering for both ICD-9 (codes starting with '87' or '88') and ICD-10 (codes starting with 'B' and having '0' or '2' as the third character).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: The query must accurately calculate the length of stay in days using `DATETIME_DIFF(a.dischtime, a.admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-admission-imaging-count",
+          "requirements": "Per-Admission Imaging Count: The query must count all relevant imaging procedures for each admission using `COUNT(pr.icd_code)` and grouping by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stay-duration-categorization",
+          "requirements": "Stay Duration Categorization: The query must categorize admissions into '1-3 Days' and '4-7 Days' stay lengths using a CASE statement and filter to include only these stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-aggregation",
+          "requirements": "Final Grouping and Aggregation: The query must group the final results by `stay_category` and `diagnosis_priority` to stratify the output correctly.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-procedure-calculation",
+          "requirements": "Mean Procedure Calculation: The query must calculate the mean number of imaging procedures per admission using `AVG(ic.imaging_procedure_count)` and round the result.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

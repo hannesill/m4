@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients (p.gender = 'M').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly filter patients with an admission age between 39 and 49 years.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "chest-pain-admission-identification",
+          "requirements": "Chest Pain Admission Identification: The query must correctly identify admissions for chest pain using appropriate ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-code-selection-for-chest-pain",
+          "requirements": "ICD Code Selection for Chest Pain: The query must use both ICD-9 ('786.5%') and ICD-10 ('R07%') codes to identify chest pain diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initial-troponin-measurement",
+          "requirements": "Initial Troponin Measurement: The query must correctly identify the first (initial) hs-TnT lab value (itemid 51003) for each admission using a window function like ROW_NUMBER() ordered by charttime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-categorization",
+          "requirements": "Troponin Categorization: The query must accurately categorize hs-TnT values into 'Normal' (<0.014), 'Borderline' (>=0.014 and <=0.04), and 'Myocardial Injury' (>0.04) using a CASE statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-and-admissions-join",
+          "requirements": "Patient Demographics and Admissions Join: The query must correctly join the 'patients' and 'admissions' tables on 'subject_id' to link demographics with hospital stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-and-diagnoses-join",
+          "requirements": "Admissions and Diagnoses Join: The query must correctly join the admissions cohort with the 'diagnoses_icd' table on 'hadm_id' to filter by diagnosis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-and-lab-events-join",
+          "requirements": "Admissions and Lab Events Join: The query must correctly join the filtered admissions cohort with the 'labevents' table on 'hadm_id' to find troponin measurements.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-by-troponin-category",
+          "requirements": "Grouping by Troponin Category: The final aggregation must group results by the defined troponin categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-count-calculation",
+          "requirements": "Patient Count Calculation: The query must compute the count of patients in each category using COUNT().",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: The query must calculate the percentage of the total cohort for each category, typically using a subquery or window function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "statistical-aggregates-calculation",
+          "requirements": "Statistical Aggregates Calculation: The query must correctly calculate the mean, median, and IQR of troponin values for each category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

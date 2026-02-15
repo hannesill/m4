@@ -1,0 +1,160 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction for ACS Admissions",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 46 and 56 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-diagnosis-selection",
+          "requirements": "ACS Diagnosis Selection: The query must correctly filter for ACS admissions using both ICD-9 ('410%', '4111') and ICD-10 ('I200', 'I21%', 'I22%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-pre-filter",
+          "requirements": "Length of Stay Pre-filter: The query should ensure both `admittime` and `dischtime` are not null to allow for accurate length of stay calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "First High-Sensitivity Troponin T (hs-TnT) Identification and Categorization",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hs-tnt-lab-event-identification",
+          "requirements": "hs-TnT Lab Event Identification: The query must correctly identify hs-TnT lab events using `itemid = 51003`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-hs-tnt-measurement-logic",
+          "requirements": "First hs-TnT Measurement Logic: The query must use a window function (`ROW_NUMBER()`) partitioned by admission and ordered by time to isolate the first troponin test for each admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hs-tnt-categorization",
+          "requirements": "hs-TnT Categorization: The query must use a CASE statement to correctly categorize the first hs-TnT value into 'Normal' (<0.014), 'Borderline' (0.014-0.052), and 'Myocardial Injury' (>0.052).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Data Integration and Preparation",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `patients`, `admissions`, `diagnoses_icd`, and `labevents` tables on their respective keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-at-admission-calculation",
+          "requirements": "Age at Admission Calculation: The query must accurately calculate the patient's age at the time of admission using `anchor_age`, `anchor_year`, and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: The query must correctly calculate the hospital length of stay in days using `DATETIME_DIFF` between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Final Aggregation and Output Formatting",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-by-troponin-category",
+          "requirements": "Grouping by Troponin Category: The final aggregation must group results by the derived troponin category.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-count-calculation",
+          "requirements": "Admission Count Calculation: The query must correctly count the number of unique admissions per category using `COUNT(DISTINCT hadm_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: The query must calculate the percentage of total admissions for each category, using a window function over the count.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "average-los-calculation",
+          "requirements": "Average Length of Stay Calculation: The query must calculate the average length of stay for each category using `AVG(length_of_stay)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-ordering",
+          "requirements": "Output Ordering: The results must be ordered logically by category ('Normal', 'Borderline', 'Myocardial Injury').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "weight": 1,
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the initial patient population based on demographics and ICU stay criteria.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-selection-and-joins",
+          "requirements": "Table Selection and Joins: The query must join `patients`, `admissions`, and `icustays` to link demographic data with ICU stay information.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for patients between 62 and 72 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-filter",
+          "requirements": "ICU Stay Filter: Ensures that only valid ICU stays with both an `intime` and `outtime` are included in the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies and categorizes clinical events like heart rate and diagnoses.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "heart-rate-measurement-identification",
+          "requirements": "Heart Rate Measurement Identification: Correctly selects heart rate measurements from `chartevents` using appropriate `itemid`s (220045, 211).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mi-diagnosis-code-selection",
+          "requirements": "MI Diagnosis Code Selection: Correctly identifies acute MI diagnoses by filtering `diagnoses_icd` for both ICD-9 ('410%') and ICD-10 ('I21%') codes.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs calculations and categorizations to derive the final metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "average-heart-rate-calculation",
+          "requirements": "Average Heart Rate Calculation: Correctly calculates the average heart rate per ICU stay using `AVG(ce.valuenum)` and groups by `stay_id`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-rate-categorization",
+          "requirements": "Heart Rate Categorization: Uses a CASE statement to correctly segment the average heart rate into the specified categories (<60; 60\u201399; 100\u2013119; \u2265120).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-aggregation",
+          "requirements": "Final Grouping and Aggregation: Groups the final result by the created heart rate categories to perform counts.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-count-calculation",
+          "requirements": "Patient Count Calculation: Correctly counts the number of unique patients in each heart rate category using `COUNT(DISTINCT subject_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mi-percentage-calculation",
+          "requirements": "MI Percentage Calculation: Correctly calculates the percentage of patients with an MI diagnosis within each category, using appropriate counting and division.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins different CTEs and tables to synthesize the final result set.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-to-events-join",
+          "requirements": "Cohort to Events Join: Correctly joins the patient cohort with `chartevents` on `stay_id` to link patients to their heart rate measurements.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stays-to-diagnoses-join",
+          "requirements": "Stays to Diagnoses Join: Correctly performs a LEFT JOIN from the categorized stays to the MI diagnoses on `hadm_id` to associate stays with potential MI events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

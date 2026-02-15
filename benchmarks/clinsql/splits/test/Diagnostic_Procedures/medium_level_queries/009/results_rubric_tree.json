@@ -1,0 +1,156 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p25-column-exists",
+              "requirements": "Column exists for the 25th percentile of imaging procedures (e.g., 'p25_imaging_procedures', 'percentile_25_imaging').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-column-exists",
+              "requirements": "Column exists for the 50th percentile (median) of imaging procedures (e.g., 'p50_imaging_procedures', 'median_imaging').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-column-exists",
+              "requirements": "Column exists for the 75th percentile of imaging procedures (e.g., 'p75_imaging_procedures', 'percentile_75_imaging').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-category-column-exists",
+              "requirements": "Column exists for the Length of Stay stratification (e.g., 'stay_category', 'los_group').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-status-column-exists",
+              "requirements": "Column exists for the ICU status stratification (e.g., 'icu_status', 'icu_stay').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the percentile, LOS, or ICU columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "p25-validation",
+          "requirements": "Validation for the 25th percentile of diagnostic imaging procedures.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p25-plausible",
+              "requirements": "Values are clinically plausible (0 to 5).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-acceptable",
+              "requirements": "Values are in an acceptable range (0 to 1).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p50-validation",
+          "requirements": "Validation for the 50th percentile (median) of diagnostic imaging procedures.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p50-plausible",
+              "requirements": "Values are clinically plausible (0 to 5).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-acceptable",
+              "requirements": "Values are in an acceptable range (0 to 2).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p75-validation",
+          "requirements": "Validation for the 75th percentile of diagnostic imaging procedures.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p75-plausible",
+              "requirements": "Values are clinically plausible (0 to 10).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-acceptable",
+              "requirements": "Values are in an acceptable range (0 to 3).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

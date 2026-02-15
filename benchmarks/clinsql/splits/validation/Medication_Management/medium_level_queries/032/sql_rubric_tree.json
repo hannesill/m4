@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates and filters for patient age between 51 and 61 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-diagnosis-selection",
+          "requirements": "Diabetes Diagnosis Selection: Correctly identifies patients with diabetes using relevant ICD-9 ('250%') and ICD-10 ('E10%', 'E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-selection",
+          "requirements": "Heart Failure Diagnosis Selection: Correctly identifies patients with heart failure using relevant ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-duration-filter",
+          "requirements": "Admission Duration Filter: Ensures the hospital stay is at least 36 hours long to allow for non-overlapping early and late time windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Insulin Regimen Identification and Temporal Logic",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "insulin-prescription-identification",
+          "requirements": "Insulin Prescription Identification: Correctly filters the prescriptions table for drugs containing 'insulin'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insulin-categorization",
+          "requirements": "Insulin Categorization: Uses a CASE statement to accurately classify insulin prescriptions into 'Basal', 'Bolus', and 'Sliding_Scale' categories based on drug names.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-window-definition",
+          "requirements": "Temporal Window Definition: Correctly defines a boolean flag for the 'early' period (first 24 hours) and 'late' period (final 12 hours) of the admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "regimen-classification-logic",
+          "requirements": "Regimen Classification Logic: Correctly combines insulin category flags (e.g., `has_basal` and `has_bolus`) to classify the patient's regimen within each time window, including prioritizing 'Basal-Bolus' over single-type regimens.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly joins `patients`, `admissions`, and `diagnoses_icd` (aliased for two separate conditions) to form the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescription-table-join",
+          "requirements": "Prescription Table Join: Correctly joins the identified patient cohort with the `prescriptions` table on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Output",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-patient-flag-aggregation",
+          "requirements": "Per-Patient Flag Aggregation: Correctly uses LOGICAL_OR and GROUP BY hadm_id to determine if a patient received each insulin type within each time window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "regimen-counting",
+          "requirements": "Regimen Counting: Accurately counts the number of patients for each regimen in both the early and late periods using COUNTIF.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-calculation",
+          "requirements": "Prevalence Calculation: Correctly calculates the percentage prevalence for each regimen by dividing the regimen count by the total number of patients in the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-point-change-calculation",
+          "requirements": "Percentage-Point Change Calculation: Correctly calculates the percentage-point change by subtracting the early prevalence from the late prevalence.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: Presents the final results with one row per regimen type and includes columns for the regimen, early prevalence, late prevalence, and the percentage-point change, rounded to one decimal place.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

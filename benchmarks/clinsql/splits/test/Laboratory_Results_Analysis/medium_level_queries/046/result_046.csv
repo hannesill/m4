@@ -1,0 +1,2 @@
+cohort_description,number_of_patients,average_age,avg_length_of_stay_days,avg_initial_troponin_t,min_initial_troponin_t,max_initial_troponin_t,stddev_initial_troponin_t,count_highly_elevated_trop_gt_10
+Male Patients (83-93) with Chest Pain/AMI and Elevated Initial Troponin T,1316,87.4,7.9,0.88,0.02,23.51,2.03,16

@@ -1,0 +1,171 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-quintile",
+              "requirements": "Column for quintile stratification exists (e.g., instability_quintile, quintile)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-los",
+              "requirements": "Column for mean Length of Stay exists (e.g., avg_los_days, mean_los)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mortality",
+              "requirements": "Column for mortality rate exists (e.g., mortality_rate_percent, mortality_rate)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-lab-comparison",
+              "requirements": "Column for lab abnormality comparison exists (e.g., lab_abnormality_rate_comparison, lab_rates)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key answer columns (quintile, LOS, mortality, lab comparison)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "los-validation",
+          "requirements": "Validation of Mean Length of Stay (avg_los_days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "los-plausible",
+              "requirements": "Values are clinically plausible (e.g., 1-100 days). ICH patients have extended, not short, stays.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-acceptable",
+              "requirements": "Values are in an acceptable range (e.g., 2-40 days), with a general trend of increasing LOS with higher instability.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validation of Mortality Rate (mortality_rate_percent)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-plausible",
+              "requirements": "Values are plausible percentages (0-100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-acceptable",
+              "requirements": "Values are in an acceptable range for an elderly ICH population (e.g., 5-60%). ICH has high mortality.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "lab-comparison-validation",
+          "requirements": "Validation of Lab Abnormality Comparison (lab_abnormality_rate_comparison)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "lab-comparison-format",
+              "requirements": "The column contains structured data (e.g., JSON string) with keys for lab name, case rate, and control rate for each lab.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "lab-comparison-plausible",
+              "requirements": "All contained percentage values are plausible (0-100).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "lab-comparison-identical-rows",
+              "requirements": "The lab comparison data should not be identical for every quintile row, as it represents a comparison for the entire ICH cohort vs controls, not per quintile. The result correctly shows the same data for all rows.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "quintile-validation",
+          "requirements": "Validation of Quintile Stratification",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "quintile-count",
+              "requirements": "There are exactly 5 distinct quintiles reported.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

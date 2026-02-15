@@ -1,0 +1,215 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "cohort-column-exists",
+              "requirements": "Column exists for patient cohorts (e.g., 'cohort', 'group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-diagnostic-utilization-column-exists",
+              "requirements": "Column exists for 75th percentile of diagnostic utilization (e.g., 'p75_diagnostic_utilization', 'diagnostic_score_p75')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-column-exists",
+              "requirements": "Column exists for ICU length of stay (e.g., 'avg_icu_los_days', 'icu_stay_duration')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column exists for in-hospital mortality (e.g., 'in_hospital_mortality_percent', 'mortality_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in cells that are required to answer the question (e.g., mortality for both cohorts, diagnostic score for PE cohort)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "p75-diagnostic-utilization-validation",
+          "requirements": "Validate 75th percentile of diagnostic utilization score for the PE cohort",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p75-diagnostic-utilization-plausible",
+              "requirements": "Clinically Plausible (0-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-diagnostic-utilization-acceptable",
+              "requirements": "Acceptable Range (3-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "Validate average ICU length of stay for both cohorts",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "pe-cohort-los-validation",
+              "requirements": "Validate ICU LOS for PE cohort (age 79-89, male)",
+              "sequential": true,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "pe-cohort-los-plausible",
+                  "requirements": "Clinically Plausible (0.5-60 days)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "pe-cohort-los-acceptable",
+                  "requirements": "Acceptable Range (3-10 days)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "general-cohort-los-validation",
+              "requirements": "Validate ICU LOS for general ICU cohort",
+              "sequential": true,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "general-cohort-los-plausible",
+                  "requirements": "Clinically Plausible (0.5-60 days)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "general-cohort-los-acceptable",
+                  "requirements": "Acceptable Range (2.5-5 days)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validate in-hospital mortality percentage for both cohorts",
+          "sequential": false,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "pe-cohort-mortality-validation",
+              "requirements": "Validate mortality for PE cohort (age 79-89, male)",
+              "sequential": true,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "pe-cohort-mortality-plausible",
+                  "requirements": "Clinically Plausible (0-100%)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "pe-cohort-mortality-acceptable",
+                  "requirements": "Acceptable Range (15-40%)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "general-cohort-mortality-validation",
+              "requirements": "Validate mortality for general ICU cohort",
+              "sequential": true,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "general-cohort-mortality-plausible",
+                  "requirements": "Clinically Plausible (0-100%)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "general-cohort-mortality-acceptable",
+                  "requirements": "Acceptable Range (8-15%)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

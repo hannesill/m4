@@ -1,0 +1,242 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-cohort-exists",
+              "requirements": "Column exists for cohort grouping (e.g., cohort_group)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-avg-instability-exists",
+              "requirements": "Column exists for mean vital-instability index (e.g., avg_vital_instability_index)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-p25-instability-exists",
+              "requirements": "Column exists for P25 vital-instability index (e.g., p25_instability_index)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-p50-instability-exists",
+              "requirements": "Column exists for P50 vital-instability index (e.g., p50_instability_index)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-p75-instability-exists",
+              "requirements": "Column exists for P75 vital-instability index (e.g., p75_instability_index)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-p90-instability-exists",
+              "requirements": "Column exists for P90 vital-instability index (e.g., p90_instability_index)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-tachycardia-exists",
+              "requirements": "Column exists for tachycardia burden/episodes (e.g., avg_tachycardia_episodes_per_stay)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-hypotension-exists",
+              "requirements": "Column exists for MAP<65 burden/episodes (e.g., avg_hypotension_episodes_per_stay)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-icu-los-exists",
+              "requirements": "Column exists for ICU LOS (e.g., avg_icu_los_days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-mortality-exists",
+              "requirements": "Column exists for mortality rate (e.g., mortality_rate_percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "vital-instability-index-validation",
+          "requirements": "Validate Vital-Instability Index values",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-instability-index",
+              "requirements": "Clinically Plausible (0-200)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-instability-index",
+              "requirements": "Acceptable Range (15-80 for mean, percentiles should be ordered)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "tachycardia-validation",
+          "requirements": "Validate Tachycardia episodes",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-tachycardia",
+              "requirements": "Clinically Plausible (0-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-tachycardia",
+              "requirements": "Acceptable Range (5-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hypotension-validation",
+          "requirements": "Validate MAP<65 burden episodes",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-hypotension",
+              "requirements": "Clinically Plausible (0-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-hypotension",
+              "requirements": "Acceptable Range (5-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "Validate ICU LOS",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-icu-los",
+              "requirements": "Clinically Plausible (0.5-90)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-icu-los",
+              "requirements": "Acceptable Range for Status Epilepticus (4-15), General ICU (2-8)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validate Mortality Rate",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-mortality",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-mortality",
+              "requirements": "Acceptable Range for Status Epilepticus (15-45), General ICU (5-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

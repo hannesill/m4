@@ -1,0 +1,1 @@
+I have a 48-year-old female patient to evaluate. Among female Medicare patients aged 43–53 admitted from the emergency department with a principal diagnosis of bowel obstruction, how many completed index admissions were identified in this cohort in the dataset?

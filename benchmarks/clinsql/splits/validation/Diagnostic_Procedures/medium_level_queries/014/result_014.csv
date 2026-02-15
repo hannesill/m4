@@ -1,0 +1,5 @@
+stay_category,diagnosis_type,num_admissions,avg_ultrasounds_per_admission,min_ultrasounds,max_ultrasounds
+1-4 Day Stay,Primary Diagnosis,378,0.03,0,1
+5-7 Day Stay,Primary Diagnosis,181,0.03,0,1
+1-4 Day Stay,Secondary Diagnosis,410,0.01,0,1
+5-7 Day Stay,Secondary Diagnosis,273,0.01,0,1

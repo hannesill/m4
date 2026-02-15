@@ -1,0 +1,5 @@
+diagnosis_type,stay_category,num_admissions,procedures_p25,procedures_median,procedures_p75,procedures_iqr
+Primary AMI,1-3 days,358,0,0,0,0
+Primary AMI,4-7 days,133,0,0,0,0
+Secondary AMI,1-3 days,109,0,0,0,0
+Secondary AMI,4-7 days,84,0,0,0,0

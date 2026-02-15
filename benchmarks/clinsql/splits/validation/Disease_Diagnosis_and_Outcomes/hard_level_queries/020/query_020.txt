@@ -1,0 +1,1 @@
+I have a 51-year-old male inpatient. Among male inpatients 46–56 with acute myocardial infarction, stratify by the composite risk score (age plus major complications) into quintiles and report in-hospital mortality%, major complication%, and median survivor LOS per quintile.

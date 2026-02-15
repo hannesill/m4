@@ -1,0 +1,149 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "discharge-group-column-exists",
+              "requirements": "A column grouping by discharge disposition exists (e.g., 'discharge_group', 'disposition').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "proportion-los-ge7-column-exists",
+              "requirements": "A column for the proportion of admissions with LOS >= 7 days exists (e.g., 'proportion_long_los', 'prop_los_ge_7').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-column-exists",
+              "requirements": "A column for the 14-day LOS percentile rank exists (e.g., 'percentile_rank_of_14_day_los', 'los_14d_percentile').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the answer-relevant columns ('discharge_group', 'proportion_long_los', 'percentile_rank_of_14_day_los').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "proportion-long-los-validation",
+          "requirements": "Validation of the proportion of admissions with LOS >= 7 days (e.g., 'proportion_long_los').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "proportion-long-los-plausible",
+              "requirements": "Proportion values must be between 0 and 1, as it represents a fraction.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "proportion-long-los-acceptable-home",
+              "requirements": "For 'Discharged Home' group, acceptable proportion is between 0.15 and 0.35.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "proportion-long-los-acceptable-facility",
+              "requirements": "For 'Discharged to Facility' group, acceptable proportion is between 0.45 and 0.65.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "proportion-long-los-acceptable-mortality",
+              "requirements": "For 'In-Hospital Mortality' group, acceptable proportion is between 0.40 and 0.60.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentile-rank-validation",
+          "requirements": "Validation of the 14-day LOS percentile rank (e.g., 'percentile_rank_of_14_day_los').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentile-rank-plausible",
+              "requirements": "Percentile rank values must be between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-acceptable-home",
+              "requirements": "For 'Discharged Home' group, acceptable 14-day LOS percentile is high, between 0.90 and 0.99, as most stays are shorter.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-acceptable-facility",
+              "requirements": "For 'Discharged to Facility' group, acceptable 14-day LOS percentile is lower, between 0.75 and 0.90.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-acceptable-mortality",
+              "requirements": "For 'In-Hospital Mortality' group, acceptable 14-day LOS percentile is lowest, between 0.65 and 0.85.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

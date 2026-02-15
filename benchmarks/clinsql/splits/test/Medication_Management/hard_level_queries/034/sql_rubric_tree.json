@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "surgical-admission-identification",
+          "requirements": "Surgical Admission Identification: Correctly identifies surgical admissions by filtering the 'procedures_icd' table for both ICD-9 (codes '00'-'86') and ICD-10 procedures.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Accurately calculates age at admission and filters for patients aged between 51 and 61.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-temporal-filter",
+          "requirements": "Medication Temporal Filter: Restricts medication analysis to the first 24 hours of the hospital admission using `rx.starttime BETWEEN pc.admittime AND DATETIME_ADD(pc.admittime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-med-classification",
+          "requirements": "High-Risk Medication Classification: Implements a CASE statement to correctly categorize specific medications into high-risk classes (e.g., Vasoactive, Antiarrhythmic, Anticoagulant).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-score-calculation",
+          "requirements": "Medication Complexity Score Calculation: Correctly computes the medication complexity score as the sum of unique drugs and a weighted count of unique high-risk classes `(COUNT(DISTINCT drug) + (COUNT(DISTINCT high_risk_class) * 2))`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-flag-logic",
+          "requirements": "30-Day Readmission Flag Logic: Correctly calculates a 30-day readmission flag using a window function `LEAD()` partitioned by `subject_id` to check for a subsequent admission within 30 days of discharge.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: Correctly joins 'patients', 'admissions', 'procedures_icd', and 'prescriptions' tables on appropriate keys (subject_id, hadm_id).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-data-integration",
+          "requirements": "Outcome Data Integration: Uses LEFT JOINs to correctly associate the base patient cohort with derived data like medication complexity and readmission flags, ensuring no patients are lost if they have no medications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "quartile-stratification",
+          "requirements": "Quartile Stratification: Uses `NTILE(4)` over the medication complexity score to stratify the patient cohort into four quartiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: Groups the final results by `complexity_quartile` to enable stratified reporting.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-aggregation",
+          "requirements": "Outcome Aggregation: Correctly calculates the required aggregated metrics per quartile: patient count, average LOS, in-hospital mortality rate (%), and 30-day readmission rate (%).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: Correctly converts mortality and readmission flags into percentages by taking the average and multiplying by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

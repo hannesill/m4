@@ -1,0 +1,1 @@
+For my 57-year-old male inpatient, among non-emergency male admissions aged 52–62, report LOS percentiles (p50, p75, p90, p95) by discharged alive vs in-hospital death, and percentile rank of 7 days.

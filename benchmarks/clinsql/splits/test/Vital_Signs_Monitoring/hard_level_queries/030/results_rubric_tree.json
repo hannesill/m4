@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p95-instability-index-column-exists",
+              "requirements": "Column exists for 95th percentile vital instability index (e.g., target_cohort_p95_instability_index)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hypotension-episodes-column-exists",
+              "requirements": "Column exists for average hypotension episodes (e.g., avg_hypotension_episodes)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachycardia-episodes-column-exists",
+              "requirements": "Column exists for average tachycardia episodes (e.g., avg_tachycardia_episodes)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-column-exists",
+              "requirements": "Column exists for average ICU LOS (e.g., avg_icu_los_days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "Column exists for mortality rate (e.g., mortality_rate)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "p95-instability-index-validation",
+          "requirements": "Validate 95th percentile vital instability index (target_cohort_p95_instability_index)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p95-instability-index-plausible",
+              "requirements": "Clinically Plausible (20-1000). The vital instability index is a composite score and can have a wide range. A percentile of a score will be within the score's range.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p95-instability-index-acceptable",
+              "requirements": "Acceptable Range (50-250). The 95th percentile for a high-risk cohort should be significantly elevated but not at the absolute maximum of a theoretical scale.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-hypotension-episodes-validation",
+          "requirements": "Validate average hypotension episodes (avg_hypotension_episodes)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-hypotension-episodes-plausible",
+              "requirements": "Clinically Plausible (0-100). The number of episodes within 48 hours should be a non-negative integer or float. The upper bound is high to account for frequent, brief events.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-hypotension-episodes-acceptable",
+              "requirements": "Acceptable Range (1-50). The top quartile of a high-risk cohort is expected to have frequent episodes (e.g., 5-50), while the general ICU population would have fewer (e.g., 1-20).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-tachycardia-episodes-validation",
+          "requirements": "Validate average tachycardia episodes (avg_tachycardia_episodes)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-tachycardia-episodes-plausible",
+              "requirements": "Clinically Plausible (0-100). Similar to hypotension, the number of episodes within 48 hours will be a non-negative value.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-tachycardia-episodes-acceptable",
+              "requirements": "Acceptable Range (1-60). Tachycardia can be very common in critically ill patients, especially those with respiratory failure. The top quartile is expected to have significantly more episodes.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-icu-los-days-validation",
+          "requirements": "Validate average ICU LOS in days (avg_icu_los_days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "avg-icu-los-days-plausible",
+              "requirements": "Clinically Plausible (0.1-90). ICU LOS can range from less than a day to several months.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-icu-los-days-acceptable",
+              "requirements": "Acceptable Range (2-20). The general ICU population average is typically 3-5 days. A sicker cohort (top quartile) is expected to have a longer LOS, likely in the 5-20 day range.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate mortality rate (mortality_rate)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0). Mortality rate must be a proportion between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0.05-0.6). General ICU mortality is often 8-19%. For a high-risk cohort with acute respiratory failure and high vital instability, a mortality rate of 20-60% is clinically expected.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

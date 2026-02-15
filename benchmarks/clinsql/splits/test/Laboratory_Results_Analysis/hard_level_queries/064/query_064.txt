@@ -1,0 +1,1 @@
+I have a 70‑year‑old female with acute pancreatitis. Among female inpatients 65–75 with acute pancreatitis, stratify first‑48‑hour lab instability scores into quintiles and report count, mean instability, mean LOS, mortality per quintile, and % with critical labs versus age‑matched inpatients.

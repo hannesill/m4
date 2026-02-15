@@ -1,0 +1,140 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "early-prevalence-column-exists",
+              "requirements": "Column exists for the percentage of patients receiving GLP-1 agonists in the early period (e.g., 'prevalence_rate_early_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "late-prevalence-column-exists",
+              "requirements": "Column exists for the percentage of patients receiving GLP-1 agonists in the late period (e.g., 'prevalence_rate_late_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-column-exists",
+              "requirements": "Column exists for the net change in percentage points (e.g., 'net_change_percentage_points').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns ('prevalence_rate_early_pct', 'prevalence_rate_late_pct', 'net_change_percentage_points').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "early-prevalence-validation",
+          "requirements": "Validate the value in the 'prevalence_rate_early_pct' column.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "early-prevalence-plausible",
+              "requirements": "Clinically Plausible: Value must be between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "early-prevalence-acceptable",
+              "requirements": "Acceptable Range: GLP-1s are not typically initiated acutely in-hospital for this cohort, so the value is expected to be very low. Acceptable range is 0 to 10.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "late-prevalence-validation",
+          "requirements": "Validate the value in the 'prevalence_rate_late_pct' column.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "late-prevalence-plausible",
+              "requirements": "Clinically Plausible: Value must be between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "late-prevalence-acceptable",
+              "requirements": "Acceptable Range: Administration near discharge might occur but is still uncommon. The value is expected to be very low. Acceptable range is 0 to 10.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "net-change-validation",
+          "requirements": "Validate the value in the 'net_change_percentage_points' column.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "net-change-plausible",
+              "requirements": "Clinically Plausible: Value must be between -100 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-acceptable",
+              "requirements": "Acceptable Range: Given the low expected rates, the net change should be small. Acceptable range is -10 to 10.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

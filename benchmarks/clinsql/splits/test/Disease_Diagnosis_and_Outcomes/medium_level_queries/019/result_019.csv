@@ -1,0 +1,10 @@
+charlson_group,los_group,total_patients,total_deaths,mortality_rate_pct,prev_los_group_mortality_pct,abs_mortality_diff_vs_prev_los_group,rel_mortality_diff_pct_vs_prev_los_group,discharge_home_pct,discharge_rehab_pct,discharge_snf_pct,discharge_hospice_pct
+<=3,1-3 days,1345,14,1.04,0.0,1.04,,56.9,0.0,1.9,0.1
+<=3,4-7 days,831,12,1.44,1.04,0.4,38.46,81.8,0.0,7.9,0.1
+<=3,>=8 days,683,23,3.37,1.44,1.93,134.03,62.5,0.0,15.7,0.9
+4-5,1-3 days,826,8,0.97,0.0,0.97,,56.1,0.0,5.2,0.0
+4-5,4-7 days,642,9,1.4,0.97,0.43,44.33,77.4,0.0,11.5,0.3
+4-5,>=8 days,566,27,4.77,1.4,3.37,240.71,56.5,0.0,19.8,1.2
+>5,1-3 days,754,30,3.98,0.0,3.98,,58.5,0.0,5.2,0.9
+>5,4-7 days,800,35,4.38,3.98,0.4,10.05,70.6,0.0,14.4,1.3
+>5,>=8 days,1073,85,7.92,4.38,3.54,80.82,51.1,0.0,19.3,2.4

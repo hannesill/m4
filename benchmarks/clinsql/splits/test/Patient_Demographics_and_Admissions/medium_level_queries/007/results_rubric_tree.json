@@ -1,0 +1,172 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "outcome-column-exists",
+              "requirements": "Column for outcome stratification exists (e.g., 'outcome', 'in_hospital_death', 'survival_status')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "num-admissions-column-exists",
+              "requirements": "Column for number of admissions exists (e.g., 'number_of_admissions', 'admission_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-los-column-exists",
+              "requirements": "Column for 50th percentile of LOS exists (e.g., 'p50_los_days', 'median_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-column-exists",
+              "requirements": "Column for 75th percentile of LOS exists (e.g., 'p75_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-los-column-exists",
+              "requirements": "Column for 90th percentile of LOS exists (e.g., 'p90_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p95-los-column-exists",
+              "requirements": "Column for 95th percentile of LOS exists (e.g., 'p95_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-column-exists",
+              "requirements": "Column for percentile rank of 10-day LOS exists (e.g., 'percentile_rank_of_10_day_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "admission-count-validation",
+          "requirements": "Validate values in the 'number_of_admissions' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-admissions",
+              "requirements": "Admission count is clinically plausible (>100 per group)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-admissions",
+              "requirements": "Admission count is within an acceptable range (e.g., discharged > mortality)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-percentiles-validation",
+          "requirements": "Validate values in LOS percentile columns",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-los",
+              "requirements": "LOS values are clinically plausible (1 to 100 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-los",
+              "requirements": "LOS values are within an acceptable range (e.g., mortality group has higher LOS percentiles than discharged group; p50 < p75 < p90 < p95)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-percentile-rank-validation",
+          "requirements": "Validate value in the 'percentile_rank_of_10_day_los' column",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-percentile-rank",
+              "requirements": "Percentile rank value is clinically plausible (0 to 100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-percentile-rank",
+              "requirements": "Percentile rank value for a 10-day LOS is within an acceptable range (50 to 90)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

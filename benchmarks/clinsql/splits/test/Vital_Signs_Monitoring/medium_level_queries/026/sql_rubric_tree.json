@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifying the patient cohort based on demographic criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the admission age and filter for patients between 68 and 78 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-selection",
+          "requirements": "ICU Stay Selection: The query must restrict the analysis to ICU stays by joining with the `icustays` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly implementing the logic to measure, aggregate, and calculate the final percentile.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "respiratory-rate-identification",
+          "requirements": "Respiratory Rate Identification: The query must correctly identify respiratory rate measurements using appropriate itemids from the `chartevents` table (e.g., 220210, 615).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-48h",
+          "requirements": "Temporal Filter (First 48h): The query must filter measurements to the first 48 hours of each ICU stay using a condition like `ce.charttime BETWEEN fc.intime AND DATETIME_ADD(fc.intime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-stay-aggregation",
+          "requirements": "Per-Stay Aggregation: The query must calculate the average respiratory rate per ICU stay by grouping by `stay_id` and using the `AVG()` function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: The query must correctly calculate the percentile rank for a value of 12 using a formula equivalent to `100 * (COUNT(CASE WHEN avg_rr <= 12 THEN 1 END) / COUNT(stay_id))`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joining necessary tables to link patient demographics with clinical events.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: The query must correctly join the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-icustays-join",
+          "requirements": "Admissions-ICU Stays Join: The query must correctly join the `admissions` and `icustays` tables on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icustays-chartevents-join",
+          "requirements": "ICU Stays-Chartevents Join: The query must correctly join the patient cohort with the `chartevents` table on `stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-quality-and-formatting",
+      "requirements": "Data Quality and Formatting: Applying filters and functions to ensure data validity and appropriate output.",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "value-range-filtering",
+          "requirements": "Value Range Filtering: The query should apply a plausible value range filter on respiratory rate to exclude outliers (e.g., `valuenum > 0 AND valuenum < 60`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "null-value-handling",
+          "requirements": "Null Value Handling: The query must explicitly exclude null measurement values (e.g., `valuenum IS NOT NULL`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-rounding",
+          "requirements": "Output Rounding: The query should use the `ROUND()` function to format the final percentile and other statistical outputs for readability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using p.gender = 'M' in the WHERE clause.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients to the age range of 51-61 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-selection",
+          "requirements": "Primary Condition Selection: The query must correctly identify and join hospital admissions with either a STEMI or NSTEMI diagnosis, and exclude admissions without either.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "mi-type-classification",
+          "requirements": "MI Type Classification: The query must correctly classify admissions into 'STEMI' and 'NSTEMI' groups based on specific ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-identification",
+          "requirements": "Comorbidity Identification: The query must correctly identify the presence of CKD and Diabetes using appropriate ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-counting",
+          "requirements": "Comorbidity Counting: The query must calculate a total count of specified major comorbidities for each admission to allow for stratification.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join 'patients', 'admissions', and 'diagnoses_icd' tables to link demographics and diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The query must use 'subject_id' to join patient-level data and 'hadm_id' to join admission-level data across CTEs.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation",
+          "requirements": "Age Calculation: The query must accurately calculate the patient's age at admission using anchor_age, anchor_year, and admittime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-binning",
+          "requirements": "LOS Binning: The query must correctly calculate the length of stay (LOS) and categorize it into the specified bins (1-2, 3-5, 6-9, >=10 days).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-binning",
+          "requirements": "Comorbidity Binning: The query must correctly stratify patients into comorbidity groups based on the count of conditions (0-1, 2, >=3).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final query must group results by MI type, LOS bin, and comorbidity bin to produce the required stratified output.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation",
+          "requirements": "Metric Calculation: The query must accurately calculate the count (N), mortality rate, CKD prevalence, and diabetes prevalence for each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting",
+      "requirements": "Output Formatting and Ordering",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "column-selection",
+          "requirements": "Column Selection: The final SELECT statement includes all required output columns: MI type, LOS bin, comorbidity bin, N, mortality rate, CKD prevalence, and diabetes prevalence.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "scaffold-usage",
+          "requirements": "Scaffold Usage: The query correctly uses a scaffold to ensure all possible strata combinations are present in the output, even those with zero patients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ordering-logic",
+          "requirements": "Ordering Logic: The query must order the final results logically, by MI type, then by LOS, and finally by comorbidity group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

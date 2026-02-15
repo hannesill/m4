@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for male patients by joining with the 'patients' table and using the condition p.gender = 'M'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-cohort-identification",
+          "requirements": "Sepsis Cohort Identification: The query correctly identifies hospital admissions for sepsis by filtering the 'diagnoses_icd' table for relevant ICD-9 ('99591', '99592', '78552') and ICD-10 ('A41%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "platelet-lab-event-identification",
+          "requirements": "Platelet Lab Event Identification: The query correctly identifies platelet count measurements by filtering the 'labevents' table using itemid = 51265.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-platelet-logic",
+          "requirements": "Admission Platelet Logic: The query correctly isolates the first platelet measurement for each admission using ROW_NUMBER() partitioned by hadm_id and ordered by charttime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-quality-filtering",
+          "requirements": "Data Quality Filtering: The query includes appropriate filters to ensure data quality, such as excluding null values (valuenum IS NOT NULL) and applying a reasonable range filter (valuenum BETWEEN 10 AND 1000).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-data-join",
+          "requirements": "Cohort-Data Join: The query correctly joins the identified sepsis admissions cohort with the platelet count data using hadm_id as the key.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "demographic-data-join",
+          "requirements": "Demographic-Data Join: The query correctly joins the labevents table with the patients table on subject_id to access gender information.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "final-cohort-filtering",
+          "requirements": "Final Cohort Filtering: The query correctly filters the joined data to include only the first platelet measurement for each admission (apc.rn = 1).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "standard-deviation-calculation",
+          "requirements": "Standard Deviation Calculation: The query correctly calculates the standard deviation of the admission platelet count values using the STDDEV() function.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result is correctly formatted by rounding to two decimal places using the ROUND() function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

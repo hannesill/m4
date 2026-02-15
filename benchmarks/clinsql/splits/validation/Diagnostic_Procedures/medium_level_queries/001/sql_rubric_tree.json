@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "acs-diagnosis-selection",
+          "requirements": "Acute Coronary Syndrome (ACS) Diagnosis Selection: The query must correctly identify admissions for ACS by filtering the diagnoses_icd table for relevant ICD-9 (e.g., '410%', '4111') and ICD-10 (e.g., 'I20.0%', 'I21%', 'I22%', 'I24%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately filter patients aged 77 to 87 at the time of admission using a calculation like `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 77 AND 87`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept and Logic Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: The query must calculate the length of stay in days by finding the difference between `dischtime` and `admittime` using `DATETIME_DIFF(a.dischtime, a.admittime, DAY)`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-vs-secondary-diagnosis-logic",
+          "requirements": "Primary vs. Secondary Diagnosis Logic: The query must correctly identify if ACS was a primary diagnosis by finding the minimum `seq_num` for ACS codes and categorizing based on whether it is 1.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-procedure-identification",
+          "requirements": "Imaging Procedure Identification: The query must correctly identify radiography/CT procedures by filtering `procedures_icd` for relevant ICD-9 (e.g., '87%', '88%') and ICD-10 (e.g., 'B%' with specific substrings) codes.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to form the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Procedure Table Join: The query must correctly LEFT JOIN the procedures_icd table on `hadm_id` to associate imaging procedures with the correct admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "stratification-logic",
+          "requirements": "Stratification Logic: The query must correctly stratify results into categories for length of stay ('1-4 Day Stay', '5-8 Day Stay') and diagnosis type ('Primary Diagnosis', 'Secondary Diagnosis') using CASE statements.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-count-per-admission",
+          "requirements": "Imaging Count Per Admission: The query must accurately count the number of imaging procedures for each individual admission before the final aggregation step, for example by grouping by `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-and-grouping",
+          "requirements": "Final Aggregation and Grouping: The final query must group by `diagnosis_type` and `los_category` to compute the required metrics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "statistical-functions",
+          "requirements": "Statistical Functions: The final SELECT statement must correctly calculate the mean, min, and max of imaging counts using `AVG()`, `MIN()`, and `MAX()` functions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

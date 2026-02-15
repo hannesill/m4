@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "dka-admission-identification",
+          "requirements": "DKA Admission Identification: The query must correctly identify hospital admissions (hadm_id) associated with a Diabetic Ketoacidosis (DKA) diagnosis from the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must correctly filter for female patients by checking `p.gender = 'F'` to match the clinical question's requirement for 'female DKA admissions'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "dka-code-selection",
+          "requirements": "DKA Code Selection: The query must accurately filter for DKA using both ICD-9 ('2501') and ICD-10 ('E101', 'E111', 'E131') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "glucose-itemid-selection",
+          "requirements": "Glucose ItemID Selection: The query must correctly identify serum glucose measurements by filtering on `le.itemid = 50931` in the `labevents` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "glucose-value-filtering",
+          "requirements": "Glucose Value Filtering: The query should apply a plausible range filter (e.g., BETWEEN 50 AND 500) on glucose values to exclude erroneous data and handle non-null values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "dka-and-lab-join",
+          "requirements": "DKA and Lab Data Join: The query must correctly join the identified DKA admissions with the `labevents` table on `hadm_id` to link lab results to specific DKA hospitalizations.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-and-patient-join",
+          "requirements": "Lab and Patient Data Join: The query must join `labevents` with the `patients` table on `subject_id` to access patient demographic information like gender.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "peak-glucose-calculation",
+          "requirements": "Peak Glucose Calculation: The query must calculate the peak (maximum) glucose level for each DKA admission using `MAX(le.valuenum)` and grouping by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-aggregation",
+          "requirements": "Median Aggregation: The query must calculate the median of the peak glucose values across all included admissions using a suitable function like `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: The query should produce a single, rounded numerical value for the median peak glucose, as specified by `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

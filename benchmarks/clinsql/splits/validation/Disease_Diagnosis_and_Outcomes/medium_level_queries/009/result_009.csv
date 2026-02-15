@@ -1,0 +1,5 @@
+los_category,day1_icu_category,total_admissions,in_hospital_deaths,mortality_rate_percent,mech_vent_prevalence_percent,vasopressor_prevalence_percent,rrt_prevalence_percent
+<8 days,Day-1 ICU,161,26,16.15,19.25,13.04,0.62
+<8 days,Non-ICU on Day-1,484,13,2.69,0.21,0.41,0.0
+>=8 days,Day-1 ICU,233,22,9.44,39.48,36.05,5.15
+>=8 days,Non-ICU on Day-1,433,34,7.85,8.78,7.16,1.62

@@ -1,0 +1,8 @@
+medication_class,cohort_size,early_initiation_count,late_initiation_count,early_initiation_rate_pct,late_initiation_rate_pct,net_change_pp
+Insulin,239,171,5,71.55,2.09,-69.46
+Metformin,239,3,4,1.26,1.67,0.4099999999999999
+Sulfonylurea,239,3,4,1.26,1.67,0.4099999999999999
+SGLT2 Inhibitor,239,2,0,0.84,0.0,-0.84
+Thiazolidinedione,239,1,0,0.42,0.0,-0.42
+DPP-4 Inhibitor,239,0,0,0.0,0.0,0.0
+GLP-1 Agonist,239,0,0,0.0,0.0,0.0

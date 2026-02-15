@@ -1,0 +1,2 @@
+cohort_description,total_icu_stays_in_cohort,cohort_mean_of_avg_hr,cohort_stddev_of_avg_hr,p25_avg_hr,p50_avg_hr_median,p75_avg_hr,p95_avg_hr,percentile_rank_of_110_bpm
+Female patients aged 80-90,7569,82.72,14.46,72.39999999999999,81.55172413793103,91.63636363636364,108.48648648648648,95.88

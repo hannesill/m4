@@ -1,0 +1,2 @@
+target_spo2_value,percentile_rank_of_target,total_stays_in_cohort,stays_at_or_below_target,cohort_mean_avg_spo2,cohort_stddev_avg_spo2,p5_avg_spo2,p25_avg_spo2,p50_avg_spo2_median,p75_avg_spo2,p95_avg_spo2
+88,0.58,7449,43,96.38,2.13,93.22,95.39,96.58,97.7,99.1

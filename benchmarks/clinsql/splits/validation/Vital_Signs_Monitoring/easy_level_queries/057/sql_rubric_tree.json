@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters the patient cohort to include only males using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly identifies patients within the 35-45 age range using `p.anchor_age BETWEEN 35 AND 45`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Respiratory Rate",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "respiratory-rate-itemid-selection",
+          "requirements": "Respiratory Rate Item ID Selection: Correctly identifies respiratory rate measurements by filtering on the appropriate itemids (`ce.itemid IN (220210, 615)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-range-filtering",
+          "requirements": "Value Range Filtering: Applies a plausible clinical range filter (`ce.valuenum BETWEEN 5 AND 50`) to exclude erroneous respiratory rate values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "null-value-handling",
+          "requirements": "Null Value Handling: Excludes null values from calculations by using `ce.valuenum IS NOT NULL` to ensure aggregation functions operate correctly.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins the `patients` and `chartevents` tables to link patient demographics with clinical events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: Uses the correct key (`subject_id`) to join the `patients` and `chartevents` tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic-per-stay",
+          "requirements": "Grouping Logic per Stay: Correctly groups the events by ICU stay (`GROUP BY ce.stay_id`) to prepare for per-stay aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "maximum-per-stay-calculation",
+          "requirements": "Maximum per Stay Calculation: Calculates the maximum respiratory rate for each ICU stay using `MAX(ce.valuenum)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-minimum-calculation",
+          "requirements": "Final Minimum Calculation: Computes the minimum of the maximum respiratory rates across all selected stays using `MIN(max_rr_per_stay)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Rounds the final result to two decimal places for clarity using `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

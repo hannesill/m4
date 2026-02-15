@@ -1,0 +1,4 @@
+discharge_category,total_admissions,admissions_los_ge_7,proportion_los_ge_7_pct,percentile_rank_of_7_days
+Discharged Home,883,91,10.31,93.43
+Discharged to Hospice,169,103,60.95,44.38
+In-Hospital Mortality,391,171,43.73,60.36

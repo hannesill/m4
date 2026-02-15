@@ -1,0 +1,176 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters the patient cohort to include only female patients (`p.gender = 'F'`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates patient age at admission and filters for the range of 88 to 98 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-diagnosis-filter",
+          "requirements": "Correctly identifies admissions for Acute Myocardial Infarction (AMI) using both ICD-9 ('410%') and ICD-10 ('I21%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-filter",
+          "requirements": "Correctly filters for admissions that include an ICU stay by joining with the `icustays` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "base-table-joins",
+          "requirements": "Correctly performs an INNER JOIN between the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-defining-joins",
+          "requirements": "Correctly uses INNER JOINs on `hadm_id` to integrate the `ami_admissions` and `icu_admissions` CTEs, ensuring all cohort criteria are met.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-data-join",
+          "requirements": "Correctly uses a LEFT JOIN to integrate the `comorbidity_and_critical_diags` CTE, ensuring patients without these specific diagnoses are not excluded from the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "aki-identification",
+          "requirements": "Correctly identifies Acute Kidney Injury (AKI) using ICD-9 (`LIKE '584%'`) and ICD-10 (`LIKE 'N17%'`) codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ards-identification",
+          "requirements": "Correctly identifies Acute Respiratory Distress Syndrome (ARDS) using the specified ICD-9 (`'518.82'`, `'518.5'`) and ICD-10 (`'J80'`) codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-window-calculation",
+          "requirements": "Correctly calculates a binary flag for 30-day mortality by comparing `deathtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-score-component-calculation",
+          "requirements": "Accurately calculates intermediate components for the risk score, specifically `critical_diag_count` and `length_of_stay`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "composite-risk-score-logic",
+          "requirements": "Correctly implements the specified custom formula to calculate the `composite_risk_score`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-logic",
+          "requirements": "Correctly applies the `PERCENT_RANK()` window function over the `composite_risk_score` to determine the percentile rank.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-aggregation",
+          "requirements": "Aggregates final metrics from the calculated cohort data to produce the requested outputs.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "target-patient-percentile",
+              "requirements": "Correctly isolates and averages the percentile rank specifically for 93-year-old patients using a conditional `AVG`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-outcome-rates",
+              "requirements": "Correctly calculates the cohort-wide rates for 30-day mortality, AKI, and ARDS using `AVG()` and scales the results to percentages.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-survival-calculation",
+              "requirements": "Correctly calculates the median survival days for deceased patients using `APPROX_QUANTILES`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter for patient age between 60 and 70 at the time of ICU admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: The query must select only the first ICU stay for each hospital admission using a window function like `ROW_NUMBER()`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ugib-identification",
+          "requirements": "UGIB Identification: The query must join with the `diagnoses_icd` table and use appropriate ICD-9 and ICD-10 codes to identify patients with Upper Gastrointestinal Bleeding (UGIB).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-signs-selection",
+          "requirements": "Vital Signs Selection: The query must filter `chartevents` for specific itemids corresponding to heart rate (220045), MAP (220181, 225312), and respiratory rate (220210).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-for-vitals",
+          "requirements": "Temporal Filter for Vitals: The query must limit vital sign measurements to the first 48 hours of the ICU stay using `charttime BETWEEN co.intime AND DATETIME_ADD(co.intime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `icustays`, `admissions`, and `patients` tables to form the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "left-join-for-grouping",
+          "requirements": "LEFT JOIN for Grouping: The query must use LEFT JOINs from the base cohort to the UGIB and vitals data to correctly create the 'UGIB' and 'Control' groups.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "vital-instability-index-calculation",
+          "requirements": "Vital Instability Index Calculation: The query must correctly count episodes of tachycardia, hypotension, and tachypnea using conditional aggregation and sum them to create the `vital_instability_index`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "95th Percentile Calculation: The query must use `PERCENTILE_CONT(..., 0.95)` to calculate the 95th percentile of the instability index for the UGIB group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "decile-ranking",
+          "requirements": "Decile Ranking: The query must use `NTILE(10)` to partition the UGIB cohort into deciles based on the instability index to identify the top decile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-comparative-aggregation",
+          "requirements": "Final Comparative Aggregation: The query must aggregate metrics (avg ICU LOS, mortality, etc.) for the 'UGIB_Top_Decile' and 'Control_Age_Matched' groups separately.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query must combine the percentile value with the comparative group statistics into a single, comprehensive output table, potentially using a CROSS JOIN.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

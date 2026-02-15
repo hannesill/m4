@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters for male inpatients aged 42-52 with diagnoses of both diabetes and acute heart failure, and a minimum stay of 36 hours.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at the time of admission and filter for the range 42-52.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-diagnosis-selection",
+          "requirements": "Diabetes Diagnosis Selection: The query must identify patients with a diabetes diagnosis using appropriate ICD-9 ('250%') and ICD-10 ('E10%', 'E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acute-hf-diagnosis-selection",
+          "requirements": "Acute Heart Failure Diagnosis Selection: The query must identify patients with an acute heart failure diagnosis using appropriate ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: The query must enforce a minimum hospital stay of 36 hours to ensure the first 24h and final 12h time windows are distinct.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Accurately maps drug names from prescriptions to their respective antidiabetic classes.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "antidiabetic-class-mapping",
+          "requirements": "Antidiabetic Class Mapping: The query must use a CASE statement or similar logic to correctly categorize various drug names into the specified classes (Insulin, Metformin, Sulfonylurea, DPP-4, SGLT2, GLP-1, TZD).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, diagnoses, and medication prescriptions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join `admissions` and `patients` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-prescription-join",
+          "requirements": "Cohort-Prescription Join: The query must join the patient cohort with the `prescriptions` table on `hadm_id` to analyze medication events.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-linking",
+          "requirements": "Diagnosis Linking: The query must link diagnoses to the correct hospital admission using `hadm_id` within an `EXISTS` clause or a JOIN.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculates the prevalence percentage of each medication class in the first 24h and final 12h of admission, and the net change.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-window-identification",
+          "requirements": "Temporal Window Identification: The query must correctly identify medications administered within the first 24 hours of admission and the final 12 hours before discharge.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-level-aggregation",
+          "requirements": "Patient-Level Aggregation: The query must count the distinct number of patients (`COUNT(DISTINCT hadm_id)`) receiving each medication class within each time window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-calculation",
+          "requirements": "Prevalence Calculation: The query must calculate prevalence as a percentage by dividing the number of patients on a drug class by the total number of patients in the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "net-change-calculation",
+          "requirements": "Net Change Calculation: The query must compute the difference in percentage points between the final 12h prevalence and the first 24h prevalence.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complete-class-reporting",
+          "requirements": "Complete Class Reporting: The final output must include all requested medication classes, even those with zero prevalence, by using a LEFT JOIN from a complete class list.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

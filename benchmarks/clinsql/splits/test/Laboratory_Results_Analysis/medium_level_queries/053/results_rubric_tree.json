@@ -1,0 +1,233 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "patient-count-column-exists",
+              "requirements": "Exists Column for Patient Count (e.g., number_of_patients)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "admission-count-column-exists",
+              "requirements": "Exists Column for Admission Count (e.g., number_of_admissions)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-troponin-column-exists",
+              "requirements": "Exists Column for Mean Initial Troponin I (e.g., mean_initial_troponin_i)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stddev-troponin-column-exists",
+              "requirements": "Exists Column for Standard Deviation of Initial Troponin I (e.g., stddev_initial_troponin_i)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-troponin-column-exists",
+              "requirements": "Exists Column for Minimum Initial Troponin I (e.g., min_initial_troponin_i)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-troponin-column-exists",
+              "requirements": "Exists Column for Maximum Initial Troponin I (e.g., max_initial_troponin_i)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in Answer-Relevant Columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-count-validation",
+          "requirements": "Validation for Patient Count (e.g., number_of_patients)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-patient-count",
+              "requirements": "Clinically Plausible (100-10000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-patient-count",
+              "requirements": "Acceptable Range (500-3000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "admission-count-validation",
+          "requirements": "Validation for Admission Count (e.g., number_of_admissions)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-admission-count",
+              "requirements": "Clinically Plausible (100-12000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-admission-count",
+              "requirements": "Acceptable Range (500-4000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mean-troponin-validation",
+          "requirements": "Validation for Mean Initial Troponin I (e.g., mean_initial_troponin_i)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-mean-troponin",
+              "requirements": "Clinically Plausible (0.04-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-mean-troponin",
+              "requirements": "Acceptable Range (1.0-50.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "stddev-troponin-validation",
+          "requirements": "Validation for Standard Deviation of Initial Troponin I (e.g., stddev_initial_troponin_i)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-stddev-troponin",
+              "requirements": "Clinically Plausible (1.0-200.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-stddev-troponin",
+              "requirements": "Acceptable Range (10.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "min-troponin-validation",
+          "requirements": "Validation for Minimum Initial Troponin I (e.g., min_initial_troponin_i)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-min-troponin",
+              "requirements": "Clinically Plausible (>=0.04)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-min-troponin",
+              "requirements": "Acceptable Range (0.04-5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "max-troponin-validation",
+          "requirements": "Validation for Maximum Initial Troponin I (e.g., max_initial_troponin_i)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-max-troponin",
+              "requirements": "Clinically Plausible (10.0-1000.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-max-troponin",
+              "requirements": "Acceptable Range (100.0-700.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

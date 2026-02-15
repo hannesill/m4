@@ -1,0 +1,5 @@
+stay_category,diagnosis_priority,num_admissions,avg_imaging_procedures,min_imaging_procedures,max_imaging_procedures
+1-3 Days,Primary Diagnosis,170,0.04,0,2
+4-7 Days,Primary Diagnosis,83,0.01,0,1
+1-3 Days,Secondary Diagnosis,153,0.03,0,2
+4-7 Days,Secondary Diagnosis,141,0.06,0,2

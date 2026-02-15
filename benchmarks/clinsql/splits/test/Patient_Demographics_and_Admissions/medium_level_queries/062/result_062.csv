@@ -1,0 +1,4 @@
+discharge_group,total_admissions,long_los_admissions_ge7_days,proportion_long_los,percentile_rank_of_14_day_los
+Discharged Home,32062,7144,0.2228,0.949
+Discharged to Facility,6119,3260,0.5328,0.8219
+In-Hospital Mortality,1660,855,0.5151,0.7277

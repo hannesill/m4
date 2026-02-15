@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for the range 58-68 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 58 AND 68`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-filtering",
+          "requirements": "Diagnosis Filtering: Uses an `EXISTS` or `JOIN` clause with `diagnoses_icd` to filter for admissions with specified chest pain or AMI diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-value-filtering",
+          "requirements": "Troponin Value Filtering: Correctly filters for initial Troponin T values greater than 0.04 ng/mL (`it.initial_troponin_t_value > 0.04`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ami-chest-pain-code-selection",
+          "requirements": "AMI/Chest Pain Code Selection: Correctly identifies ICD-9 codes (LIKE '410%', '78650', '78651', '78659') and ICD-10 codes (LIKE 'I21%', 'I22%', 'R071', 'R072', 'R0782', 'R0789', 'R079') for Acute Myocardial Infarction and Chest Pain.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-t-identification",
+          "requirements": "Troponin T Identification: Identifies Troponin T lab events using the correct `itemid` (51003).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initial-troponin-logic",
+          "requirements": "Initial Troponin Logic: Uses a window function `ROW_NUMBER() OVER(PARTITION BY le.hadm_id ORDER BY le.charttime ASC)` to isolate the first recorded Troponin T value for each hospital admission.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: Correctly joins `patients` and `admissions` tables on `subject_id` to link demographic data with hospital stay information.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-labevents-join",
+          "requirements": "Admissions-LabEvents Join: Correctly joins the patient cohort with `labevents` on `hadm_id` to link admissions to lab results.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-counts",
+          "requirements": "Patient and Admission Counts: Correctly calculates total unique patients using `COUNT(DISTINCT subject_id)` and total admissions using `COUNT(hadm_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "in-hospital-mortality-calculation",
+          "requirements": "In-Hospital Mortality Calculation: Accurately calculates the in-hospital mortality rate by summing `hospital_expire_flag` and dividing by the total number of admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "summary-statistics-calculation",
+          "requirements": "Summary Statistics Calculation: Provides all requested summary statistics, including average age, average length of stay, and various metrics (avg, min, max, quartiles) for the initial Troponin T value.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: Correctly computes the length of stay in days using `DATETIME_DIFF(it.dischtime, it.admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

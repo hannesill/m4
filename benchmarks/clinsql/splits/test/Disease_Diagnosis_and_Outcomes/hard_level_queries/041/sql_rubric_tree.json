@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients aged 68-78 using `p.anchor_age BETWEEN 68 AND 78`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: The query must ensure patients had an ICU stay by linking to the `icustays` table, for instance, using an `EXISTS` clause on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-diagnosis-filter-ich",
+          "requirements": "Primary Diagnosis (ICH) Filter: The query must filter for patients with an Intracranial Hemorrhage diagnosis by joining with `diagnoses_icd` and checking for relevant ICD codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must correctly join the admissions-level cohort with the `diagnoses_icd` table on `hadm_id` to identify conditions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ich-code-selection",
+          "requirements": "ICH Code Selection: The query correctly identifies both ICD-9 (e.g., '430%', '431%') and ICD-10 (e.g., 'I60%', 'I61%') codes for Intracranial Hemorrhage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-flag-creation-aki-ards",
+          "requirements": "Outcome Flag Creation (AKI/ARDS): The query must correctly create binary flags for AKI and ARDS using appropriate ICD codes (e.g., `N17%` for AKI, `J80` for ARDS).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "thirty-day-mortality-logic",
+          "requirements": "30-Day Mortality Logic: The query must correctly calculate 30-day mortality by considering both in-hospital death (`hospital_expire_flag`) and post-discharge death within 30 days (`DATETIME_DIFF(dod, dischtime, DAY)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-component-flagging",
+          "requirements": "Risk Score Component Flagging: The query correctly creates flags for risk score components (e.g., septic shock, acute MI) using specified ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "survival-time-calculation",
+          "requirements": "Survival Time Calculation: The query must accurately calculate the survival duration for deceased patients from admission date to the date of death, handling both in-hospital and out-of-hospital deaths (`COALESCE(deathtime, dod)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "composite-risk-score-logic",
+          "requirements": "Composite Risk Score Logic: The query must implement the two-step risk score calculation: a weighted sum for a raw score, followed by min-max normalization.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-aggregation",
+          "requirements": "Final Metric Aggregation: The query must correctly calculate and format all requested metrics: cohort size, mortality/AKI/ARDS rates, risk score percentiles, and median survival for decedents.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "window-function-application",
+          "requirements": "Window Function Application: The query must correctly use window functions (`... OVER ()`) to perform aggregations across the entire cohort and return a single summary row.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

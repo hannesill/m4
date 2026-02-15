@@ -1,0 +1,6 @@
+regimen_type,early_initiation_rate_pct,late_initiation_rate_pct,net_change_pp
+Total Cohort Admissions (N),1642.0,1642.0,0.0
+Basal-Bolus,0.2,0.0,-0.2
+Basal,0.2,0.0,-0.2
+Bolus,3.0,0.3,-2.7
+Sliding-Scale,0.0,0.0,0.0

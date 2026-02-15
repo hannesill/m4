@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-p75-procedures",
+              "requirements": "Column exists for 75th percentile of procedures (e.g., 'p75_procedure_burden')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-p90-procedures",
+              "requirements": "Column exists for 90th percentile of procedures (e.g., 'p90_procedure_burden')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-avg-icu-los",
+              "requirements": "Column exists for average ICU length of stay (e.g., 'avg_icu_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-hospital-mortality",
+              "requirements": "Column exists for hospital mortality (e.g., 'hospital_mortality_percent')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns (procedure percentiles, LOS, mortality)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "p75-procedure-burden-validation",
+          "requirements": "Validate 75th percentile of procedure count",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p75-procedure-plausible",
+              "requirements": "Clinically Plausible Range (0-25 procedures)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-procedure-acceptable",
+              "requirements": "Acceptable Range (2-15 procedures)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p90-procedure-burden-validation",
+          "requirements": "Validate 90th percentile of procedure count",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p90-procedure-plausible",
+              "requirements": "Clinically Plausible Range (0-35 procedures)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-procedure-acceptable",
+              "requirements": "Acceptable Range (4-20 procedures)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-gte-p75",
+              "requirements": "90th percentile value must be greater than or equal to 75th percentile value for each cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "avg-icu-los-validation",
+          "requirements": "Validate average ICU length of stay",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "avg-icu-los-plausible",
+              "requirements": "Clinically Plausible Range (0.5-30 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-icu-los-acceptable",
+              "requirements": "Acceptable Range (1-20 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hospital-mortality-validation",
+          "requirements": "Validate hospital mortality percentage",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "hospital-mortality-plausible",
+              "requirements": "Clinically Plausible Range (0-100%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hospital-mortality-acceptable",
+              "requirements": "Acceptable Range (3-45%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cross-cohort-comparison-validation",
+          "requirements": "Validate cross-cohort comparisons for clinical consistency",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "sepsis-los-longer",
+              "requirements": "Average ICU LOS for sepsis cohort should be greater than the general cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "sepsis-mortality-higher",
+              "requirements": "Hospital mortality for sepsis cohort should be greater than the general cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

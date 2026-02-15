@@ -1,0 +1,140 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "early-initiation-rate-exists",
+              "requirements": "Column exists for '% started on GLP-1 within 72h' (e.g., early_initiation_rate_pct, early_glp1_rate)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "late-prevalence-rate-exists",
+              "requirements": "Column exists for '% on GLP-1 in last 48h' (e.g., late_prevalence_rate_pct, late_glp1_rate)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-exists",
+              "requirements": "Column exists for 'net change' (e.g., net_change_pp, change_in_rate)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in the answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "early-initiation-rate-validation",
+          "requirements": "Validate the value for '% started on GLP-1 within 72h' (e.g., early_initiation_rate_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "early-initiation-rate-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "early-initiation-rate-acceptable",
+              "requirements": "Acceptable Range (0-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "late-prevalence-rate-validation",
+          "requirements": "Validate the value for '% on GLP-1 in last 48h' (e.g., late_prevalence_rate_pct)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "late-prevalence-rate-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "late-prevalence-rate-acceptable",
+              "requirements": "Acceptable Range (0-25)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "net-change-validation",
+          "requirements": "Validate the value for 'net change' in percentage points (e.g., net_change_pp)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "net-change-plausible",
+              "requirements": "Clinically Plausible (-100 to 100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-acceptable",
+              "requirements": "Acceptable Range (-10 to 10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters for male inpatients aged 71-81 with diagnoses of both diabetes and acute heart failure.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter for patient age between 71 and 81 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-filtering-diabetes",
+          "requirements": "Diabetes Diagnosis: The query must correctly identify patients with a diabetes diagnosis using relevant ICD-9 ('250.xx') or ICD-10 ('E10', 'E11') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-filtering-heart-failure",
+          "requirements": "Heart Failure Diagnosis: The query must correctly identify patients with an acute heart failure diagnosis using relevant ICD-9 ('428.xx') or ICD-10 ('I50') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-stay-duration",
+          "requirements": "Inpatient Stay Duration: The query must filter for admissions with a duration of at least 72 hours to ensure the time windows are valid.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medication-identification-and-categorization",
+      "requirements": "Medication Identification and Categorization: Correctly identifies and categorizes the five specified classes of diabetes medications.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-name-matching",
+          "requirements": "Medication Name Matching: Uses a CASE statement with `LOWER(rx.drug) LIKE ...` to identify various drug names for the specified classes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "drug-class-mapping",
+          "requirements": "Drug Class Mapping: Correctly maps identified drugs to their respective classes: 'Metformin', 'Sulfonylureas', 'DPP-4 Inhibitors', 'SGLT2 Inhibitors', and 'Thiazolidinediones'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient demographics, diagnoses, and prescription data.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "join-patients-admissions",
+          "requirements": "Join Patients and Admissions: Correctly joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "join-admissions-diagnoses",
+          "requirements": "Join Admissions and Diagnoses: Correctly joins `admissions` and `diagnoses_icd` tables on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "join-cohort-prescriptions",
+          "requirements": "Join Cohort and Prescriptions: Correctly joins the patient cohort with the `prescriptions` table on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates the initiation rates for each medication class within the two specified time windows.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "time-window-definition",
+          "requirements": "Time Window Definition: Correctly defines the 'first 72h' and 'last 48h' windows relative to admission and discharge times using `DATETIME_DIFF`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-level-window-flagging",
+          "requirements": "Patient-Level Window Flagging: Correctly flags whether a patient received a medication in each window, grouping by `hadm_id` and `medication_class` to avoid double-counting.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rate-calculation",
+          "requirements": "Rate Calculation: Correctly calculates initiation rates as a percentage by dividing the count of patients receiving a drug in a window by the total number of patients in the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: The query must group by medication class, present rates for both time windows, and use `ROUND` to format the percentage to two decimal places.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

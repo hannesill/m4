@@ -1,0 +1,1 @@
+I have a 49-year-old female inpatient to evaluate. Among female inpatients aged 44–54 with intracranial hemorrhage, stratify by composite risk-score quartile and report patient counts, in-hospital mortality, cardiac and neurologic complication rates, and median LOS for survivors per quartile.

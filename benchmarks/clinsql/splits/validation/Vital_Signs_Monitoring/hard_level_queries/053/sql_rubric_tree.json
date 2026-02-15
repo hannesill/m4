@@ -1,0 +1,191 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query correctly filters for patients aged between 59 and 69 using `p.anchor_age BETWEEN 59 AND 69`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-patient-selection",
+          "requirements": "ICU Patient Selection: The query correctly selects patients from the `icustays` table to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-group-definition",
+          "requirements": "Cohort Group Definition: The query correctly creates two distinct patient groups (shock vs. no-shock) using a CASE statement based on the presence of a shock diagnosis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "shock-diagnosis-identification",
+          "requirements": "Shock Diagnosis Identification: The query identifies hospital admissions with a shock diagnosis by checking the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query correctly distinguishes between ICD-9 and ICD-10 versions and applies the appropriate shock codes for each.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "shock-icd-code-selection",
+          "requirements": "Shock ICD Code Selection: The query uses a comprehensive list of ICD codes for shock, including 'R57%', 'A41%', 'T81.12' for ICD-10 and '785.50', '785.51', '785.52', '785.59', '998.0' for ICD-9.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-24h-window",
+          "requirements": "First 24-Hour Window: The query correctly isolates `chartevents` data to the first 24 hours of the ICU stay using `ce.charttime BETWEEN co.intime AND DATETIME_ADD(co.intime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-icu-join",
+          "requirements": "Patient-ICU Join: The query correctly joins `icustays` and `patients` tables on `subject_id` to link demographic data with ICU stay information.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-shock-join",
+          "requirements": "Cohort-Shock Join: The query uses a LEFT JOIN to correctly associate shock diagnoses with the base patient cohort via `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-vitals-join",
+          "requirements": "Cohort-Vitals Join: The query correctly joins `chartevents` with the cohort on `stay_id` to link vital signs to specific ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-data-join",
+          "requirements": "Mortality Data Join: The query correctly joins with the `admissions` table on `hadm_id` to retrieve the `hospital_expire_flag`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hypotension-burden-logic",
+          "requirements": "Hypotension Burden Logic: The query correctly defines and counts hypotensive events as MAP < 65 (`valuenum < 65`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "tachycardia-burden-logic",
+          "requirements": "Tachycardia Burden Logic: The query correctly defines and counts tachycardic events as Heart Rate > 100 (`valuenum > 100`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "composite-instability-score-calculation",
+          "requirements": "Composite Instability Score Calculation: The query correctly calculates the composite score by summing the hypotensive and tachycardic episode counts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-los-calculation",
+          "requirements": "ICU LOS Calculation: The query correctly calculates ICU length of stay in hours using `DATETIME_DIFF(icu.outtime, icu.intime, HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-grouping",
+          "requirements": "Final Aggregation Grouping: The query correctly groups the final results by `cohort_group` to produce separate analytics for the shock and no-shock cohorts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query uses `APPROX_QUANTILES` to calculate the 25th, 50th, 75th, and 95th percentiles of the composite instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-calculation",
+          "requirements": "Final Metric Calculation: The query correctly calculates the average instability score, burden scores, ICU LOS, and mortality rate using AVG().",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

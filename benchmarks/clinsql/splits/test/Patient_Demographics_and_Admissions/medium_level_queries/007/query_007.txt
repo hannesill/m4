@@ -1,0 +1,1 @@
+I have an 83-year-old man transferred from another hospital. Among male inpatients aged 78–88 transferred, report number of admissions and LOS p50/p75/p90/p95 stratified by survived vs in-hospital death, plus percentile rank of a 10-day LOS.

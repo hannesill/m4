@@ -1,0 +1,1 @@
+Patient: 68-year-old female ICU admission. For female inpatients 63–73 with ICU stay, report n, mean and median LOS by discharge outcome (home, hospice, in-hospital death) and percent ≤10 days.

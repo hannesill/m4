@@ -1,0 +1,211 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "map-category-column-exists",
+              "requirements": "Column exists for MAP categories (e.g., 'map_category', 'map_group').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-column-exists",
+              "requirements": "Column exists for the count of stays (e.g., 'number_of_stays', 'stay_count').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-map-column-exists",
+              "requirements": "Column exists for the mean of stay average MAPs (e.g., 'mean_of_stay_averages', 'avg_map').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-map-column-exists",
+              "requirements": "Column exists for the median of stay average MAPs (e.g., 'median_of_stay_averages', 'median_map').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-map-column-exists",
+              "requirements": "Column exists for the IQR of stay average MAPs (e.g., 'iqr_of_stay_averages', 'iqr_map'). This can also be represented by P25 and P75 columns.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the answer-relevant columns ('map_category', 'number_of_stays', 'mean_of_stay_averages', 'median_of_stay_averages', 'iqr_of_stay_averages').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "number-of-stays-validation",
+          "requirements": "Validation for the column 'number_of_stays'.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "number-of-stays-plausible",
+              "requirements": "Clinically Plausible: Total number of stays across all categories should be between 1000 and 10000.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "number-of-stays-acceptable",
+              "requirements": "Acceptable Range: Total number of stays across all categories should be between 2000 and 5000.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mean-map-validation",
+          "requirements": "Validation for the column 'mean_of_stay_averages'. The mean MAP for each category must be within the bounds of that category.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-map-cat1-plausible",
+              "requirements": "Clinically Plausible for '<65' category: Mean MAP is between 40 and 64.9.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-map-cat2-plausible",
+              "requirements": "Clinically Plausible for '65-74' category: Mean MAP is between 65 and 74.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-map-cat3-plausible",
+              "requirements": "Clinically Plausible for '75-84' category: Mean MAP is between 75 and 84.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-map-cat4-plausible",
+              "requirements": "Clinically Plausible for '>=85' category: Mean MAP is between 85 and 120.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-map-validation",
+          "requirements": "Validation for the column 'median_of_stay_averages'. The median MAP for each category must be within the bounds of that category.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-map-cat1-plausible",
+              "requirements": "Clinically Plausible for '<65' category: Median MAP is between 40 and 64.9.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-map-cat2-plausible",
+              "requirements": "Clinically Plausible for '65-74' category: Median MAP is between 65 and 74.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-map-cat3-plausible",
+              "requirements": "Clinically Plausible for '75-84' category: Median MAP is between 75 and 84.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-map-cat4-plausible",
+              "requirements": "Clinically Plausible for '>=85' category: Median MAP is between 85 and 120.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-map-validation",
+          "requirements": "Validation for the column 'iqr_of_stay_averages'.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "iqr-map-plausible",
+              "requirements": "Clinically Plausible: IQR values for all categories are between 1 and 20.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-map-acceptable",
+              "requirements": "Acceptable Range: IQR values for all categories are between 2 and 15.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

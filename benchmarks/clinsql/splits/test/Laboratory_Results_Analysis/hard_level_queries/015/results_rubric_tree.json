@@ -1,0 +1,194 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p75_score_threshold-column-exists",
+              "requirements": "Column Exists: 75th percentile of the instability score (e.g., 'p75_score_threshold')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg_length_of_stay_days-column-exists",
+              "requirements": "Column Exists: Average length of stay (e.g., 'avg_length_of_stay_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality_rate_percent-column-exists",
+              "requirements": "Column Exists: Mortality rate (e.g., 'mortality_rate_percent')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "critical_lab_rates-columns-exist",
+              "requirements": "Columns Exist: At least one critical lab rate (e.g., 'critical_sodium_rate', 'critical_potassium_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in key columns for the high-instability group (p75_score_threshold, avg_length_of_stay_days, mortality_rate_percent, critical lab rates)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "p75-score-validation",
+          "requirements": "Validation for 75th Percentile Lab Instability Score",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p75-score-plausible",
+              "requirements": "Clinically Plausible (0.0 - 20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-score-acceptable",
+              "requirements": "Acceptable Range (0.5 - 5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "los-validation",
+          "requirements": "Validation for Average Length of Stay (High-Instability Stroke Group)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "los-plausible",
+              "requirements": "Clinically Plausible (2.0 - 90.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "los-acceptable",
+              "requirements": "Acceptable Range (5.0 - 30.0 days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validation for Mortality Rate (High-Instability Stroke Group)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-plausible",
+              "requirements": "Clinically Plausible (1.0 - 100.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-acceptable",
+              "requirements": "Acceptable Range (5.0 - 40.0%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "lab-rate-validation-stroke-group",
+          "requirements": "Validation for Critical Lab Rates (High-Instability Stroke Group) - Average of all reported rates",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "lab-rate-stroke-plausible",
+              "requirements": "Clinically Plausible (0.01 - 5.0 events/patient)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "lab-rate-stroke-acceptable",
+              "requirements": "Acceptable Range (0.1 - 2.5 events/patient)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "lab-rate-validation-control-group",
+          "requirements": "Validation for Critical Lab Rates (Control Group) - Average of all reported rates",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "lab-rate-control-plausible",
+              "requirements": "Clinically Plausible (0.0 - 2.0 events/patient)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "lab-rate-control-acceptable",
+              "requirements": "Acceptable Range (0.01 - 1.0 events/patient)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the initial patient population based on demographics and diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at admission and filter for ages between 67 and 77.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-diagnosis-filtering",
+          "requirements": "AMI Diagnosis Filtering: The query must correctly identify admissions with an Acute Myocardial Infarction diagnosis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd9-ami-codes",
+              "requirements": "ICD-9 AMI Codes: Correctly filters for ICD-9 codes using `icd_code LIKE '410%'` and `icd_version = 9`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd10-ami-codes",
+              "requirements": "ICD-10 AMI Codes: Correctly filters for ICD-10 codes using `icd_code LIKE 'I21%'` and `icd_version = 10`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medication-complexity-calculation",
+      "requirements": "Medication Complexity Calculation: Computes the custom medication complexity score for each admission.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-24h-prescription-identification",
+          "requirements": "First 24-Hour Prescription Identification: Correctly filters prescriptions to include only those started within 24 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complexity-score-logic",
+          "requirements": "Complexity Score Logic: Accurately implements the defined formula: (distinct drugs*2) + (distinct routes) + (distinct IV drugs*3).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-outcomes-calculation",
+      "requirements": "Clinical Outcomes Calculation: Correctly computes length of stay, mortality, and readmission.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay (LOS) Calculation: Correctly calculates the difference between discharge and admission times in days.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "in-hospital-mortality-flag",
+          "requirements": "In-Hospital Mortality Flag: Correctly uses the `hospital_expire_flag` to identify in-hospital deaths.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-logic",
+          "requirements": "30-Day Readmission Logic: Correctly uses a window function to identify if a subsequent admission occurred within 30 days of discharge for the same patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-stratification-and-aggregation",
+      "requirements": "Final Stratification and Aggregation: Stratifies the cohort into tertiles and calculates the required metrics for each tertile.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "tertile-stratification",
+          "requirements": "Tertile Stratification: Correctly uses `NTILE(3)` over the medication complexity score to stratify admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final query groups results by the calculated `complexity_tertile`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-metrics-calculation",
+          "requirements": "Output Metrics Calculation: Correctly calculates and aggregates all required output columns per tertile (count, score range/mean, mean LOS, mortality%, readmission%).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

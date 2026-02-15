@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the base population of male heart failure patients within the specified age range.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-at-admission-calculation",
+          "requirements": "Age at Admission Calculation: Correctly calculates patient age at the time of admission using `anchor_age`, `anchor_year`, and `admittime`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-filtering",
+          "requirements": "Age Range Filtering: Filters the cohort for patients aged between 38 and 48 at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-condition-identification",
+          "requirements": "Heart Failure Condition Identification: Correctly identifies patients with heart failure using both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "stratification-and-analytics",
+      "requirements": "Stratification and Clinical Analytics: Correctly implements stratification logic and calculates the required metrics.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icu-stratification",
+          "requirements": "ICU Stratification: Correctly determines ICU vs. non-ICU status by checking for an associated `hadm_id` in the `icustays` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation-and-stratification",
+          "requirements": "LOS Calculation and Stratification: Calculates length of stay using `DATETIME_DIFF` and correctly buckets it into '1-3', '4-7', and '>=8' days categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "charlson-index-stratification",
+          "requirements": "Charlson Index Stratification: Correctly stratifies patients based on the Charlson Comorbidity Index into '<=3', '4-5', and '>5' categories.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-count-calculation",
+          "requirements": "Comorbidity Count Calculation: Calculates a per-admission comorbidity count by counting distinct ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "In-Hospital Mortality Rate Calculation: Correctly calculates the in-hospital mortality percentage using `SUM(hospital_expire_flag)` and `COUNT(*)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "confidence-interval-calculation",
+          "requirements": "Confidence Interval Calculation: Correctly applies the Wilson score interval formula to calculate the 95% CI for the mortality rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Properly joins tables to construct the cohort and retrieve necessary data.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: Correctly joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: Correctly joins the patient cohort with `diagnoses_icd` on `hadm_id` to identify heart failure cases.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-charlson-join",
+          "requirements": "Admission-Charlson Join: Correctly performs a LEFT JOIN with the `charlson` table on `hadm_id` to append the Charlson index.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-output",
+      "requirements": "Final Aggregation and Output Formatting: Correctly groups the results and formats the final output.",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: Correctly groups the final results by all three stratification categories (ICU, LOS, Charlson).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Rounds the calculated metrics (`avg_comorbidity_count`, `mortality_rate_percent`, and CIs) to the specified precision.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "result-ordering",
+          "requirements": "Result Ordering: Orders the final output logically by severity, LOS, and Charlson categories for clear presentation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

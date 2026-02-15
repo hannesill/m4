@@ -1,0 +1,5 @@
+risk_quartile,num_patients,avg_risk_score,min_risk_score,max_risk_score,mortality_rate_30_day_pct,cardio_complication_rate_pct,neuro_complication_rate_pct,median_survivor_los_days,baseline_all_fem_59_69_mort_pct
+1,58,7.25,2.5,10.5,62.07,0.0,8.62,7,3.96
+2,58,13.41,10.5,17.5,53.45,1.72,25.86,17,3.96
+3,58,22.59,18.0,28.5,58.62,24.14,12.07,12,3.96
+4,58,54.08,28.5,114.5,70.69,81.03,15.52,22,3.96

@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 50-60 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 50 AND 60`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "type-2-diabetes-identification",
+          "requirements": "Type 2 Diabetes Identification: Correctly identifies patients with Type 2 Diabetes using both ICD-9 ('250' with specific 5th digit) and ICD-10 ('E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-identification",
+          "requirements": "Heart Failure Identification: Correctly identifies patients with Heart Failure using both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: Filters for admissions lasting at least 72 hours using `DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 72`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for GLP-1 Agonists",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "glp1-drug-identification",
+          "requirements": "GLP-1 Drug Identification: Identifies GLP-1 agonist prescriptions by searching for multiple relevant drug names (e.g., 'liraglutide', 'semaglutide', 'ozempic') in the `prescriptions` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescription-temporal-constraint",
+          "requirements": "Prescription Temporal Constraint: Ensures that the identified GLP-1 prescriptions were administered during the admission using `rx.starttime BETWEEN c.admittime AND c.dischtime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-construction-joins",
+          "requirements": "Cohort Construction Joins: Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to build the initial patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-data-join",
+          "requirements": "Medication Data Join: Correctly performs a LEFT JOIN from the cohort to the `prescriptions` table on `hadm_id` to include patients without GLP-1 prescriptions in the final cohort count.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "early-initiation-logic",
+          "requirements": "Early Initiation Logic: Correctly identifies administrations within the first 12 hours of admission using `DATETIME_DIFF(rx.starttime, c.admittime, HOUR) < 12`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "late-prevalence-logic",
+          "requirements": "Late Prevalence Logic: Correctly identifies administrations within the final 72 hours of admission using `DATETIME_DIFF(c.dischtime, rx.starttime, HOUR) <= 72`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: Correctly calculates the early initiation and late prevalence percentages by dividing the respective patient counts by the total cohort size, handling potential division by zero.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "net-change-calculation",
+          "requirements": "Net Change Calculation: Correctly computes the net percentage-point change by subtracting the early initiation percentage from the late prevalence percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aggregation-uniqueness",
+          "requirements": "Aggregation Uniqueness: Uses `COUNT(DISTINCT c.hadm_id)` to ensure that each admission is counted only once for both the total cohort and the subgroups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+For a female COPD inpatient I'm evaluating, what's the maximum peak serum creatinine among hospitalized female COPD patients (mg/dL)?

@@ -1,0 +1,5 @@
+los_group,icu_status,number_of_admissions,mean_ct_mri_scans
+1-4 Days,ICU Stay,23,0.0
+1-4 Days,No ICU Stay,268,0.0
+5-7 Days,ICU Stay,34,0.0
+5-7 Days,No ICU Stay,117,0.0

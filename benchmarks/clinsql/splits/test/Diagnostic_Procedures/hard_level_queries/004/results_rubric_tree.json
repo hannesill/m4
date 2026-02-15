@@ -1,0 +1,248 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "procedure-burden-percentiles-columns-exist",
+              "requirements": "Columns exist for 25th, 50th, and 90th percentile of procedure burden (e.g., p25_procedure_burden, p50_procedure_burden, p90_procedure_burden)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-column-exists",
+              "requirements": "Column exists for average ICU length of stay (e.g., avg_icu_los_days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column exists for in-hospital mortality percentage (e.g., in_hospital_mortality_pct)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "procedure-burden-validation",
+          "requirements": "Procedure Burden Percentiles Validation for ICH Cohort",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p25-procedure-burden-validation",
+              "requirements": "Validate 25th percentile of procedure burden for ICH cohort",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "p25-procedure-burden-plausible",
+                  "requirements": "Value is clinically plausible (0-50)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "p25-procedure-burden-acceptable",
+                  "requirements": "Value is within acceptable range (1-5)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "p50-procedure-burden-validation",
+              "requirements": "Validate 50th percentile of procedure burden for ICH cohort",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "p50-procedure-burden-plausible",
+                  "requirements": "Value is clinically plausible (0-75)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "p50-procedure-burden-acceptable",
+                  "requirements": "Value is within acceptable range (3-10)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "p90-procedure-burden-validation",
+              "requirements": "Validate 90th percentile of procedure burden for ICH cohort",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "p90-procedure-burden-plausible",
+                  "requirements": "Value is clinically plausible (0-100)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "p90-procedure-burden-acceptable",
+                  "requirements": "Value is within acceptable range (8-25)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "ICU Length of Stay Validation",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "icu-los-general-validation",
+              "requirements": "Validate ICU LOS for General ICU cohort",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "icu-los-general-plausible",
+                  "requirements": "Value is clinically plausible in days (0.5-30.0)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "icu-los-general-acceptable",
+                  "requirements": "Value is within acceptable range in days (2.0-5.0)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "icu-los-ich-validation",
+              "requirements": "Validate ICU LOS for ICH cohort",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "icu-los-ich-plausible",
+                  "requirements": "Value is clinically plausible in days (1.0-40.0)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "icu-los-ich-acceptable",
+                  "requirements": "Value is within acceptable range in days (4.0-12.0)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "icu-los-relative-comparison",
+              "requirements": "ICU LOS for ICH cohort is greater than General ICU cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "In-Hospital Mortality Validation",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-general-validation",
+              "requirements": "Validate mortality for General ICU cohort",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "mortality-general-plausible",
+                  "requirements": "Value is clinically plausible percentage (0-100)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "mortality-general-acceptable",
+                  "requirements": "Value is within acceptable range (5.0-25.0)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "mortality-ich-validation",
+              "requirements": "Validate mortality for ICH cohort",
+              "sequential": false,
+              "critical": false,
+              "sub_tasks": [
+                {
+                  "id": "mortality-ich-plausible",
+                  "requirements": "Value is clinically plausible percentage (0-100)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "mortality-ich-acceptable",
+                  "requirements": "Value is within acceptable range (12.0-45.0)",
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "mortality-relative-comparison",
+              "requirements": "Mortality for ICH cohort is greater than General ICU cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

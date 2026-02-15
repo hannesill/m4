@@ -1,0 +1,3 @@
+med_class,total_cohort_patients,patients_on_in_early_window,initiation_rate_early_pct,patients_on_in_late_window,initiation_rate_late_pct,transition_continued,transition_initiated_late,transition_discontinued,transition_never_prescribed
+Insulin,1932,1379,71.4,527,27.3,437,90,942,463
+Oral Agents,1932,19,1.0,43,2.2,5,38,14,1875

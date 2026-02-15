@@ -1,0 +1,1 @@
+Patient is a 42-year-old man — among male ICU patients aged 37–47, what's the IQR of first recorded SpO2 on admission?

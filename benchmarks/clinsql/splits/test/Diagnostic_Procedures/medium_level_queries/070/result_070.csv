@@ -1,0 +1,5 @@
+stay_category,icu_status,num_admissions,p25_imaging_count,p50_imaging_count,p75_imaging_count
+1-4 Day Stay,ICU Stay,600,0,0,0
+1-4 Day Stay,No ICU Stay,4192,0,0,0
+5-8 Day Stay,ICU Stay,942,0,0,0
+5-8 Day Stay,No ICU Stay,1679,0,0,0

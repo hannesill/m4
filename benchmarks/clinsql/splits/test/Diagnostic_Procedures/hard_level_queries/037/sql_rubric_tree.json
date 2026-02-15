@@ -1,0 +1,183 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-constraint",
+          "requirements": "Correctly calculates age at admission and filters for the range 53 to 63 years using `age_at_admission BETWEEN 53 AND 63`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-filter",
+          "requirements": "Identifies and filters for only the first ICU stay per hospital admission using `ROW_NUMBER()` and a `rn = 1` condition.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Correctly joins `patients`, `admissions`, and `icustays` tables using `subject_id` and `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-data-join",
+          "requirements": "Correctly joins `procedureevents` to the ICU stay cohort using `stay_id` to link procedures to patients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sepsis-cohort-integration",
+          "requirements": "Uses a `LEFT JOIN` to integrate sepsis diagnosis data, ensuring the non-sepsis (control) cohort is retained for comparison.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-burden-integration",
+          "requirements": "Uses a `LEFT JOIN` to attach the calculated procedure counts to the main cohort, using `COALESCE` to correctly handle patients with zero procedures.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "sepsis-identification-logic",
+          "requirements": "Correctly identifies sepsis admissions using ICD codes.",
+          "weight": 0,
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "sepsis-icd-version-handling",
+              "requirements": "Differentiates between ICD-9 and ICD-10 codes using the `icd_version` column.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "sepsis-icd9-code-selection",
+              "requirements": "Selects appropriate ICD-9 codes for sepsis, such as `9959%` or `78552%`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "sepsis-icd10-code-selection",
+              "requirements": "Selects appropriate ICD-10 codes for sepsis, such as `A41%`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "procedure-time-window",
+          "requirements": "Filters procedures to only those occurring within the first 24 hours of the ICU admission time using `starttime BETWEEN cb.intime AND DATETIME_ADD(cb.intime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-stratification",
+          "requirements": "Correctly uses a `CASE` statement to separate the cohort into 'Sepsis' and 'General ICU' groups based on the sepsis diagnosis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Correctly groups the final result set by the stratified `cohort` column to perform comparative analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-burden-quantification",
+          "requirements": "Calculates the procedure burden by counting the number of distinct procedures per stay using `COUNT(DISTINCT pe.itemid)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-percentile-calculation",
+          "requirements": "Calculates the 75th and 90th percentiles of the procedure burden using `APPROX_QUANTILES(..., 100)[OFFSET(75)]` and `[OFFSET(90)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-metric-calculation",
+          "requirements": "Calculates the average ICU Length of Stay in days using `AVG(DATETIME_DIFF(cb.outtime, cb.intime, HOUR) / 24.0)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-metric-calculation",
+          "requirements": "Calculates the average hospital mortality as a percentage using `AVG(hospital_expire_flag) * 100`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

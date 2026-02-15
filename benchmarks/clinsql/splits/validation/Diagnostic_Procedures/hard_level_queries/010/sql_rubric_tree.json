@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Accurately filtering for the primary patient population of male ICU patients aged 40-50 and creating the two comparison groups.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must correctly filter for male patients using `fi.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate patient age at the time of admission and filter for patients between 40 and 50 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: The query must isolate the first ICU stay for each hospital admission using a window function like `ROW_NUMBER()` to ensure each admission is counted only once.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifying patients with hemorrhagic stroke to define the case group.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hemorrhagic-stroke-identification",
+          "requirements": "Hemorrhagic Stroke Identification: The query must correctly identify patients by filtering `diagnoses_icd` on the appropriate ICD-9 ('430%', '431%', '432%') and ICD-10 ('I60%', 'I61%', 'I62%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly use the `icd_version` column to distinguish between ICD-9 and ICD-10 codes in its filtering logic.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-group-definition",
+          "requirements": "Cohort Group Definition: The query must use a CASE statement or similar logic to correctly categorize patients into 'Hemorrhagic Stroke' and 'Age-Matched ICU' groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joining all necessary tables from the MIMIC-IV database to construct the cohort and retrieve outcomes.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "demographic-icu-join",
+          "requirements": "Demographic and ICU Join: The query must correctly join `icustays`, `admissions`, and `patients` tables using `subject_id` and `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-data-join",
+          "requirements": "Procedure Data Join: The query must correctly LEFT JOIN `procedureevents` to the patient cohort using `stay_id` to associate procedures with specific ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Calculation of the specified outcome metrics for each cohort within the defined time window.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "procedure-temporal-filter",
+          "requirements": "Procedure Temporal Filter: The query must limit the analysis of procedures to the first 72 hours of the ICU stay using a condition like `pe.starttime BETWEEN c.intime AND DATETIME_ADD(c.intime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-load-calculation",
+          "requirements": "Diagnostic Load Calculation: The query must calculate the number of unique diagnostic procedures per stay using `COUNT(DISTINCT pe.itemid)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metrics-aggregation",
+          "requirements": "Final Metrics Aggregation: The final query must correctly group by cohort and compute all three required metrics: 90th percentile of diagnostic load using `APPROX_QUANTILES`, average ICU LOS, and in-hospital mortality rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

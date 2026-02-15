@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-and-condition-identification",
+      "requirements": "Patient and Condition Identification",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using the condition p.gender = 'M'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pneumonia-code-selection",
+          "requirements": "Pneumonia Code Selection: The query must identify pneumonia cases by filtering diagnoses_icd for both ICD-9 codes (e.g., '480'-'486') and ICD-10 codes (e.g., 'J12'-'J18').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly use the icd_version column to differentiate between ICD-9 and ICD-10 code ranges.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "serum-creatinine-identification",
+          "requirements": "Serum Creatinine Identification: The query must correctly identify serum creatinine measurements in the labevents table using itemid = 50912.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "nadir-creatinine-calculation",
+          "requirements": "Nadir Creatinine Calculation: The query must use the MIN() aggregation function on the creatinine value to find the nadir (lowest) value for each hospital admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-range-filtering",
+          "requirements": "Value Range Filtering: The query should apply a reasonable filter (e.g., BETWEEN 0.5 AND 10) on the creatinine value to exclude erroneous or outlier measurements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-diagnosis-join",
+          "requirements": "Patient-Diagnosis Join: The query must correctly join the patients and diagnoses_icd tables on subject_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-lab-join",
+          "requirements": "Admission-Lab Join: The query must correctly join the identified pneumonia admissions with the labevents table on hadm_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-by-admission",
+          "requirements": "Grouping by Admission: The query must group lab events by hadm_id to correctly calculate the nadir creatinine for each distinct hospital stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "interquartile-range-calculation",
+          "requirements": "Interquartile Range (IQR) Calculation: The query must calculate the IQR by finding the difference between the 3rd and 1st quartiles, for example, using APPROX_QUANTILES(nadir_creatinine, 4)[OFFSET(3)] - APPROX_QUANTILES(nadir_creatinine, 4)[OFFSET(1)].",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to a reasonable precision (e.g., 2 decimal places) for readability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters for the specified patient demographic and location.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter the patient cohort to an age range of 49-59 using `p.anchor_age BETWEEN 49 AND 59`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "care-unit-selection",
+          "requirements": "Care Unit Selection: The query must filter for ICU stays in 'Step-down' or 'Intermediate' care units using `icu.first_careunit LIKE '%Stepdown%' OR icu.first_careunit LIKE '%Intermediate%'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies and filters for the correct medical event (diastolic blood pressure).",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "diastolic-bp-code-selection",
+          "requirements": "Diastolic BP Code Selection: The query must correctly identify diastolic blood pressure measurements using the appropriate item IDs (e.g., `ce.itemid IN (220051, 8368)`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-range-filtering",
+          "requirements": "Value Range Filtering: The query should apply a plausible clinical range filter for diastolic blood pressure values to exclude outliers (e.g., `ce.valuenum BETWEEN 30 AND 150`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables to link patient demographics to their clinical events.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-to-icustay-join",
+          "requirements": "Patient to ICU Stay Join: The query must join the `patients` and `icustays` tables on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icustay-to-chartevents-join",
+          "requirements": "ICU Stay to Chart Events Join: The query must join the `icustays` and `chartevents` tables on `stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the correct calculations to derive the final metric.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-aggregation",
+          "requirements": "Per-Stay Aggregation: The query must first calculate the mean diastolic blood pressure per stay by grouping by `stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-calculation",
+          "requirements": "Mean Calculation: The query must use the AVG() function on `valuenum` to calculate the mean diastolic blood pressure.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "iqr-calculation",
+          "requirements": "IQR Calculation: The query must calculate the Interquartile Range (IQR) of the per-stay mean diastolic blood pressures, typically using APPROX_QUANTILES and subtracting the first quartile from the third.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

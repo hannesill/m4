@@ -1,0 +1,3 @@
+medication_class,total_patients_in_cohort,initiated_first_24h_count,initiated_last_24h_count,pct_initiated_first_24h,pct_initiated_last_24h,absolute_difference_pp
+Insulin,5324,4609,15,86.57,0.28,-86.29
+Oral Agents,5324,185,66,3.47,1.24,-2.24

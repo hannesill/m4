@@ -1,0 +1,241 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-percentile",
+              "requirements": "Column for 95th percentile of instability index must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-comparison",
+              "requirements": "Column identifying comparison groups (e.g., top decile, control) must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-tachycardia",
+              "requirements": "Column for average tachycardia episodes must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-hypotension",
+              "requirements": "Column for average hypotension episodes must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-tachypnea",
+              "requirements": "Column for average tachypnea episodes must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-icu-los",
+              "requirements": "Column for average ICU LOS must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "secondary-column-exists-mortality",
+              "requirements": "Column for mortality rate must exist.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "percentile-instability-index-validation",
+          "requirements": "Validate 95th Percentile of Vital Instability Index",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentile-instability-index-plausible",
+              "requirements": "Clinically Plausible (20-150). The index is based on vital signs; high values are expected for unstable patients.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-instability-index-acceptable",
+              "requirements": "Acceptable Range (70-120). For a high-risk UGIB cohort, the 95th percentile should reflect significant instability.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "tachycardia-validation",
+          "requirements": "Validate Average Tachycardia Episodes",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "tachycardia-plausible",
+              "requirements": "Clinically Plausible (0-48). An episode is measured each hour over 48 hours.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachycardia-acceptable",
+              "requirements": "Acceptable Range (Top Decile: 20-45, Control: 2-20). The unstable UGIB group should have significantly more episodes.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hypotension-validation",
+          "requirements": "Validate Average Hypotension Episodes",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "hypotension-plausible",
+              "requirements": "Clinically Plausible (0-48). An episode is measured each hour over 48 hours.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hypotension-acceptable",
+              "requirements": "Acceptable Range (Top Decile: 5-30, Control: 1-15). UGIB top decile should exhibit more hypotension due to bleeding.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "tachypnea-validation",
+          "requirements": "Validate Average Tachypnea Episodes",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "tachypnea-plausible",
+              "requirements": "Clinically Plausible (0-48). An episode is measured each hour over 48 hours.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachypnea-acceptable",
+              "requirements": "Acceptable Range (Top Decile: 20-48, Control: 5-25). Unstable patients often have respiratory compensation.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "Validate Average ICU LOS (days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "icu-los-plausible",
+              "requirements": "Clinically Plausible (1-50). ICU stays can be long but are rarely over 50 days on average.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-acceptable",
+              "requirements": "Acceptable Range (Top Decile: 5-15, Control: 2-7). Sicker patients (top decile) are expected to have a longer ICU stay.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validate Mortality Rate",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-plausible",
+              "requirements": "Clinically Plausible (0.0-1.0). Mortality is a rate between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-acceptable",
+              "requirements": "Acceptable Range (Top Decile: 0.3-0.7, Control: 0.05-0.2). The top decile UGIB cohort has a very high expected mortality rate.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for male patients using `pat.gender = 'M'` in the `icustay_details` CTE.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query accurately calculates age at ICU admission and filters for patients aged 57 to 67 using `(DATETIME_DIFF(icu.intime, DATETIME(pat.anchor_year, 1, 1, 0, 0, 0), YEAR) + pat.anchor_age) BETWEEN 57 AND 67`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "transplant-identification",
+          "requirements": "Transplant Identification: The query correctly identifies solid-organ transplant patients by filtering `diagnoses_icd` for both ICD-9 ('V42', '9968') and ICD-10 ('Z94', 'T86') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-grouping",
+          "requirements": "Cohort Grouping: The query correctly assigns patients to 'Transplant' and 'Non-Transplant' groups based on the presence of transplant-related diagnosis codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-event-definition",
+          "requirements": "Instability Event Definition: The query correctly defines abnormal events for fever (Temp > 38.5\u00b0C, handling both Celsius and Fahrenheit), hypoxemia (SpO2 < 90%), and tachypnea (RR > 20) using a CASE statement in the `abnormal_events` CTE.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-72h-filter",
+          "requirements": "First 72-Hour Filter: The query correctly restricts the analysis of vital signs to the first 72 hours of each patient's ICU stay using `DATETIME_DIFF(fv.charttime, co.intime, HOUR) <= 72`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query correctly joins `icustays` with `patients` on `subject_id` and `admissions` on `hadm_id` to construct the patient cohort and retrieve mortality data.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "chartevents-join",
+          "requirements": "Chartevents Join: The query correctly links `chartevents` data to the patient cohort using `stay_id` to analyze vital signs.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnoses-join-logic",
+          "requirements": "Diagnoses Join Logic: The query correctly uses `hadm_id` to link transplant diagnoses from the `diagnoses_icd` table to the main patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "composite-score-aggregation",
+          "requirements": "Composite Score Aggregation: The query correctly calculates the `composite_instability_score` for each `stay_id` by summing the counts of fever, hypoxemia, and tachypnea events.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: The query correctly groups the final results by `cohort_group` to compare the Transplant and Non-Transplant cohorts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-metrics-calculation",
+          "requirements": "Output Metrics Calculation: The query calculates the required comparison metrics: ICU LOS, mortality rate, and median/percentiles of the instability score using appropriate aggregation and quantile functions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

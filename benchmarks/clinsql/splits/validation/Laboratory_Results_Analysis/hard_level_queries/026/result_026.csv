@@ -1,0 +1,13 @@
+sort_key,metric_type,metric_name,value,description,cohort_size
+1,COHORT_SUMMARY,Cohort Size,399,Total number of patients in the target cohort.,399
+2,COHORT_SUMMARY,In-Hospital Mortality Rate (%),41.10,Percentage of patients in the cohort who died during the hospital admission.,399
+3,COHORT_SUMMARY,Average Length of Stay (Days),12.85,Average hospital length of stay for the cohort.,399
+4,COHORT_SUMMARY,Maximum Instability Score,6,The highest number of unique critical lab derangements for any single patient in the cohort.,399
+5,COHORT_SUMMARY,"Instability Score Percentiles (25th, 50th, 75th, 90th)","P25: 0, P50: 1, P75: 2, P90: 3",Distribution of the instability score across the cohort.,399
+6,CRITICAL_FREQUENCY,ALT,Cohort: 17.45% vs. General: 1.04%,"Comparison of critical event frequency. Cohort N=361, General N=169787 (N=patients with this lab drawn in first 48h).",
+6,CRITICAL_FREQUENCY,AST,Cohort: 24.93% vs. General: 1.27%,"Comparison of critical event frequency. Cohort N=361, General N=170393 (N=patients with this lab drawn in first 48h).",
+6,CRITICAL_FREQUENCY,Bilirubin,Cohort: 4.42% vs. General: 1.62%,"Comparison of critical event frequency. Cohort N=362, General N=163322 (N=patients with this lab drawn in first 48h).",
+6,CRITICAL_FREQUENCY,Creatinine,Cohort: 14.72% vs. General: 4.85%,"Comparison of critical event frequency. Cohort N=394, General N=394484 (N=patients with this lab drawn in first 48h).",
+6,CRITICAL_FREQUENCY,INR,Cohort: 6.93% vs. General: 1.12%,"Comparison of critical event frequency. Cohort N=375, General N=238113 (N=patients with this lab drawn in first 48h).",
+6,CRITICAL_FREQUENCY,Lactate,Cohort: 48.06% vs. General: 11.27%,"Comparison of critical event frequency. Cohort N=258, General N=72366 (N=patients with this lab drawn in first 48h).",
+6,CRITICAL_FREQUENCY,Platelets,Cohort: 10.43% vs. General: 2.67%,"Comparison of critical event frequency. Cohort N=393, General N=402237 (N=patients with this lab drawn in first 48h).",

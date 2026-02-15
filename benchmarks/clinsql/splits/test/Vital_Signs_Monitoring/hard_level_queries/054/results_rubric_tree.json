@@ -1,0 +1,235 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Required Column Names Exist",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "cohort-group-column-exists",
+              "requirements": "Column for cohort identification exists (e.g., 'cohort_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-instability-score-column-exists",
+              "requirements": "Column for p25 instability score exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-instability-score-column-exists",
+              "requirements": "Column for median instability score exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-instability-score-column-exists",
+              "requirements": "Column for p75 instability score exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-instability-score-column-exists",
+              "requirements": "Column for IQR of instability score exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-instability-score-column-exists",
+              "requirements": "Column for average instability score exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "avg-icu-los-column-exists",
+              "requirements": "Column for average ICU LOS exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "Column for mortality rate exists",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-rows-validation",
+          "requirements": "Validate existence and content of two cohort rows (Target and General)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-validation",
+          "requirements": "Validate instability score metrics (p25, median, p75, IQR, average)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-instability-score-range",
+              "requirements": "Clinically Plausible: All instability score related values are between 0 and 2",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-avg-instability-score",
+              "requirements": "Acceptable Range: Average instability score is 0.2-0.8 for Target, 0.1-0.6 for General",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-percentiles-instability-score",
+              "requirements": "Acceptable Range: p25 (0.05-0.3), median (0.1-0.6), p75 (0.3-1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-iqr-instability-score",
+              "requirements": "Acceptable Range: IQR is 0.2-0.8",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "Validate average ICU length of stay (days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-icu-los-range",
+              "requirements": "Clinically Plausible: Average LOS is between 1 and 50 days",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-icu-los-range",
+              "requirements": "Acceptable Range: Average LOS is 3-15 days for Target, 2-8 days for General",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate mortality rate",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-mortality-rate-range",
+              "requirements": "Clinically Plausible: Mortality rate is between 0 and 1",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-mortality-rate-range",
+              "requirements": "Acceptable Range: Mortality is 0.25-0.60 for Target, 0.08-0.20 for General",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cross-column-clinical-logic-validation",
+          "requirements": "Validate clinical logic across columns and rows",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "trend-target-vs-general",
+              "requirements": "Clinical Trend: Target cohort values for mortality, LOS, and instability score are higher than General cohort",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "trend-percentile-order",
+              "requirements": "Mathematical Trend: p25 <= median <= p75 for both cohorts",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-calculation-correctness",
+              "requirements": "Mathematical Trend: IQR is approximately equal to p75 - p25 for both cohorts",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

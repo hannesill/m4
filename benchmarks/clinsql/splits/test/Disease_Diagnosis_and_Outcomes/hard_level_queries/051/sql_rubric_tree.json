@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters the patient cohort to include only males (e.g., p.gender = 'M').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates and filters for patient age at admission to be between 35 and 45 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-diagnosis-selection",
+          "requirements": "Identifies admissions for acute pancreatitis using both ICD-9 ('577.0%') and ICD-10 ('K85%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "initial-table-join-logic",
+          "requirements": "Correctly joins 'admissions', 'patients', and 'diagnoses_icd' tables on 'subject_id' and 'hadm_id' to create the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "feature-augmentation-join",
+          "requirements": "Correctly uses a LEFT JOIN to reconnect the pancreatitis cohort with the 'diagnoses_icd' table to gather all diagnoses for each admission, which is necessary for the diagnosis count.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "major-complication-flagging",
+          "requirements": "Correctly creates flags for each of the four specified major complications (multi-organ failure, septic shock, acute MI, respiratory failure) using CASE statements and appropriate ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-calculation",
+          "requirements": "Accurately calculates the 'composite_risk_score' using the formula: total_diagnoses_count + 5 * (sum of complication flags).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-stratification",
+          "requirements": "Uses the NTILE(4) window function to stratify patients into four risk quartiles based on the calculated 'composite_risk_score'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stratified-grouping-logic",
+          "requirements": "Uses GROUP BY ROLLUP on the risk quartile to enable aggregation for each quartile and an overall total.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Correctly calculates the in-hospital mortality rate as a percentage using AVG(hospital_expire_flag).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "major-complication-rate-calculation",
+          "requirements": "Correctly calculates the major complication rate as a percentage using an aggregate function on a flag that indicates if any major complication occurred (e.g., AVG(has_major_complication)).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-survivor-los-calculation",
+          "requirements": "Calculates the median length of stay specifically for survivors using a conditional median function like APPROX_QUANTILES, filtering for hospital_expire_flag = 0.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

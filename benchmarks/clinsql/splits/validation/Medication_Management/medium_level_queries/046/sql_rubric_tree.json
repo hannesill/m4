@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 63-73 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 63 AND 73`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-diagnosis-filter",
+          "requirements": "T2DM Diagnosis Filter: Identifies patients with Type 2 Diabetes Mellitus by joining to `diagnoses_icd` and correctly filtering on ICD-9 ('250.%0', '250.%2') and ICD-10 ('E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hf-diagnosis-filter",
+          "requirements": "Heart Failure Diagnosis Filter: Identifies patients with Heart Failure by joining to `diagnoses_icd` and correctly filtering on ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-type-filter",
+          "requirements": "Admission Type Filter: The query correctly targets 'inpatients' by joining `patients` and `admissions` tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: Includes a filter to ensure the admission is at least 48 hours long (`DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 48`) to make the first/last 24-hour periods distinct.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-identification",
+          "requirements": "Medication Identification: Correctly identifies insulin and a representative set of oral hypoglycemic agents from the `prescriptions` table using `LIKE` conditions on the drug name.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-classification",
+          "requirements": "Medication Classification: Uses a CASE statement to categorize identified drugs into 'Insulin' and 'Oral Agent' classes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-window-first-24h",
+          "requirements": "Temporal Window (First 24h): Correctly identifies medications administered in the first 24 hours of admission using `rx.starttime BETWEEN cohort.admittime AND DATETIME_ADD(cohort.admittime, INTERVAL 24 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-window-last-24h",
+          "requirements": "Temporal Window (Last 24h): Correctly identifies medications administered in the final 24 hours of admission using `rx.starttime BETWEEN DATETIME_SUB(cohort.dischtime, INTERVAL 24 HOUR) AND cohort.dischtime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-patient-med-flagging",
+          "requirements": "Per-Patient Medication Flagging: Correctly groups by `hadm_id` and `medication_class` and uses `MAX()` to determine if a patient received a medication class within each time window, avoiding double-counting.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-aggregation",
+          "requirements": "Cohort-Level Aggregation: Correctly sums the flags for each medication class across the cohort to get the total number of patients receiving the drug in each period.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prevalence-calculation",
+          "requirements": "Prevalence Calculation: Correctly calculates prevalence as a percentage by dividing the patient count for each period by the total number of admissions in the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "net-change-calculation",
+          "requirements": "Net Change Calculation: Correctly calculates the net change in percentage points (pp) by subtracting the first 24hr prevalence from the final 24hr prevalence.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "correct-table-joins",
+          "requirements": "Correct Table Joins: Appropriately joins `patients`, `admissions`, `diagnoses_icd`, and `prescriptions` tables using the correct keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output columns match the requested metrics (prevalence percentages, net change) and are clearly labeled.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "use-of-ctes",
+          "requirements": "Use of CTEs: Query is logically structured into Common Table Expressions (CTEs) for cohort definition, medication event processing, and aggregation, improving readability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

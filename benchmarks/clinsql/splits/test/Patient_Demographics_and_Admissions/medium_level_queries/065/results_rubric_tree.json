@@ -1,0 +1,117 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stratification-column-exists",
+              "requirements": "Column for stratification exists (e.g., 'outcome_category', 'discharge_disposition')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-column-exists",
+              "requirements": "Column for mean length of stay exists (e.g., 'mean_los_days', 'avg_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stddev-los-column-exists",
+              "requirements": "Column for standard deviation of length of stay exists (e.g., 'stddev_los_days', 'sd_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns ('mean_los_days', 'stddev_los_days')",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mean-los-validation",
+          "requirements": "Validate values in the mean length of stay column (e.g., 'mean_los_days')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-los-clinically-plausible",
+              "requirements": "Values are clinically plausible (1.0-30.0 days). Elderly inpatients on general wards will have a LOS > 1 day, but very long stays (e.g., >30 days) are less common for the average.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-acceptable-range",
+              "requirements": "Values are in an acceptable range (3.0-15.0 days). Expected that Discharged Home has lowest LOS, while Hospice and Mortality have higher LOS.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "stddev-los-validation",
+          "requirements": "Validate values in the standard deviation of length of stay column (e.g., 'stddev_los_days')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "stddev-los-clinically-plausible",
+              "requirements": "Values are clinically plausible (1.0-30.0 days). Standard deviation will be positive and can be large, reflecting variability in patient conditions.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stddev-los-acceptable-range",
+              "requirements": "Values are in an acceptable range (3.0-15.0 days). The standard deviation is often of a similar magnitude to the mean for length of stay data, which is typically right-skewed.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

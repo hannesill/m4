@@ -1,0 +1,1 @@
+For my 86‑year‑old female ICU patient: among female ICU patients 81–91, classify per‑stay mean temperature in first 24h (<36.0, 36.0–37.9, ≥38.0°C) and report N, mean, median, IQR, and MI rate (%).

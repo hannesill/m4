@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p90-instability-score-column-exists",
+              "requirements": "A column for the 90th percentile instability score must exist (e.g., 'P90_Instability_Score_Overall_Cohort').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hypotension-column-exists",
+              "requirements": "A column for hypotension episodes/count must exist (e.g., 'Avg_Hypotension_Episodes_48hr').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachycardia-column-exists",
+              "requirements": "A column for tachycardia episodes/count must exist (e.g., 'Avg_Tachycardia_Episodes_48hr').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-column-exists",
+              "requirements": "A column for ICU length of stay must exist (e.g., 'Avg_ICU_LOS_Days').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-column-exists",
+              "requirements": "A column for mortality rate must exist (e.g., 'Mortality_Rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the answer-relevant columns for the 'Top 25%' group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "p90-instability-score-validation",
+          "requirements": "Validate 90th percentile of composite instability score ('P90_Instability_Score_Overall_Cohort').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "p90-instability-score-plausible",
+              "requirements": "Clinically Plausible (0.0 - 1.0). The score is a composite index, likely normalized.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-instability-score-acceptable",
+              "requirements": "Acceptable Range (0.5 - 1.0). The 90th percentile should represent a high degree of instability.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hypotension-episodes-validation",
+          "requirements": "Validate average hypotension episodes in the top 25% unstable group ('Avg_Hypotension_Episodes_48hr').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "hypotension-episodes-plausible",
+              "requirements": "Clinically Plausible (0.0 - 50.0). Represents average episodes over 48 hours for a very sick cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "hypotension-episodes-acceptable",
+              "requirements": "Acceptable Range (5.0 - 25.0). Unstable, elderly, ventilated patients are expected to have frequent hypotensive episodes.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "tachycardia-episodes-validation",
+          "requirements": "Validate average tachycardia episodes in the top 25% unstable group ('Avg_Tachycardia_Episodes_48hr').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "tachycardia-episodes-plausible",
+              "requirements": "Clinically Plausible (0.0 - 50.0). Similar to hypotension, represents average episodes over 48 hours.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "tachycardia-episodes-acceptable",
+              "requirements": "Acceptable Range (5.0 - 30.0). Sepsis, pain, and ventilation can all drive tachycardia in this critically ill group.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "Validate average ICU LOS in the top 25% unstable group ('Avg_ICU_LOS_Days').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "icu-los-plausible",
+              "requirements": "Clinically Plausible (1.0 - 60.0). ICU stays for ventilated elderly patients can be prolonged.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-acceptable",
+              "requirements": "Acceptable Range (3.0 - 15.0). Reflects a typical range for this cohort, accounting for both early mortality and longer stays.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate mortality rate in the top 25% unstable group ('Mortality_Rate').",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.0 - 1.0). Mortality is a rate between 0 and 1.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0.2 - 0.7). Mortality is high in elderly, ventilated, unstable ICU patients.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

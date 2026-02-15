@@ -1,0 +1,168 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies a cohort of male patients aged 66-76 with diabetes and heart failure, whose admission length is at least 72 hours.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate and filter patient age to be between 66 and 76 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-filtering",
+          "requirements": "Diagnosis Filtering: The query must correctly identify patients with both diabetes and heart failure diagnoses using appropriate ICD codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "diabetes-code-selection",
+              "requirements": "Diabetes Code Selection: Correctly filters for diabetes using ICD-9 ('250%') and ICD-10 ('E08%', 'E09%', 'E10%', 'E11%', 'E13%') codes.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "heart-failure-code-selection",
+              "requirements": "Heart Failure Code Selection: Correctly filters for heart failure using ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "admission-length-filter",
+          "requirements": "Admission Length Filter: The query must filter for hospital admissions lasting 72 hours or longer using `DATETIME_DIFF(a.dischtime, a.admittime, HOUR) >= 72`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient demographics, diagnoses, and medication prescriptions.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient and Admissions Join: Correctly joins `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnoses-join",
+          "requirements": "Diagnoses Join: Correctly performs two separate joins from `admissions` to `diagnoses_icd` on `hadm_id` to independently check for diabetes and heart failure.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescriptions-join",
+          "requirements": "Prescriptions Join: Correctly joins the patient cohort to the `prescriptions` table on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Accurately classifies medications, assigns them to the correct time windows, and calculates the final percentages.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-window-definition",
+          "requirements": "Temporal Window Definition: Correctly defines the 'First_72_Hours' and 'Final_24_Hours' windows based on admission and discharge times.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-classification",
+          "requirements": "Medication Classification: Uses a CASE statement to accurately classify drugs into antidiabetic classes (e.g., Insulin, Metformin, Sulfonylurea).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: Correctly calculates the percentage of patients in each medication class for both time windows, using the total cohort size as the denominator.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "correct-aggregation-unit",
+          "requirements": "Correct Aggregation Unit: Uses `COUNT(DISTINCT hadm_id)` to count patients, not individual prescription events, preventing overcounting.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting",
+      "requirements": "Output Formatting and Structure: Ensures the final output is correctly structured, complete, and easy to interpret.",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "complete-class-reporting",
+          "requirements": "Complete Class Reporting: Uses a separate CTE or similar method to ensure all specified antidiabetic classes are reported, even if their prevalence is zero.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-naming-and-rounding",
+          "requirements": "Column Naming and Rounding: Provides clear column aliases and rounds the final percentages to two decimal places.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "zero-division-handling",
+          "requirements": "Zero Division Handling: Uses `NULLIF` or a `CASE` statement to prevent division-by-zero errors if the patient cohort is empty.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

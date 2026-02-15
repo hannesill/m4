@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the initial patient population based on demographic criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at admission and filter for the range 81-91 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 81 AND 91`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Identifies patients who received specific treatments and measurements.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hiflow-nasal-cannula-identification",
+          "requirements": "High-Flow Nasal Cannula Identification: The query must correctly identify ICU stays where high-flow nasal cannula was administered by filtering `chartevents` for `itemid = 226732` and `value = 'High flow nasal cannula'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sbp-measurement-identification",
+          "requirements": "Systolic Blood Pressure Measurement Identification: The query must filter `chartevents` for itemids corresponding to systolic blood pressure, specifically `itemid IN (220050, 51)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sbp-value-validation",
+          "requirements": "SBP Value Validation: The query should filter out null or invalid SBP values using `ce.valuenum IS NOT NULL` and a plausible range check like `ce.valuenum BETWEEN 40 AND 300`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables to link patient demographics, ICU stays, treatments, and measurements.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "demographic-admission-join",
+          "requirements": "Demographic-Admission Join: The query must join `patients` and `admissions` tables on `subject_id` to link patient demographics with hospital admission data.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-icu-stay-join",
+          "requirements": "Admission-ICU Stay Join: The query must join the patient cohort to `icustays` on `hadm_id` to identify ICU stays associated with the selected admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-events-join",
+          "requirements": "ICU Stay-Events Join: The query must correctly join `icustays` and `chartevents` on `stay_id` to link clinical events to specific ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the required calculations to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-aggregation",
+          "requirements": "Per-Stay Aggregation: The query must first calculate the mean systolic blood pressure for each individual ICU stay using `AVG(sbp)` and `GROUP BY stay_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metric-calculation",
+          "requirements": "Final Metric Calculation: The query must calculate the minimum of the per-stay mean SBP values using `MIN(avg_sbp_per_stay)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting",
+      "requirements": "Output Formatting and Additional Statistics: Ensures the final output is well-formatted and provides supplementary statistical context.",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "rounding-results",
+          "requirements": "Rounding Results: The final numerical outputs should be rounded to two decimal places for readability using `ROUND(..., 2)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "supplementary-statistics",
+          "requirements": "Supplementary Statistics: The query correctly includes additional descriptive statistics such as COUNT, AVG, MAX, STDDEV, and percentiles (P25, P50, P75) for the per-stay mean SBP.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

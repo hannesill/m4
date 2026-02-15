@@ -1,0 +1,13 @@
+icu_status,los_bin,comorbidity_bin,N,mortality_rate_pct,avg_comorbidity_count
+Non-ICU,<=5 days,0-1,501,0.6,0.77
+Non-ICU,<=5 days,2,403,0.74,2.0
+Non-ICU,<=5 days,>=3,282,1.06,3.32
+Non-ICU,>5 days,0-1,221,1.36,0.8
+Non-ICU,>5 days,2,211,1.9,2.0
+Non-ICU,>5 days,>=3,313,4.79,3.47
+ICU,<=5 days,0-1,72,5.56,0.78
+ICU,<=5 days,2,84,20.24,2.0
+ICU,<=5 days,>=3,92,34.78,3.38
+ICU,>5 days,0-1,172,6.98,0.83
+ICU,>5 days,2,234,12.39,2.0
+ICU,>5 days,>=3,456,20.83,3.56

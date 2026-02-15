@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 41 and 51 years, inclusive, using `p.anchor_age BETWEEN 41 AND 51`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-location-selection",
+          "requirements": "Admission Location Selection: The query must filter for inpatients admitted from the Emergency Room using `a.admission_location = 'EMERGENCY ROOM'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: The query must correctly join the `patients` and `admissions` tables.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: The join between `patients` and `admissions` tables must be on `subject_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "discharge-categorization",
+      "requirements": "Medical Concept Implementation: Discharge Categorization",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "in-hospital-mortality",
+          "requirements": "In-Hospital Mortality Categorization: The query must correctly identify in-hospital deaths using `hospital_expire_flag = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharged-home",
+          "requirements": "Discharged Home Categorization: The query must correctly identify patients discharged home using `discharge_location = 'HOME'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharged-to-facility",
+          "requirements": "Discharged to Facility Categorization: The query must correctly identify patients discharged to a facility by checking for 'SKILLED NURSING FACILITY', 'REHAB/DISTINCT PART HOSP', or 'LONG TERM CARE HOSPITAL'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-category-filtering",
+          "requirements": "Final Category Filtering: The query must filter the final results to include only the three specified discharge categories: 'In-Hospital Mortality', 'Discharged Home', and 'Discharged to Facility'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay Calculation: The query must correctly calculate the length of stay in days using the difference between `dischtime` and `admittime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final result set must be grouped by the calculated `discharge_category`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "proportion-los-ge-7-days",
+          "requirements": "Proportion LOS >= 7 Days: The query must correctly calculate the proportion of admissions with a length of stay of 7 days or more for each category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-10-day-los",
+          "requirements": "Percentile Rank of 10-day LOS: The query must correctly calculate the percentile rank of a 10-day LOS, interpreted as the percentage of admissions with a LOS less than 10 days.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

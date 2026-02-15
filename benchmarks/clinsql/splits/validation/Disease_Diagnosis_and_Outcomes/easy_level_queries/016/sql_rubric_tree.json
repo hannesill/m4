@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters the patient cohort to include only males, as specified by `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Restricts the patient cohort to the age range of 68-78 years using `p.anchor_age BETWEEN 68 AND 78`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Comorbidities",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "concurrent-condition-logic",
+          "requirements": "Correctly filters for admissions that have BOTH pneumonia and COPD diagnoses, implemented using two separate `EXISTS` subqueries.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pneumonia-code-selection",
+          "requirements": "Accurately identifies pneumonia by checking for both ICD-9 codes (SUBSTR '480'-'486') and ICD-10 codes (SUBSTR 'J12'-'J18').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "copd-code-selection",
+          "requirements": "Accurately identifies COPD by checking for both ICD-9 codes (SUBSTR '491'-'496') and ICD-10 codes ('J44%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "Correctly uses the `icd_version` column to differentiate between ICD-9 and ICD-10 coding systems within the diagnosis subqueries.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Data Integrity",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Correctly joins the `admissions` and `patients` tables to link patient demographics to hospital admission records.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching-logic",
+          "requirements": "Uses `subject_id` to join `admissions` and `patients`, and `hadm_id` within `EXISTS` clauses to link admissions to diagnoses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-validity-checks",
+          "requirements": "Ensures the validity of length-of-stay calculations by filtering for non-null `admittime` and `dischtime`, and ensuring a non-negative stay duration.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Calculates the hospital length of stay in days by finding the difference between `dischtime` and `admittime` using `DATE_DIFF`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-aggregation",
+          "requirements": "Correctly computes the 75th percentile of the length of stay using `APPROX_QUANTILES(..., 100)[OFFSET(75)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

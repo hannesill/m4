@@ -1,0 +1,4 @@
+discharge_group,num_admissions,mean_los,stddev_los,percentile_rank_of_7_days
+Discharged Home,8775,5.32,5.06,79.8
+Discharged to Facility,2599,9.37,8.82,54.0
+In-Hospital Mortality,363,14.92,20.43,41.9

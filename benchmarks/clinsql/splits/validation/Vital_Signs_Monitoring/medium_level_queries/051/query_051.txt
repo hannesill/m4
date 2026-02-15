@@ -1,0 +1,1 @@
+I have a 60-year-old male ICU patient. Among male ICU patients aged 55–65, what is the interquartile range of each patient's maximum heart rate recorded during their ICU stay?

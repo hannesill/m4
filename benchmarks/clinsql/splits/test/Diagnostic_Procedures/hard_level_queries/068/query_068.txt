@@ -1,0 +1,1 @@
+I’m evaluating an 82‑year‑old man. Among male ICU patients aged 77–87 admitted with asthma exacerbation, stratify first 72‑hour ICU procedure burden into quartiles and report each quartile’s mean procedure count, mean hospital LOS (days), and hospital mortality.

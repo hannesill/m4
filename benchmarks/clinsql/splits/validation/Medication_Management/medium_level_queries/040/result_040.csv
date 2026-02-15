@@ -1,0 +1,7 @@
+medication_class,total_cohort_patients,patients_early,patients_late,prevalence_early_pct,prevalence_late_pct,absolute_diff_pct_points
+Cardiac - ACEi/ARB/ARNI,178,76,20,42.7,11.24,-31.46
+Cardiac - Beta-blocker,178,123,26,69.1,14.61,-54.49
+Cardiac - Loop Diuretic,178,114,47,64.04,26.4,-37.64
+Antidiabetic - Insulin,178,161,39,90.45,21.91,-68.54
+Antidiabetic - Metformin,178,5,1,2.81,0.56,-2.25
+Antidiabetic - Sulfonylurea,178,3,4,1.69,2.25,0.56

@@ -1,0 +1,2 @@
+cohort_description,number_of_patients,number_of_admissions,min_troponin_t,p25_troponin_t,p50_troponin_t_median,p75_troponin_t,max_troponin_t
+"Female, 82-92, with Chest Pain/AMI and initial Troponin T > 0.01",1418,1662,0.02,0.08,0.22,0.68,23.9

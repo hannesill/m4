@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies ICU patients who are female, aged 43-53, and diagnosed with acute respiratory failure.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at ICU admission and filter for the range 43 to 53 years using `age_at_icu_intime BETWEEN 43 AND 53`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acute-respiratory-failure-diagnosis",
+          "requirements": "Acute Respiratory Failure Diagnosis: The query must filter patients based on ICD codes for acute respiratory failure, correctly handling both ICD-9 and ICD-10 versions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables from the MIMIC-IV database to construct the patient cohort and extract relevant clinical data.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "base-cohort-table-joins",
+          "requirements": "Base Cohort Table Joins: The query must correctly join `icustays`, `patients`, and `admissions` tables using `subject_id` and `hadm_id` to link demographic and admission data.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-table-join",
+          "requirements": "Diagnosis Table Join: The query must join the base cohort with `diagnoses_icd` on `hadm_id` to identify patient diagnoses.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "chartevents-table-join",
+          "requirements": "Chartevents Table Join: The query must join `chartevents` with `icustays` on `stay_id` to access vital sign measurements.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly implements the logic for the Vital Instability Index and related clinical metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "vital-sign-selection",
+          "requirements": "Vital Sign Selection: The query must select the correct `itemid` values for Heart Rate, SpO2, Respiratory Rate, and Mean Arterial Pressure.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-48h",
+          "requirements": "Temporal Filter (48 Hours): The query must accurately filter vital signs to include only those recorded within the first 48 hours of the ICU stay.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-index-calculation",
+          "requirements": "Instability Index Calculation: The query must use a CASE statement to correctly assign points based on specified thresholds for each vital sign to compute the `instability_index`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "episode-counting",
+          "requirements": "Episode Counting: The query must correctly count the number of hypotension and tachycardia episodes using `COUNTIF` or equivalent logic.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final statistical calculations and comparisons as requested in the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "p95-instability-calculation",
+          "requirements": "95th Percentile Instability Calculation: The query must correctly calculate the 95th percentile of the `instability_index` for the target ARF cohort using `APPROX_QUANTILES`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-identification",
+          "requirements": "Top Quartile Identification: The query must identify the top quartile of the target cohort based on the `instability_index` for comparison.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparison-group-aggregation",
+          "requirements": "Comparison Group Aggregation: The query must correctly calculate and average the required metrics (hypotension/tachycardia episodes, ICU LOS, mortality) for both the 'Top Quartile' and 'General ICU' populations.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-structuring",
+          "requirements": "Final Output Structuring: The query must present the 95th percentile value alongside the comparative statistics for the two groups, using a `UNION ALL` for the groups and a `CROSS JOIN` to combine results.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

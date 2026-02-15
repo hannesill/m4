@@ -1,0 +1,3 @@
+final_group,p75_score_threshold,number_of_patients,avg_instability_score,avg_length_of_stay_days,mortality_rate_percent,critical_sodium_rate,critical_potassium_rate,critical_creatinine_rate,critical_troponin_t_rate,critical_glucose_rate,critical_bun_rate
+Stroke_High_Instability,1.0,200,5.0699999999999985,14.71,19.499999999999996,0.175,0.315,1.695,1.575,0.145,1.165
+Control_Group,,53950,1.092091414824839,4.759499536607971,1.594068582020389,0.02252085264133457,0.037757182576459686,0.31351251158480076,0.13760889712696942,0.028897126969416126,0.26750695088044485

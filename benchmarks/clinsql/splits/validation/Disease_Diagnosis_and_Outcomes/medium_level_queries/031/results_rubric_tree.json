@@ -1,0 +1,462 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-sepsis-severity",
+              "requirements": "Column exists for sepsis severity grouping (e.g., 'sepsis_severity', 'condition')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-n-los-le-7",
+              "requirements": "Column exists for patient count with LOS <= 7 days (e.g., 'N_los_le_7_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mortality-los-le-7",
+              "requirements": "Column exists for mortality rate (%) with LOS <= 7 days (e.g., 'mortality_rate_los_le_7_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-ttd-los-le-7",
+              "requirements": "Column exists for median time to death with LOS <= 7 days (e.g., 'median_time_to_death_los_le_7_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-n-los-gt-7",
+              "requirements": "Column exists for patient count with LOS > 7 days (e.g., 'N_los_gt_7_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mortality-los-gt-7",
+              "requirements": "Column exists for mortality rate (%) with LOS > 7 days (e.g., 'mortality_rate_los_gt_7_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-ttd-los-gt-7",
+              "requirements": "Column exists for median time to death with LOS > 7 days (e.g., 'median_time_to_death_los_gt_7_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-abs-mort-diff",
+              "requirements": "Column exists for absolute mortality difference (e.g., 'absolute_mortality_difference')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-rel-mort-diff",
+              "requirements": "Column exists for relative mortality difference (e.g., 'relative_mortality_difference_pct')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "sepsis-group-validation",
+          "requirements": "Validation of 'Sepsis' group metrics",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "sepsis-n-los-le-7-validation",
+              "requirements": "Patient count with LOS <= 7 days for 'Sepsis'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "sepsis-n-los-le-7-plausible",
+                  "requirements": "Clinically Plausible (100-2000)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "sepsis-n-los-le-7-acceptable",
+                  "requirements": "Acceptable Range (400-900)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "sepsis-mortality-los-le-7-validation",
+              "requirements": "Mortality rate (%) with LOS <= 7 days for 'Sepsis'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "sepsis-mortality-los-le-7-plausible",
+                  "requirements": "Clinically Plausible (1-40)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "sepsis-mortality-los-le-7-acceptable",
+                  "requirements": "Acceptable Range (5-20)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "sepsis-ttd-los-le-7-validation",
+              "requirements": "Median time to death with LOS <= 7 days for 'Sepsis'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "sepsis-ttd-los-le-7-plausible",
+                  "requirements": "Clinically Plausible (0-7)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "sepsis-ttd-los-le-7-acceptable",
+                  "requirements": "Acceptable Range (1-5)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "sepsis-n-los-gt-7-validation",
+              "requirements": "Patient count with LOS > 7 days for 'Sepsis'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "sepsis-n-los-gt-7-plausible",
+                  "requirements": "Clinically Plausible (100-2000)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "sepsis-n-los-gt-7-acceptable",
+                  "requirements": "Acceptable Range (500-1000)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "sepsis-mortality-los-gt-7-validation",
+              "requirements": "Mortality rate (%) with LOS > 7 days for 'Sepsis'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "sepsis-mortality-los-gt-7-plausible",
+                  "requirements": "Clinically Plausible (1-50)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "sepsis-mortality-los-gt-7-acceptable",
+                  "requirements": "Acceptable Range (8-25)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "sepsis-ttd-los-gt-7-validation",
+              "requirements": "Median time to death with LOS > 7 days for 'Sepsis'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "sepsis-ttd-los-gt-7-plausible",
+                  "requirements": "Clinically Plausible (8-60)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "sepsis-ttd-los-gt-7-acceptable",
+                  "requirements": "Acceptable Range (10-30)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "septic-shock-group-validation",
+          "requirements": "Validation of 'Septic Shock' group metrics",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "shock-n-los-le-7-validation",
+              "requirements": "Patient count with LOS <= 7 days for 'Septic Shock'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "shock-n-los-le-7-plausible",
+                  "requirements": "Clinically Plausible (50-1000)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "shock-n-los-le-7-acceptable",
+                  "requirements": "Acceptable Range (80-250)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "shock-mortality-los-le-7-validation",
+              "requirements": "Mortality rate (%) with LOS <= 7 days for 'Septic Shock'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "shock-mortality-los-le-7-plausible",
+                  "requirements": "Clinically Plausible (10-70)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "shock-mortality-los-le-7-acceptable",
+                  "requirements": "Acceptable Range (25-50)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "shock-ttd-los-le-7-validation",
+              "requirements": "Median time to death with LOS <= 7 days for 'Septic Shock'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "shock-ttd-los-le-7-plausible",
+                  "requirements": "Clinically Plausible (0-7)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "shock-ttd-los-le-7-acceptable",
+                  "requirements": "Acceptable Range (1-5)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "shock-n-los-gt-7-validation",
+              "requirements": "Patient count with LOS > 7 days for 'Septic Shock'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "shock-n-los-gt-7-plausible",
+                  "requirements": "Clinically Plausible (50-1000)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "shock-n-los-gt-7-acceptable",
+                  "requirements": "Acceptable Range (150-400)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "shock-mortality-los-gt-7-validation",
+              "requirements": "Mortality rate (%) with LOS > 7 days for 'Septic Shock'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "shock-mortality-los-gt-7-plausible",
+                  "requirements": "Clinically Plausible (10-70)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "shock-mortality-los-gt-7-acceptable",
+                  "requirements": "Acceptable Range (20-45)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "shock-ttd-los-gt-7-validation",
+              "requirements": "Median time to death with LOS > 7 days for 'Septic Shock'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "shock-ttd-los-gt-7-plausible",
+                  "requirements": "Clinically Plausible (8-60)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "shock-ttd-los-gt-7-acceptable",
+                  "requirements": "Acceptable Range (10-30)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "difference-validation",
+          "requirements": "Validation of mortality difference metrics",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "abs-diff-validation",
+              "requirements": "Absolute mortality difference (LOS > 7 vs LOS <= 7)",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "abs-diff-plausible",
+                  "requirements": "Plausible Range (-50 to 50)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "abs-diff-acceptable",
+                  "requirements": "Acceptable Range (-20 to 20)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "rel-diff-validation",
+              "requirements": "Relative mortality difference (%) (LOS > 7 vs LOS <= 7)",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "rel-diff-plausible",
+                  "requirements": "Plausible Range (-100 to 100)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "rel-diff-acceptable",
+                  "requirements": "Acceptable Range (-50 to 50)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

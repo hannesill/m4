@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the specific patient cohort based on demographic, diagnosis, and exclusion criteria.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Filters patients to be between 62 and 72 years of age at the time of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-ami",
+          "requirements": "Primary Condition (AMI): Identifies patients with a diagnosis of Acute Myocardial Infarction.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "exclusion-criteria",
+          "requirements": "Exclusion Criteria: Correctly excludes patients with diagnoses of shock or respiratory failure.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Accurately translates clinical conditions into ICD codes and handles different ICD versions.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "ami-code-selection",
+          "requirements": "AMI Code Selection: Uses correct ICD-9 ('410') and ICD-10 ('I21', 'I22') codes for AMI.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "exclusion-code-selection",
+          "requirements": "Exclusion Code Selection: Uses correct ICD-9/10 codes for shock ('7855'/'R57') and respiratory failure ('51881','51882','51884'/'J96').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-code-selection",
+          "requirements": "Comorbidity Code Selection: Uses correct ICD-9/10 codes for Chronic Kidney Disease ('585'/'N18') and Diabetes ('250'/'E08'-'E13').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: Correctly handles both ICD-9 and ICD-10 codes within the same logic block for each condition.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables and calculates necessary columns like age and length of stay.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins patients, admissions, and diagnoses_icd tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching",
+          "requirements": "Key Matching: Uses `subject_id` to join patients and admissions, and `hadm_id` to link admissions with diagnoses.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation",
+          "requirements": "Age Calculation: Accurately calculates age at admission using anchor_age, anchor_year, and admittime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "LOS Calculation: Accurately calculates length of stay in days using DATETIME_DIFF between dischtime and admittime.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs correct aggregations and calculations to answer the clinical question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-grouping",
+          "requirements": "LOS Grouping: Correctly stratifies patients into two groups: LOS <= 5 days and LOS > 5 days.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation-by-group",
+          "requirements": "Metric Calculation by Group: Correctly calculates mortality rate, CKD prevalence, and diabetes prevalence for each LOS group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-difference-calculation",
+          "requirements": "Mortality Difference Calculation: Correctly computes both absolute and relative differences in mortality rates between the two LOS groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-pivoting",
+          "requirements": "Final Output Pivoting: Correctly pivots the grouped results into a single row with separate columns for each metric and LOS group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

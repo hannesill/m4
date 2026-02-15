@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "ards-diagnosis-selection",
+          "requirements": "ARDS Diagnosis Selection: The query must filter for patients with an ARDS diagnosis by joining with 'diagnoses_icd' and using both ICD-10 ('J80%') and ICD-9 ('518.82') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must correctly filter the patient cohort to include only males (p.gender = 'M').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate patient age at admission and filter for the range 71-81 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation of Instability Score",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "critical-lab-identification",
+          "requirements": "Critical Lab Identification: The query must correctly identify the specified critical lab tests using their corresponding 'itemid' values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-lab-value-definition",
+          "requirements": "Abnormal Lab Value Definition: The query must apply the correct abnormal value ranges for each specified lab test to define a critical lab event.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Calculations",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must count the number of critical lab events per patient within the first 72 hours of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-threshold-calculation",
+          "requirements": "Percentile Threshold Calculation: The query must calculate the 90th percentile of the instability score for the target cohort using an approximation function like APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-group-identification",
+          "requirements": "High-Risk Group Identification: The query must correctly filter for patients whose instability score is at or above the calculated 90th percentile threshold.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-outcomes-calculation",
+          "requirements": "High-Risk Outcomes Calculation: The query must correctly calculate the average LOS and mortality rate for the identified high-risk patient group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "comparative-analysis",
+      "requirements": "Comparative Analysis of Lab Rates",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "high-risk-lab-rate",
+          "requirements": "High-Risk Lab Rate Calculation: The query must calculate the rate of each critical lab event for the high-risk group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "general-population-lab-rate",
+          "requirements": "General Population Lab Rate Calculation: The query must calculate the rate of each critical lab event for the general inpatient population.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-integration",
+          "requirements": "Final Output Integration: The query must join and present the 90th percentile score, high-risk outcomes, and the comparative lab rates in the final output.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

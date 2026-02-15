@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'` to correctly identify the patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must include a filter for the patient's age (49 years old) at the time of admission. Note: The provided query omits this critical step.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-hospitalization-identification",
+          "requirements": "Heart Failure Hospitalization Identification: The query must correctly identify hospitalizations with a heart failure diagnosis by filtering on relevant ICD codes (e.g., '428%' for ICD-9 and 'I50%' for ICD-10).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "hemoglobin-lab-event-identification",
+          "requirements": "Hemoglobin Lab Event Identification: The query must correctly identify hemoglobin measurements by filtering `labevents` using `itemid = 51222`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "value-range-filtering",
+          "requirements": "Value Range Filtering: The query should apply a plausible value range filter for hemoglobin (e.g., `valuenum BETWEEN 7 AND 18`) to exclude erroneous data points.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-diagnosis-join",
+          "requirements": "Patient-Diagnosis Join: The query must join `patients` and `diagnoses_icd` tables on `subject_id` to link patient demographics with diagnoses.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-lab-event-join",
+          "requirements": "Admission-Lab Event Join: The query must join the identified admissions (`hf_admissions`) with the `labevents` table on `hadm_id` to link lab results to specific hospital stays.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "nadir-hemoglobin-calculation",
+          "requirements": "Nadir Hemoglobin Calculation: The query must use `MIN(le.valuenum)` grouped by `hadm_id` to correctly calculate the lowest hemoglobin value for each hospitalization.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must calculate the 75th percentile of the nadir hemoglobin values using an appropriate function like `APPROX_QUANTILES(nadir_hgb, 100)[OFFSET(75)]`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final result should be rounded to a reasonable number of decimal places (e.g., 2) for clarity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

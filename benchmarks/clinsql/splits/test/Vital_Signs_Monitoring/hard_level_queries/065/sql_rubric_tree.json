@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation for Vital Instability Analysis",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the initial patient population based on demographics and ICU stay.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for male patients using `p.gender = 'M'` in the `base_cohort` CTE.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query accurately calculates patient age at ICU admission and filters for the 70-80 range using `(DATETIME_DIFF(icu.intime, DATETIME(p.anchor_year, 1, 1, 0, 0, 0), YEAR) + p.anchor_age) BETWEEN 70 AND 80`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: The query correctly identifies ICU stays from the `icustays` table as the primary unit of analysis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies and utilizes medical concepts like RRT, hypotension, and tachycardia.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "rrt-identification",
+          "requirements": "RRT Identification: The query correctly identifies RRT procedures by filtering `chartevents` using a comprehensive list of `itemid`s.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rrt-cohort-separation",
+          "requirements": "RRT Cohort Separation: The query successfully creates a `has_rrt` flag (e.g., via a LEFT JOIN and CASE statement) to distinguish between patients with and without RRT.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-sign-thresholds",
+          "requirements": "Vital Sign Thresholds: The query correctly implements the clinical definitions for hypotension (MAP < 65) and tachycardia (HR > 100) using the appropriate `itemid`s and value comparisons.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, ICU stays, and clinical events.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "base-cohort-joins",
+          "requirements": "Base Cohort Joins: The query correctly joins `icustays`, `admissions`, and `patients` tables using `subject_id` and `hadm_id` to form the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "clinical-event-join",
+          "requirements": "Clinical Event Join: The query correctly joins the patient cohort with `chartevents` on `stay_id` to link vital signs and RRT events to specific ICU stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the required calculations and comparisons as specified in the question.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filtering-48hr",
+          "requirements": "Temporal Filtering for Vitals: The query correctly filters vital sign events to the first 48 hours of the ICU stay using a condition like `ce.charttime BETWEEN c.intime AND DATETIME_ADD(c.intime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query correctly calculates the composite vital instability score as the ratio of hypotensive/tachycardic measurements to the total number of relevant vital sign measurements.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "p90-calculation",
+          "requirements": "90th Percentile Calculation: The query correctly calculates the 90th percentile of the instability score for the RRT cohort using `APPROX_QUANTILES(..., 100)[OFFSET(90)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-identification",
+          "requirements": "Top Decile Identification: The query correctly identifies the top 10% of the RRT cohort based on instability score using the `NTILE(10) OVER (ORDER BY instability_score DESC)` window function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-comparison-metrics",
+          "requirements": "Cohort Comparison Metrics: The query correctly calculates and averages hypotension episodes, tachycardia episodes, ICU LOS, and mortality for both the 'Top 10% RRT' group and the 'No RRT' comparison group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-output-formatting",
+      "requirements": "Final Output Formatting: Correctly structures the final result set to be clear and answer all parts of the question.",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "union-and-cross-join",
+          "requirements": "Final Result Combination: The query correctly uses `UNION ALL` to combine the stats from the two cohorts and `CROSS JOIN` to append the P90 score to each result row.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-selection",
+          "requirements": "Column Selection: The final SELECT statement includes all required columns: the P90 score, cohort identifier, and the four comparison metrics (hypotension, tachycardia, LOS, mortality).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

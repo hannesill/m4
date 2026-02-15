@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the patient population based on demographics, clinical condition, and encounter type.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters the patient cohort to include only male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates patient age at admission and filters for the range 74-84, e.g., `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 74 AND 84`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-selection-gi-bleed",
+          "requirements": "Identifies patients with Upper GI Bleeding by filtering `diagnoses_icd` for both ICD-9 (`d.icd_code LIKE '578%'`) and ICD-10 (`d.icd_code LIKE 'K92%'`) codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "Isolates the first ICU stay for each hospital admission using a window function like `ROW_NUMBER() OVER (PARTITION BY i.hadm_id ORDER BY i.intime) = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Data Integration: Ensures correct joining of necessary tables to link patient data with clinical events.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Correctly joins `admissions`, `patients`, and `diagnoses_icd` tables using appropriate keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-join-integration",
+          "requirements": "Integrates the first ICU stay information by joining the `first_icu_stay` CTE to the main cohort on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-events-join",
+          "requirements": "Uses a `LEFT JOIN` to connect the cohort to `procedureevents` on `stay_id`, ensuring patients without procedures are retained for accurate intensity calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the required calculations, stratification, and final aggregation of metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "diagnostic-intensity-calculation",
+          "requirements": "Defines and calculates diagnostic intensity by counting distinct procedures (`COUNT(DISTINCT pe.itemid)`) within the first 72 hours of the ICU stay (`pe.starttime BETWEEN c.intime AND DATETIME_ADD(c.intime, INTERVAL 72 HOUR)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-stratification",
+          "requirements": "Correctly stratifies the cohort into four quartiles based on the calculated diagnostic intensity using `NTILE(4) OVER (ORDER BY d.procedure_count)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metrics-aggregation",
+          "requirements": "Correctly groups results by `diagnostic_quartile` and calculates all three specified metrics: mean procedure count, mean hospital LOS in days, and in-hospital mortality percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

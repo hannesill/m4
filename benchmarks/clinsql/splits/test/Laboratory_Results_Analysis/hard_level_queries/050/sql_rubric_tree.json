@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'` in the `base_cohort` CTE.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the age at admission and filter for patients between 40 and 50 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ards-condition-identification",
+          "requirements": "ARDS Condition Identification: The query must correctly identify patients with ARDS using both ICD-9 ('51882') and ICD-10 ('J80') codes from the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Score Calculation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-lab-filtering",
+          "requirements": "Temporal Lab Filtering: The query must correctly filter lab events to include only those occurring within the first 72 hours of admission (`BETWEEN bc.admittime AND DATETIME_ADD(bc.admittime, INTERVAL 72 HOUR)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must correctly calculate the laboratory-instability score as the count of distinct lab systems with at least one abnormal value (`COUNT(DISTINCT CASE WHEN af.is_abnormal = 1 THEN af.lab_name END)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must correctly calculate the 75th percentile of the instability score for the ARDS cohort using `PERCENTILE_CONT(instability_score, 0.75) OVER ()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-events-calculation",
+          "requirements": "Critical Events Calculation: The query must sum the count of critical lab events per patient using `SUM(af.is_critical)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "lab-itemid-selection",
+          "requirements": "Lab ItemID Selection: The query must select the correct `itemid` values for the specified lab tests (Sodium, Potassium, Creatinine, Lactate, WBC, Platelets, Bicarbonate, Anion Gap).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-lab-thresholds",
+          "requirements": "Abnormal Lab Thresholds: The query must implement the correct 'is_abnormal' logic with clinically appropriate thresholds for each lab test.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-thresholds",
+          "requirements": "Critical Lab Thresholds: The query must implement the correct 'is_critical' logic with clinically appropriate thresholds for each lab test to define critical events.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-output",
+      "requirements": "Final Aggregation and Output",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-grouping-and-categorization",
+          "requirements": "Patient Grouping and Categorization: The query must correctly categorize patients into 'Top Tier ARDS', 'Lower Tier ARDS', and 'Control Group (Non-ARDS)' based on the 75th percentile score threshold.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metric-calculation",
+          "requirements": "Outcome Metric Calculation: The query must calculate the required metrics (mortality rate, average LOS, avg critical events) for each patient category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-group-by",
+          "requirements": "Final Grouping: The final query must group results by the defined `patient_category` to report metrics for each cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

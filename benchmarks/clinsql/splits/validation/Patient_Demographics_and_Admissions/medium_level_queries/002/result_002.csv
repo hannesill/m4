@@ -1,0 +1,4 @@
+discharge_group,number_of_admissions,mean_los_days,p25_los_days,p50_los_days_median,p75_los_days,p90_los_days,percentile_rank_of_10_day_los
+Discharged Home,13056,5.15,2,4,6,10,90.8
+Discharged to Facility (SNF/Rehab/LTACH),2595,10.06,4,7,12,20,70.2
+In-Hospital Mortality,853,10.87,2,6,15,25,64.6

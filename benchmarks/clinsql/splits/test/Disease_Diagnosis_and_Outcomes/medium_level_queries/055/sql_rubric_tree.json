@@ -1,0 +1,192 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies and filters the patient cohort based on demographics and primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate and filter patient age to be between 71 and 81 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complications-of-care-diagnosis",
+          "requirements": "Condition Identification: The query must correctly identify patients with a 'complications of care' diagnosis using the specified ICD-9 and ICD-10 code ranges.",
+          "sequential": true,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd9-code-selection",
+              "requirements": "ICD-9 Code Selection: Correctly filters for ICD-9 codes between '996' and '999' using `SUBSTR` on `d.icd_code`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd10-code-selection",
+              "requirements": "ICD-10 Code Selection: Correctly filters for ICD-10 codes between 'T80' and 'T88' using `SUBSTR` on `d.icd_code`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icd-version-handling",
+              "requirements": "ICD Version Handling: Correctly uses the `d.icd_version` column to apply the appropriate code logic for both ICD-9 and ICD-10.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables from different MIMIC-IV modules (hosp, icu) to integrate patient, admission, and treatment data.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The `admissions` and `patients` tables must be correctly joined on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The `admissions` and `diagnoses_icd` tables must be correctly linked via `hadm_id`, typically within an `EXISTS` clause or join.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-icu-join",
+          "requirements": "Admission-ICU Join: A `LEFT JOIN` must be used between the patient cohort and `icustays` on `hadm_id` to correctly classify all admissions as 'ICU' or 'Non-ICU' without losing non-ICU patients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-event-join",
+          "requirements": "ICU Event Join: ICU events (procedures, inputs) must be linked back to the cohort using `stay_id`, correctly handled via `UNNEST` on an aggregated array of `stay_ids`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies clinical interventions and patient states from raw event data.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icu-status-classification",
+          "requirements": "ICU Status Classification: Correctly classifies hospital admissions into 'ICU' and 'Non-ICU' groups based on the presence of a matching `hadm_id` in the `icustays` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mechanical-ventilation-identification",
+          "requirements": "Mechanical Ventilation Identification: Correctly identifies mechanical ventilation using the specified `itemid`s from `procedureevents`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vasopressor-identification",
+          "requirements": "Vasopressor Identification: Correctly identifies vasopressor administration using the specified `itemid`s from `inputevents`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "rrt-identification",
+          "requirements": "RRT Identification: Correctly identifies renal replacement therapy using the specified `itemid`s from `procedureevents`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the requested data transformations, aggregations, and comparisons to generate the final report.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay (LOS) Calculation: Accurately calculates LOS in days using `DATETIME_DIFF` between `dischtime` and `admittime` and filters for LOS > 0.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-quartile-generation",
+          "requirements": "LOS Quartile Generation: Correctly uses `NTILE(4)` partitioned by `icu_status` and ordered by `los_days` to create four LOS quartiles for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-and-aggregation",
+          "requirements": "Grouping and Aggregation: Correctly groups results by `icu_status` and `los_quartile` and calculates the count of patients and average rates for mortality and interventions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-comparison-logic",
+          "requirements": "Mortality Comparison Logic: Correctly calculates absolute and relative mortality differences compared to the Q1 baseline for each ICU status group, using a window function to find the baseline.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output columns must be correctly formatted, including rounding percentages and creating descriptive labels for LOS quartiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

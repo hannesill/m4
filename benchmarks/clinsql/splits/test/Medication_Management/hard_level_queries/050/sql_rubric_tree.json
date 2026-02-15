@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the cohort of female inpatients aged 81-91 with an AKI diagnosis.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-filtering",
+          "requirements": "Demographic Filtering: Selects female patients and calculates their age at admission to filter for the 81-91 range.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-diagnosis-identification",
+          "requirements": "AKI Diagnosis Identification: Correctly identifies hospital admissions with an AKI diagnosis using both ICD-9 ('584%') and ICD-10 ('N17%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-cohort-join",
+          "requirements": "Final Cohort Join: Correctly joins the demographic-filtered cohort with the AKI-diagnosed admissions on 'hadm_id'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies specific medication classes and calculates a medication complexity score.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-class-identification",
+          "requirements": "Medication Class Identification: Uses CASE statements and string matching to flag both CNS-depressant and nephrotoxic drugs from the prescriptions table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-complexity-score-calculation",
+          "requirements": "Medication Complexity Score Calculation: Defines a medication complexity score by counting the distinct number of drugs and administration routes per admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs patient grouping, outcome calculation, and statistical analysis as required by the question.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-grouping-logic",
+          "requirements": "Patient Grouping Logic: Correctly categorizes patients into two groups: 'CNS Depression + Nephrotoxic' and 'General AKI Cohort' based on medication flags.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "overall-outcome-calculation",
+          "requirements": "Overall Outcome Calculation: Correctly calculates overall LOS, mortality, mean complexity, and complexity quartiles for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-analysis",
+          "requirements": "Top-Quartile Analysis: Correctly uses PERCENT_RANK() to identify the top quartile of patients by medication complexity and calculates their specific LOS and mortality.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration-and-output",
+      "requirements": "Database Integration and Output Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins patients, admissions, diagnoses_icd, and prescriptions tables using appropriate keys (subject_id, hadm_id).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: The final SELECT statement groups by the risk category and presents all required metrics with appropriate rounding and aliasing.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

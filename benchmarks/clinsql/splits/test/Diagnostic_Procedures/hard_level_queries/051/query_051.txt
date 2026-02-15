@@ -1,0 +1,1 @@
+I’m evaluating a 95‑year‑old male ICU patient with sepsis. Among male ICU patients age 90–100 with sepsis, what is the SD of diagnostic utilization in the first 24h? Also report p75, p95, in‑hospital mortality %, average LOS, and admissions versus overall ICU.

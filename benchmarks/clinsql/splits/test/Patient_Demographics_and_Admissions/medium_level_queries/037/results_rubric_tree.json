@@ -1,0 +1,218 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "outcome-group-column-exists",
+              "requirements": "Column Exists for Outcome Group (e.g., 'outcome_group', 'mortality_status')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-los-column-exists",
+              "requirements": "Column Exists for 50th Percentile LOS (e.g., 'p50_los_days', 'median_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-column-exists",
+              "requirements": "Column Exists for 75th Percentile LOS (e.g., 'p75_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-los-column-exists",
+              "requirements": "Column Exists for 90th Percentile LOS (e.g., 'p90_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p95-los-column-exists",
+              "requirements": "Column Exists for 95th Percentile LOS (e.g., 'p95_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-column-exists",
+              "requirements": "Column Exists for Percentile Rank of 7 Days (e.g., 'percentile_rank_of_7_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "p50-los-validation",
+          "requirements": "Validation for 50th Percentile LOS (p50_los_days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p50-los-plausible",
+              "requirements": "Clinically Plausible (1.0-15.0 days). Median LOS is rarely under a day and typically not excessively long for a general cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-los-acceptable",
+              "requirements": "Acceptable Range (2.0-10.0 days). For a 52-62 age group, median LOS for survivors is expected to be a few days, while for non-survivors it is expected to be longer.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p75-los-validation",
+          "requirements": "Validation for 75th Percentile LOS (p75_los_days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p75-los-plausible",
+              "requirements": "Clinically Plausible (2.0-30.0 days). Must be greater than p50.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-los-acceptable",
+              "requirements": "Acceptable Range (4.0-20.0 days). Represents patients with more complex stays.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p90-los-validation",
+          "requirements": "Validation for 90th Percentile LOS (p90_los_days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p90-los-plausible",
+              "requirements": "Clinically Plausible (4.0-60.0 days). Must be greater than p75.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p90-los-acceptable",
+              "requirements": "Acceptable Range (8.0-40.0 days). Represents patients with significantly long stays.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p95-los-validation",
+          "requirements": "Validation for 95th Percentile LOS (p95_los_days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "p95-los-plausible",
+              "requirements": "Clinically Plausible (5.0-90.0 days). Must be greater than p90.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p95-los-acceptable",
+              "requirements": "Acceptable Range (12.0-60.0 days). Represents the longest, most complex patient stays.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentile-rank-validation",
+          "requirements": "Validation for Percentile Rank of 7 Days (percentile_rank_of_7_days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-rank-plausible",
+              "requirements": "Clinically Plausible (0.0-100.0). By definition, a percentile rank must be within this range.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-acceptable",
+              "requirements": "Acceptable Range (40.0-95.0). The rank should be higher for survivors (LOS of 7 is between p50 and p75) and lower for non-survivors (LOS of 7 is around the median).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "outcome-logic-validation",
+          "requirements": "Clinical logic of outcomes is valid (LOS for non-survivors is generally longer than for survivors)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

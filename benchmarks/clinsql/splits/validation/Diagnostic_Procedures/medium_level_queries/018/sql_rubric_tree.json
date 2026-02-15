@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Filters patients to be between 80 and 90 years old, using a condition like `pat.anchor_age BETWEEN 80 AND 90`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hemorrhagic-stroke-diagnosis",
+          "requirements": "Correctly identifies patients with hemorrhagic stroke using both ICD-9 codes (e.g., '430%', '431%', '432%') and ICD-10 codes (e.g., 'I60%', 'I61%', 'I62%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to form the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Uses a `LEFT JOIN` to connect the admissions cohort with `procedures_icd` on `hadm_id` to ensure admissions with zero ultrasounds are included in the count.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "ultrasound-procedure-identification",
+          "requirements": "Correctly identifies ultrasound procedures across both ICD-9 (e.g., `proc.icd_code LIKE '88.7%'`) and ICD-10 (e.g., using section 'B' and modality 'U').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Accurately calculates the length of stay in days, for instance using `DATETIME_DIFF(adm.dischtime, adm.admittime, DAY)`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stay-duration-filtering",
+          "requirements": "Restricts the analysis to admissions with a length of stay between 1 and 7 days (inclusive).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-ultrasound-count",
+          "requirements": "Correctly counts the number of ultrasound procedures for each individual admission (e.g., using `COUNT(proc.icd_code)` and `GROUP BY hadm_id`).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stay-category-grouping",
+          "requirements": "Accurately categorizes admissions into '1-4 Day Stay' and '5-7 Day Stay' groups, typically via a `CASE` statement, and groups the final results by these categories.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metrics-calculation",
+          "requirements": "Calculates the final required metrics (mean, min, and max) of ultrasound counts for each stay category using `AVG()`, `MIN()`, and `MAX()`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

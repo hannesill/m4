@@ -1,0 +1,1 @@
+For a 55-year-old male: among male patients 50–60 admitted with chest pain or AMI whose initial hs‑TnT > ULN (0.014 ng/mL), report patient and admission counts, mean, median, IQR.

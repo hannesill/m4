@@ -1,0 +1,2 @@
+number_of_patient_stays,number_of_sbp_measurements,avg_nighttime_sbp,stddev_nighttime_sbp,min_nighttime_sbp,max_nighttime_sbp,p25_nighttime_sbp,median_nighttime_sbp,p75_nighttime_sbp
+64,3235,127.81,23.03,67.0,216.0,111.0,125.0,141.0

@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the initial patient population based on demographics and primary diagnosis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 42-52 years using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 42 AND 52`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "condition-selection-pancreatitis",
+          "requirements": "Condition Selection (Acute Pancreatitis): Filters for admissions with a diagnosis of acute pancreatitis using both ICD-9 ('5770') and ICD-10 ('K85%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identifies diagnostic procedures and categorizes length of stay based on the clinical question.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "diagnostic-procedure-identification",
+          "requirements": "Diagnostic Procedure Identification: Correctly filters `procedures_icd` for diagnostic procedures using both ICD-9 (codes like '87%' or '88%') and ICD-10 (codes like 'B%').",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-categorization",
+          "requirements": "Length of Stay Categorization: Correctly calculates length of stay using `DATETIME_DIFF` and groups it into '1-4 Day Stay' and '5-7 Day Stay' categories using a CASE statement.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Ensures correct joining of all necessary tables to link patient data with diagnoses and procedures.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-diagnosis-join",
+          "requirements": "Patient, Admission, and Diagnosis Join: Correctly performs INNER JOINs from `patients` to `admissions` on `subject_id`, and then to `diagnoses_icd` on `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-procedure-join",
+          "requirements": "Admission to Procedure Join: Correctly performs a LEFT JOIN from the filtered admissions to `procedures_icd` on `hadm_id` to ensure admissions with zero procedures are included in the count.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly aggregates the data to produce the final requested metrics per length-of-stay group.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-procedure-count",
+          "requirements": "Per-Admission Procedure Count: Correctly counts procedures for each individual admission using `COUNT(pr.icd_code)` and grouping by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-grouping",
+          "requirements": "Final Output Grouping: Groups the final results by the `stay_category` and filters to include only the '1-4 Day Stay' and '5-7 Day Stay' groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-count-aggregation",
+          "requirements": "Patient Count Aggregation: Correctly calculates the unique patient count for each group using `COUNT(DISTINCT apc.subject_id)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-statistics-aggregation",
+          "requirements": "Procedure Statistics Aggregation: Correctly calculates the mean, min, and max procedures per admission for each group using `AVG`, `MIN`, and `MAX` functions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

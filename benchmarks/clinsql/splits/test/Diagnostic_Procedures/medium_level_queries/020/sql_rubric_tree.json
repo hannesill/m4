@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters for the primary patient population based on demographics, diagnosis, and length of stay.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range of 72-82 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "tia-diagnosis-selection",
+          "requirements": "TIA Diagnosis Selection: Identifies admissions for Transient Ischemic Attack (TIA) using appropriate ICD-9 ('435%') and ICD-10 ('G45%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "initial-los-filter",
+          "requirements": "Initial Length of Stay Filter: Correctly calculates the length of stay in days and pre-filters admissions to the 1-7 day range.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient demographics, diagnoses, ICU stays, and procedures.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "primary-cohort-joins",
+          "requirements": "Primary Cohort Joins: Correctly performs INNER JOINs between `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-data-join",
+          "requirements": "ICU Data Join: Correctly uses a LEFT JOIN to the `icustays` table on `hadm_id` to identify admissions with an ICU stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-data-join",
+          "requirements": "Procedure Data Join: Correctly uses a LEFT JOIN to the `procedures_icd` table on `hadm_id` to link imaging procedures to the TIA admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Accurately translates clinical concepts like ICU status, LOS groups, and imaging procedures into SQL logic.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "icu-status-determination",
+          "requirements": "ICU Status Determination: Implements a CASE statement to correctly label admissions as 'ICU Stay' or 'No ICU Stay' based on the join to the icustays table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-categorization",
+          "requirements": "Length of Stay Categorization: Uses a CASE statement to correctly categorize admissions into '1-3 Day Stay' and '4-7 Day Stay' groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-procedure-identification",
+          "requirements": "Imaging Procedure Identification: Correctly filters for diagnostic imaging procedures by handling both ICD-9 (codes like '87%' or '88%') and ICD-10 (codes like 'B%') within the join condition.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the correct sequence of aggregations to calculate the final requested metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-imaging-count",
+          "requirements": "Per-Admission Imaging Count: Correctly counts the number of imaging procedures for each individual admission (`GROUP BY hadm_id`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-grouping",
+          "requirements": "Final Output Grouping: Groups the intermediate results correctly by `stay_category` and `icu_status` to prepare for the final aggregation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metrics-calculation",
+          "requirements": "Final Metrics Calculation: Accurately calculates the total admission count (`COUNT(hadm_id)`) and the average number of imaging procedures (`AVG(imaging_procedure_count)`) for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

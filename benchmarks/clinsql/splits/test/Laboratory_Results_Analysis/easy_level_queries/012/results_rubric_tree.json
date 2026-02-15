@@ -1,0 +1,78 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists",
+              "requirements": "The output must contain a column representing the 75th percentile of platelet count (e.g., 'percentile_75th_platelet_count', 'p75_platelets').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "The value for the 75th percentile of platelet count must not be NULL or empty.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "percentile-platelet-validation",
+          "requirements": "Validate the value for the 75th percentile of platelet count.",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible",
+              "requirements": "Clinically Plausible Range: The 75th percentile of platelet count (in k/uL) must be within a broad physiological range (e.g., 10.0-1000.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range",
+              "requirements": "Acceptable Range: The 75th percentile of platelet count (in k/uL) should fall within a clinically expected range for hemorrhagic stroke patients on discharge, who might exhibit reactive thrombocytosis (e.g., 200.0-500.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

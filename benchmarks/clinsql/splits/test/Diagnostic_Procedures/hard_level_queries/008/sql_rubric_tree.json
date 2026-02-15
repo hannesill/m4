@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at the time of admission and filter for the range 48-58.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ugib-diagnosis-filter",
+          "requirements": "UGIB Diagnosis Filter: The query must correctly filter for patients with an Upper GI Bleed diagnosis by joining with the `ugib_admissions` CTE.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: The query must correctly identify and filter for only the first ICU stay for each hospital admission using a window function and `rn = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ugib-icd-code-selection",
+          "requirements": "UGIB ICD Code Selection: The query must correctly identify UGIB using both ICD-9 ('578%') and ICD-10 ('K920%', 'K921%', 'K922%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-time-window",
+          "requirements": "Procedure Time Window: The query must correctly filter procedures to those occurring within the first 24 hours of the ICU stay start time.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `admissions`, `patients`, and the `first_icu` CTE using appropriate keys (`subject_id`, `hadm_id`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-join-logic",
+          "requirements": "Procedure Join Logic: The query must use a LEFT JOIN to connect `procedureevents` to ensure patients with zero procedures are included in the cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "procedure-count-calculation",
+          "requirements": "Procedure Count Calculation: The query must count the number of unique diagnostic procedures per stay using `COUNT(DISTINCT pe.itemid)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quintile-stratification",
+          "requirements": "Quintile Stratification: The query must correctly stratify patients into 5 groups (quintiles) based on the diagnostic procedure count using `NTILE(5)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-outcome-aggregation",
+          "requirements": "Final Outcome Aggregation: The query must group results by quintile and correctly calculate the average procedures, hospital LOS, and in-hospital mortality.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-calculation-accuracy",
+          "requirements": "Outcome Calculation Accuracy: The query must accurately calculate hospital LOS in days (`DATETIME_DIFF(...) / 24.0`) and mortality as a percentage (`AVG(...) * 100`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

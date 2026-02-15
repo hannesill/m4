@@ -1,0 +1,241 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "cohort-column-exists",
+              "requirements": "Exists column identifying the Target and Control cohorts",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-risk-score-column-exists",
+              "requirements": "Exists column for mean comorbidity risk score",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-30day-column-exists",
+              "requirements": "Exists column for 30-day mortality rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cardio-complication-column-exists",
+              "requirements": "Exists column for cardiovascular complication rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "neuro-complication-column-exists",
+              "requirements": "Exists column for neurologic complication rate",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "survivor-los-column-exists",
+              "requirements": "Exists column for survivor average length of stay",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "matched-percentile-column-exists",
+              "requirements": "Exists column for matched profile risk percentile",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty values in cells that are expected to have a value (e.g., all cells for Target cohort, all except percentile for Control cohort)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mean-risk-score-validation",
+          "requirements": "Validate column for mean comorbidity risk score",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-mean-risk-score",
+              "requirements": "Clinically Plausible (0-50)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-mean-risk-score",
+              "requirements": "Acceptable Range: Target (20-40), Control (8-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-30day-validation",
+          "requirements": "Validate column for 30-day mortality rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-mortality-rate",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-mortality-rate",
+              "requirements": "Acceptable Range: Target (15-45), Control (2-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cardio-complication-validation",
+          "requirements": "Validate column for cardiovascular complication rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-cardio-complication-rate",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-cardio-complication-rate",
+              "requirements": "Acceptable Range: Target (5-20), Control (1-8)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "neuro-complication-validation",
+          "requirements": "Validate column for neurologic complication rate (%)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-neuro-complication-rate",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-neuro-complication-rate",
+              "requirements": "Acceptable Range: Target (8-25), Control (3-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "survivor-los-validation",
+          "requirements": "Validate column for survivor average length of stay (days)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-survivor-los",
+              "requirements": "Clinically Plausible (1-90)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-survivor-los",
+              "requirements": "Acceptable Range: Target (10-30), Control (3-8)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "risk-percentile-validation",
+          "requirements": "Validate column for matched profile risk percentile vs control",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "plausible-risk-percentile",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-risk-percentile",
+              "requirements": "Acceptable Range for Target cohort (75-99)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

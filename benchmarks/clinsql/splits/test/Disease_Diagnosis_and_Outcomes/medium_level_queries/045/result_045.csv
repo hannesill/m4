@@ -1,0 +1,9 @@
+pneumonia_type,los_group,day1_icu_status,N,in_hospital_mortality_rate_pct,mech_vent_prevalence_pct,vasopressor_prevalence_pct,rrt_prevalence_pct
+Aspiration Pneumonia,<=7 days,Day-1 ICU,92,32.61,27.17,27.17,1.09
+Aspiration Pneumonia,<=7 days,No Day-1 ICU,126,12.7,3.17,0.0,2.38
+Aspiration Pneumonia,>7 days,Day-1 ICU,101,27.72,52.48,46.53,5.94
+Aspiration Pneumonia,>7 days,No Day-1 ICU,95,18.95,30.53,18.95,1.05
+Community-Acquired Pneumonia,<=7 days,Day-1 ICU,357,31.37,19.61,30.25,2.52
+Community-Acquired Pneumonia,<=7 days,No Day-1 ICU,1073,4.1,0.37,0.65,1.77
+Community-Acquired Pneumonia,>7 days,Day-1 ICU,353,15.58,35.41,34.56,3.12
+Community-Acquired Pneumonia,>7 days,No Day-1 ICU,409,10.02,11.98,9.78,3.67

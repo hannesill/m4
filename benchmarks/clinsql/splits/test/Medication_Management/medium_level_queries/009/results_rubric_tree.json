@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "medication-class-column-exists",
+              "requirements": "Exists column for medication class (e.g., 'medication_class', 'drug_group').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "first-24h-rate-column-exists",
+              "requirements": "Exists column for initiation rate in first 24h (e.g., 'pct_initiated_first_24h', 'first_day_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "last-24h-rate-column-exists",
+              "requirements": "Exists column for initiation rate in final 24h (e.g., 'pct_initiated_last_24h', 'last_day_rate').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "difference-column-exists",
+              "requirements": "Exists column for absolute percentage-point difference (e.g., 'absolute_difference_pp', 'rate_diff_pp').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns ('medication_class', 'pct_initiated_first_24h', 'pct_initiated_last_24h', 'absolute_difference_pp').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "first-24h-rate-validation",
+          "requirements": "Validation of first 24h initiation rate ('pct_initiated_first_24h')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "first-24h-rate-plausible",
+              "requirements": "Clinically Plausible Percentage (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "first-24h-rate-acceptable",
+              "requirements": "Acceptable Range: Insulin (60.0-95.0), Oral Agents (1.0-20.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "last-24h-rate-validation",
+          "requirements": "Validation of last 24h initiation rate ('pct_initiated_last_24h')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "last-24h-rate-plausible",
+              "requirements": "Clinically Plausible Percentage (0.0-100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "last-24h-rate-acceptable",
+              "requirements": "Acceptable Range: Insulin (0.0-10.0), Oral Agents (0.0-15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "difference-validation",
+          "requirements": "Validation of absolute percentage-point difference ('absolute_difference_pp')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "difference-plausible",
+              "requirements": "Clinically Plausible Range (-100.0 to 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "difference-acceptable",
+              "requirements": "Acceptable Range: Insulin (-95.0 to -50.0), Oral Agents (-20.0 to 15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

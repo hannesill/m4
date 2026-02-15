@@ -1,0 +1,249 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-cohort",
+              "requirements": "Column for cohort groups exists (e.g., cohort_group)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-instability-percentiles",
+              "requirements": "Columns for instability index percentiles exist (e.g., p25_instability_index, p50_instability_index, p75_instability_index, p90_instability_index)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-instability-iqr",
+              "requirements": "Column for instability index IQR exists (e.g., iqr_instability_index)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-hypotension-hours",
+              "requirements": "Column for average hypotensive hours exists (e.g., avg_hours_with_hypotension)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-tachycardia-hours",
+              "requirements": "Column for average tachycardic hours exists (e.g., avg_hours_with_tachycardia)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-icu-los",
+              "requirements": "Column for average ICU LOS exists (e.g., avg_icu_los_days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mortality",
+              "requirements": "Column for mortality rate exists (e.g., hospital_mortality_rate)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "correct-row-count",
+          "requirements": "Correct number of rows (2) for target and control cohorts",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "instability-index-percentiles-validation",
+          "requirements": "Validate Instability Index Percentiles (p25, p50, p75, p90)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-instability-percentiles",
+              "requirements": "Clinically Plausible Range (0.0 to 1.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-instability-percentiles",
+              "requirements": "Acceptable Range (0.1 to 1.1)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "instability-index-iqr-validation",
+          "requirements": "Validate Instability Index IQR",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-instability-iqr",
+              "requirements": "Clinically Plausible Range (0.0 to 1.5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-instability-iqr",
+              "requirements": "Acceptable Range (0.3 to 0.8)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "hypotension-hours-validation",
+          "requirements": "Validate Average Hypotensive Hours",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-hypotension-hours",
+              "requirements": "Clinically Plausible Range (0.0 to 72.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-hypotension-hours",
+              "requirements": "Acceptable Range (5.0 to 35.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "tachycardia-hours-validation",
+          "requirements": "Validate Average Tachycardic Hours",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-tachycardia-hours",
+              "requirements": "Clinically Plausible Range (0.0 to 72.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-tachycardia-hours",
+              "requirements": "Acceptable Range (5.0 to 40.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "Validate Average ICU LOS (days)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-icu-los",
+              "requirements": "Clinically Plausible Range (1.0 to 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-icu-los",
+              "requirements": "Acceptable Range (5.0 to 25.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate Hospital Mortality Rate",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-mortality-rate",
+              "requirements": "Clinically Plausible Range (0.0 to 1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-mortality-rate",
+              "requirements": "Acceptable Range (0.25 to 0.7)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

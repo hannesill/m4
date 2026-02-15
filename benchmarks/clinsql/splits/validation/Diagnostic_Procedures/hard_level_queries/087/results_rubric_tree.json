@@ -1,0 +1,143 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "diagnostic-intensity-column-exists",
+              "requirements": "Column Exists: Diagnostic Intensity (e.g., p95_diagnostic_intensity_first_72h)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "icu-los-column-exists",
+              "requirements": "Column Exists: ICU Length of Stay (e.g., avg_icu_los_days)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-column-exists",
+              "requirements": "Column Exists: In-hospital Mortality (e.g., hospital_mortality_percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "diagnostic-intensity-validation",
+          "requirements": "Validate values for Diagnostic Intensity (e.g., p95_diagnostic_intensity_first_72h)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-diag-intensity",
+              "requirements": "Clinically Plausible: Value for 95th percentile of diagnostic intensity must be between 1 and 100",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-diag-intensity",
+              "requirements": "Acceptable Range: Value for 95th percentile of diagnostic intensity for an ICH cohort is expected to be between 8 and 25",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "icu-los-validation",
+          "requirements": "Validate values for ICU Length of Stay (days) (e.g., avg_icu_los_days)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-icu-los",
+              "requirements": "Clinically Plausible: Average ICU LOS must be between 0.5 and 45 days",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-icu-los",
+              "requirements": "Acceptable Range: Average ICU LOS for an ICH cohort is expected to be between 4 and 15 days",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mortality-validation",
+          "requirements": "Validate values for In-hospital Mortality (%) (e.g., hospital_mortality_percent)",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "clinically-plausible-mortality",
+              "requirements": "Clinically Plausible: Mortality rate must be between 0 and 100",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "acceptable-range-mortality",
+              "requirements": "Acceptable Range: In-hospital mortality for an ICH cohort is expected to be between 15% and 50%",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+I have an 85‑year‑old female patient to evaluate. Among female Medicare patients aged 80–90 admitted via the emergency department with a principal diagnosis of osteomyelitis, how many index hospital admissions are in that cohort in the MIMIC‑IV hospital dataset?

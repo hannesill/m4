@@ -1,0 +1,2 @@
+target_map_value,total_stays_in_cohort,stays_with_avg_map_le_60,percentile_rank_of_60,cohort_mean_avg_map,cohort_stddev_avg_map,cohort_p25_avg_map,cohort_p50_avg_map,cohort_p75_avg_map
+60,4315,34,0.79,84.53,11.5,76.23076923076921,83.66887417218544,91.73684210526318

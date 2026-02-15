@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly filters for female inpatients aged 44-54 with a diagnosis of intracranial hemorrhage.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `pat.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates age at admission and filters for patients aged between 44 and 54.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-selection",
+          "requirements": "Primary Condition Selection: Identifies admissions for intracranial hemorrhage using both ICD-9 ('430', '431', '432') and ICD-10 ('I60%', 'I61%', 'I62%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Ensures correct joining of tables to link patient demographics, admissions, and diagnoses.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patients-admissions-join",
+          "requirements": "Patients-Admissions Join: Correctly joins the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: Correctly joins the admissions cohort with `diagnoses_icd` on `hadm_id` to identify conditions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "feature-integration-join",
+          "requirements": "Feature Integration Join: Correctly joins the main `ich_admissions` cohort with the `diagnosis_features` CTE on `hadm_id` to link patients to their calculated features.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly implements the logic for complications and the composite risk score.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "complication-identification",
+          "requirements": "Complication Identification: Creates flags for `has_cardiac_complication` and `has_neuro_complication` using specified ICD-9 and ICD-10 codes within a CASE statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-feature-creation",
+          "requirements": "Risk Score Feature Creation: Correctly calculates `num_diagnoses` and creates the `has_critical_illness` flag based on the specified set of ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-calculation",
+          "requirements": "Risk Score Calculation: Correctly computes the `risk_score` using the formula `(age_at_admission - 44) * 1 + (num_diagnoses) * 2 + (has_critical_illness * 25)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs risk stratification and calculates the required outcome metrics per risk quartile.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-stratification",
+          "requirements": "Risk Stratification: Stratifies patients into four quartiles based on the calculated `risk_score` using the `NTILE(4) OVER (ORDER BY risk_score)` window function.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: Groups the final results by `risk_quartile` for stratified analysis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metrics-calculation",
+          "requirements": "Outcome Metrics Calculation: Correctly calculates patient counts (`COUNT`), mortality rate (`AVG(hospital_expire_flag)`), and complication rates (`AVG(has_cardiac_complication)`, `AVG(has_neuro_complication)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "survivor-los-calculation",
+          "requirements": "Survivor LOS Calculation: Calculates the median length of stay (LOS) specifically for survivors (`hospital_expire_flag = 0`) in each quartile using `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

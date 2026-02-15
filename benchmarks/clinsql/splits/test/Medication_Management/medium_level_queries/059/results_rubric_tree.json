@@ -1,0 +1,148 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "medication-class-column-exists",
+              "requirements": "A column grouping by medication class exists (e.g., 'med_class').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pct-initiated-first-48h-column-exists",
+              "requirements": "A column representing the initiation percentage in the first 48 hours exists (e.g., 'pct_initiated_first_48h').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pct-initiated-final-24h-column-exists",
+              "requirements": "A column representing the initiation percentage in the final 24 hours exists (e.g., 'pct_initiated_final_24h').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-difference-pp-column-exists",
+              "requirements": "A column representing the absolute percentage point difference exists (e.g., 'absolute_difference_pp').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the primary answer columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "pct-initiated-first-48h-validation",
+          "requirements": "Validate the column `pct_initiated_first_48h` (or similar).",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "pct-initiated-first-48h-plausible",
+              "requirements": "Clinically Plausible: Values are percentages between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pct-initiated-first-48h-acceptable",
+              "requirements": "Acceptable Range: Initiation rates are expected to be between 10% and 95% for this patient cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "pct-initiated-final-24h-validation",
+          "requirements": "Validate the column `pct_initiated_final_24h` (or similar).",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "pct-initiated-final-24h-plausible",
+              "requirements": "Clinically Plausible: Values are percentages between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pct-initiated-final-24h-acceptable",
+              "requirements": "Acceptable Range: Initiation rates in the final 24h are expected to be between 1% and 40%.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "absolute-difference-pp-validation",
+          "requirements": "Validate the column `absolute_difference_pp` (or similar).",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "absolute-difference-pp-plausible",
+              "requirements": "Clinically Plausible: Values are between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "absolute-difference-pp-acceptable",
+              "requirements": "Acceptable Range: The absolute difference is expected to be between 5 and 75 percentage points.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

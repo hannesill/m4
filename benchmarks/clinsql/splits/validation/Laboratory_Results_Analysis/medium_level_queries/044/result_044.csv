@@ -1,0 +1,2 @@
+cohort_description,number_of_admissions,mean_troponin_t,stddev_troponin_t,min_troponin_t,p25_troponin_t,median_troponin_t,p75_troponin_t,max_troponin_t
+Male Patients Aged 54-64 with Initial Elevated Troponin T,5527,0.561,1.832,0.02,0.04,0.1,0.3,39.7

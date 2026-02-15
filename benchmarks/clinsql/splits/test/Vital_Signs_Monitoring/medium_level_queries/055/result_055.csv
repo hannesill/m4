@@ -1,0 +1,2 @@
+cohort_description,total_icu_stays_in_cohort,mean_of_average_spo2,stddev_of_average_spo2,min_average_spo2,p25_average_spo2,p50_average_spo2,p75_average_spo2,max_average_spo2,percentile_rank_of_88_spo2
+Female ICU Patients Aged 87-97 (First 24h Avg SpO2),4591,96.44,2.33,70.0,95.27,96.64,97.96,100.0,0.74

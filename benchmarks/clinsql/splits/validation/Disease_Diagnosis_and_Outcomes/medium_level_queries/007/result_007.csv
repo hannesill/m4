@@ -1,0 +1,13 @@
+severity_level,comorbidity_burden,los_group,total_admissions,total_deaths,mortality_rate_pct,comparison_mortality_rate_pct,abs_mortality_diff_vs_short_los,rel_mortality_diff_vs_short_los_pct,prevalence_mv_pct,prevalence_vaso_pct,prevalence_rrt_pct
+Lower-Severity (No ICU),High (>20 comorbidities),< 8 days,450,1,0.22,0.0,,,0.0,0.0,0.0
+Lower-Severity (No ICU),High (>20 comorbidities),>= 8 days,278,2,0.72,0.22,0.5,227.27,0.0,0.0,0.0
+Lower-Severity (No ICU),Low (0-10 comorbidities),< 8 days,613,0,0.0,0.0,,,0.0,0.0,0.0
+Lower-Severity (No ICU),Low (0-10 comorbidities),>= 8 days,31,0,0.0,0.0,0.0,,0.0,0.0,0.0
+Lower-Severity (No ICU),Medium (11-20 comorbidities),< 8 days,1362,5,0.37,0.0,,,0.0,0.0,0.0
+Lower-Severity (No ICU),Medium (11-20 comorbidities),>= 8 days,239,3,1.26,0.37,0.89,240.54,0.0,0.0,0.0
+Higher-Severity (ICU),High (>20 comorbidities),< 8 days,169,34,20.12,0.0,,,16.57,31.36,15.38
+Higher-Severity (ICU),High (>20 comorbidities),>= 8 days,428,53,12.38,20.12,-7.74,-38.47,39.02,53.97,22.9
+Higher-Severity (ICU),Low (0-10 comorbidities),< 8 days,66,3,4.55,0.0,,,22.73,28.79,1.52
+Higher-Severity (ICU),Low (0-10 comorbidities),>= 8 days,16,0,0.0,4.55,-4.55,-100.0,50.0,62.5,12.5
+Higher-Severity (ICU),Medium (11-20 comorbidities),< 8 days,250,11,4.4,0.0,,,19.2,20.4,9.2
+Higher-Severity (ICU),Medium (11-20 comorbidities),>= 8 days,208,9,4.33,4.4,-0.07,-1.59,39.42,35.1,8.65

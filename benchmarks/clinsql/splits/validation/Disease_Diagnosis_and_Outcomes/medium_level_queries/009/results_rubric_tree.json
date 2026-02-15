@@ -1,0 +1,179 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "primary-column-exists-stratification",
+              "requirements": "Stratification columns exist (e.g., related to LOS and ICU status)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mortality",
+              "requirements": "Primary column exists for mortality rate (e.g., mortality_rate_percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-mech-vent",
+              "requirements": "Primary column exists for mechanical ventilation prevalence (e.g., mech_vent_prevalence_percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-vasopressor",
+              "requirements": "Primary column exists for vasopressor prevalence (e.g., vasopressor_prevalence_percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "primary-column-exists-rrt",
+              "requirements": "Primary column exists for RRT prevalence (e.g., rrt_prevalence_percent)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mortality-rate-validation",
+          "requirements": "Validate values in column related to mortality rate (e.g., mortality_rate_percent)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0-60%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mortality-rate-acceptable",
+              "requirements": "Acceptable Range (1-20%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mech-vent-prevalence-validation",
+          "requirements": "Validate values in column related to mechanical ventilation prevalence (e.g., mech_vent_prevalence_percent)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mech-vent-prevalence-plausible",
+              "requirements": "Clinically Plausible (0-70%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mech-vent-prevalence-acceptable",
+              "requirements": "Acceptable Range (0.1-45%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "vasopressor-prevalence-validation",
+          "requirements": "Validate values in column related to vasopressor prevalence (e.g., vasopressor_prevalence_percent)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "vasopressor-prevalence-plausible",
+              "requirements": "Clinically Plausible (0-60%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "vasopressor-prevalence-acceptable",
+              "requirements": "Acceptable Range (0.1-40%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "rrt-prevalence-validation",
+          "requirements": "Validate values in column related to RRT prevalence (e.g., rrt_prevalence_percent)",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "rrt-prevalence-plausible",
+              "requirements": "Clinically Plausible (0-30%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "rrt-prevalence-acceptable",
+              "requirements": "Acceptable Range (0-10%)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the age at admission and filter for patients between 41 and 51 years old.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-patient-identification",
+          "requirements": "ICU Patient Identification: The query must join with the `icustays` table to ensure only ICU patients are included in the cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stroke-diagnosis-identification",
+          "requirements": "Stroke Diagnosis Identification: The query must correctly identify stroke diagnoses from the `diagnoses_icd` table.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling for Stroke: The query must handle both ICD-9 (codes '430'-'438') and ICD-10 (codes 'I60'-'I69') for stroke diagnosis.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "map-measurement-identification",
+          "requirements": "MAP Measurement Identification: The query must correctly identify Mean Arterial Pressure measurements using the appropriate itemids (e.g., 220052, 52).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "map-value-categorization",
+          "requirements": "MAP Value Categorization: The query must use a CASE statement to correctly categorize MAP values into the four specified ranges (<65, 65-74, 75-84, >=85).",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-integration",
+          "requirements": "Patient-Demographics Integration: The query must correctly join `patients`, `admissions`, and `icustays` tables using `subject_id` and `hadm_id` to build the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "measurements-integration",
+          "requirements": "Measurements Integration: The query must join the patient cohort to `chartevents` on `stay_id` to link patients to their MAP measurements.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stroke-diagnosis-linking",
+          "requirements": "Stroke Diagnosis Linking: The query must use a LEFT JOIN to correctly link stroke diagnoses to patient measurements on `hadm_id` without excluding patients who did not have a stroke.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final aggregation must group results by the `map_category` to provide per-category statistics.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "patient-count-calculation",
+          "requirements": "Patient Count Calculation: The query must correctly calculate the total number of unique patients per MAP category using `COUNT(DISTINCT subject_id)`.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stroke-rate-calculation",
+          "requirements": "Stroke Rate Calculation: The query must accurately calculate the stroke rate as the count of unique patients with a stroke divided by the total unique patients in each category, expressed as a percentage.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-ordering",
+          "requirements": "Output Ordering: The results must be ordered logically by MAP category (e.g., using a CASE statement in the ORDER BY clause).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

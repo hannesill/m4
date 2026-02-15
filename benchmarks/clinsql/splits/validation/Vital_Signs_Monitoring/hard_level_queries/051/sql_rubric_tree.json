@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using `pat.gender = 'M'` in the WHERE clause.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate the patient's age at ICU admission and filter for the range 89-99 using `BETWEEN 89 AND 99`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "ischemic-stroke-identification",
+          "requirements": "Ischemic Stroke Identification: The query must identify patients with ischemic stroke by correctly using both ICD-9 (LIKE '433%' OR LIKE '434%') and ICD-10 (LIKE 'I63%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-grouping",
+          "requirements": "Cohort Grouping: The query must correctly create two distinct patient groups ('Ischemic Stroke' vs. 'General ICU') based on the presence or absence of an ischemic stroke diagnosis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-sign-selection",
+          "requirements": "Vital Sign Selection: The query must select the correct vital signs (HR, SBP, RR, SpO2) using the appropriate itemids from the chartevents table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "base-cohort-joins",
+          "requirements": "Base Cohort Joins: The query must correctly join icustays, patients, and admissions tables on the appropriate keys (subject_id and hadm_id) to form the initial patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-data-join",
+          "requirements": "Diagnosis Data Join: The query must join the patient cohort with diagnoses_icd on hadm_id to correctly link diagnoses to hospital admissions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-data-join",
+          "requirements": "Vitals Data Join: The query must join the patient cohort with chartevents on stay_id to link vital sign measurements to specific ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filter-48h",
+          "requirements": "Temporal Filter (48h): The query must filter vital signs to include only those recorded within the first 48 hours of the ICU stay using `charttime BETWEEN icu.intime AND DATETIME_ADD(icu.intime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must correctly calculate the instability score as the average of the coefficients of variation (STDDEV/AVG) for each of the four specified vital signs per patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-episodes-calculation",
+          "requirements": "Abnormal Episodes Calculation: The query must correctly count the number of abnormal vital sign readings per patient based on the specified clinical thresholds within the first 48 hours.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "p95-percentile-calculation",
+          "requirements": "95th Percentile Calculation: The query must correctly compute the 95th percentile of the instability score specifically for the ischemic stroke cohort using a function like `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-quartile-identification",
+          "requirements": "Top Quartile Identification: The query must correctly identify the top 25% of patients based on descending instability score using `NTILE(4) OVER (ORDER BY instability_score DESC)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-and-output",
+          "requirements": "Final Aggregation and Output: The query must correctly aggregate results for the top quartile, grouped by cohort, and output the required metrics (N, mean instability, mean abnormal episodes, mean ICU LOS, mortality rate).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

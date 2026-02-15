@@ -1,0 +1,5 @@
+spo2_category,patient_count,aki_patient_count,aki_rate_percent
+< 90%,82,46,56.1
+90-92%,119,55,46.22
+93-95%,1584,567,35.8
+> 95%,6854,1977,28.84

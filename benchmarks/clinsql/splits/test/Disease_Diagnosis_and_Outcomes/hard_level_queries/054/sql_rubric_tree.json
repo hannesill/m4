@@ -1,0 +1,269 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "base-patient-filtering",
+          "requirements": "Initial Patient Pool Selection: Correctly filters the base population for female inpatients aged 59-69.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "gender-selection",
+              "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "age-range-selection",
+              "requirements": "Age Range Selection: Filters for patients aged 59 to 69 using `p.anchor_age BETWEEN 59 AND 69`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "final-cohort-separation",
+          "requirements": "Final Cohort Separation: Correctly separates the base cohort into 'Target' and 'Control' groups based on PE and high comorbidity status.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "target-group-definition",
+              "requirements": "Target Group Definition: Identifies the target group using the logic `has_pe = 1 AND is_high_comorbidity_burden = 1`.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "control-group-definition",
+              "requirements": "Control Group Definition: Defines the control group as all other patients in the base cohort who do not meet the target criteria.",
+              "sequential": false,
+              "critical": true,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-join",
+          "requirements": "Patient-Admissions Join: Correctly joins `patients` and `admissions` tables on `subject_id` to link patient demographics with hospital stay information.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: Correctly joins the base cohort with `diagnoses_icd` on `hadm_id` to associate diagnoses with specific hospital admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "feature-aggregation-join-logic",
+          "requirements": "Feature Aggregation Join Logic: Uses a LEFT JOIN to connect the base patient cohort to the diagnosis flags, ensuring all patients are retained for cohort definition.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "diagnosis-code-identification",
+          "requirements": "Diagnosis Code Identification: Correctly flags diagnoses for PE, complications, and comorbidities across ICD-9 and ICD-10.",
+          "sequential": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd-version-handling",
+              "requirements": "ICD Version Handling: The query correctly distinguishes between ICD-9 and ICD-10 versions for all relevant diagnoses.",
+              "sequential": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "pe-code-selection",
+              "requirements": "PE Code Selection: Correctly identifies Pulmonary Embolism using ICD-10 codes like 'I26%' and ICD-9 codes like '415.1%'.",
+              "sequential": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cardio-complication-codes",
+              "requirements": "Cardiovascular Complication Code Selection: Correctly identifies cardio complications using codes like 'I21%' (ICD-10) and '410%' (ICD-9).",
+              "sequential": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "neuro-complication-codes",
+              "requirements": "Neurological Complication Code Selection: Correctly identifies neuro complications using codes like 'I6%' (ICD-10) and '43%' (ICD-9).",
+              "sequential": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "comorbidity-burden-quantification",
+          "requirements": "Comorbidity Burden Quantification: Correctly implements the logic for defining high comorbidity burden and calculating a risk score.",
+          "sequential": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "high-comorbidity-definition",
+              "requirements": "High Comorbidity Burden Definition: Implements the specific rule `comorbidity_dx_count >= 2 OR total_dx_count > 15` to flag high-burden admissions.",
+              "sequential": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "risk-score-calculation",
+              "requirements": "Comorbidity Risk Score Calculation: Implements the custom formula `LEAST(100, (alf.comorbidity_dx_count * 15) + alf.total_dx_count)`.",
+              "sequential": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Output",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "admission-level-metric-calculation",
+          "requirements": "Admission-Level Metric Calculation: Correctly calculates key metrics for each individual admission before aggregation.",
+          "sequential": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "los-calculation",
+              "requirements": "Length of Stay (LOS) Calculation: Correctly calculates LOS in days using `DATETIME_DIFF(pb.dischtime, pb.admittime, DAY)`.",
+              "sequential": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "30-day-mortality-logic",
+              "requirements": "30-Day Mortality Logic: Correctly identifies 30-day mortality by checking `hospital_expire_flag` or death date (`dod`) within 30 days of discharge.",
+              "sequential": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-level-aggregation",
+          "requirements": "Cohort-Level Aggregation: Correctly aggregates metrics for the 'Target' and 'Control' cohorts.",
+          "sequential": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "grouping-logic",
+              "requirements": "Grouping Logic: Correctly groups results by the `cohort` column to produce separate statistics for each group.",
+              "sequential": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "survivor-los-aggregation",
+              "requirements": "Survivor LOS Aggregation: Correctly calculates the average LOS for survivors only, using `AVG(CASE WHEN mortality_30day = 0 THEN los_days END)`.",
+              "sequential": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "advanced-comparative-analytics",
+          "requirements": "Advanced Comparative Analytics: Correctly calculates the risk percentile of the matched profile against the control group.",
+          "sequential": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "median-target-risk-score",
+              "requirements": "Median Target Risk Score Calculation: Correctly isolates the target cohort to calculate its median risk score using `APPROX_QUANTILES`.",
+              "sequential": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-calculation",
+              "requirements": "Percentile Rank Calculation: Correctly calculates the percentile of the target's median score within the control group's distribution using `COUNTIF` and `SAFE_DIVIDE`.",
+              "sequential": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "output-formatting-and-presentation",
+      "requirements": "Output Formatting and Presentation",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "rounding-logic",
+          "requirements": "Rounding Logic: Applies `ROUND()` function to numerical outputs for clarity and readability.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "result-ordering",
+          "requirements": "Result Ordering: Orders the final output by cohort using `ORDER BY ca.cohort DESC` for consistent presentation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "conditional-percentile-display",
+          "requirements": "Conditional Percentile Display: Correctly uses a CASE statement to display the percentile value only for the 'Target' cohort row.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

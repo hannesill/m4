@@ -1,0 +1,5 @@
+admission_category,stay_category,num_admissions,mean_ultrasounds,min_ultrasounds,max_ultrasounds
+ED Admission,1-3 days,454,0.0,0,0
+ED Admission,4-7 days,637,0.01,0,1
+Elective Admission,1-3 days,8,0.13,0,1
+Elective Admission,4-7 days,31,0.03,0,1

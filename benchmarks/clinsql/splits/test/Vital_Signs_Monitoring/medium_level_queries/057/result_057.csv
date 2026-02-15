@@ -1,0 +1,2 @@
+target_temp_c,total_icu_stays,stays_with_lower_avg_temp,percentile_rank_of_target_temp,cohort_mean_avg_temp,cohort_stddev_avg_temp,cohort_min_avg_temp,cohort_max_avg_temp,p10_avg_temp,p25_avg_temp,p50_median_avg_temp,p75_avg_temp,p90_avg_temp
+36.0,4746,233,4.91,36.7,0.44,32.4,39.67,36.24,36.52,36.71,36.9,37.16

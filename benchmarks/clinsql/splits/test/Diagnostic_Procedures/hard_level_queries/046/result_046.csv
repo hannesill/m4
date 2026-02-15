@@ -1,0 +1,3 @@
+cohort,number_of_stays,min_diagnostic_utilization,diagnostic_utilization_p75,diagnostic_utilization_p90,avg_hospital_los_days,in_hospital_mortality_pct
+"ARDS (Female, 37-47)",42,0,10,13,26.955357142857142,23.809523809523814
+General ICU,85200,0,8,11,10.09681435837246,11.109154929577462

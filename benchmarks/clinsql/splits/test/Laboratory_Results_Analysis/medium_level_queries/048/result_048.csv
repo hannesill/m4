@@ -1,0 +1,2 @@
+patient_count,admission_count,mean_troponin_t,median_troponin_t,p25_troponin_t,p75_troponin_t,iqr_troponin_t,min_elevated_troponin_t,max_elevated_troponin_t
+687,808,1.0738,0.29,0.11,0.88,0.77,0.02,24.31

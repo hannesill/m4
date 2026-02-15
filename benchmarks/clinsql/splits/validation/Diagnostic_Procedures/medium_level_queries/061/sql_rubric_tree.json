@@ -1,0 +1,127 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Calculates patient age at admission and filters for the range 64-74 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 64 AND 74`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-diagnosis-selection",
+          "requirements": "Identifies admissions with an Acute Kidney Injury (AKI) diagnosis by correctly filtering for both ICD-9 ('584%') and ICD-10 ('N17%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-construction-joins",
+          "requirements": "Correctly integrates patient demographics and diagnoses by performing INNER JOINs between `admissions`, `patients`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` as keys.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-data-join",
+          "requirements": "Correctly links imaging procedures to the patient cohort using a `LEFT JOIN` on `hadm_id` between the `aki_admissions` CTE and `procedures_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "primary-vs-secondary-diagnosis-logic",
+          "requirements": "Correctly determines if AKI was a primary diagnosis for an admission using the logic `MAX(CASE WHEN d.seq_num = 1 THEN 1 ELSE 0 END)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "imaging-procedure-identification",
+          "requirements": "Identifies diagnostic imaging procedures by correctly filtering on ICD-9 codes (LIKE '87%' OR LIKE '88%') and ICD-10 codes (LIKE 'B%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Correctly calculates the length of stay in days for each admission using `DATETIME_DIFF(a.dischtime, a.admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "per-admission-procedure-count",
+          "requirements": "Correctly counts the total number of imaging procedures for each admission using `COUNT(pr.icd_code)` and grouping by `hadm_id`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-stratification-and-filtering",
+          "requirements": "Correctly stratifies results into '1-3 Days' and '4-7 Days' stay categories and by 'Primary' vs 'Secondary' diagnosis, and filters the final result set to only these stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "statistical-aggregation",
+          "requirements": "Calculates the median and IQR of imaging studies using `APPROX_QUANTILES`, correctly specifying offsets for the 25th, 50th, and 75th percentiles.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+cohort,num_icu_stays,p90_diagnostic_intensity_first_48h,avg_hospital_los_days,in_hospital_mortality_percent
+"Sepsis (Female, Age 66-76)",1575,11,16.36777777777778,30.349206349206355
+"Age-Matched ICU (Female, Age 66-76)",7608,11,9.577122765509971,8.136172450052555

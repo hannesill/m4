@@ -1,0 +1,1 @@
+I have a 76‑year‑old female inpatient with acute pancreatitis. Among female inpatients aged 71–81 with acute pancreatitis, compute medication complexity score over the first 72 hours, stratify into tertiles, and report LOS, in‑hospital mortality, and 30‑day readmission rates per tertile.

@@ -1,0 +1,231 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "stratification-column-exists",
+              "requirements": "Stratification column for outcome exists (e.g., 'outcome', 'discharge_status')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-column-exists",
+              "requirements": "Column for number of admissions exists (e.g., 'number_of_admissions', 'n')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-los-column-exists",
+              "requirements": "Column for mean LOS exists (e.g., 'mean_los_days', 'avg_los')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-columns-exist",
+              "requirements": "Columns for LOS percentiles exist (e.g., 'p25_los_days', 'median_los_days', 'p75_los_days', 'p90_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key columns (count, mean, percentiles)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "alive-stratum-validation",
+          "requirements": "Validate 'Discharged Alive' stratum metrics",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "alive-count-validation",
+              "requirements": "Validate number of admissions for 'Discharged Alive'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "alive-count-plausible",
+                  "requirements": "Clinically Plausible (500-5000)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "alive-count-acceptable",
+                  "requirements": "Acceptable Range (900-1300)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "alive-mean-los-validation",
+              "requirements": "Validate mean LOS for 'Discharged Alive'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "alive-mean-los-plausible",
+                  "requirements": "Clinically Plausible (1.0-20.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "alive-mean-los-acceptable",
+                  "requirements": "Acceptable Range (4.0-7.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "alive-median-los-validation",
+              "requirements": "Validate median LOS for 'Discharged Alive'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "alive-median-los-plausible",
+                  "requirements": "Clinically Plausible (1.0-15.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "alive-median-los-acceptable",
+                  "requirements": "Acceptable Range (2.0-6.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mortality-stratum-validation",
+          "requirements": "Validate 'In-Hospital Mortality' stratum metrics",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mortality-count-validation",
+              "requirements": "Validate number of admissions for 'In-Hospital Mortality'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "mortality-count-plausible",
+                  "requirements": "Clinically Plausible (1-100)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "mortality-count-acceptable",
+                  "requirements": "Acceptable Range (3-20)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "mortality-mean-los-validation",
+              "requirements": "Validate mean LOS for 'In-Hospital Mortality'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "mortality-mean-los-plausible",
+                  "requirements": "Clinically Plausible (5.0-150.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "mortality-mean-los-acceptable",
+                  "requirements": "Acceptable Range (20.0-70.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            },
+            {
+              "id": "mortality-median-los-validation",
+              "requirements": "Validate median LOS for 'In-Hospital Mortality'",
+              "sequential": false,
+              "sub_tasks": [
+                {
+                  "id": "mortality-median-los-plausible",
+                  "requirements": "Clinically Plausible (3.0-100.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                },
+                {
+                  "id": "mortality-median-los-acceptable",
+                  "requirements": "Acceptable Range (10.0-30.0)",
+                  "sequential": false,
+                  "critical": false,
+                  "scoring": "1/0",
+                  "sub_tasks": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

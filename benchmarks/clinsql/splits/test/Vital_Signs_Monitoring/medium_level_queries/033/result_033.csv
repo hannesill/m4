@@ -1,0 +1,5 @@
+hr_category,patient_count,mi_patient_count,mi_rate_percent
+1. Bradycardia (<60 bpm),466,45,9.66
+2. Normal (60-99 bpm),9127,1380,15.12
+3. Tachycardia (100-119 bpm),1226,130,10.6
+4. Severe Tachycardia (>=120 bpm),159,19,11.95

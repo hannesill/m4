@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using the condition p.gender = 'M'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter patient age to be between 77 and 87 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "insurance-selection",
+          "requirements": "Insurance Selection: The query must filter for patients with Medicare insurance using a.insurance = 'Medicare'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-location-filter",
+          "requirements": "Admission Location Filter: The query must filter for admissions from the emergency department, using a condition like UPPER(a.admission_location) LIKE '%EMERGENCY%'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for Pneumonia Diagnosis",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "principal-diagnosis-selection",
+          "requirements": "Principal Diagnosis Selection: The query must correctly identify the principal diagnosis by filtering for d.seq_num = 1.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pneumonia-icd-code-selection",
+          "requirements": "Pneumonia ICD Code Selection: The query must correctly filter for pneumonia diagnoses using appropriate ICD-9 ('486%') and ICD-10 ('J18%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly associate the ICD codes with their respective versions (d.icd_version = 9 and d.icd_version = 10).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "table-join-patients-admissions",
+          "requirements": "Table Join (Patients-Admissions): The query must correctly join the patients and admissions tables on subject_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "table-join-admissions-diagnoses",
+          "requirements": "Table Join (Admissions-Diagnoses): The query must correctly join the admissions and diagnoses_icd tables on hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cte-construction",
+          "requirements": "CTE Construction: The query must use a Common Table Expression (CTE) named 'index_admissions' or similar to correctly isolate the primary cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation-count",
+          "requirements": "Final Aggregation (Count): The query must correctly count the total number of admissions in the identified cohort using COUNT(*).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "extraneous-calculations",
+          "requirements": "Extraneous Calculations: The query calculates additional metrics (readmission rate, LOS) not required by the question, but correctly identifies the primary cohort first. This is acceptable but not optimal.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

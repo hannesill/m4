@@ -1,0 +1,159 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "medication-class-column-exists",
+              "requirements": "Column for medication classes exists (e.g., 'medication_class', 'drug_name').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-early-column-exists",
+              "requirements": "Column for initial prevalence percentage exists (e.g., 'prevalence_early_24h_pct', 'initial_prevalence_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-final-column-exists",
+              "requirements": "Column for final prevalence percentage exists (e.g., 'prevalence_discharge_12h_pct', 'final_prevalence_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-column-exists",
+              "requirements": "Column for net change in percentage points exists (e.g., 'net_change_pct_points', 'change_pp').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in columns that directly answer the clinical question.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "prevalence-early-validation",
+          "requirements": "Validate values in column 'prevalence_early_24h_pct'.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-early-plausible",
+              "requirements": "Clinically Plausible: Values are between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-early-insulin-acceptable",
+              "requirements": "Acceptable Range for Insulin: Prevalence for inpatients with acute HF and diabetes is typically high, often >40%. The value of 86.14 is within the acceptable range (40.0-95.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-early-orals-acceptable",
+              "requirements": "Acceptable Range for Oral Agents (Metformin, Sulfonylurea, SGLT2, TZD, DPP-4): Oral agent use is common on admission but lower than insulin for this acute inpatient cohort. The values of 0-3% are within the acceptable range (0.0-40.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "prevalence-final-validation",
+          "requirements": "Validate values in column 'prevalence_discharge_12h_pct'.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "prevalence-final-plausible",
+              "requirements": "Clinically Plausible: Values are between 0 and 100.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "prevalence-final-acceptable",
+              "requirements": "Acceptable Range: Prevalence of oral agents like Metformin, SGLT2i are often stopped in acute HF. Insulin use may decrease but remain significant. The values of 0-13% are within the acceptable range (0.0-50.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "net-change-validation",
+          "requirements": "Validate values in column 'net_change_pct_points'.",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "net-change-plausible",
+              "requirements": "Clinically Plausible: Change can be from -100 to +100 percentage points. The values are within this range.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "net-change-acceptable",
+              "requirements": "Acceptable Direction of Change: Expect a significant decrease in insulin (as patient stabilizes) and decreases in most oral agents (especially Metformin/SGLT2i due to HF contraindications). The strong negative change for Insulin (-73.37) and smaller negative changes for orals are clinically expected. Acceptable range is (-90.0 to 10.0).",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

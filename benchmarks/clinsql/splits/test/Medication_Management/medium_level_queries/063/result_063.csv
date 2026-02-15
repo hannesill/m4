@@ -1,0 +1,3 @@
+medication_class,total_cohort_patients,patients_initiated_first_12h,patients_initiated_final_72h,initiation_rate_first_12h_pct,initiation_rate_final_72h_pct,absolute_difference_pp
+Insulin,573,465,339,81.15,59.16,21.99
+Oral Agent,573,23,66,4.01,11.52,-7.5

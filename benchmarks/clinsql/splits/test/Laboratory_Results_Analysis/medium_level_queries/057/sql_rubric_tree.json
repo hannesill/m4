@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query correctly filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query correctly calculates admission age and filters for patients aged between 79 and 89 using `pc.admission_age BETWEEN 79 AND 89`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-diagnosis-selection",
+          "requirements": "ACS Diagnosis Selection: The query correctly identifies admissions for Acute Coronary Syndrome (ACS) by filtering on relevant ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icd-version-handling",
+          "requirements": "ICD Version Handling: The query must correctly handle both ICD-9 and ICD-10 codes by using the `icd_version` column to apply distinct code patterns for each version (e.g., `(d.icd_version = 9 AND ...)` and `(d.icd_version = 10 AND ...)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-code-selection",
+          "requirements": "ACS Code Selection: The query accurately selects ACS-related codes, including '410%', '4111' for ICD-9 and 'I20.0%', 'I21%', 'I22%' for ICD-10.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "index-troponin-identification",
+          "requirements": "Index Troponin Identification: The query correctly identifies the first Troponin T measurement per admission using `ROW_NUMBER() OVER (PARTITION BY aa.hadm_id ORDER BY le.charttime ASC)` and filtering for `rn = 1`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-measurement-filtering",
+          "requirements": "Troponin Measurement Filtering: The query correctly filters for Troponin T using `le.itemid = 51003` and ensures valid measurements with `le.valuenum IS NOT NULL AND le.valuenum >= 0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: The query must correctly join `patients` and `admissions` tables on `subject_id` to link demographic data with hospital stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-diagnoses-join",
+          "requirements": "Admissions-Diagnoses Join: The query must correctly join the patient cohort with `diagnoses_icd` on `hadm_id` to filter by diagnosis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admissions-labevents-join",
+          "requirements": "Admissions-LabEvents Join: The query must correctly join the ACS admissions with `labevents` on `hadm_id` to access lab measurements.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "troponin-categorization",
+          "requirements": "Troponin Categorization: The query must use a CASE statement to correctly categorize troponin values into 'Normal (<= 0.04)', 'Borderline (> 0.04-0.1)', and 'Elevated (> 0.1)'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aggregation-logic",
+          "requirements": "Aggregation Logic: The query must correctly count the number of admissions (`COUNT(hadm_id)`) for each troponin category.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final result must be grouped by the created `troponin_category` to provide counts per category.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-ordering",
+          "requirements": "Output Ordering: The query should order the final results logically by troponin category severity (Normal, Borderline, Elevated).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

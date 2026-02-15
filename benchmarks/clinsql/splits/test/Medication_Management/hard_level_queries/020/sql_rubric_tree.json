@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the cohort of female patients aged 78-88 with a diagnosis of cardiac arrest.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 78 and 88 years at the time of admission using a dynamic age calculation like `(p.anchor_age + EXTRACT(YEAR FROM ad.admittime) - p.anchor_year) BETWEEN 78 AND 88`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cardiac-arrest-diagnosis",
+          "requirements": "Cardiac Arrest Diagnosis: The query must correctly filter for admissions with a cardiac arrest diagnosis by checking for relevant ICD-9 ('4275') and ICD-10 ('I46%') codes in the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates the medication complexity score, stratifies by tertiles, and computes the required outcome metrics.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-complexity-score-calculation",
+          "requirements": "Medication Complexity Score Calculation: The query must correctly implement the formula: `unique drugs + (2 * high-risk drugs) + unique routes` within the first 7 days of admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-risk-drug-identification",
+          "requirements": "High-Risk Drug Identification: The query must count distinct high-risk drugs using a CASE statement with appropriate pattern matching (LIKE) for a list of relevant medications (e.g., vasopressors, antiarrhythmics, sedatives).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay Calculation: The query must accurately calculate the length of stay in days using `DATETIME_DIFF(ca.dischtime, ca.admittime, DAY)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "30-day-readmission-calculation",
+          "requirements": "30-Day Readmission Calculation: The query must use a window function (e.g., `LEAD`) partitioned by `subject_id` to identify the next admission and calculate if it occurred within 30 days of discharge.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "tertile-stratification",
+          "requirements": "Tertile Stratification: The query must use the `NTILE(3)` window function over the calculated medication complexity score to stratify the cohort into three groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all necessary tables to link patient demographics, admissions, diagnoses, and prescriptions.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join `patients`, `admissions`, and `diagnoses_icd` tables using `subject_id` and `hadm_id` to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "medication-data-join",
+          "requirements": "Medication Data Join: The query must join the `prescriptions` table to the cohort on `hadm_id` and filter for medications within the first 7 days of admission using `DATETIME_ADD`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "analytical-results-join",
+          "requirements": "Analytical Results Join: The query must use LEFT JOINs to correctly integrate the calculated complexity scores and readmission data back to the main cohort admissions, handling cases with no medications.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-reporting",
+      "requirements": "Final Aggregation and Reporting: Aggregates the stratified data to produce the final report with all required metrics.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final SELECT statement must group results by the `complexity_tertile`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-metric-calculation",
+          "requirements": "Output Metric Calculation: The query must correctly calculate all required output metrics: patient count, min/max score, average LOS, in-hospital mortality %, and 30-day readmission % using appropriate aggregate functions (COUNT, MIN, MAX, AVG).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-formatting",
+          "requirements": "Percentage Formatting: The query must correctly calculate mortality and readmission rates as percentages, typically by taking the average of a binary flag and multiplying by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output columns must be clearly named and rounded to two decimal places where appropriate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

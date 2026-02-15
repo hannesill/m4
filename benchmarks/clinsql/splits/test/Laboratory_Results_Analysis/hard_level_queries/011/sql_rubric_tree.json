@@ -1,0 +1,201 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the base population of male inpatients aged 47-57 and separates them into AKI and non-AKI (control) groups.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 47-57 using `(DATETIME_DIFF(adm.admittime, DATETIME(pat.anchor_year, 1, 1, 0, 0, 0), YEAR) + pat.anchor_age) BETWEEN 47 AND 57`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-identification",
+          "requirements": "AKI Identification: Identifies AKI using both ICD-9 ('5845' to '5849') and ICD-10 ('N17%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-separation",
+          "requirements": "Cohort Separation: Uses a `CASE` statement and a `LEFT JOIN` on AKI diagnoses to correctly flag patients as belonging to either the AKI or control cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Correctly calculates the required metrics for comparison between the AKI and control cohorts.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-instability-score-logic",
+          "requirements": "Lab Instability Score Logic: Defines and calculates a 72-hour laboratory instability score based on specific critical lab value thresholds.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "lab-event-temporal-filter",
+              "requirements": "Lab Event Temporal Filter: Filters lab events to the first 72 hours of admission using `charttime BETWEEN admittime AND DATETIME_ADD(admittime, INTERVAL 72 HOUR)`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "lab-item-selection",
+              "requirements": "Lab Item Selection: Selects the correct set of lab `itemid`s corresponding to sodium, potassium, creatinine, lactate, WBC, hemoglobin, and platelets.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "critical-value-thresholds",
+              "requirements": "Critical Value Thresholds: Implements the correct thresholds for each lab test to determine if a value is critical using a `CASE` statement.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "per-patient-score-aggregation",
+              "requirements": "Per-Patient Score Aggregation: Correctly sums the number of critical lab events per patient to create the `instability_score` using `SUM(is_critical) GROUP BY hadm_id`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "comparative-metrics-calculation",
+          "requirements": "Comparative Metrics Calculation: Calculates all required comparison metrics: critical-event frequency, average length of stay, and in-hospital mortality.",
+          "sequential": true,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "critical-event-frequency",
+              "requirements": "Critical Event Frequency Calculation: Calculates frequency as the total number of critical events divided by the total number of relevant lab tests for each cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "length-of-stay",
+              "requirements": "Length of Stay Calculation: Calculates the length of stay for each patient using `DATETIME_DIFF(dischtime, admittime, DAY)`.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "in-hospital-mortality",
+              "requirements": "In-Hospital Mortality Flag: Correctly uses the `hospital_expire_flag` to represent mortality.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, admissions, diagnoses, and lab events.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admissions-join",
+          "requirements": "Patient-Admissions Join: Correctly performs an INNER JOIN between `admissions` and `patients` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-labevents-join",
+          "requirements": "Cohort-Labevents Join: Correctly performs an INNER JOIN between the base cohort and `labevents` tables on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-output",
+      "requirements": "Final Aggregation and Output: Aggregates the patient-level data to produce the final comparison between the two cohorts.",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: Groups the final results by the `is_aki_patient` flag to create two distinct rows for the AKI and control cohorts.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-instability-score",
+          "requirements": "Mean Instability Score: Calculates the average instability score for each cohort using `AVG(instability_score)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mean-length-of-stay",
+          "requirements": "Mean Length of Stay: Calculates the average length of stay for each cohort using `AVG(los_days)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate",
+          "requirements": "Mortality Rate Calculation: Calculates the in-hospital mortality rate for each cohort using `AVG(hospital_expire_flag)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Presents the results clearly, with a descriptive `cohort` column and correctly labeled metrics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

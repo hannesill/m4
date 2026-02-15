@@ -1,0 +1,3 @@
+cohort_group,patient_count,avg_instability_score,p25_instability_score,p50_instability_score,p75_instability_score,p95_instability_score,avg_hypotensive_episodes_burden,avg_tachycardic_episodes_burden,avg_icu_los_hours,mortality_rate
+Target_Female_59_69_Shock,1694,9.841794569067288,0,5,16,33,1.982290436835893,7.859504132231405,146.88370720188914,0.2857142857142853
+Control_Female_59_69_NoShock,8309,5.713082200024071,0,2,8,24,1.2055602358887951,4.5075219641352815,79.87698603755433,0.08340353833192954

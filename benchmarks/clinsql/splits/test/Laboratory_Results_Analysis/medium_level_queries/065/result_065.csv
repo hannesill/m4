@@ -1,0 +1,2 @@
+cohort_description,number_of_admissions,median_troponin_value,p25_troponin_value,p75_troponin_value,iqr_troponin_value
+"Male patients, aged 49-59, with AMI and initial Troponin > 0.04 ng/mL",1194,0.44,0.16,1.39,1.23

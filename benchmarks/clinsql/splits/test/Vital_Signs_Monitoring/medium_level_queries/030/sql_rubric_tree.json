@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients by using the condition p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 81 and 91 using the condition (p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 81 AND 91.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-stay-identification",
+          "requirements": "ICU Stay Identification: The query must correctly join the patients, admissions, and icustays tables to identify ICU stays for the cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temperature-measurement-selection",
+          "requirements": "Temperature Measurement Selection: The query must select temperature measurements by filtering the chartevents table for the correct itemids (223762, 676).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-24h",
+          "requirements": "24-Hour Temporal Filter: The query must filter temperature measurements to only include those taken within the first 24 hours of the ICU stay (ie.intime).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mi-diagnosis-identification",
+          "requirements": "MI Diagnosis Identification: The query must identify Myocardial Infarction diagnoses by correctly filtering the diagnoses_icd table for both ICD-9 ('410%') and ICD-10 ('I21%', 'I22%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ],
+      "requirements": "Medical Concept Implementation and Temporal Constraints"
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly INNER JOIN patients, admissions, and icustays tables on subject_id and hadm_id to form the base cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mi-data-join",
+          "requirements": "MI Data Join: The query must LEFT JOIN the main cohort with the MI admissions CTE on hadm_id to correctly flag patients with an MI diagnosis.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "events-table-join",
+          "requirements": "Events Table Join: The query must INNER JOIN the patient cohort with the chartevents table on stay_id to link patients to their temperature measurements.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-stay-temperature-aggregation",
+          "requirements": "Per-Stay Temperature Aggregation: The query must first calculate the mean temperature per ICU stay by using AVG() and grouping by stay_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temperature-categorization",
+          "requirements": "Temperature Categorization: The query must use a CASE statement to correctly classify the mean per-stay temperature into three categories: <36.0, 36.0-37.9, and >=38.0.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping Logic: The final SELECT statement must group results by the temperature_category to perform the required analytics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-metrics-calculation",
+          "requirements": "Final Metrics Calculation: The query must calculate the number of stays (N), mean, median, IQR of temperature, and MI rate (%) for each category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

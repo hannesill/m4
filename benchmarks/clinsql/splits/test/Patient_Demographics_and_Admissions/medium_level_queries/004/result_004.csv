@@ -1,0 +1,4 @@
+disposition_category,number_of_admissions,mean_los_days,median_los_days_p50,los_p75,los_p90,percentile_rank_of_5_days
+Discharged Home,779,4.52,4,6,9,63.67
+Discharged to Hospice,58,10.05,7,15,19,22.41
+In-Hospital Mortality,135,7.42,5,11,18,46.67

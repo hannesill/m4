@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate and filter patient age to be between 39 and 49 years at the time of admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filtering",
+          "requirements": "Length of Stay Filtering: The query must filter admissions to have a length of stay between 1 and 7 days using `DATETIME_DIFF`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "acs-diagnosis-cohort",
+          "requirements": "ACS Diagnosis Cohort: The query must correctly filter admissions to include only those with an ACS diagnosis using appropriate ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "acs-code-selection",
+          "requirements": "ACS Code Selection: The query must correctly identify ACS-related codes for both ICD-9 (e.g., '410%', '411.1') and ICD-10 (e.g., 'I20.0%', 'I21%', 'I22%', 'I24%').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-vs-secondary-acs-logic",
+          "requirements": "Primary vs. Secondary ACS Logic: The query must correctly classify ACS as 'Primary' or 'Secondary' based on the diagnosis sequence number (`MIN(d.seq_num) = 1`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ultrasound-code-selection",
+          "requirements": "Ultrasound Code Selection: The query must correctly filter for ultrasound procedures, including echocardiograms, using appropriate codes for both ICD-9 (e.g., '88.7%') and ICD-10.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly perform INNER JOINs between patients, admissions, and diagnoses_icd tables on subject_id and hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Procedure Table Join: The query must use a LEFT JOIN to connect the ACS admissions cohort with the procedures_icd table to ensure admissions with zero ultrasounds are included in the count.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "per-admission-ultrasound-count",
+          "requirements": "Per-Admission Ultrasound Count: The query must correctly count the number of ultrasound procedures for each unique admission (`hadm_id`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stratification-logic",
+          "requirements": "Stratification Logic: The final result must be stratified (grouped) by both diagnosis_type ('Primary ACS' vs 'Secondary ACS') and a stay_category ('1-4 Day Stay' vs '5-7 Day Stay').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "Percentile Calculation: The query must use an appropriate function like `APPROX_QUANTILES` to calculate the 25th, 50th, and 75th percentiles of ultrasound counts for each stratified group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

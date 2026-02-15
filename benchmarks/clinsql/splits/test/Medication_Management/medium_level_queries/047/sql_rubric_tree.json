@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the 40-50 age range.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-selection",
+          "requirements": "Inpatient Selection: Correctly identifies inpatients by joining the `admissions` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-diagnosis-selection",
+          "requirements": "Diabetes Diagnosis Selection: Identifies patients with diabetes using ICD-9 ('250%') and ICD-10 ('E08'-'E13') codes from `diagnoses_icd`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-selection",
+          "requirements": "Heart Failure Diagnosis Selection: Identifies patients with heart failure using ICD-9 ('428%') and ICD-10 ('I50%') codes from `diagnoses_icd`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept and Temporal Logic Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "medication-classification",
+          "requirements": "Medication Classification: Correctly categorizes drugs into 'Antidiabetic', 'Beta-Blocker', 'ACEi/ARB/ARNI', and 'Loop Diuretic' using a CASE statement and LIKE operators on the `drug` name.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-24h-window",
+          "requirements": "First 24-Hour Window Definition: Correctly identifies medications given within the first 24 hours of admission using `DATETIME_DIFF(starttime, admittime, HOUR) <= 24`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "last-24h-window",
+          "requirements": "Last 24-Hour Window Definition: Correctly identifies medications given within the last 24 hours of admission using `DATETIME_DIFF(dischtime, starttime, HOUR) <= 24`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "transition-status-logic",
+          "requirements": "Transition Status Logic: Accurately defines 'Continued', 'Initiated Late', and 'Discontinued' statuses based on medication presence in the first and last 24-hour windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins `patients`, `admissions`, `diagnoses_icd` (self-join), and `prescriptions` tables to construct the patient cohort and their medication history.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "key-matching-integrity",
+          "requirements": "Key Matching Integrity: Consistently uses `subject_id` and `hadm_id` as the joining keys between the respective tables.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "all-combinations-generation",
+          "requirements": "All Combinations Generation: Correctly generates a complete set of patient-medication class pairs using a CROSS JOIN to ensure all patients are evaluated for all medication classes, even if not prescribed.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Final Aggregation and Calculation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final aggregation correctly groups results by `med_class` to provide analytics for each medication category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "total-patient-count",
+          "requirements": "Total Patient Count: Accurately calculates the total number of unique patients in the cohort for use as the denominator in percentage calculations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-first-24h",
+          "requirements": "Percentage on Med First 24h: Correctly calculates the percentage of patients on medication in the first 24h by summing 'Continued' and 'Discontinued' statuses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-last-24h",
+          "requirements": "Percentage on Med Last 24h: Correctly calculates the percentage of patients on medication in the last 24h by summing 'Continued' and 'Initiated Late' statuses.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "transition-counts",
+          "requirements": "Transition Counts: Accurately counts the number of patients for 'Continued', 'Initiated Late', and 'Discontinued' statuses using SUM(CASE...).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

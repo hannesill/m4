@@ -1,0 +1,4 @@
+troponin_category,patient_count,percentage_of_cohort,mean_troponin,median_troponin,iqr_troponin
+Normal,5,9.8,0.01,0.01,0.0
+Borderline,6,11.76,0.0317,0.03,0.02
+Myocardial Injury,40,78.43,0.2802,0.16,0.14

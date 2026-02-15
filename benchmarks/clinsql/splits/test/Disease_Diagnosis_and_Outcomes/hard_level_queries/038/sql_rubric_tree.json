@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Filters for male patients using `p.gender = 'M'` in the WHERE clause.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Correctly calculates patient age at admission and filters for the range 74\u201384 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 74 AND 84`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-cohort-definition",
+          "requirements": "Correctly filters for the primary AKI cohort in the final aggregation using `WHERE has_aki = 1`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Correctly joins the `patients` and `admissions` tables on `subject_id` to link demographic data with hospital stay information.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Correctly performs a `LEFT JOIN` between the admissions data and the `DiagnosisFlags` CTE on `hadm_id`. This is critical to ensure all admissions are retained for the general cohort analysis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "aki-concept-flagging",
+          "requirements": "Identifies Acute Kidney Injury (AKI) using both ICD-9 ('584%') and ICD-10 ('N17%') codes to create a `has_aki` flag.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ards-concept-flagging",
+          "requirements": "Identifies ARDS using both ICD-9 ('518.82') and ICD-10 ('J80') codes to create a `has_ards` flag.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "risk-score-component-flagging",
+          "requirements": "Correctly flags multiple diagnoses (e.g., multi-organ failure, septic shock, acute MI) using appropriate ICD codes to serve as components for the risk score calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-score-calculation",
+          "requirements": "Implements a custom weighted risk score by summing values from various diagnosis flags and capping the result at 100 with `LEAST()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "thirty-day-mortality-logic",
+          "requirements": "Correctly calculates a 30-day mortality flag by checking both in-hospital expiration (`hospital_expire_flag`) and out-of-hospital death within 30 days of discharge (`DATE_DIFF(p.dod, a.dischtime, DAY) BETWEEN 0 AND 30`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "survivor-los-logic",
+          "requirements": "Calculates Length of Stay (LOS) exclusively for survivors by using a `CASE` statement to assign NULL for non-survivors.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-iqr-calculation",
+          "requirements": "Computes and formats the median and Interquartile Range (IQR) for the risk score using `APPROX_QUANTILES` with offsets 25, 50, and 75.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-comparison-structure",
+          "requirements": "Uses `UNION ALL` to generate separate result sets for the AKI cohort and the general inpatient cohort, enabling direct comparison of metrics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Accurately calculates the percentile rank of the AKI cohort's median risk score within the general cohort using `SAFE_DIVIDE(COUNTIF(risk_score < median_aki_risk), COUNT(*))`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

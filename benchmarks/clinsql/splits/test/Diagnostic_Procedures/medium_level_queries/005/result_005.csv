@@ -1,0 +1,5 @@
+stay_category,diagnosis_type,num_admissions,avg_procedures_per_admission,min_procedures_per_admission,max_procedures_per_admission
+1-4 Day Stay,Primary Diagnosis,206,0.08,0,2
+1-4 Day Stay,Secondary Diagnosis,36,0.14,0,1
+5-8 Day Stay,Primary Diagnosis,72,0.31,0,4
+5-8 Day Stay,Secondary Diagnosis,37,0.27,0,2

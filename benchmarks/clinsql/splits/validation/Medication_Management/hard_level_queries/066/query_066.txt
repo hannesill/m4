@@ -1,0 +1,1 @@
+I have a 48-year-old male inpatient. Among male inpatients aged 43–53 with a transplant diagnosis, compute medication complexity score over the first 7 hospital days, stratify into quartiles, and report per quartile: n, mean score, LOS, in-hospital mortality, and 30-day readmission

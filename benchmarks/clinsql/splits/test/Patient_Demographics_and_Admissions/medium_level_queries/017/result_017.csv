@@ -1,0 +1,4 @@
+discharge_category,number_of_admissions,mean_los_days,median_los_days_p50,percentile_75_los_days,percentile_90_los_days
+Discharged Home,1945,6.4,4,7,12
+Discharged to Facility,229,16.2,11,19,33
+In-Hospital Mortality,286,12.8,7,16,29

@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies and filters the patient cohort based on demographic, clinical, and administrative criteria.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `pat.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must calculate patient age at the time of ICU admission and filter for ages between 68 and 78.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: The query must correctly identify and filter for the first ICU stay per hospital admission using a window function like `ROW_NUMBER()` and filtering for rank 1.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "multi-trauma-cohort-selection",
+          "requirements": "Multi-Trauma Cohort Selection: The query must define and filter for patients with 'multi-trauma', defined as having at least three distinct trauma-related ICD codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly translates clinical concepts like 'multi-trauma' and 'vital sign instability' into SQL logic.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "trauma-icd-code-identification",
+          "requirements": "Trauma ICD Code Identification: The query must correctly identify trauma codes for both ICD-9 (e.g., '800'-'959') and ICD-10 (e.g., 'S' or 'T') versions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vital-sign-itemid-selection",
+          "requirements": "Vital Sign ItemID Selection: The query must use the correct itemids for heart rate (220045), MAP (220052, 220181, 225312), and respiratory rate (220210, 224690).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-logic",
+          "requirements": "Instability Score Logic: The query must correctly define and calculate the instability score by summing hourly episodes of tachycardia (>100), hypotension (<65 MAP), and tachypnea (>20).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-24h-vitals-filter",
+          "requirements": "First 24h Vitals Filter: The query must correctly filter vital sign measurements to include only those within the first 24 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs correct stratification, aggregation, and calculation of final metrics as requested.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-stratification",
+          "requirements": "Instability Score Stratification: The query must use NTILE(4) to stratify patients into quartiles and NTILE(10) for deciles based on the instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "quartile-summary-calculation",
+          "requirements": "Quartile Summary Calculation: For each quartile, the query must correctly calculate and report patient count, mean score, mean ICU LOS, and mortality rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-summary-calculation",
+          "requirements": "Top Decile Summary Calculation: For the top decile (decile 10), the query must correctly calculate and report the mean number of tachycardia, hypotension, and tachypnea episodes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-formatting",
+          "requirements": "Final Output Formatting: The query must combine the quartile and top decile results into a single output table using UNION ALL, with a clear stratum identifier.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables to link patient demographics, admissions, ICU stays, and diagnoses.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-table-joins",
+          "requirements": "Core Table Joins: The query must correctly join icustays, patients, and admissions tables on their respective keys (subject_id, hadm_id).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "trauma-cohort-join",
+          "requirements": "Trauma Cohort Join: The main cohort query must correctly join with the pre-filtered multi-trauma cohort on hadm_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "chartevents-join",
+          "requirements": "Chartevents Join: The vital signs query must correctly join chartevents to the final patient cohort on stay_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

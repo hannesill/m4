@@ -1,0 +1,4 @@
+complexity_tertile,number_of_admissions,min_complexity_score,max_complexity_score,avg_complexity_score,avg_length_of_stay_days,in_hospital_mortality_pct,readmission_30_day_pct
+1,1005,0,55,42.63,6.51,3.68,16.02
+2,1004,55,79,66.59,8.36,5.28,18.82
+3,1004,79,222,115.07,11.4,16.43,19.52

@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies and filters the primary patient cohorts (male stroke patients and age-matched controls aged 49-59).",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 49 and 59 at the time of admission using `(EXTRACT(YEAR FROM adm.admittime) - p.anchor_year) + p.anchor_age BETWEEN 49 AND 59`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "stroke-cohort-identification",
+          "requirements": "Ischemic Stroke Cohort Identification: The query must correctly identify admissions with an ischemic stroke diagnosis using both ICD-9 ('433_1', '434_1') and ICD-10 ('I63%') codes from the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-labeling",
+          "requirements": "Cohort Labeling: The query must correctly label admissions as 'Stroke' or 'Control' using a CASE statement based on the presence of a stroke diagnosis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly implements the logic for the 72-hour lab instability score.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "temporal-filter-for-labs",
+          "requirements": "72-Hour Temporal Lab Filter: The query must filter lab events to the first 72 hours of the hospital admission using a condition like `le.charttime BETWEEN c.admittime AND DATETIME_ADD(c.admittime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-item-selection",
+          "requirements": "Lab Item Selection: The query must select the correct lab tests for the instability score by filtering on specific `itemid` values (50983, 50971, 50912, 51003, 50931, 51006).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "critical-lab-value-logic",
+          "requirements": "Critical Lab Value Logic: The query must use CASE statements to correctly define and flag abnormal lab values based on established clinical thresholds for each selected lab test.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins necessary tables to link patient demographics, admissions, diagnoses, and lab results.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly perform an INNER JOIN between the `patients` and `admissions` tables on `subject_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-lab-join",
+          "requirements": "Cohort-Lab Join: The query must correctly join the base cohort with the `labevents` table on `hadm_id` to associate lab results with the correct patient admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the required calculations and comparisons between the high-instability stroke group and the control group.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must correctly calculate the per-patient `instability_score` by summing the flags for each abnormal lab value.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "75th Percentile Calculation: The query must calculate the 75th percentile of the instability score for the stroke cohort using `PERCENTILE_CONT(..., 0.75) OVER ()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "high-instability-group-definition",
+          "requirements": "High-Instability Group Definition: The query must correctly define the 'Stroke_High_Instability' group as patients whose score is greater than or equal to the calculated 75th percentile.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-group-aggregation",
+          "requirements": "Final Group Aggregation: The query must group results by the final defined groups ('Stroke_High_Instability', 'Control_Group') to calculate and compare aggregate metrics.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metric-calculation",
+          "requirements": "Outcome Metric Calculation: The query must correctly calculate the average length of stay, mortality rate, and critical lab rates for the final comparison groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

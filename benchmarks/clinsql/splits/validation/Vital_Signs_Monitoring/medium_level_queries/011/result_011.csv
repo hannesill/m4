@@ -1,0 +1,5 @@
+rr_category,number_of_icu_stays,mean_of_average_rr,median_of_average_rr,iqr_of_average_rr
+< 12 (Bradypnea),90,11.1,11.3,1.2
+12-20 (Normal),8712,16.9,17.0,2.9
+21-29 (Tachypnea),3860,22.8,22.2,3.2
+>= 30 (Severe Tachypnea),141,32.3,31.8,2.2

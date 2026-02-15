@@ -1,0 +1,210 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "grouping-column-exists",
+              "requirements": "Exists Column for SpO2 Categories (e.g., 'spo2_category')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "count-column-exists",
+              "requirements": "Exists Column for Stay Count (e.g., 'number_of_stays')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-spo2-column-exists",
+              "requirements": "Exists Column for Mean SpO2 (e.g., 'mean_avg_spo2')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-spo2-column-exists",
+              "requirements": "Exists Column for Median SpO2 (e.g., 'median_avg_spo2')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-spo2-column-exists",
+              "requirements": "Exists Column for IQR of SpO2 (e.g., 'iqr_avg_spo2')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "aki-rate-column-exists",
+              "requirements": "Exists Column for AKI Rate (e.g., 'aki_rate_percent')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in Answer Columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "stay-count-validation",
+          "requirements": "Value Validation for Stay Count (e.g., 'number_of_stays')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "stay-count-plausible",
+              "requirements": "Clinically Plausible (1 - 10000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "stay-count-acceptable",
+              "requirements": "Acceptable Range (10 - 5000)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "mean-spo2-validation",
+          "requirements": "Value Validation for Mean SpO2 (e.g., 'mean_avg_spo2')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-spo2-plausible",
+              "requirements": "Clinically Plausible (70.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-spo2-acceptable",
+              "requirements": "Acceptable Range (80.0 - 99.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-spo2-validation",
+          "requirements": "Value Validation for Median SpO2 (e.g., 'median_avg_spo2')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-spo2-plausible",
+              "requirements": "Clinically Plausible (70.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-spo2-acceptable",
+              "requirements": "Acceptable Range (80.0 - 99.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "iqr-spo2-validation",
+          "requirements": "Value Validation for IQR of SpO2 (e.g., 'iqr_avg_spo2')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "iqr-spo2-plausible",
+              "requirements": "Clinically Plausible (0.0 - 30.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "iqr-spo2-acceptable",
+              "requirements": "Acceptable Range (0.5 - 15.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "aki-rate-validation",
+          "requirements": "Value Validation for AKI Rate (e.g., 'aki_rate_percent')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "aki-rate-plausible",
+              "requirements": "Clinically Plausible (0.0 - 100.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "aki-rate-acceptable",
+              "requirements": "Acceptable Range (15.0 - 80.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

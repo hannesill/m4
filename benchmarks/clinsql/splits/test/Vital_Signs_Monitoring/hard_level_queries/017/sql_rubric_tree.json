@@ -1,0 +1,175 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged between 83 and 93 at the time of ICU admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients within the asthma cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-patient-identification",
+          "requirements": "ICU Patient Identification: The query must correctly identify patients with an ICU stay using the `icustays` table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "asthma-diagnosis-codes",
+          "requirements": "Asthma Diagnosis Codes: The query must identify patients with asthma by filtering on a comprehensive list of relevant ICD-9 and ICD-10 codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-vitals-selection",
+          "requirements": "Instability Score Vital Signs Selection: The query must correctly select the vital signs required for the instability score (Heart Rate, SBP, Resp Rate, Temp, SpO2) using their itemids.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-abnormality-logic",
+          "requirements": "Instability Score Abnormality Logic: The query must use a CASE statement to correctly classify each vital sign measurement as abnormal based on the specified thresholds.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-aggregation",
+          "requirements": "Instability Score Aggregation: The query must correctly sum the abnormal vital sign flags for each stay_id to calculate the total instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-72h",
+          "requirements": "Temporal Filter (First 72h): The query must filter vital sign measurements to include only those recorded within the first 72 hours of the ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "base-cohort-joins",
+          "requirements": "Base Cohort Table Joins: The query must correctly join `icustays`, `patients`, and `admissions` tables on `subject_id` and `hadm_id` to gather demographic and admission data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-join",
+          "requirements": "Diagnosis Join: The query must join with `diagnoses_icd` on `hadm_id` to link diagnoses to the patient cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "chartevents-join",
+          "requirements": "Chartevents Join: The query must join with `chartevents` on `stay_id` to link vital signs to specific ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-group-creation",
+          "requirements": "Cohort Group Creation: The query must use a LEFT JOIN and a CASE statement to correctly label each stay as either 'Asthma_Female_83_93' or 'All_ICU_Age_Matched_83_93'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Output",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "final-grouping",
+          "requirements": "Final Grouping: The query must group the final results by the created cohort groups to enable comparison.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-statistics",
+          "requirements": "Instability Score Statistics: The query must calculate the standard deviation (STDDEV) and percentiles (25th, 50th, 75th, 95th) for the instability score using APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-los-calculation",
+          "requirements": "ICU LOS Calculation: The query must correctly calculate the average ICU length of stay in days for each cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-rate-calculation",
+          "requirements": "Mortality Rate Calculation: The query must correctly calculate the average hospital mortality rate for each cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-columns",
+          "requirements": "Output Columns: The final SELECT statement must produce all required metrics: cohort group, count, instability score stats, average LOS, and mortality rate.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

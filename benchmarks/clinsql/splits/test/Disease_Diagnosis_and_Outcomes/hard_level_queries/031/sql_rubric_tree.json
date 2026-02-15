@@ -1,0 +1,144 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter for patients aged 85-95 at the time of admission using a calculation like `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 85 AND 95`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-condition-filter",
+          "requirements": "Primary Condition Filter: The query must identify hospital admissions for asthma exacerbation by filtering `diagnoses_icd` on the correct set of ICD codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": [
+            {
+              "id": "icd-version-handling-for-asthma",
+              "requirements": "ICD Version Handling for Asthma: The filter for asthma exacerbation must include both ICD-9 ('49301', '49311', '49321', '49391') and ICD-10 ('J4521', 'J4531', 'J4541', 'J4551', 'J45901') codes.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-admission-join",
+          "requirements": "Patient-Admission Join: The query must correctly join the `patients` and `admissions` tables on `subject_id` to link patient demographics with hospital stay information.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: The query must join the cohort of admissions with the `diagnoses_icd` table on `hadm_id` to identify the primary condition and subsequent comorbidities/complications.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Derivation of risk scores and complication flags.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "comorbidity-risk-score-calculation",
+          "requirements": "Comorbidity Risk Score Calculation: A composite risk score must be calculated by summing weights for specific comorbidities (CHF, CKD, Afib, Diabetes) identified via ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cardiovascular-complication-identification",
+          "requirements": "Cardiovascular Complication Identification: The query must create a flag indicating the presence of in-hospital cardiovascular complications (e.g., MI, stroke) using relevant ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "neurologic-complication-identification",
+          "requirements": "Neurologic Complication Identification: The query must create a flag indicating the presence of in-hospital neurologic complications (e.g., delirium, encephalopathy) using relevant ICD codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Stratification and reporting of outcomes.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "risk-score-stratification",
+          "requirements": "Risk Score Stratification: Patients must be stratified into four quartiles based on the calculated composite comorbidity risk score, using `NTILE(4) OVER (ORDER BY risk_score)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-by-strata",
+          "requirements": "Grouping by Strata: The final aggregation must group results by the calculated risk quartile to report outcomes for each stratum.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-rate-calculation",
+          "requirements": "Outcome Rate Calculation: The query must correctly calculate the rates for in-hospital mortality, cardiovascular complications, and neurologic complications for each quartile, typically using `AVG()` on binary flags.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The calculated rates must be presented as percentages, correctly formatted using functions like `ROUND()` and multiplication by 100.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

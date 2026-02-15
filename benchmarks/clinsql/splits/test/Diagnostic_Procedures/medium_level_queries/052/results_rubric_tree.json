@@ -1,0 +1,156 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "column-exists-mean-ultrasounds",
+              "requirements": "Column exists for mean ultrasounds per admission (e.g., 'mean_ultrasounds', 'avg_us_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-min-ultrasounds",
+              "requirements": "Column exists for min ultrasounds per admission (e.g., 'min_ultrasounds', 'min_us_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-max-ultrasounds",
+              "requirements": "Column exists for max ultrasounds per admission (e.g., 'max_ultrasounds', 'max_us_count')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-admission-category",
+              "requirements": "Column exists for admission category (e.g., 'admission_category', 'admission_type')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "column-exists-stay-category",
+              "requirements": "Column exists for length of stay category (e.g., 'stay_category', 'los_group')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in key metric columns (mean, min, max ultrasounds)",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-value-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "mean-ultrasounds-validation",
+          "requirements": "Validate values in the column for mean ultrasounds (e.g. 'mean_ultrasounds')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "mean-ultrasounds-plausible",
+              "requirements": "Clinically Plausible mean ultrasounds per admission (0.0 - 5.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "mean-ultrasounds-acceptable",
+              "requirements": "Acceptable mean ultrasounds per admission (0.0 - 1.0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "min-ultrasounds-validation",
+          "requirements": "Validate values in the column for min ultrasounds (e.g. 'min_ultrasounds')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "min-ultrasounds-plausible",
+              "requirements": "Clinically Plausible min ultrasounds per admission (0 - 1)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "min-ultrasounds-acceptable",
+              "requirements": "Acceptable min ultrasounds per admission (must be 0)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "max-ultrasounds-validation",
+          "requirements": "Validate values in the column for max ultrasounds (e.g. 'max_ultrasounds')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "max-ultrasounds-plausible",
+              "requirements": "Clinically Plausible max ultrasounds per admission (0 - 20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "max-ultrasounds-acceptable",
+              "requirements": "Acceptable max ultrasounds per admission (0 - 10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

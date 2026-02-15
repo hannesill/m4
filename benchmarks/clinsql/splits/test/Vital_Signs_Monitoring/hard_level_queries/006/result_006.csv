@@ -1,0 +1,3 @@
+ugib_cohort_95th_percentile_instability_index,comparison_group,num_patients,avg_instability_index,avg_tachycardia_episodes,avg_hypotension_episodes,avg_tachypnea_episodes,avg_icu_los_days,mortality_rate
+89.24999999999996,UGIB_Top_Decile,29,93.31,38.83,13.9,40.59,6.93,0.5862
+89.24999999999996,Control_Age_Matched,12893,24.65,6.87,3.83,13.95,3.49,0.0991

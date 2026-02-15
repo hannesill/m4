@@ -1,0 +1,191 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates patient age at admission and filters for the range 39-49 years.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "t2dm-condition-selection",
+          "requirements": "T2DM Condition Selection: Correctly identifies Type 2 Diabetes Mellitus using both ICD-9 ('250%') and ICD-10 ('E11%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-condition-selection",
+          "requirements": "Heart Failure Condition Selection: Correctly identifies Heart Failure using both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "length-of-stay-filter",
+          "requirements": "Length of Stay Filter: Filters admissions for a length of stay greater than or equal to 72 hours using `DATETIME_DIFF`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly joins `patients`, `admissions`, and `diagnoses_icd` tables to build the initial cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "prescriptions-table-join",
+          "requirements": "Prescriptions Table Join: Correctly performs a LEFT JOIN from the cohort to `prescriptions` on `hadm_id` to include all cohort patients, regardless of insulin prescription status.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "basal-insulin-identification",
+          "requirements": "Basal Insulin Identification: Correctly identifies basal insulins using drug names like 'glargine', 'detemir', 'lantus', 'levemir', 'nph'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "bolus-insulin-identification",
+          "requirements": "Bolus Insulin Identification: Correctly identifies bolus insulins using drug names like 'lispro', 'aspart', 'glulisine', 'humalog', 'novolog', 'apidra', 'regular'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "sliding-scale-insulin-identification",
+          "requirements": "Sliding-Scale Insulin Identification: Correctly identifies sliding-scale insulin using terms like 'sliding scale' or 'ssi'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "regimen-flagging-logic",
+          "requirements": "Regimen Flagging Logic: Correctly uses MAX(CASE...) to create flags for each insulin regimen type within each time window.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-window-logic",
+          "requirements": "Admission Window Logic: Correctly defines the first 72-hour window relative to the admission time.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "discharge-window-logic",
+          "requirements": "Discharge Window Logic: Correctly defines the final 48-hour window relative to the discharge time.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "regimen-counting",
+          "requirements": "Regimen Counting: Correctly counts patients for each regimen, including the 'Basal-Bolus' combination, using COUNTIF on the created flags.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentage-calculation",
+          "requirements": "Percentage Calculation: Correctly calculates the percentage for each regimen and time window against the total cohort size.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "absolute-difference-calculation",
+          "requirements": "Absolute Difference Calculation: Correctly calculates the absolute percentage-point difference between the admission and discharge windows.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-formatting",
+      "requirements": "Output Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "column-naming",
+          "requirements": "Column Naming: Final output columns are clearly named, including 'regimen_type', percentage columns, and the difference column.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "result-ordering",
+          "requirements": "Result Ordering: The final results are ordered logically, prioritizing 'Basal-Bolus' as requested implicitly by its complexity.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

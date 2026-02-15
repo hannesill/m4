@@ -1,0 +1,2 @@
+cohort_patient_count,mortality_rate_30_day_percent,aki_rate_percent,ards_rate_percent,risk_score_25th_percentile,risk_score_median,risk_score_75th_percentile,median_survival_days_for_deceased
+643,28.77,20.22,0.47,18.0,31.0,49.0,26.0

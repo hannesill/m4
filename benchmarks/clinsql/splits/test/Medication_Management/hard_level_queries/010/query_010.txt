@@ -1,0 +1,1 @@
+I'm managing a 66‑year‑old man hospitalized with hemorrhagic stroke. For male inpatients aged 61–71, stratified into quintiles by first‑24‑hour medication complexity score, report per quintile: number of patients, mean complexity score, average LOS, in‑hospital mortality, and 30‑day readmission rate.

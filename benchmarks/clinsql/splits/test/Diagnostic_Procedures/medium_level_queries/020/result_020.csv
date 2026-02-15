@@ -1,0 +1,5 @@
+stay_category,icu_status,admission_count,mean_imaging_procedures
+1-3 Day Stay,ICU Stay,20,0.1
+1-3 Day Stay,No ICU Stay,169,0.04
+4-7 Day Stay,ICU Stay,12,0.25
+4-7 Day Stay,No ICU Stay,30,0.13

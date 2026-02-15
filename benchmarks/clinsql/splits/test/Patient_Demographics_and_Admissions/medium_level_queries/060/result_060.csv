@@ -1,0 +1,4 @@
+discharge_outcome,number_of_admissions,mean_los_days,stddev_los_days,percentile_rank_of_10_day_los
+Discharged to Hospice,173,10.94,14.22,65.9
+In-Hospital Mortality,286,9.73,14.52,70.28
+Discharged Home,11532,4.39,4.86,93.57

@@ -1,0 +1,2 @@
+target_sbp_value,total_stays_in_cohort,stays_at_or_below_target,percentile_rank_of_160,cohort_mean_avg_sbp,cohort_stddev_avg_sbp,p25_sbp,p50_sbp_median,p75_sbp,p90_sbp,p95_sbp
+160,2720,2684,98.68,119.2,16.05,109.33,117.35,127.93,139.5,147.25

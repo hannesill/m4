@@ -1,0 +1,111 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients by using the condition p.gender = 'M'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients to be within the 76-86 age range using p.anchor_age BETWEEN 76 AND 86.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-admission-identification",
+          "requirements": "First Admission Identification: The query must correctly identify each patient's first hospital admission using a window function like ROW_NUMBER() partitioned by subject_id and ordered by admittime.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "antiplatelet-drug-identification",
+          "requirements": "Antiplatelet Drug Identification: The query must identify relevant antiplatelet drugs (aspirin, clopidogrel, ticagrelor, prasugrel) from the prescriptions table, typically using a WHERE clause with multiple LIKE conditions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "dapt-logic",
+          "requirements": "Dual Antiplatelet Therapy (DAPT) Logic: The query must correctly implement logic to identify admissions where at least two distinct antiplatelet agents were prescribed, using COUNT(DISTINCT antiplatelet_agent) >= 2 grouped by hadm_id.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-dapt-integration",
+          "requirements": "Cohort-DAPT Integration: The query must join the filtered patient cohort with the DAPT admission list on hadm_id to ensure patients meet both demographic and medication criteria for the same admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-icu-integration",
+          "requirements": "Cohort-ICU Integration: The query must join the final patient cohort with the ICU stay information on hadm_id to link admissions to their respective ICU length of stay.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "icu-los-calculation",
+          "requirements": "ICU LOS Calculation: The query must calculate the length of stay in days for each ICU stay using DATETIME_DIFF and aggregate total ICU time per hospital admission (hadm_id).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-aggregation",
+          "requirements": "Final Aggregation: The query must compute the final average ICU length of stay across the qualifying cohort using the AVG() function on the calculated ICU LOS values.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

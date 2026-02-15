@@ -1,0 +1,4 @@
+stay_category,icu_status,total_admissions,median_imaging_procedures,iqr_imaging_procedures,min_imaging_procedures,max_imaging_procedures
+1-3 Day Stay,No ICU Stay,49,0,0,0,0
+4-7 Day Stay,ICU Stay,4,0,0,0,0
+4-7 Day Stay,No ICU Stay,15,0,0,0,0

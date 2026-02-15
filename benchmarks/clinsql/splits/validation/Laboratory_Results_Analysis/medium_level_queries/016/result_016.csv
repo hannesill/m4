@@ -1,0 +1,4 @@
+troponin_category,count_of_admissions,percentage_of_admissions,mean_troponin_t,median_troponin_t,iqr_troponin_t
+Normal,50,2.53,0.01,0.01,0.0
+Borderline,256,12.97,0.03,0.03,0.02
+Elevated,1668,84.5,1.129,0.31,0.87

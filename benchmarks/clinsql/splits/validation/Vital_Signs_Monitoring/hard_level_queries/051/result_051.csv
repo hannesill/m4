@@ -1,0 +1,3 @@
+cohort_group,p95_instability_score_stroke_group,num_patients_in_top_quartile,avg_instability_score_in_top_quartile,avg_abnormal_episodes_in_top_quartile,avg_icu_los_hours_in_top_quartile,mortality_rate_in_top_quartile
+General ICU (89-99 M),0.16600474082360298,508,0.16204867545081839,32.60039370078741,80.8523622047244,0.32283464566929143
+Ischemic Stroke (89-99 M),0.16600474082360298,43,0.15365007386216428,31.697674418604656,89.93023255813952,0.3720930232558139

@@ -1,0 +1,2 @@
+cohort_description,total_patients_in_cohort,min_risk_score,risk_score_25th_percentile,risk_score_median,risk_score_75th_percentile,max_risk_score,in_hospital_mortality_rate_pct,aki_rate_pct,ards_rate_pct,median_survival_days_for_deceased
+"Male Patients, Age 88-98 at Admission, with Pneumonia & ICU Stay",503,7,17,24,33,58,27.83,59.44,1.19,6

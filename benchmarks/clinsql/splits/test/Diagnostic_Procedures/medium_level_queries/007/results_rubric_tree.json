@@ -1,0 +1,143 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p25-column-exists",
+              "requirements": "Column related to the 25th percentile of procedures exists (e.g., 'p25_procedures').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-column-exists",
+              "requirements": "Column related to the 50th percentile (median) of procedures exists (e.g., 'p50_median_procedures').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-column-exists",
+              "requirements": "Column related to the 75th percentile of procedures exists (e.g., 'p75_procedures').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-related columns ('p25_procedures', 'p50_median_procedures', 'p75_procedures').",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "p25-procedures-validation",
+          "requirements": "Validation for 25th percentile of procedures ('p25_procedures').",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p25-procedures-plausible",
+              "requirements": "Clinically Plausible (0-10). Value must be >= 0, as procedure counts cannot be negative. A count over 10 is unlikely for a p25 value.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p25-procedures-acceptable",
+              "requirements": "Acceptable Range (0-3). For a lower percentile (p25), it's expected that the number of diagnostic procedures is low, including zero for some groups.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p50-procedures-validation",
+          "requirements": "Validation for 50th percentile (median) of procedures ('p50_median_procedures').",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p50-procedures-plausible",
+              "requirements": "Clinically Plausible (0-15). The median procedure count can be higher than p25 but is unlikely to be extremely high.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p50-procedures-acceptable",
+              "requirements": "Acceptable Range (0-5). The median for diagnostic procedures in ACS is typically a small number, reflecting standard workup like ECG, troponins, and maybe one imaging study.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "p75-procedures-validation",
+          "requirements": "Validation for 75th percentile of procedures ('p75_procedures').",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "p75-procedures-plausible",
+              "requirements": "Clinically Plausible (0-20). The 75th percentile represents patients with more extensive workups, but a count above 20 is very unlikely.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "p75-procedures-acceptable",
+              "requirements": "Acceptable Range (1-8). This range allows for patients who underwent more comprehensive diagnostics, potentially including both non-invasive and invasive procedures.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

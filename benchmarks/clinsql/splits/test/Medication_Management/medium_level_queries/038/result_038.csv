@@ -1,0 +1,2 @@
+medication_class,total_cohort_admissions,prevalence_early_count,prevalence_early_pct,prevalence_discharge_count,prevalence_discharge_pct,prevalence_absolute_change_pct,initiation_early_count,initiation_early_pct,initiation_discharge_count,initiation_discharge_pct,initiation_absolute_change_pct,prevalence_relative_change_pct,initiation_relative_change_pct
+GLP-1 Receptor Agonists,3568,1,0.03,0,0.0,-0.03,1,0.03,0,0.0,-0.03,-100.0,-100.0

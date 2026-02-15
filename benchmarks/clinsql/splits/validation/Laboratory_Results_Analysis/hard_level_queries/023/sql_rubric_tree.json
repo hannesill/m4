@@ -1,0 +1,167 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Defines the base population and target cohort for analysis.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly filters admissions for patients aged between 90 and 100 years using the anchor_age, anchor_year, and admittime fields.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ami-diagnosis-selection",
+          "requirements": "AMI Diagnosis Selection: Identifies hospital admissions with an Acute Myocardial Infarction (AMI) diagnosis using appropriate ICD-9 ('410%') and ICD-10 ('I21%', 'I22%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Correctly identifies female patients and uses this to define the target AMI cohort via the 'is_target_ami_group' flag.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-grouping-definition",
+          "requirements": "Cohort Grouping Definition: Establishes two distinct cohorts: the target group (female AMI patients 90-100) and a control group (all inpatients 90-100) for comparative analysis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Translates clinical concepts like 'lab instability' into executable SQL logic.",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-instability-definition",
+          "requirements": "Lab Instability Definition: Correctly implements the 'lab-instability' concept by identifying specific critical lab events using a CASE statement on itemid and valuenum from the labevents table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-constraint",
+          "requirements": "Temporal Constraint: Filters lab events to only include those occurring within the first 48 hours of admission using TIMESTAMP_DIFF.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: Correctly calculates the 'instability_score' by counting the number of non-null critical lab events for each hospital admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins tables to link patient demographics, admissions, diagnoses, and lab results.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "admission-patient-join",
+          "requirements": "Admission-Patient Join: Correctly performs an INNER JOIN between admissions and patients on subject_id.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-diagnosis-join",
+          "requirements": "Admission-Diagnosis Join: Correctly performs a LEFT JOIN between the base cohort and AMI admissions on hadm_id to flag target patients without losing the control group.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-lab-join",
+          "requirements": "Cohort-Lab Join: Correctly performs an INNER JOIN between the base cohorts and labevents on hadm_id to associate lab results with the correct admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-consolidation-join",
+          "requirements": "Data Consolidation Join: Correctly performs a LEFT JOIN from the base cohorts to the instability scores on hadm_id, using COALESCE to handle patients with no critical lab events.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics: Performs the final calculations and comparisons required by the question.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "p75-score-calculation",
+          "requirements": "P75 Score Calculation: Correctly calculates the 75th percentile of the instability score for the target AMI female cohort using APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-tier-cohort-identification",
+          "requirements": "Top-Tier Cohort Identification: Correctly filters the target cohort to include only patients with an instability score greater than or equal to the calculated P75 score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metrics-calculation",
+          "requirements": "Outcome Metrics Calculation: Correctly calculates in-hospital mortality (AVG of hospital_expire_flag) and mean LOS for the top-tier cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comparative-rate-calculation",
+          "requirements": "Comparative Rate Calculation: Correctly calculates the rates of specific critical labs for the top-tier cohort and compares them against the control group (all inpatients 90-100) using subqueries.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: Correctly structures the final output using UNION ALL to present each metric as a separate row and formats numerical values as requested.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

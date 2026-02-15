@@ -1,0 +1,3 @@
+los_group,number_of_admissions,n_with_ckd,mortality_rate_with_ckd_pct,n_without_ckd,mortality_rate_without_ckd_pct,n_with_diabetes,mortality_rate_with_diabetes_pct,n_without_diabetes,mortality_rate_without_diabetes_pct,n_with_afib,mortality_rate_with_afib_pct,n_without_afib,mortality_rate_without_afib_pct,n_with_htn,mortality_rate_with_htn_pct,n_without_htn,mortality_rate_without_htn_pct
+<=5 days,443,153,7.84,290,7.24,157,7.01,286,7.69,133,15.04,310,4.19,179,6.15,264,8.33
+>5 days,744,332,12.05,412,8.25,346,10.69,398,9.3,339,12.09,405,8.15,231,5.19,513,12.09

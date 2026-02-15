@@ -1,0 +1,9 @@
+severity_group,los_bucket,N,in_hospital_mortality_rate_pct,median_los_days,average_comorbidity_count
+Lower-Severity (Non-ICU),≤3 days,4306,0.77,2,15.7
+Lower-Severity (Non-ICU),4-6 days,2139,0.89,5,19.0
+Lower-Severity (Non-ICU),7-10 days,1326,1.21,8,21.5
+Lower-Severity (Non-ICU),>10 days,978,2.25,14,25.0
+Higher-Severity (ICU),≤3 days,494,36.64,2,20.4
+Higher-Severity (ICU),4-6 days,804,12.69,5,20.6
+Higher-Severity (ICU),7-10 days,902,11.64,8,22.8
+Higher-Severity (ICU),>10 days,1551,16.57,16,27.9

@@ -1,0 +1,3 @@
+cohort_group,num_patients,avg_instability_index,stddev_instability_index,p25_instability_index,p50_instability_index,p75_instability_index,p95_instability_index,avg_hypotensive_episodes,avg_tachycardic_episodes,avg_icu_los_hours,mortality_rate_percent
+"Target (Male, 40-50, Resp Failure)",1216,24.19,21.69,8,18,36,66,9.56,14.63,172.76,18.59
+Comparison (Other Resp Failure),24910,19.96,20.54,4,14,29,59,8.2,11.76,142.25,26.94

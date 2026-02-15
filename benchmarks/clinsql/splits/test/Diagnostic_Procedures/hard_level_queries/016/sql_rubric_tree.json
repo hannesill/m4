@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identifies the cohort of male patients aged 88-98 with pneumonia on their first ICU stay.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: Filters for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: Correctly calculates and filters patient age at the time of admission to be between 88 and 98.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-filter",
+          "requirements": "First ICU Stay Filter: Correctly identifies the first ICU stay for a given hospital admission using a window function like `ROW_NUMBER()` and filtering for the first entry (`rn = 1`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "pneumonia-diagnosis-filter",
+          "requirements": "Pneumonia Diagnosis Filter: Filters for pneumonia diagnoses using appropriate ICD-9 ('486%') and ICD-10 ('J18%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration: Correctly joins all required tables to link patient demographics, admissions, diagnoses, and ICU events.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "core-hosp-icu-joins",
+          "requirements": "Core Hospital and ICU Joins: Correctly joins `patients` to `admissions` on `subject_id`, and `admissions` to `icustays` (via a CTE) on `hadm_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnosis-table-join",
+          "requirements": "Diagnosis Table Join: Correctly joins `diagnoses_icd` to the cohort on `hadm_id` to filter for pneumonia.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "procedure-table-join",
+          "requirements": "Procedure Table Join: Correctly performs a `LEFT JOIN` from the patient cohort to `procedureevents` on `stay_id` to ensure patients with zero procedures are not excluded.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "temporal-and-metric-calculation",
+      "requirements": "Temporal and Metric Calculation: Correctly calculates per-stay metrics within the specified time window before stratification.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "procedure-time-window",
+          "requirements": "Procedure Time Window: Filters procedures to the first 72 hours of the ICU stay using a condition like `pe.starttime BETWEEN c.intime AND DATETIME_ADD(c.intime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-procedure-count",
+          "requirements": "Diagnostic Procedure Count: Calculates the count of unique procedures per stay, for example using `COUNT(DISTINCT pe.itemid)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "icu-los-calculation",
+          "requirements": "ICU LOS Calculation: Correctly calculates the ICU length of stay in days, for example using `DATETIME_DIFF(c.outtime, c.intime, HOUR) / 24.0`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "stratification-and-final-analytics",
+      "requirements": "Stratification and Final Analytics: Correctly stratifies patients into quintiles and calculates the required average metrics per quintile.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "quintile-stratification",
+          "requirements": "Quintile Stratification: Uses the `NTILE(5)` window function, ordered by the diagnostic procedure count, to stratify ICU stays into five groups.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-grouping-and-aggregation",
+          "requirements": "Final Grouping and Aggregation: Groups the final results by quintile and correctly calculates the average procedure count, average ICU LOS, and in-hospital mortality percentage.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-ordering",
+          "requirements": "Output Ordering: Orders the final result set by the quintile stratum for clear presentation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

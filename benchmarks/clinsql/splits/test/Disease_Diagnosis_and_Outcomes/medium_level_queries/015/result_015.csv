@@ -1,0 +1,13 @@
+icu_status,los_category,comorbidity_burden,total_patients,total_deaths,mortality_rate_percent,ci_95_lower_bound,ci_95_upper_bound
+Non-ICU,>5 days,Low Burden,27,1,3.7,0.0,10.83
+Non-ICU,>5 days,Medium Burden,43,0,0.0,0.0,0.0
+Non-ICU,>5 days,High Burden,59,1,1.69,0.0,4.99
+Non-ICU,≤5 days,Low Burden,161,0,0.0,0.0,0.0
+Non-ICU,≤5 days,Medium Burden,127,2,1.57,0.0,3.74
+Non-ICU,≤5 days,High Burden,39,0,0.0,0.0,0.0
+ICU,>5 days,Low Burden,97,3,3.09,0.0,6.54
+ICU,>5 days,Medium Burden,134,5,3.73,0.52,6.94
+ICU,>5 days,High Burden,234,38,16.24,11.51,20.96
+ICU,≤5 days,Low Burden,81,12,14.81,7.08,22.55
+ICU,≤5 days,Medium Burden,62,16,25.81,14.91,36.7
+ICU,≤5 days,High Burden,33,17,51.52,34.46,68.57

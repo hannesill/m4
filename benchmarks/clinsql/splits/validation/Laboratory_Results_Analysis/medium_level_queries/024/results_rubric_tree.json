@@ -1,0 +1,132 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "in-hospital-mortality-rate-column-exists",
+              "requirements": "A column for in-hospital mortality rate exists (e.g., 'in_hospital_mortality_rate_percent', 'mortality_pct').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "troponin-summary-stats-columns-exist",
+              "requirements": "Columns for troponin summary statistics exist (e.g., 'avg_initial_troponin_t', 'median_initial_troponin_t').",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in the identified columns.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "in-hospital-mortality-rate-validation",
+          "requirements": "Validation for a column related to in-hospital mortality rate (e.g., 'in_hospital_mortality_rate_percent')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "in-hospital-mortality-rate-plausible",
+              "requirements": "Clinically Plausible (0.0-20.0). A rate of 0 is possible but unlikely, and over 20% is high for this specific cohort.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "in-hospital-mortality-rate-acceptable",
+              "requirements": "Acceptable Range (0.5-10.0). Expected mortality for ACS patients with elevated troponin is significant but not extremely high.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "median-troponin-validation",
+          "requirements": "Validation for a column related to median initial Troponin T (e.g., 'median_initial_troponin_t')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "median-troponin-plausible",
+              "requirements": "Clinically Plausible (0.015-1.0). Must be above the 99th percentile cutoff (approx 0.014 ng/mL) and below extreme outlier values.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "median-troponin-acceptable",
+              "requirements": "Acceptable Range (0.03-0.5). Reflects a typical median for a cohort with clinically significant myocardial injury.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "average-troponin-validation",
+          "requirements": "Validation for a column related to average initial Troponin T (e.g., 'avg_initial_troponin_t')",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "average-troponin-plausible",
+              "requirements": "Clinically Plausible (0.015-5.0). The average can be skewed higher than the median due to outliers with very high troponin levels.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "average-troponin-acceptable",
+              "requirements": "Acceptable Range (0.05-1.5). The average should be higher than the 99th percentile cutoff and reasonably reflect a population with myocardial injury.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

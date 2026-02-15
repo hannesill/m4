@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at the time of admission and filter for the 70-80 age range using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 70 AND 80`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-condition",
+          "requirements": "Heart Failure Condition: The query must identify patients with heart failure by checking for relevant ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: The query must correctly isolate the first ICU stay for each hospital admission using `ROW_NUMBER() OVER (PARTITION BY i.hadm_id ORDER BY i.intime) = 1` to prevent duplicate analysis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "diagnostic-intensity-definition",
+          "requirements": "Diagnostic Intensity Definition: The query must interpret 'diagnostic intensity' as the count of unique procedures, implemented as `COUNT(DISTINCT pe.itemid)` from the `procedureevents` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-time-window",
+          "requirements": "Diagnostic Time Window: The query must restrict the analysis of procedures to the first 72 hours of the ICU stay, using a condition like `pe.starttime BETWEEN icu.intime AND DATETIME_ADD(icu.intime, INTERVAL 72 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-definition-joins",
+          "requirements": "Cohort Definition Joins: The query must correctly join `icustays`, `admissions`, `patients`, and `diagnoses_icd` tables on `hadm_id` and `subject_id` to define the heart failure patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-comparison-logic",
+          "requirements": "Cohort Comparison Logic: The query must use a `LEFT JOIN` from the general population to the heart failure cohort (`hf_stays`) and a `CASE` statement to stratify results into 'Heart Failure' and 'General ICU Population' groups.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-data-join",
+          "requirements": "Diagnostic Data Join: The query must link procedures to ICU stays by joining `procedureevents` and `icustays` (or a CTE derived from it) on `stay_id`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final aggregation must group results by the defined cohort ('Heart Failure' vs 'General ICU Population') to enable comparison.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnostic-percentile-calculation",
+          "requirements": "Diagnostic Percentile Calculation: The query must calculate the mean, median (50th), 75th, and 95th percentiles of diagnostic intensity using `AVG` and `APPROX_QUANTILES`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-mortality-calculation",
+          "requirements": "LOS and Mortality Calculation: The query must correctly calculate the average ICU length of stay in days using `DATETIME_DIFF` and the hospital mortality percentage using `AVG` on `hospital_expire_flag`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "null-handling",
+          "requirements": "Null Handling: The query must use `COALESCE` on the diagnostic intensity metric to correctly include patients with zero procedures in the final aggregations.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

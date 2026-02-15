@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients by checking p.gender = 'F'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate the patient's age at the time of admission and filter for the range 39-49 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 39 AND 49`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "heart-failure-diagnosis-filter",
+          "requirements": "Heart Failure Diagnosis Filter: The query must use an EXISTS or JOIN clause to filter for admissions with a Heart Failure diagnosis, correctly identifying both ICD-9 ('428%') and ICD-10 ('I50%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics-stratification",
+      "requirements": "Clinical Analytics and Stratification",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "comorbidity-burden-calculation",
+          "requirements": "Comorbidity Burden Calculation: The query must calculate a comorbidity score by counting the number of distinct diagnosis codes per hospital admission (`COUNT(DISTINCT d.icd_code)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "tertile-calculation",
+          "requirements": "Tertile Calculation: The query must correctly calculate the boundaries for comorbidity tertiles using `APPROX_QUANTILES(diagnosis_count, 3)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "comorbidity-tertile-assignment",
+          "requirements": "Comorbidity Tertile Assignment: A CASE statement must be used to correctly assign each admission to a 'Low', 'Medium', or 'High' comorbidity burden group based on the calculated tertile boundaries.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-group-assignment",
+          "requirements": "Length of Stay Group Assignment: The query must first calculate the length of stay in days and then use a CASE statement to stratify admissions into two groups: '<=5 days' and '>5 days'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "prevalence-calculation",
+      "requirements": "Prevalence Calculation for Specific Conditions",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "ckd-identification",
+          "requirements": "Chronic Kidney Disease (CKD) Identification: The query must use an `EXISTS` subquery or similar logic to flag admissions with a CKD diagnosis, covering both ICD-9 ('585%') and ICD-10 ('N18%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diabetes-identification",
+          "requirements": "Diabetes Identification: The query must use an `EXISTS` subquery or similar logic to flag admissions with a Diabetes diagnosis, covering relevant ICD-9 ('250%') and ICD-10 ('E08%' - 'E13%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-output",
+      "requirements": "Final Aggregation and Output",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "grouping-logic",
+          "requirements": "Grouping Logic: The final query must group results by the two stratification columns: `los_group` and `comorbidity_burden`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "complete-strata-reporting",
+          "requirements": "Complete Strata Reporting: The query must ensure all possible strata combinations are present in the final output, using a LEFT JOIN from a pre-generated strata table to handle groups with zero patients.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "metric-calculation",
+          "requirements": "Metric Calculation: The query must correctly calculate the total count (N), in-hospital mortality percentage, CKD prevalence percentage, and diabetes prevalence percentage for each group.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The query should use `ROUND` for percentage values and `ORDER BY` to present the results in a logical order (by LOS, then by comorbidity burden).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+For my 61-year-old male ICU patient: among male ICU patients aged 56–66, categorize per-stay mean arterial pressure (<65, 65–74, 75–84, ≥85 mmHg) and report patient counts and stroke rates.

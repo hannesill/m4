@@ -1,0 +1,119 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-selection-missing",
+          "requirements": "Age Selection: The query must filter for patients aged 57. The current implementation is missing an age filter (e.g., `p.anchor_age = 57`).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "inpatient-admission-identification",
+          "requirements": "Inpatient Admission Identification: The query must correctly identify inpatient admissions associated with an ACS diagnosis.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation for ACS and Troponin",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "acs-diagnosis-codes",
+          "requirements": "ACS Diagnosis Codes: The query must correctly identify ACS using a combination of ICD-9 ('410%', '4111') and ICD-10 ('I200%', 'I21%', 'I22%') codes from the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "troponin-lab-item-selection",
+          "requirements": "Troponin Lab Item Selection: The query must correctly filter for troponin lab measurements using the appropriate itemids (51003 for Troponin T, 51002 for Troponin I).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Data Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "patient-demographics-join",
+          "requirements": "Patient-Demographics Join: The query must join the `patients` table with the `acs_admissions` CTE on `subject_id` to link demographic information to ACS admissions.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-lab-join",
+          "requirements": "Admission-Lab Join: The query must join the `acs_admissions` CTE with the `labevents` table on `hadm_id` to link lab results to the specific hospitalization.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "minimum-value-aggregation",
+          "requirements": "Minimum Value Aggregation: The query must use the `MIN()` aggregate function on the troponin `valuenum` to find the minimum measurement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-quality-filtering",
+          "requirements": "Data Quality Filtering: The query should apply filters to ensure data quality, such as `valuenum IS NOT NULL` and a plausible range for troponin values (`valuenum >= 0 AND valuenum < 100`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "output-formatting",
+          "requirements": "Output Formatting: The final output must be a single value, correctly aliased and rounded to an appropriate precision (e.g., `ROUND(..., 3)`).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

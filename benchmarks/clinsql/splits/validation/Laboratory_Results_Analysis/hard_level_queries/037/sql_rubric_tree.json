@@ -1,0 +1,159 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction for Hemorrhagic Stroke",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for male patients using `p.gender = 'M'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must filter patients with an age between 70 and 80 using `p.anchor_age BETWEEN 70 AND 80`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hemorrhagic-stroke-diagnosis",
+          "requirements": "Hemorrhagic Stroke Diagnosis: The query must filter for admissions with a diagnosis of hemorrhagic stroke using both ICD-9 ('430%', '431%', '432%') and ICD-10 ('I60%', 'I61%', 'I62%') codes.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Calculation of Instability Score, Rates, LOS, and Mortality",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-instability-score-definition",
+          "requirements": "Lab Instability Score Definition: The query must correctly define critical lab thresholds for specific lab items (itemid) using a temporary structure like a CTE with UNION ALL.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-for-labs",
+          "requirements": "Temporal Filter for Labs: The query must filter lab events to include only those within the first 48 hours of admission using `DATETIME_DIFF(le.charttime, a.admittime, HOUR) BETWEEN 0 AND 48`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must correctly count the number of critical lab events per cohort admission, using a LEFT JOIN to include patients with zero events.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-calculation",
+          "requirements": "25th Percentile Calculation: The query must calculate the 25th percentile of the instability score for the cohort using `APPROX_QUANTILES(instability_score, 100)[OFFSET(25)]`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "cohort-event-rate-calculation",
+          "requirements": "Cohort Event Rate Calculation: The query must correctly calculate the critical lab event rate for the specific cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "general-event-rate-calculation",
+          "requirements": "General Inpatient Event Rate Calculation: The query must correctly calculate the critical lab event rate for the general inpatient population for comparison.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-calculation",
+          "requirements": "Length of Stay Calculation: The query must calculate the average length of stay in days for the cohort using `AVG(DATETIME_DIFF(dischtime, admittime, DAY))`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "mortality-calculation",
+          "requirements": "Mortality Calculation: The query must calculate the in-hospital mortality rate for the cohort using `AVG(hospital_expire_flag)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Correct Table Joins and Data Linkage",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `patients`, `admissions`, and `diagnoses_icd` tables on `subject_id` and `hadm_id` to define the patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-event-table-joins",
+          "requirements": "Lab Event Table Joins: The query must correctly join `labevents` with `admissions` on `hadm_id` to link lab results to specific hospital stays.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "query-structure-and-formatting",
+      "requirements": "Overall Query Structure and Formatting",
+      "weight": 1,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cte-usage",
+          "requirements": "CTE Usage: The query effectively uses Common Table Expressions (CTEs) to structure the logic for cohort definition, lab definitions, and score calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-structure",
+          "requirements": "Final Output Structure: The query produces a single row with multiple columns for each requested metric, using subqueries in the final SELECT statement.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

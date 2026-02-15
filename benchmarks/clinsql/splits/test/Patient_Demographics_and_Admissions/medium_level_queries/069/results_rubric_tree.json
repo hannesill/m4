@@ -1,0 +1,133 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "outcome-group-column-exists",
+              "requirements": "Exists Column for Outcome Grouping (e.g., 'outcome_group', 'mortality_status')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "proportion-column-exists",
+              "requirements": "Exists Column for Proportion of LOS >= 7 Days (e.g., 'proportion_los_ge_7_days_pct', 'pct_long_stay')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-column-exists",
+              "requirements": "Exists Column for Percentile Rank of 7-Day LOS (e.g., 'percentile_rank_of_7_days', 'los_7_day_percentile')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in Answer-Relevant Columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "proportion-validation",
+          "requirements": "Validation of Column 'proportion_los_ge_7_days_pct'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "proportion-clinically-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "proportion-discharged-alive-acceptable-range",
+              "requirements": "Acceptable Range for 'Discharged Alive' Group (15-45)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "proportion-in-hospital-mortality-acceptable-range",
+              "requirements": "Acceptable Range for 'In-Hospital Mortality' Group (35-65)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "percentile-rank-validation",
+          "requirements": "Validation of Column 'percentile_rank_of_7_days'",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentile-rank-clinically-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-discharged-alive-acceptable-range",
+              "requirements": "Acceptable Range for 'Discharged Alive' Group (60-85)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-rank-in-hospital-mortality-acceptable-range",
+              "requirements": "Acceptable Range for 'In-Hospital Mortality' Group (40-65)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

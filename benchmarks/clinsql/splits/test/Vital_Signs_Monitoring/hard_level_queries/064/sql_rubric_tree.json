@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "target-cohort-definition",
+          "requirements": "Target Cohort Definition: Correctly identifies male ICU patients aged 45-55 with a diagnosis of Acute Respiratory Failure (ARF).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "control-cohort-definition",
+          "requirements": "Control Cohort Definition: Correctly identifies the age-matched control group of male ICU patients aged 45-55.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "arf-diagnosis-coding",
+          "requirements": "ARF Diagnosis Coding: The query must use appropriate ICD-9 ('51881') and ICD-10 ('J960%') codes to identify Acute Respiratory Failure.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Metric Calculation",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "vitals-time-window",
+          "requirements": "Vitals Time Window: Filters vital signs from `chartevents` to the first 48 hours of the ICU stay using `DATETIME_DIFF` on `intime`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: Defines and calculates the composite instability score as the sum of the standard deviations of heart rate and mean arterial pressure.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percentile-and-quartile-calculation",
+          "requirements": "Percentile and Quartile Calculation: Correctly computes the 95th percentile instability score for the target group and identifies the top quartile using `PERCENTILE_CONT` and `NTILE` window functions.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-metrics-calculation",
+          "requirements": "Outcome Metrics Calculation: Correctly calculates ICU LOS, mortality, and counts of hypotension/tachycardia episodes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "data-integration",
+      "requirements": "Database Integration and Data Preparation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: Correctly joins `icustays`, `patients`, and `diagnoses_icd` tables to build the initial patient cohorts.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "vitals-table-join",
+          "requirements": "Vitals Table Join: Correctly joins `chartevents` with `icustays` to link vital signs to specific ICU stays within the first 48 hours.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "outcome-data-join",
+          "requirements": "Outcome Data Join: Correctly joins `icustays` and `admissions` tables to retrieve ICU length of stay and hospital mortality data.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "final-aggregation-and-output",
+      "requirements": "Final Aggregation and Output Formatting",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "target-group-aggregation",
+          "requirements": "Target Group Aggregation: Correctly filters for the top instability quartile of the target cohort and calculates the average for all specified outcome metrics.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "control-group-aggregation",
+          "requirements": "Control Group Aggregation: Correctly aggregates metrics for the entire age-matched control cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-structure",
+          "requirements": "Final Output Structure: Combines the results for the target top quartile and the control cohort into a single output table using UNION ALL.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

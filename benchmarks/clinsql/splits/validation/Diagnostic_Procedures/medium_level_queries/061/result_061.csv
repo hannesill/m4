@@ -1,0 +1,5 @@
+stay_category,diagnosis_type,num_admissions,median_imaging_procedures,iqr_imaging_procedures
+1-3 Days,Primary Diagnosis,399,0,0
+1-3 Days,Secondary Diagnosis,1575,0,0
+4-7 Days,Primary Diagnosis,259,0,0
+4-7 Days,Secondary Diagnosis,2150,0,0

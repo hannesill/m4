@@ -1,0 +1,109 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-column-exists",
+              "requirements": "Column for percentile exists (e.g., 'percentile_rank_of_90_bpm')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-size-column-exists",
+              "requirements": "Column for cohort size exists (e.g., 'total_icu_stays_in_cohort')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Clinical Value Validation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "percentile-value-validation",
+          "requirements": "Validate the calculated percentile for a heart rate of 90 bpm",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "percentile-plausible",
+              "requirements": "Clinically Plausible (0-100)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-acceptable",
+              "requirements": "Acceptable Range (45-75). The provided value of 90 bpm is slightly above the typical resting median for this cohort, so the percentile should be in the upper-middle range.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-size-validation",
+          "requirements": "Validate the cohort size for female ICU stays aged 42-52",
+          "sequential": true,
+          "sub_tasks": [
+            {
+              "id": "cohort-size-plausible",
+              "requirements": "Clinically Plausible (100-10000). The cohort size should be a substantial number, not extremely small or larger than the entire ICU population.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-size-acceptable",
+              "requirements": "Acceptable Range (3000-6000). Based on typical large ICU database demographics, this specific 10-year age and gender slice should yield a few thousand stays.",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

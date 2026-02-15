@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "initial-demographic-filtering",
+          "requirements": "Initial Demographic Filtering: Filters the patient population based on gender ('F') and age (51-61) from the patients and admissions tables.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "first-icu-stay-selection",
+          "requirements": "First ICU Stay Selection: Correctly identifies and selects the first ICU stay for each hospital admission using a window function like ROW_NUMBER().",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "ventilation-status-identification",
+          "requirements": "Ventilation Status Identification: Correctly identifies patients on invasive mechanical ventilation using relevant itemids (e.g., 224685, 223849, 720, 223848) within the first 48 hours of their ICU stay.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-cohort-assembly",
+          "requirements": "Final Cohort Assembly: Joins the demographic cohort with the ventilation-identified patients to create the final analysis cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-concept-implementation",
+      "requirements": "Clinical Concept Implementation: Instability Score",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "vitals-extraction",
+          "requirements": "Vital Signs Extraction: Selects the correct vital sign measurements (heart rate, SpO2, SBP, RR, temperature) within the first 48 hours of the ICU stay for the ventilated cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-vitals-logic",
+          "requirements": "Abnormal Vitals Logic: Applies correct CASE WHEN logic to flag individual vital sign measurements as abnormal based on specified clinical thresholds, including handling temperature in C and F.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: Aggregates the count of abnormal vital sign events for each patient (stay_id) to calculate the final instability score.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "percentile-rank-calculation",
+          "requirements": "Percentile Rank Calculation: Correctly calculates the percentile rank of an instability score of 80 by dividing the count of patients with a score less than or equal to 80 by the total cohort size.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "decile-ranking",
+          "requirements": "Decile Ranking: Uses the NTILE(10) window function to partition patients into deciles based on their instability score in descending order.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-los-calculation",
+          "requirements": "Top Decile ICU LOS Calculation: Calculates the average ICU length of stay (in hours) specifically for patients in the most unstable decile (instability_decile = 1).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "top-decile-mortality-calculation",
+          "requirements": "Top Decile Mortality Calculation: Calculates the average mortality rate (as a percentage) specifically for patients in the most unstable decile (instability_decile = 1).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Data Integrity",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins icustays, patients, admissions, and chartevents tables using appropriate keys (subject_id, hadm_id, stay_id).",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "data-validity-filtering",
+          "requirements": "Data Validity Filtering: Applies filters to ensure vital sign values are within plausible ranges and not null, improving the quality of the instability score calculation.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

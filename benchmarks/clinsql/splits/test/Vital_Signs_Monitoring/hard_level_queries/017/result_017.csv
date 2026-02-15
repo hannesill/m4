@@ -1,0 +1,3 @@
+cohort_group,num_stays,avg_instability_score,stddev_instability_score,p25_instability_score,p50_instability_score,p75_instability_score,p95_instability_score,avg_icu_los_days,mortality_rate_percent
+All_ICU_Age_Matched_83_93,13532,16.422923440733168,18.176701494261575,4,10,22,52,3.169598423256957,19.243275199527087
+Asthma_Female_83_93,23,12.608695652173914,19.537235150149904,3,6,13,48,1.695652173913043,13.043478260869565

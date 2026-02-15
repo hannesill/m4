@@ -1,0 +1,1 @@
+I have a 94‑year‑old man admitted with lower GI bleeding. Among male inpatients aged 89–99 with lower GI bleed, compute a 72‑hour lab instability score, stratify into quintiles, and report LOS, mortality, and quintile critical‑lab rates versus general inpatient rate.

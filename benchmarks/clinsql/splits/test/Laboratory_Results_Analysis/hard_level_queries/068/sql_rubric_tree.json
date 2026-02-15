@@ -1,0 +1,151 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation for Septic Shock Analysis",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction: Correctly identify female inpatients aged 89-99 with a diagnosis of septic shock.",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "septic-shock-diagnosis",
+          "requirements": "Septic Shock Diagnosis Filter: The query must filter for hospital admissions with a septic shock diagnosis using ICD codes 'R6521' or '78552' from the 'diagnoses_icd' table.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients by checking `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must correctly calculate patient age at admission and filter for ages between 89 and 99 using `(p.anchor_age + EXTRACT(YEAR FROM a.admittime) - p.anchor_year) BETWEEN 89 AND 99`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation: Correctly identify and process lab events to calculate an instability score.",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "lab-event-identification",
+          "requirements": "Lab Event Identification: The query must select the correct set of lab events by filtering on specific `itemid`s (50912, 51003, 50983, 50971, 50931, 51006).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-first-48h",
+          "requirements": "Temporal Filter (First 48 Hours): The query must filter lab events to include only those within the first 48 hours of admission using `le.charttime BETWEEN c.admittime AND DATETIME_ADD(c.admittime, INTERVAL 48 HOUR)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-lab-logic",
+          "requirements": "Abnormal Lab Logic: The query must use a CASE statement to correctly classify lab values as abnormal based on predefined clinical thresholds for each itemid.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "instability-score-calculation",
+          "requirements": "Instability Score Calculation: The query must calculate the instability score per patient as the percentage of unique abnormal labs out of the 6 monitored labs.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration and Comparison Cohort Setup",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join 'patients', 'admissions', and the 'septic_shock_stays' CTE using 'subject_id' and 'hadm_id' to form the primary cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "lab-data-join",
+          "requirements": "Lab Data Join: The query must correctly join the 'labevents' table to the main cohort on 'hadm_id' to associate labs with the correct patient admission.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "general-population-cohort",
+          "requirements": "General Population Cohort Definition: The query must create a general inpatient cohort for comparison by selecting lab events from all admissions, not just the septic shock cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Reporting",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "instability-score-quantiles",
+          "requirements": "Instability Score Quantiles: The query must calculate the Q1, median (Q2), Q3, and IQR of the instability score for the septic shock cohort using APPROX_QUANTILES.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "los-mortality-calculation",
+          "requirements": "LOS and Mortality Calculation: The query must calculate the average length of stay (LOS) and the mortality rate for the septic shock cohort.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "abnormal-lab-frequency-comparison",
+          "requirements": "Abnormal Lab Frequency Comparison: The query must calculate and compare the frequency of abnormal labs between the septic shock cohort and the general inpatient population.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "final-output-structuring",
+          "requirements": "Final Output Structuring: The query must present all calculated metrics as separate columns in the final result set.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

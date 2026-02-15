@@ -1,0 +1,6 @@
+complexity_quintile,num_patients_in_stratum,min_complexity_score,max_complexity_score,avg_complexity_score,avg_los_days,mortality_rate_pct,readmission_rate_30d_pct
+1,160,0,52,38.74,7.57,3.75,40.0
+2,160,52,68,59.97,9.35,11.25,37.5
+3,160,68,98,81.44,11.48,10.63,29.38
+4,160,99,149,122.33,14.33,27.5,21.87
+5,159,149,294,191.09,16.58,43.4,18.87

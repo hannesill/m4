@@ -1,0 +1,5 @@
+regimen_type,total_cohort_admissions,admission_window_count,discharge_window_count,admission_initiation_pct,discharge_initiation_pct,absolute_difference_pct_points
+Basal-Bolus,334,3,0,0.9,0.0,0.9
+Basal,334,3,0,0.9,0.0,0.9
+Bolus,334,26,5,7.78,1.5,6.29
+Sliding-Scale,334,0,0,0.0,0.0,0.0

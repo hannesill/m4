@@ -1,0 +1,135 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction for Index Admissions",
+      "weight": 3,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "demographic-filtering",
+          "requirements": "Demographic Filtering: Correctly filters for female patients aged 58-68 with Medicare insurance.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "admission-type-filtering",
+          "requirements": "Admission Type Filtering: Correctly identifies admissions originating from the Emergency Department using 'UPPER(aa.admission_location) LIKE '%EMERGENCY%'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "primary-diagnosis-filtering",
+          "requirements": "Primary Diagnosis Filtering: Correctly identifies the principal diagnosis by filtering for 'd.seq_num = 1'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "femoral-neck-fracture-code-selection",
+          "requirements": "Femoral Neck Fracture Code Selection: Correctly filters for femoral neck fractures using appropriate ICD-9 ('820%') and ICD-10 ('S720%') codes.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration for Cohort and Clinical Data",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "table-join-logic",
+          "requirements": "Table Join Logic: Correctly joins 'admissions' with 'patients' on 'subject_id' and the result with 'diagnoses_icd' on 'hadm_id'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-calculation",
+          "requirements": "Age Calculation: Accurately calculates patient age at admission using 'anchor_age', 'admittime', and 'anchor_year'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "length-of-stay-calculation",
+          "requirements": "Length of Stay (LOS) Calculation: Correctly calculates the length of stay in days using 'DATETIME_DIFF' between 'dischtime' and 'admittime'.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-identification-logic",
+          "requirements": "Readmission Identification Logic: Correctly uses the LEAD window function to find the next admission time for each patient.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "readmission-flagging",
+          "requirements": "Readmission Flagging: Accurately flags 30-day readmissions by comparing the discharge date of the index admission with the date of the next admission.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics and Final Metrics Calculation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "readmission-rate-calculation",
+          "requirements": "Readmission Rate Calculation: Correctly calculates the 30-day readmission rate as a percentage using 'AVG(ia.is_readmitted_30_days) * 100'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "median-los-calculation",
+          "requirements": "Median LOS Calculation: Correctly calculates the median LOS for both readmitted and non-readmitted groups using 'APPROX_QUANTILES' and conditional logic.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "long-stay-percentage-calculation",
+          "requirements": "Long Stay Percentage Calculation: Correctly calculates the percentage of stays longer than 8 days using 'AVG(IF(ia.los_days > 8, 1, 0)) * 100'.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+complexity_tertile,num_admissions,min_complexity_score,max_complexity_score,avg_complexity_score,avg_los_days,mortality_rate_pct,readmission_rate_30_day_pct
+1,401,0,36,26.07,3.8,2.99,20.95
+2,401,36,48,41.52,7.16,4.99,20.7
+3,400,48,121,62.18,10.42,21.75,22.25

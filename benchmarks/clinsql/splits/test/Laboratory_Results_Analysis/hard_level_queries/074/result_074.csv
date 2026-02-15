@@ -1,0 +1,2 @@
+target_cohort_description,cohort_size,max_instability_score_in_cohort,p25_instability_score,p50_instability_score,p75_instability_score,p95_instability_score,avg_critical_events_per_admission_cohort,avg_critical_events_per_admission_general_pop,avg_los_days_cohort,mortality_rate_cohort
+Male inpatients aged 37-47 with Heart Failure,1580,4,0,0,1,1,1.1012658227848102,0.27969261649585736,7.0917721518987324,0.023417721518987345

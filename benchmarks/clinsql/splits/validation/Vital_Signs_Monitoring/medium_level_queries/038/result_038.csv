@@ -1,0 +1,2 @@
+number_of_patients,number_of_sbp_measurements,sbp_25th_percentile_q1,sbp_median_q2,sbp_75th_percentile_q3,sbp_interquartile_range
+3961,34282,99.0,111.0,124.0,25.0

@@ -1,0 +1,1 @@
+For my 94yo female ICU patient, among female ICU patients aged 89–99 report per-measurement temperature categories (<36, 36–37.9, ≥38°C) with mean, median, IQR, unique patient and measurement counts, MI rate.

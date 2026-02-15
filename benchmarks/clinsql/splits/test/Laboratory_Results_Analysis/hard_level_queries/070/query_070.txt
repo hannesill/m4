@@ -1,0 +1,1 @@
+I have a 45-year-old man. Among male inpatients 40–50 with hemorrhagic stroke, compute a 72‑hour lab instability score (count of unique abnormal labs), stratify into quartiles, and report LOS, mortality, and per‑lab abnormal rates versus general inpatients.

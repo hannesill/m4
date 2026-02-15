@@ -1,0 +1,4 @@
+patient_group,total_patients,avg_med_complexity,p25_med_complexity,p50_med_complexity,p75_med_complexity,avg_los_days_overall,mortality_rate_overall_pct,patients_in_top_quartile,avg_los_top_quartile,mortality_rate_top_quartile_pct
+1_Serotonergic_Interaction_Risk,324,26.6,20,26,32,12.96,10.49,74,17.42,22.97
+2_ICU_Patient_No_Interaction,1022,22.72,17,22,29,18.84,17.71,223,19.51,25.11
+3_Baseline_Non_ICU,1343,16.22,12,16,21,7.23,1.12,303,9.7,2.31

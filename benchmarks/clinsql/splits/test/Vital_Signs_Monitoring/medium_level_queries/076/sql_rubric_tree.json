@@ -1,0 +1,143 @@
+{
+  "id": "sql-query-evaluation-root",
+  "requirements": "SQL Query Evaluation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "patient-cohort-construction",
+      "requirements": "Patient Cohort Construction",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "gender-selection",
+          "requirements": "Gender Selection: The query must filter for female patients using `p.gender = 'F'`.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "age-range-selection",
+          "requirements": "Age Range Selection: The query must accurately calculate the patient's age at the time of the ICU stay and filter for ages between 48 and 58.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "medical-concept-implementation",
+      "requirements": "Medical Concept Implementation",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "hr-measurement-selection",
+          "requirements": "Heart Rate Measurement Selection: The query must select heart rate measurements by filtering `chartevents` for the correct `itemid`s (220045, 211).",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "temporal-filter-hr",
+          "requirements": "Temporal Filter for Heart Rate: The query must limit heart rate measurements to the first 48 hours of the ICU stay using `DATETIME_DIFF(ce.charttime, pc.intime, HOUR) BETWEEN 0 AND 48`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-code-selection",
+          "requirements": "AKI Code Selection: The query must identify AKI diagnoses using both ICD-9 ('584%') and ICD-10 ('N17%') codes from the `diagnoses_icd` table.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "database-integration",
+      "requirements": "Database Integration",
+      "weight": 3,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "cohort-table-joins",
+          "requirements": "Cohort Table Joins: The query must correctly join `patients`, `admissions`, and `icustays` tables to form the base patient cohort.",
+          "sequential": false,
+          "critical": true,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "events-join",
+          "requirements": "Events Table Join: The query must correctly join the patient cohort to the `chartevents` table on `stay_id` to link HR measurements to ICU stays.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "diagnoses-join",
+          "requirements": "Diagnoses Data Join: The query must use a LEFT JOIN to connect the primary data with the AKI diagnoses on `hadm_id` to ensure all stays are retained.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "clinical-analytics",
+      "requirements": "Clinical Analytics",
+      "weight": 2,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "average-hr-calculation",
+          "requirements": "Average Heart Rate Calculation: The query must compute the average heart rate per ICU stay using `AVG(ce.valuenum)`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "hr-categorization",
+          "requirements": "Heart Rate Categorization: The query must use a CASE statement to correctly categorize the average heart rate into the specified bins: <60, 60-99, 100-119, >=120.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "grouping-and-aggregation",
+          "requirements": "Final Grouping and Aggregation: The query must group the final results by `hr_category` to perform calculations for each bin.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "percent-distribution-calculation",
+          "requirements": "Percent Distribution Calculation: The query must accurately calculate the percentage distribution of patients across HR categories using a window function like `SUM(...) OVER ()`.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "aki-rate-calculation",
+          "requirements": "AKI Rate Calculation: The query must compute the AKI rate per HR category as the percentage of patients with an AKI diagnosis within that category.",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    }
+  ]
+}

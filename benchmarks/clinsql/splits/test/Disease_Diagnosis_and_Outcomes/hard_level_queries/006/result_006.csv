@@ -1,0 +1,6 @@
+risk_quintile,num_patients,ninety_day_mortality_rate,major_complication_rate,median_survivor_los_days
+1,143,0.1399,0.0,4
+2,143,0.1469,0.0,4
+3,143,0.1259,0.0,5
+4,143,0.1329,0.028,4
+5,143,0.4965,1.0,15

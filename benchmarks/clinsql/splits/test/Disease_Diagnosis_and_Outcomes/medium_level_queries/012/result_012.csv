@@ -1,0 +1,13 @@
+severity_level,los_group,comorbidity_group,total_admissions,in_hospital_deaths,mortality_rate_pct,median_los_days,ckd_prevalence_pct,diabetes_prevalence_pct
+Higher-Severity (ICU),<8 days,0-1 Major Systems,141,11,7.8,5,0.71,0.71
+Higher-Severity (ICU),<8 days,2 Major Systems,382,48,12.57,4,13.61,17.02
+Higher-Severity (ICU),<8 days,>=3 Major Systems,1098,295,26.87,5,48.45,38.98
+Higher-Severity (ICU),>=8 days,0-1 Major Systems,63,4,6.35,10,0.0,0.0
+Higher-Severity (ICU),>=8 days,2 Major Systems,245,21,8.57,11,12.24,18.37
+Higher-Severity (ICU),>=8 days,>=3 Major Systems,1042,185,17.75,12,51.73,38.39
+Lower-Severity (No ICU),<8 days,0-1 Major Systems,1037,5,0.48,2,0.29,1.54
+Lower-Severity (No ICU),<8 days,2 Major Systems,2349,28,1.19,3,20.01,24.1
+Lower-Severity (No ICU),<8 days,>=3 Major Systems,4148,77,1.86,3,60.97,46.17
+Lower-Severity (No ICU),>=8 days,0-1 Major Systems,75,2,2.67,10,0.0,1.33
+Lower-Severity (No ICU),>=8 days,2 Major Systems,313,7,2.24,9,23.96,17.89
+Lower-Severity (No ICU),>=8 days,>=3 Major Systems,1159,37,3.19,11,63.68,44.87

@@ -1,0 +1,5 @@
+med_class,total_admissions,n_initiated_first_48h,pct_initiated_first_48h,n_initiated_final_24h,pct_initiated_final_24h,absolute_difference_pp
+ACEi/ARB/ARNI,3301,919,27.84,184,5.57,22.27
+Antidiabetic,3301,2995,90.73,786,23.81,66.92
+Beta-blocker,3301,2211,66.98,384,11.63,55.35
+Loop Diuretic,3301,1976,59.86,736,22.3,37.56

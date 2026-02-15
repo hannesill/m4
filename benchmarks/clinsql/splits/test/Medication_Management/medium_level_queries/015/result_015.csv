@@ -1,0 +1,8 @@
+medication_class,prevalence_early_24h_pct,prevalence_discharge_12h_pct,net_change_pct_points,cohort_total_admissions
+Insulin,86.14,12.77,-73.37,1010
+Metformin,2.18,0.5,-1.68,1010
+Sulfonylurea,2.08,0.59,-1.49,1010
+SGLT2 Inhibitor,0.2,0.0,-0.2,1010
+Thiazolidinedione (TZD),0.1,0.0,-0.1,1010
+DPP-4 Inhibitor,0.0,0.0,0.0,1010
+GLP-1 Agonist,0.0,0.0,0.0,1010

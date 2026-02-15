@@ -1,0 +1,17 @@
+bleed_type,los_bucket,day_1_icu_status,number_of_admissions,in_hospital_mortality_rate_pct,icu_admission_rate_pct
+Lower GI Bleed,1-2 days,No Day-1 ICU,124,0.0,0.0
+Lower GI Bleed,1-2 days,Day-1 ICU,4,0.0,100.0
+Lower GI Bleed,3-5 days,No Day-1 ICU,82,2.44,2.44
+Lower GI Bleed,3-5 days,Day-1 ICU,29,0.0,100.0
+Lower GI Bleed,6-9 days,No Day-1 ICU,35,2.86,14.29
+Lower GI Bleed,6-9 days,Day-1 ICU,20,10.0,100.0
+Lower GI Bleed,>=10 days,No Day-1 ICU,47,4.26,19.15
+Lower GI Bleed,>=10 days,Day-1 ICU,18,16.67,100.0
+Upper GI Bleed,1-2 days,No Day-1 ICU,244,2.46,0.82
+Upper GI Bleed,1-2 days,Day-1 ICU,35,54.29,100.0
+Upper GI Bleed,3-5 days,No Day-1 ICU,268,1.87,1.87
+Upper GI Bleed,3-5 days,Day-1 ICU,95,14.74,100.0
+Upper GI Bleed,6-9 days,No Day-1 ICU,163,5.52,6.13
+Upper GI Bleed,6-9 days,Day-1 ICU,87,12.64,100.0
+Upper GI Bleed,>=10 days,No Day-1 ICU,252,12.7,39.29
+Upper GI Bleed,>=10 days,Day-1 ICU,186,19.35,100.0

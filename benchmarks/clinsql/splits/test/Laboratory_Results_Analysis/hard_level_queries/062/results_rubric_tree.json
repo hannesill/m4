@@ -1,0 +1,202 @@
+{
+  "id": "results-validation-root",
+  "requirements": "Results Validation",
+  "sequential": false,
+  "sub_tasks": [
+    {
+      "id": "output-format-validation",
+      "requirements": "Output Format Validation",
+      "weight": 1,
+      "sequential": true,
+      "sub_tasks": [
+        {
+          "id": "csv-file-exists",
+          "requirements": "CSV File Exists",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        },
+        {
+          "id": "column-name-exists",
+          "requirements": "Column Name Exists",
+          "sequential": true,
+          "critical": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-instability-score-column-exists",
+              "requirements": "Column Exists for 25th-percentile instability score (e.g., 'sepsis_cohort_p25_instability_score')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-avg-critical-events-column-exists",
+              "requirements": "Column Exists for sepsis cohort average critical events (e.g., 'sepsis_cohort_avg_critical_events_per_admission')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-avg-critical-events-column-exists",
+              "requirements": "Column Exists for general cohort average critical events (e.g., 'general_cohort_avg_critical_events_per_admission')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-avg-los-column-exists",
+              "requirements": "Column Exists for sepsis cohort average length of stay (e.g., 'sepsis_cohort_avg_los_days')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-mortality-column-exists",
+              "requirements": "Column Exists for sepsis cohort mortality rate (e.g., 'sepsis_cohort_mortality_rate')",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "no-null-empty-values",
+          "requirements": "No NULL/Empty Values in answer-relevant columns",
+          "sequential": false,
+          "critical": false,
+          "scoring": "1/0",
+          "sub_tasks": []
+        }
+      ]
+    },
+    {
+      "id": "output-feature-validation",
+      "requirements": "Output Feature Validation",
+      "weight": 2,
+      "sequential": false,
+      "sub_tasks": [
+        {
+          "id": "percentile-instability-score-validation",
+          "requirements": "Validate 25th Percentile Instability Score (Value: 0)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "percentile-instability-score-plausible",
+              "requirements": "Clinically Plausible (0-20)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "percentile-instability-score-acceptable",
+              "requirements": "Acceptable Range (0-3)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-avg-critical-events-validation",
+          "requirements": "Validate Sepsis Cohort Avg Critical Events (Value: 1.675)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "cohort-avg-critical-events-plausible",
+              "requirements": "Clinically Plausible (0.1-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-avg-critical-events-acceptable",
+              "requirements": "Acceptable Range (0.5-10)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "general-avg-critical-events-validation",
+          "requirements": "Validate General Cohort Avg Critical Events (Value: 0.274)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "general-avg-critical-events-plausible",
+              "requirements": "Clinically Plausible (0-15)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "general-avg-critical-events-acceptable",
+              "requirements": "Acceptable Range (0.1-5)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-avg-los-validation",
+          "requirements": "Validate Sepsis Cohort Avg LOS (Value: 14.617)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "cohort-avg-los-plausible",
+              "requirements": "Clinically Plausible (2-90)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-avg-los-acceptable",
+              "requirements": "Acceptable Range (7-30)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        },
+        {
+          "id": "cohort-mortality-validation",
+          "requirements": "Validate Sepsis Cohort Mortality Rate (Value: 0.131)",
+          "sequential": false,
+          "sub_tasks": [
+            {
+              "id": "cohort-mortality-plausible",
+              "requirements": "Clinically Plausible (0.01-0.6)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            },
+            {
+              "id": "cohort-mortality-acceptable",
+              "requirements": "Acceptable Range (0.05-0.35)",
+              "sequential": false,
+              "critical": false,
+              "scoring": "1/0",
+              "sub_tasks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
