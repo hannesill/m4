@@ -34,77 +34,74 @@ class TestSerializeSchemaResult:
         """Schema result with tables lists them line by line."""
         result = _serialize_schema_result(
             {
-                "backend_info": "Backend: DuckDB (local)",
-                "tables": ["mimiciv_hosp.patients", "mimiciv_icu.icustays"],
+                "backend": "duckdb",
+                "dataset": "mimic-iv-demo",
+                "tables": {
+                    "mimiciv_hosp.patients": "Patient demographics",
+                    "mimiciv_icu.icustays": "",
+                },
             }
         )
-        assert "DuckDB" in result
+        assert "duckdb" in result
+        assert "mimic-iv-demo" in result
         assert "mimiciv_hosp.patients" in result
+        assert "Patient demographics" in result
         assert "mimiciv_icu.icustays" in result
-        assert "Available Tables" in result
 
     def test_schema_no_tables(self):
-        """Schema result with no tables shows 'No tables found'."""
+        """Schema result with no tables shows '(none)'."""
         result = _serialize_schema_result(
-            {"backend_info": "Backend: DuckDB", "tables": []}
+            {"backend": "duckdb", "dataset": "test", "tables": {}}
         )
-        assert "No tables found" in result
+        assert "(none)" in result
 
     def test_schema_empty_result(self):
         """Schema result with missing keys uses defaults."""
         result = _serialize_schema_result({})
-        assert "No tables found" in result
+        assert "(none)" in result
 
 
 class TestSerializeTableInfoResult:
     """Test _serialize_table_info_result output formatting."""
 
-    def test_table_info_with_schema_and_sample(self):
-        """Table info with both schema and sample data."""
-        schema_df = pd.DataFrame(
-            {"name": ["subject_id", "gender"], "type": ["INTEGER", "VARCHAR"]}
-        )
+    def test_table_info_with_ddl_and_sample(self):
+        """Table info with DDL and sample data."""
         sample_df = pd.DataFrame({"subject_id": [1, 2], "gender": ["M", "F"]})
 
         result = _serialize_table_info_result(
             {
-                "backend_info": "Backend: DuckDB",
                 "table_name": "mimiciv_hosp.patients",
-                "schema": schema_df,
+                "ddl": "CREATE TABLE mimiciv_hosp.patients (\n  subject_id INTEGER,\n  gender VARCHAR\n);",
                 "sample": sample_df,
             }
         )
-        assert "mimiciv_hosp.patients" in result
-        assert "Column Information" in result
+        assert "CREATE TABLE mimiciv_hosp.patients" in result
         assert "subject_id" in result
-        assert "Sample Data" in result
+        assert "Sample" in result
         assert "M" in result
 
     def test_table_info_no_sample(self):
         """Table info without sample data omits sample section."""
-        schema_df = pd.DataFrame({"name": ["id"], "type": ["INT"]})
         result = _serialize_table_info_result(
             {
-                "backend_info": "Backend: DuckDB",
                 "table_name": "test",
-                "schema": schema_df,
+                "ddl": "CREATE TABLE test (\n  id INT\n);",
                 "sample": None,
             }
         )
-        assert "Sample Data" not in result
-        assert "Column Information" in result
+        assert "Sample" not in result
+        assert "CREATE TABLE" in result
 
-    def test_table_info_no_schema(self):
-        """Table info without schema shows placeholder."""
+    def test_table_info_no_ddl(self):
+        """Table info without DDL returns empty string."""
         result = _serialize_table_info_result(
             {
-                "backend_info": "Backend: DuckDB",
                 "table_name": "test",
-                "schema": None,
+                "ddl": "",
                 "sample": None,
             }
         )
-        assert "no schema information" in result
+        assert result == ""
 
 
 class TestSerializeDatasetsResult:

@@ -130,12 +130,15 @@ class TestEndToEnd:
 
         assert isinstance(result, dict)
 
-        # Schema should be a DataFrame with column metadata
-        schema = result["schema"]
-        assert isinstance(schema, pd.DataFrame)
-        column_names = schema["name"].tolist()
+        # Columns should be a normalized DataFrame
+        columns = result["columns"]
+        assert isinstance(columns, pd.DataFrame)
+        column_names = columns["column_name"].tolist()
         assert "subject_id" in column_names
         assert "gender" in column_names
+
+        # DDL should be present
+        assert "CREATE TABLE" in result["ddl"]
 
         # Sample should be a DataFrame with actual patient data
         sample = result["sample"]

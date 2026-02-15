@@ -23,6 +23,8 @@ from m4.core.tools.tabular import (
     GetDatabaseSchemaTool,
     GetTableInfoInput,
     GetTableInfoTool,
+    _generate_ddl,
+    _normalize_schema_df,
 )
 
 
@@ -32,6 +34,10 @@ def mock_dataset():
     return DatasetDefinition(
         name="test-dataset",
         modalities={Modality.TABULAR},
+        table_descriptions={
+            "mimiciv_hosp.patients": "Patient demographics",
+            "mimiciv_hosp.admissions": "Hospital admissions",
+        },
     )
 
 
@@ -48,7 +54,7 @@ class TestGetDatabaseSchemaTool:
     """Test GetDatabaseSchemaTool functionality."""
 
     def test_invoke_returns_table_list(self, mock_dataset, mock_backend):
-        """Test that invoke returns dict with tables."""
+        """Test that invoke returns dict with tables as name → description."""
         mock_backend.get_table_list.return_value = [
             "mimiciv_hosp.patients",
             "mimiciv_hosp.admissions",
@@ -59,13 +65,13 @@ class TestGetDatabaseSchemaTool:
             tool = GetDatabaseSchemaTool()
             result = tool.invoke(mock_dataset, GetDatabaseSchemaInput())
 
-            # Result is now a dict
-            assert result["tables"] == [
-                "mimiciv_hosp.patients",
-                "mimiciv_hosp.admissions",
-                "mimiciv_icu.icustays",
-            ]
-            assert result["backend_info"] == "Mock backend info"
+            assert isinstance(result["tables"], dict)
+            assert "mimiciv_hosp.patients" in result["tables"]
+            assert result["tables"]["mimiciv_hosp.patients"] == "Patient demographics"
+            assert result["tables"]["mimiciv_icu.icustays"] == ""  # no description
+            assert result["backend"] == "mock"
+            assert result["dataset"] == "test-dataset"
+            assert "backend_info" not in result
 
     def test_invoke_handles_empty_table_list(self, mock_dataset, mock_backend):
         """Test handling when no tables are found."""
@@ -75,7 +81,49 @@ class TestGetDatabaseSchemaTool:
             tool = GetDatabaseSchemaTool()
             result = tool.invoke(mock_dataset, GetDatabaseSchemaInput())
 
-            assert result["tables"] == []
+            assert result["tables"] == {}
+
+    def test_invoke_include_ddl(self, mock_dataset, mock_backend):
+        """Test that include_ddl=True returns DDL for all tables."""
+        mock_backend.get_table_list.return_value = [
+            "mimiciv_hosp.patients",
+            "mimiciv_hosp.admissions",
+        ]
+
+        schema_patients = pd.DataFrame(
+            {
+                "name": ["subject_id", "gender"],
+                "type": ["INTEGER", "VARCHAR"],
+                "notnull": [False, False],
+            }
+        )
+        schema_admissions = pd.DataFrame(
+            {"name": ["hadm_id"], "type": ["INTEGER"], "notnull": [False]}
+        )
+
+        mock_backend.get_table_info.side_effect = [
+            QueryResult(dataframe=schema_patients, row_count=2),
+            QueryResult(dataframe=schema_admissions, row_count=1),
+        ]
+
+        with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
+            tool = GetDatabaseSchemaTool()
+            result = tool.invoke(mock_dataset, GetDatabaseSchemaInput(include_ddl=True))
+
+            assert "ddl" in result
+            assert "CREATE TABLE mimiciv_hosp.patients" in result["ddl"]
+            assert "CREATE TABLE mimiciv_hosp.admissions" in result["ddl"]
+            assert "subject_id INTEGER" in result["ddl"]
+
+    def test_invoke_without_ddl_has_no_ddl_key(self, mock_dataset, mock_backend):
+        """Test that include_ddl=False (default) does not include ddl key."""
+        mock_backend.get_table_list.return_value = ["mimiciv_hosp.patients"]
+
+        with patch("m4.core.tools.tabular.get_backend", return_value=mock_backend):
+            tool = GetDatabaseSchemaTool()
+            result = tool.invoke(mock_dataset, GetDatabaseSchemaInput())
+
+            assert "ddl" not in result
 
     def test_invoke_handles_backend_error(self, mock_dataset, mock_backend):
         """Test error handling when backend raises exception."""
@@ -109,12 +157,15 @@ class TestGetTableInfoTool:
     """Test GetTableInfoTool functionality."""
 
     def test_invoke_returns_schema_and_sample(self, mock_dataset, mock_backend):
-        """Test that invoke returns both schema and sample DataFrames."""
+        """Test that invoke returns normalized columns, DDL, and sample."""
         schema_df = pd.DataFrame(
             {
                 "cid": [0, 1],
                 "name": ["subject_id", "gender"],
                 "type": ["INTEGER", "VARCHAR"],
+                "notnull": [True, False],
+                "dflt_value": [None, None],
+                "pk": [0, 0],
             }
         )
         sample_df = pd.DataFrame({"subject_id": [1, 2], "gender": ["M", "F"]})
@@ -134,13 +185,20 @@ class TestGetTableInfoTool:
             result = tool.invoke(mock_dataset, params)
 
             assert result["table_name"] == "patients"
-            assert isinstance(result["schema"], pd.DataFrame)
+            assert isinstance(result["columns"], pd.DataFrame)
+            assert list(result["columns"].columns) == [
+                "column_name",
+                "data_type",
+                "nullable",
+            ]
+            assert "CREATE TABLE" in result["ddl"]
+            assert "backend_info" not in result
             assert isinstance(result["sample"], pd.DataFrame)
 
     def test_invoke_without_sample(self, mock_dataset, mock_backend):
         """Test invoke with show_sample=False."""
         schema_df = pd.DataFrame(
-            {"cid": [0], "name": ["subject_id"], "type": ["INTEGER"]}
+            {"name": ["subject_id"], "type": ["INTEGER"], "notnull": [False]}
         )
         mock_backend.get_table_info.return_value = QueryResult(
             dataframe=schema_df,
@@ -153,6 +211,8 @@ class TestGetTableInfoTool:
             result = tool.invoke(mock_dataset, params)
 
             assert result["table_name"] == "patients"
+            assert isinstance(result["columns"], pd.DataFrame)
+            assert "ddl" in result
             assert result["sample"] is None
             mock_backend.get_sample_data.assert_not_called()
 
@@ -283,3 +343,72 @@ class TestToolProtocolConformance:
 
         for tool in tools:
             assert Modality.TABULAR in tool.required_modalities
+
+
+class TestNormalizeSchemaDF:
+    """Test _normalize_schema_df helper."""
+
+    def test_duckdb_layout(self):
+        """Test normalization of DuckDB schema format."""
+        df = pd.DataFrame(
+            {
+                "cid": [0, 1],
+                "name": ["subject_id", "gender"],
+                "type": ["INTEGER", "VARCHAR"],
+                "notnull": [True, False],
+                "dflt_value": [None, None],
+                "pk": [0, 0],
+            }
+        )
+        result = _normalize_schema_df(df)
+        assert list(result.columns) == ["column_name", "data_type", "nullable"]
+        assert result["column_name"].tolist() == ["subject_id", "gender"]
+        assert result["data_type"].tolist() == ["INTEGER", "VARCHAR"]
+        assert result["nullable"].tolist() == [False, True]
+
+    def test_bigquery_layout(self):
+        """Test normalization of BigQuery schema format."""
+        df = pd.DataFrame(
+            {
+                "column_name": ["subject_id", "gender"],
+                "data_type": ["INT64", "STRING"],
+                "is_nullable": ["NO", "YES"],
+            }
+        )
+        result = _normalize_schema_df(df)
+        assert list(result.columns) == ["column_name", "data_type", "nullable"]
+        assert result["column_name"].tolist() == ["subject_id", "gender"]
+        assert result["data_type"].tolist() == ["INT64", "STRING"]
+        assert result["nullable"].tolist() == [False, True]
+
+
+class TestGenerateDDL:
+    """Test _generate_ddl helper."""
+
+    def test_basic_ddl(self):
+        """Test DDL generation from normalized DataFrame."""
+        df = pd.DataFrame(
+            {
+                "column_name": ["subject_id", "gender"],
+                "data_type": ["INTEGER", "VARCHAR"],
+                "nullable": [False, True],
+            }
+        )
+        ddl = _generate_ddl("mimiciv_hosp.patients", df)
+        assert ddl.startswith("CREATE TABLE mimiciv_hosp.patients (")
+        assert "subject_id INTEGER NOT NULL" in ddl
+        assert "gender VARCHAR" in ddl
+        assert "gender VARCHAR NOT NULL" not in ddl
+        assert ddl.endswith(");")
+
+    def test_all_nullable(self):
+        """Test DDL when all columns are nullable."""
+        df = pd.DataFrame(
+            {
+                "column_name": ["a", "b"],
+                "data_type": ["INT", "TEXT"],
+                "nullable": [True, True],
+            }
+        )
+        ddl = _generate_ddl("test_table", df)
+        assert "NOT NULL" not in ddl

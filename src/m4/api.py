@@ -6,8 +6,8 @@ the MCP server, ensuring consistent behavior across interfaces.
 
 Unlike the MCP server, this API returns native Python types:
 - execute_query() returns pd.DataFrame
-- get_schema() returns dict with tables list
-- get_table_info() returns dict with schema DataFrame
+- get_schema() returns dict with tables dict (name → description)
+- get_table_info() returns dict with columns DataFrame and DDL
 - etc.
 
 Example:
@@ -15,8 +15,9 @@ Example:
     import pandas as pd
 
     set_dataset("mimic-iv")
-    schema = get_schema()  # Returns dict with 'tables' list
-    print(schema['tables'])
+    schema = get_schema()  # Returns dict with 'tables' dict
+    for table, desc in schema['tables'].items():
+        print(f"{table} -- {desc}")
 
     df = execute_query("SELECT COUNT(*) FROM mimiciv_hosp.patients")
     print(df)  # DataFrame
@@ -136,23 +137,31 @@ def get_active_dataset() -> str:
 # =============================================================================
 
 
-def get_schema() -> dict[str, Any]:
+def get_schema(include_ddl: bool = False) -> dict[str, Any]:
     """Get database schema information for the active dataset.
+
+    Args:
+        include_ddl: If True, include CREATE TABLE DDL for every table (default: False).
 
     Returns:
         dict with:
-            - backend_info: str - Backend description
-            - tables: list[str] - List of table names
+            - backend: str - Backend name ('duckdb' or 'bigquery')
+            - dataset: str - Active dataset name
+            - tables: dict[str, str] - Table name → description
+            - ddl: str - Combined DDL for all tables (only when include_ddl=True)
 
     Example:
         >>> set_dataset("mimic-iv")
         >>> schema = get_schema()
-        >>> print(schema['tables'])
-        ['admissions', 'diagnoses_icd', 'patients', ...]
+        >>> for table, desc in schema['tables'].items():
+        ...     print(f"{table} -- {desc}")
+        >>> # Get full DDL in one call
+        >>> schema = get_schema(include_ddl=True)
+        >>> print(schema['ddl'])
     """
     dataset = DatasetRegistry.get_active()
     tool = ToolRegistry.get("get_database_schema")
-    return tool.invoke(dataset, GetDatabaseSchemaInput())
+    return tool.invoke(dataset, GetDatabaseSchemaInput(include_ddl=include_ddl))
 
 
 def get_table_info(table_name: str, show_sample: bool = True) -> dict[str, Any]:
@@ -164,18 +173,19 @@ def get_table_info(table_name: str, show_sample: bool = True) -> dict[str, Any]:
 
     Returns:
         dict with:
-            - backend_info: str - Backend description
             - table_name: str - Table name
-            - schema: pd.DataFrame - Column information
+            - columns: pd.DataFrame - Normalized [column_name, data_type, nullable]
+            - ddl: str - CREATE TABLE DDL string
             - sample: pd.DataFrame | None - Sample rows if requested
 
     Raises:
         QueryError: If table doesn't exist.
 
     Example:
-        >>> info = get_table_info("patients")
-        >>> print(info['schema'])  # DataFrame with column info
-        >>> print(info['sample'])  # DataFrame with sample rows
+        >>> info = get_table_info("mimiciv_hosp.patients")
+        >>> print(info['ddl'])      # CREATE TABLE statement
+        >>> print(info['columns'])  # DataFrame with column info
+        >>> print(info['sample'])   # DataFrame with sample rows
     """
     dataset = DatasetRegistry.get_active()
     tool = ToolRegistry.get("get_table_info")

@@ -83,40 +83,43 @@ _MCP_TOOL_NAMES = frozenset(
 
 def _serialize_schema_result(result: dict[str, Any]) -> str:
     """Serialize get_database_schema result to MCP string."""
-    backend_info = result.get("backend_info", "")
-    tables = result.get("tables", [])
+    backend = result.get("backend", "unknown")
+    dataset = result.get("dataset", "unknown")
+    tables = result.get("tables", {})
+
+    header = f"Backend: {backend} | Dataset: {dataset}"
 
     if not tables:
-        return f"{backend_info}\n**Available Tables:**\nNo tables found"
+        return f"{header}\n\nTables:\n  (none)"
 
-    table_list = "\n".join(f"  {t}" for t in tables)
-    return f"{backend_info}\n**Available Tables:**\n{table_list}"
+    lines = []
+    for name, desc in tables.items():
+        if desc:
+            lines.append(f"  {name} -- {desc}")
+        else:
+            lines.append(f"  {name}")
+
+    output = f"{header}\n\nTables:\n" + "\n".join(lines)
+
+    ddl = result.get("ddl")
+    if ddl:
+        output += f"\n\n{ddl}"
+
+    return output
 
 
 def _serialize_table_info_result(result: dict[str, Any]) -> str:
     """Serialize get_table_info result to MCP string."""
-    backend_info = result.get("backend_info", "")
-    table_name = result.get("table_name", "")
-    schema = result.get("schema")
+    ddl = result.get("ddl", "")
     sample = result.get("sample")
 
-    parts = [
-        backend_info,
-        f"**Table:** {table_name}",
-        "",
-        "**Column Information:**",
-    ]
-
-    if schema is not None and isinstance(schema, pd.DataFrame):
-        parts.append(schema.to_string(index=False))
-    else:
-        parts.append("(no schema information)")
+    parts = [ddl]
 
     if sample is not None and isinstance(sample, pd.DataFrame) and not sample.empty:
         parts.extend(
             [
                 "",
-                "**Sample Data (first 3 rows):**",
+                f"Sample ({len(sample)} rows):",
                 sample.to_string(index=False),
             ]
         )
@@ -317,13 +320,17 @@ def set_dataset(dataset_name: str) -> str:
 
 @mcp.tool()
 @require_oauth2
-def get_database_schema() -> str:
+def get_database_schema(include_ddl: bool = False) -> str:
     """📚 Discover what data is available in the database.
 
     **When to use:** Start here to understand what tables exist.
 
+    Args:
+        include_ddl: If True, include CREATE TABLE DDL for every table (default: False).
+
     Returns:
-        List of all available tables in the database with current backend info.
+        List of all available tables with descriptions. When include_ddl=True,
+        also includes the full schema DDL for all tables.
     """
     try:
         dataset = DatasetRegistry.get_active()
@@ -336,7 +343,7 @@ def get_database_schema() -> str:
             return compat_result.error_message
 
         tool = ToolRegistry.get("get_database_schema")
-        result = tool.invoke(dataset, GetDatabaseSchemaInput())
+        result = tool.invoke(dataset, GetDatabaseSchemaInput(include_ddl=include_ddl))
         return _serialize_schema_result(result)
     except M4Error as e:
         return f"**Error:** {e}"

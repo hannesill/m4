@@ -80,8 +80,8 @@ Then use this MCP configuration:
 ### Tabular Data (MIMIC-IV, eICU)
 | Tool | Description |
 |------|-------------|
-| `get_database_schema` | List all tables in the database |
-| `get_table_info` | Get column details and sample data for a table |
+| `get_database_schema` | List all tables with descriptions; use include_ddl=True for full schema DDL |
+| `get_table_info` | Get DDL, normalized columns, and sample data for a table |
 | `execute_query` | Run SQL SELECT queries |
 
 ### Clinical Notes (MIMIC-IV-Note)

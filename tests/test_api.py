@@ -113,23 +113,49 @@ class TestTabularDataAPI:
     @patch(TABULAR_BACKEND_PATCH)
     @patch("m4.api.DatasetRegistry.get_active")
     def test_get_schema(self, mock_get_active, mock_get_backend, mock_tabular_dataset):
-        """Test get_schema returns dict with tables."""
+        """Test get_schema returns dict with tables as name → description."""
         mock_get_active.return_value = mock_tabular_dataset
         mock_backend = MagicMock()
+        mock_backend.name = "duckdb"
         mock_backend.get_table_list.return_value = [
             "mimiciv_hosp.patients",
             "mimiciv_hosp.admissions",
         ]
-        mock_backend.get_backend_info.return_value = "Backend: DuckDB"
         mock_get_backend.return_value = mock_backend
 
         result = get_schema()
 
-        # Result is now a dict with 'tables' key
         assert isinstance(result, dict)
+        assert isinstance(result["tables"], dict)
         assert "mimiciv_hosp.patients" in result["tables"]
         assert "mimiciv_hosp.admissions" in result["tables"]
+        assert result["backend"] == "duckdb"
         mock_backend.get_table_list.assert_called_once()
+
+    @patch(TABULAR_BACKEND_PATCH)
+    @patch("m4.api.DatasetRegistry.get_active")
+    def test_get_schema_include_ddl(
+        self, mock_get_active, mock_get_backend, mock_tabular_dataset
+    ):
+        """Test get_schema with include_ddl=True returns DDL."""
+        mock_get_active.return_value = mock_tabular_dataset
+        mock_backend = MagicMock()
+        mock_backend.name = "duckdb"
+        mock_backend.get_table_list.return_value = ["mimiciv_hosp.patients"]
+
+        schema_df = pd.DataFrame(
+            {"name": ["subject_id"], "type": ["INTEGER"], "notnull": [False]}
+        )
+        mock_result = MagicMock()
+        mock_result.success = True
+        mock_result.dataframe = schema_df
+        mock_backend.get_table_info.return_value = mock_result
+        mock_get_backend.return_value = mock_backend
+
+        result = get_schema(include_ddl=True)
+
+        assert "ddl" in result
+        assert "CREATE TABLE mimiciv_hosp.patients" in result["ddl"]
 
     @patch(TABULAR_BACKEND_PATCH)
     @patch("m4.api.DatasetRegistry.get_active")
@@ -139,23 +165,25 @@ class TestTabularDataAPI:
         """Test get_schema with no tables."""
         mock_get_active.return_value = mock_tabular_dataset
         mock_backend = MagicMock()
+        mock_backend.name = "duckdb"
         mock_backend.get_table_list.return_value = []
-        mock_backend.get_backend_info.return_value = "Backend: DuckDB"
         mock_get_backend.return_value = mock_backend
 
         result = get_schema()
 
-        assert result["tables"] == []
+        assert result["tables"] == {}
 
     @patch(TABULAR_BACKEND_PATCH)
     @patch("m4.api.DatasetRegistry.get_active")
     def test_get_table_info(
         self, mock_get_active, mock_get_backend, mock_tabular_dataset
     ):
-        """Test get_table_info returns dict with schema DataFrame."""
+        """Test get_table_info returns dict with columns DataFrame and DDL."""
         mock_get_active.return_value = mock_tabular_dataset
         mock_backend = MagicMock()
-        schema_df = pd.DataFrame({"name": ["subject_id"], "type": ["INTEGER"]})
+        schema_df = pd.DataFrame(
+            {"name": ["subject_id"], "type": ["INTEGER"], "notnull": [False]}
+        )
         sample_df = pd.DataFrame({"subject_id": [1], "gender": ["M"]})
 
         mock_result = MagicMock()
@@ -167,15 +195,15 @@ class TestTabularDataAPI:
         mock_sample_result.success = True
         mock_sample_result.dataframe = sample_df
         mock_backend.get_sample_data.return_value = mock_sample_result
-        mock_backend.get_backend_info.return_value = "Backend: DuckDB"
         mock_get_backend.return_value = mock_backend
 
         result = get_table_info("patients")
 
-        # Result is now a dict
         assert isinstance(result, dict)
         assert result["table_name"] == "patients"
-        assert isinstance(result["schema"], pd.DataFrame)
+        assert isinstance(result["columns"], pd.DataFrame)
+        assert "ddl" in result
+        assert "CREATE TABLE" in result["ddl"]
         assert isinstance(result["sample"], pd.DataFrame)
 
     @patch(TABULAR_BACKEND_PATCH)

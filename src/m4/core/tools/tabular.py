@@ -27,13 +27,73 @@ from m4.core.validation import (
     validate_table_name,
 )
 
+# ---------------------------------------------------------------------------
+# Private helpers
+# ---------------------------------------------------------------------------
+
+
+def _normalize_schema_df(schema_df: pd.DataFrame) -> pd.DataFrame:
+    """Map backend-specific column layouts to consistent [column_name, data_type, nullable].
+
+    DuckDB returns: name, type, notnull, (cid, dflt_value, pk)
+    BigQuery returns: column_name, data_type, is_nullable
+    """
+    cols = set(schema_df.columns)
+
+    if "name" in cols and "type" in cols:
+        # DuckDB layout
+        df = pd.DataFrame(
+            {
+                "column_name": schema_df["name"],
+                "data_type": schema_df["type"],
+                "nullable": ~schema_df["notnull"].astype(bool)
+                if "notnull" in cols
+                else True,
+            }
+        )
+    elif "column_name" in cols and "data_type" in cols:
+        # BigQuery layout
+        df = pd.DataFrame(
+            {
+                "column_name": schema_df["column_name"],
+                "data_type": schema_df["data_type"],
+                "nullable": schema_df["is_nullable"].str.upper() != "NO"
+                if "is_nullable" in cols
+                else True,
+            }
+        )
+    else:
+        # Unknown layout — pass through first two columns
+        columns = list(schema_df.columns)
+        df = pd.DataFrame(
+            {
+                "column_name": schema_df[columns[0]] if len(columns) > 0 else [],
+                "data_type": schema_df[columns[1]] if len(columns) > 1 else [],
+                "nullable": True,
+            }
+        )
+
+    return df
+
+
+def _generate_ddl(table_name: str, columns_df: pd.DataFrame) -> str:
+    """Build a CREATE TABLE DDL string from a normalized columns DataFrame."""
+    lines = []
+    for _, row in columns_df.iterrows():
+        col_def = f"  {row['column_name']} {row['data_type']}"
+        if row.get("nullable") is False:
+            col_def += " NOT NULL"
+        lines.append(col_def)
+    body = ",\n".join(lines)
+    return f"CREATE TABLE {table_name} (\n{body}\n);"
+
 
 # Input/Output models for specific tools
 @dataclass
 class GetDatabaseSchemaInput(ToolInput):
     """Input for get_database_schema tool."""
 
-    pass  # No parameters needed
+    include_ddl: bool = False
 
 
 @dataclass
@@ -56,10 +116,10 @@ class GetDatabaseSchemaTool:
     """Tool for listing available tables in the database.
 
     This tool provides schema introspection capabilities, showing all
-    available tables. Works with any dataset that has tabular data.
+    available tables with descriptions. Works with any dataset that has tabular data.
 
     Returns:
-        dict with 'backend_info' and 'tables' keys
+        dict with 'backend', 'dataset', and 'tables' (name → description) keys
     """
 
     name = "get_database_schema"
@@ -77,16 +137,35 @@ class GetDatabaseSchemaTool:
 
         Returns:
             dict with:
-                - backend_info: str - Backend description
-                - tables: list[str] - List of table names
+                - backend: str - Backend name ('duckdb' or 'bigquery')
+                - dataset: str - Active dataset name
+                - tables: dict[str, str] - Table name → description
+                - ddl: str | None - Combined DDL for all tables (when include_ddl=True)
         """
         backend = get_backend()
-        tables = backend.get_table_list(dataset)
+        table_names = backend.get_table_list(dataset)
 
-        return {
-            "backend_info": backend.get_backend_info(dataset),
+        descriptions = dataset.table_descriptions
+        tables = {t: descriptions.get(t, "") for t in table_names}
+
+        result: dict[str, Any] = {
+            "backend": backend.name,
+            "dataset": dataset.name,
             "tables": tables,
         }
+
+        if params.include_ddl:
+            ddl_parts = []
+            for table_name in table_names:
+                if not validate_table_name(table_name):
+                    continue
+                schema_result = backend.get_table_info(table_name, dataset)
+                if schema_result.success and schema_result.dataframe is not None:
+                    columns_df = _normalize_schema_df(schema_result.dataframe)
+                    ddl_parts.append(_generate_ddl(table_name, columns_df))
+            result["ddl"] = "\n\n".join(ddl_parts)
+
+        return result
 
     def is_compatible(self, dataset: DatasetDefinition) -> bool:
         """Check if this tool is compatible with the given dataset."""
@@ -101,10 +180,10 @@ class GetTableInfoTool:
     """Tool for inspecting table structure and sample data.
 
     Shows column names, data types, and optionally sample rows for a
-    specified table.
+    specified table. Returns normalized columns and DDL.
 
     Returns:
-        dict with table metadata, schema DataFrame, and optional sample DataFrame
+        dict with table_name, columns DataFrame, ddl string, and optional sample DataFrame
     """
 
     name = "get_table_info"
@@ -121,9 +200,9 @@ class GetTableInfoTool:
 
         Returns:
             dict with:
-                - backend_info: str - Backend description
                 - table_name: str - Name of the table
-                - schema: pd.DataFrame - Column information
+                - columns: pd.DataFrame - Normalized [column_name, data_type, nullable]
+                - ddl: str - CREATE TABLE DDL string
                 - sample: pd.DataFrame | None - Sample rows (if requested)
 
         Raises:
@@ -140,10 +219,13 @@ class GetTableInfoTool:
         if not schema_result.success:
             raise QueryError(schema_result.error or "Failed to get table info")
 
+        columns_df = _normalize_schema_df(schema_result.dataframe)
+        ddl = _generate_ddl(params.table_name, columns_df)
+
         result = {
-            "backend_info": backend.get_backend_info(dataset),
             "table_name": params.table_name,
-            "schema": schema_result.dataframe,
+            "columns": columns_df,
+            "ddl": ddl,
             "sample": None,
         }
 

@@ -35,14 +35,16 @@ from m4 import set_dataset, get_schema, get_table_info, execute_query
 # Step 1: Always set dataset first
 set_dataset("mimic-iv")  # or "mimic-iv-demo", "eicu", "mimic-iv-note"
 
-# Step 2: Explore schema
+# Step 2: Explore schema — tables is a dict of name → description
 schema = get_schema()
-print(schema['tables'])  # List of table names
+for table, desc in schema['tables'].items():
+    print(f"{table} -- {desc}")
 
 # Step 3: Inspect specific tables before querying
 info = get_table_info("mimiciv_hosp.patients")
-print(info['schema'])  # DataFrame with column names, types
-print(info['sample'])  # DataFrame with sample rows
+print(info['ddl'])      # CREATE TABLE DDL
+print(info['columns'])  # DataFrame with column_name, data_type, nullable
+print(info['sample'])   # DataFrame with sample rows
 
 # Step 4: Execute queries
 df = execute_query("SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROUP BY gender")
@@ -63,8 +65,8 @@ df = execute_query("SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROU
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `get_schema()` | `dict` | `{'backend_info': str, 'tables': list[str]}` |
-| `get_table_info(table, show_sample=True)` | `dict` | `{'schema': DataFrame, 'sample': DataFrame}` |
+| `get_schema(include_ddl=False)` | `dict` | `{'backend': str, 'dataset': str, 'tables': dict[str, str], 'ddl': str}` — tables maps name → description; ddl only when include_ddl=True |
+| `get_table_info(table, show_sample=True)` | `dict` | `{'columns': DataFrame, 'ddl': str, 'sample': DataFrame}` |
 | `execute_query(sql)` | `DataFrame` | Query results as pandas DataFrame |
 
 ### Clinical Notes (requires NOTES modality)
@@ -127,8 +129,8 @@ The Python API mirrors MCP tools but with better return types:
 | MCP Tool | Python Function | MCP Returns | Python Returns |
 |----------|-----------------|-------------|----------------|
 | `execute_query` | `execute_query()` | Formatted string | `pd.DataFrame` |
-| `get_database_schema` | `get_schema()` | Formatted string | `dict` with `tables` list |
-| `get_table_info` | `get_table_info()` | Formatted string | `dict` with `schema`/`sample` DataFrames |
+| `get_database_schema` | `get_schema(include_ddl=False)` | Formatted string | `dict` with `tables` dict + optional `ddl` string |
+| `get_table_info` | `get_table_info()` | Formatted string | `dict` with `columns` DataFrame, `ddl` string, `sample` DataFrame |
 
 Use the Python API when you need to:
 - Chain queries in analysis pipelines
