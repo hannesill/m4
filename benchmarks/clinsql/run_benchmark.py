@@ -50,6 +50,92 @@ Your final message must contain ONLY the line: FINAL ANSWER: <value>
 """
 
 
+def _clean_trace(trace: list[dict]) -> list[dict]:
+    """Strip noisy metadata from trace events, keeping only what's useful for review.
+
+    Keeps: assistant reasoning, tool calls, tool results, final answer, cost summary.
+    Removes: token usage, cache metrics, UUIDs, session IDs, redundant fields.
+    """
+    cleaned = []
+    for event in trace:
+        etype = event.get("type")
+
+        if etype == "system":
+            # Keep only model and tools from init
+            cleaned.append(
+                {
+                    "type": "system",
+                    "model": event.get("model"),
+                    "tools": event.get("tools"),
+                }
+            )
+
+        elif etype == "assistant":
+            msg = event.get("message", {})
+            content = msg.get("content", [])
+            # Strip caller metadata from tool_use blocks
+            slim_content = []
+            for block in content:
+                if block.get("type") == "tool_use":
+                    slim_content.append(
+                        {
+                            "type": "tool_use",
+                            "id": block.get("id"),
+                            "name": block.get("name"),
+                            "input": block.get("input"),
+                        }
+                    )
+                elif block.get("type") == "text":
+                    text = block.get("text", "").strip()
+                    if text:
+                        slim_content.append({"type": "text", "text": text})
+            if slim_content:
+                cleaned.append({"type": "assistant", "content": slim_content})
+
+        elif etype == "user":
+            msg = event.get("message", {})
+            content = msg.get("content", [])
+            slim_content = []
+            for block in content:
+                if block.get("type") == "tool_result":
+                    entry = {
+                        "type": "tool_result",
+                        "tool_use_id": block.get("tool_use_id"),
+                        "is_error": block.get("is_error", False),
+                    }
+                    # Use tool_use_result.stdout/stderr if available (cleaner),
+                    # otherwise fall back to content string
+                    tur = event.get("tool_use_result", {})
+                    if isinstance(tur, dict) and (
+                        tur.get("stdout") or tur.get("stderr")
+                    ):
+                        if tur.get("stdout"):
+                            entry["stdout"] = tur["stdout"]
+                        if tur.get("stderr"):
+                            entry["stderr"] = tur["stderr"]
+                    else:
+                        raw = block.get("content", "")
+                        if raw:
+                            entry["content"] = raw
+                    slim_content.append(entry)
+            if slim_content:
+                cleaned.append({"type": "user", "content": slim_content})
+
+        elif etype == "result":
+            cleaned.append(
+                {
+                    "type": "result",
+                    "result": event.get("result"),
+                    "is_error": event.get("is_error", False),
+                    "num_turns": event.get("num_turns"),
+                    "duration_ms": event.get("duration_ms"),
+                    "total_cost_usd": event.get("total_cost_usd"),
+                }
+            )
+
+    return cleaned
+
+
 def load_completed(output_csv: Path) -> set[str]:
     """Load problem IDs that have already been completed."""
     if not output_csv.exists():
@@ -185,8 +271,9 @@ def main():
         print(f"Error: {args.input} not found. Run load_dataset.py first.")
         raise SystemExit(1)
 
-    output_csv = args.output or SCRIPT_DIR / f"clinsql_results_{args.model}.csv"
-    traces_dir = SCRIPT_DIR / f"traces_{args.model}"
+    results_dir = SCRIPT_DIR / "results"
+    output_csv = args.output or results_dir / f"clinsql_results_{args.model}.csv"
+    traces_dir = results_dir / f"traces_{args.model}"
 
     df = pd.read_csv(args.input, dtype={"problem_id": str})
 
@@ -244,7 +331,7 @@ def main():
         trace_subdir.mkdir(parents=True, exist_ok=True)
         trace_file = trace_subdir / f"{row['problem_id']}.json"
         with open(trace_file, "w") as f:
-            json.dump(result.get("trace", []), f, indent=2)
+            json.dump(_clean_trace(result.get("trace", [])), f, indent=2)
 
         out_row = {
             "split": row["split"],
