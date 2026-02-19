@@ -53,7 +53,7 @@ jobs:
         uv run pytest tests/ -v --tb=short
 
     - name: Build package
-      run: uv build
+      run: uv build --no-sources
 
     - name: Verify package
       run: uv run --with twine twine check dist/*
