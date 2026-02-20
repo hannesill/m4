@@ -219,7 +219,7 @@ The Python API shines when you need to:
 
 ## Integration with Claude Code
 
-Claude Code can execute Python directly, making the API immediately useful. See [this example session](M4_Code_Execution_Example.pdf) for a walkthrough.
+Claude Code can execute Python directly, making the API immediately useful. See [this example session](../assets/M4_Code_Execution_Example.pdf) for a walkthrough.
 
 When you ask Claude to analyze clinical data, it can:
 
@@ -234,4 +234,4 @@ Install the M4 skills to give Claude contextual knowledge about the API:
 m4 skills --tools claude
 ```
 
-See [Skills Guide](SKILLS.md) for more on how skills enhance Claude's capabilities.
+See [Skills Guide](skills.md) for more on how skills enhance Claude's capabilities.

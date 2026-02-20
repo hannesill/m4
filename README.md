@@ -5,42 +5,31 @@
 </p>
 
 <p align="center">
-  <strong>Give your AI agents clinical intelligence & access to MIMIC-IV, eICU, and more</strong>
+  <strong>Query clinical databases with AI — grounded in clinician-reviewed knowledge</strong>
 </p>
 
 <p align="center">
   <a href="https://www.python.org/downloads/"><img alt="Python" src="https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white"></a>
   <a href="https://modelcontextprotocol.io/"><img alt="MCP" src="https://img.shields.io/badge/MCP-Compatible-green?logo=ai&logoColor=white"></a>
   <a href="https://github.com/hannesill/m4/actions/workflows/tests.yaml"><img alt="Tests" src="https://github.com/hannesill/m4/actions/workflows/tests.yaml/badge.svg"></a>
+  <a href="docs/index.md"><img alt="Docs" src="https://img.shields.io/badge/Docs-Documentation-blue"></a>
 </p>
 
-M4 is infrastructure for AI-assisted clinical research. Initialize MIMIC-IV, eICU, or custom datasets as fast local databases (with optional BigQuery for cloud access). Your AI agents get specialized tools (MCP, Python API) and clinical knowledge (agent skills) to query and analyze them.
+M4 connects your AI assistant to clinical databases like MIMIC-IV and eICU. Ask questions in plain English, automate research tasks through a Python API, and ground your agent in clinician-reviewed definitions and best practices — all from Claude, Cursor, or any MCP-compatible tool.
 
-[Usage example – M4 MCP](https://claude.ai/share/93f26832-f298-4d1d-96e3-5608d7f0d7ad) | [Usage example – Code Execution](docs/M4_Code_Execution_Example.pdf)
+[Usage example – M4 MCP](https://claude.ai/share/93f26832-f298-4d1d-96e3-5608d7f0d7ad) | [Usage example – Code Execution](docs/assets/M4_Code_Execution_Example.pdf)
 
 > M4 builds on the [M3](https://github.com/rafiattrach/m3) project. Please [cite](#citation) their work when using M4!
+
+> **Never used a terminal?** The [Getting Started guide](docs/getting-started/index.md) explains everything from opening a terminal to your first query.
 
 
 ## Why M4?
 
-Clinical research shouldn't require mastering database schemas. Whether you're screening a hypothesis, characterizing a cohort, or running a multi-step survival analysis—you should be able to describe what you want and get clinically meaningful results.
-
-M4 makes this possible by giving AI agents deep clinical knowledge:
-
-**Understand clinical semantics.**
-LLMs can write SQL, but have a harder time with (dataset-specific) clinical semantics. M4's comprehensive agent skills encode validated clinical concepts—so "find sepsis patients" produces clinically correct queries on any supported dataset.
-
-**Work across modalities.**
-Clinical research with M4 spans structured data, clinical notes, and (soon) waveforms and imaging. M4 dynamically selects tools based on what each dataset contains—query labs in MIMIC-IV, search discharge summaries in MIMIC-IV-Note, all through the same interface.
-
-**Go beyond chat.**
-Data exploration and simple research questions work great via MCP. But real research requires iteration: explore a cohort, compute statistics, visualize distributions, refine criteria. M4's Python API returns DataFrames that integrate with pandas, scipy, and matplotlib—turning your AI assistant into a research partner that can execute complete analysis workflows.
-
-**Cross-dataset research.**
-You should be able to ask for multi-dataset queries or cross-dataset comparisons. M4 makes this easier than ever as the AI can switch between your initialized datasets on its own, allowing it to do cross-dataset tasks for you.
-
-**Interactive exploration.**
-Some research tasks—like cohort definition—benefit from real-time visual feedback rather than iterative text queries. M4 Apps embed purpose-built UIs directly in your AI client, letting you drag sliders, toggle filters, and see instant results without leaving your workflow.
+- **Ask questions in plain English.** Query MIMIC-IV, eICU, and other clinical databases directly from Claude, Cursor, or any MCP-compatible AI client — no SQL required.
+- **Automate research tasks.** Let your AI agent build cohorts, compute severity scores, run survival analyses, and generate publication-ready tables through M4's Python API.
+- **Ground your agent in clinical knowledge.** A library of agent skills provides validated, clinician-reviewed definitions, best practices, and domain knowledge — so your agent applies proven methods instead of improvising.
+- **Work across datasets.** Switch seamlessly between databases for multi-center studies and external validation — or add your own datasets.
 
 
 ## Quickstart (3 steps)
@@ -83,68 +72,44 @@ m4 config --quick
 Copy the generated JSON into your client's MCP settings, restart, and start asking questions!
 
 <details>
-<summary>Different setup options</summary>
+<summary>Alternative setup options</summary>
 
-* If you don't want to use uv, you can just run pip install m4-infra
-
-* If you want to use Docker, look at <a href="docs/DEVELOPMENT.md">docs/DEVELOPMENT.md</a>
+* If you don't want to use uv, you can run `pip install m4-infra`
+* If you want to use Docker, see the [Development Guide](docs/development/contributing.md)
 </details>
 
 
 ## Code Execution
 
-For complex analysis that goes beyond simple queries, M4 provides a Python API that returns Python data types instead of formatted strings (e.g. pd.DataFrame for SQL queries). This transforms M4 from a query tool into a complete clinical data analysis environment.
+For complex analysis that goes beyond simple queries, M4 provides a Python API that returns native Python types (DataFrames) instead of formatted strings:
 
 ```python
 from m4 import set_dataset, execute_query, get_schema
 
 set_dataset("mimic-iv")
 
-# Get schema as a dict
 schema = get_schema()
 print(schema['tables'])  # ['mimiciv_hosp.admissions', 'mimiciv_hosp.diagnoses_icd', ...]
 
-# Query returns a pandas DataFrame
 df = execute_query("""
     SELECT icd_code, COUNT(*) as n
     FROM mimiciv_hosp.diagnoses_icd
-    GROUP BY icd_code
-    ORDER BY n DESC
-    LIMIT 10
+    GROUP BY icd_code ORDER BY n DESC LIMIT 10
 """)
 
-# Use full pandas power: filter, join, compute statistics
 df[df['n'] > 100].plot(kind='bar')
 ```
 
-The API uses the same tools as the MCP server, so behavior is consistent. But instead of parsing text, you get DataFrames you can immediately analyze, visualize, or feed into downstream pipelines.
-
-**When to use code execution:**
-- Multi-step analyses where each query informs the next
-- Large result sets (thousands of rows) that shouldn't flood your context
-- Statistical computations, survival analysis, cohort characterization
-- Building reproducible analysis notebooks
-
-See [Code Execution Guide](docs/CODE_EXECUTION.md) for the full API reference and [this example session](docs/M4_Code_Execution_Example.pdf) for a walkthrough.
+Use code execution for multi-step analyses, statistical computations, survival analysis, large result sets, and reproducible notebooks. See the [Code Execution Guide](docs/guides/code-execution.md) for the full API reference.
 
 
 ## Agent Skills
 
-M4 ships with a set of skills that teach AI coding assistants clinical research patterns. Skills activate automatically when relevant—ask about "SOFA scores" or "sepsis cohorts" and Claude uses validated SQL from MIT-LCP repositories.
+M4 ships with skills that teach AI assistants clinical research patterns. Skills activate automatically when relevant — ask about "SOFA scores" or "sepsis cohorts" and the AI uses validated SQL from MIT-LCP repositories.
 
-For the canonical list of bundled skills, see `src/m4/skills/SKILLS_INDEX.md`.
+**Clinical skills:** SOFA, APACHE III, SAPS-II, OASIS, LODS, SIRS, Sepsis-3, KDIGO AKI, GCS, vasopressor equivalents, baseline creatinine, first ICU stay, research pitfalls
 
-**Clinical skills:**
-- **Severity Scores**: SOFA, APACHE III, SAPS-II, OASIS, LODS, SIRS
-- **Sepsis**: Sepsis-3 cohort identification, suspected infection
-- **Organ Failure**: KDIGO AKI staging
-- **Measurements**: GCS calculation, baseline creatinine, vasopressor equivalents
-- **Cohort Selection**: First ICU stay identification
-- **Research Methodology**: Common research pitfalls and how to avoid them
-
-**System skills:**
-- **M4 Framework**: Python API usage, research workflow, skill creation guide
-- **Data Structure**: MIMIC-IV table relationships, MIMIC-eICU mapping
+**System skills:** Python API usage, MIMIC-IV table relationships, MIMIC-eICU mapping, skill creation guide
 
 **Supported tools:** Claude Code, Cursor, Cline, Codex CLI, Gemini CLI, GitHub Copilot
 
@@ -152,82 +117,55 @@ For the canonical list of bundled skills, see `src/m4/skills/SKILLS_INDEX.md`.
 m4 skills                                    # Interactive tool and skill selection
 m4 skills --tools claude,cursor              # Install all skills for specific tools
 m4 skills --tools claude --tier validated     # Only validated skills
-m4 skills --tools claude --category clinical  # Only clinical skills
-m4 skills --tools claude --skills sofa-score,m4-api  # Specific skills by name
 m4 skills --list                             # Show installed skills with metadata
 ```
 
-See [Skills Guide](docs/SKILLS.md) for the full list and how to create custom skills.
-
-
-## M4 Apps
-
-M4 Apps bring interactivity to clinical research. Instead of text-only responses, apps render interactive UIs directly in your AI client—ideal for tasks that benefit from real-time visual feedback.
-
-**Cohort Builder**: Define patient cohorts with live filtering. Adjust age ranges, add diagnosis codes, and toggle clinical criteria while watching counts update instantly.
-
-```
-User: Help me build a cohort of elderly diabetic patients
-Claude: [Launches Cohort Builder UI with interactive filters]
-```
-
-M4 Apps require a host that supports the MCP Apps protocol (like Claude Desktop). In other clients, you'll get text-based results instead.
-
-See [M4 Apps Guide](docs/M4_APPS.md) for details on available apps and how they work.
+See the [Skills Guide](docs/guides/skills.md) for the full list and how to create custom skills.
 
 
 ## Example Questions
-
-Once connected, try asking:
 
 **Tabular data (mimic-iv, eicu):**
 - *"What tables are available in the database?"*
 - *"Show me the race distribution in hospital admissions"*
 - *"Find all ICU stays longer than 7 days"*
-- *"What are the most common lab tests?"*
 
 **Derived concept tables (mimic-iv, after `m4 init-derived`):**
 - *"What are the average SOFA scores for patients with sepsis?"*
 - *"Show KDIGO AKI staging distribution across ICU stays"*
-- *"Find patients on norepinephrine with SOFA > 10"*
-- *"What is the 30-day mortality for patients with Charlson index > 5?"*
 
 **Clinical notes (mimic-iv-note):**
 - *"Search for notes mentioning diabetes"*
-- *"List all notes for patient 10000032"*
 - *"Get the full discharge summary for this patient"*
 
 
 ## Supported Datasets
 
-| Dataset | Modality | Size | Access | Local | BigQuery | Derived Tables |
-|---------|----------|------|--------|-------|----------|----------------|
-| **mimic-iv-demo** | Tabular | 100 patients | Free | Yes | No | No |
-| **mimic-iv** | Tabular | 365k patients | [PhysioNet credentialed](https://physionet.org/content/mimiciv/) | Yes | Yes | Yes (63 tables) |
+| Dataset | Modality | Patients | Access | Local | BigQuery | Derived Tables |
+|---------|----------|----------|--------|-------|----------|----------------|
+| **mimic-iv-demo** | Tabular | 100 | Free | Yes | No | No |
+| **mimic-iv** | Tabular | 365k | [PhysioNet credentialed](https://physionet.org/content/mimiciv/) | Yes | Yes | Yes (63 tables) |
 | **mimic-iv-note** | Notes | 331k notes | [PhysioNet credentialed](https://physionet.org/content/mimic-iv-note/) | Yes | Yes | No |
-| **eicu** | Tabular | 200k+ patients | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes | No |
+| **eicu** | Tabular | 200k+ | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes | No |
 
-These datasets are supported out of the box. However, it is possible to add any other custom dataset by following [these instructions](docs/CUSTOM_DATASETS.md).
+Custom datasets can be added via JSON definition. See the [Datasets Guide](docs/getting-started/datasets.md) for full setup instructions including credentialed datasets.
 
-Switch datasets or backends anytime:
 ```bash
-m4 use mimic-iv     # Switch to full MIMIC-IV
-m4 backend bigquery # Switch to BigQuery (or duckdb)
-m4 status           # Show active dataset and backend
-m4 status --all     # List all available datasets
-m4 status --derived # Show per-table derived materialization status
+m4 use mimic-iv         # Switch to full MIMIC-IV
+m4 backend bigquery     # Switch to BigQuery (or duckdb)
+m4 status               # Show active dataset and backend
+m4 status --all         # List all available datasets
 ```
 
-**Derived concept tables** (MIMIC-IV only):
-```bash
-m4 init-derived mimic-iv         # Materialize ~63 derived tables (SOFA, sepsis3, KDIGO, etc.)
-m4 init-derived mimic-iv --list  # List available derived tables without materializing
-```
+**Derived concept tables** (MIMIC-IV only): ~63 pre-computed tables (SOFA, sepsis3, KDIGO, etc.) from [mimic-code](https://github.com/MIT-LCP/mimic-code). BigQuery users already have these via `physionet-data.mimiciv_derived`.
 
-After running `m4 init mimic-iv`, you are prompted whether to materialize derived tables. You can also run `m4 init-derived` separately at any time. Derived tables are created in the `mimiciv_derived` schema (e.g., `mimiciv_derived.sofa`) and are immediately queryable. The SQL is vendored from the [mimic-code](https://github.com/MIT-LCP/mimic-code) repository -- production-tested and DuckDB-compatible. BigQuery users already have these tables available via `physionet-data.mimiciv_derived` and do not need to run `init-derived`.
+```bash
+m4 init-derived mimic-iv         # Materialize derived tables
+m4 init-derived mimic-iv --list  # Preview available tables
+```
 
 <details>
-<summary><strong>Setting up MIMIC-IV or eICU (credentialed datasets)</strong></summary>
+<summary><strong>Setting up credentialed datasets (MIMIC-IV, eICU)</strong></summary>
 
 1. **Get PhysioNet credentials:** Complete the [credentialing process](https://physionet.org/settings/credentialing/) and sign the data use agreement for the dataset.
 
@@ -243,7 +181,6 @@ After running `m4 init mimic-iv`, you are prompted whether to materialize derive
      https://physionet.org/files/eicu-crd/2.0/ \
      -P m4_data/raw_files/eicu
    ```
-   The `--cut-dirs=2 -nH` flags ensure CSV files land directly in `m4_data/raw_files/mimic-iv/` rather than a nested `physionet.org/files/...` structure.
 
 3. **Initialize:**
    ```bash
@@ -256,62 +193,45 @@ This converts the CSV files to Parquet format and creates a local DuckDB databas
 
 ## Available Tools
 
-M4 exposes these tools to your AI client. Tools are filtered based on the active dataset's modality.
+M4 exposes these MCP tools to your AI client, filtered by the active dataset's modality:
 
-**Dataset Management:**
-| Tool | Description |
-|------|-------------|
-| `list_datasets` | List available datasets and their status |
-| `set_dataset` | Switch the active dataset |
+| Tool | Description | Datasets |
+|------|-------------|----------|
+| `list_datasets` | List available datasets and their status | All |
+| `set_dataset` | Switch the active dataset | All |
+| `get_database_schema` | List all available tables | Tabular |
+| `get_table_info` | Get column details and sample data | Tabular |
+| `execute_query` | Run SQL SELECT queries | Tabular |
+| `search_notes` | Full-text search with snippets | Notes |
+| `get_note` | Retrieve a single note by ID | Notes |
+| `list_patient_notes` | List notes for a patient (metadata only) | Notes |
 
-**Tabular Data Tools** (mimic-iv, mimic-iv-demo, eicu):
-| Tool | Description |
-|------|-------------|
-| `get_database_schema` | List all available tables |
-| `get_table_info` | Get column details and sample data |
-| `execute_query` | Run SQL SELECT queries |
-
-**Clinical Notes Tools** (mimic-iv-note):
-| Tool | Description |
-|------|-------------|
-| `search_notes` | Full-text search with snippets |
-| `get_note` | Retrieve a single note by ID |
-| `list_patient_notes` | List notes for a patient (metadata only) |
+See the [Tools Reference](docs/reference/tools.md) for full documentation including derived table categories.
 
 
-## More Documentation
+## Documentation
 
 | Guide | Description |
 |-------|-------------|
-| [Architecture](docs/ARCHITECTURE.md) | Design philosophy, system overview, clinical semantics |
-| [Code Execution](docs/CODE_EXECUTION.md) | Python API for programmatic access |
-| [M4 Apps](docs/M4_APPS.md) | Interactive UIs for clinical research tasks |
-| [Skills](docs/SKILLS.md) | Clinical and system skills for AI-assisted research |
-| [Tools Reference](docs/TOOLS.md) | MCP tool documentation |
-| [BigQuery Setup](docs/BIGQUERY.md) | Google Cloud for full datasets |
-| [Custom Datasets](docs/CUSTOM_DATASETS.md) | Add your own PhysioNet datasets |
-| [Development](docs/DEVELOPMENT.md) | Contributing, testing, code style |
-| [OAuth2 Authentication](docs/OAUTH2_AUTHENTICATION.md) | Enterprise security setup |
+| [Getting Started](docs/getting-started/index.md) | Install M4 and run your first query (zero CLI experience needed) |
+| [Datasets](docs/getting-started/datasets.md) | Choose and set up datasets (demo, MIMIC-IV, eICU, BigQuery) |
+| [First Analysis](docs/getting-started/first-analysis.md) | End-to-end tutorial from setup to clinical insights |
+| [Code Execution](docs/guides/code-execution.md) | Python API for programmatic access |
+| [Skills](docs/guides/skills.md) | Clinical and system skills (SOFA, sepsis, KDIGO, etc.) |
+| [M4 Apps](docs/guides/apps.md) | Interactive UIs for clinical research tasks |
+| [BigQuery](docs/guides/bigquery.md) | Cloud access to full datasets |
+| [Custom Datasets](docs/guides/custom-datasets.md) | Add your own datasets |
+| [Tools Reference](docs/reference/tools.md) | MCP tool documentation and derived tables |
+| [Architecture](docs/reference/architecture.md) | Design philosophy and system overview |
+| [OAuth2](docs/reference/oauth2.md) | Enterprise authentication setup |
+| [Development](docs/development/contributing.md) | Contributing, testing, code style |
+| [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
 
-## Roadmap
-
-M4 is infrastructure for AI-assisted clinical research. Current priorities:
-
-- **Clinical Semantics**
-  - More concept mappings (comorbidity indices, medication classes)
-  - Semantic search over clinical notes (beyond keyword matching)
-  - More agent skills that provide meaningful clinical knowledge
-
-- **New Modalities**
-  - Waveforms (ECG, arterial blood pressure)
-  - Imaging (chest X-rays)
-
-- **Clinical Research Agents**
-  - Skills and guardrails that enforce scientific integrity and best practices (documentation, etc.)
-  - Query logging and session export
-  - Result fingerprints for audit trails
 
 ## Troubleshooting
+
+**`m4` command opens GNU M4 instead of the CLI:**
+Make sure your virtual environment is activated (`source .venv/bin/activate`). Alternatively, use `uv run m4 [command]` to run within the project environment without activating it.
 
 **"Parquet not found" error:**
 ```bash
@@ -321,14 +241,14 @@ m4 init mimic-iv-demo --force
 **MCP client won't connect:**
 Check client logs (Claude Desktop: Help → View Logs) and ensure the config JSON is valid.
 
-**`m4` command opens GNU M4 instead of the CLI:**
-On macOS/Linux, `m4` is a built-in system utility. Make sure your virtual environment is activated (`source .venv/bin/activate`) so that the correct `m4` binary is found first. Alternatively, use `uv run m4 [command]` to run within the project environment without activating it.
-
 **Need to reconfigure:**
 ```bash
 m4 config claude --quick   # Regenerate Claude Desktop config
 m4 config --quick          # Regenerate generic config
 ```
+
+See the [full troubleshooting guide](docs/troubleshooting.md) for Windows-specific issues, BigQuery errors, and more.
+
 
 ## Citation
 
@@ -347,5 +267,6 @@ M4 builds on the M3 project. Please cite:
 
 <p align="center">
   <a href="https://github.com/hannesill/m4/issues">Report an Issue</a> ·
-  <a href="docs/DEVELOPMENT.md">Contribute</a>
+  <a href="./docs/development/contributing.md">Contribute</a> ·
+  <a href="./docs/index.md">Documentation</a>
 </p>

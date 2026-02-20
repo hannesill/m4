@@ -234,4 +234,4 @@ set_dataset("mimic-iv")
 df = execute_query("SELECT * FROM mimiciv_hosp.patients")  # Returns pandas DataFrame
 ```
 
-See [Code Execution Guide](CODE_EXECUTION.md) for the full API reference.
+See [Code Execution Guide](../guides/code-execution.md) for the full API reference.
