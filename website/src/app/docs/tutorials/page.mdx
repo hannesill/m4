@@ -1,0 +1,57 @@
+export const metadata = {
+  title: 'Tutorials',
+  description: 'Video tutorials to help you get the most out of M4.',
+}
+
+export const sections = [
+  { title: 'Installation Walkthrough', id: 'installation-walkthrough' },
+  { title: 'First Clinical Analysis', id: 'first-clinical-analysis' },
+  { title: 'Setting Up Full MIMIC-IV', id: 'setting-up-full-mimic-iv' },
+  { title: 'BigQuery Setup', id: 'bigquery-setup' },
+  { title: 'Python API', id: 'python-api' },
+  { title: 'Clinical Skills in Action', id: 'clinical-skills-in-action' },
+]
+
+# Tutorials
+
+Video tutorials to help you get the most out of M4. Each tutorial includes step-by-step instructions you can follow along with. {{ className: 'lead' }}
+
+<Note>
+  Video tutorials are coming soon. In the meantime, follow the written guides linked below.
+</Note>
+
+## Installation Walkthrough
+
+**Duration:** ~5 minutes | **Prerequisites:** None
+
+Covers installing uv, creating a project, installing M4, initializing the demo dataset, and connecting Claude Desktop. Everything from the [Getting Started](/docs/getting-started) guide in video form.
+
+## First Clinical Analysis
+
+**Duration:** ~10 minutes | **Prerequisites:** M4 installed with demo dataset
+
+Walk through an end-to-end analysis session: exploring tables, asking clinical questions, interpreting results, and building up to a multi-step analysis. Follows the [First Analysis](/docs/first-analysis) tutorial.
+
+## Setting Up Full MIMIC-IV
+
+**Duration:** ~8 minutes | **Prerequisites:** PhysioNet credentials
+
+Complete walkthrough of downloading MIMIC-IV from PhysioNet, initializing the database, materializing derived tables, and verifying the setup. Covers the [Datasets Guide](/docs/datasets).
+
+## BigQuery Setup
+
+**Duration:** ~7 minutes | **Prerequisites:** Google Cloud account, PhysioNet credentials
+
+Setting up BigQuery access: authenticating with Google Cloud, configuring M4, and running your first cloud query. Follows the [BigQuery Guide](/docs/bigquery).
+
+## Python API
+
+**Duration:** ~12 minutes | **Prerequisites:** M4 installed, familiarity with Python helpful
+
+Using M4's Python API for programmatic analysis: DataFrames, multi-step workflows, statistical analysis, and visualization. Demonstrates the [Code Execution Guide](/docs/code-execution).
+
+## Clinical Skills in Action
+
+**Duration:** ~8 minutes | **Prerequisites:** M4 installed with MIMIC-IV
+
+How M4 skills enhance AI-assisted research: SOFA scoring, Sepsis-3 cohort identification, KDIGO AKI staging, and more. Shows the difference between with and without clinical knowledge. Covers the [Skills Guide](/docs/skills).

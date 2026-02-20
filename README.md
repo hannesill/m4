@@ -1,7 +1,7 @@
 # M4: Infrastructure for AI-Assisted Clinical Research
 
 <p align="center">
-  <img src="webapp/public/m4_logo_transparent.png" alt="M4 Logo" width="180"/>
+  <img src="assets/m4_logo_transparent.png" alt="M4 Logo" width="180"/>
 </p>
 
 <p align="center">
@@ -12,16 +12,16 @@
   <a href="https://www.python.org/downloads/"><img alt="Python" src="https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white"></a>
   <a href="https://modelcontextprotocol.io/"><img alt="MCP" src="https://img.shields.io/badge/MCP-Compatible-green?logo=ai&logoColor=white"></a>
   <a href="https://github.com/hannesill/m4/actions/workflows/tests.yaml"><img alt="Tests" src="https://github.com/hannesill/m4/actions/workflows/tests.yaml/badge.svg"></a>
-  <a href="docs/index.md"><img alt="Docs" src="https://img.shields.io/badge/Docs-Documentation-blue"></a>
+
 </p>
 
 M4 connects your AI assistant to clinical databases like MIMIC-IV and eICU. Ask questions in plain English, automate research tasks through a Python API, and ground your agent in clinician-reviewed definitions and best practices — all from Claude, Cursor, or any MCP-compatible tool.
 
-[Usage example – M4 MCP](https://claude.ai/share/93f26832-f298-4d1d-96e3-5608d7f0d7ad) | [Usage example – Code Execution](docs/assets/M4_Code_Execution_Example.pdf)
+[Usage example – M4 MCP](https://claude.ai/share/93f26832-f298-4d1d-96e3-5608d7f0d7ad) | [Usage example – Code Execution](assets/M4_Code_Execution_Example.pdf)
 
 > M4 builds on the [M3](https://github.com/rafiattrach/m3) project. Please [cite](#citation) their work when using M4!
 
-> **Never used a terminal?** The [Getting Started guide](docs/getting-started/index.md) explains everything from opening a terminal to your first query.
+
 
 
 ## Why M4?
@@ -75,7 +75,7 @@ Copy the generated JSON into your client's MCP settings, restart, and start aski
 <summary>Alternative setup options</summary>
 
 * If you don't want to use uv, you can run `pip install m4-infra`
-* If you want to use Docker, see the [Development Guide](docs/development/contributing.md)
+* If you want to use Docker, see the Development Guide
 </details>
 
 
@@ -100,7 +100,7 @@ df = execute_query("""
 df[df['n'] > 100].plot(kind='bar')
 ```
 
-Use code execution for multi-step analyses, statistical computations, survival analysis, large result sets, and reproducible notebooks. See the [Code Execution Guide](docs/guides/code-execution.md) for the full API reference.
+Use code execution for multi-step analyses, statistical computations, survival analysis, large result sets, and reproducible notebooks.
 
 
 ## Agent Skills
@@ -120,7 +120,7 @@ m4 skills --tools claude --tier validated     # Only validated skills
 m4 skills --list                             # Show installed skills with metadata
 ```
 
-See the [Skills Guide](docs/guides/skills.md) for the full list and how to create custom skills.
+See the Skills Guide for the full list and how to create custom skills.
 
 
 ## Example Questions
@@ -148,7 +148,7 @@ See the [Skills Guide](docs/guides/skills.md) for the full list and how to creat
 | **mimic-iv-note** | Notes | 331k notes | [PhysioNet credentialed](https://physionet.org/content/mimic-iv-note/) | Yes | Yes | No |
 | **eicu** | Tabular | 200k+ | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes | No |
 
-Custom datasets can be added via JSON definition. See the [Datasets Guide](docs/getting-started/datasets.md) for full setup instructions including credentialed datasets.
+Custom datasets can be added via JSON definition.
 
 ```bash
 m4 use mimic-iv         # Switch to full MIMIC-IV
@@ -206,26 +206,12 @@ M4 exposes these MCP tools to your AI client, filtered by the active dataset's m
 | `get_note` | Retrieve a single note by ID | Notes |
 | `list_patient_notes` | List notes for a patient (metadata only) | Notes |
 
-See the [Tools Reference](docs/reference/tools.md) for full documentation including derived table categories.
+See the Tools Reference for full documentation including derived table categories.
 
 
 ## Documentation
 
-| Guide | Description |
-|-------|-------------|
-| [Getting Started](docs/getting-started/index.md) | Install M4 and run your first query (zero CLI experience needed) |
-| [Datasets](docs/getting-started/datasets.md) | Choose and set up datasets (demo, MIMIC-IV, eICU, BigQuery) |
-| [First Analysis](docs/getting-started/first-analysis.md) | End-to-end tutorial from setup to clinical insights |
-| [Code Execution](docs/guides/code-execution.md) | Python API for programmatic access |
-| [Skills](docs/guides/skills.md) | Clinical and system skills (SOFA, sepsis, KDIGO, etc.) |
-| [M4 Apps](docs/guides/apps.md) | Interactive UIs for clinical research tasks |
-| [BigQuery](docs/guides/bigquery.md) | Cloud access to full datasets |
-| [Custom Datasets](docs/guides/custom-datasets.md) | Add your own datasets |
-| [Tools Reference](docs/reference/tools.md) | MCP tool documentation and derived tables |
-| [Architecture](docs/reference/architecture.md) | Design philosophy and system overview |
-| [OAuth2](docs/reference/oauth2.md) | Enterprise authentication setup |
-| [Development](docs/development/contributing.md) | Contributing, testing, code style |
-| [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
+Documentation is available on the [M4 website](website/).
 
 
 ## Troubleshooting
@@ -247,7 +233,7 @@ m4 config claude --quick   # Regenerate Claude Desktop config
 m4 config --quick          # Regenerate generic config
 ```
 
-See the [full troubleshooting guide](docs/troubleshooting.md) for Windows-specific issues, BigQuery errors, and more.
+See the website for Windows-specific issues, BigQuery errors, and more.
 
 
 ## Citation
@@ -267,6 +253,5 @@ M4 builds on the M3 project. Please cite:
 
 <p align="center">
   <a href="https://github.com/hannesill/m4/issues">Report an Issue</a> ·
-  <a href="./docs/development/contributing.md">Contribute</a> ·
-  <a href="./docs/index.md">Documentation</a>
+  <a href="./website/">Documentation</a>
 </p>

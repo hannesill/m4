@@ -50,6 +50,7 @@ dependencies = [
     "httpx>=0.24.0", # Modern HTTP client for OAuth2 token validation
     "duckdb>=1.4.1",
     "datasets>=4.5.0",
+    "vitrine",
 ]
 
 [dependency-groups]
@@ -71,9 +72,12 @@ m4-mcp-server = "m4.mcp_server:main"  # Kept for backwards compatibility
 [project.urls]
 Homepage = "https://github.com/rafiattrach/m4"
 Repository = "https://github.com/rafiattrach/m4"
-Documentation = "https://github.com/rafiattrach/m4#readme"
+Documentation = "https://hannesill.github.io/m4/docs/"
 Issues = "https://github.com/rafiattrach/m4/issues"
 Changelog = "https://github.com/rafiattrach/m4/releases"
+
+[tool.uv.sources]
+vitrine = { path = "../vitrine", editable = true }
 
 [tool.pdm.version]
 source = "file"

@@ -1,0 +1,143 @@
+export const metadata = {
+  title: 'OAuth2 Authentication',
+  description: 'Enterprise-grade authentication for M4 using OAuth2 with JWT tokens.',
+}
+
+export const sections = [
+  { title: 'Quick Setup', id: 'quick-setup' },
+  { title: 'Environment Variables', id: 'environment-variables' },
+  { title: 'Token Requirements', id: 'token-requirements' },
+  { title: 'Rate Limiting', id: 'rate-limiting' },
+  { title: 'Provider Examples', id: 'provider-examples' },
+  { title: 'Troubleshooting', id: 'troubleshooting' },
+]
+
+# OAuth2 Authentication
+
+Enterprise-grade authentication for M4 using OAuth2 with JWT tokens. {{ className: 'lead' }}
+
+## Quick Setup
+
+```bash
+m4 config claude --enable-oauth2 \
+  --oauth2-issuer https://your-auth-provider.com \
+  --oauth2-audience m4-api
+```
+
+For manual MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "m4": {
+      "command": "uvx",
+      "args": ["m4-infra"],
+      "env": {
+        "M4_OAUTH2_ENABLED": "true",
+        "M4_OAUTH2_ISSUER_URL": "https://your-auth-provider.com",
+        "M4_OAUTH2_AUDIENCE": "m4-api",
+        "M4_OAUTH2_TOKEN": "your-jwt-token"
+      }
+    }
+  }
+}
+```
+
+## Environment Variables
+
+### Required (when OAuth2 enabled)
+
+```bash
+M4_OAUTH2_ENABLED=true
+M4_OAUTH2_ISSUER_URL=https://your-auth-provider.com
+M4_OAUTH2_AUDIENCE=m4-api
+```
+
+### Optional
+
+```bash
+M4_OAUTH2_REQUIRED_SCOPES=read:mimic-data    # Default: read:mimic-data
+M4_OAUTH2_JWKS_URL=https://your-auth-provider.com/.well-known/jwks.json
+M4_OAUTH2_JWKS_CACHE_TTL=3600                # Default: 3600 (1 hour)
+M4_OAUTH2_CLIENT_ID=your-client-id
+M4_OAUTH2_CLIENT_SECRET=your-client-secret
+M4_OAUTH2_VALIDATE_EXP=true                  # Default: true
+M4_OAUTH2_VALIDATE_AUD=true                  # Default: true
+M4_OAUTH2_VALIDATE_ISS=true                  # Default: true
+M4_OAUTH2_RATE_LIMIT_ENABLED=true            # Default: true
+M4_OAUTH2_RATE_LIMIT_REQUESTS=100            # Default: 100 per window
+M4_OAUTH2_RATE_LIMIT_WINDOW=3600             # Default: 3600 seconds
+M4_OAUTH2_TOKEN=your-jwt-token               # Bearer prefix optional
+```
+
+## Token Requirements
+
+Your JWT must include:
+
+**Header:** `alg` (RS256 or ES256), `kid` (matching a key in the JWKS)
+
+**Claims:**
+
+```json
+{
+  "iss": "https://your-auth-provider.com",
+  "aud": "m4-api",
+  "scope": "read:mimic-data",
+  "exp": 1234567890,
+  "sub": "user-id"
+}
+```
+
+## Rate Limiting
+
+Rate limiting is per-user (based on the `sub` claim):
+
+- **Default limit:** 100 requests per hour per user
+- **Memory management:** LRU eviction when cache exceeds 10,000 users
+
+Disable rate limiting:
+
+```bash
+M4_OAUTH2_RATE_LIMIT_ENABLED=false
+```
+
+## Provider Examples
+
+### Auth0
+
+```bash
+M4_OAUTH2_ISSUER_URL=https://your-domain.auth0.com/
+M4_OAUTH2_AUDIENCE=https://api.your-domain.com
+M4_OAUTH2_REQUIRED_SCOPES=read:mimic-data
+```
+
+### Okta
+
+```bash
+M4_OAUTH2_ISSUER_URL=https://your-domain.okta.com/oauth2/default
+M4_OAUTH2_AUDIENCE=api://m4
+```
+
+### Any OIDC Provider
+
+Any OAuth2 provider supporting JWKS endpoint, JWT tokens with RS256 or ES256, and standard claims (`iss`, `aud`, `exp`, `sub`).
+
+## Troubleshooting
+
+**"Missing OAuth2 access token"** — Set the token: `export M4_OAUTH2_TOKEN="eyJhbGci..."`
+
+**"Invalid token signature"** — Verify token is signed by the configured issuer. Check JWKS URL is accessible.
+
+**"Missing required scopes"** — Request a new token with all required scopes.
+
+**"Rate limit exceeded"** — Wait for the rate limit window to reset, or increase `M4_OAUTH2_RATE_LIMIT_REQUESTS`.
+
+**"Token has expired"** — Request a fresh token from your OAuth2 provider.
+
+### Security Best Practices
+
+1. Use short-lived tokens (less than 1 hour)
+2. Never commit tokens to version control
+3. Use environment variables or secure secret storage
+4. Start with conservative rate limits
+5. Monitor authentication failures in logs

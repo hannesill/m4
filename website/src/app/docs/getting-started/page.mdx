@@ -1,0 +1,155 @@
+export const metadata = {
+  title: 'Getting Started',
+  description:
+    'Install M4 and run your first clinical data query. No prior experience with terminals, Python, or databases is needed.',
+}
+
+export const sections = [
+  { title: 'Prerequisites', id: 'prerequisites' },
+  { title: 'Step 1: Open a terminal', id: 'step-1-open-a-terminal' },
+  { title: 'Step 2: Install uv', id: 'step-2-install-uv' },
+  { title: 'Step 3: Create a project and install M4', id: 'step-3-create-a-project-and-install-m4' },
+  { title: 'Step 4: Activate the virtual environment', id: 'step-4-activate-the-virtual-environment' },
+  { title: 'Step 5: Initialize the demo dataset', id: 'step-5-initialize-the-demo-dataset' },
+  { title: 'Step 6: Connect your AI client', id: 'step-6-connect-your-ai-client' },
+  { title: 'Step 7: Ask your first question', id: 'step-7-ask-your-first-question' },
+  { title: 'Quick version', id: 'quick-version' },
+  { title: 'Next steps', id: 'next-steps' },
+]
+
+# Getting Started
+
+This guide walks you through installing M4 and running your first clinical data query. No prior experience with terminals, Python, or databases is needed. {{ className: 'lead' }}
+
+---
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- A computer running macOS, Windows, or Linux
+- An internet connection
+- About 20 minutes
+- [Claude Desktop](https://claude.ai/download) (or another AI client that supports MCP)
+
+## Step 1: Open a terminal
+
+A terminal (also called a command line) is a text-based way to interact with your computer. You type commands and press Enter to run them.
+
+**macOS:** Press `Cmd+Space` to open Spotlight Search, type **Terminal** and press Enter.
+
+**Windows:** Press `Win+X` and select **Terminal** (or **PowerShell**).
+
+**Linux:** Press `Ctrl+Alt+T` (on most distributions), or search for **Terminal** in your applications menu.
+
+<Note>
+  **How to paste into a terminal:** On macOS: `Cmd+V`. On Windows/Linux: `Ctrl+Shift+V` (note the Shift).
+</Note>
+
+## Step 2: Install uv
+
+`uv` is a tool that manages Python and Python packages. Run one of these commands in your terminal:
+
+**macOS / Linux:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+This downloads and installs `uv`, a fast Python package manager. It also installs Python if you didn't already have it. You only need to do this once.
+
+After the install completes, **close and reopen your terminal** so the `uv` command is available.
+
+## Step 3: Create a project and install M4
+
+Run these commands one at a time:
+
+```bash
+mkdir my-research
+cd my-research
+uv init
+uv add m4-infra
+```
+
+## Step 4: Activate the virtual environment
+
+A virtual environment keeps M4's dependencies separate from the rest of your system. You need to activate it each time you open a new terminal session:
+
+**macOS / Linux:**
+```bash
+source .venv/bin/activate
+```
+
+**Windows (PowerShell):**
+```powershell
+.venv\Scripts\activate
+```
+
+<Note>
+  If you close your terminal and come back later, you'll need to `cd my-research` and activate the environment again before using M4 commands.
+</Note>
+
+## Step 5: Initialize the demo dataset
+
+```bash
+m4 init mimic-iv-demo
+```
+
+This downloads the free MIMIC-IV demo dataset (~16 MB) containing 100 de-identified patient records and creates a local database. No credentials or applications are required.
+
+[MIMIC-IV](https://mimic.mit.edu/) (Medical Information Mart for Intensive Care) is a large, freely-available database of de-identified health records from Beth Israel Deaconess Medical Center. The demo version contains a small subset (100 patients) that anyone can access for free. The full version (365,000+ patients) requires credentialed access through PhysioNet.
+
+## Step 6: Connect your AI client
+
+**Claude Desktop:**
+```bash
+m4 config claude --quick
+```
+This automatically updates Claude Desktop's configuration. Restart Claude Desktop to apply.
+
+**Other clients (Cursor, LibreChat, etc.):**
+```bash
+m4 config --quick
+```
+This prints a JSON configuration block. Copy it into your client's MCP server settings, then restart the client.
+
+## Step 7: Ask your first question
+
+Open Claude Desktop (or your configured AI client) and try:
+
+> *"What tables are available in the database?"*
+
+You should see a list of clinical data tables. Then try:
+
+> *"Show me the gender distribution in hospital admissions"*
+
+You're now using AI-assisted clinical data analysis.
+
+---
+
+## Quick version
+
+Already comfortable with the command line? Here's the whole setup in 6 lines:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh  # Install uv (skip if you have it)
+mkdir my-research && cd my-research
+uv init && uv add m4-infra
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+m4 init mimic-iv-demo
+m4 config claude --quick   # Or: m4 config --quick
+```
+
+## Next steps
+
+| Goal | Guide |
+|------|-------|
+| Follow an end-to-end analysis tutorial | [First Analysis](/docs/first-analysis) |
+| Set up a larger dataset (MIMIC-IV, eICU) | [Datasets](/docs/datasets) |
+| Learn about the Python API | [Code Execution](/docs/code-execution) |
+| Install clinical skills for your AI | [Skills](/docs/skills) |
+| Use BigQuery instead of local files | [BigQuery](/docs/bigquery) |

@@ -1,0 +1,195 @@
+export const metadata = {
+  title: 'Datasets',
+  description: 'Choose and set up the right clinical dataset for your research with M4.',
+}
+
+export const sections = [
+  { title: 'Which dataset should I use?', id: 'which-dataset-should-i-use' },
+  { title: 'Dataset comparison', id: 'dataset-comparison' },
+  { title: 'Demo dataset setup', id: 'demo-dataset-setup' },
+  { title: 'Credentialed dataset setup', id: 'credentialed-dataset-setup' },
+  { title: 'Derived concept tables', id: 'derived-concept-tables' },
+  { title: 'BigQuery (cloud access)', id: 'bigquery-cloud-access' },
+  { title: 'MIMIC-IV-Note specifics', id: 'mimic-iv-note-specifics' },
+  { title: 'Custom datasets', id: 'custom-datasets' },
+]
+
+# Datasets
+
+M4 supports several clinical datasets out of the box, from a free 100-patient demo to full research databases with hundreds of thousands of patients. This guide helps you choose the right one and set it up. {{ className: 'lead' }}
+
+## Which dataset should I use?
+
+```
+Do you have PhysioNet credentials?
+├── No → Start with mimic-iv-demo (free, no credentials needed)
+└── Yes → What do you need?
+    ├── Structured data (labs, vitals, demographics) → mimic-iv or eicu
+    ├── Clinical notes (discharge summaries, radiology) → mimic-iv-note
+    └── Cross-dataset validation → Set up both mimic-iv and eicu
+```
+
+## Dataset comparison
+
+| | mimic-iv-demo | mimic-iv | mimic-iv-note | eicu |
+|---|---|---|---|---|
+| **Patients** | 100 | 365,000+ | 331,000 notes | 200,000+ |
+| **Data type** | Tabular | Tabular | Clinical notes | Tabular |
+| **Access** | Free | PhysioNet credentialed | PhysioNet credentialed | PhysioNet credentialed |
+| **Download size** | ~16 MB | ~7 GB | ~3 GB | ~6 GB |
+| **Database size** | ~50 MB | ~15 GB | ~8 GB | ~12 GB |
+| **Derived tables** | No | Yes (63 tables) | No | No |
+| **BigQuery** | No | Yes | Yes | Yes |
+| **Setup time** | < 1 minute | 30-60 minutes | 20-40 minutes | 30-60 minutes |
+
+## Demo dataset setup
+
+If you followed the [Getting Started](/docs/getting-started) guide, you already have this set up. Otherwise:
+
+```bash
+m4 init mimic-iv-demo
+```
+
+That's it. The demo dataset is free and downloads automatically.
+
+## Credentialed dataset setup
+
+### Getting PhysioNet credentials
+
+Full datasets require credentialed access through [PhysioNet](https://physionet.org/). The process takes 1-3 weeks:
+
+1. **Create a PhysioNet account** at [physionet.org](https://physionet.org/register/)
+2. **Complete CITI training** — PhysioNet requires a "Data or Specimens Only Research" course from [CITI Program](https://about.citiprogram.org/). This is a self-paced online course that typically takes 3-5 hours.
+3. **Submit your credentialing application** at [physionet.org/settings/credentialing/](https://physionet.org/settings/credentialing/)
+4. **Sign the Data Use Agreement (DUA)** for each dataset you want to access
+5. **Wait for approval** — typically 1-2 weeks after completing all steps
+
+<Note>
+  You can start the CITI training while waiting for your PhysioNet account to be approved. Save time by doing both in parallel.
+</Note>
+
+### Disk space requirements
+
+Make sure you have enough free disk space before downloading:
+
+| Dataset | Raw files | Parquet | Database | Total needed |
+|---------|-----------|---------|----------|-------------|
+| mimic-iv | ~7 GB | ~4 GB | ~15 GB | ~26 GB |
+| mimic-iv-note | ~3 GB | ~2 GB | ~8 GB | ~13 GB |
+| eicu | ~6 GB | ~3 GB | ~12 GB | ~21 GB |
+
+### Downloading data
+
+You'll use `wget` to download data from PhysioNet. Install it if needed:
+
+**macOS:**
+```bash
+brew install wget
+```
+
+**Windows:**
+```powershell
+winget install GnuWin32.Wget
+```
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt install wget
+```
+
+Now download your dataset (replace `YOUR_USERNAME` with your PhysioNet username):
+
+**MIMIC-IV:**
+```bash
+wget -r -N -c -np --cut-dirs=2 -nH --user YOUR_USERNAME --ask-password \
+  https://physionet.org/files/mimiciv/3.1/ \
+  -P m4_data/raw_files/mimic-iv
+```
+
+**MIMIC-IV-Note:**
+```bash
+wget -r -N -c -np --cut-dirs=2 -nH --user YOUR_USERNAME --ask-password \
+  https://physionet.org/files/mimic-iv-note/2.2/ \
+  -P m4_data/raw_files/mimic-iv-note
+```
+
+**eICU:**
+```bash
+wget -r -N -c -np --cut-dirs=2 -nH --user YOUR_USERNAME --ask-password \
+  https://physionet.org/files/eicu-crd/2.0/ \
+  -P m4_data/raw_files/eicu
+```
+
+### Initializing the database
+
+After downloading, initialize the dataset:
+
+```bash
+m4 init mimic-iv       # or: m4 init mimic-iv-note, m4 init eicu
+```
+
+This converts CSV files to Parquet format and creates a local DuckDB database. The process takes 10-30 minutes depending on your hardware and the dataset size.
+
+### Switching between datasets
+
+Once you have multiple datasets initialized, switch between them anytime:
+
+```bash
+m4 use mimic-iv         # Switch to MIMIC-IV
+m4 use mimic-iv-note    # Switch to clinical notes
+m4 use eicu             # Switch to eICU
+m4 status               # Show active dataset and backend
+m4 status --all         # List all available datasets
+```
+
+## Derived concept tables
+
+MIMIC-IV includes ~63 pre-computed clinical concept tables — severity scores (SOFA, APACHE III, SAPS-II), sepsis cohorts, organ failure staging (KDIGO AKI), medications, labs, and more. These save you from writing complex SQL for common clinical concepts.
+
+**To materialize derived tables (local DuckDB):**
+
+```bash
+m4 init-derived mimic-iv
+```
+
+You'll also be prompted to materialize them during `m4 init mimic-iv`. They are created in the `mimiciv_derived` schema (e.g., `mimiciv_derived.sofa`) and are immediately queryable.
+
+```bash
+m4 init-derived mimic-iv --list    # Preview available tables
+m4 status --derived                # Check materialization status
+```
+
+<Note>
+  If you're using BigQuery, derived tables are already available at `physionet-data.mimiciv_derived`. You do not need to run `init-derived`.
+</Note>
+
+The SQL is vendored from the [mimic-code](https://github.com/MIT-LCP/mimic-code) repository — peer-reviewed and used in hundreds of published studies.
+
+## BigQuery (cloud access)
+
+For cloud-based access without downloading files, see the full [BigQuery Setup Guide](/docs/bigquery). BigQuery requires:
+
+- Google Cloud account with BigQuery access
+- PhysioNet credentials linked to your Google account
+- A GCP project for billing
+
+## MIMIC-IV-Note specifics
+
+MIMIC-IV-Note contains clinical narratives rather than structured tables. M4 provides specialized tools for working with notes:
+
+| Note type | Description | Typical length |
+|-----------|-------------|----------------|
+| Discharge summaries | Comprehensive narratives of hospital stays | 5,000-15,000 characters |
+| Radiology reports | Findings from imaging studies | 500-2,000 characters |
+
+Use the `note_type` parameter to filter searches:
+
+- **Search**: Find notes mentioning specific terms across the database
+- **Retrieve**: Get the full text of a specific note by ID
+- **List**: See what notes exist for a given patient
+
+Notes can be linked to MIMIC-IV tabular data via `subject_id` for cross-modal analysis.
+
+## Custom datasets
+
+M4 can work with any PhysioNet dataset (or your own data). See [Custom Datasets](/docs/custom-datasets) for instructions on adding new datasets via JSON definitions.

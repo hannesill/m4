@@ -1,0 +1,59 @@
+export const metadata = {
+  title: 'M4 Apps',
+  description: 'Interactive clinical research tools that render UIs directly within your AI client.',
+}
+
+export const sections = [
+  { title: 'Why Interactivity Matters', id: 'why-interactivity-matters' },
+  { title: 'Cohort Builder', id: 'cohort-builder' },
+  { title: 'How M4 Apps Work', id: 'how-m4-apps-work' },
+  { title: 'Requirements', id: 'requirements' },
+]
+
+# M4 Apps: Interactive Clinical Research Tools
+
+M4 Apps bring interactivity to clinical research workflows. While traditional MCP tools return text responses, M4 Apps render interactive UIs directly within your AI client — enabling real-time exploration, visual feedback, and iterative refinement. {{ className: 'lead' }}
+
+## Why Interactivity Matters
+
+Clinical research is inherently iterative. Cohort definition alone often requires dozens of refinements: adjusting age ranges, adding diagnosis codes, checking how inclusion criteria affect sample sizes.
+
+| Research Task | Text-Only | With M4 Apps |
+|--------------|-----------|--------------|
+| **Cohort Definition** | Multiple query iterations, parsing counts | Drag sliders, instant count updates |
+| **Inclusion Criteria** | Ask AI to modify SQL each time | Toggle checkboxes, see impact immediately |
+| **Demographics Review** | Request statistics, read tables | Visual charts update as you filter |
+| **Sample Size Planning** | Trial and error with queries | Real-time feedback on criteria tradeoffs |
+
+## Cohort Builder
+
+The Cohort Builder provides an interactive interface for defining and exploring patient cohorts.
+
+**Features:**
+- Real-time patient and admission counts as you adjust criteria
+- Age range sliders with distribution visualization
+- Gender selection with breakdown charts
+- ICD code filtering with flexible matching (any/all codes)
+- ICU stay and mortality filters
+- Generated SQL available for reproducibility
+
+**Usage:** Ask your AI assistant to "open the cohort builder" or "help me define a patient cohort" when using a host that supports MCP Apps (like Claude Desktop).
+
+**Supported Datasets:** MIMIC-IV, MIMIC-IV Demo
+
+## How M4 Apps Work
+
+M4 Apps use the MCP Apps protocol to serve interactive UIs alongside tool responses:
+
+1. **Tool returns data**: The backend tool processes the request and returns structured data
+2. **UI renders**: The host (Claude Desktop, etc.) renders the app's UI in an iframe
+3. **Bidirectional communication**: The UI calls backend tools for live updates
+4. **Results stay in context**: The AI sees the final results for follow-up questions
+
+Apps gracefully degrade in hosts without MCP Apps support — you'll get text-based results instead of the interactive UI.
+
+## Requirements
+
+- **Host support**: A client that implements the MCP Apps protocol (Claude Desktop 1.x+)
+- **M4 initialized**: An active dataset (`m4 init mimic-iv-demo`)
+- **MCP connection**: M4 configured in your client (`m4 config claude --quick`)

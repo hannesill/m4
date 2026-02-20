@@ -1,0 +1,154 @@
+export const metadata = {
+  title: 'Architecture',
+  description: 'Design philosophy, architecture overview, and system internals of M4.',
+}
+
+export const sections = [
+  { title: 'Why M4?', id: 'why-m4' },
+  { title: 'Architecture Overview', id: 'architecture-overview' },
+  { title: 'Core Design Principles', id: 'core-design-principles' },
+  { title: 'Component Details', id: 'component-details' },
+  { title: 'Data Flow Example', id: 'data-flow-example' },
+  { title: 'Future Directions', id: 'future-directions' },
+]
+
+# Architecture and Vision
+
+M4 is infrastructure for AI-assisted clinical research. This document explains the design philosophy, architecture, and why M4 exists. {{ className: 'lead' }}
+
+## Why M4?
+
+### The Problem: Clinical Semantics
+
+LLM-assisted clinical data exploration fails most often due to **clinical semantics**, not SQL syntax. An LLM can write syntactically correct SQL, but it doesn't know:
+
+- What "sepsis" maps to in ICD codes
+- Which lab values indicate kidney function (creatinine? GFR? both?)
+- That SOFA scores require specific chartevents itemids
+- How to join MIMIC-IV tables without duplicating rows
+- That eICU structures data differently than MIMIC-IV
+
+### The Solution: Infrastructure Layer
+
+M4 addresses this by providing three layers of clinical intelligence:
+
+1. **Schema Documentation**: Tables and columns annotated with clinical meaning
+2. **Concept Mappings**: Curated mappings from clinical concepts to database-specific implementations
+3. **Agent Skills**: Validated clinical research patterns (SOFA scoring, Sepsis-3 criteria, KDIGO AKI staging) extracted from MIT-LCP repositories
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      AI Clients                          │
+│        (Claude Desktop, Cursor, Claude Code)             │
+└─────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────┐
+│                   M4 Infrastructure                      │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐         │
+│  │ MCP Server │  │ Python API │  │   Skills   │         │
+│  │  (tools)   │  │ (code exec)│  │(knowledge) │         │
+│  └────────────┘  └────────────┘  └────────────┘         │
+│                            │                             │
+│  ┌────────────────────────────────────────────────┐      │
+│  │         Modality-Based Tool System             │      │
+│  │    (TABULAR, NOTES, future: WAVEFORMS)         │      │
+│  └────────────────────────────────────────────────┘      │
+│                            │                             │
+│  ┌────────────────────────────────────────────────┐      │
+│  │           Backend Abstraction                  │      │
+│  │      (DuckDB local, BigQuery cloud)            │      │
+│  └────────────────────────────────────────────────┘      │
+└─────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────┐
+│                   Clinical Datasets                      │
+│     MIMIC-IV  │  MIMIC-IV-Note  │  eICU  │  Custom      │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Three Access Patterns
+
+**1. MCP Server (Natural Language)** — For exploratory questions: "What tables exist?", "Show me patients over 80".
+
+**2. Python API (Code Execution)** — For complex analysis: multi-step workflows, statistical computations.
+
+**3. Agent Skills (Knowledge)** — For clinical intelligence: validated SQL patterns, concept definitions.
+
+## Core Design Principles
+
+### Modality-Based Tools
+
+Datasets contain different data types (modalities): **TABULAR** (structured tables) and **NOTES** (clinical narratives). Tools declare which modalities they require. When you switch datasets, M4 automatically shows only compatible tools.
+
+### Backend Abstraction
+
+The same queries work on local files or cloud databases:
+
+| Backend | Use Case | Setup |
+|---------|----------|-------|
+| **DuckDB** | Local development, data governance | Parquet files on disk |
+| **BigQuery** | Full datasets, cloud collaboration | Google Cloud credentials |
+
+### Cross-Dataset Portability
+
+The same clinical question should work across datasets. M4's skills and concept mappings handle translations between MIMIC-IV and eICU, enabling external validation studies without per-dataset engineering.
+
+## Component Details
+
+### MCP Server
+
+FastMCP server exposing tools via Model Context Protocol. Thin adapter over core functionality.
+
+### Python API
+
+Direct programmatic access returning native Python types:
+
+| Function | Returns |
+|----------|---------|
+| `execute_query(sql)` | `pd.DataFrame` |
+| `get_schema()` | `dict` |
+| `get_table_info(table)` | `dict` with DataFrame values |
+| `search_notes(query)` | `dict` with DataFrame values |
+
+### Tool System
+
+Protocol-based design (structural typing). Tools implement `name`, `description`, `required_modalities`, `invoke()`, and `is_compatible()`.
+
+### Derived Table System
+
+~63 pre-computed clinical concept tables materialized from vendored [mimic-code](https://github.com/MIT-LCP/mimic-code) SQL. Covers severity scores, sepsis definitions, organ failure staging, medications, measurements, and more.
+
+## Data Flow Example
+
+**User asks:** "What's the mortality rate for patients with AKI?"
+
+**Without M4:** LLM guesses at table names, may not know KDIGO staging criteria, produces clinically incorrect SQL.
+
+**With M4:** `kdigo-aki-staging` skill activates with validated SQL. LLM uses proper MIMIC-IV table joins. Query uses peer-reviewed AKI definitions.
+
+```python
+from m4 import set_dataset, execute_query
+
+set_dataset("mimic-iv")
+
+aki_cohort = execute_query("""
+    SELECT
+        k.stay_id, k.aki_stage,
+        a.hospital_expire_flag
+    FROM mimiciv_derived.kdigo_stages k
+    JOIN admissions a ON k.hadm_id = a.hadm_id
+    WHERE k.aki_stage >= 1
+""")
+
+mortality_rate = aki_cohort['hospital_expire_flag'].mean()
+```
+
+## Future Directions
+
+- **Additional Modalities**: WAVEFORMS (ECG, blood pressure), IMAGING (chest X-rays, CT scans)
+- **Enhanced Clinical Semantics**: Semantic search over notes, entity extraction
+- **Provenance and Reproducibility**: Query logging, session export/replay, result fingerprints

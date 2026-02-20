@@ -1,0 +1,146 @@
+export const metadata = {
+  title: 'Troubleshooting',
+  description: 'Common issues and solutions when using M4.',
+}
+
+export const sections = [
+  { title: 'Installation issues', id: 'installation-issues' },
+  { title: 'Dataset issues', id: 'dataset-issues' },
+  { title: 'MCP connection issues', id: 'mcp-connection-issues' },
+  { title: 'Windows-specific issues', id: 'windows-specific-issues' },
+  { title: 'BigQuery issues', id: 'bigquery-issues' },
+  { title: 'Getting help', id: 'getting-help' },
+]
+
+# Troubleshooting
+
+Common issues and solutions when using M4. {{ className: 'lead' }}
+
+## Installation issues
+
+### `m4` command opens GNU M4 instead of the CLI
+
+On macOS and Linux, `m4` is a built-in system utility. If you get unexpected output, your virtual environment isn't activated.
+
+**Fix:** Activate your virtual environment first:
+
+```bash
+cd my-research
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+m4 status  # Should now work
+```
+
+Alternatively, use `uv run m4 [command]` to run within the project environment without activating it.
+
+### `uv: command not found`
+
+The `uv` installer didn't add itself to your PATH, or you haven't restarted your terminal.
+
+**Fix:** Close and reopen your terminal. If still not found, run the install command again:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### Permission errors during installation
+
+Do **not** use `sudo` with `uv` or `pip`. Make sure you're using a virtual environment.
+
+On Windows, if you see "execution of scripts is disabled":
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+## Dataset issues
+
+### "Parquet not found" error
+
+The dataset hasn't been initialized or the database is corrupted.
+
+```bash
+m4 init mimic-iv-demo --force
+```
+
+The `--force` flag recreates the database from scratch.
+
+### Download stalls or fails partway through
+
+The `wget` download was interrupted. The download commands use flags (`-N -c`) that make them safe to resume. Re-run the exact same `wget` command.
+
+### Not enough disk space
+
+| Dataset | Total disk space needed |
+|---------|----------------------|
+| mimic-iv-demo | ~50 MB |
+| mimic-iv | ~26 GB |
+| mimic-iv-note | ~13 GB |
+| eicu | ~21 GB |
+
+Free up space or use [BigQuery](/docs/bigquery) for cloud-based access without downloading files.
+
+## MCP connection issues
+
+### AI client won't connect to M4
+
+1. **Check your configuration** — make sure the JSON in your MCP settings is valid (no trailing commas, correct paths)
+2. **Restart the client** — changes to MCP configuration require a full restart
+3. **Check client logs** — Claude Desktop: Help → View Logs; Cursor: check the MCP panel
+4. **Regenerate config:**
+
+```bash
+m4 config claude --quick   # For Claude Desktop
+m4 config --quick          # For other clients
+```
+
+### Tools not appearing in the AI client
+
+1. Make sure a dataset is initialized: `m4 status`
+2. Make sure the AI client was restarted after config changes
+3. Check that the MCP server can start: `uv run m4-infra` (should print nothing and wait for input)
+
+## Windows-specific issues
+
+### Execution policy prevents activation
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+### Path too long errors
+
+Enable long paths in Windows via Group Policy Editor or registry:
+
+```powershell
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+  -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+```
+
+### Virtual environment activation syntax
+
+```powershell
+.venv\Scripts\activate       # PowerShell
+.venv\Scripts\activate.bat   # Command Prompt (cmd)
+```
+
+## BigQuery issues
+
+### "Access Denied" error
+
+- Ensure you've completed PhysioNet credentialing for the dataset
+- Verify your Google account is linked to your PhysioNet account
+- Re-authenticate: `gcloud auth application-default login`
+
+### "Project not found" error
+
+- Double-check the project ID (it's your billing project, not `physionet-data`)
+- Ensure BigQuery API is enabled in your GCP project
+
+See the [BigQuery Guide](/docs/bigquery) for full setup instructions.
+
+## Getting help
+
+If your issue isn't listed here:
+
+1. Check the [GitHub Issues](https://github.com/hannesill/m4/issues) for similar problems
+2. Open a new issue with your operating system, the command you ran, the full error message, and output of `m4 status`

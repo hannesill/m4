@@ -1,0 +1,179 @@
+export const metadata = {
+  title: 'MCP Tools Reference',
+  description: 'Complete reference for M4 MCP tools exposed to AI clients via the Model Context Protocol.',
+}
+
+export const sections = [
+  { title: 'Dataset Management', id: 'dataset-management' },
+  { title: 'Tabular Data Tools', id: 'tabular-data-tools' },
+  { title: 'Clinical Notes Tools', id: 'clinical-notes-tools' },
+  { title: 'Modality-Based Tool Availability', id: 'modality-based-tool-availability' },
+  { title: 'Derived Table Categories', id: 'derived-table-categories' },
+  { title: 'Error Handling', id: 'error-handling' },
+]
+
+# MCP Tools Reference
+
+M4 exposes these tools to AI clients via the Model Context Protocol. Tools are filtered based on the active dataset's modality. {{ className: 'lead' }}
+
+## Dataset Management
+
+### `list_datasets`
+
+List all available datasets and their status. No parameters.
+
+### `set_dataset`
+
+Switch the active dataset.
+
+<Properties>
+  <Property name="dataset_name" type="string">
+    Name of the dataset to activate.
+  </Property>
+</Properties>
+
+## Tabular Data Tools
+
+Available for datasets with the `TABULAR` modality (mimic-iv, mimic-iv-demo, eicu).
+
+### `get_database_schema`
+
+List all tables in the current dataset. Returns table names with row counts. No parameters.
+
+### `get_table_info`
+
+Get detailed information about a specific table.
+
+<Properties>
+  <Property name="table_name" type="string">
+    Name of the table.
+  </Property>
+  <Property name="sample_rows" type="integer">
+    Number of sample rows to return. Default: 5.
+  </Property>
+</Properties>
+
+### `execute_query`
+
+Execute a read-only SQL SELECT query.
+
+<Properties>
+  <Property name="query" type="string">
+    SQL SELECT statement.
+  </Property>
+  <Property name="limit" type="integer">
+    Maximum rows to return. Default: 100.
+  </Property>
+</Properties>
+
+Only SELECT statements are allowed. DROP, DELETE, INSERT, UPDATE are blocked.
+
+```sql
+SELECT subject_id, gender, anchor_age
+FROM mimiciv_hosp.patients
+WHERE anchor_age > 65
+LIMIT 10
+```
+
+## Clinical Notes Tools
+
+Available for datasets with the `NOTES` modality (mimic-iv-note).
+
+### `search_notes`
+
+Full-text search across clinical notes. Returns snippets around matches.
+
+<Properties>
+  <Property name="query" type="string">
+    Search term.
+  </Property>
+  <Property name="note_type" type="string">
+    Filter by type: `"discharge"`, `"radiology"`, or `"all"`. Default: `"all"`.
+  </Property>
+  <Property name="limit" type="integer">
+    Maximum results. Default: 5.
+  </Property>
+  <Property name="snippet_length" type="integer">
+    Characters around match. Default: 300.
+  </Property>
+</Properties>
+
+### `get_note`
+
+Retrieve the full text of a single clinical note by ID.
+
+<Properties>
+  <Property name="note_id" type="string">
+    The note identifier (e.g., `"10000032_DS-1"`).
+  </Property>
+  <Property name="max_length" type="integer">
+    Truncate output to this length.
+  </Property>
+</Properties>
+
+<Note>
+  Clinical notes can be very long (10,000+ characters). Consider using `search_notes()` first to find relevant notes, then retrieve specific ones.
+</Note>
+
+### `list_patient_notes`
+
+List available notes for a patient. Returns metadata only (IDs, types, lengths) — not full text.
+
+<Properties>
+  <Property name="subject_id" type="integer">
+    Patient identifier.
+  </Property>
+  <Property name="note_type" type="string">
+    Filter by type. Default: `"all"`.
+  </Property>
+  <Property name="limit" type="integer">
+    Maximum results. Default: 20.
+  </Property>
+</Properties>
+
+## Modality-Based Tool Availability
+
+| Tool | Required Modality | mimic-iv-demo | mimic-iv | mimic-iv-note | eicu |
+|------|-------------------|:---:|:---:|:---:|:---:|
+| `get_database_schema` | TABULAR | Yes | Yes | No | Yes |
+| `get_table_info` | TABULAR | Yes | Yes | No | Yes |
+| `execute_query` | TABULAR | Yes | Yes | No | Yes |
+| `search_notes` | NOTES | No | No | Yes | No |
+| `get_note` | NOTES | No | No | Yes | No |
+| `list_patient_notes` | NOTES | No | No | Yes | No |
+| `list_datasets` | (always) | Yes | Yes | Yes | Yes |
+| `set_dataset` | (always) | Yes | Yes | Yes | Yes |
+
+## Derived Table Categories
+
+After running `m4 init-derived mimic-iv`, these pre-computed tables become available in the `mimiciv_derived` schema:
+
+| Category | Tables | Description |
+|----------|--------|-------------|
+| **Scores** | `sofa`, `sapsii`, `apsiii`, `oasis`, `lods`, `sirs` | Severity and mortality prediction scores |
+| **Sepsis** | `sepsis3`, `suspicion_of_infection` | Sepsis-3 cohort identification |
+| **Organ Failure** | `kdigo_creatinine`, `kdigo_uo`, `kdigo_stages`, `meld` | KDIGO AKI staging and MELD |
+| **Medications** | `norepinephrine`, `epinephrine`, `dopamine`, `dobutamine`, `phenylephrine`, `vasopressin`, `milrinone`, `norepinephrine_equivalent_dose`, `vasoactive_agent`, `antibiotic`, `acei`, `nsaid`, `neuroblock` | Vasopressors, equivalents, and drug classes |
+| **Measurements** | `vitalsign`, `bg`, `blood_gas`, `chemistry`, `complete_blood_count`, `coagulation`, `cardiac_marker`, `enzyme`, `inflammation`, `icp`, `height`, `urine_output`, `urine_output_rate`, `ventilator_setting`, `oxygen_delivery`, `rhythm`, `gcs`, `creatinine_baseline`, `blood_differential` | Labs, vitals, and clinical measurements |
+| **Demographics** | `age`, `icustay_detail`, `icustay_times`, `icustay_hourly`, `weight_durations` | Patient demographics and ICU stay metadata |
+| **First Day** | `first_day_bg`, `first_day_bg_art`, `first_day_gcs`, `first_day_height`, `first_day_lab`, `first_day_rrt`, `first_day_sofa`, `first_day_urine_output`, `first_day_vitalsign`, `first_day_weight` | First 24 hours of ICU admission |
+| **Treatment** | `ventilation`, `rrt`, `crrt`, `invasive_line` | Mechanical ventilation, renal replacement therapy |
+| **Comorbidity** | `charlson` | Charlson comorbidity index |
+
+<Note>
+  BigQuery users already have these tables at `physionet-data.mimiciv_derived`. No need to run `init-derived`.
+</Note>
+
+## Error Handling
+
+When a tool is unavailable for the current dataset, it returns a helpful error:
+
+```
+Error: Tool `search_notes` is not available for dataset 'mimic-iv'.
+
+This tool requires the NOTES modality, but 'mimic-iv' only has: TABULAR
+
+Suggestions:
+   - Use `list_datasets()` to see all available datasets
+   - Use `set_dataset('mimic-iv-note')` to switch to a notes dataset
+```

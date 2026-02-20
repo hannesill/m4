@@ -1,0 +1,111 @@
+export const metadata = {
+  title: 'BigQuery Setup',
+  description: 'Use Google Cloud BigQuery to access full clinical datasets without downloading files locally.',
+}
+
+export const sections = [
+  { title: 'Prerequisites', id: 'prerequisites' },
+  { title: 'Setup', id: 'setup' },
+  { title: 'BigQuery Dataset IDs', id: 'bigquery-dataset-ids' },
+  { title: 'Derived Tables on BigQuery', id: 'derived-tables-on-bigquery' },
+  { title: 'Environment Variables', id: 'environment-variables' },
+  { title: 'Cost Considerations', id: 'cost-considerations' },
+  { title: 'Troubleshooting', id: 'troubleshooting' },
+]
+
+# BigQuery Setup
+
+Use Google Cloud BigQuery to access full clinical datasets without downloading files locally. {{ className: 'lead' }}
+
+## Prerequisites
+
+1. **Google Cloud account** with BigQuery access
+2. **PhysioNet credentialed access** for MIMIC-IV or eICU ([apply here](https://physionet.org/)). Scroll to the bottom of the page and request access to the BigQuery dataset.
+3. **gcloud CLI** installed ([installation guide](https://cloud.google.com/sdk/docs/install))
+
+## Setup
+
+### 1. Authenticate with Google Cloud
+
+```bash
+gcloud auth application-default login
+```
+
+This opens a browser to complete authentication.
+
+### 2. Switch to BigQuery backend
+
+```bash
+m4 backend bigquery
+```
+
+### 3. Configure your MCP client
+
+**Claude Desktop:**
+```bash
+m4 config claude --backend bigquery --project-id YOUR_PROJECT_ID
+```
+
+**Other clients:**
+```bash
+m4 config --backend bigquery --project-id YOUR_PROJECT_ID
+```
+
+Replace `YOUR_PROJECT_ID` with your own billing project for BigQuery usage, not the PhysioNet dataset project.
+
+### 4. Set the dataset and restart
+
+```bash
+m4 use mimic-iv    # or eicu
+```
+
+Restart your MCP client. The AI will now query BigQuery directly.
+
+## BigQuery Dataset IDs
+
+| Dataset | BigQuery Project | Dataset IDs |
+|---------|-----------------|-------------|
+| mimic-iv | `physionet-data` | `mimiciv_3_1_hosp`, `mimiciv_3_1_icu` |
+| mimic-iv-note | `physionet-data` | `mimiciv_note` |
+| mimic-iv-ed | `physionet-data` | `mimiciv_ed` |
+| eicu | `physionet-data` | `eicu_crd` |
+
+## Derived Tables on BigQuery
+
+BigQuery users already have access to ~63 pre-computed derived concept tables via `physionet-data.mimiciv_derived`. You do **not** need to run `m4 init-derived` when using BigQuery.
+
+```sql
+SELECT * FROM mimiciv_derived.sofa LIMIT 10
+```
+
+## Environment Variables
+
+You can override the backend via environment variables (these take priority over `m4 backend`):
+
+```bash
+export M4_BACKEND=bigquery
+export M4_PROJECT_ID=your-project-id
+```
+
+## Cost Considerations
+
+BigQuery charges based on data scanned. Tips to minimize costs:
+
+- Use `LIMIT` clauses in queries
+- Query specific columns instead of `SELECT *`
+- Use the `limit` parameter in `execute_query` (default: 100 rows)
+
+## Troubleshooting
+
+**"Access Denied" error:**
+- Ensure you've completed PhysioNet credentialing for the dataset
+- Verify your Google account is linked to PhysioNet
+- Re-run `gcloud auth application-default login`
+
+**"Project not found" error:**
+- Check the project ID is correct
+- Ensure BigQuery API is enabled in your project
+
+**Slow queries:**
+- BigQuery has network latency; consider local DuckDB for development
+- Use smaller `LIMIT` values while exploring

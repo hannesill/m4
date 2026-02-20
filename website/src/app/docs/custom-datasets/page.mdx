@@ -1,0 +1,136 @@
+export const metadata = {
+  title: 'Custom Datasets',
+  description: 'Add your own datasets to M4 via JSON definitions or programmatic registration.',
+}
+
+export const sections = [
+  { title: 'JSON Definition', id: 'json-definition' },
+  { title: 'JSON Fields Reference', id: 'json-fields-reference' },
+  { title: 'Initialization Process', id: 'initialization-process' },
+  { title: 'Directory Structure', id: 'directory-structure' },
+  { title: 'Using Existing CSV Files', id: 'using-existing-csv-files' },
+  { title: 'Programmatic Registration', id: 'programmatic-registration' },
+]
+
+# Adding Custom Datasets
+
+M4 supports any PhysioNet dataset or your own data. This guide shows how to add custom datasets. {{ className: 'lead' }}
+
+## JSON Definition
+
+Create a JSON file in `m4_data/datasets/`:
+
+```json
+{
+  "name": "mimic-iv-ed",
+  "description": "MIMIC-IV Emergency Department Module",
+  "file_listing_url": "https://physionet.org/files/mimic-iv-ed/2.2/",
+  "subdirectories_to_scan": ["ed"],
+  "primary_verification_table": "mimiciv_ed.edstays",
+  "requires_authentication": true,
+  "bigquery_project_id": "physionet-data",
+  "bigquery_dataset_ids": ["mimiciv_ed"],
+  "modalities": ["TABULAR"],
+  "schema_mapping": {"ed": "mimiciv_ed"},
+  "bigquery_schema_mapping": {"mimiciv_ed": "mimiciv_ed"}
+}
+```
+
+Then initialize:
+
+```bash
+m4 init mimic-iv-ed --src /path/to/your/csv/files
+```
+
+## JSON Fields Reference
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Unique identifier (used in `m4 use <name>`) |
+| `description` | Yes | Human-readable description |
+| `file_listing_url` | No | PhysioNet URL for auto-download (demo datasets only) |
+| `subdirectories_to_scan` | No | Subdirs containing CSV files (e.g., `["hosp", "icu"]`) |
+| `primary_verification_table` | Yes | Table to verify initialization succeeded |
+| `requires_authentication` | No | `true` if PhysioNet credentialing required |
+| `bigquery_project_id` | No | GCP project for BigQuery access |
+| `bigquery_dataset_ids` | No | BigQuery dataset IDs |
+| `modalities` | No | Data types: `TABULAR` and/or `NOTES`. Defaults to `["TABULAR"]` |
+| `schema_mapping` | No | Maps filesystem subdirectories to canonical schema names |
+| `bigquery_schema_mapping` | No | Maps canonical schema names to BigQuery dataset IDs |
+
+### Schema Mapping
+
+M4 uses canonical `schema.table` names (e.g., `mimiciv_hosp.patients`) that work identically on both DuckDB and BigQuery.
+
+**`schema_mapping`** maps filesystem subdirectories to canonical schema names:
+
+```json
+{
+  "schema_mapping": {
+    "hosp": "mimiciv_hosp",
+    "icu": "mimiciv_icu"
+  }
+}
+```
+
+With this mapping, a file at `hosp/patients.csv` becomes queryable as `mimiciv_hosp.patients`.
+
+For datasets where all files are in the root directory:
+
+```json
+{
+  "schema_mapping": {
+    "": "eicu_crd"
+  }
+}
+```
+
+## Initialization Process
+
+When you run `m4 init <dataset>`:
+
+1. **Download** (if `file_listing_url` exists and files missing)
+2. **Convert** CSV.gz files to Parquet format
+3. **Create** DuckDB views over the Parquet files
+4. **Verify** by querying `primary_verification_table`
+
+## Directory Structure
+
+```
+m4_data/
+├── datasets/           # Custom JSON definitions
+│   └── my-dataset.json
+├── raw_files/          # Downloaded CSV.gz files
+│   └── my-dataset/
+├── parquet/            # Converted Parquet files
+│   └── my-dataset/
+└── databases/          # DuckDB databases
+    └── my_dataset.duckdb
+```
+
+## Using Existing CSV Files
+
+If you already have CSV files (`.csv` or `.csv.gz`), point to them with `--src`:
+
+```bash
+m4 init my-dataset --src /path/to/csvs
+```
+
+M4 will convert them to Parquet, create DuckDB views, and set the dataset as active.
+
+## Programmatic Registration
+
+For more control, register datasets in Python:
+
+```python
+from m4.core.datasets import DatasetDefinition, DatasetRegistry, Modality
+
+my_dataset = DatasetDefinition(
+    name="my-custom-dataset",
+    description="My custom clinical dataset",
+    primary_verification_table="patients",
+    modalities=frozenset({Modality.TABULAR}),
+)
+
+DatasetRegistry.register(my_dataset)
+```

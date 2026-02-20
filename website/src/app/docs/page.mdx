@@ -1,0 +1,63 @@
+import { HeroPattern } from '@/components/HeroPattern'
+
+export const metadata = {
+  title: 'Introduction',
+  description:
+    'M4 is infrastructure for AI-assisted clinical research. Give your AI agents clinical intelligence & access to MIMIC-IV, eICU, and more.',
+}
+
+export const sections = [
+  { title: 'What is M4?', id: 'what-is-m4' },
+  { title: 'Who is M4 for?', id: 'who-is-m4-for' },
+  { title: 'What makes M4 different?', id: 'what-makes-m4-different' },
+  { title: 'Supported datasets', id: 'supported-datasets' },
+]
+
+<HeroPattern />
+
+# M4 Documentation
+
+M4 is infrastructure for AI-assisted clinical research. It gives AI agents specialized tools and clinical knowledge to query and analyze electronic health record (EHR) datasets like MIMIC-IV and eICU. {{ className: 'lead' }}
+
+<div className="not-prose mt-6 mb-16 flex gap-3">
+  <Button href="/docs/getting-started" arrow="right">
+    <>Get started</>
+  </Button>
+  <Button href="/docs/first-analysis" variant="outline">
+    <>First analysis tutorial</>
+  </Button>
+</div>
+
+## What is M4?
+
+Initialize datasets as fast local databases, connect your AI client, and start asking clinical questions in natural language. M4 provides three layers of access:
+
+- **MCP Server** — Natural language queries through any MCP-compatible AI client
+- **Python API** — Programmatic access returning pandas DataFrames for complex analysis
+- **Agent Skills** — Validated clinical knowledge (SOFA, Sepsis-3, KDIGO AKI) from MIT-LCP repositories
+
+## Who is M4 for?
+
+**Clinicians & Researchers** — Ask clinical questions in plain English. No SQL or programming required. [Get started](/docs/getting-started).
+
+**Data Scientists & Developers** — Use the Python API for multi-step analyses with pandas DataFrames. [Code Execution](/docs/code-execution).
+
+**Research Teams** — Scale to BigQuery for cloud access to full datasets with your team. [BigQuery setup](/docs/bigquery).
+
+## What makes M4 different?
+
+- **Understands clinical semantics.** M4's agent skills encode validated clinical concepts from MIT-LCP repositories — "find sepsis patients" produces clinically correct queries, not just syntactically valid SQL.
+- **Works across modalities.** Query labs in MIMIC-IV, search discharge summaries in MIMIC-IV-Note, all through the same interface. M4 dynamically selects tools based on what each dataset contains.
+- **Goes beyond chat.** The Python API returns DataFrames that integrate with pandas, scipy, and matplotlib — turning your AI assistant into a research partner that executes complete analysis workflows.
+- **Enables cross-dataset research.** Switch between datasets seamlessly. The AI handles MIMIC-IV and eICU differences so you can focus on your research question.
+
+## Supported datasets
+
+| Dataset | Modality | Patients | Access | Derived Tables |
+|---------|----------|----------|--------|----------------|
+| **mimic-iv-demo** | Tabular | 100 | Free | No |
+| **mimic-iv** | Tabular | 365k | [PhysioNet credentialed](https://physionet.org/content/mimiciv/) | Yes (63 tables) |
+| **mimic-iv-note** | Notes | 331k notes | [PhysioNet credentialed](https://physionet.org/content/mimic-iv-note/) | No |
+| **eicu** | Tabular | 200k+ | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | No |
+
+You can also add [custom datasets](/docs/custom-datasets).

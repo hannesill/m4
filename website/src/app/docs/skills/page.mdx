@@ -1,0 +1,173 @@
+export const metadata = {
+  title: 'Agent Skills',
+  description: 'Skills teach AI coding assistants clinical research patterns and validated clinical concepts.',
+}
+
+export const sections = [
+  { title: 'What Skills Do', id: 'what-skills-do' },
+  { title: 'Installing Skills', id: 'installing-skills' },
+  { title: 'Available Skills', id: 'available-skills' },
+  { title: 'Skills vs. Derived Tables', id: 'skills-vs-derived-tables' },
+  { title: 'Skill Structure', id: 'skill-structure' },
+  { title: 'Creating Custom Skills', id: 'creating-custom-skills' },
+  { title: 'Tips for Effective Skills', id: 'tips-for-effective-skills' },
+  { title: 'Clinical Skill Sources', id: 'clinical-skill-sources' },
+]
+
+# Agent Skills
+
+Skills are contextual prompts that teach AI coding assistants how to accomplish specific clinical research tasks. They activate automatically when relevant — ask about "SOFA scores" or "sepsis cohorts" and the AI uses validated SQL from MIT-LCP repositories. {{ className: 'lead' }}
+
+## What Skills Do
+
+Without skills, an AI assistant might guess at APIs or make assumptions about clinical concepts. With M4 skills installed:
+
+- **m4-api**: Claude knows to call `set_dataset()` before queries, returns proper DataFrames, handles errors correctly
+- **Clinical skills**: Claude understands SOFA scoring, Sepsis-3 criteria, KDIGO AKI staging, and other validated clinical concepts
+
+## Installing Skills
+
+During initial setup:
+
+```bash
+m4 config claude --skills
+```
+
+Or install to an existing project:
+
+```bash
+# Interactive tool and skill selection
+m4 skills
+
+# Install all skills for specific tools
+m4 skills --tools claude,cursor
+
+# Install only validated clinical skills
+m4 skills --tools claude --tier validated --category clinical
+
+# Install specific skills by name
+m4 skills --tools claude --skills sofa-score,sepsis-3-cohort,m4-api
+
+# List installed skills (with tier and category)
+m4 skills --list
+```
+
+Filters combine with AND logic: `--tier validated --category clinical` installs only skills that are both validated and clinical. Filtered installs are additive — existing skills that don't match the filter are left untouched.
+
+Skills are installed to `.claude/skills/` (or equivalent for other tools). AI assistants automatically discover skills in these locations.
+
+## Available Skills
+
+### M4 Framework
+
+| Skill | Triggers On | Description |
+|-------|-------------|-------------|
+| **m4-api** | "M4 API", "query MIMIC with Python" | Complete Python API usage including `set_dataset()`, DataFrame handling, error handling |
+| **m4-research** | "research workflow", "clinical study" | Structured clinical research workflow and protocol drafting |
+| **create-m4-skill** | "create skill", "new skill" | Guide for creating new M4 skills |
+
+### Severity Scores
+
+| Skill | Triggers On | Description |
+|-------|-------------|-------------|
+| **sofa-score** | "SOFA", "organ failure" | Sequential Organ Failure Assessment — 6 organ systems, 0-24 points |
+| **apsiii-score** | "APACHE III", "mortality prediction" | Acute Physiology Score III with mortality prediction |
+| **sapsii-score** | "SAPS-II", "ICU severity" | Simplified Acute Physiology Score II |
+| **oasis-score** | "OASIS", "severity score" | Oxford Acute Severity of Illness Score (no lab values required) |
+| **lods-score** | "LODS", "logistic organ dysfunction" | Logistic Organ Dysfunction Score — 6 systems with weighted scoring |
+| **sirs-criteria** | "SIRS", "inflammatory response" | Systemic Inflammatory Response Syndrome criteria |
+
+### Sepsis and Infection
+
+| Skill | Triggers On | Description |
+|-------|-------------|-------------|
+| **sepsis-3-cohort** | "Sepsis-3", "sepsis cohort" | Sepsis-3 identification: SOFA >= 2 with suspected infection |
+| **suspicion-of-infection** | "suspected infection", "antibiotic culture" | Suspected infection events using antibiotic + culture timing |
+
+### Organ Failure, Medications, Labs, Cohorts, Data Quality
+
+| Skill | Triggers On | Description |
+|-------|-------------|-------------|
+| **kdigo-aki-staging** | "KDIGO", "AKI staging" | KDIGO AKI staging using creatinine and urine output criteria |
+| **vasopressor-equivalents** | "vasopressor", "NEE" | Norepinephrine-equivalent dose calculation |
+| **baseline-creatinine** | "baseline creatinine" | Baseline creatinine estimation for AKI assessment |
+| **gcs-calculation** | "GCS", "Glasgow Coma Scale" | Glasgow Coma Scale extraction with intubation handling |
+| **first-icu-stay** | "first ICU stay", "exclude readmissions" | First ICU stay selection for cohort construction |
+| **mimic-table-relationships** | "table relationships", "join tables" | MIMIC-IV table relationships and join patterns |
+| **mimic-eicu-mapping** | "MIMIC to eICU", "cross-database" | Mapping equivalent concepts between MIMIC-IV and eICU |
+| **clinical-research-pitfalls** | "immortal time bias", "selection bias" | Common methodological mistakes and how to avoid them |
+
+**Supported tools:** Claude Code, Cursor, Cline, Codex CLI, Gemini CLI, GitHub Copilot
+
+## Skills vs. Derived Tables
+
+Skills and derived tables are complementary. Both use the same clinical knowledge source (mimic-code), but serve different purposes:
+
+**Derived tables** (`mimiciv_derived.*`) provide pre-computed results. After running `m4 init-derived mimic-iv`, tables like `mimiciv_derived.sofa` are ready to query directly. For standard analyses, derived tables are preferred — they are faster, validated, and consistent.
+
+**Skills** provide adaptable SQL patterns that the AI can modify for non-standard use cases. When you need a custom SOFA variant, different time windows, or novel concept combinations, skills give the AI the clinical knowledge to generate correct queries from scratch.
+
+**When to use which:**
+- Use derived tables for standard clinical concepts — they are pre-computed and immediately available
+- Use skills when you need customized logic or when working with datasets without derived tables (e.g., eICU)
+- Skills and derived tables can be used together — e.g., joining a custom cohort with `mimiciv_derived.sofa`
+
+## Skill Structure
+
+Each skill is a directory containing a `SKILL.md` file:
+
+```
+.claude/skills/
+├── m4-api/
+│   └── SKILL.md
+├── sofa-score/
+│   └── SKILL.md
+│   └── scripts/
+│       └── sofa.sql
+├── sepsis-3-cohort/
+│   └── SKILL.md
+│   └── scripts/
+│       └── sepsis3.sql
+```
+
+The frontmatter has four required fields: `name`, `description`, `tier` (one of `validated`, `expert`, `community`), and `category` (`clinical` or `system`).
+
+## Creating Custom Skills
+
+You can extend M4 with project-specific skills:
+
+```markdown
+---
+name: cardiac-surgery-cohort
+description: Identify cardiac surgery patients. Triggers on "CABG", "valve replacement"
+tier: community
+category: clinical
+---
+
+# Cardiac Surgery Cohort Selection
+
+When identifying cardiac surgery patients in MIMIC-IV:
+
+1. Use procedure codes from `procedures_icd` table
+2. Filter by ICD-10-PCS codes starting with '02' (heart and great vessels)
+3. Consider combining with `d_icd_procedures` for code descriptions
+```
+
+Place in `.claude/skills/cardiac-surgery-cohort/SKILL.md` and Claude will use it when discussing cardiac surgery research.
+
+## Tips for Effective Skills
+
+- **Be specific about triggers.** The description should clearly indicate when the skill applies.
+- **Include working code examples.** Claude learns patterns from examples. Show exact imports, function calls, and expected outputs.
+- **Document edge cases.** What errors might occur? What datasets are required?
+- **Keep skills focused.** One skill per domain or workflow.
+- **Reference validated sources.** Clinical skills should cite their sources.
+
+## Clinical Skill Sources
+
+All clinical research skills are extracted from MIT-LCP validated repositories:
+
+- **mimic-code**: [github.com/MIT-LCP/mimic-code](https://github.com/MIT-LCP/mimic-code)
+- **eicu-code**: [github.com/MIT-LCP/eicu-code](https://github.com/MIT-LCP/eicu-code)
+
+These repositories contain peer-reviewed implementations used in hundreds of published studies.

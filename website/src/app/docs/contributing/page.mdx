@@ -1,0 +1,184 @@
+export const metadata = {
+  title: 'Contributing',
+  description: 'Development guide for contributors who want to develop M4 locally.',
+}
+
+export const sections = [
+  { title: 'Setup', id: 'setup' },
+  { title: 'CLI Commands', id: 'cli-commands' },
+  { title: 'Architecture Overview', id: 'architecture-overview' },
+  { title: 'Adding a New Tool', id: 'adding-a-new-tool' },
+  { title: 'Code Style', id: 'code-style' },
+  { title: 'Docker', id: 'docker' },
+]
+
+# Development Guide
+
+This guide is for contributors who want to develop M4 locally. {{ className: 'lead' }}
+
+## Setup
+
+### Clone and install
+
+```bash
+git clone https://github.com/hannesill/m4.git
+cd m4
+uv venv
+uv sync
+```
+
+### Initialize test data
+
+```bash
+uv run m4 init mimic-iv-demo
+```
+
+## CLI Commands
+
+### Dataset Management
+
+```bash
+uv run m4 init mimic-iv-demo          # Initialize dataset
+uv run m4 init-derived mimic-iv       # Materialize derived tables
+uv run m4 init-derived mimic-iv --list # List available derived tables
+uv run m4 use mimic-iv                # Switch active dataset
+uv run m4 status                      # Show active dataset status
+uv run m4 status --all                # List all datasets
+uv run m4 status --derived            # Show derived table status
+```
+
+### MCP Client Configuration
+
+```bash
+uv run m4 config claude               # Auto-configure Claude Desktop
+uv run m4 config --quick              # Generate config for other clients
+```
+
+### Development Commands
+
+```bash
+uv run pytest -v                       # Run all tests
+uv run pytest tests/test_mcp_server.py -v  # Specific test file
+uv run pytest -k "test_name" -v        # Tests matching pattern
+uv run pre-commit run --all-files      # Lint and format
+uv run ruff check src/                 # Lint only
+uv run ruff format src/                # Format only
+```
+
+### MCP Configuration for Development
+
+Point your MCP client to your local development environment:
+
+```json
+{
+  "mcpServers": {
+    "m4": {
+      "command": "/absolute/path/to/m4/.venv/bin/python",
+      "args": ["-m", "m4.mcp_server"],
+      "cwd": "/absolute/path/to/m4"
+    }
+  }
+}
+```
+
+## Architecture Overview
+
+```
+MCP Layer (mcp_server.py)
+    ├── Exposes tools via Model Context Protocol
+    └── Thin adapter over core functionality
+
+Core Layer (src/m4/core/)
+    ├── datasets.py    - Dataset definitions and modalities
+    ├── tools/         - Tool implementations
+    ├── backends/      - Database backends (DuckDB, BigQuery)
+    └── derived/       - Derived concept tables
+
+Infrastructure Layer
+    ├── data_io.py     - Download, convert, initialize databases
+    ├── cli.py         - Command-line interface
+    └── config.py      - Configuration management
+```
+
+## Adding a New Tool
+
+M4 uses a protocol-based design (structural typing). Tools don't inherit from a base class.
+
+**1. Create the tool class** in `src/m4/core/tools/`:
+
+```python
+from dataclasses import dataclass
+from m4.core.datasets import DatasetDefinition, Modality
+from m4.core.tools.base import ToolInput, ToolOutput
+
+@dataclass
+class MyNewToolInput(ToolInput):
+    param1: str
+    limit: int = 10
+
+class MyNewTool:
+    name = "my_new_tool"
+    description = "Description shown to LLMs"
+    input_model = MyNewToolInput
+    output_model = ToolOutput
+    required_modalities: frozenset[Modality] = frozenset({Modality.TABULAR})
+    supported_datasets: frozenset[str] | None = None
+
+    def invoke(self, dataset: DatasetDefinition, params: MyNewToolInput) -> ToolOutput:
+        return ToolOutput(result="Success")
+
+    def is_compatible(self, dataset: DatasetDefinition) -> bool:
+        if self.supported_datasets and dataset.name not in self.supported_datasets:
+            return False
+        return self.required_modalities.issubset(dataset.modalities)
+```
+
+**2. Register** in `src/m4/core/tools/__init__.py`
+
+**3. Add the MCP handler** in `mcp_server.py`
+
+## Code Style
+
+- **Formatter:** Ruff (line-length 88)
+- **Type hints:** Required on all functions
+- **Docstrings:** Google style on public APIs
+- **Tests:** pytest with `asyncio_mode = "auto"`
+
+Run the full test suite before submitting PRs:
+
+```bash
+uv run pre-commit run --all-files
+```
+
+## Docker
+
+**Local (DuckDB):**
+
+```bash
+docker build -t m4:lite --target lite .
+docker run -d --name m4-server m4:lite tail -f /dev/null
+```
+
+**BigQuery:**
+
+```bash
+docker build -t m4:bigquery --target bigquery .
+docker run -d --name m4-server \
+  -e M4_BACKEND=bigquery \
+  -e M4_PROJECT_ID=your-project-id \
+  -v $HOME/.config/gcloud:/root/.config/gcloud:ro \
+  m4:bigquery tail -f /dev/null
+```
+
+MCP config for Docker:
+
+```json
+{
+  "mcpServers": {
+    "m4": {
+      "command": "docker",
+      "args": ["exec", "-i", "m4-server", "python", "-m", "m4.mcp_server"]
+    }
+  }
+}
+```

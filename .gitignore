@@ -92,3 +92,14 @@ notes/
 
 # Node.js
 node_modules/
+
+# Next.js
+.next/
+out/
+
+# Tailwind Plus templates (source, not committed)
+tailwind-plus-protocol/
+
+# Local working directories
+demo/
+.vitrine/
