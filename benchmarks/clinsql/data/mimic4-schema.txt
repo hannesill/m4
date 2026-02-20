@@ -1,0 +1,140 @@
+# MIMIC-IV — HOSP module
+
+## admissions
+Columns:
+subject_id, hadm_id, admittime, dischtime, deathtime, admission_type, admit_provider_id, admission_location, discharge_location, insurance, language, marital_status, race, edregtime, edouttime, hospital_expire_flag
+
+## patients
+Columns:
+subject_id, gender, anchor_age, anchor_year, anchor_year_group, dod
+
+## transfers
+Columns:
+subject_id, hadm_id, transfer_id, eventtype, careunit, intime, outtime
+
+## labevents
+Columns:
+labevent_id, subject_id, hadm_id, specimen_id, itemid, charttime, storetime, value, valuenum, valueuom, ref_range_lower, ref_range_upper, flag, priority, comments
+
+## d_labitems
+Columns:
+itemid, label, fluid, category, loinc_code
+
+## microbiologyevents
+Columns:
+microevent_id, subject_id, hadm_id, micro_specimen_id, order_provider_id, chartdate, charttime, spec_itemid, spec_type_desc, test_seq, storedate, storetime, test_itemid, test_name, org_itemid, org_name, isolate_num, quantity, ab_itemid, ab_name, dilution_text, dilution_comparison, dilution_value, interpretation, comments
+
+## diagnoses_icd
+Columns:
+subject_id, hadm_id, seq_num, icd_code, icd_version
+
+## d_icd_diagnoses
+Columns:
+icd_code, icd_version, long_title
+
+## procedures_icd
+Columns:
+subject_id, hadm_id, seq_num, chartdate, icd_code, icd_version
+
+## d_icd_procedures
+Columns:
+icd_code, icd_version, long_title
+
+## emar
+Columns:
+subject_id, hadm_id, emar_id, emar_seq, poe_id, pharmacy_id, enter_provider_id, charttime, medication, event_txt, scheduletime, storetime
+
+## emar_detail
+Columns:
+subject_id, emar_id, emar_seq, parent_field_ordinal, administration_type, pharmacy_id, barcode_type, reason_for_no_barcode, complete_dose_not_given, dose_due, dose_due_unit, dose_given, dose_given_unit, will_remainder_of_dose_be_given, product_amount_given, product_unit, product_code, product_description, prior_infusion_rate, infusion_rate, infusion_rate_adjustment, infusion_rate_adjustment_amount, infusion_rate_unit, route, infusion_complete, completion_interval, new_iv_bag_hung, continued_infusion_in_other_location, restart_interval, side, site, non_formulary_visual_verification
+
+## prescriptions
+Columns:
+subject_id, hadm_id, pharmacy_id, poe_id, poe_seq, order_provider_id, starttime, stoptime, drug_type, drug, formulary_drug_cd, gsn, ndc, prod_strength, form_rx, dose_val_rx, dose_unit_rx, form_val_disp, form_unit_disp, doses_per_24_hrs, route
+
+## pharmacy
+Columns:
+subject_id, hadm_id, pharmacy_id, poe_id, starttime, stoptime, medication, proc_type, status, entertime, verifiedtime, route, frequency, disp_sched, infusion_type, sliding_scale, lockout_interval, basal_rate, one_hr_max, doses_per_24_hrs, duration, duration_interval, expiration_value, expiration_unit, expirationdate, dispensation, fill_quantity
+
+## poe
+Columns:
+poe_id, poe_seq, subject_id, hadm_id, ordertime, order_type, order_subtype, transaction_type, discontinue_of_poe_id, discontinued_by_poe_id, order_provider_id, order_status
+
+## poe_detail
+Columns:
+poe_id, poe_seq, subject_id, field_name, field_value
+
+## hcpcsevents
+Columns:
+subject_id, hadm_id, chartdate, hcpcs_cd, seq_num, short_description
+
+## d_hcpcs
+Columns:
+code, category, long_description, short_description
+
+## drgcodes
+Columns:
+subject_id, hadm_id, drg_type, drg_code, description, drg_severity, drg_mortality
+
+## services
+Columns:
+subject_id, hadm_id, transfertime, prev_service, curr_service
+
+## provider
+Columns:
+provider_id
+
+## omr
+Columns:
+subject_id, chartdate, seq_num, result_name, result_value
+
+
+# MIMIC-IV — ICU module
+
+## icustays
+Columns:
+subject_id, hadm_id, stay_id, first_careunit, last_careunit, intime, outtime, los
+
+## chartevents
+Columns:
+subject_id, hadm_id, stay_id, caregiver_id, charttime, storetime, itemid, value, valuenum, valueuom, warning
+
+## datetimesevents
+Columns:
+subject_id, hadm_id, stay_id, caregiver_id, charttime, storetime, itemid, value, valueuom, warning
+
+## inputevents
+Columns:
+subject_id, hadm_id, stay_id, caregiver_id, starttime, endtime, storetime, itemid, amount, amountuom, rate, rateuom, orderid, linkorderid, ordercategoryname, secondaryordercategoryname, ordercomponenttypedescription, ordercategorydescription, patientweight, totalamount, totalamountuom, isopenbag, statusdescription, originalamount, originalrate
+
+## ingredientevents
+Columns:
+subject_id, hadm_id, stay_id, caregiver_id, starttime, endtime, storetime, itemid, amount, amountuom, rate, rateuom, orderid, linkorderid, statusdescription, originalamount, originalrate
+
+## outputevents
+Columns:
+subject_id, hadm_id, stay_id, caregiver_id, charttime, storetime, itemid, value, valueuom
+
+## procedureevents
+Columns:
+subject_id, hadm_id, stay_id, caregiver_id, starttime, endtime, storetime, itemid, value, valueuom, location, locationcategory, orderid, linkorderid, ordercategoryname, ordercategorydescription, patientweight, isopenbag, continueinnextdept, statusdescription, originalamount, originalrate
+
+## d_items
+Columns:
+itemid, label, abbreviation, linksto, category, unitname, param_type, lownormalvalue, highnormalvalue
+
+## caregiver
+Columns:
+caregiver_id
+
+
+# Concise notes — only commonly confusing columns
+
+- **hadm_id vs stay_id**: `hadm_id` = hospital admission id; `stay_id` = ICU stay id (sub-episode within an admission).
+- **charttime vs storetime**: `charttime` = when the event/measurement occurred; `storetime` = when it was recorded/entered/verified. Prefer `charttime` for temporal analyses.
+- **itemid**: numeric code for labs/measurements/drug components — lookup in `d_labitems` or `d_items`.
+- **value / valuenum / valueuom**: `value` may be text; `valuenum` is the numeric form (use for calculations); `valueuom` is the unit.
+- **seq_num**: ordering for billing entries (diagnoses/procedures); lower often indicates higher priority.
+- **poe_id / poe_seq**: top-level provider order (`poe_id`) plus its sequence; see `poe_detail` for attribute/value rows.
+- **orderid / linkorderid (ICU inputs)**: group related infusion/order records and link rate-change segments over time.
+- **interpretation (microbiology)**: susceptibility call (e.g., S/I/R).

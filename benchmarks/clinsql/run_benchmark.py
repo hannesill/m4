@@ -15,37 +15,40 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import shutil
 import subprocess
-import tempfile
 import time
+import uuid
 from pathlib import Path
 
 import pandas as pd
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-INPUT_CSV = SCRIPT_DIR / "clinsql_with_m4.csv"
+DATA_DIR = SCRIPT_DIR / "data"
+INPUT_CSV = DATA_DIR / "clinsql_with_m4.csv"
+SCHEMA_FILE = DATA_DIR / "mimic4-schema.txt"
 
 PROMPT_TEMPLATE = """\
 You are a clinical data analyst expert specializing in the MIMIC-IV database.
-Your goal is to correctly answer clinical questions about the MIMIC-IV database.
-The SQL dialect is DuckDB.
+Your goal is to accurately answer clinical questions about the MIMIC-IV database by writing SQL queries.
+The SQL dialect is BigQuery.
 
 M4 SQL API:
 ```python
-from m4 import set_dataset, get_schema, get_table_info, execute_query
+from m4 import set_dataset, execute_query
 
-set_dataset("mimic-iv")                         # Must call first
-schema = get_schema()                           # Returns {{'tables': list[str]}}
-info = get_table_info("mimiciv_hosp.patients")  # Returns {{'schema': DataFrame, 'sample': DataFrame}}
+set_dataset("mimic-iv") # Must call first
 df = execute_query("SELECT COUNT(*) FROM mimiciv_hosp.patients")  # Returns pd.DataFrame
 ```
 All table names use `schema.table` format (e.g., `mimiciv_hosp.patients`, `mimiciv_icu.icustays`).
 
+Try to write SQL queries that directly produce the answer to the question.
+
+Database schema:
+{schema}
+
 Clinical question:
 "{question}"
 
-Compute your answer in as few queries as possible; avoid exploratory dumps of reference tables.
 Your final message must contain ONLY the line: FINAL ANSWER: <value>
 """
 
@@ -155,9 +158,14 @@ def run_query(
     max_budget_usd: float | None,
 ) -> dict:
     """Call claude -p with a clinical question and return the parsed response."""
-    work_dir = tempfile.mkdtemp(prefix="clinsql_work_")
+    work_dir = SCRIPT_DIR / "work"
+    work_dir.mkdir(exist_ok=True)
+    session_id = str(uuid.uuid4())
 
-    prompt = PROMPT_TEMPLATE.format(question=question)
+    schema_text = (
+        SCHEMA_FILE.read_text() if SCHEMA_FILE.exists() else "(schema file not found)"
+    )
+    prompt = PROMPT_TEMPLATE.format(question=question, schema=schema_text)
 
     cmd = [
         "claude",
@@ -168,7 +176,8 @@ def run_query(
         model,
         "--max-turns",
         str(max_turns),
-        "--no-session-persistence",
+        "--session-id",
+        session_id,
         "--verbose",
         "--tools",
         "Bash",
@@ -220,6 +229,7 @@ def run_query(
         "raw_stderr": proc.stderr,
         "exit_code": proc.returncode,
         "elapsed_seconds": round(elapsed, 2),
+        "session_id": session_id,
     }
 
     if result_event:
@@ -236,7 +246,6 @@ def run_query(
                     result["model_response"] = "\n".join(texts)
                     break
 
-    shutil.rmtree(work_dir, ignore_errors=True)
     return result
 
 
@@ -347,6 +356,7 @@ def main():
             "turns": result.get("turns"),
             "elapsed_seconds": result.get("elapsed_seconds"),
             "exit_code": result.get("exit_code"),
+            "session_id": result.get("session_id"),
             "trace_file": str(trace_file),
         }
 
@@ -362,7 +372,10 @@ def main():
             print(f"{tag} — WARNING: empty trace")
             if stderr_snip:
                 print(f"  stderr: {stderr_snip}")
-        print(f"{tag} — {status} ({result.get('elapsed_seconds', '?')}s)\n")
+        sid = result.get("session_id", "")
+        print(
+            f"{tag} — {status} ({result.get('elapsed_seconds', '?')}s) session={sid}\n"
+        )
 
     print(f"\nDone. Results at {output_csv}")
 

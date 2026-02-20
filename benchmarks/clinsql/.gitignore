@@ -2,6 +2,7 @@
 clinsql_results_*.csv
 traces_*/
 mcp_config.json
+work/
 
 # Generated data (reproducible via load_dataset.py / evaluate_gold_m4.py)
 clinsql.csv

@@ -20,8 +20,9 @@ from pathlib import Path
 import pandas as pd
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-INPUT_CSV = SCRIPT_DIR / "clinsql.csv"
-OUTPUT_CSV = SCRIPT_DIR / "clinsql_with_m4.csv"
+DATA_DIR = SCRIPT_DIR / "data"
+INPUT_CSV = DATA_DIR / "clinsql.csv"
+OUTPUT_CSV = DATA_DIR / "clinsql_with_m4.csv"
 
 # ── BigQuery → DuckDB table name mapping ──────────────────────────────────────
 

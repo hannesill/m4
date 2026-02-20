@@ -6,9 +6,10 @@ Usage:
 Expects the ClinSQL data/splits/ directory to be copied into benchmarks/clinsql/.
 Default layout:
     benchmarks/clinsql/
-    ├── splits/          ← copied from ClinSQL repo data/splits/
-    ├── load_dataset.py  ← this script
-    └── clinsql.csv      ← output
+    ├── data/
+    │   ├── splits/      ← copied from ClinSQL repo data/splits/
+    │   └── clinsql.csv  ← output
+    └── load_dataset.py  ← this script
 """
 
 from __future__ import annotations
@@ -20,8 +21,9 @@ import pandas as pd
 from datasets import load_dataset
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_SPLITS_DIR = SCRIPT_DIR / "splits"
-OUTPUT_PATH = SCRIPT_DIR / "clinsql.csv"
+DATA_DIR = SCRIPT_DIR / "data"
+DEFAULT_SPLITS_DIR = DATA_DIR / "splits"
+OUTPUT_PATH = DATA_DIR / "clinsql.csv"
 
 # The result_path column in the HF dataset looks like:
 #   data/splits/validation/Diagnostic_Procedures/easy_level_queries/001/result_001.csv
