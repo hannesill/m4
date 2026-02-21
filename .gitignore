@@ -103,3 +103,7 @@ tailwind-plus-protocol/
 # Local working directories
 demo/
 .vitrine/
+
+# Internal strategy docs
+VISION.md
+OPENTASKS.md
