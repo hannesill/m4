@@ -329,6 +329,13 @@ def set_bigquery_project_id(project_id: str | None) -> None:
     save_runtime_config(cfg)
 
 
+def get_telemetry_dir() -> Path:
+    """Return the telemetry directory, creating it if needed."""
+    path = _PROJECT_DATA_DIR / "telemetry"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def get_duckdb_path_for(choice: str) -> Path | None:
     return get_default_database_path(choice)
 

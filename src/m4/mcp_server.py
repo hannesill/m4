@@ -35,6 +35,7 @@ from m4.auth import init_oauth2, require_oauth2
 from m4.core.datasets import DatasetRegistry
 from m4.core.exceptions import M4Error
 from m4.core.serialization import serialize_for_mcp
+from m4.core.telemetry import invoke_tracked, set_interface
 from m4.core.tools import ToolRegistry, ToolSelector, init_tools
 from m4.core.tools.management import ListDatasetsInput, SetDatasetInput
 from m4.core.tools.notes import (
@@ -55,6 +56,7 @@ mcp = FastMCP("m4")
 init_oauth2()
 init_tools()
 init_apps()
+set_interface("mcp")
 
 # Tool selector for capability-based filtering
 _tool_selector = ToolSelector()
@@ -279,7 +281,7 @@ def list_datasets() -> str:
     try:
         tool = ToolRegistry.get("list_datasets")
         dataset = DatasetRegistry.get_active()
-        result = tool.invoke(dataset, ListDatasetsInput())
+        result = invoke_tracked(tool, dataset, ListDatasetsInput())
         return _serialize_datasets_result(result)
     except M4Error as e:
         return f"**Error:** {e}"
@@ -301,7 +303,9 @@ def set_dataset(dataset_name: str) -> str:
 
         tool = ToolRegistry.get("set_dataset")
         dataset = DatasetRegistry.get_active()
-        result = tool.invoke(dataset, SetDatasetInput(dataset_name=dataset_name))
+        result = invoke_tracked(
+            tool, dataset, SetDatasetInput(dataset_name=dataset_name)
+        )
         output = _serialize_set_dataset_result(result)
 
         # Append supported tools snapshot if dataset is valid
@@ -336,7 +340,7 @@ def get_database_schema() -> str:
             return compat_result.error_message
 
         tool = ToolRegistry.get("get_database_schema")
-        result = tool.invoke(dataset, GetDatabaseSchemaInput())
+        result = invoke_tracked(tool, dataset, GetDatabaseSchemaInput())
         return _serialize_schema_result(result)
     except M4Error as e:
         return f"**Error:** {e}"
@@ -365,8 +369,10 @@ def get_table_info(table_name: str, show_sample: bool = True) -> str:
             return compat_result.error_message
 
         tool = ToolRegistry.get("get_table_info")
-        result = tool.invoke(
-            dataset, GetTableInfoInput(table_name=table_name, show_sample=show_sample)
+        result = invoke_tracked(
+            tool,
+            dataset,
+            GetTableInfoInput(table_name=table_name, show_sample=show_sample),
         )
         return _serialize_table_info_result(result)
     except M4Error as e:
@@ -398,7 +404,7 @@ def execute_query(sql_query: str) -> str:
             return compat_result.error_message
 
         tool = ToolRegistry.get("execute_query")
-        result = tool.invoke(dataset, ExecuteQueryInput(sql_query=sql_query))
+        result = invoke_tracked(tool, dataset, ExecuteQueryInput(sql_query=sql_query))
         # Result is a DataFrame - serialize it
         return serialize_for_mcp(result)
     except M4Error as e:
@@ -442,7 +448,8 @@ def search_notes(
             return compat_result.error_message
 
         tool = ToolRegistry.get("search_notes")
-        result = tool.invoke(
+        result = invoke_tracked(
+            tool,
             dataset,
             SearchNotesInput(
                 query=query,
@@ -480,7 +487,8 @@ def get_note(note_id: str, max_length: int | None = None) -> str:
             return compat_result.error_message
 
         tool = ToolRegistry.get("get_note")
-        result = tool.invoke(
+        result = invoke_tracked(
+            tool,
             dataset,
             GetNoteInput(note_id=note_id, max_length=max_length),
         )
@@ -522,7 +530,8 @@ def list_patient_notes(
             return compat_result.error_message
 
         tool = ToolRegistry.get("list_patient_notes")
-        result = tool.invoke(
+        result = invoke_tracked(
+            tool,
             dataset,
             ListPatientNotesInput(
                 subject_id=subject_id,
@@ -570,7 +579,7 @@ def cohort_builder() -> str:
             return compat_result.error_message
 
         tool = ToolRegistry.get("cohort_builder")
-        result = tool.invoke(dataset, CohortBuilderInput())
+        result = invoke_tracked(tool, dataset, CohortBuilderInput())
         return serialize_for_mcp(result)
     except M4Error as e:
         return f"**Error:** {e}"
@@ -614,7 +623,8 @@ def query_cohort(
             return json.dumps({"error": compat_result.error_message})
 
         tool = ToolRegistry.get("query_cohort")
-        result = tool.invoke(
+        result = invoke_tracked(
+            tool,
             dataset,
             QueryCohortInput(
                 age_min=age_min,
