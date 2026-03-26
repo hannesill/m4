@@ -86,6 +86,11 @@ m4_data/
 
 notes/
 
+# Benchmark data (large, generated)
+benchmark/shared/ground_truth/
+benchmark/agent_db/
+benchmark/results/
+
 # Agents
 .claude/
 .research/
