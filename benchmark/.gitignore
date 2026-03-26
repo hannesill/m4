@@ -1,0 +1,9 @@
+# Generated results
+results/
+
+# Agent database (generated from MIMIC-IV source)
+agent_db/
+
+# Python cache
+__pycache__/
+*.pyc
