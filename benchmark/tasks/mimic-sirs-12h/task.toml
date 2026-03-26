@@ -1,0 +1,14 @@
+[metadata]
+name = "mimic-sirs-12h"
+description = "Calculate SIRS criteria (12h window) for ICU patients from MIMIC-IV data"
+difficulty = "medium"
+mode = "standard"  # intermediates available, novel time window
+category = "Healthcare"
+tags = ["clinical", "icu", "severity-score", "mimic-iv", "sirs", "12h"]
+database = "mimic-iv"
+
+[evaluation]
+key_columns = ["stay_id"]
+value_columns = ["sirs", "temp_score", "heart_rate_score", "resp_score", "wbc_score"]
+
+[evaluation.tolerance]
