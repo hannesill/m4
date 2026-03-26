@@ -1,0 +1,14 @@
+[metadata]
+name = "mimic-sirs-24h-raw"
+description = "Calculate SIRS criteria (24h, raw tables) for ICU patients from MIMIC-IV data"
+difficulty = "hard"
+mode = "raw"  # no intermediate tables, standard time window
+category = "Healthcare"
+tags = ["clinical", "icu", "severity-score", "mimic-iv", "sirs", "raw"]
+database = "mimic-iv"
+
+[evaluation]
+key_columns = ["stay_id"]
+value_columns = ["sirs", "temp_score", "heart_rate_score", "resp_score", "wbc_score"]
+
+[evaluation.tolerance]
