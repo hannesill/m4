@@ -1,29 +1,25 @@
 """ClinSkillsBench evaluation harness.
 
-Orchestrates: task setup → agent invocation → output collection → test execution.
+Orchestrates: task setup -> agent invocation -> output collection -> test execution.
 
 Usage:
-    # Run SIRS task with Claude Code, with-skill condition
-    python benchmark/harness/run.py --task mimic-sirs --condition with-skill --agent claude
+    # Run with skill
+    python benchmark/run.py --task mimic-sirs-24h --condition with-skill --agent claude
 
     # Run without skill
-    python benchmark/harness/run.py --task mimic-sirs --condition no-skill --agent claude
-
-    # Run with self-generated skill
-    python benchmark/harness/run.py --task mimic-sirs --condition self-generated --agent claude
+    python benchmark/run.py --task mimic-sirs-24h --condition no-skill --agent claude
 
     # Specify model (for claude)
-    python benchmark/harness/run.py --task mimic-sirs --condition with-skill --agent claude --model opus
+    python benchmark/run.py --task mimic-sirs-24h --condition with-skill --agent claude --model opus
 
-    # Just run the oracle solution and tests (no agent)
-    python benchmark/harness/run.py --task mimic-sirs --oracle
+    # Just run oracle solution and tests
+    python benchmark/run.py --task mimic-sirs-24h --oracle
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -31,9 +27,11 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-BENCHMARK_ROOT = Path(__file__).parent.parent
+# Ensure lib/ is importable
+sys.path.insert(0, str(Path(__file__).parent))
+
+BENCHMARK_ROOT = Path(__file__).parent
 TASKS_DIR = BENCHMARK_ROOT / "tasks"
-GROUND_TRUTH_DIR = BENCHMARK_ROOT / "shared" / "ground_truth"
 AGENT_DB_DIR = BENCHMARK_ROOT / "agent_db"
 RESULTS_DIR = BENCHMARK_ROOT / "results"
 
@@ -74,20 +72,8 @@ AGENT_COMMANDS = {
 }
 
 
-def load_task_config(task_name: str) -> dict:
-    """Load task.toml configuration."""
-    import tomllib
-
-    task_dir = TASKS_DIR / task_name
-    config_path = task_dir / "task.toml"
-    if not config_path.exists():
-        raise FileNotFoundError(f"Task config not found: {config_path}")
-    with open(config_path, "rb") as f:
-        return tomllib.load(f)
-
-
 def _resolve_agent_db(task_name: str) -> str:
-    """Find the agent DB for a task. Task-specific DB takes priority."""
+    """Find the agent DB for a task."""
     task_key = task_name.replace("mimic-", "")
     task_db = AGENT_DB_DIR / f"mimic_iv_{task_key}.duckdb"
     generic_db = AGENT_DB_DIR / "mimic_iv.duckdb"
@@ -96,7 +82,6 @@ def _resolve_agent_db(task_name: str) -> str:
 
 def setup_workdir(task_name: str, workdir: Path) -> None:
     """Prepare the agent's working directory with symlinked data."""
-    # Symlink agent DB into workdir so agent only needs local access
     agent_db_src = Path(_resolve_agent_db(task_name)).resolve()
     agent_db_link = workdir / "database.duckdb"
     if not agent_db_link.exists():
@@ -108,7 +93,6 @@ def prepare_instruction(task_name: str, workdir: Path, condition: str) -> str:
     task_dir = TASKS_DIR / task_name
     instruction = (task_dir / "instruction.md").read_text()
 
-    # Use relative paths so agent stays in workdir
     db_path = "./database.duckdb"
     output_path = "./output.csv"
 
@@ -141,7 +125,6 @@ def inject_skill(task_name: str, agent_name: str) -> list[Path]:
                 continue
             target = target_base / skill_dir.name
             if target.exists():
-                # Don't overwrite existing skills
                 continue
             shutil.copytree(skill_dir, target)
             created_paths.append(target)
@@ -174,11 +157,9 @@ def run_agent(
 
     cmd = list(agent_config["cmd"])
 
-    # Add model flag if specified
     if model and agent_name == "claude":
         cmd.extend(["--model", model])
 
-    # Append instruction as the prompt
     cmd.append(instruction)
 
     print(f"  Running {agent_name}{'  (verbose)' if verbose else ''}...")
@@ -186,7 +167,6 @@ def run_agent(
 
     try:
         if verbose:
-            # Stream output in real time, also capture it
             process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -212,7 +192,7 @@ def run_agent(
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=1800,  # 30 min timeout
+                timeout=1800,
                 cwd=str(workdir),
             )
             elapsed = time.time() - start
@@ -235,92 +215,45 @@ def run_agent(
 
 
 def run_oracle(task_name: str, workdir: Path) -> dict:
-    """Run the oracle solution."""
+    """Run the oracle solution by executing the task's oracle.sql directly."""
+    import duckdb
+
     task_dir = TASKS_DIR / task_name
-    solve_script = task_dir / "solution" / "solve.py"
-    db_path = str(workdir / "database.duckdb")  # symlinked in workdir
-    output_path = str(workdir / "output.csv")
+    oracle_sql_path = task_dir / "oracle.sql"
+    if not oracle_sql_path.exists():
+        return {
+            "returncode": 1,
+            "stdout": "",
+            "stderr": f"oracle.sql not found: {oracle_sql_path}",
+        }
 
-    result = subprocess.run(
-        [sys.executable, str(solve_script), db_path, output_path],
-        capture_output=True,
-        text=True,
-    )
-    return {
-        "returncode": result.returncode,
-        "stdout": result.stdout,
-        "stderr": result.stderr,
-    }
+    db_path = str(workdir / "database.duckdb")
+    output_path = workdir / "output.csv"
 
-
-def run_tests(task_name: str, workdir: Path) -> dict:
-    """Run pytest on the task's test_outputs.py. Returns test results."""
-    task_dir = TASKS_DIR / task_name
-    test_file = task_dir / "tests" / "test_outputs.py"
-
-    # Determine ground truth path from task name
-    gt_name = task_name.replace("mimic-", "")
-    # Try compressed first, fall back to uncompressed
-    gt_gz = GROUND_TRUTH_DIR / f"{gt_name}.csv.gz"
-    gt_csv = GROUND_TRUTH_DIR / f"{gt_name}.csv"
-    gt_path = str(gt_gz if gt_gz.exists() else gt_csv)
-    output_path = str(workdir / "output.csv")
-
-    env = {
-        **os.environ,
-        "AGENT_OUTPUT_PATH": output_path,
-        "GROUND_TRUTH_PATH": gt_path,
-    }
-
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pytest",
-            str(test_file),
-            "-v",
-            "--tb=short",
-            "--no-header",
-        ],
-        capture_output=True,
-        text=True,
-        env=env,
-    )
-
-    # Parse pass/fail counts from pytest output
-    # Look for summary line like "7 passed" or "5 passed, 2 failed"
-    import re
-
-    passed = failed = errors = 0
-    for line in result.stdout.strip().split("\n"):
-        # Match pytest summary patterns
-        m = re.search(r"(\d+) passed", line)
-        if m:
-            passed = int(m.group(1))
-        m = re.search(r"(\d+) failed", line)
-        if m:
-            failed = int(m.group(1))
-        m = re.search(r"(\d+) error", line)
-        if m:
-            errors = int(m.group(1))
-
-    total = passed + failed + errors
-    reward = passed / total if total > 0 else 0.0
-
-    return {
-        "passed": passed,
-        "failed": failed,
-        "errors": errors,
-        "total": total,
-        "reward": round(reward, 4),
-        "pytest_output": result.stdout,
-        "pytest_stderr": result.stderr,
-    }
+    try:
+        sql = oracle_sql_path.read_text()
+        con = duckdb.connect(db_path, read_only=True)
+        df = con.execute(sql).df()
+        df.to_csv(output_path, index=False)
+        con.close()
+        return {
+            "returncode": 0,
+            "stdout": f"Wrote {len(df)} rows to {output_path}",
+            "stderr": "",
+        }
+    except Exception as e:
+        return {
+            "returncode": 1,
+            "stdout": "",
+            "stderr": str(e),
+        }
 
 
 def main():
     parser = argparse.ArgumentParser(description="ClinSkillsBench evaluation harness")
-    parser.add_argument("--task", required=True, help="Task name (e.g., mimic-sirs)")
+    parser.add_argument(
+        "--task", required=True, help="Task name (e.g., mimic-sirs-24h)"
+    )
     parser.add_argument(
         "--condition",
         choices=["no-skill", "with-skill", "self-generated"],
@@ -351,9 +284,8 @@ def main():
 
     agent_db_path = _resolve_agent_db(args.task)
     if not Path(agent_db_path).exists():
-        task_key = args.task.replace("mimic-", "")
         print(f"Error: Agent DB not found: {agent_db_path}")
-        print(f"Run: python benchmark/shared/setup_agent_db.py --task {task_key}")
+        print(f"Run: python benchmark/setup.py --task {args.task}")
         sys.exit(1)
 
     # Create working directory
@@ -389,18 +321,13 @@ def main():
             if agent_result["returncode"] != 0:
                 print(f"Oracle failed: {agent_result['stderr']}")
         else:
-            # Inject skill if with-skill condition
             if args.condition == "with-skill":
                 print("Injecting skills...")
                 injected_skills = inject_skill(args.task, args.agent)
 
-            # Prepare instruction
             instruction = prepare_instruction(args.task, workdir, args.condition)
-
-            # Save instruction for reference
             (workdir / "instruction.md").write_text(instruction)
 
-            # Run agent
             agent_result = run_agent(
                 instruction, args.agent, workdir, args.model, verbose=args.verbose
             )
@@ -425,7 +352,9 @@ def main():
         else:
             print(f"\nOutput produced: {output_file}")
             print("Running tests...")
-            test_results = run_tests(args.task, workdir)
+            from evaluate import evaluate
+
+            test_results = evaluate(args.task, str(output_file))
 
         # Print results
         print(f"\n{'=' * 60}")
@@ -452,7 +381,6 @@ def main():
         print(f"\nFull result saved to: {result_file}")
 
     finally:
-        # Clean up injected skills
         if injected_skills:
             print("\nCleaning up skills...")
             cleanup_skills(injected_skills)

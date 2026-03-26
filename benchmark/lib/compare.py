@@ -1,8 +1,4 @@
-"""Shared test utilities for ClinSkillsBench.
-
-Provides comparison functions for evaluating agent-produced derived tables
-against MIT-LCP mimic-code ground truth.
-"""
+"""Comparison utilities for evaluating agent output against ground truth."""
 
 from __future__ import annotations
 
