@@ -33,9 +33,14 @@ def run_tests(
         "GROUND_TRUTH_PATH": str(ground_truth_path),
     }
 
+    # Prefer the venv Python so pytest/pandas are available even when
+    # the harness is invoked via a bare `python` outside the venv.
+    venv_python = Path(__file__).resolve().parents[2] / ".venv" / "bin" / "python"
+    python = str(venv_python) if venv_python.exists() else sys.executable
+
     result = subprocess.run(
         [
-            sys.executable,
+            python,
             "-m",
             "pytest",
             str(TEST_FILE),
@@ -47,6 +52,11 @@ def run_tests(
         text=True,
         env=env,
     )
+
+    # Detect pytest infrastructure failures (e.g. missing pytest module)
+    if result.returncode != 0 and not result.stdout.strip():
+        detail = result.stderr.strip() or f"pytest exited with code {result.returncode}"
+        raise RuntimeError(f"Pytest failed to run: {detail}")
 
     passed = failed = errors = 0
     for line in result.stdout.strip().split("\n"):
