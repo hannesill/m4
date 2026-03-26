@@ -7,9 +7,18 @@ category = "Healthcare"
 tags = ["clinical", "icu", "severity-score", "mimic-iv", "sirs"]
 database = "mimic-iv"
 
+[database]
+source = "mimic-iv"
+drop_tables = ["mimiciv_derived.sirs"]
+
+[ground_truth]
+# Default: run oracle.sql on full DB
+
 [evaluation]
 key_columns = ["stay_id"]
 value_columns = ["sirs", "temp_score", "heart_rate_score", "resp_score", "wbc_score"]
+required_columns = ["subject_id", "hadm_id", "stay_id", "sirs", "temp_score", "heart_rate_score", "resp_score", "wbc_score"]
+row_coverage_threshold = 0.95
+accuracy_threshold = 0.90
 
-# All integer scores — exact match required
 [evaluation.tolerance]

@@ -4,6 +4,12 @@ results/
 # Agent database (generated from MIMIC-IV source)
 agent_db/
 
+# Ground truth (generated from oracle SQL)
+ground_truth/
+
 # Python cache
 __pycache__/
 *.pyc
+
+# Override root-level lib/ ignore for benchmark/lib/
+!lib/
