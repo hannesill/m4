@@ -7,8 +7,24 @@ category = "Healthcare"
 tags = ["clinical", "icu", "severity-score", "mimic-iv", "sirs", "raw"]
 database = "mimic-iv"
 
+[database]
+source = "mimic-iv"
+drop_tables = [
+    "mimiciv_derived.sirs",
+    "mimiciv_derived.first_day_vitalsign",
+    "mimiciv_derived.first_day_lab",
+    "mimiciv_derived.first_day_bg",
+    "mimiciv_derived.first_day_bg_art",
+]
+
+[ground_truth]
+alias = "sirs-24h"  # same clinical concept, same time window
+
 [evaluation]
 key_columns = ["stay_id"]
 value_columns = ["sirs", "temp_score", "heart_rate_score", "resp_score", "wbc_score"]
+required_columns = ["subject_id", "hadm_id", "stay_id", "sirs", "temp_score", "heart_rate_score", "resp_score", "wbc_score"]
+row_coverage_threshold = 0.95
+accuracy_threshold = 0.90
 
 [evaluation.tolerance]
