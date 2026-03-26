@@ -1,0 +1,14 @@
+[metadata]
+name = "mimic-sirs"
+description = "Calculate SIRS criteria for ICU patients from MIMIC-IV data"
+difficulty = "medium"
+category = "Healthcare"
+tags = ["clinical", "icu", "severity-score", "mimic-iv", "sirs"]
+database = "mimic-iv"
+
+[evaluation]
+key_columns = ["stay_id"]
+value_columns = ["sirs", "temp_score", "heart_rate_score", "resp_score", "wbc_score"]
+
+# All integer scores — exact match required
+[evaluation.tolerance]
