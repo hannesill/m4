@@ -34,7 +34,14 @@ def resolve_ground_truth(task_name: str) -> Path:
 
 
 def evaluate(task_name: str, output_path: str) -> dict:
-    """Run evaluation tests and return results."""
+    """Run evaluation tests and return results.
+
+    Reward is the mean per-column match rate (continuous, 0.0-1.0),
+    computed directly from comparing agent output to ground truth.
+    Pytest tests are kept for pass/fail diagnostics.
+    """
+    from lib.compare import compare_derived_tables
+    from lib.db import load_task_config
     from lib.runner import run_tests
 
     task_dir = TASKS_DIR / task_name
@@ -42,7 +49,31 @@ def evaluate(task_name: str, output_path: str) -> dict:
         raise FileNotFoundError(f"Task not found: {task_dir}")
 
     gt_path = resolve_ground_truth(task_name)
-    return run_tests(task_dir, output_path, gt_path)
+    test_results = run_tests(task_dir, output_path, gt_path)
+
+    # Compute continuous reward from raw match rates
+    try:
+        config = load_task_config(task_dir)
+        eval_config = config["evaluation"]
+        comparison = compare_derived_tables(
+            output_path,
+            str(gt_path),
+            key_columns=eval_config["key_columns"],
+            value_columns=eval_config["value_columns"],
+            tolerance=eval_config.get("tolerance", {}),
+        )
+        match_rates = {
+            col: round(comparison[col]["match_rate"], 4)
+            for col in eval_config["value_columns"]
+        }
+        test_results["match_rates"] = match_rates
+        test_results["reward"] = round(sum(match_rates.values()) / len(match_rates), 4)
+    except Exception:
+        # If comparison fails (missing columns, bad CSV, etc.),
+        # fall back to pytest-based reward
+        pass
+
+    return test_results
 
 
 def main():
