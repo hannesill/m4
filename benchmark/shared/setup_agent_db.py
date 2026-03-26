@@ -1,11 +1,12 @@
 """Create agent database by copying MIMIC-IV DuckDB and dropping target tables.
 
-The agent database has all raw tables and intermediate derived tables,
-but the specific derived table being tested is removed so the agent
-must compute it from scratch.
+The agent database has all raw tables and (depending on mode) intermediate
+derived tables, but the specific derived table being tested is removed so
+the agent must compute it from scratch.
 
 Usage:
-    python benchmark/shared/setup_agent_db.py --task sirs
+    python benchmark/shared/setup_agent_db.py --task sirs-24h
+    python benchmark/shared/setup_agent_db.py --task sirs-24h-raw
 """
 
 from __future__ import annotations
@@ -17,8 +18,25 @@ from pathlib import Path
 import duckdb
 
 # Map task name → table(s) to drop from agent DB
+# Standard mode: drop only the target table
+# Raw mode: also drop intermediate derived tables the agent would normally use
 TASK_DROP_TABLES = {
-    "sirs": ["mimiciv_derived.sirs"],
+    "sirs-24h": ["mimiciv_derived.sirs"],
+    "sirs-12h": ["mimiciv_derived.sirs"],
+    "sirs-24h-raw": [
+        "mimiciv_derived.sirs",
+        "mimiciv_derived.first_day_vitalsign",
+        "mimiciv_derived.first_day_lab",
+        "mimiciv_derived.first_day_bg",
+        "mimiciv_derived.first_day_bg_art",
+    ],
+    "sirs-12h-raw": [
+        "mimiciv_derived.sirs",
+        "mimiciv_derived.first_day_vitalsign",
+        "mimiciv_derived.first_day_lab",
+        "mimiciv_derived.first_day_bg",
+        "mimiciv_derived.first_day_bg_art",
+    ],
 }
 
 SOURCE_DB = Path("m4_data/databases/mimic_iv.duckdb")
@@ -32,7 +50,7 @@ def setup(task_name: str) -> Path:
         )
 
     AGENT_DB_DIR.mkdir(parents=True, exist_ok=True)
-    dest = AGENT_DB_DIR / "mimic_iv.duckdb"
+    dest = AGENT_DB_DIR / f"mimic_iv_{task_name}.duckdb"
 
     print(f"Copying {SOURCE_DB} → {dest} ...")
     shutil.copy2(SOURCE_DB, dest)
@@ -54,6 +72,6 @@ def setup(task_name: str) -> Path:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task", required=True, help="Task name (e.g., sirs)")
+    parser.add_argument("--task", required=True, help="Task name (e.g., sirs-24h)")
     args = parser.parse_args()
     setup(args.task)
