@@ -49,7 +49,12 @@ Analyze the requirements, then:
 # Agent CLI commands
 AGENT_COMMANDS = {
     "claude": {
-        "cmd": ["claude", "-p"],
+        "cmd": [
+            "claude",
+            "-p",
+            "--allowedTools",
+            "Bash(*),Read,Write,Glob,Grep,Edit",
+        ],
         "skill_paths": [
             "{home}/.claude/skills",
         ],
@@ -81,13 +86,31 @@ def load_task_config(task_name: str) -> dict:
         return tomllib.load(f)
 
 
+def _resolve_agent_db(task_name: str) -> str:
+    """Find the agent DB for a task. Task-specific DB takes priority."""
+    task_key = task_name.replace("mimic-", "")
+    task_db = AGENT_DB_DIR / f"mimic_iv_{task_key}.duckdb"
+    generic_db = AGENT_DB_DIR / "mimic_iv.duckdb"
+    return str(task_db if task_db.exists() else generic_db)
+
+
+def setup_workdir(task_name: str, workdir: Path) -> None:
+    """Prepare the agent's working directory with symlinked data."""
+    # Symlink agent DB into workdir so agent only needs local access
+    agent_db_src = Path(_resolve_agent_db(task_name)).resolve()
+    agent_db_link = workdir / "database.duckdb"
+    if not agent_db_link.exists():
+        agent_db_link.symlink_to(agent_db_src)
+
+
 def prepare_instruction(task_name: str, workdir: Path, condition: str) -> str:
     """Load instruction.md and fill in paths."""
     task_dir = TASKS_DIR / task_name
     instruction = (task_dir / "instruction.md").read_text()
 
-    db_path = str(AGENT_DB_DIR / "mimic_iv.duckdb")
-    output_path = str(workdir / "output.csv")
+    # Use relative paths so agent stays in workdir
+    db_path = "./database.duckdb"
+    output_path = "./output.csv"
 
     instruction = instruction.replace("{db_path}", db_path)
     instruction = instruction.replace("{output_path}", output_path)
@@ -136,7 +159,11 @@ def cleanup_skills(paths: list[Path]) -> None:
 
 
 def run_agent(
-    instruction: str, agent_name: str, workdir: Path, model: str | None = None
+    instruction: str,
+    agent_name: str,
+    workdir: Path,
+    model: str | None = None,
+    verbose: bool = False,
 ) -> dict:
     """Invoke an agent CLI with the instruction. Returns result dict."""
     agent_config = AGENT_COMMANDS.get(agent_name)
@@ -154,26 +181,51 @@ def run_agent(
     # Append instruction as the prompt
     cmd.append(instruction)
 
-    print(f"  Running {agent_name}...")
+    print(f"  Running {agent_name}{'  (verbose)' if verbose else ''}...")
     start = time.time()
 
     try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=1800,  # 30 min timeout
-            cwd=str(workdir),
-        )
+        if verbose:
+            # Stream output in real time, also capture it
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                cwd=str(workdir),
+            )
+            output_lines = []
+            for line in process.stdout:
+                print(f"  │ {line}", end="")
+                output_lines.append(line)
+            process.wait(timeout=1800)
+            elapsed = time.time() - start
+            full_output = "".join(output_lines)
+            return {
+                "returncode": process.returncode,
+                "stdout": full_output[-10000:],
+                "stderr": "",
+                "elapsed_seconds": round(elapsed, 1),
+            }
+        else:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=1800,  # 30 min timeout
+                cwd=str(workdir),
+            )
+            elapsed = time.time() - start
+            return {
+                "returncode": result.returncode,
+                "stdout": result.stdout[-5000:] if result.stdout else "",
+                "stderr": result.stderr[-2000:] if result.stderr else "",
+                "elapsed_seconds": round(elapsed, 1),
+            }
+    except (subprocess.TimeoutExpired, Exception):
         elapsed = time.time() - start
-        return {
-            "returncode": result.returncode,
-            "stdout": result.stdout[-5000:] if result.stdout else "",  # Last 5K chars
-            "stderr": result.stderr[-2000:] if result.stderr else "",
-            "elapsed_seconds": round(elapsed, 1),
-        }
-    except subprocess.TimeoutExpired:
-        elapsed = time.time() - start
+        if verbose and "process" in locals():
+            process.kill()
         return {
             "returncode": -1,
             "stdout": "",
@@ -186,7 +238,7 @@ def run_oracle(task_name: str, workdir: Path) -> dict:
     """Run the oracle solution."""
     task_dir = TASKS_DIR / task_name
     solve_script = task_dir / "solution" / "solve.py"
-    db_path = str(AGENT_DB_DIR / "mimic_iv.duckdb")
+    db_path = str(workdir / "database.duckdb")  # symlinked in workdir
     output_path = str(workdir / "output.csv")
 
     result = subprocess.run(
@@ -208,7 +260,10 @@ def run_tests(task_name: str, workdir: Path) -> dict:
 
     # Determine ground truth path from task name
     gt_name = task_name.replace("mimic-", "")
-    gt_path = str(GROUND_TRUTH_DIR / f"{gt_name}.csv")
+    # Try compressed first, fall back to uncompressed
+    gt_gz = GROUND_TRUTH_DIR / f"{gt_name}.csv.gz"
+    gt_csv = GROUND_TRUTH_DIR / f"{gt_name}.csv"
+    gt_path = str(gt_gz if gt_gz.exists() else gt_csv)
     output_path = str(workdir / "output.csv")
 
     env = {
@@ -277,6 +332,12 @@ def main():
     parser.add_argument(
         "--oracle", action="store_true", help="Run oracle solution only"
     )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Stream agent output in real time",
+    )
     args = parser.parse_args()
 
     if not args.oracle and (not args.condition or not args.agent):
@@ -288,10 +349,11 @@ def main():
         print(f"Error: Task directory not found: {task_dir}")
         sys.exit(1)
 
-    agent_db = AGENT_DB_DIR / "mimic_iv.duckdb"
-    if not agent_db.exists():
-        print(f"Error: Agent DB not found: {agent_db}")
-        print("Run: python benchmark/shared/setup_agent_db.py --task sirs")
+    agent_db_path = _resolve_agent_db(args.task)
+    if not Path(agent_db_path).exists():
+        task_key = args.task.replace("mimic-", "")
+        print(f"Error: Agent DB not found: {agent_db_path}")
+        print(f"Run: python benchmark/shared/setup_agent_db.py --task {task_key}")
         sys.exit(1)
 
     # Create working directory
@@ -315,6 +377,9 @@ def main():
     print(f"Working dir: {workdir}")
     print(f"{'=' * 60}\n")
 
+    # Set up workdir with symlinked data
+    setup_workdir(args.task, workdir)
+
     # Run oracle or agent
     injected_skills = []
     try:
@@ -336,7 +401,9 @@ def main():
             (workdir / "instruction.md").write_text(instruction)
 
             # Run agent
-            agent_result = run_agent(instruction, args.agent, workdir, args.model)
+            agent_result = run_agent(
+                instruction, args.agent, workdir, args.model, verbose=args.verbose
+            )
             print(
                 f"  Agent finished in {agent_result['elapsed_seconds']}s "
                 f"(exit code: {agent_result['returncode']})"
