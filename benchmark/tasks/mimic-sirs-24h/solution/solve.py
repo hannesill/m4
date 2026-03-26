@@ -9,17 +9,11 @@ from pathlib import Path
 
 import duckdb
 
-SKILL_SQL = (
-    Path(__file__).parent.parent
-    / "skills"
-    / "sirs-criteria"
-    / "scripts"
-    / "mimic-iv.sql"
-)
+ORACLE_SQL = Path(__file__).parent.parent.parent.parent / "oracle_sql" / "sirs_24h.sql"
 
 
 def solve(db_path: str, output_path: str) -> None:
-    sql = SKILL_SQL.read_text()
+    sql = ORACLE_SQL.read_text()
     con = duckdb.connect(db_path, read_only=True)
     df = con.execute(sql).df()
     df.to_csv(output_path, index=False)
