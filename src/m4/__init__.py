@@ -30,6 +30,8 @@ from m4.api import (
     get_note,
     get_schema,
     get_table_info,
+    # Telemetry
+    get_telemetry_path,
     list_datasets,
     list_patient_notes,
     search_notes,
@@ -48,6 +50,7 @@ __all__ = [
     "get_note",
     "get_schema",
     "get_table_info",
+    "get_telemetry_path",
     "list_datasets",
     "list_patient_notes",
     "search_notes",

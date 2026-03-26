@@ -26,6 +26,7 @@ that work on both DuckDB and BigQuery backends. Use set_dataset()
 to switch between datasets.
 """
 
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -65,6 +66,7 @@ __all__ = [
     "get_note",
     "get_schema",
     "get_table_info",
+    "get_telemetry_path",
     "list_datasets",
     "list_patient_notes",
     "search_notes",
@@ -350,3 +352,25 @@ def list_patient_notes(
             limit=limit,
         ),
     )
+
+
+# =============================================================================
+# Telemetry
+# =============================================================================
+
+
+def get_telemetry_path() -> Path:
+    """Return the path to the telemetry JSONL file.
+
+    This file contains one JSON record per line, with each record
+    representing a tool invocation (see ToolCallRecord for schema).
+    External systems can read this file to build provenance trails.
+
+    Returns:
+        Path to the tool_calls.jsonl file (may not exist if no
+        calls have been made yet, or if M4_TELEMETRY=off).
+    """
+    from m4.config import get_telemetry_dir
+    from m4.core.telemetry import TELEMETRY_FILENAME
+
+    return get_telemetry_dir() / TELEMETRY_FILENAME

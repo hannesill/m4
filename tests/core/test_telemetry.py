@@ -5,12 +5,15 @@ import os
 from dataclasses import dataclass
 from unittest.mock import patch
 
+import pandas as pd
 import pytest
 
 from m4.core.datasets import DatasetDefinition, Modality
 from m4.core.exceptions import M4Error
 from m4.core.telemetry import (
+    TELEMETRY_FILENAME,
     _agent_id_var,
+    _get_terminal_session,
     _interface_var,
     _writer,
     invoke_tracked,
@@ -175,3 +178,76 @@ class TestContextVars:
     def test_set_agent_id(self):
         set_agent_id("my-agent")
         assert _agent_id_var.get() == "my-agent"
+
+
+class TestTerminalSession:
+    def test_terminal_session_present(self, mock_dataset):
+        record = _capture_record(mock_dataset)
+        session = record["terminal_session"]
+        assert session is not None
+        assert session.isdigit()
+
+    def test_terminal_session_consistent(self, mock_dataset):
+        r1 = _capture_record(mock_dataset)
+        r2 = _capture_record(mock_dataset)
+        assert r1["terminal_session"] == r2["terminal_session"]
+
+    def test_terminal_session_none_without_getsid(self, mock_dataset):
+        with patch("m4.core.telemetry.os.getsid", side_effect=AttributeError):
+            record = _capture_record(mock_dataset)
+        assert record["terminal_session"] is None
+
+    def test_get_terminal_session_returns_string(self):
+        result = _get_terminal_session()
+        assert result is None or isinstance(result, str)
+
+
+class TestRowCount:
+    def test_row_count_for_dataframe(self, mock_dataset):
+        df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+        tool = MockTool(return_value=df)
+        record = _capture_record(mock_dataset, tool=tool)
+        assert record["row_count"] == 3
+
+    def test_row_count_none_for_dict(self, mock_dataset):
+        tool = MockTool(return_value={"schema": "info"})
+        record = _capture_record(mock_dataset, tool=tool)
+        assert record["row_count"] is None
+
+    def test_row_count_none_for_string(self, mock_dataset):
+        tool = MockTool(return_value="ok")
+        record = _capture_record(mock_dataset, tool=tool)
+        assert record["row_count"] is None
+
+    def test_row_count_none_on_error(self, mock_dataset):
+        tool = MockTool(side_effect=M4Error("fail"))
+        with patch("m4.core.telemetry.logger") as mock_logger:
+            with pytest.raises(M4Error):
+                invoke_tracked(tool, mock_dataset, MockInput())
+            record = json.loads(mock_logger.info.call_args[0][0])
+        assert record["row_count"] is None
+
+    def test_row_count_zero_for_empty_dataframe(self, mock_dataset):
+        df = pd.DataFrame({"a": []})
+        tool = MockTool(return_value=df)
+        record = _capture_record(mock_dataset, tool=tool)
+        assert record["row_count"] == 0
+
+
+class TestTelemetryFilename:
+    def test_constant_value(self):
+        assert TELEMETRY_FILENAME == "tool_calls.jsonl"
+
+    def test_jsonl_uses_constant(self, mock_dataset, tmp_path):
+        with patch("m4.config.get_telemetry_dir", return_value=tmp_path):
+            invoke_tracked(MockTool(), mock_dataset, MockInput())
+        assert (tmp_path / TELEMETRY_FILENAME).exists()
+
+
+class TestGetTelemetryPath:
+    def test_returns_correct_path(self, tmp_path):
+        with patch("m4.config.get_telemetry_dir", return_value=tmp_path):
+            from m4.api import get_telemetry_path
+
+            path = get_telemetry_path()
+        assert path == tmp_path / "tool_calls.jsonl"
