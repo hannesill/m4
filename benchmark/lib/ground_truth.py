@@ -10,11 +10,10 @@ from pathlib import Path
 
 import duckdb
 
-from .db import load_task_config
+from .db import list_task_dirs, load_task_config, resolve_task_dir
 
 DB_PATH = Path("m4_data/databases/mimic_iv.duckdb")
 GROUND_TRUTH_DIR = Path("benchmark/ground_truth")
-TASKS_DIR = Path("benchmark/tasks")
 
 
 def generate(task_name: str | None = None) -> None:
@@ -26,9 +25,9 @@ def generate(task_name: str | None = None) -> None:
     GROUND_TRUTH_DIR.mkdir(parents=True, exist_ok=True)
 
     if task_name:
-        task_dirs = [TASKS_DIR / task_name]
+        task_dirs = [resolve_task_dir(task_name)]
     else:
-        task_dirs = sorted(p for p in TASKS_DIR.iterdir() if p.is_dir())
+        task_dirs = list_task_dirs()
 
     con = duckdb.connect(str(DB_PATH), read_only=True)
 

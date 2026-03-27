@@ -31,8 +31,9 @@ from pathlib import Path
 # Ensure lib/ is importable
 sys.path.insert(0, str(Path(__file__).parent))
 
+from lib.db import resolve_task_dir
+
 BENCHMARK_ROOT = Path(__file__).parent
-TASKS_DIR = BENCHMARK_ROOT / "tasks"
 AGENT_DB_DIR = BENCHMARK_ROOT / "agent_db"
 RESULTS_DIR = BENCHMARK_ROOT / "results"
 ISOLATED_BASE = Path(tempfile.gettempdir()) / "clinskillsbench"
@@ -213,7 +214,7 @@ def copy_results_back(workdir: Path, results_dir: Path) -> None:
 
 def prepare_instruction(task_name: str, workdir: Path, condition: str) -> str:
     """Load instruction.md and fill in paths."""
-    task_dir = TASKS_DIR / task_name
+    task_dir = resolve_task_dir(task_name)
     instruction = (task_dir / "instruction.md").read_text()
 
     db_path = "./database.duckdb"
@@ -230,7 +231,7 @@ def prepare_instruction(task_name: str, workdir: Path, condition: str) -> str:
 
 def inject_skill(task_name: str, agent_name: str) -> list[Path]:
     """Copy skill files to agent's skill discovery path. Returns paths for cleanup."""
-    task_dir = TASKS_DIR / task_name
+    task_dir = resolve_task_dir(task_name)
     skills_dir = task_dir / "skills"
 
     if not skills_dir.exists():
@@ -445,9 +446,10 @@ def main():
     args = parser.parse_args()
 
     # Verify prerequisites
-    task_dir = TASKS_DIR / args.task
-    if not task_dir.exists():
-        print(f"Error: Task directory not found: {task_dir}")
+    try:
+        resolve_task_dir(args.task)
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
         sys.exit(1)
 
     agent_db_path = _resolve_agent_db(args.task)

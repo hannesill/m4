@@ -13,6 +13,35 @@ import duckdb
 
 SOURCE_DB = Path("m4_data/databases/mimic_iv.duckdb")
 AGENT_DB_DIR = Path("benchmark/agent_db")
+TASKS_DIR = Path("benchmark/tasks")
+
+
+def resolve_task_dir(task_name: str) -> Path:
+    """Find a task directory by name within the (possibly nested) tasks tree.
+
+    Walks TASKS_DIR looking for a directory matching task_name that contains
+    a task.toml file. Supports both flat (tasks/mimic-sirs-24h/) and nested
+    (tasks/sirs/mimic-sirs-24h/) layouts.
+    """
+    # Fast path: flat layout
+    flat = TASKS_DIR / task_name
+    if (flat / "task.toml").exists():
+        return flat
+
+    # Walk the tree
+    for candidate in TASKS_DIR.rglob(task_name):
+        if candidate.is_dir() and (candidate / "task.toml").exists():
+            return candidate
+
+    raise FileNotFoundError(
+        f"Task '{task_name}' not found under {TASKS_DIR}. "
+        f"Expected a directory containing task.toml."
+    )
+
+
+def list_task_dirs() -> list[Path]:
+    """Discover all task directories (those containing task.toml)."""
+    return sorted(p.parent for p in TASKS_DIR.rglob("task.toml"))
 
 
 def load_task_config(task_dir: Path) -> dict:
