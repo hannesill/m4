@@ -15,8 +15,6 @@ from pathlib import Path
 # Ensure lib/ is importable
 sys.path.insert(0, str(Path(__file__).parent))
 
-TASKS_DIR = Path("benchmark/tasks")
-
 
 def verify_ground_truth(task_names: list[str]) -> bool:
     """Verify ground truth by evaluating it against itself (should score 1.0)."""
@@ -50,12 +48,15 @@ def main():
     )
     args = parser.parse_args()
 
+    from lib.db import list_task_dirs, resolve_task_dir
+
     if args.all:
-        task_dirs = sorted(p for p in TASKS_DIR.iterdir() if p.is_dir())
+        task_dirs = list_task_dirs()
     else:
-        task_dirs = [TASKS_DIR / args.task]
-        if not task_dirs[0].exists():
-            parser.error(f"Task directory not found: {task_dirs[0]}")
+        try:
+            task_dirs = [resolve_task_dir(args.task)]
+        except FileNotFoundError as e:
+            parser.error(str(e))
 
     task_names = [p.name for p in task_dirs]
 

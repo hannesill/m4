@@ -14,7 +14,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 BENCHMARK_ROOT = Path(__file__).parent
-TASKS_DIR = BENCHMARK_ROOT / "tasks"
 GROUND_TRUTH_DIR = BENCHMARK_ROOT / "ground_truth"
 
 
@@ -41,12 +40,10 @@ def evaluate(task_name: str, output_path: str) -> dict:
     Pytest tests are kept for pass/fail diagnostics.
     """
     from lib.compare import compare_derived_tables
-    from lib.db import load_task_config
+    from lib.db import load_task_config, resolve_task_dir
     from lib.runner import run_tests
 
-    task_dir = TASKS_DIR / task_name
-    if not task_dir.exists():
-        raise FileNotFoundError(f"Task not found: {task_dir}")
+    task_dir = resolve_task_dir(task_name)
 
     gt_path = resolve_ground_truth(task_name)
     test_results = run_tests(task_dir, output_path, gt_path)
