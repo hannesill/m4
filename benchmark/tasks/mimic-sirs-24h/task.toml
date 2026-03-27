@@ -12,7 +12,7 @@ source = "mimic-iv"
 drop_tables = ["mimiciv_derived.sirs"]
 
 [ground_truth]
-# Default: run oracle.sql on full DB
+# Generated from ground_truth/sirs-24h.sql
 
 [evaluation]
 key_columns = ["stay_id"]

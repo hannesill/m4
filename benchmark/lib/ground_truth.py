@@ -1,4 +1,4 @@
-"""Generate ground truth CSVs by running each task's oracle.sql against the full DB.
+"""Generate ground truth CSVs by running SQL from ground_truth/ against the full DB.
 
 Prerequisites: Run `m4 init-derived mimic-iv` first to materialize derived tables.
 """
@@ -20,7 +20,7 @@ TASKS_DIR = Path("benchmark/tasks")
 def generate(task_name: str | None = None) -> None:
     """Generate ground truth for one or all tasks.
 
-    Each task's oracle.sql is run against the full DB.
+    Runs the SQL file from ground_truth/{task_key}.sql against the full DB.
     Tasks with ground_truth.alias in task.toml copy from the aliased task.
     """
     GROUND_TRUTH_DIR.mkdir(parents=True, exist_ok=True)
@@ -50,12 +50,12 @@ def generate(task_name: str | None = None) -> None:
             print(f"{task_key}: copied from {alias}")
             continue
 
-        oracle_sql_path = task_dir / "oracle.sql"
-        if not oracle_sql_path.exists():
-            print(f"{task_key}: no oracle.sql found, skipping")
+        sql_path = GROUND_TRUTH_DIR / f"{task_key}.sql"
+        if not sql_path.exists():
+            print(f"{task_key}: no SQL file found at {sql_path}, skipping")
             continue
 
-        sql = oracle_sql_path.read_text()
+        sql = sql_path.read_text()
         df = con.execute(sql).df()
         df.to_csv(out_path, index=False, compression="gzip")
         print(f"{task_key}: {len(df)} rows → {out_path}")
