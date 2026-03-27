@@ -24,7 +24,7 @@ alias = "sirs-24h"  # same clinical concept, same time window
 key_columns = ["stay_id"]
 value_columns = ["sirs", "temp_score", "heart_rate_score", "resp_score", "wbc_score"]
 required_columns = ["subject_id", "hadm_id", "stay_id", "sirs", "temp_score", "heart_rate_score", "resp_score", "wbc_score"]
-row_coverage_threshold = 0.95
+row_coverage_threshold = 1.0
 accuracy_threshold = 0.95
 
 [evaluation.tolerance]
