@@ -41,6 +41,9 @@ def compare_derived_tables(
     agent_dupes = int(agent_df.duplicated(subset=key_columns).sum())
     agent_df = agent_df.drop_duplicates(subset=key_columns, keep="first")
 
+    # Check which value columns exist in agent output before merging
+    agent_has_column = {col: col in agent_df.columns for col in value_columns}
+
     # Merge: left join from truth to agent
     merged = truth_df.merge(
         agent_df, on=key_columns, suffixes=("_truth", "_agent"), how="left"
@@ -55,7 +58,6 @@ def compare_derived_tables(
             merged[agent_col_name].isna() & merged[f"{first_value_col}_truth"].notna()
         )
     else:
-        # Columns weren't renamed (no suffix needed if no overlap)
         missing_mask = pd.Series([False] * len(merged))
 
     results = {}
@@ -64,7 +66,7 @@ def compare_derived_tables(
         agent_col = f"{col}_agent" if f"{col}_agent" in merged.columns else col
         tol = tolerance.get(col, 0)
 
-        if agent_col not in merged.columns:
+        if not agent_has_column[col]:
             results[col] = {
                 "match_rate": 0.0,
                 "total": len(truth_df),
