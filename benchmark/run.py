@@ -132,11 +132,19 @@ def _resolve_agent_db(task_name: str) -> str:
 
 
 def setup_workdir(task_name: str, workdir: Path) -> None:
-    """Prepare the agent's working directory with symlinked data."""
+    """Prepare the agent's working directory with a copy of the database.
+
+    Uses a full copy (not symlink) so the agent's DuckDB writes (WAL, etc.)
+    don't mutate the shared agent_db/ source between runs.
+    """
     agent_db_src = Path(_resolve_agent_db(task_name)).resolve()
-    agent_db_link = workdir / "database.duckdb"
-    if not agent_db_link.exists():
-        agent_db_link.symlink_to(agent_db_src)
+    agent_db_dest = workdir / "database.duckdb"
+    if not agent_db_dest.exists():
+        print(f"  Copying database ({agent_db_src.stat().st_size / 1e9:.1f} GB)...")
+        shutil.copy2(agent_db_src, agent_db_dest)
+        wal_src = agent_db_src.with_suffix(".duckdb.wal")
+        if wal_src.exists():
+            shutil.copy2(wal_src, agent_db_dest.with_suffix(".duckdb.wal"))
 
 
 def _get_cached_db(task_name: str) -> Path:
