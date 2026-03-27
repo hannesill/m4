@@ -14,9 +14,6 @@ Usage:
 
     # Isolated mode (filesystem sandboxed, network tools blocked, full trace captured)
     python benchmark/run.py --task mimic-sirs-24h --condition no-skill --agent claude --isolated
-
-    # Just run oracle solution and tests
-    python benchmark/run.py --task mimic-sirs-24h --oracle
 """
 
 from __future__ import annotations
@@ -39,7 +36,7 @@ TASKS_DIR = BENCHMARK_ROOT / "tasks"
 AGENT_DB_DIR = BENCHMARK_ROOT / "agent_db"
 RESULTS_DIR = BENCHMARK_ROOT / "results"
 ISOLATED_BASE = Path(tempfile.gettempdir()) / "clinskillsbench"
-ISOLATED_DB_CACHE = ISOLATED_BASE / "_db_cache"
+DB_CACHE = ISOLATED_BASE / "_db_cache"
 SANDBOX_HOOK = BENCHMARK_ROOT / "lib" / "sandbox_hook.py"
 
 # Tools to deny in isolated mode — blocks internet access from the agent.
@@ -132,30 +129,28 @@ def _resolve_agent_db(task_name: str) -> str:
 
 
 def setup_workdir(task_name: str, workdir: Path) -> None:
-    """Prepare the agent's working directory with a copy of the database.
+    """Prepare the agent's working directory with a symlink to a cached DB copy.
 
-    Uses a full copy (not symlink) so the agent's DuckDB writes (WAL, etc.)
-    don't mutate the shared agent_db/ source between runs.
+    Symlinks to a per-task cache in /tmp (not to agent_db/ directly) so that
+    DuckDB WAL writes don't mutate the source, and the results directory
+    stays lightweight.
     """
-    agent_db_src = Path(_resolve_agent_db(task_name)).resolve()
-    agent_db_dest = workdir / "database.duckdb"
-    if not agent_db_dest.exists():
-        print(f"  Copying database ({agent_db_src.stat().st_size / 1e9:.1f} GB)...")
-        shutil.copy2(agent_db_src, agent_db_dest)
-        wal_src = agent_db_src.with_suffix(".duckdb.wal")
-        if wal_src.exists():
-            shutil.copy2(wal_src, agent_db_dest.with_suffix(".duckdb.wal"))
+    cached_db = _get_cached_db(task_name)
+    agent_db_link = workdir / "database.duckdb"
+    if not agent_db_link.exists():
+        agent_db_link.symlink_to(cached_db)
 
 
 def _get_cached_db(task_name: str) -> Path:
-    """Get or create a cached copy of the agent DB for isolated runs.
+    """Get or create a cached copy of the agent DB.
 
-    Databases are cached per task key so multiple runs of the same task
-    don't each copy 2+ GB from the original source.
+    Databases are cached per task key in /tmp so that multiple runs don't
+    each copy 2+ GB from agent_db/, and DuckDB WAL writes never touch the
+    source.
     """
     task_key = task_name.replace("mimic-", "")
-    ISOLATED_DB_CACHE.mkdir(parents=True, exist_ok=True)
-    cached_db = ISOLATED_DB_CACHE / f"mimic_iv_{task_key}.duckdb"
+    DB_CACHE.mkdir(parents=True, exist_ok=True)
+    cached_db = DB_CACHE / f"mimic_iv_{task_key}.duckdb"
 
     if not cached_db.exists():
         agent_db_src = Path(_resolve_agent_db(task_name)).resolve()
@@ -417,41 +412,6 @@ def _print_trace_line(line: str) -> None:
                     print(f"  │ [{tool}]")
 
 
-def run_oracle(task_name: str, workdir: Path) -> dict:
-    """Run the oracle solution by executing the task's oracle.sql directly."""
-    import duckdb
-
-    task_dir = TASKS_DIR / task_name
-    oracle_sql_path = task_dir / "oracle.sql"
-    if not oracle_sql_path.exists():
-        return {
-            "returncode": 1,
-            "stdout": "",
-            "stderr": f"oracle.sql not found: {oracle_sql_path}",
-        }
-
-    db_path = str(workdir / "database.duckdb")
-    output_path = workdir / "output.csv"
-
-    try:
-        sql = oracle_sql_path.read_text()
-        con = duckdb.connect(db_path, read_only=True)
-        df = con.execute(sql).df()
-        df.to_csv(output_path, index=False)
-        con.close()
-        return {
-            "returncode": 0,
-            "stdout": f"Wrote {len(df)} rows to {output_path}",
-            "stderr": "",
-        }
-    except Exception as e:
-        return {
-            "returncode": 1,
-            "stdout": "",
-            "stderr": str(e),
-        }
-
-
 # ── Main ────────────────────────────────────────────────────────────────────
 
 
@@ -462,15 +422,15 @@ def main():
     )
     parser.add_argument(
         "--condition",
+        required=True,
         choices=["no-skill", "with-skill", "self-generated"],
         help="Evaluation condition",
     )
-    parser.add_argument("--agent", choices=list(AGENT_COMMANDS), help="Agent to use")
+    parser.add_argument(
+        "--agent", required=True, choices=list(AGENT_COMMANDS), help="Agent to use"
+    )
     parser.add_argument("--model", help="Model override (e.g., opus, sonnet, haiku)")
     parser.add_argument("--trial", type=int, default=1, help="Trial number")
-    parser.add_argument(
-        "--oracle", action="store_true", help="Run oracle solution only"
-    )
     parser.add_argument(
         "--verbose",
         "-v",
@@ -483,9 +443,6 @@ def main():
         help="Run in isolated mode: filesystem sandboxed, network tools blocked, full trace captured",
     )
     args = parser.parse_args()
-
-    if not args.oracle and (not args.condition or not args.agent):
-        parser.error("--condition and --agent are required unless --oracle is set")
 
     # Verify prerequisites
     task_dir = TASKS_DIR / args.task
@@ -501,10 +458,7 @@ def main():
 
     # Create working directory
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    if args.oracle:
-        run_id = f"oracle_{args.task}_{timestamp}"
-    else:
-        run_id = f"{args.task}_{args.condition}_{args.agent}_{args.model or 'default'}_t{args.trial}_{timestamp}"
+    run_id = f"{args.task}_{args.condition}_{args.agent}_{args.model or 'default'}_t{args.trial}_{timestamp}"
 
     if args.isolated:
         workdir = setup_isolated_workdir(args.task, run_id)
@@ -516,12 +470,9 @@ def main():
 
     print(f"\n{'=' * 60}")
     print(f"ClinSkillsBench: {args.task}")
-    if args.oracle:
-        print("Mode: Oracle solution")
-    else:
-        print(
-            f"Condition: {args.condition} | Agent: {args.agent} | Model: {args.model or 'default'}"
-        )
+    print(
+        f"Condition: {args.condition} | Agent: {args.agent} | Model: {args.model or 'default'}"
+    )
     if args.isolated:
         print("Isolation: ON (filesystem sandboxed, network blocked)")
     print(f"Working dir: {workdir}")
@@ -531,34 +482,28 @@ def main():
     if not args.isolated:
         setup_workdir(args.task, workdir)
 
-    # Run oracle or agent
+    # Run agent
     injected_skills = []
     try:
-        if args.oracle:
-            print("Running oracle solution...")
-            agent_result = run_oracle(args.task, workdir)
-            if agent_result["returncode"] != 0:
-                print(f"Oracle failed: {agent_result['stderr']}")
-        else:
-            if args.condition == "with-skill":
-                print("Injecting skills...")
-                injected_skills = inject_skill(args.task, args.agent)
+        if args.condition == "with-skill":
+            print("Injecting skills...")
+            injected_skills = inject_skill(args.task, args.agent)
 
-            instruction = prepare_instruction(args.task, workdir, args.condition)
-            (workdir / "instruction.md").write_text(instruction)
+        instruction = prepare_instruction(args.task, workdir, args.condition)
+        (workdir / "instruction.md").write_text(instruction)
 
-            agent_result = run_agent(
-                instruction,
-                args.agent,
-                workdir,
-                args.model,
-                verbose=args.verbose,
-                isolated=args.isolated,
-            )
-            print(
-                f"  Agent finished in {agent_result['elapsed_seconds']}s "
-                f"(exit code: {agent_result['returncode']})"
-            )
+        agent_result = run_agent(
+            instruction,
+            args.agent,
+            workdir,
+            args.model,
+            verbose=args.verbose,
+            isolated=args.isolated,
+        )
+        print(
+            f"  Agent finished in {agent_result['elapsed_seconds']}s "
+            f"(exit code: {agent_result['returncode']})"
+        )
 
         # Check if output was produced
         output_file = workdir / "output.csv"
@@ -590,8 +535,8 @@ def main():
         # Save full result
         full_result = {
             "task": args.task,
-            "condition": args.condition if not args.oracle else "oracle",
-            "agent": args.agent if not args.oracle else "oracle",
+            "condition": args.condition,
+            "agent": args.agent,
             "model": args.model,
             "trial": args.trial,
             "isolated": args.isolated,

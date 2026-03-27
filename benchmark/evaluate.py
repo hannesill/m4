@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-import traceback
 from pathlib import Path
 
 # Ensure lib/ is importable
@@ -53,30 +52,21 @@ def evaluate(task_name: str, output_path: str) -> dict:
     test_results = run_tests(task_dir, output_path, gt_path)
 
     # Compute continuous reward from raw match rates
-    try:
-        config = load_task_config(task_dir)
-        eval_config = config["evaluation"]
-        comparison = compare_derived_tables(
-            output_path,
-            str(gt_path),
-            key_columns=eval_config["key_columns"],
-            value_columns=eval_config["value_columns"],
-            tolerance=eval_config.get("tolerance", {}),
-        )
-        match_rates = {
-            col: round(comparison[col]["match_rate"], 4)
-            for col in eval_config["value_columns"]
-        }
-        test_results["match_rates"] = match_rates
-        test_results["reward"] = round(sum(match_rates.values()) / len(match_rates), 4)
-    except Exception:
-        # Fall back to pytest-based reward, but surface the error
-        print(
-            f"WARNING: continuous reward computation failed, "
-            f"falling back to pytest-based reward.\n"
-            f"{traceback.format_exc()}",
-            file=sys.stderr,
-        )
+    config = load_task_config(task_dir)
+    eval_config = config["evaluation"]
+    comparison = compare_derived_tables(
+        output_path,
+        str(gt_path),
+        key_columns=eval_config["key_columns"],
+        value_columns=eval_config["value_columns"],
+        tolerance=eval_config.get("tolerance", {}),
+    )
+    match_rates = {
+        col: round(comparison[col]["match_rate"], 4)
+        for col in eval_config["value_columns"]
+    }
+    test_results["match_rates"] = match_rates
+    test_results["reward"] = round(sum(match_rates.values()) / len(match_rates), 4)
 
     return test_results
 
