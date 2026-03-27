@@ -37,6 +37,10 @@ def compare_derived_tables(
     agent_df = pd.read_csv(agent_output_path)
     truth_df = pd.read_csv(ground_truth_path)
 
+    agent_rows_raw = len(agent_df)
+    agent_dupes = int(agent_df.duplicated(subset=key_columns).sum())
+    agent_df = agent_df.drop_duplicates(subset=key_columns, keep="first")
+
     # Merge: left join from truth to agent
     merged = truth_df.merge(
         agent_df, on=key_columns, suffixes=("_truth", "_agent"), how="left"
@@ -65,7 +69,8 @@ def compare_derived_tables(
                 "match_rate": 0.0,
                 "total": len(truth_df),
                 "matched": 0,
-                "agent_rows": len(agent_df),
+                "agent_rows": agent_rows_raw,
+                "agent_duplicates": agent_dupes,
                 "missing_rows": len(truth_df),
                 "mismatched_examples": [],
                 "error": f"Column '{col}' not found in agent output",
@@ -95,7 +100,8 @@ def compare_derived_tables(
             "match_rate": matched / total if total > 0 else 0.0,
             "total": total,
             "matched": matched,
-            "agent_rows": len(agent_df),
+            "agent_rows": agent_rows_raw,
+            "agent_duplicates": agent_dupes,
             "missing_rows": int(missing_mask.sum()),
             "mismatched_examples": mismatched[example_cols].to_dict("records"),
         }

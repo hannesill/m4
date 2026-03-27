@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import traceback
 from pathlib import Path
 
 # Ensure lib/ is importable
@@ -69,9 +70,13 @@ def evaluate(task_name: str, output_path: str) -> dict:
         test_results["match_rates"] = match_rates
         test_results["reward"] = round(sum(match_rates.values()) / len(match_rates), 4)
     except Exception:
-        # If comparison fails (missing columns, bad CSV, etc.),
-        # fall back to pytest-based reward
-        pass
+        # Fall back to pytest-based reward, but surface the error
+        print(
+            f"WARNING: continuous reward computation failed, "
+            f"falling back to pytest-based reward.\n"
+            f"{traceback.format_exc()}",
+            file=sys.stderr,
+        )
 
     return test_results
 

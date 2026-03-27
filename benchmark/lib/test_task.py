@@ -64,12 +64,16 @@ def test_has_required_columns():
 
 
 def test_row_coverage():
-    """Agent should produce output for at least the configured coverage threshold."""
+    """Agent should produce matching keys for at least the configured coverage threshold."""
     agent = pd.read_csv(AGENT_OUTPUT)
     truth = pd.read_csv(GROUND_TRUTH)
-    coverage = len(agent) / len(truth)
+    matched_keys = truth.merge(
+        agent[KEY_COLUMNS].drop_duplicates(), on=KEY_COLUMNS, how="inner"
+    )
+    coverage = len(matched_keys) / len(truth)
     assert coverage >= ROW_COVERAGE_THRESHOLD, (
-        f"Only {coverage:.1%} of rows covered ({len(agent)}/{len(truth)}). "
+        f"Only {coverage:.1%} of ground truth keys matched "
+        f"({len(matched_keys)}/{len(truth)}). "
         f"Need >= {ROW_COVERAGE_THRESHOLD:.0%}."
     )
 
