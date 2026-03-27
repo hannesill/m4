@@ -23,8 +23,8 @@ benchmark/
   evaluate.py      # Standalone evaluation against ground truth
   setup.py         # Database and ground truth preparation
   lib/             # Shared utilities (comparison, test runner, sandbox)
-  tasks/           # Task definitions (instruction, oracle SQL, skills, config)
-  ground_truth/    # Generated ground truth CSVs (gzipped)
+  tasks/           # Task definitions (instruction, skills, config)
+  ground_truth/    # Ground truth SQL and generated CSVs (gzipped)
   agent_db/        # Task-specific DuckDB databases (intermediates selectively dropped)
   results/         # Run outputs (agent traces, CSVs, result JSON)
 ```
@@ -40,9 +40,6 @@ python benchmark/run.py --task mimic-sirs-24h --condition with-skill --agent cla
 
 # Run agent without skill
 python benchmark/run.py --task mimic-sirs-24h --condition no-skill --agent claude
-
-# Run oracle solution (validates ground truth pipeline)
-python benchmark/run.py --task mimic-sirs-24h --oracle
 
 # Isolated mode (sandboxed filesystem, no network)
 python benchmark/run.py --task mimic-sirs-24h --condition no-skill --agent claude --isolated
