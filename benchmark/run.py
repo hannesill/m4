@@ -1,4 +1,4 @@
-"""ClinSkillsBench evaluation harness.
+"""M4Bench evaluation harness.
 
 Orchestrates: task setup -> agent invocation -> output collection -> test execution.
 
@@ -417,7 +417,7 @@ def _print_trace_line(line: str) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ClinSkillsBench evaluation harness")
+    parser = argparse.ArgumentParser(description="M4Bench evaluation harness")
     parser.add_argument(
         "--task", required=True, help="Task name (e.g., mimic-sirs-24h)"
     )
@@ -471,7 +471,7 @@ def main():
         final_results_dir = None
 
     print(f"\n{'=' * 60}")
-    print(f"ClinSkillsBench: {args.task}")
+    print(f"M4Bench: {args.task}")
     print(
         f"Condition: {args.condition} | Agent: {args.agent} | Model: {args.model or 'default'}"
     )

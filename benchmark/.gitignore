@@ -14,3 +14,7 @@ __pycache__/
 
 # Override root-level lib/ ignore for benchmark/lib/
 !lib/
+
+# Markdown files (except README.md)
+*.md
+!README.md
