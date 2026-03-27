@@ -86,14 +86,24 @@ WITH scorecomp AS (
 
 SELECT
     ie.subject_id, ie.hadm_id, ie.stay_id
-    -- Combine all the scores to get SOFA
+    -- Combine all the scores to get SIRS
     -- Impute 0 if the score is missing
     , COALESCE(temp_score, 0)
     + COALESCE(heart_rate_score, 0)
     + COALESCE(resp_score, 0)
     + COALESCE(wbc_score, 0)
     AS sirs
-    , temp_score, heart_rate_score, resp_score, wbc_score
+    -- DEVIATION from mimic-code: COALESCE component scores to 0.
+    -- The original SQL leaves them NULL when underlying data is missing.
+    -- We impute 0 here so the ground truth matches the task instruction
+    -- ("treat missing data as normal, score 0") and agents are not
+    -- penalised for following the instruction. The NULL→0 semantics are
+    -- already applied to the sirs total above; this extends it to the
+    -- individual components for consistency.
+    , COALESCE(temp_score, 0) AS temp_score
+    , COALESCE(heart_rate_score, 0) AS heart_rate_score
+    , COALESCE(resp_score, 0) AS resp_score
+    , COALESCE(wbc_score, 0) AS wbc_score
 FROM mimiciv_icu.icustays ie
 LEFT JOIN scorecalc s
           ON ie.stay_id = s.stay_id
