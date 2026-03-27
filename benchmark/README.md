@@ -1,4 +1,6 @@
-# ClinSkillsBench
+# M4Bench
+
+**M4 — Model Middleware for MIMIC & More**
 
 Benchmark for evaluating whether procedural clinical skills improve AI agents' ability to compute validated clinical scores from raw ICU database tables, using MIT-LCP mimic-code derived tables as ground truth.
 
