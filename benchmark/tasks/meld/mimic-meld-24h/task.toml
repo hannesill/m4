@@ -1,0 +1,25 @@
+[metadata]
+name = "mimic-meld-24h"
+description = "Calculate MELD score for ICU patients from MIMIC-IV data"
+difficulty = "medium"
+mode = "standard"
+category = "Healthcare"
+tags = ["clinical", "icu", "hepatology", "mimic-iv", "meld"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = ["mimiciv_derived.meld"]
+
+[ground_truth]
+# Generated from ground_truth/meld-24h.sql
+
+[evaluation]
+key_columns = ["stay_id"]
+value_columns = ["meld"]
+required_columns = ["subject_id", "hadm_id", "stay_id", "meld"]
+row_coverage_threshold = 1.0
+accuracy_threshold = 1.0
+
+[evaluation.tolerance]
+meld = 1.0
