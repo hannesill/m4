@@ -1,0 +1,41 @@
+[metadata]
+name = "mimic-sapsii-24h-raw"
+description = "Calculate SAPS-II score (24h, raw tables) for ICU patients from MIMIC-IV data"
+difficulty = "expert"
+mode = "raw"  # no intermediate tables, standard time window
+category = "Healthcare"
+tags = ["clinical", "icu", "severity-score", "mimic-iv", "sapsii", "raw"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = [
+    "mimiciv_derived.sapsii",
+    "mimiciv_derived.bg",
+    "mimiciv_derived.ventilation",
+    "mimiciv_derived.gcs",
+    "mimiciv_derived.vitalsign",
+    "mimiciv_derived.chemistry",
+    "mimiciv_derived.enzyme",
+    "mimiciv_derived.complete_blood_count",
+    "mimiciv_derived.urine_output",
+    "mimiciv_derived.age",
+    "mimiciv_derived.first_day_vitalsign",
+    "mimiciv_derived.first_day_lab",
+    "mimiciv_derived.first_day_gcs",
+    "mimiciv_derived.first_day_urine_output",
+    "mimiciv_derived.first_day_bg",
+    "mimiciv_derived.first_day_bg_art",
+]
+
+[ground_truth]
+alias = "sapsii-24h"  # same clinical concept, same time window
+
+[evaluation]
+key_columns = ["stay_id"]
+value_columns = ["sapsii", "age_score", "hr_score", "sysbp_score", "temp_score", "pao2fio2_score", "uo_score", "bun_score", "wbc_score", "potassium_score", "sodium_score", "bicarbonate_score", "bilirubin_score", "gcs_score", "comorbidity_score", "admissiontype_score"]
+required_columns = ["subject_id", "hadm_id", "stay_id", "sapsii", "age_score", "hr_score", "sysbp_score", "temp_score", "pao2fio2_score", "uo_score", "bun_score", "wbc_score", "potassium_score", "sodium_score", "bicarbonate_score", "bilirubin_score", "gcs_score", "comorbidity_score", "admissiontype_score"]
+row_coverage_threshold = 1.0
+accuracy_threshold = 0.90
+
+[evaluation.tolerance]
