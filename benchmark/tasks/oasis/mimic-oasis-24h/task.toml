@@ -1,0 +1,24 @@
+[metadata]
+name = "mimic-oasis-24h"
+description = "Calculate OASIS score (24h window) for ICU patients from MIMIC-IV data"
+difficulty = "medium"
+mode = "standard"
+category = "Healthcare"
+tags = ["clinical", "icu", "severity-score", "mimic-iv", "oasis"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = ["mimiciv_derived.oasis"]
+
+[ground_truth]
+# Generated from ground_truth/oasis-24h.sql
+
+[evaluation]
+key_columns = ["stay_id"]
+value_columns = ["oasis", "preiculos_score", "age_score", "gcs_score", "heart_rate_score", "mbp_score", "resp_rate_score", "temp_score", "urineoutput_score", "mechvent_score", "electivesurgery_score"]
+required_columns = ["subject_id", "hadm_id", "stay_id", "oasis", "preiculos_score", "age_score", "gcs_score", "heart_rate_score", "mbp_score", "resp_rate_score", "temp_score", "urineoutput_score", "mechvent_score", "electivesurgery_score"]
+row_coverage_threshold = 1.0
+accuracy_threshold = 1.0
+
+[evaluation.tolerance]
