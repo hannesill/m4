@@ -1,0 +1,24 @@
+[metadata]
+name = "mimic-sofa-24h"
+description = "Calculate SOFA score (24h window) for ICU patients from MIMIC-IV data"
+difficulty = "hard"
+mode = "standard"  # intermediates available, standard time window
+category = "Healthcare"
+tags = ["clinical", "icu", "severity-score", "mimic-iv", "sofa"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = ["mimiciv_derived.sofa", "mimiciv_derived.first_day_sofa"]
+
+[ground_truth]
+# Generated from ground_truth/sofa-24h.sql
+
+[evaluation]
+key_columns = ["stay_id"]
+value_columns = ["sofa", "respiration", "coagulation", "liver", "cardiovascular", "cns", "renal"]
+required_columns = ["subject_id", "hadm_id", "stay_id", "sofa", "respiration", "coagulation", "liver", "cardiovascular", "cns", "renal"]
+row_coverage_threshold = 1.0
+accuracy_threshold = 1.0
+
+[evaluation.tolerance]
