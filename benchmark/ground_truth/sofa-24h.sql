@@ -84,9 +84,12 @@ WITH vaso_stg AS (
         bg.pao2fio2ratio,
         CASE WHEN NOT vd.stay_id IS NULL THEN 1 ELSE 0 END AS isvent
     FROM mimiciv_icu.icustays AS ie
+    -- [REVIEW] mimic-code omits specimen='ART.' here, unlike the hourly
+    -- sofa.sql which filters arterial only. This means venous PaO2/FiO2
+    -- values may contribute to the respiration score. Consider adding:
+    --     AND bg.specimen = 'ART.'
     LEFT JOIN mimiciv_derived.bg AS bg
         ON ie.subject_id = bg.subject_id
-        AND bg.specimen = 'ART.'
         AND bg.charttime >= ie.intime - INTERVAL '6' HOUR
         AND bg.charttime <= ie.intime + INTERVAL '1' DAY
     LEFT JOIN mimiciv_derived.ventilation AS vd
@@ -146,11 +149,7 @@ WITH vaso_stg AS (
             THEN 3
             WHEN pao2fio2_novent_min < 300
             THEN 2
-            WHEN pao2fio2_vent_min < 300
-            THEN 2
             WHEN pao2fio2_novent_min < 400
-            THEN 1
-            WHEN pao2fio2_vent_min < 400
             THEN 1
             WHEN COALESCE(pao2fio2_vent_min, pao2fio2_novent_min) IS NULL
             THEN NULL
