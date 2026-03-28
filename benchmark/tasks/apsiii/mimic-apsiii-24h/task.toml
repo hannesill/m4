@@ -1,0 +1,24 @@
+[metadata]
+name = "mimic-apsiii-24h"
+description = "Calculate APS III (APACHE III) score for ICU patients from MIMIC-IV data"
+difficulty = "hard"
+mode = "standard"
+category = "Healthcare"
+tags = ["clinical", "icu", "severity-score", "mimic-iv", "apsiii", "apache"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = ["mimiciv_derived.apsiii"]
+
+[ground_truth]
+# Generated from ground_truth/apsiii-24h.sql
+
+[evaluation]
+key_columns = ["stay_id"]
+value_columns = ["apsiii", "hr_score", "mbp_score", "temp_score", "resp_rate_score", "pao2_aado2_score", "hematocrit_score", "wbc_score", "creatinine_score", "uo_score", "bun_score", "sodium_score", "albumin_score", "bilirubin_score", "glucose_score", "acidbase_score", "gcs_score"]
+required_columns = ["subject_id", "hadm_id", "stay_id", "apsiii", "hr_score", "mbp_score", "temp_score", "resp_rate_score", "pao2_aado2_score", "hematocrit_score", "wbc_score", "creatinine_score", "uo_score", "bun_score", "sodium_score", "albumin_score", "bilirubin_score", "glucose_score", "acidbase_score", "gcs_score"]
+row_coverage_threshold = 1.0
+accuracy_threshold = 1.0
+
+[evaluation.tolerance]

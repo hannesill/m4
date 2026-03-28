@@ -1,0 +1,24 @@
+[metadata]
+name = "mimic-kdigo-48h"
+description = "Calculate KDIGO AKI staging (48h window) for ICU patients from MIMIC-IV data"
+difficulty = "hard"
+mode = "standard"
+category = "Healthcare"
+tags = ["clinical", "icu", "nephrology", "mimic-iv", "kdigo", "aki"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = ["mimiciv_derived.kdigo_stages"]
+
+[ground_truth]
+# Generated from ground_truth/kdigo-48h.sql
+
+[evaluation]
+key_columns = ["stay_id"]
+value_columns = ["aki_stage", "aki_stage_creat", "aki_stage_uo", "aki_stage_crrt"]
+required_columns = ["subject_id", "hadm_id", "stay_id", "aki_stage", "aki_stage_creat", "aki_stage_uo", "aki_stage_crrt"]
+row_coverage_threshold = 1.0
+accuracy_threshold = 1.0
+
+[evaluation.tolerance]
