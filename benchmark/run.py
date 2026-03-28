@@ -3,16 +3,19 @@
 Orchestrates: task setup -> agent invocation -> output collection -> test execution.
 
 Usage:
-    # Run with skill
+    # Run a single task
     python benchmark/run.py --task mimic-sirs-24h --condition with-skill --agent claude
 
-    # Run without skill
-    python benchmark/run.py --task mimic-sirs-24h --condition no-skill --agent claude
+    # Run all variants of a task family
+    python benchmark/run.py --family sofa --condition no-skill --agent claude
 
-    # Specify model (for claude)
-    python benchmark/run.py --task mimic-sirs-24h --condition with-skill --agent claude --model opus
+    # Run all tasks
+    python benchmark/run.py --task all --condition with-skill --agent claude --model opus
 
-    # Isolated mode (filesystem sandboxed, network tools blocked, full trace captured)
+    # List available tasks
+    python benchmark/run.py --list
+
+    # Isolated mode (filesystem sandboxed, network tools blocked)
     python benchmark/run.py --task mimic-sirs-24h --condition no-skill --agent claude --isolated
 """
 
@@ -31,7 +34,7 @@ from pathlib import Path
 # Ensure lib/ is importable
 sys.path.insert(0, str(Path(__file__).parent))
 
-from lib.db import resolve_task_dir
+from lib.db import list_task_dirs, load_task_config, resolve_task_dir
 
 BENCHMARK_ROOT = Path(__file__).parent
 AGENT_DB_DIR = BENCHMARK_ROOT / "agent_db"
@@ -413,57 +416,92 @@ def _print_trace_line(line: str) -> None:
                     print(f"  │ [{tool}]")
 
 
-# ── Main ────────────────────────────────────────────────────────────────────
+# ── Task listing ───────────────────────────────────────────────────────────
 
 
-def main():
-    parser = argparse.ArgumentParser(description="M4Bench evaluation harness")
-    parser.add_argument(
-        "--task", required=True, help="Task name (e.g., mimic-sirs-24h)"
-    )
-    parser.add_argument(
-        "--condition",
-        required=True,
-        choices=["no-skill", "with-skill", "self-generated"],
-        help="Evaluation condition",
-    )
-    parser.add_argument(
-        "--agent", required=True, choices=list(AGENT_COMMANDS), help="Agent to use"
-    )
-    parser.add_argument("--model", help="Model override (e.g., opus, sonnet, haiku)")
-    parser.add_argument("--trial", type=int, default=1, help="Trial number")
-    parser.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Stream agent output in real time",
-    )
-    parser.add_argument(
-        "--isolated",
-        action="store_true",
-        help="Run in isolated mode: filesystem sandboxed, network tools blocked, full trace captured",
-    )
-    args = parser.parse_args()
+def list_tasks() -> None:
+    """Print available tasks with metadata and exit."""
+    task_dirs = list_task_dirs()
+    if not task_dirs:
+        print("No tasks found.")
+        return
 
+    # Group by family (parent directory name)
+    families: dict[str, list[tuple[str, str, str]]] = {}
+    for td in task_dirs:
+        config = load_task_config(td)
+        meta = config["metadata"]
+        family = td.parent.name
+        families.setdefault(family, []).append(
+            (meta["name"], meta.get("difficulty", "?"), meta.get("mode", "?"))
+        )
+
+    print(f"\nAvailable tasks ({len(task_dirs)} total):\n")
+    for family, tasks in sorted(families.items()):
+        print(f"  {family}/")
+        for name, difficulty, mode in tasks:
+            print(f"    {name:<30s}  {difficulty:<8s}  {mode}")
+    print(f"\nFamilies: {', '.join(sorted(families))}")
+
+
+def resolve_tasks(args) -> list[str]:
+    """Resolve CLI arguments to a list of task names."""
+    if args.list:
+        list_tasks()
+        sys.exit(0)
+
+    if args.family:
+        # Find all tasks under benchmark/tasks/{family}/
+        all_dirs = list_task_dirs()
+        matched = [
+            load_task_config(td)["metadata"]["name"]
+            for td in all_dirs
+            if td.parent.name == args.family
+        ]
+        if not matched:
+            print(f"Error: No tasks found for family '{args.family}'")
+            print("Use --list to see available tasks and families.")
+            sys.exit(1)
+        return matched
+
+    if args.task == "all":
+        return [load_task_config(td)["metadata"]["name"] for td in list_task_dirs()]
+
+    return [args.task]
+
+
+# ── Single-task execution ──────────────────────────────────────────────────
+
+
+def run_single_task(
+    task_name: str,
+    condition: str,
+    agent_name: str,
+    model: str | None,
+    trial: int,
+    verbose: bool,
+    isolated: bool,
+) -> dict:
+    """Run a single benchmark task end-to-end. Returns the full result dict."""
     # Verify prerequisites
     try:
-        resolve_task_dir(args.task)
+        resolve_task_dir(task_name)
     except FileNotFoundError as e:
         print(f"Error: {e}")
-        sys.exit(1)
+        return {"task": task_name, "test_results": {"reward": 0.0}, "error": str(e)}
 
-    agent_db_path = _resolve_agent_db(args.task)
+    agent_db_path = _resolve_agent_db(task_name)
     if not Path(agent_db_path).exists():
-        print(f"Error: Agent DB not found: {agent_db_path}")
-        print(f"Run: python benchmark/setup.py --task {args.task}")
-        sys.exit(1)
+        msg = f"Agent DB not found: {agent_db_path}. Run: python benchmark/setup.py --task {task_name}"
+        print(f"Error: {msg}")
+        return {"task": task_name, "test_results": {"reward": 0.0}, "error": msg}
 
     # Create working directory
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    run_id = f"{args.task}_{args.condition}_{args.agent}_{args.model or 'default'}_t{args.trial}_{timestamp}"
+    run_id = f"{task_name}_{condition}_{agent_name}_{model or 'default'}_t{trial}_{timestamp}"
 
-    if args.isolated:
-        workdir = setup_isolated_workdir(args.task, run_id)
+    if isolated:
+        workdir = setup_isolated_workdir(task_name, run_id)
         final_results_dir = RESULTS_DIR / run_id
     else:
         workdir = RESULTS_DIR / run_id
@@ -471,36 +509,34 @@ def main():
         final_results_dir = None
 
     print(f"\n{'=' * 60}")
-    print(f"M4Bench: {args.task}")
-    print(
-        f"Condition: {args.condition} | Agent: {args.agent} | Model: {args.model or 'default'}"
-    )
-    if args.isolated:
+    print(f"M4Bench: {task_name}")
+    print(f"Condition: {condition} | Agent: {agent_name} | Model: {model or 'default'}")
+    if isolated:
         print("Isolation: ON (filesystem sandboxed, network blocked)")
     print(f"Working dir: {workdir}")
     print(f"{'=' * 60}\n")
 
     # Set up workdir with data
-    if not args.isolated:
-        setup_workdir(args.task, workdir)
+    if not isolated:
+        setup_workdir(task_name, workdir)
 
     # Run agent
     injected_skills = []
     try:
-        if args.condition == "with-skill":
+        if condition == "with-skill":
             print("Injecting skills...")
-            injected_skills = inject_skill(args.task, args.agent)
+            injected_skills = inject_skill(task_name, agent_name)
 
-        instruction = prepare_instruction(args.task, workdir, args.condition)
+        instruction = prepare_instruction(task_name, workdir, condition)
         (workdir / "instruction.md").write_text(instruction)
 
         agent_result = run_agent(
             instruction,
-            args.agent,
+            agent_name,
             workdir,
-            args.model,
-            verbose=args.verbose,
-            isolated=args.isolated,
+            model,
+            verbose=verbose,
+            isolated=isolated,
         )
         print(
             f"  Agent finished in {agent_result['elapsed_seconds']}s "
@@ -525,7 +561,7 @@ def main():
             print("Running tests...")
             from evaluate import evaluate
 
-            test_results = evaluate(args.task, str(output_file))
+            test_results = evaluate(task_name, str(output_file))
 
         # Print results
         print(f"\n{'=' * 60}")
@@ -536,12 +572,12 @@ def main():
 
         # Save full result
         full_result = {
-            "task": args.task,
-            "condition": args.condition,
-            "agent": args.agent,
-            "model": args.model,
-            "trial": args.trial,
-            "isolated": args.isolated,
+            "task": task_name,
+            "condition": condition,
+            "agent": agent_name,
+            "model": model,
+            "trial": trial,
+            "isolated": isolated,
             "timestamp": timestamp,
             "run_id": run_id,
             "agent_result": agent_result,
@@ -558,6 +594,8 @@ def main():
             trace_size = trace_file.stat().st_size / 1024
             print(f"Agent trace: {trace_file} ({trace_size:.0f} KB)")
 
+        return full_result
+
     finally:
         if injected_skills:
             print("\nCleaning up skills...")
@@ -566,6 +604,89 @@ def main():
             print(f"\nCopying results to {final_results_dir}...")
             copy_results_back(workdir, final_results_dir)
             print(f"Results available at: {final_results_dir}")
+
+
+# ── Main ────────────────────────────────────────────────────────────────────
+
+
+def main():
+    parser = argparse.ArgumentParser(description="M4Bench evaluation harness")
+    task_group = parser.add_mutually_exclusive_group(required=True)
+    task_group.add_argument(
+        "--task",
+        help="Task name (e.g., mimic-sirs-24h) or 'all' for every task",
+    )
+    task_group.add_argument(
+        "--family",
+        help="Run all variants of a task family (e.g., sirs, sofa)",
+    )
+    task_group.add_argument(
+        "--list",
+        action="store_true",
+        help="List available tasks and exit",
+    )
+    parser.add_argument(
+        "--condition",
+        choices=["no-skill", "with-skill", "self-generated"],
+        help="Evaluation condition",
+    )
+    parser.add_argument("--agent", choices=list(AGENT_COMMANDS), help="Agent to use")
+    parser.add_argument("--model", help="Model override (e.g., opus, sonnet, haiku)")
+    parser.add_argument("--trial", type=int, default=1, help="Trial number")
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Stream agent output in real time",
+    )
+    parser.add_argument(
+        "--isolated",
+        action="store_true",
+        help="Run in isolated mode: filesystem sandboxed, network tools blocked, full trace captured",
+    )
+    args = parser.parse_args()
+
+    task_names = resolve_tasks(args)
+
+    # --condition and --agent are required when actually running tasks
+    if not args.condition:
+        parser.error("--condition is required when running tasks")
+    if not args.agent:
+        parser.error("--agent is required when running tasks")
+
+    # Run tasks
+    results = []
+    for task_name in task_names:
+        result = run_single_task(
+            task_name,
+            args.condition,
+            args.agent,
+            args.model,
+            args.trial,
+            args.verbose,
+            args.isolated,
+        )
+        results.append(result)
+
+    # Print batch summary if multiple tasks were run
+    if len(results) > 1:
+        print(f"\n{'=' * 70}")
+        print("BATCH SUMMARY")
+        print(f"{'=' * 70}")
+        print(f"{'Task':<30s}  {'Condition':<14s}  {'Reward':>7s}  {'Time':>7s}")
+        print(f"{'-' * 30}  {'-' * 14}  {'-' * 7}  {'-' * 7}")
+        for r in results:
+            task = r.get("task", "?")
+            cond = r.get("condition", "?")
+            reward = r.get("test_results", {}).get("reward", 0.0)
+            elapsed = r.get("agent_result", {}).get("elapsed_seconds", 0)
+            print(f"{task:<30s}  {cond:<14s}  {reward:>7.4f}  {elapsed:>6.1f}s")
+        mean_reward = sum(
+            r.get("test_results", {}).get("reward", 0.0) for r in results
+        ) / len(results)
+        print(f"{'-' * 30}  {'-' * 14}  {'-' * 7}  {'-' * 7}")
+        print(f"{'Mean':<30s}  {'':<14s}  {mean_reward:>7.4f}")
+        print(f"{'=' * 70}")
 
 
 if __name__ == "__main__":

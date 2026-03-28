@@ -1,0 +1,45 @@
+[metadata]
+name = "mimic-sofa-24h-raw"
+description = "Calculate SOFA score (24h, raw tables) for ICU patients from MIMIC-IV data"
+difficulty = "expert"
+mode = "raw"  # no intermediate tables, standard time window
+category = "Healthcare"
+tags = ["clinical", "icu", "severity-score", "mimic-iv", "sofa", "raw"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = [
+    "mimiciv_derived.sofa",
+    "mimiciv_derived.first_day_sofa",
+    "mimiciv_derived.bg",
+    "mimiciv_derived.ventilation",
+    "mimiciv_derived.gcs",
+    "mimiciv_derived.vitalsign",
+    "mimiciv_derived.chemistry",
+    "mimiciv_derived.enzyme",
+    "mimiciv_derived.complete_blood_count",
+    "mimiciv_derived.urine_output_rate",
+    "mimiciv_derived.norepinephrine",
+    "mimiciv_derived.epinephrine",
+    "mimiciv_derived.dopamine",
+    "mimiciv_derived.dobutamine",
+    "mimiciv_derived.first_day_vitalsign",
+    "mimiciv_derived.first_day_lab",
+    "mimiciv_derived.first_day_gcs",
+    "mimiciv_derived.first_day_urine_output",
+    "mimiciv_derived.first_day_bg",
+    "mimiciv_derived.first_day_bg_art",
+]
+
+[ground_truth]
+alias = "sofa-24h"  # same clinical concept, same time window
+
+[evaluation]
+key_columns = ["stay_id"]
+value_columns = ["sofa", "respiration", "coagulation", "liver", "cardiovascular", "cns", "renal"]
+required_columns = ["subject_id", "hadm_id", "stay_id", "sofa", "respiration", "coagulation", "liver", "cardiovascular", "cns", "renal"]
+row_coverage_threshold = 1.0
+accuracy_threshold = 0.90
+
+[evaluation.tolerance]
