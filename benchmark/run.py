@@ -24,10 +24,14 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import statistics
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -167,14 +171,16 @@ def _get_cached_db(task_name: str, schema: str = "native") -> Path:
 
     cached_db = DB_CACHE / cache_name
 
-    if not cached_db.exists():
-        agent_db_src = Path(_resolve_agent_db(task_name, schema)).resolve()
-        size_gb = agent_db_src.stat().st_size / 1e9
-        print(f"  Caching database for {task_key}/{schema} ({size_gb:.1f} GB)...")
-        shutil.copy2(agent_db_src, cached_db)
-        wal_src = agent_db_src.with_suffix(".duckdb.wal")
-        if wal_src.exists():
-            shutil.copy2(wal_src, cached_db.with_suffix(".duckdb.wal"))
+    lock = _get_db_cache_lock(cache_name)
+    with lock:
+        if not cached_db.exists():
+            agent_db_src = Path(_resolve_agent_db(task_name, schema)).resolve()
+            size_gb = agent_db_src.stat().st_size / 1e9
+            print(f"  Caching database for {task_key}/{schema} ({size_gb:.1f} GB)...")
+            shutil.copy2(agent_db_src, cached_db)
+            wal_src = agent_db_src.with_suffix(".duckdb.wal")
+            if wal_src.exists():
+                shutil.copy2(wal_src, cached_db.with_suffix(".duckdb.wal"))
 
     return cached_db
 
@@ -212,7 +218,7 @@ def copy_results_back(workdir: Path, results_dir: Path) -> None:
     Skips the database and sandbox config (only copies useful outputs).
     """
     results_dir.mkdir(parents=True, exist_ok=True)
-    skip = {"database.duckdb", "database.duckdb.wal", ".claude"}
+    skip = {"database.duckdb", "database.duckdb.wal", ".claude", "_home"}
     for item in workdir.iterdir():
         if item.name in skip or item.is_symlink():
             continue
@@ -255,8 +261,10 @@ def prepare_instruction(
     return instruction
 
 
-def inject_skill(task_name: str, agent_name: str) -> list[Path]:
-    """Copy skill files to agent's skill discovery path. Returns paths for cleanup."""
+def inject_skill(
+    task_name: str, agent_name: str, home: str | None = None
+) -> list[Path]:
+    """Copy skill files to agent's skill discovery path. Returns created paths."""
     task_dir = resolve_task_dir(task_name)
     skills_dir = task_dir / "skills"
 
@@ -264,11 +272,12 @@ def inject_skill(task_name: str, agent_name: str) -> list[Path]:
         return []
 
     agent_config = AGENT_COMMANDS.get(agent_name, {})
-    home = str(Path.home())
+    home = home or str(Path.home())
     created_paths = []
 
     for skill_path_template in agent_config.get("skill_paths", []):
         target_base = Path(skill_path_template.format(home=home))
+        target_base.mkdir(parents=True, exist_ok=True)
 
         for skill_dir in skills_dir.iterdir():
             if not skill_dir.is_dir():
@@ -283,12 +292,32 @@ def inject_skill(task_name: str, agent_name: str) -> list[Path]:
     return created_paths
 
 
-def cleanup_skills(paths: list[Path]) -> None:
-    """Remove injected skill directories."""
-    for p in paths:
-        if p.exists():
-            shutil.rmtree(p)
-            print(f"  Cleaned up skill: {p}")
+def inject_all_skills(agent_name: str, home: str | None = None) -> list[Path]:
+    """Copy ALL benchmark skills to the agent's skill directory."""
+    all_task_dirs = list_task_dirs()
+    seen_skills: set[str] = set()
+    created_paths: list[Path] = []
+    home = home or str(Path.home())
+    agent_config = AGENT_COMMANDS.get(agent_name, {})
+
+    for task_dir in all_task_dirs:
+        skills_dir = task_dir / "skills"
+        if not skills_dir.exists():
+            continue
+        for skill_dir in skills_dir.iterdir():
+            if not skill_dir.is_dir() or skill_dir.name in seen_skills:
+                continue
+            seen_skills.add(skill_dir.name)
+            for tmpl in agent_config.get("skill_paths", []):
+                target_base = Path(tmpl.format(home=home))
+                target_base.mkdir(parents=True, exist_ok=True)
+                target = target_base / skill_dir.name
+                if not target.exists():
+                    shutil.copytree(skill_dir, target)
+                    created_paths.append(target)
+                    print(f"  Injected skill: {target}")
+
+    return created_paths
 
 
 # ── Agent execution ─────────────────────────────────────────────────────────
@@ -553,6 +582,9 @@ def run_single_task(
         if condition == "with-skill":
             print("Injecting skills...")
             injected_skills = inject_skill(task_name, agent_name)
+        elif condition == "with-skill-all":
+            print("Injecting all benchmark skills...")
+            injected_skills = inject_all_skills(agent_name)
 
         instruction = prepare_instruction(task_name, workdir, condition, schema)
         (workdir / "instruction.md").write_text(instruction)
@@ -626,12 +658,212 @@ def run_single_task(
 
     finally:
         if injected_skills:
-            print("\nCleaning up skills...")
-            cleanup_skills(injected_skills)
+            print("Cleaning up skills...")
+            for p in injected_skills:
+                if p.exists():
+                    shutil.rmtree(p)
         if final_results_dir:
             print(f"\nCopying results to {final_results_dir}...")
             copy_results_back(workdir, final_results_dir)
             print(f"Results available at: {final_results_dir}")
+
+
+# ── Thread safety ──────────────────────────────────────────────────────────
+
+_db_cache_locks: dict[str, threading.Lock] = defaultdict(threading.Lock)
+_db_cache_locks_guard = threading.Lock()
+
+
+def _get_db_cache_lock(cache_name: str) -> threading.Lock:
+    """Get a per-cache-name lock for thread-safe DB caching."""
+    with _db_cache_locks_guard:
+        return _db_cache_locks[cache_name]
+
+
+# Skill injection locks: keyed by skill directory name. Serializes parallel
+# with-skill runs that inject the same skill (e.g., sirs-24h and sirs-24h-raw
+# both use "sirs-criteria" but with different content).
+_skill_locks: dict[str, threading.Lock] = defaultdict(threading.Lock)
+_skill_locks_guard = threading.Lock()
+
+
+def _get_skill_locks(task_name: str) -> list[threading.Lock]:
+    """Return locks for all skill directories this task would inject."""
+    try:
+        task_dir = resolve_task_dir(task_name)
+    except FileNotFoundError:
+        return []
+    skills_dir = task_dir / "skills"
+    if not skills_dir.exists():
+        return []
+    locks = []
+    with _skill_locks_guard:
+        for skill_dir in sorted(skills_dir.iterdir()):
+            if skill_dir.is_dir():
+                locks.append(_skill_locks[skill_dir.name])
+    return locks
+
+
+# ── Parallel execution ─────────────────────────────────────────────────────
+
+_progress_lock = threading.Lock()
+
+
+def _print_progress(done: int, total: int, running: set[str]) -> None:
+    """Print current progress (thread-safe)."""
+    with _progress_lock:
+        running_str = ", ".join(sorted(running)) if running else "none"
+        queued = total - done - len(running)
+        print(
+            f"\n[{done}/{total} done] Running: {running_str} | Queued: {queued}",
+            flush=True,
+        )
+
+
+def _run_parallel(
+    run_matrix: list[tuple[str, int]],
+    condition: str,
+    agent_name: str,
+    model: str | None,
+    verbose: bool,
+    isolated: bool,
+    schema: str,
+    max_workers: int,
+) -> list[dict]:
+    """Execute runs in parallel using ThreadPoolExecutor."""
+    total = len(run_matrix)
+    done = 0
+    running: set[str] = set()
+    results: list[dict] = []
+
+    def _run_one(task_name: str, trial: int) -> dict:
+        nonlocal done
+        key = f"{task_name}/t{trial}"
+        with _progress_lock:
+            running.add(key)
+        _print_progress(done, total, running)
+
+        # Acquire skill locks for with-skill conditions to prevent
+        # concurrent inject/cleanup of same skill directory
+        skill_locks = []
+        if condition in ("with-skill", "with-skill-all"):
+            skill_locks = _get_skill_locks(task_name)
+            skill_locks.sort(key=id)  # consistent order prevents deadlock
+            for lock in skill_locks:
+                lock.acquire()
+
+        try:
+            result = run_single_task(
+                task_name,
+                condition,
+                agent_name,
+                model,
+                trial,
+                verbose,
+                isolated,
+                schema,
+            )
+        except Exception as e:
+            result = {
+                "task": task_name,
+                "trial": trial,
+                "condition": condition,
+                "test_results": {"reward": 0.0},
+                "error": str(e),
+            }
+        finally:
+            for lock in skill_locks:
+                lock.release()
+
+        # Print single-line completion
+        reward = result.get("test_results", {}).get("reward", 0.0)
+        elapsed = result.get("agent_result", {}).get("elapsed_seconds", 0)
+        with _progress_lock:
+            running.discard(key)
+            done += 1
+        _print_progress(done, total, running)
+        with _progress_lock:
+            print(f"  Completed: {key} -> reward={reward:.4f} ({elapsed:.0f}s)")
+
+        return result
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_key = {}
+        for task_name, trial in run_matrix:
+            future = executor.submit(_run_one, task_name, trial)
+            future_to_key[future] = (task_name, trial)
+
+        for future in as_completed(future_to_key):
+            task_name, trial = future_to_key[future]
+            try:
+                result = future.result()
+            except Exception as e:
+                result = {
+                    "task": task_name,
+                    "trial": trial,
+                    "condition": condition,
+                    "test_results": {"reward": 0.0},
+                    "error": str(e),
+                }
+            results.append(result)
+
+    return results
+
+
+# ── Summary ────────────────────────────────────────────────────────────────
+
+
+def _print_summary(results: list[dict], seeds: int) -> None:
+    """Print batch summary with per-task mean ± std when seeds > 1."""
+    print(f"\n{'=' * 78}")
+    print("BATCH SUMMARY")
+    print(f"{'=' * 78}")
+
+    if seeds > 1:
+        # Group by task
+        by_task: dict[str, list[float]] = defaultdict(list)
+        for r in results:
+            task = r.get("task", "?")
+            reward = r.get("test_results", {}).get("reward", 0.0)
+            by_task[task].append(reward)
+
+        cond = results[0].get("condition", "?")
+        print(
+            f"{'Task':<30s}  {'Condition':<16s}  {'Mean':>7s}  {'Std':>7s}  {'N':>3s}"
+        )
+        print(f"{'-' * 30}  {'-' * 16}  {'-' * 7}  {'-' * 7}  {'-' * 3}")
+
+        all_means = []
+        for task, rewards in sorted(by_task.items()):
+            mean_r = statistics.mean(rewards)
+            std_r = statistics.stdev(rewards) if len(rewards) > 1 else 0.0
+            all_means.append(mean_r)
+            print(
+                f"{task:<30s}  {cond:<16s}  {mean_r:>7.4f}  {std_r:>7.4f}  {len(rewards):>3d}"
+            )
+
+        overall_mean = statistics.mean(all_means)
+        overall_std = statistics.stdev(all_means) if len(all_means) > 1 else 0.0
+        print(f"{'-' * 30}  {'-' * 16}  {'-' * 7}  {'-' * 7}  {'-' * 3}")
+        print(
+            f"{'Aggregate':<30s}  {'':<16s}  {overall_mean:>7.4f}  {overall_std:>7.4f}"
+        )
+    else:
+        print(f"{'Task':<30s}  {'Condition':<16s}  {'Reward':>7s}  {'Time':>7s}")
+        print(f"{'-' * 30}  {'-' * 16}  {'-' * 7}  {'-' * 7}")
+        for r in results:
+            task = r.get("task", "?")
+            cond = r.get("condition", "?")
+            reward = r.get("test_results", {}).get("reward", 0.0)
+            elapsed = r.get("agent_result", {}).get("elapsed_seconds", 0)
+            print(f"{task:<30s}  {cond:<16s}  {reward:>7.4f}  {elapsed:>6.1f}s")
+        mean_reward = sum(
+            r.get("test_results", {}).get("reward", 0.0) for r in results
+        ) / len(results)
+        print(f"{'-' * 30}  {'-' * 16}  {'-' * 7}  {'-' * 7}")
+        print(f"{'Mean':<30s}  {'':<16s}  {mean_reward:>7.4f}")
+
+    print(f"{'=' * 78}")
 
 
 # ── Main ────────────────────────────────────────────────────────────────────
@@ -655,7 +887,7 @@ def main():
     )
     parser.add_argument(
         "--condition",
-        choices=["no-skill", "with-skill", "self-generated"],
+        choices=["no-skill", "with-skill", "with-skill-all", "self-generated"],
         help="Evaluation condition",
     )
     parser.add_argument("--agent", choices=list(AGENT_COMMANDS), help="Agent to use")
@@ -678,6 +910,18 @@ def main():
         default="native",
         help="Database schema condition for contamination analysis (default: native)",
     )
+    parser.add_argument(
+        "--parallel",
+        type=int,
+        default=1,
+        help="Max concurrent task runs (default: 1, recommended max: 4 on 18GB RAM)",
+    )
+    parser.add_argument(
+        "--seeds",
+        type=int,
+        default=1,
+        help="Number of seeds per task (each gets trial=1..N)",
+    )
     args = parser.parse_args()
 
     task_names = resolve_tasks(args)
@@ -688,40 +932,74 @@ def main():
     if not args.agent:
         parser.error("--agent is required when running tasks")
 
-    # Run tasks
-    results = []
-    for task_name in task_names:
-        result = run_single_task(
-            task_name,
+    if args.parallel > 4:
+        print(
+            f"Warning: --parallel {args.parallel} exceeds recommended max of 4 on 18GB RAM"
+        )
+
+    # Build run matrix: (task_name, trial) for all tasks x seeds
+    run_matrix = [
+        (task_name, trial)
+        for task_name in task_names
+        for trial in range(1, args.seeds + 1)
+    ]
+
+    print(
+        f"\nRun matrix: {len(run_matrix)} runs ({len(task_names)} tasks x {args.seeds} seeds)"
+    )
+    if args.parallel > 1:
+        print(f"Parallelism: {args.parallel} concurrent runs")
+    print()
+
+    # Execute runs
+    if args.parallel <= 1:
+        # Sequential execution (original behavior)
+        results = []
+        for task_name, trial in run_matrix:
+            result = run_single_task(
+                task_name,
+                args.condition,
+                args.agent,
+                args.model,
+                trial,
+                args.verbose,
+                args.isolated,
+                args.schema,
+            )
+            results.append(result)
+    else:
+        # Parallel execution
+        results = _run_parallel(
+            run_matrix,
             args.condition,
             args.agent,
             args.model,
-            args.trial,
             args.verbose,
             args.isolated,
             args.schema,
+            args.parallel,
         )
-        results.append(result)
 
-    # Print batch summary if multiple tasks were run
+    # Print summary
     if len(results) > 1:
-        print(f"\n{'=' * 70}")
-        print("BATCH SUMMARY")
-        print(f"{'=' * 70}")
-        print(f"{'Task':<30s}  {'Condition':<14s}  {'Reward':>7s}  {'Time':>7s}")
-        print(f"{'-' * 30}  {'-' * 14}  {'-' * 7}  {'-' * 7}")
-        for r in results:
-            task = r.get("task", "?")
-            cond = r.get("condition", "?")
-            reward = r.get("test_results", {}).get("reward", 0.0)
-            elapsed = r.get("agent_result", {}).get("elapsed_seconds", 0)
-            print(f"{task:<30s}  {cond:<14s}  {reward:>7.4f}  {elapsed:>6.1f}s")
-        mean_reward = sum(
-            r.get("test_results", {}).get("reward", 0.0) for r in results
-        ) / len(results)
-        print(f"{'-' * 30}  {'-' * 14}  {'-' * 7}  {'-' * 7}")
-        print(f"{'Mean':<30s}  {'':<14s}  {mean_reward:>7.4f}")
-        print(f"{'=' * 70}")
+        _print_summary(results, args.seeds)
+
+    # Save batch result JSON
+    if len(results) > 1:
+        batch_ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        batch_path = RESULTS_DIR / f"batch_{batch_ts}.json"
+        batch_data = {
+            "condition": args.condition,
+            "agent": args.agent,
+            "model": args.model,
+            "schema": args.schema,
+            "parallel": args.parallel,
+            "seeds": args.seeds,
+            "results": results,
+        }
+        with open(batch_path, "w") as f:
+            json.dump(batch_data, f, indent=2, default=str)
+        print(f"\nBatch results saved to: {batch_path}")
 
 
 if __name__ == "__main__":
