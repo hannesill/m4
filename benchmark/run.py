@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import statistics
 import subprocess
@@ -330,6 +331,7 @@ def run_agent(
     model: str | None = None,
     verbose: bool = False,
     isolated: bool = False,
+    run_home: Path | None = None,
 ) -> dict:
     """Invoke an agent CLI with the instruction. Returns result dict."""
     agent_config = AGENT_COMMANDS.get(agent_name)
@@ -354,6 +356,12 @@ def run_agent(
 
     cmd.append(instruction)
 
+    # Per-run HOME isolation: when set, Claude CLI discovers skills at
+    # $HOME/.claude/skills/ and loads $HOME/.claude/CLAUDE.md — both controlled.
+    env = None
+    if run_home:
+        env = {**os.environ, "HOME": str(run_home)}
+
     print(f"  Running {agent_name}{'  (verbose)' if verbose else ''}...")
     start = time.time()
 
@@ -364,6 +372,7 @@ def run_agent(
             stderr=subprocess.STDOUT,
             text=True,
             cwd=str(workdir),
+            env=env,
         )
         output_lines = []
         with open(trace_path, "w") as trace_file:
@@ -576,15 +585,27 @@ def run_single_task(
     if not isolated:
         setup_workdir(task_name, workdir, schema)
 
+    # Per-run HOME isolation: when ANTHROPIC_API_KEY is set (Docker / explicit key),
+    # create a clean HOME so the agent sees no host CLAUDE.md or personal skills.
+    # On bare metal with OAuth (no key set), skip — auth requires the real HOME.
+    run_home = None
+    use_run_home = os.environ.get("ANTHROPIC_API_KEY")
+
+    if use_run_home:
+        run_home = workdir / "_home"
+        (run_home / ".claude" / "skills").mkdir(parents=True, exist_ok=True)
+        print("  Per-run HOME isolation: ON (clean environment)")
+
     # Run agent
     injected_skills = []
     try:
+        skill_home = str(run_home) if run_home else None
         if condition == "with-skill":
             print("Injecting skills...")
-            injected_skills = inject_skill(task_name, agent_name)
+            injected_skills = inject_skill(task_name, agent_name, home=skill_home)
         elif condition == "with-skill-all":
             print("Injecting all benchmark skills...")
-            injected_skills = inject_all_skills(agent_name)
+            injected_skills = inject_all_skills(agent_name, home=skill_home)
 
         instruction = prepare_instruction(task_name, workdir, condition, schema)
         (workdir / "instruction.md").write_text(instruction)
@@ -596,6 +617,7 @@ def run_single_task(
             model,
             verbose=verbose,
             isolated=isolated,
+            run_home=run_home,
         )
         print(
             f"  Agent finished in {agent_result['elapsed_seconds']}s "
@@ -657,7 +679,9 @@ def run_single_task(
         return full_result
 
     finally:
-        if injected_skills:
+        # When using per-run HOME, skills live in workdir — no host cleanup needed.
+        # On bare metal (no run_home), clean up injected skills from ~/.claude/skills/.
+        if injected_skills and not run_home:
             print("Cleaning up skills...")
             for p in injected_skills:
                 if p.exists():
