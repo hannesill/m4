@@ -30,6 +30,7 @@ This directory contains skills for the M4 framework, covering clinical research 
 | Skill | Description |
 |-------|-------------|
 | [kdigo-aki-staging](clinical/kdigo-aki-staging/SKILL.md) | KDIGO AKI staging using creatinine and urine output |
+| [meld-score](clinical/meld-score/SKILL.md) | MELD score for liver disease severity and transplant prioritization |
 
 ### Medications and Treatments
 

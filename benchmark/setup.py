@@ -4,6 +4,12 @@ Usage:
     python benchmark/setup.py --task mimic-sirs-24h     # one task
     python benchmark/setup.py --all                      # all tasks
     python benchmark/setup.py --all --verify             # setup + sanity check
+
+    # Contamination analysis schemas
+    python benchmark/setup.py --schema obfuscated        # build obfuscated source DB + GT SQL
+    python benchmark/setup.py --schema restructured      # build restructured source DB + GT SQL
+    python benchmark/setup.py --schema obfuscated --all  # source DB + per-task agent DBs
+    python benchmark/setup.py --verify-equivalence       # verify GT matches across conditions
 """
 
 from __future__ import annotations
@@ -32,11 +38,84 @@ def verify_ground_truth(task_names: list[str]) -> bool:
     return all_ok
 
 
+def setup_schema(schema_type: str, task_dirs: list[Path] | None = None) -> None:
+    """Set up obfuscated or restructured schema: source DB + GT SQL + agent DBs."""
+    from lib.transform import (
+        DICTIONARY_PATH,
+        OBFUSCATED_DB,
+        RESTRUCTURED_DB,
+        build_dictionary,
+        create_obfuscated_db,
+        create_restructured_db,
+        generate_obfuscated_gt_sql,
+        generate_restructured_gt_sql,
+        load_dictionary,
+        save_dictionary,
+        setup_transformed_agent_db,
+        verify_dictionary_completeness,
+    )
+
+    # Step 1: Dictionary
+    if not DICTIONARY_PATH.exists():
+        print("\n--- Building dictionary ---")
+        d = build_dictionary()
+        save_dictionary(d)
+        verify_dictionary_completeness(dictionary=d)
+    else:
+        d = load_dictionary()
+        print(f"Using existing dictionary: {DICTIONARY_PATH}")
+
+    # Step 2: Source DB
+    if schema_type == "obfuscated":
+        if not OBFUSCATED_DB.exists():
+            print("\n--- Creating obfuscated source DB ---")
+            create_obfuscated_db(dictionary=d)
+        else:
+            print(f"Using existing obfuscated DB: {OBFUSCATED_DB}")
+
+        print("\n--- Generating obfuscated GT SQL ---")
+        generate_obfuscated_gt_sql(d)
+
+    elif schema_type == "restructured":
+        # Restructured depends on obfuscated
+        if not OBFUSCATED_DB.exists():
+            print("\n--- Creating obfuscated source DB (prerequisite) ---")
+            create_obfuscated_db(dictionary=d)
+
+        if not RESTRUCTURED_DB.exists():
+            print("\n--- Creating restructured source DB ---")
+            create_restructured_db(dictionary=d)
+        else:
+            print(f"Using existing restructured DB: {RESTRUCTURED_DB}")
+
+        print("\n--- Generating obfuscated GT SQL ---")
+        generate_obfuscated_gt_sql(d)
+        print("\n--- Generating restructured GT SQL ---")
+        generate_restructured_gt_sql(d)
+
+    # Step 3: Per-task agent DBs (if task_dirs provided)
+    if task_dirs:
+        print(f"\n--- Setting up {schema_type} agent DBs ---")
+        for task_dir in task_dirs:
+            print(f"\n  {task_dir.name}:")
+            setup_transformed_agent_db(task_dir, schema_type, d)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Set up benchmark tasks")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--task", help="Task name (e.g., mimic-sirs-24h)")
     group.add_argument("--all", action="store_true", help="Set up all tasks")
+    group.add_argument(
+        "--schema",
+        choices=["obfuscated", "restructured"],
+        help="Set up contamination analysis schema (source DB + GT SQL)",
+    )
+    group.add_argument(
+        "--verify-equivalence",
+        action="store_true",
+        help="Verify GT matches across native/obfuscated/restructured",
+    )
     parser.add_argument("--skip-db", action="store_true", help="Skip agent DB creation")
     parser.add_argument(
         "--skip-gt", action="store_true", help="Skip ground truth generation"
@@ -50,6 +129,31 @@ def main():
 
     from lib.db import list_task_dirs, resolve_task_dir
 
+    # Handle schema setup
+    if args.schema:
+        setup_schema(args.schema)
+        return
+
+    # Handle equivalence verification
+    if args.verify_equivalence:
+        from lib.transform import load_dictionary, verify_gt_equivalence
+
+        d = load_dictionary()
+        gt_dir = Path("benchmark/ground_truth")
+        all_ok = True
+        for sql_file in sorted(gt_dir.glob("*.sql")):
+            task_key = sql_file.stem
+            ok = verify_gt_equivalence(task_key, dictionary=d)
+            if not ok:
+                all_ok = False
+        if all_ok:
+            print("\nAll GT equivalence checks passed.")
+        else:
+            print("\nSome GT equivalence checks FAILED.")
+            sys.exit(1)
+        return
+
+    # Standard setup
     if args.all:
         task_dirs = list_task_dirs()
     else:

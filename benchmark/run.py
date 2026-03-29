@@ -124,28 +124,33 @@ def _create_isolated_settings(workdir: Path) -> Path:
 # ── Database and workdir setup ──────────────────────────────────────────────
 
 
-def _resolve_agent_db(task_name: str) -> str:
-    """Find the agent DB for a task."""
+def _resolve_agent_db(task_name: str, schema: str = "native") -> str:
+    """Find the agent DB for a task and schema condition."""
     task_key = task_name.replace("mimic-", "")
-    task_db = AGENT_DB_DIR / f"mimic_iv_{task_key}.duckdb"
-    generic_db = AGENT_DB_DIR / "mimic_iv.duckdb"
+    if schema == "native":
+        task_db = AGENT_DB_DIR / f"mimic_iv_{task_key}.duckdb"
+        generic_db = AGENT_DB_DIR / "mimic_iv.duckdb"
+    else:
+        # obfuscated or restructured
+        task_db = AGENT_DB_DIR / f"{schema}_{task_key}.duckdb"
+        generic_db = AGENT_DB_DIR / f"{schema}_mimic_iv.duckdb"
     return str(task_db if task_db.exists() else generic_db)
 
 
-def setup_workdir(task_name: str, workdir: Path) -> None:
+def setup_workdir(task_name: str, workdir: Path, schema: str = "native") -> None:
     """Prepare the agent's working directory with a symlink to a cached DB copy.
 
     Symlinks to a per-task cache in /tmp (not to agent_db/ directly) so that
     DuckDB WAL writes don't mutate the source, and the results directory
     stays lightweight.
     """
-    cached_db = _get_cached_db(task_name)
+    cached_db = _get_cached_db(task_name, schema)
     agent_db_link = workdir / "database.duckdb"
     if not agent_db_link.exists():
         agent_db_link.symlink_to(cached_db)
 
 
-def _get_cached_db(task_name: str) -> Path:
+def _get_cached_db(task_name: str, schema: str = "native") -> Path:
     """Get or create a cached copy of the agent DB.
 
     Databases are cached per task key in /tmp so that multiple runs don't
@@ -154,12 +159,18 @@ def _get_cached_db(task_name: str) -> Path:
     """
     task_key = task_name.replace("mimic-", "")
     DB_CACHE.mkdir(parents=True, exist_ok=True)
-    cached_db = DB_CACHE / f"mimic_iv_{task_key}.duckdb"
+
+    if schema == "native":
+        cache_name = f"mimic_iv_{task_key}.duckdb"
+    else:
+        cache_name = f"{schema}_{task_key}.duckdb"
+
+    cached_db = DB_CACHE / cache_name
 
     if not cached_db.exists():
-        agent_db_src = Path(_resolve_agent_db(task_name)).resolve()
+        agent_db_src = Path(_resolve_agent_db(task_name, schema)).resolve()
         size_gb = agent_db_src.stat().st_size / 1e9
-        print(f"  Caching database for {task_key} ({size_gb:.1f} GB)...")
+        print(f"  Caching database for {task_key}/{schema} ({size_gb:.1f} GB)...")
         shutil.copy2(agent_db_src, cached_db)
         wal_src = agent_db_src.with_suffix(".duckdb.wal")
         if wal_src.exists():
@@ -215,8 +226,10 @@ def copy_results_back(workdir: Path, results_dir: Path) -> None:
 # ── Instruction and skill management ────────────────────────────────────────
 
 
-def prepare_instruction(task_name: str, workdir: Path, condition: str) -> str:
-    """Load instruction.md and fill in paths."""
+def prepare_instruction(
+    task_name: str, workdir: Path, condition: str, schema: str = "native"
+) -> str:
+    """Load instruction.md and fill in paths. Apply schema transforms if needed."""
     task_dir = resolve_task_dir(task_name)
     instruction = (task_dir / "instruction.md").read_text()
 
@@ -228,6 +241,16 @@ def prepare_instruction(task_name: str, workdir: Path, condition: str) -> str:
 
     if condition == "self-generated":
         instruction += SELF_GEN_PROMPT
+
+    if schema in ("obfuscated", "restructured"):
+        from lib.transform import generate_obfuscated_instruction, load_dictionary
+
+        dictionary = load_dictionary()
+        instruction = generate_obfuscated_instruction(
+            instruction,
+            dictionary,
+            include_restructured_tables=(schema == "restructured"),
+        )
 
     return instruction
 
@@ -481,6 +504,7 @@ def run_single_task(
     trial: int,
     verbose: bool,
     isolated: bool,
+    schema: str = "native",
 ) -> dict:
     """Run a single benchmark task end-to-end. Returns the full result dict."""
     # Verify prerequisites
@@ -490,7 +514,7 @@ def run_single_task(
         print(f"Error: {e}")
         return {"task": task_name, "test_results": {"reward": 0.0}, "error": str(e)}
 
-    agent_db_path = _resolve_agent_db(task_name)
+    agent_db_path = _resolve_agent_db(task_name, schema)
     if not Path(agent_db_path).exists():
         msg = f"Agent DB not found: {agent_db_path}. Run: python benchmark/setup.py --task {task_name}"
         print(f"Error: {msg}")
@@ -498,7 +522,8 @@ def run_single_task(
 
     # Create working directory
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    run_id = f"{task_name}_{condition}_{agent_name}_{model or 'default'}_t{trial}_{timestamp}"
+    schema_tag = f"_{schema}" if schema != "native" else ""
+    run_id = f"{task_name}_{condition}{schema_tag}_{agent_name}_{model or 'default'}_t{trial}_{timestamp}"
 
     if isolated:
         workdir = setup_isolated_workdir(task_name, run_id)
@@ -510,7 +535,9 @@ def run_single_task(
 
     print(f"\n{'=' * 60}")
     print(f"M4Bench: {task_name}")
-    print(f"Condition: {condition} | Agent: {agent_name} | Model: {model or 'default'}")
+    print(
+        f"Condition: {condition} | Schema: {schema} | Agent: {agent_name} | Model: {model or 'default'}"
+    )
     if isolated:
         print("Isolation: ON (filesystem sandboxed, network blocked)")
     print(f"Working dir: {workdir}")
@@ -518,7 +545,7 @@ def run_single_task(
 
     # Set up workdir with data
     if not isolated:
-        setup_workdir(task_name, workdir)
+        setup_workdir(task_name, workdir, schema)
 
     # Run agent
     injected_skills = []
@@ -527,7 +554,7 @@ def run_single_task(
             print("Injecting skills...")
             injected_skills = inject_skill(task_name, agent_name)
 
-        instruction = prepare_instruction(task_name, workdir, condition)
+        instruction = prepare_instruction(task_name, workdir, condition, schema)
         (workdir / "instruction.md").write_text(instruction)
 
         agent_result = run_agent(
@@ -574,6 +601,7 @@ def run_single_task(
         full_result = {
             "task": task_name,
             "condition": condition,
+            "schema": schema,
             "agent": agent_name,
             "model": model,
             "trial": trial,
@@ -644,6 +672,12 @@ def main():
         action="store_true",
         help="Run in isolated mode: filesystem sandboxed, network tools blocked, full trace captured",
     )
+    parser.add_argument(
+        "--schema",
+        choices=["native", "obfuscated", "restructured"],
+        default="native",
+        help="Database schema condition for contamination analysis (default: native)",
+    )
     args = parser.parse_args()
 
     task_names = resolve_tasks(args)
@@ -665,6 +699,7 @@ def main():
             args.trial,
             args.verbose,
             args.isolated,
+            args.schema,
         )
         results.append(result)
 
