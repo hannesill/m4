@@ -18,3 +18,4 @@ __pycache__/
 # Root-level markdown files (design docs, results, etc.) — except README
 /*.md
 !README.md
+reports/
