@@ -1,0 +1,27 @@
+[metadata]
+name = "mimic-charlson-raw"
+description = "Calculate Charlson Comorbidity Index (raw tables) for hospital admissions from MIMIC-IV data"
+difficulty = "hard"
+mode = "raw"  # no age table
+category = "Healthcare"
+tags = ["clinical", "comorbidity", "mimic-iv", "charlson", "icd-codes", "raw"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = [
+    "mimiciv_derived.charlson",
+    "mimiciv_derived.age",
+]
+
+[ground_truth]
+alias = "charlson"  # same clinical concept
+
+[evaluation]
+key_columns = ["hadm_id"]
+value_columns = ["charlson_comorbidity_index", "age_score", "myocardial_infarct", "congestive_heart_failure", "peripheral_vascular_disease", "cerebrovascular_disease", "dementia", "chronic_pulmonary_disease", "rheumatic_disease", "peptic_ulcer_disease", "mild_liver_disease", "diabetes_without_cc", "diabetes_with_cc", "paraplegia", "renal_disease", "malignant_cancer", "severe_liver_disease", "metastatic_solid_tumor", "aids"]
+required_columns = ["subject_id", "hadm_id", "age_score", "myocardial_infarct", "congestive_heart_failure", "peripheral_vascular_disease", "cerebrovascular_disease", "dementia", "chronic_pulmonary_disease", "rheumatic_disease", "peptic_ulcer_disease", "mild_liver_disease", "diabetes_without_cc", "diabetes_with_cc", "paraplegia", "renal_disease", "malignant_cancer", "severe_liver_disease", "metastatic_solid_tumor", "aids", "charlson_comorbidity_index"]
+row_coverage_threshold = 1.0
+accuracy_threshold = 0.95
+
+[evaluation.tolerance]

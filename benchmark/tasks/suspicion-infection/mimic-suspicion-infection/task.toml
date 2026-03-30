@@ -1,0 +1,24 @@
+[metadata]
+name = "mimic-suspicion-infection"
+description = "Identify suspected infection events from antibiotic-culture pairing in MIMIC-IV data"
+difficulty = "hard"
+mode = "standard"  # antibiotic table available
+category = "Healthcare"
+tags = ["clinical", "sepsis", "infection", "mimic-iv", "temporal-matching"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = ["mimiciv_derived.suspicion_of_infection"]
+
+[ground_truth]
+# Generated from ground_truth/suspicion-infection.sql
+
+[evaluation]
+key_columns = ["subject_id", "ab_id"]
+value_columns = ["suspected_infection", "positive_culture", "specimen"]
+required_columns = ["subject_id", "stay_id", "hadm_id", "ab_id", "antibiotic", "antibiotic_time", "suspected_infection", "suspected_infection_time", "culture_time", "specimen", "positive_culture"]
+row_coverage_threshold = 1.0
+accuracy_threshold = 1.0
+
+[evaluation.tolerance]
