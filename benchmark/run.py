@@ -576,12 +576,29 @@ def resolve_tasks(args) -> list[str]:
             print(f"Error: No tasks found for family '{args.family}'")
             print("Use --list to see available tasks and families.")
             sys.exit(1)
-        return matched
+        return _filter_by_mode(matched, args.mode)
 
     if args.task == "all":
-        return [load_task_config(td)["metadata"]["name"] for td in list_task_dirs()]
+        tasks = [load_task_config(td)["metadata"]["name"] for td in list_task_dirs()]
+        return _filter_by_mode(tasks, args.mode)
 
     return [args.task]
+
+
+def _filter_by_mode(task_names: list[str], mode: str | None) -> list[str]:
+    """Filter tasks by mode (standard/raw) if specified."""
+    if not mode:
+        return task_names
+    filtered = []
+    for name in task_names:
+        task_dir = resolve_task_dir(name)
+        config = load_task_config(task_dir)
+        if config["metadata"].get("mode") == mode:
+            filtered.append(name)
+    if not filtered:
+        print(f"Error: No tasks match --mode '{mode}'")
+        sys.exit(1)
+    return filtered
 
 
 # ── Single-task execution ──────────────────────────────────────────────────
@@ -949,6 +966,12 @@ def main():
         choices=["native", "obfuscated", "restructured"],
         default="native",
         help="Database schema condition for contamination analysis (default: native)",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["standard", "raw"],
+        default=None,
+        help="Filter tasks by mode (e.g., --mode raw for contamination runs)",
     )
     parser.add_argument(
         "--parallel",
