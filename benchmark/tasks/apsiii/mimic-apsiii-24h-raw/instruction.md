@@ -2,11 +2,12 @@
 
 You have access to a MIMIC-IV clinical database (DuckDB) at `{db_path}`.
 It contains ICU patient data with schemas `mimiciv_hosp` and `mimiciv_icu`.
+There are no pre-computed intermediate or derived tables.
 
 Calculate the Acute Physiology Score III (APS III) for each ICU stay
 using the worst values from the first 24 hours of ICU admission. Compute
-directly from the raw `chartevents`, `labevents`, and `outputevents`
-tables.
+directly from base tables such as `chartevents`, `labevents`, and
+`outputevents` (Knaus et al., Chest, 1991).
 
 APS III scores 16 physiological variables. Most variables use the value
 **furthest from a physiological reference** (not simply min or max):
@@ -27,13 +28,12 @@ APS III scores 16 physiological variables. Most variables use the value
 | Albumin | 3.5 g/dL | 0-11 | Furthest from 3.5 |
 | Bilirubin | — | 0-16 | Always max |
 | Glucose | 130 mg/dL | 0-9 | Furthest from 130 |
-| Acid-Base | — | 0-12 | 2D matrix of pH × PaCO2 |
-| GCS | — | 0-48 | 3D matrix of Eyes × Verbal × Motor |
+| Acid-Base | — | 0-12 | 2D matrix of pH x PaCO2 |
+| GCS | — | 0-48 | 3D matrix of Eyes x Verbal x Motor |
 
-Use only arterial blood gas specimens. Acute renal failure (ARF) is
-defined as creatinine >= 1.5, urine output < 410 mL/day, and no
-chronic kidney disease stages 4-6. If intubated (GCS unable), GCS
-score = 0.
+Acute renal failure (ARF) is defined as creatinine >= 1.5, urine output
+< 410 mL/day, and no chronic kidney disease. If intubated (GCS unable
+to assess), GCS score = 0.
 
 The total APS III score ranges from 0 to 299. Treat missing data as
 normal (score 0).

@@ -6,7 +6,7 @@ and pre-computed intermediate tables in `mimiciv_derived`.
 
 Calculate the minimum Glasgow Coma Scale (GCS) score for each ICU stay
 using data from the first 24 hours (from 6 hours before ICU admission
-to 24 hours after admission).
+to 24 hours after admission) (Teasdale & Jennett, Lancet, 1974).
 
 GCS has 3 components:
 - **Eye opening** (1-4): None=1, To pain=2, To voice=3, Spontaneous=4

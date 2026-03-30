@@ -1,0 +1,28 @@
+[metadata]
+name = "mimic-sepsis3-raw"
+description = "Identify Sepsis-3 patients (raw tables) from MIMIC-IV data"
+difficulty = "expert"
+mode = "raw"  # no intermediate tables
+category = "Healthcare"
+tags = ["clinical", "sepsis", "icu", "mimic-iv", "sepsis-3", "compositional", "raw"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = [
+    "mimiciv_derived.sepsis3",
+    "mimiciv_derived.sofa",
+    "mimiciv_derived.suspicion_of_infection",
+]
+
+[ground_truth]
+alias = "sepsis3"  # same clinical concept
+
+[evaluation]
+key_columns = ["stay_id"]
+value_columns = ["sepsis3", "sofa_score", "respiration", "coagulation", "liver", "cardiovascular", "cns", "renal"]
+required_columns = ["subject_id", "stay_id", "antibiotic_time", "culture_time", "suspected_infection_time", "sofa_time", "sofa_score", "respiration", "coagulation", "liver", "cardiovascular", "cns", "renal", "sepsis3"]
+row_coverage_threshold = 0.95
+accuracy_threshold = 0.85
+
+[evaluation.tolerance]

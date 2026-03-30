@@ -1,0 +1,35 @@
+[metadata]
+name = "mimic-vasopressor-equivalents-raw"
+description = "Calculate norepinephrine-equivalent vasopressor dose (raw tables) from MIMIC-IV data"
+difficulty = "hard"
+mode = "raw"  # no intermediate tables
+category = "Healthcare"
+tags = ["clinical", "icu", "medication", "mimic-iv", "vasopressor", "hemodynamics", "raw"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = [
+    "mimiciv_derived.norepinephrine_equivalent_dose",
+    "mimiciv_derived.vasoactive_agent",
+    "mimiciv_derived.norepinephrine",
+    "mimiciv_derived.epinephrine",
+    "mimiciv_derived.dopamine",
+    "mimiciv_derived.phenylephrine",
+    "mimiciv_derived.vasopressin",
+    "mimiciv_derived.dobutamine",
+    "mimiciv_derived.milrinone",
+]
+
+[ground_truth]
+alias = "vasopressor-equivalents"  # same clinical concept
+
+[evaluation]
+key_columns = ["stay_id", "starttime"]
+value_columns = ["norepinephrine_equivalent_dose"]
+required_columns = ["stay_id", "starttime", "endtime", "norepinephrine_equivalent_dose"]
+row_coverage_threshold = 0.95
+accuracy_threshold = 0.90
+
+[evaluation.tolerance]
+norepinephrine_equivalent_dose = 0.01

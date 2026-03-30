@@ -2,10 +2,12 @@
 
 You have access to a MIMIC-IV clinical database (DuckDB) at `{db_path}`.
 It contains ICU patient data with schemas `mimiciv_hosp` and `mimiciv_icu`.
+There are no pre-computed intermediate or derived tables.
 
 Calculate the Oxford Acute Severity of Illness Score (OASIS) for each
 ICU stay using data from the first 24 hours of ICU admission. Compute
-directly from the raw `chartevents` and `outputevents` tables.
+directly from base tables such as `chartevents` and `outputevents`
+(Johnson et al., Critical Care Medicine, 2013).
 
 OASIS uses 10 components (no laboratory values required):
 
@@ -22,11 +24,8 @@ OASIS uses 10 components (no laboratory values required):
 | Mechanical Ventilation | 0-9 | 9 (ventilated), 0 (not ventilated) |
 | Elective Surgery | 0-6 | 0 (elective surgical admission), 6 (all others) |
 
-Mechanical ventilation means invasive ventilation during the first 24 hours.
-Elective surgery requires both elective admission type AND a surgical service.
-Treat missing data as normal (score 0).
-
-The total OASIS score ranges from 0 to 71.
+The total OASIS score ranges from 0 to 71. Treat missing data as
+normal (score 0).
 
 Output a CSV file to `{output_path}` with these exact columns:
 subject_id, hadm_id, stay_id, oasis, preiculos_score, age_score, gcs_score,
