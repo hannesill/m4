@@ -1,0 +1,26 @@
+[metadata]
+name = "mimic-creatinine-baseline"
+description = "Estimate baseline serum creatinine for hospital admissions from MIMIC-IV data"
+difficulty = "medium"
+mode = "standard"  # intermediate tables available
+category = "Healthcare"
+tags = ["clinical", "nephrology", "mimic-iv", "creatinine", "baseline", "aki"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = ["mimiciv_derived.creatinine_baseline"]
+
+[ground_truth]
+# Generated from ground_truth/creatinine-baseline.sql
+
+[evaluation]
+key_columns = ["hadm_id"]
+value_columns = ["scr_baseline", "ckd", "mdrd_est"]
+required_columns = ["hadm_id", "gender", "age", "scr_min", "ckd", "mdrd_est", "scr_baseline"]
+row_coverage_threshold = 1.0
+accuracy_threshold = 1.0
+
+[evaluation.tolerance]
+scr_baseline = 0.01
+mdrd_est = 0.01

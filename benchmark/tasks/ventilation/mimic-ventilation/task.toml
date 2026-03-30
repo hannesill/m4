@@ -1,0 +1,24 @@
+[metadata]
+name = "mimic-ventilation"
+description = "Classify ventilation status and detect episodes for ICU stays from MIMIC-IV data"
+difficulty = "hard"
+mode = "standard"  # ventilator_setting and oxygen_delivery available
+category = "Healthcare"
+tags = ["clinical", "icu", "ventilation", "mimic-iv", "temporal-classification"]
+database = "mimic-iv"
+
+[database]
+source = "mimic-iv"
+drop_tables = ["mimiciv_derived.ventilation"]
+
+[ground_truth]
+# Generated from ground_truth/ventilation.sql
+
+[evaluation]
+key_columns = ["stay_id", "ventilation_seq"]
+value_columns = ["ventilation_status"]
+required_columns = ["stay_id", "ventilation_seq", "starttime", "endtime", "ventilation_status"]
+row_coverage_threshold = 0.95
+accuracy_threshold = 0.95
+
+[evaluation.tolerance]
