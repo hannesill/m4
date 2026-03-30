@@ -5,7 +5,8 @@ It contains ICU patient data with schemas `mimiciv_hosp`, `mimiciv_icu`,
 and pre-computed intermediate tables in `mimiciv_derived`.
 
 Calculate the Logistic Organ Dysfunction Score (LODS) for each ICU stay
-using data from the first 24 hours of ICU admission.
+using data from the first 24 hours of ICU admission
+(Le Gall et al., JAMA, 1996).
 
 LODS scores organ dysfunction across 6 systems:
 
