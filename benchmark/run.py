@@ -44,6 +44,11 @@ from lib.db import list_task_dirs, load_task_config, resolve_task_dir
 BENCHMARK_ROOT = Path(__file__).parent
 AGENT_DB_DIR = BENCHMARK_ROOT / "agent_db"
 RESULTS_DIR = BENCHMARK_ROOT / "results"
+
+# Token refresh: interval (seconds) and lock for thread-safe refresh.
+_TOKEN_REFRESH_INTERVAL = 900  # 15 minutes
+_token_lock = threading.Lock()
+_token_last_refresh: float = 0.0
 ISOLATED_BASE = Path(tempfile.gettempdir()) / "clinskillsbench"
 DB_CACHE = ISOLATED_BASE / "_db_cache"
 SANDBOX_HOOK = BENCHMARK_ROOT / "lib" / "sandbox_hook.py"
@@ -71,7 +76,10 @@ Analyze the requirements, then:
 3. Then use those skills to solve the task
 """
 
-# Agent CLI commands
+# Agent CLI commands.
+# Skills are injected into workdir/.claude/skills/ (directory-level discovery)
+# so each parallel run sees only its own skills. This currently assumes Claude
+# Code's directory-level skill loading; other agents may need adaptation.
 AGENT_COMMANDS = {
     "claude": {
         "cmd": [
@@ -80,23 +88,70 @@ AGENT_COMMANDS = {
             "--allowedTools",
             "Bash(*),Read,Write,Glob,Grep,Edit",
         ],
-        "skill_paths": [
-            "{home}/.claude/skills",
-        ],
     },
     "codex": {
         "cmd": ["codex", "--quiet", "--approval-mode", "full-auto"],
-        "skill_paths": [
-            "{home}/.codex/skills",
-        ],
     },
     "gemini": {
         "cmd": ["gemini", "-p"],
-        "skill_paths": [
-            "{home}/.gemini/skills",
-        ],
     },
 }
+
+
+# ── Token refresh ──────────────────────────────────────────────────────────
+
+
+def _refresh_oauth_token() -> None:
+    """Refresh the ANTHROPIC_API_KEY from macOS keychain if it's an OAuth token.
+
+    Called before each agent invocation. Uses a 15-minute cooldown to avoid
+    hammering the keychain. Thread-safe.
+    """
+    global _token_last_refresh
+
+    # Only refresh OAuth tokens (sk-ant-oat*), not permanent API keys
+    current = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not current.startswith("sk-ant-oat"):
+        return
+
+    with _token_lock:
+        now = time.time()
+        if now - _token_last_refresh < _TOKEN_REFRESH_INTERVAL:
+            return
+
+        try:
+            raw = subprocess.run(
+                [
+                    "security",
+                    "find-generic-password",
+                    "-s",
+                    "Claude Code-credentials",
+                    "-w",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if raw.returncode != 0:
+                return
+            token = subprocess.run(
+                [
+                    "python3",
+                    "-c",
+                    "import sys,json; print(json.loads(sys.stdin.read()).get('claudeAiOauth',{}).get('accessToken',''))",
+                ],
+                input=raw.stdout,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            new_token = token.stdout.strip()
+            if new_token:
+                os.environ["ANTHROPIC_API_KEY"] = new_token
+                _token_last_refresh = now
+                print("  [token refreshed]")
+        except Exception:
+            pass  # Non-fatal — keep using current token
 
 
 # ── Isolated workdir setup ──────────────────────────────────────────────────
@@ -262,44 +317,43 @@ def prepare_instruction(
     return instruction
 
 
-def inject_skill(
-    task_name: str, agent_name: str, home: str | None = None
-) -> list[Path]:
-    """Copy skill files to agent's skill discovery path. Returns created paths."""
+def inject_skill(task_name: str, workdir: Path) -> list[Path]:
+    """Copy task-specific skill files into workdir/.claude/skills/ (directory-level).
+
+    Using directory-level skills ensures each parallel task sees only its own
+    skill(s), with no cross-contamination between concurrent runs.
+    """
     task_dir = resolve_task_dir(task_name)
     skills_dir = task_dir / "skills"
 
     if not skills_dir.exists():
         return []
 
-    agent_config = AGENT_COMMANDS.get(agent_name, {})
-    home = home or str(Path.home())
+    target_base = workdir / ".claude" / "skills"
+    target_base.mkdir(parents=True, exist_ok=True)
     created_paths = []
 
-    for skill_path_template in agent_config.get("skill_paths", []):
-        target_base = Path(skill_path_template.format(home=home))
-        target_base.mkdir(parents=True, exist_ok=True)
-
-        for skill_dir in skills_dir.iterdir():
-            if not skill_dir.is_dir():
-                continue
-            target = target_base / skill_dir.name
-            if target.exists():
-                continue
-            shutil.copytree(skill_dir, target)
-            created_paths.append(target)
-            print(f"  Injected skill: {target}")
+    for skill_dir in skills_dir.iterdir():
+        if not skill_dir.is_dir():
+            continue
+        target = target_base / skill_dir.name
+        if target.exists():
+            continue
+        shutil.copytree(skill_dir, target)
+        created_paths.append(target)
+        print(f"  Injected skill: {target}")
 
     return created_paths
 
 
-def inject_all_skills(agent_name: str, home: str | None = None) -> list[Path]:
-    """Copy ALL benchmark skills to the agent's skill directory."""
+def inject_all_skills(workdir: Path) -> list[Path]:
+    """Copy ALL benchmark skills into workdir/.claude/skills/ (directory-level)."""
     all_task_dirs = list_task_dirs()
     seen_skills: set[str] = set()
     created_paths: list[Path] = []
-    home = home or str(Path.home())
-    agent_config = AGENT_COMMANDS.get(agent_name, {})
+
+    target_base = workdir / ".claude" / "skills"
+    target_base.mkdir(parents=True, exist_ok=True)
 
     for task_dir in all_task_dirs:
         skills_dir = task_dir / "skills"
@@ -309,14 +363,11 @@ def inject_all_skills(agent_name: str, home: str | None = None) -> list[Path]:
             if not skill_dir.is_dir() or skill_dir.name in seen_skills:
                 continue
             seen_skills.add(skill_dir.name)
-            for tmpl in agent_config.get("skill_paths", []):
-                target_base = Path(tmpl.format(home=home))
-                target_base.mkdir(parents=True, exist_ok=True)
-                target = target_base / skill_dir.name
-                if not target.exists():
-                    shutil.copytree(skill_dir, target)
-                    created_paths.append(target)
-                    print(f"  Injected skill: {target}")
+            target = target_base / skill_dir.name
+            if not target.exists():
+                shutil.copytree(skill_dir, target)
+                created_paths.append(target)
+                print(f"  Injected skill: {target}")
 
     return created_paths
 
@@ -334,6 +385,8 @@ def run_agent(
     run_home: Path | None = None,
 ) -> dict:
     """Invoke an agent CLI with the instruction. Returns result dict."""
+    _refresh_oauth_token()
+
     agent_config = AGENT_COMMANDS.get(agent_name)
     if not agent_config:
         raise ValueError(
@@ -596,16 +649,15 @@ def run_single_task(
         (run_home / ".claude" / "skills").mkdir(parents=True, exist_ok=True)
         print("  Per-run HOME isolation: ON (clean environment)")
 
-    # Run agent
-    injected_skills = []
+    # Inject skills into workdir/.claude/skills/ (directory-level discovery).
+    # Each task's workdir is unique, so parallel runs never interfere.
     try:
-        skill_home = str(run_home) if run_home else None
         if condition == "with-skill":
-            print("Injecting skills...")
-            injected_skills = inject_skill(task_name, agent_name, home=skill_home)
+            print("Injecting task skill into workdir...")
+            inject_skill(task_name, workdir)
         elif condition == "with-skill-all":
-            print("Injecting all benchmark skills...")
-            injected_skills = inject_all_skills(agent_name, home=skill_home)
+            print("Injecting all benchmark skills into workdir...")
+            inject_all_skills(workdir)
 
         instruction = prepare_instruction(task_name, workdir, condition, schema)
         (workdir / "instruction.md").write_text(instruction)
@@ -679,13 +731,8 @@ def run_single_task(
         return full_result
 
     finally:
-        # When using per-run HOME, skills live in workdir — no host cleanup needed.
-        # On bare metal (no run_home), clean up injected skills from ~/.claude/skills/.
-        if injected_skills and not run_home:
-            print("Cleaning up skills...")
-            for p in injected_skills:
-                if p.exists():
-                    shutil.rmtree(p)
+        # Skills live in workdir/.claude/skills/ — cleaned up with the workdir.
+        # No host-level cleanup needed.
         if final_results_dir:
             print(f"\nCopying results to {final_results_dir}...")
             copy_results_back(workdir, final_results_dir)
@@ -702,30 +749,6 @@ def _get_db_cache_lock(cache_name: str) -> threading.Lock:
     """Get a per-cache-name lock for thread-safe DB caching."""
     with _db_cache_locks_guard:
         return _db_cache_locks[cache_name]
-
-
-# Skill injection locks: keyed by skill directory name. Serializes parallel
-# with-skill runs that inject the same skill (e.g., sirs-24h and sirs-24h-raw
-# both use "sirs-criteria" but with different content).
-_skill_locks: dict[str, threading.Lock] = defaultdict(threading.Lock)
-_skill_locks_guard = threading.Lock()
-
-
-def _get_skill_locks(task_name: str) -> list[threading.Lock]:
-    """Return locks for all skill directories this task would inject."""
-    try:
-        task_dir = resolve_task_dir(task_name)
-    except FileNotFoundError:
-        return []
-    skills_dir = task_dir / "skills"
-    if not skills_dir.exists():
-        return []
-    locks = []
-    with _skill_locks_guard:
-        for skill_dir in sorted(skills_dir.iterdir()):
-            if skill_dir.is_dir():
-                locks.append(_skill_locks[skill_dir.name])
-    return locks
 
 
 # ── Parallel execution ─────────────────────────────────────────────────────
@@ -754,7 +777,12 @@ def _run_parallel(
     schema: str,
     max_workers: int,
 ) -> list[dict]:
-    """Execute runs in parallel using ThreadPoolExecutor."""
+    """Execute runs in parallel using ThreadPoolExecutor.
+
+    Skills are injected into each task's workdir/.claude/skills/ (directory-level
+    discovery), so parallel runs never interfere — no locking or batch
+    pre-injection needed.
+    """
     total = len(run_matrix)
     done = 0
     running: set[str] = set()
@@ -766,15 +794,6 @@ def _run_parallel(
         with _progress_lock:
             running.add(key)
         _print_progress(done, total, running)
-
-        # Acquire skill locks for with-skill conditions to prevent
-        # concurrent inject/cleanup of same skill directory
-        skill_locks = []
-        if condition in ("with-skill", "with-skill-all"):
-            skill_locks = _get_skill_locks(task_name)
-            skill_locks.sort(key=id)  # consistent order prevents deadlock
-            for lock in skill_locks:
-                lock.acquire()
 
         try:
             result = run_single_task(
@@ -795,9 +814,6 @@ def _run_parallel(
                 "test_results": {"reward": 0.0},
                 "error": str(e),
             }
-        finally:
-            for lock in skill_locks:
-                lock.release()
 
         # Print single-line completion
         reward = result.get("test_results", {}).get("reward", 0.0)
@@ -961,12 +977,35 @@ def main():
             f"Warning: --parallel {args.parallel} exceeds recommended max of 4 on 18GB RAM"
         )
 
-    # Build run matrix: (task_name, trial) for all tasks x seeds
-    run_matrix = [
+    # Build run matrix: (task_name, trial) for all tasks x seeds.
+    raw_matrix = [
         (task_name, trial)
-        for task_name in task_names
         for trial in range(1, args.seeds + 1)
+        for task_name in task_names
     ]
+    if args.parallel > 1 and len(task_names) > 1:
+        # Sort so consecutive entries come from different families (parent dir)
+        def _family(task_name: str) -> str:
+            try:
+                return resolve_task_dir(task_name).parent.name
+            except FileNotFoundError:
+                return task_name
+
+        from itertools import zip_longest
+
+        by_family: dict[str, list] = defaultdict(list)
+        for item in raw_matrix:
+            by_family[_family(item[0])].append(item)
+        # Round-robin across families
+        family_lists = list(by_family.values())
+        run_matrix = [
+            item
+            for batch in zip_longest(*family_lists)
+            for item in batch
+            if item is not None
+        ]
+    else:
+        run_matrix = raw_matrix
 
     print(
         f"\nRun matrix: {len(run_matrix)} runs ({len(task_names)} tasks x {args.seeds} seeds)"
