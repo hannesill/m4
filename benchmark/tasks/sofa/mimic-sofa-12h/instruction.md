@@ -1,4 +1,4 @@
-# Task: Calculate SOFA Score (First 12 Hours)
+# Task: Calculate SOFA Score (12-Hour)
 
 You have access to a MIMIC-IV clinical database (DuckDB) at `{db_path}`.
 It contains ICU patient data with schemas `mimiciv_hosp`, `mimiciv_icu`,
@@ -8,7 +8,8 @@ Calculate the Sequential Organ Failure Assessment (SOFA) score for each
 ICU stay using data from the first 12 hours (from 6 hours before ICU
 admission to 12 hours after admission).
 
-SOFA scores organ dysfunction across 6 systems, each scored 0-4:
+SOFA scores organ dysfunction across 6 systems, each scored 0-4
+(Vincent et al., Intensive Care Medicine, 1996):
 
 | System | 0 | 1 | 2 | 3 | 4 |
 |--------|---|---|---|---|---|
@@ -20,12 +21,9 @@ SOFA scores organ dysfunction across 6 systems, each scored 0-4:
 | Renal (Creatinine mg/dL) | < 1.2 | 1.2-1.9 | 2.0-3.4 | 3.5-4.9 | >= 5.0 |
 
 Vasopressor doses are in mcg/kg/min. Respiratory support means invasive
-mechanical ventilation. Use only arterial blood gas specimens for PaO2/FiO2.
-
-Note: The urine output criterion for the renal component requires 24 hours
-of data. For this 12-hour window, use only serum creatinine for the renal score.
-
-The total SOFA score ranges from 0 to 24. Treat missing data as normal (score 0).
+mechanical ventilation. The renal component uses creatinine only (no urine
+output) because 12 hours is insufficient for daily UO criteria. The total
+SOFA score ranges from 0 to 24. Treat missing data as normal (score 0).
 
 Output a CSV file to `{output_path}` with these exact columns:
 subject_id, hadm_id, stay_id, sofa, respiration, coagulation, liver, cardiovascular, cns, renal

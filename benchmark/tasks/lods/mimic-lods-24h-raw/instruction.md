@@ -2,10 +2,12 @@
 
 You have access to a MIMIC-IV clinical database (DuckDB) at `{db_path}`.
 It contains ICU patient data with schemas `mimiciv_hosp` and `mimiciv_icu`.
+There are no pre-computed intermediate or derived tables.
 
 Calculate the Logistic Organ Dysfunction Score (LODS) for each ICU stay
 using data from the first 24 hours of ICU admission. Compute directly
-from the raw `chartevents`, `labevents`, and `outputevents` tables.
+from base tables such as `chartevents`, `labevents`, and `outputevents`
+(Le Gall et al., JAMA, 1996).
 
 LODS scores organ dysfunction across 6 systems:
 

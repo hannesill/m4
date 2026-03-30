@@ -2,26 +2,21 @@
 
 You have access to a MIMIC-IV clinical database (DuckDB) at `{db_path}`.
 It contains ICU patient data with schemas `mimiciv_hosp` and `mimiciv_icu`.
+There are no pre-computed intermediate or derived tables.
 
 Calculate the MELD-Na (Model for End-Stage Liver Disease with sodium
 adjustment) score for each ICU stay using data from the first 24 hours
-of ICU admission. Compute directly from the raw `labevents` and
-procedure tables.
+of ICU admission (Kamath et al., Hepatology, 2001; Kim et al., NEJM, 2008).
 
-MELD uses logarithmic transformations of 3 lab values plus a conditional
-sodium adjustment:
+MELD uses logarithmic transformations of 3 lab values (creatinine,
+bilirubin, INR) plus a conditional sodium adjustment:
 
-1. **Component scores** (all values floored at 1.0 before taking ln):
-   - Creatinine: `0.957 × ln(Cr)` — cap creatinine at 4.0 if on dialysis or Cr > 4
-   - Bilirubin: `0.378 × ln(Bili)`
-   - INR: `1.120 × ln(INR) + 0.643`
-
-2. **MELD Initial** = `round(Cr_score + Bili_score + INR_score, 1) × 10`
-   - Cap at 40 if component sum > 4
-
-3. **Sodium adjustment** (only if MELD Initial > 11):
-   - Na score = `137 - Na` (Na bounded to 125-137)
-   - `MELD = MELD_Initial + 1.32 × Na_score - 0.033 × MELD_Initial × Na_score`
+- All lab values are floored at 1.0 before taking the natural log
+- Creatinine is capped at 4.0 mg/dL for patients on dialysis or with
+  creatinine > 4.0
+- The initial MELD score is capped at 40
+- The sodium adjustment is only applied when the initial MELD > 11
+- Sodium is bounded to the range 125-137 mEq/L for scoring
 
 The MELD score ranges from approximately 6 to 40.
 

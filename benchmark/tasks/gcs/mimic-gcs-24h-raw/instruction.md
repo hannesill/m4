@@ -2,11 +2,12 @@
 
 You have access to a MIMIC-IV clinical database (DuckDB) at `{db_path}`.
 It contains ICU patient data with schemas `mimiciv_hosp` and `mimiciv_icu`.
+There are no pre-computed intermediate or derived tables.
 
 Calculate the minimum Glasgow Coma Scale (GCS) score for each ICU stay
 using data from the first 24 hours (from 6 hours before ICU admission
-to 24 hours after admission). Compute directly from the raw `chartevents`
-table.
+to 24 hours after admission). Compute directly from `chartevents`
+(Teasdale & Jennett, Lancet, 1974).
 
 GCS has 3 components:
 - **Eye opening** (1-4): None=1, To pain=2, To voice=3, Spontaneous=4

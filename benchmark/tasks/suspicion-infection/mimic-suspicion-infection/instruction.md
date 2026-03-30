@@ -5,12 +5,13 @@ It contains hospital patient data with schemas `mimiciv_hosp`, `mimiciv_icu`,
 and pre-computed intermediate tables in `mimiciv_derived`.
 
 Identify suspected infection events by pairing systemic antibiotic
-administration with culture collection within defined time windows.
+administration with culture collection within defined time windows,
+following the operationalization from Seymour et al. (JAMA, 2016).
 
 ### Definition
 
 Suspected infection requires BOTH:
-1. Systemic antibiotic administration
+1. Systemic antibiotic administration (exclude topical routes)
 2. Culture collection within the time window:
    - Culture obtained up to **72 hours BEFORE** antibiotic start, OR
    - Culture obtained up to **24 hours AFTER** antibiotic start
@@ -21,9 +22,8 @@ Suspected infection requires BOTH:
   direction (before and after)
 - **Culture-before-antibiotic takes priority** when both exist
 - If multiple cultures match in a direction, use the earliest
-  (order by chartdate NULLS FIRST, then charttime — date-only cultures
-  sort before timestamped cultures on the same date)
-- `ab_id` = ROW_NUMBER per subject, ordered by starttime, stoptime, antibiotic name
+- `ab_id` = ROW_NUMBER per subject, ordered by starttime, stoptime,
+  antibiotic name
 
 ### Suspected Infection Time
 
@@ -31,22 +31,7 @@ Suspected infection requires BOTH:
 - If antibiotic came BEFORE culture: `suspected_infection_time` = antibiotic time
 - If no culture matched: `suspected_infection` = 0, `suspected_infection_time` = NULL
 
-### Culture Positivity
-
-A culture is positive if `org_name` is non-null, non-empty, and `org_itemid != 90856`
-(the "NEGATIVE" sentinel value).
-
-### Handling Cultures with Only Dates
-
-Some cultures in `mimiciv_hosp.microbiologyevents` have `chartdate` but NULL
-`charttime`. For these:
-- 72h window becomes: antibiotic date >= culture date AND antibiotic date <= culture date + 3 days
-- 24h window becomes: antibiotic date >= culture date - 1 day AND antibiotic date <= culture date
-
-### Data Sources
-
-- **Antibiotics**: `mimiciv_derived.antibiotic` (pre-filtered for systemic routes)
-- **Cultures**: `mimiciv_hosp.microbiologyevents` — group by `micro_specimen_id` first
+### Output
 
 Output a CSV file to `{output_path}` with these exact columns:
 subject_id, stay_id, hadm_id, ab_id, antibiotic, antibiotic_time, suspected_infection, suspected_infection_time, culture_time, specimen, positive_culture

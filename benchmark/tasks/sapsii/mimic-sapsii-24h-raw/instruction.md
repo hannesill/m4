@@ -2,11 +2,12 @@
 
 You have access to a MIMIC-IV clinical database (DuckDB) at `{db_path}`.
 It contains ICU patient data with schemas `mimiciv_hosp` and `mimiciv_icu`.
+There are no pre-computed intermediate or derived tables.
 
 Calculate the Simplified Acute Physiology Score II (SAPS-II) for each
 ICU stay using the worst values from the first 24 hours of ICU admission.
-Compute directly from the raw `chartevents`, `labevents`, `outputevents`,
-and hospital tables.
+Compute directly from base tables such as `chartevents`, `labevents`,
+`outputevents`, and hospital tables (Le Gall et al., JAMA, 1993).
 
 SAPS-II uses 15 weighted components:
 
@@ -16,7 +17,7 @@ SAPS-II uses 15 weighted components:
 | Heart Rate | 0-11 | 11 (<40 bpm), 2 (40-69), 0 (70-119), 4 (120-159), 7 (>=160) |
 | Systolic BP | 0-13 | 13 (<70 mmHg), 5 (70-99), 0 (100-199), 2 (>=200) |
 | Temperature | 0-3 | 0 (<39°C), 3 (>=39°C) |
-| PaO2/FiO2 (if ventilated) | 0-11 | 11 (<100), 9 (100-199), 6 (>=200); 0 if not ventilated |
+| PaO2/FiO2 (if ventilated or CPAP) | 0-11 | 11 (<100), 9 (100-199), 6 (>=200); 0 if not ventilated |
 | Urine Output | 0-11 | 11 (<500 mL/day), 4 (500-999), 0 (>=1000) |
 | BUN | 0-10 | 0 (<28 mg/dL), 6 (28-83), 10 (>=84) |
 | WBC | 0-12 | 12 (<1 x10^9/L), 0 (1-19), 3 (>=20) |
@@ -28,12 +29,8 @@ SAPS-II uses 15 weighted components:
 | Chronic Disease | 0-17 | 17 (AIDS), 10 (Hematologic malignancy), 9 (Metastatic cancer), 0 (none) |
 | Admission Type | 0-8 | 0 (Scheduled surgical), 6 (Medical), 8 (Unscheduled surgical) |
 
-PaO2/FiO2 is only scored for patients on mechanical ventilation or CPAP/BiPAP.
-Use only arterial blood gas specimens. Chronic disease is determined from ICD
-diagnosis codes. Admission type combines elective/non-elective status with
-surgical service classification. Treat missing data as normal (score 0).
-
-The total SAPS-II score ranges from 0 to 163.
+The total SAPS-II score ranges from 0 to 163. Treat missing data as
+normal (score 0).
 
 Output a CSV file to `{output_path}` with these exact columns:
 subject_id, hadm_id, stay_id, sapsii, age_score, hr_score, sysbp_score,
