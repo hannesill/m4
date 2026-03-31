@@ -68,9 +68,9 @@ NETWORK_DENY_TOOLS = ",".join(
 )
 
 # Agent CLI commands.
-# Skills are injected into workdir/.claude/skills/ (directory-level discovery)
-# so each parallel run sees only its own skills. This currently assumes Claude
-# Code's directory-level skill loading; other agents may need adaptation.
+# Skills are injected into an agent-specific directory inside the workdir
+# (for example, .claude/skills or .codex/skills) so each parallel run sees
+# only its own skills.
 AGENT_COMMANDS = {
     "claude": {
         "cmd": [
@@ -79,12 +79,18 @@ AGENT_COMMANDS = {
             "--allowedTools",
             "Bash(*),Read,Write,Glob,Grep,Edit",
         ],
+        "skill_dir": ".claude/skills",
+        "json_trace": True,
     },
     "codex": {
-        "cmd": ["codex", "--quiet", "--approval-mode", "full-auto"],
+        "cmd": ["codex", "exec", "--skip-git-repo-check", "--full-auto"],
+        "skill_dir": ".codex/skills",
+        "json_trace": True,
     },
     "gemini": {
         "cmd": ["gemini", "-p"],
+        "skill_dir": ".gemini/skills",
+        "json_trace": False,
     },
 }
 
@@ -271,7 +277,11 @@ def copy_results_back(workdir: Path, results_dir: Path) -> None:
     Skips the database and sandbox config (only copies useful outputs).
     """
     results_dir.mkdir(parents=True, exist_ok=True)
-    skip = {"database.duckdb", "database.duckdb.wal", ".claude", "_home"}
+    skip = {"database.duckdb", "database.duckdb.wal", "_home"} | {
+        Path(cfg["skill_dir"]).parts[0]
+        for cfg in AGENT_COMMANDS.values()
+        if cfg.get("skill_dir")
+    }
     for item in workdir.iterdir():
         if item.name in skip or item.is_symlink():
             continue
@@ -311,8 +321,18 @@ def prepare_instruction(
     return instruction
 
 
-def inject_skill(task_name: str, workdir: Path) -> list[Path]:
-    """Copy task-specific skill files into workdir/.claude/skills/ (directory-level).
+def _skill_target_base(agent_name: str, workdir: Path) -> Path:
+    """Return the agent-specific skill directory inside the workdir."""
+    agent_config = AGENT_COMMANDS.get(agent_name)
+    if not agent_config:
+        raise ValueError(
+            f"Unknown agent: {agent_name}. Available: {list(AGENT_COMMANDS)}"
+        )
+    return workdir / agent_config["skill_dir"]
+
+
+def inject_skill(task_name: str, workdir: Path, agent_name: str) -> list[Path]:
+    """Copy task-specific skill files into the agent's local skill directory.
 
     Using directory-level skills ensures each parallel task sees only its own
     skill(s), with no cross-contamination between concurrent runs.
@@ -323,7 +343,7 @@ def inject_skill(task_name: str, workdir: Path) -> list[Path]:
     if not skills_dir.exists():
         return []
 
-    target_base = workdir / ".claude" / "skills"
+    target_base = _skill_target_base(agent_name, workdir)
     target_base.mkdir(parents=True, exist_ok=True)
     created_paths = []
 
@@ -340,13 +360,13 @@ def inject_skill(task_name: str, workdir: Path) -> list[Path]:
     return created_paths
 
 
-def inject_all_skills(workdir: Path) -> list[Path]:
-    """Copy ALL benchmark skills into workdir/.claude/skills/ (directory-level)."""
+def inject_all_skills(workdir: Path, agent_name: str) -> list[Path]:
+    """Copy ALL benchmark skills into the agent's local skill directory."""
     all_task_dirs = list_task_dirs()
     seen_skills: set[str] = set()
     created_paths: list[Path] = []
 
-    target_base = workdir / ".claude" / "skills"
+    target_base = _skill_target_base(agent_name, workdir)
     target_base.mkdir(parents=True, exist_ok=True)
 
     for task_dir in all_task_dirs:
@@ -389,24 +409,35 @@ def run_agent(
 
     cmd = list(agent_config["cmd"])
 
-    if model and agent_name == "claude":
-        cmd.extend(["--model", model])
+    if model:
+        if agent_name == "claude":
+            cmd.extend(["--model", model])
+        elif agent_name == "codex":
+            cmd.extend(["-m", model])
+        elif agent_name == "gemini":
+            if cmd and cmd[-1] == "-p":
+                cmd = cmd[:-1]
+                cmd.extend(["-m", model, "-p"])
+            else:
+                cmd.extend(["-m", model])
 
     if isolated and agent_name == "claude":
         cmd.extend(["--disallowedTools", NETWORK_DENY_TOOLS])
 
-    # Capture structured trace for claude
+    # Capture structured trace for agent CLIs that support JSONL output.
     trace_path = workdir / "trace.jsonl"
-    use_stream_json = agent_name == "claude"
-    if use_stream_json:
+    use_json_trace = bool(agent_config.get("json_trace"))
+    if agent_name == "claude" and use_json_trace:
         cmd.extend(["--output-format", "stream-json", "--verbose"])
+    elif agent_name == "codex" and use_json_trace:
+        cmd.extend(["--json", "-C", str(workdir)])
 
     cmd.append(instruction)
 
     # Per-run HOME isolation: when set, Claude CLI discovers skills at
     # $HOME/.claude/skills/ and loads $HOME/.claude/CLAUDE.md — both controlled.
     env = None
-    if run_home:
+    if run_home and agent_name == "claude":
         env = {**os.environ, "HOME": str(run_home)}
 
     print(f"  Running {agent_name}{'  (verbose)' if verbose else ''}...")
@@ -424,10 +455,10 @@ def run_agent(
         output_lines = []
         with open(trace_path, "w") as trace_file:
             for line in process.stdout:
-                if use_stream_json:
+                if use_json_trace:
                     trace_file.write(line)
                     if verbose:
-                        _print_trace_line(line)
+                        _print_trace_line(line, agent_name)
                 else:
                     trace_file.write(line)
                     if verbose:
@@ -456,11 +487,11 @@ def run_agent(
         }
 
 
-def _print_trace_line(line: str) -> None:
-    """Print a human-readable summary of a stream-json trace line.
+def _print_trace_line(line: str, agent_name: str) -> None:
+    """Print a human-readable summary of a structured trace line.
 
-    The stream-json format emits newline-delimited JSON with varying schemas.
-    We extract what we can and fall back to printing the raw line.
+    Claude and Codex emit different JSONL schemas. We extract what we can and
+    fall back to printing the raw line.
     """
     line = line.rstrip()
     if not line:
@@ -470,6 +501,10 @@ def _print_trace_line(line: str) -> None:
         event = json.loads(line)
     except json.JSONDecodeError:
         print(f"  │ {line}")
+        return
+
+    if agent_name == "codex":
+        _print_codex_trace_line(event, line)
         return
 
     etype = event.get("type", "")
@@ -522,6 +557,44 @@ def _print_trace_line(line: str) -> None:
                     print(f"  │ [{tool}] {inp.get('pattern', '')}")
                 else:
                     print(f"  │ [{tool}]")
+
+
+def _print_codex_trace_line(event: dict, raw_line: str) -> None:
+    """Print a compact summary for Codex JSONL events."""
+    etype = event.get("type", "")
+    item = event.get("item", {})
+    item_type = item.get("type", "")
+
+    if etype == "item.started" and item_type == "command_execution":
+        print(f"  │ [cmd] {item.get('command', '')[:120]}")
+        return
+
+    if etype == "item.completed":
+        if item_type == "agent_message":
+            text = item.get("text", "")
+            for text_line in text.splitlines():
+                if text_line.strip():
+                    print(f"  │ {text_line}")
+            return
+
+        if item_type == "command_execution":
+            exit_code = item.get("exit_code")
+            if exit_code not in (None, 0):
+                print(f"  │ [cmd failed:{exit_code}] {item.get('command', '')[:100]}")
+            return
+
+    if etype == "turn.completed":
+        usage = event.get("usage", {})
+        if usage:
+            print(
+                "  │ "
+                f"[usage] in={usage.get('input_tokens', 0)} "
+                f"out={usage.get('output_tokens', 0)}"
+            )
+            return
+
+    if etype not in {"thread.started", "turn.started"}:
+        print(f"  │ {raw_line}")
 
 
 # ── Task listing ───────────────────────────────────────────────────────────
@@ -649,26 +722,25 @@ def run_single_task(
     if not isolated:
         setup_workdir(task_name, workdir, schema)
 
-    # Per-run HOME isolation: when ANTHROPIC_API_KEY is set (Docker / explicit key),
-    # create a clean HOME so the agent sees no host CLAUDE.md or personal skills.
-    # On bare metal with OAuth (no key set), skip — auth requires the real HOME.
+    # Per-run HOME isolation is currently Claude-only. Codex ChatGPT login uses
+    # the real ~/.codex state, so overriding HOME would break subscription auth.
     run_home = None
-    use_run_home = os.environ.get("ANTHROPIC_API_KEY")
+    use_run_home = agent_name == "claude" and os.environ.get("ANTHROPIC_API_KEY")
 
     if use_run_home:
         run_home = workdir / "_home"
         (run_home / ".claude" / "skills").mkdir(parents=True, exist_ok=True)
         print("  Per-run HOME isolation: ON (clean environment)")
 
-    # Inject skills into workdir/.claude/skills/ (directory-level discovery).
+    # Inject skills into the agent's workdir-local skill directory.
     # Each task's workdir is unique, so parallel runs never interfere.
     try:
         if condition == "with-skill":
             print("Injecting task skill into workdir...")
-            inject_skill(task_name, workdir)
+            inject_skill(task_name, workdir, agent_name)
         elif condition == "with-skill-all":
             print("Injecting all benchmark skills into workdir...")
-            inject_all_skills(workdir)
+            inject_all_skills(workdir, agent_name)
 
         instruction = prepare_instruction(task_name, workdir, condition, schema)
         (workdir / "instruction.md").write_text(instruction)
@@ -742,8 +814,8 @@ def run_single_task(
         return full_result
 
     finally:
-        # Skills live in workdir/.claude/skills/ — cleaned up with the workdir.
-        # No host-level cleanup needed.
+        # Skills live in the workdir's agent-specific control directory and are
+        # cleaned up with the workdir. No host-level cleanup needed.
         if final_results_dir:
             print(f"\nCopying results to {final_results_dir}...")
             copy_results_back(workdir, final_results_dir)
@@ -790,9 +862,8 @@ def _run_parallel(
 ) -> list[dict]:
     """Execute runs in parallel using ThreadPoolExecutor.
 
-    Skills are injected into each task's workdir/.claude/skills/ (directory-level
-    discovery), so parallel runs never interfere — no locking or batch
-    pre-injection needed.
+    Skills are injected into each task's workdir-local control directory, so
+    parallel runs never interfere — no locking or batch pre-injection needed.
     """
     total = len(run_matrix)
     done = 0
