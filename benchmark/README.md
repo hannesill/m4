@@ -1,7 +1,7 @@
 # M4Bench
 
 Benchmark for evaluating AI agents' ability to derive validated clinical concepts
-from real EHR databases. 16 task families (32 tasks) covering severity scores,
+from real EHR databases. 16 task families (38 tasks) covering severity scores,
 organ failure staging, comorbidity indices, infection detection, medication data,
 and temporal event classification. Ground truth from MIT-LCP mimic-code.
 
@@ -50,7 +50,7 @@ understanding by running tasks on obfuscated (renamed) and restructured
 | Baseline creatinine | 2 | Estimation | Decision tree + ICD lookup + MDRD formula |
 | Ventilation | 2 | Classification | Episode detection, 14h gap rule, device string matching |
 | Suspicion of infection | 2 | Temporal matching | Asymmetric time window (72h before / 24h after) |
-| Sepsis-3 | 2 | Compositional | SOFA ≥ 2 + suspected infection (depends on two sub-concepts) |
+| Sepsis-3 | 1 | Compositional | SOFA ≥ 2 + suspected infection (raw-only, depends on two sub-concepts) |
 | Vasopressor equivalents | 2 | Medication | NE-equivalent dose, unit conversion |
 | Urine output rate | 2 | Data engineering | Rolling windows, LAG functions, weight normalization |
 
@@ -68,6 +68,15 @@ benchmark/
   agent_db/        # Task-specific DuckDB databases (intermediates selectively dropped)
   results/         # Run outputs (agent traces, CSVs, result JSON)
 ```
+
+## Evaluation Integrity
+
+**Docker is the only valid evaluation mode.** When running locally (without
+Docker), the agent process has access to the full M4 repository — including
+ground truth SQL, M4 skills, and source code. This makes local runs useful for
+development and debugging, but results cannot be reported as benchmark scores.
+Use `bench.sh` (see `DOCKER.md`) for all evaluation runs intended for
+publication or comparison.
 
 ## Usage
 
