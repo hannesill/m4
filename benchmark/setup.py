@@ -101,17 +101,18 @@ def setup_schema(schema_type: str, task_dirs: list[Path] | None = None) -> None:
             setup_transformed_agent_db(task_dir, schema_type, d)
 
 
-def main():
+def build_parser() -> argparse.ArgumentParser:
+    """Build the CLI parser."""
     parser = argparse.ArgumentParser(description="Set up benchmark tasks")
-    group = parser.add_mutually_exclusive_group(required=True)
+    group = parser.add_mutually_exclusive_group()
     group.add_argument("--task", help="Task name (e.g., mimic-sirs-24h)")
     group.add_argument("--all", action="store_true", help="Set up all tasks")
-    group.add_argument(
+    parser.add_argument(
         "--schema",
         choices=["obfuscated", "restructured"],
         help="Set up contamination analysis schema (source DB + GT SQL)",
     )
-    group.add_argument(
+    parser.add_argument(
         "--verify-equivalence",
         action="store_true",
         help="Verify GT matches across native/obfuscated/restructured",
@@ -125,17 +126,37 @@ def main():
         action="store_true",
         help="Verify ground truth scores 1.0 against itself (sanity check)",
     )
-    args = parser.parse_args()
+    return parser
 
+
+def _resolve_task_dirs(args, parser: argparse.ArgumentParser) -> list[Path] | None:
+    """Resolve task selection for standard or transformed setup."""
     from lib.db import list_task_dirs, resolve_task_dir
+
+    if args.all:
+        return list_task_dirs()
+    if args.task:
+        try:
+            return [resolve_task_dir(args.task)]
+        except FileNotFoundError as e:
+            parser.error(str(e))
+    return None
+
+
+def main():
+    parser = build_parser()
+    args = parser.parse_args()
 
     # Handle schema setup
     if args.schema:
-        setup_schema(args.schema)
+        task_dirs = _resolve_task_dirs(args, parser)
+        setup_schema(args.schema, task_dirs)
         return
 
     # Handle equivalence verification
     if args.verify_equivalence:
+        if args.task or args.all:
+            parser.error("--verify-equivalence cannot be combined with --task/--all")
         from lib.transform import load_dictionary, verify_gt_equivalence
 
         d = load_dictionary()
@@ -154,13 +175,11 @@ def main():
         return
 
     # Standard setup
-    if args.all:
-        task_dirs = list_task_dirs()
-    else:
-        try:
-            task_dirs = [resolve_task_dir(args.task)]
-        except FileNotFoundError as e:
-            parser.error(str(e))
+    task_dirs = _resolve_task_dirs(args, parser)
+    if not task_dirs:
+        parser.error(
+            "one of --task, --all, --schema, or --verify-equivalence is required"
+        )
 
     task_names = [p.name for p in task_dirs]
 

@@ -4,6 +4,27 @@ set -euo pipefail
 CONTAINER="m4bench"
 IMAGE="m4bench:latest"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+AUTH_ROOT="/host-auth"
+
+AGENT=""
+HAS_ISOLATED=0
+ARGS=("$@")
+for ((i=0; i<${#ARGS[@]}; i++)); do
+    case "${ARGS[$i]}" in
+        --agent)
+            if (( i + 1 < ${#ARGS[@]} )); then
+                AGENT="${ARGS[$((i + 1))]}"
+                ((i+=1))
+            fi
+            ;;
+        --agent=*)
+            AGENT="${ARGS[$i]#--agent=}"
+            ;;
+        --isolated)
+            HAS_ISOLATED=1
+            ;;
+    esac
+done
 
 # Load .env file if it exists (expects ANTHROPIC_API_KEY=sk-ant-api03-...)
 if [[ -f "$SCRIPT_DIR/.env" ]]; then
@@ -15,7 +36,7 @@ fi
 # Fallback: on macOS, extract a fresh OAuth token from the keychain.
 # This uses your Claude subscription (no API credits).
 # On Linux/Windows, set ANTHROPIC_API_KEY in benchmark/.env instead.
-if [[ -z "${ANTHROPIC_API_KEY:-}" ]] && command -v security &>/dev/null; then
+if [[ "$AGENT" == "claude" ]] && [[ -z "${ANTHROPIC_API_KEY:-}" ]] && command -v security &>/dev/null; then
     ANTHROPIC_API_KEY=$(
         security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null \
         | python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('claudeAiOauth',{}).get('accessToken',''))" 2>/dev/null
@@ -25,7 +46,7 @@ if [[ -z "${ANTHROPIC_API_KEY:-}" ]] && command -v security &>/dev/null; then
     fi
 fi
 
-if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
+if [[ "$AGENT" == "claude" ]] && [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
     echo "Error: No ANTHROPIC_API_KEY found."
     echo "Options:"
     echo "  1. Create benchmark/.env with: ANTHROPIC_API_KEY=sk-ant-api03-..."
@@ -45,14 +66,36 @@ if docker ps -q -f name="^${CONTAINER}$" | grep -q .; then
     docker rm -f "$CONTAINER" >/dev/null
 fi
 docker rm "$CONTAINER" 2>/dev/null || true
-docker run -d --name "$CONTAINER" \
-    -v "$SCRIPT_DIR":/benchmark \
-    -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-    "$IMAGE" >/dev/null
+
+DOCKER_ARGS=(
+    -d
+    --name "$CONTAINER"
+    -v "$SCRIPT_DIR":/benchmark
+    -e "M4BENCH_AUTH_ROOT=$AUTH_ROOT"
+)
+
+if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+    DOCKER_ARGS+=(-e "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY")
+fi
+
+if [[ -d "$HOME/.codex" ]]; then
+    DOCKER_ARGS+=(-v "$HOME/.codex:$AUTH_ROOT/.codex:ro")
+fi
+
+if [[ -d "$HOME/.gemini" ]]; then
+    DOCKER_ARGS+=(-v "$HOME/.gemini:$AUTH_ROOT/.gemini:ro")
+fi
+
+docker run "${DOCKER_ARGS[@]}" "$IMAGE" >/dev/null
 
 # Install benchmark dependencies (lightweight, no M4 package)
 docker exec "$CONTAINER" pip3 install --break-system-packages --quiet \
     duckdb pandas pytest tomli 2>/dev/null
 
+RUN_ARGS=("$@")
+if [[ "$HAS_ISOLATED" -eq 0 ]]; then
+    RUN_ARGS+=(--isolated)
+fi
+
 # Forward all arguments to run.py inside the container
-docker exec "$CONTAINER" python3 /benchmark/run.py "$@"
+docker exec "$CONTAINER" python3 /benchmark/run.py "${RUN_ARGS[@]}"
