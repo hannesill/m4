@@ -1,7 +1,7 @@
 # M4Bench
 
 Benchmark for evaluating AI agents' ability to derive validated clinical concepts
-from real EHR databases. 16 task families (38 tasks) covering severity scores,
+from real EHR databases. 14 task families (28 tasks) covering severity scores,
 organ failure staging, comorbidity indices, infection detection, medication data,
 and temporal event classification. Ground truth from MIT-LCP mimic-code.
 
@@ -37,16 +37,15 @@ understanding by running tasks on obfuscated (renamed) and restructured
 
 | Family | Tasks | Category | Key challenge |
 |--------|-------|----------|---------------|
-| SIRS | 4 | Severity score | Vital sign thresholds, WBC count |
-| SOFA | 4 | Severity score | 6-organ subscore aggregation, vasopressor doses |
+| SOFA | 2 | Severity score | 6-organ subscore aggregation, vasopressor doses |
+| SIRS | 1 | Severity score | Vital sign thresholds, WBC count (raw-only) |
 | SAPS-II | 2 | Severity score | 15 physiological variables + admission type |
 | APSIII | 2 | Severity score | Worst-from-normal scoring, 16 variables |
-| OASIS | 2 | Severity score | Vitals-only (no labs), pre-ICU LOS |
-| LODS | 2 | Severity score | 6-organ weighted dysfunction |
-| GCS | 2 | Neurological | Component extraction, intubated patient handling |
+| OASIS | 3 | Severity score | Vitals-only (no labs), pre-ICU LOS, eICU cross-database |
+| GCS | 2 | Neurological | Component extraction, intubated patient handling, eICU cross-database |
 | MELD | 2 | Organ failure | Logarithmic formula, sodium adjustment |
 | KDIGO | 2 | Organ failure | Creatinine + urine output AKI staging |
-| Charlson | 2 | Comorbidity | ICD code mapping with hierarchy rules |
+| Charlson | 1 | Comorbidity | ICD code mapping with hierarchy rules (raw-only) |
 | Baseline creatinine | 2 | Estimation | Decision tree + ICD lookup + MDRD formula |
 | Ventilation | 2 | Classification | Episode detection, 14h gap rule, device string matching |
 | Suspicion of infection | 2 | Temporal matching | Asymmetric time window (72h before / 24h after) |
@@ -63,7 +62,7 @@ benchmark/
   setup.py         # Database and ground truth preparation
   bench.sh         # Docker wrapper for reproducible execution
   lib/             # Shared utilities (comparison, test runner, transforms, sandbox)
-  tasks/           # Task definitions (instruction, skills, config) — 16 families
+  tasks/           # Task definitions (instruction, skills, config) — 14 families
   ground_truth/    # Ground truth SQL and generated CSVs (gzipped)
   agent_db/        # Task-specific DuckDB databases (intermediates selectively dropped)
   results/         # Run outputs (agent traces, CSVs, result JSON)
@@ -75,8 +74,7 @@ benchmark/
 Docker), the agent process has access to the full M4 repository — including
 ground truth SQL, M4 skills, and source code. This makes local runs useful for
 development and debugging, but results cannot be reported as benchmark scores.
-Use `bench.sh` (see `DOCKER.md`) for all evaluation runs intended for
-publication or comparison.
+Use `bench.sh` for all evaluation runs intended for publication or comparison.
 
 ## Usage
 
