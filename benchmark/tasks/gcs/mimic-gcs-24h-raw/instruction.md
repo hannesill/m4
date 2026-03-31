@@ -1,20 +1,10 @@
 # Task: Calculate Minimum GCS (Raw Tables)
 
-You have access to a MIMIC-IV clinical database (DuckDB) at `{db_path}`.
-It contains ICU patient data with schemas `mimiciv_hosp` and `mimiciv_icu`.
-There are no pre-computed intermediate or derived tables.
+Only base tables are available — there are no pre-computed derived tables.
 
 Calculate the minimum Glasgow Coma Scale (GCS) score for each ICU stay
 using data from the first 24 hours (from 6 hours before ICU admission
-to 24 hours after admission). Compute directly from `chartevents`
-(Teasdale & Jennett, Lancet, 1974).
-
-GCS has 3 components:
-- **Eye opening** (1-4): None=1, To pain=2, To voice=3, Spontaneous=4
-- **Verbal response** (1-5): None=1, Incomprehensible=2, Inappropriate=3, Confused=4, Oriented=5
-- **Motor response** (1-6): None=1, Extension=2, Flexion=3, Withdrawal=4, Localizing=5, Obeys=6
-
-Total GCS = Eye + Verbal + Motor (range 3-15).
+to 24 hours after admission) (Teasdale & Jennett, Lancet, 1974).
 
 For intubated patients who cannot give a verbal response, the verbal
 component is untestable and the total GCS is assumed to be 15
