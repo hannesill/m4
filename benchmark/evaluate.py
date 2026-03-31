@@ -19,7 +19,9 @@ GROUND_TRUTH_DIR = BENCHMARK_ROOT / "ground_truth"
 
 def resolve_ground_truth(task_name: str) -> Path:
     """Find the ground truth file for a task."""
-    task_key = task_name.replace("mimic-", "")
+    from lib.db import _task_key
+
+    task_key = _task_key(task_name)
     gt_gz = GROUND_TRUTH_DIR / f"{task_key}.csv.gz"
     gt_csv = GROUND_TRUTH_DIR / f"{task_key}.csv"
     if gt_gz.exists():
