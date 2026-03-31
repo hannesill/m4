@@ -7,9 +7,5 @@ RUN apt-get update && apt-get install -y \
 # Claude CLI
 RUN npm install -g @anthropic-ai/claude-code
 
-# uv for Python dependency management
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:$PATH"
-
-WORKDIR /app
+WORKDIR /benchmark
 CMD ["sleep", "infinity"]

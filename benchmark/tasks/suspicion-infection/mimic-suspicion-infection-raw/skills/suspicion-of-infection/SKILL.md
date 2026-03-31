@@ -70,11 +70,7 @@ Priority: Culture-before-antibiotic takes precedence when both exist.
 
 ### MIMIC-IV
 
-Suspicion of infection is available as a pre-computed derived table. Materialize with:
-
-```bash
-m4 init-derived mimic-iv          # All derived tables including suspicion_of_infection
-```
+Suspicion of infection is available as a pre-computed derived table.
 
 ```sql
 SELECT
@@ -92,7 +88,7 @@ SELECT
 FROM mimiciv_derived.suspicion_of_infection;
 ```
 
-BigQuery users already have this table via `physionet-data.mimiciv_derived.suspicion_of_infection` without running `init-derived`.
+BigQuery users already have this table via `physionet-data.mimiciv_derived.suspicion_of_infection`.
 
 **MIMIC-IV implementation details:**
 - The derived tables originate from the [MIT-LCP mimic-code](https://github.com/MIT-LCP/mimic-code) repository. The full SQL query is in `scripts/mimic-iv.sql`.

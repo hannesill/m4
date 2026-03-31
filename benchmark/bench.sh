@@ -4,7 +4,6 @@ set -euo pipefail
 CONTAINER="m4bench"
 IMAGE="m4bench:latest"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Load .env file if it exists (expects ANTHROPIC_API_KEY=sk-ant-api03-...)
 if [[ -f "$SCRIPT_DIR/.env" ]]; then
@@ -47,14 +46,13 @@ if docker ps -q -f name="^${CONTAINER}$" | grep -q .; then
 fi
 docker rm "$CONTAINER" 2>/dev/null || true
 docker run -d --name "$CONTAINER" \
-    -v "$REPO_ROOT":/app \
+    -v "$SCRIPT_DIR":/benchmark \
     -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-    -e UV_PROJECT_ENVIRONMENT=/tmp/m4bench-venv \
-    -e UV_LINK_MODE=copy \
     "$IMAGE" >/dev/null
 
-# Install project dependencies (cached in container volume)
-docker exec "$CONTAINER" uv sync --no-dev --quiet 2>/dev/null
+# Install benchmark dependencies (lightweight, no M4 package)
+docker exec "$CONTAINER" pip3 install --break-system-packages --quiet \
+    duckdb pandas pytest tomli 2>/dev/null
 
 # Forward all arguments to run.py inside the container
-docker exec "$CONTAINER" uv run python benchmark/run.py "$@"
+docker exec "$CONTAINER" python3 /benchmark/run.py "$@"
