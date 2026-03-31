@@ -87,15 +87,11 @@ Two validated comorbidity indices for risk adjustment: Charlson Comorbidity Inde
 
 ### MIMIC-IV
 
-**Charlson** is available as a pre-computed derived table. Materialize with:
-
-```bash
-m4 init-derived mimic-iv          # All derived tables including charlson
-```
+**Charlson** is available as a pre-computed derived table.
 
 The derived `mimiciv_derived.charlson` table provides `charlson_comorbidity_index` (total weighted score), `age_score`, and binary flags for all 17 conditions.
 
-BigQuery users already have this table via `physionet-data.mimiciv_derived.charlson` without running `init-derived`.
+BigQuery users already have this table via `physionet-data.mimiciv_derived.charlson`.
 
 **Elixhauser** is **not** in the derived tables or BigQuery. The SQL was adapted from the mimic-code MIMIC-III Elixhauser script with ICD-10-CM mappings added from Quan 2005.
 
