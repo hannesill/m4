@@ -1,0 +1,220 @@
+-- ------------------------------------------------------------------
+-- Title: APACHE IV Diagnosis Groups (eICU)
+-- Maps patient.apacheadmissiondx text to clinically meaningful groups.
+-- ------------------------------------------------------------------
+
+-- Reference:
+--    Zimmerman JE et al. "Acute Physiology and Chronic Health
+--    Evaluation (APACHE) IV." Crit Care Med. 2006.
+
+-- Adapted from eicu-code diagnosis/apache-groups.sql (PostgreSQL → DuckDB)
+
+SELECT
+    patientunitstayid,
+    uniquepid,
+    patienthealthsystemstayid,
+    CASE
+        WHEN apacheadmissiondx IN (
+            'Angina, unstable (angina interferes w/quality of life or meds are tolerated poorly)',
+            'Infarction, acute myocardial (MI)',
+            'MI admitted > 24 hrs after onset of ischemia'
+        ) THEN 'ACS'
+        WHEN apacheadmissiondx IN (
+            'Chest pain, atypical (noncardiac chest pain)',
+            'Chest pain, epigastric',
+            'Chest pain, musculoskeletal',
+            'Chest pain, respiratory',
+            'Chest pain, unknown origin'
+        ) THEN 'ChestPainUnknown'
+        WHEN apacheadmissiondx IN (
+            'Cardiomyopathy',
+            'CHF, congestive heart failure',
+            'Shock, cardiogenic'
+        ) THEN 'CHF'
+        WHEN apacheadmissiondx IN (
+            'Angina, stable (asymp or stable pattern of symptoms w/meds)',
+            'Anomaly, cardiac congenital',
+            'Arteriovenous malformation, surgery for',
+            'Atrial Septal Defect (ASD) Repair',
+            'Cardiovascular medical, other',
+            'Cardiovascular surgery, other',
+            'Congenital Defect Repair (Other)',
+            'Contusion, myocardial (include r/o)',
+            'Efffusion, pericardial',
+            'Endocarditis',
+            'Hypertension-pulmonary, primary/idiopathic',
+            'Monitoring, hemodynamic (pre-operative evaluation)',
+            'Pericardial effusion/tamponade',
+            'Pericardiectomy (total/subtotal)',
+            'Pericarditis',
+            'Tamponade, pericardial',
+            'Thrombus, arterial',
+            'Vascular medical, other',
+            'Vascular surgery, other',
+            'Ablation or mapping of cardiac conduction pathway',
+            'Defibrillator, automatic implantable cardiac; insertion of'
+        ) THEN 'CVOther'
+        WHEN apacheadmissiondx IN (
+            'Cardiac arrest (with or without respiratory arrest; for respiratory arrest see Respiratory System)',
+            'Rhythm disturbance (atrial, supraventricular)',
+            'Rhythm disturbance (conduction defect)',
+            'Rhythm disturbance (ventricular)'
+        ) THEN 'CardiacArrest'
+        WHEN apacheadmissiondx IN (
+            'CABG alone, coronary artery bypass grafting',
+            'CABG alone, redo',
+            'CABG redo with other operation',
+            'CABG redo with valve repair/replacement',
+            'CABG with aortic valve replacement',
+            'CABG with double valve repair/replacement',
+            'CABG with mitral valve repair',
+            'CABG with mitral valve replacement',
+            'CABG with other operation',
+            'CABG with pulmonic or tricuspid valve repair or replacement ONLY.',
+            'CABG with single valve repair/replacement',
+            'CABG, minimally invasive; mid-CABG'
+        ) THEN 'CABG'
+        WHEN apacheadmissiondx IN (
+            'Aortic and Mitral valve replacement',
+            'Aortic valve replacement (isolated)',
+            'Mitral valve repair',
+            'Mitral valve replacement',
+            'Papillary muscle rupture',
+            'Pulmonary valve surgery',
+            'Tricuspid valve surgery',
+            'Valve, double; repair/replacement',
+            'Valve, redo, single',
+            'Valve, single; repair/replacement',
+            'Valve, triple; repair/replacement'
+        ) THEN 'ValveDz'
+        WHEN apacheadmissiondx IN (
+            'Pneumonia, aspiration',
+            'Pneumonia, bacterial',
+            'Pneumonia, fungal',
+            'Pneumonia, other',
+            'Pneumonia, parasitic (i.e., Pneumocystic pneumonia)',
+            'Pneumonia, viral'
+        ) THEN 'PNA'
+        WHEN apacheadmissiondx IN (
+            'Apnea, sleep',
+            'Apnea-sleep; surgery for (i.e., UPPP - uvulopalatopharyngoplasty)',
+            'ARDS-adult respiratory distress syndrome, non-cardiogenic pulmonary edema',
+            'Arrest, respiratory (without cardiac arrest)',
+            'Atelectasis',
+            'Biopsy, open lung',
+            'Effusions, pleural',
+            'Embolus, pulmonary',
+            'Guillain-Barre syndrome',
+            'Hemorrhage/hemoptysis, pulmonary',
+            'Hemothorax',
+            'Obstruction-airway (i.e., acute epiglottitis, post-extubation edema, foreign body, etc)',
+            'Pneumothorax',
+            'Respiratory - medical, other',
+            'Restrictive lung disease (i.e., Sarcoidosis, pulmonary fibrosis)',
+            'Tracheostomy',
+            'Weaning from mechanical ventilation (transfer from other unit or hospital only)'
+        ) THEN 'RespMedOther'
+        WHEN apacheadmissiondx IN (
+            'Asthma',
+            'Emphysema/bronchitis'
+        ) THEN 'Asthma-Emphys'
+        WHEN apacheadmissiondx IN (
+            'Bleeding, GI from esophageal varices/portal hypertension',
+            'Bleeding, GI-location unknown',
+            'Bleeding, lower GI',
+            'Bleeding, upper GI',
+            'Bleeding-lower GI, surgery for',
+            'Bleeding-other GI, surgery for',
+            'Bleeding-upper GI, surgery for',
+            'Bleeding-variceal, surgery for (excluding vascular shunting-see surgery for portosystemic shunt)',
+            'GI perforation/rupture',
+            'GI perforation/rupture, surgery for',
+            'Hemorrhage, intra/retroperitoneal',
+            'Ulcer disease, peptic'
+        ) THEN 'GIBleed'
+        WHEN apacheadmissiondx IN (
+            'GI obstruction',
+            'GI obstruction, surgery for (including lysis of adhesions)'
+        ) THEN 'GIObstruction'
+        WHEN apacheadmissiondx IN (
+            'CVA, cerebrovascular accident/stroke',
+            'Hemorrhage/hematoma, intracranial',
+            'Hemorrhage/hematoma-intracranial, surgery for',
+            'Hypertension, uncontrolled (for cerebrovascular accident-see Neurological System)',
+            'Subarachnoid hemorrhage/arteriovenous malformation',
+            'Subarachnoid hemorrhage/intracranial aneurysm',
+            'Subarachnoid hemorrhage/intracranial aneurysm, surgery for'
+        ) THEN 'CVA'
+        WHEN apacheadmissiondx IN (
+            'Abscess, neurologic',
+            'Biopsy, brain',
+            'Hydrocephalus, obstructive',
+            'Neoplasm, neurologic',
+            'Neoplasm-cranial, surgery for (excluding transphenoidal)',
+            'Neoplasm-spinal cord, surgery or other related procedures',
+            'Neurologic medical, other',
+            'Neuromuscular medical, other',
+            'Palsy, cranial nerve',
+            'Seizures (primary-no structural brain disease)',
+            'Seizures-intractable, surgery for'
+        ) THEN 'Neuro'
+        WHEN apacheadmissiondx IN (
+            'Coma/change in level of consciousness (for hepatic see GI, for diabetic see Endocrine, if related to cardiac arrest, see CV)',
+            'Nontraumatic coma due to anoxia/ischemia'
+        ) THEN 'Coma'
+        WHEN apacheadmissiondx IN (
+            'Overdose, alcohols (bethanol, methanol, ethylene glycol)',
+            'Overdose, analgesic (aspirin, acetaminophen)',
+            'Overdose, antidepressants (cyclic, lithium)',
+            'Overdose, other toxin, poison or drug',
+            'Overdose, sedatives, hypnotics, antipsychotics, benzodiazepines',
+            'Overdose, self-inflicted',
+            'Overdose, street drugs (opiates, cocaine, amphetamine)',
+            'Toxicity, drug (i.e., beta blockers, calcium channel blockers, etc.)'
+        ) THEN 'Overdose'
+        WHEN apacheadmissiondx IN (
+            'Sepsis, cutaneous/soft tissue',
+            'Sepsis, GI',
+            'Sepsis, gynecologic',
+            'Sepsis, other',
+            'Sepsis, pulmonary',
+            'Sepsis, renal/UTI (including bladder)',
+            'Sepsis, unknown'
+        ) THEN 'Sepsis'
+        WHEN apacheadmissiondx IN (
+            'Renal failure, acute',
+            'Renal obstruction'
+        ) THEN 'ARF'
+        WHEN apacheadmissiondx IN (
+            'Diabetic hyperglycemic hyperosmolar nonketotic coma (HHNC)',
+            'Diabetic ketoacidosis'
+        ) THEN 'DKA'
+        WHEN apacheadmissiondx IN (
+            'Abdomen only trauma', 'Abdomen/extremity trauma',
+            'Abdomen/face trauma', 'Abdomen/multiple trauma',
+            'Abdomen/pelvis trauma', 'Abdomen/spinal trauma',
+            'Chest thorax only trauma', 'Chest/abdomen trauma',
+            'Chest/extremity trauma', 'Chest/face trauma',
+            'Chest/multiple trauma', 'Chest/pelvis trauma',
+            'Chest/spinal trauma', 'Chest/thorax only trauma',
+            'Extremity only trauma', 'Extremity only trauma, surgery for',
+            'Extremity/face trauma', 'Extremity/face trauma, surgery for',
+            'Extremity/multiple trauma', 'Extremity/multiple trauma, surgery for',
+            'Face only trauma', 'Face only trauma, surgery for',
+            'Face/multiple trauma', 'Face/multiple trauma, surgery for',
+            'Facial surgery (if related to trauma, see Trauma)',
+            'Head only trauma', 'Head/abdomen trauma', 'Head/chest trauma',
+            'Head/extremity trauma', 'Head/face trauma',
+            'Head/multiple trauma', 'Head/pelvis trauma', 'Head/spinal trauma',
+            'Pelvis/extremity trauma', 'Pelvis/face trauma',
+            'Pelvis/hip trauma', 'Pelvis/multiple trauma',
+            'Pelvis/spinal trauma', 'Spinal cord only trauma',
+            'Spinal/extremity trauma', 'Spinal/face trauma',
+            'Spinal/multiple trauma', 'Trauma medical, other',
+            'Trauma surgery, other'
+        ) THEN 'Trauma'
+        ELSE 'Other'
+    END AS apachedxgroup,
+    apacheadmissiondx
+FROM main.patient
+;

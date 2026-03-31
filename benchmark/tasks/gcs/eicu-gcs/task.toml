@@ -1,0 +1,25 @@
+[metadata]
+name = "eicu-gcs"
+description = "Calculate minimum GCS (24h window) for ICU patients from eICU data"
+difficulty = "hard"
+mode = "raw"
+category = "Healthcare"
+tags = ["clinical", "icu", "neurological", "eicu", "gcs", "cross-database"]
+database = "eicu"
+
+[database]
+source = "eicu"
+# eICU has no derived tables — agent works from raw tables only
+drop_tables = []
+
+[ground_truth]
+# Generated from ground_truth/eicu-gcs.sql
+
+[evaluation]
+key_columns = ["patientunitstayid"]
+value_columns = ["gcs_min", "gcs_motor", "gcs_verbal", "gcs_eyes"]
+required_columns = ["patientunitstayid", "uniquepid", "patienthealthsystemstayid", "gcs_min", "gcs_motor", "gcs_verbal", "gcs_eyes"]
+row_coverage_threshold = 1.0
+accuracy_threshold = 1.0
+
+[evaluation.tolerance]

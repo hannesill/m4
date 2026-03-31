@@ -177,12 +177,15 @@ def _create_isolated_settings(workdir: Path) -> Path:
 
 def _resolve_agent_db(task_name: str, schema: str = "native") -> str:
     """Find the agent DB for a task and schema condition."""
-    task_key = task_name.replace("mimic-", "")
+    from lib.db import _db_prefix, _task_key
+
+    task_key = _task_key(task_name)
+    db_prefix = _db_prefix(task_name)
     if schema == "native":
-        task_db = AGENT_DB_DIR / f"mimic_iv_{task_key}.duckdb"
-        generic_db = AGENT_DB_DIR / "mimic_iv.duckdb"
+        task_db = AGENT_DB_DIR / f"{db_prefix}_{task_key}.duckdb"
+        generic_db = AGENT_DB_DIR / f"{db_prefix}.duckdb"
     else:
-        # obfuscated or restructured
+        # obfuscated or restructured (MIMIC-IV only)
         task_db = AGENT_DB_DIR / f"{schema}_{task_key}.duckdb"
         generic_db = AGENT_DB_DIR / f"{schema}_mimic_iv.duckdb"
     return str(task_db if task_db.exists() else generic_db)
@@ -208,11 +211,14 @@ def _get_cached_db(task_name: str, schema: str = "native") -> Path:
     each copy 2+ GB from agent_db/, and DuckDB WAL writes never touch the
     source.
     """
-    task_key = task_name.replace("mimic-", "")
+    from lib.db import _db_prefix, _task_key
+
+    task_key = _task_key(task_name)
+    db_prefix = _db_prefix(task_name)
     DB_CACHE.mkdir(parents=True, exist_ok=True)
 
     if schema == "native":
-        cache_name = f"mimic_iv_{task_key}.duckdb"
+        cache_name = f"{db_prefix}_{task_key}.duckdb"
     else:
         cache_name = f"{schema}_{task_key}.duckdb"
 

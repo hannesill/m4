@@ -1,0 +1,25 @@
+[metadata]
+name = "eicu-apache-groups"
+description = "Map APACHE IV admission diagnoses to clinical groups for ICU patients from eICU data"
+difficulty = "hard"
+mode = "raw"
+category = "Healthcare"
+tags = ["clinical", "icu", "apache", "eicu", "diagnosis-grouping"]
+database = "eicu"
+
+[database]
+source = "eicu"
+# eICU has no derived tables — agent works from raw tables only
+drop_tables = []
+
+[ground_truth]
+# Generated from ground_truth/apache-groups.sql
+
+[evaluation]
+key_columns = ["patientunitstayid"]
+value_columns = ["apachedxgroup"]
+required_columns = ["patientunitstayid", "apachedxgroup", "apacheadmissiondx"]
+row_coverage_threshold = 1.0
+accuracy_threshold = 1.0
+
+[evaluation.tolerance]
