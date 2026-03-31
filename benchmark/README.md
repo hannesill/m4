@@ -114,3 +114,8 @@ coverage, required columns, and per-criterion accuracy.
 ## Supported Agents
 
 Claude Code, Codex, Gemini CLI. See `AGENT_COMMANDS` in `run.py` for configuration.
+
+For Codex CLI, the harness uses `codex exec --full-auto` and injects task
+skills into `.codex/skills/` inside each run workdir. Authenticate first with
+`codex login` if you want to use ChatGPT subscription access instead of an API
+key.
