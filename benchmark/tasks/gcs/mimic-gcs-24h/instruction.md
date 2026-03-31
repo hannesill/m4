@@ -15,10 +15,11 @@ GCS has 3 components:
 
 Total GCS = Eye + Verbal + Motor (range 3-15).
 
-For intubated patients unable to give a verbal response, assume
-unimpaired consciousness (GCS = 15). When a component is missing, use
-the most recent value within 6 hours. If no value exists, default to
-normal (eyes=4, verbal=5, motor=6).
+For intubated patients who cannot give a verbal response, the verbal
+component is untestable and the total GCS is assumed to be 15
+(unimpaired consciousness). When a component is missing, use the most
+recent value within 6 hours. If no GCS data exists at all for a stay,
+default to normal (gcs_min=15, eyes=4, verbal=5, motor=6).
 
 Report the minimum total GCS and the component values at the time of
 the minimum total score.

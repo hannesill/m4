@@ -52,7 +52,7 @@ FROM mimiciv_derived.gcs;
 
 ## Critical Implementation Notes
 
-1. **Intubated Patients**: When verbal response is documented as "No Response-ETT" (endotracheal tube), the verbal component is set to 0 and flagged with `gcs_unable = 1`. The total GCS is then set to **15** (assumed normal if only intubation prevents assessment).
+1. **Intubated Patients**: When verbal response is documented as "No Response-ETT" (endotracheal tube), the verbal component is set to **0** (not 1, not 5) and flagged with `gcs_unable = 1`. The total GCS is then set to **15** (assumed normal if only intubation prevents assessment). **Important**: report `gcs_verbal = 0` in the output — do NOT replace it with 5. The value 0 is a sentinel meaning "untestable."
 
 2. **Component Carry-Forward**: If only one or two components are documented at a time, previous values from the past 6 hours are carried forward. This prevents artificially low scores from incomplete charting.
 
@@ -60,7 +60,7 @@ FROM mimiciv_derived.gcs;
    ```
    GCS = Motor + Verbal + Eyes
 
-   IF current verbal = 0 (intubated) THEN GCS = 15
+   IF current verbal = 0 (intubated) THEN GCS = 15 (but keep gcs_verbal = 0 in output)
    ELSE IF previous verbal = 0 THEN use current components only (don't carry forward)
    ELSE carry forward missing components from past 6 hours
    ```
@@ -102,14 +102,15 @@ ORDER BY 1;
 ## Example: First Day Minimum GCS
 
 ```sql
+-- Include ALL patients (intubated patients have gcs=15, gcs_verbal=0)
 SELECT
-    g.stay_id,
+    ie.stay_id,
     MIN(g.gcs) AS first_day_min_gcs
-FROM mimiciv_derived.gcs g
-INNER JOIN mimiciv_icu.icustays ie ON g.stay_id = ie.stay_id
-WHERE g.charttime BETWEEN ie.intime AND DATETIME_ADD(ie.intime, INTERVAL 24 HOUR)
-    AND g.gcs_unable = 0
-GROUP BY g.stay_id;
+FROM mimiciv_icu.icustays ie
+LEFT JOIN mimiciv_derived.gcs g ON g.stay_id = ie.stay_id
+    AND g.charttime >= ie.intime - INTERVAL '6' HOUR
+    AND g.charttime <= ie.intime + INTERVAL '1' DAY
+GROUP BY ie.stay_id;
 ```
 
 ## Example: GCS Trajectory

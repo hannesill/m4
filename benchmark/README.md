@@ -1,31 +1,70 @@
 # M4Bench
 
-**M4 — Model Middleware for MIMIC & More**
-
-Benchmark for evaluating whether procedural clinical skills improve AI agents' ability to compute validated clinical scores from raw ICU database tables, using MIT-LCP mimic-code derived tables as ground truth.
+Benchmark for evaluating AI agents' ability to derive validated clinical concepts
+from real EHR databases. 16 task families (32 tasks) covering severity scores,
+organ failure staging, comorbidity indices, infection detection, medication data,
+and temporal event classification. Ground truth from MIT-LCP mimic-code.
 
 ## Design
 
-Each task asks an agent to compute a clinical concept (e.g., SIRS criteria) from a MIMIC-IV DuckDB database. The agent's output CSV is compared column-by-column against ground truth generated from mimic-code's validated SQL.
+Each task asks an agent to compute a clinical concept (e.g., SOFA score, KDIGO
+AKI staging, Charlson comorbidity index) from a MIMIC-IV DuckDB database. The
+agent's output CSV is compared column-by-column against ground truth generated
+from mimic-code's validated SQL.
 
 Tasks come in two modes:
 - **standard** — pre-computed intermediate tables (e.g., `first_day_vitalsign`) are available
 - **raw** — intermediate tables are dropped, forcing the agent to work from base tables
 
-Three experimental conditions:
+Four experimental conditions:
 - **no-skill** — agent receives only the task instruction
-- **with-skill** — a clinician-reviewed M4 skill is injected into the agent's context
-- **self-generated** — agent is prompted to write its own procedural skill before solving
+- **with-skill** — a task-specific clinician-reviewed skill is injected
+- **with-skill-all** — all benchmark skills injected (real-world deployment scenario)
+- **self-generated** — agent writes its own procedural skill before solving
+
+**Information gradient**: Task instructions describe the clinical concept
+accurately but are intentionally underspecified on dataset-specific
+implementation details (encoding conventions, sentinel values, item IDs,
+edge-case handling). Skills fill that gap with MIMIC-specific procedural
+knowledge. This creates a measurable difference between what an agent can
+figure out from schema exploration alone versus what it gets from
+clinician-reviewed guidance.
+
+A contamination analysis dimension (`--schema`) tests memorization vs genuine
+understanding by running tasks on obfuscated (renamed) and restructured
+(merged/denormalized) versions of MIMIC-IV.
+
+## Task Families
+
+| Family | Tasks | Category | Key challenge |
+|--------|-------|----------|---------------|
+| SIRS | 4 | Severity score | Vital sign thresholds, WBC count |
+| SOFA | 4 | Severity score | 6-organ subscore aggregation, vasopressor doses |
+| SAPS-II | 2 | Severity score | 15 physiological variables + admission type |
+| APSIII | 2 | Severity score | Worst-from-normal scoring, 16 variables |
+| OASIS | 2 | Severity score | Vitals-only (no labs), pre-ICU LOS |
+| LODS | 2 | Severity score | 6-organ weighted dysfunction |
+| GCS | 2 | Neurological | Component extraction, intubated patient handling |
+| MELD | 2 | Organ failure | Logarithmic formula, sodium adjustment |
+| KDIGO | 2 | Organ failure | Creatinine + urine output AKI staging |
+| Charlson | 2 | Comorbidity | ICD code mapping with hierarchy rules |
+| Baseline creatinine | 2 | Estimation | Decision tree + ICD lookup + MDRD formula |
+| Ventilation | 2 | Classification | Episode detection, 14h gap rule, device string matching |
+| Suspicion of infection | 2 | Temporal matching | Asymmetric time window (72h before / 24h after) |
+| Sepsis-3 | 2 | Compositional | SOFA ≥ 2 + suspected infection (depends on two sub-concepts) |
+| Vasopressor equivalents | 2 | Medication | NE-equivalent dose, unit conversion |
+| Urine output rate | 2 | Data engineering | Rolling windows, LAG functions, weight normalization |
 
 ## Structure
 
 ```
 benchmark/
-  run.py           # Harness: task setup -> agent invocation -> evaluation
+  run.py           # Harness: task setup → agent invocation → evaluation
   evaluate.py      # Standalone evaluation against ground truth
   setup.py         # Database and ground truth preparation
-  lib/             # Shared utilities (comparison, test runner, sandbox)
-  tasks/           # Task definitions (instruction, skills, config)
+  bench.sh         # Docker wrapper for reproducible execution
+  lib/             # Shared utilities (comparison, test runner, transforms, sandbox)
+  tasks/           # Task definitions (instruction, skills, config) — 16 families
   ground_truth/    # Ground truth SQL and generated CSVs (gzipped)
   agent_db/        # Task-specific DuckDB databases (intermediates selectively dropped)
   results/         # Run outputs (agent traces, CSVs, result JSON)
@@ -36,21 +75,34 @@ benchmark/
 ```bash
 # Setup (creates agent DB and ground truth for a task)
 python benchmark/setup.py --task mimic-sirs-24h
+python benchmark/setup.py --all
 
-# Run agent with skill
+# Run a single task
 python benchmark/run.py --task mimic-sirs-24h --condition with-skill --agent claude
 
-# Run agent without skill
-python benchmark/run.py --task mimic-sirs-24h --condition no-skill --agent claude
+# Run all tasks in a family
+python benchmark/run.py --family sofa --condition no-skill --agent claude
 
-# Isolated mode (sandboxed filesystem, no network)
-python benchmark/run.py --task mimic-sirs-24h --condition no-skill --agent claude --isolated
+# Run all tasks with multiple seeds
+python benchmark/run.py --all --condition no-skill --agent claude --seeds 3
+
+# Run only raw-mode tasks (e.g., for contamination analysis)
+python benchmark/run.py --all --mode raw --condition no-skill --agent claude
+
+# Run on obfuscated schema (contamination analysis)
+python benchmark/run.py --task mimic-sirs-24h-raw --condition no-skill --schema obfuscated
+
+# Parallel execution
+python benchmark/run.py --all --condition no-skill --agent claude --parallel 4
 ```
 
 ## Evaluation
 
-Reward is the mean per-column match rate (0.0-1.0) between the agent's output and ground truth. Pytest-based assertions provide pass/fail diagnostics on row coverage, required columns, and per-criterion accuracy.
+Reward is the mean per-column match rate (0.0–1.0) between the agent's output
+and ground truth. Per-column tolerances are configurable in each task's
+`task.toml`. Pytest-based assertions provide pass/fail diagnostics on row
+coverage, required columns, and per-criterion accuracy.
 
-## Supported agents
+## Supported Agents
 
 Claude Code, Codex, Gemini CLI. See `AGENT_COMMANDS` in `run.py` for configuration.
