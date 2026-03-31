@@ -53,15 +53,11 @@ The Simplified Acute Physiology Score II (SAPS-II) is a severity scoring system 
 
 ### MIMIC-IV
 
-SAPS-II is available as a pre-computed derived table. Materialize with:
-
-```bash
-m4 init-derived mimic-iv          # All derived tables including sapsii
-```
+SAPS-II is available as a pre-computed derived table.
 
 The derived table provides the total score, predicted mortality probability, and all 15 component sub-scores (`age_score`, `hr_score`, `sysbp_score`, `temp_score`, `pao2fio2_score`, `uo_score`, `bun_score`, `wbc_score`, `potassium_score`, `sodium_score`, `bicarbonate_score`, `bilirubin_score`, `gcs_score`, `comorbidity_score`, `admissiontype_score`).
 
-BigQuery users already have this table via `physionet-data.mimiciv_derived.sapsii` without running `init-derived`.
+BigQuery users already have this table via `physionet-data.mimiciv_derived.sapsii`.
 
 **MIMIC-IV implementation details:**
 - **Comorbidity Definitions** (ICD-based):

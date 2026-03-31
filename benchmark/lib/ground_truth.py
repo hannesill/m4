@@ -1,6 +1,6 @@
 """Generate ground truth CSVs by running SQL from ground_truth/ against the full DB.
 
-Prerequisites: Run `m4 init-derived mimic-iv` first to materialize derived tables.
+Prerequisites: Derived tables must be materialized in the database first.
 """
 
 from __future__ import annotations

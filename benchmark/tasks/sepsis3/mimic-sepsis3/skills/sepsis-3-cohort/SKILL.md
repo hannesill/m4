@@ -73,11 +73,7 @@ See [sofa-score](../sofa-score/SKILL.md) for SOFA component details.
 
 ### MIMIC-IV
 
-Sepsis-3 is available as a pre-computed derived table. Materialize with:
-
-```bash
-m4 init-derived mimic-iv          # All derived tables including sepsis3
-```
+Sepsis-3 is available as a pre-computed derived table.
 
 ```sql
 SELECT
@@ -93,7 +89,7 @@ SELECT
 FROM mimiciv_derived.sepsis3;
 ```
 
-BigQuery users already have this table via `physionet-data.mimiciv_derived.sepsis3` without running `init-derived`.
+BigQuery users already have this table via `physionet-data.mimiciv_derived.sepsis3`.
 
 **MIMIC-IV implementation details:**
 - The derived tables originate from the [MIT-LCP mimic-code](https://github.com/MIT-LCP/mimic-code) repository. The full SQL query is in `scripts/mimic-iv.sql`.
