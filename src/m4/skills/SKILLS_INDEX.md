@@ -37,6 +37,7 @@ This directory contains skills for the M4 framework, covering clinical research 
 | Skill | Description |
 |-------|-------------|
 | [vasopressor-equivalents](clinical/vasopressor-equivalents/SKILL.md) | Norepinephrine-equivalent dose calculation |
+| [ventilation-classification](clinical/ventilation-classification/SKILL.md) | Ventilation status classification and episode detection |
 
 ### Laboratory and Measurements
 

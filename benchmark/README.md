@@ -16,11 +16,10 @@ Tasks come in two modes:
 - **standard** — pre-computed intermediate tables (e.g., `first_day_vitalsign`) are available
 - **raw** — intermediate tables are dropped, forcing the agent to work from base tables
 
-Four experimental conditions:
+Three experimental conditions:
 - **no-skill** — agent receives only the task instruction
 - **with-skill** — a task-specific clinician-reviewed skill is injected
 - **with-skill-all** — all benchmark skills injected (real-world deployment scenario)
-- **self-generated** — agent writes its own procedural skill before solving
 
 **Information gradient**: Task instructions describe the clinical concept
 accurately but are intentionally underspecified on dataset-specific

@@ -67,15 +67,6 @@ NETWORK_DENY_TOOLS = ",".join(
     ]
 )
 
-SELF_GEN_PROMPT = """
-
-Before solving this task, take a moment to create your own procedural skill document.
-Analyze the requirements, then:
-1. Write 1-3 modular skill documents as markdown files in your working directory
-2. Each skill should contain step-by-step procedures, not just facts
-3. Then use those skills to solve the task
-"""
-
 # Agent CLI commands.
 # Skills are injected into workdir/.claude/skills/ (directory-level discovery)
 # so each parallel run sees only its own skills. This currently assumes Claude
@@ -300,9 +291,6 @@ def prepare_instruction(
 
     instruction = instruction.replace("{db_path}", db_path)
     instruction = instruction.replace("{output_path}", output_path)
-
-    if condition == "self-generated":
-        instruction += SELF_GEN_PROMPT
 
     if schema in ("obfuscated", "restructured"):
         from lib.transform import generate_obfuscated_instruction, load_dictionary
@@ -944,7 +932,7 @@ def main():
     )
     parser.add_argument(
         "--condition",
-        choices=["no-skill", "with-skill", "with-skill-all", "self-generated"],
+        choices=["no-skill", "with-skill", "with-skill-all"],
         help="Evaluation condition",
     )
     parser.add_argument("--agent", choices=list(AGENT_COMMANDS), help="Agent to use")
