@@ -32,6 +32,83 @@ DICTIONARY_PATH = Path("benchmark/lib/dictionary.json")
 GROUND_TRUTH_DIR = Path("benchmark/ground_truth")
 AGENT_DB_DIR = Path("benchmark/agent_db")
 
+# ── Semantic descriptions for obfuscated instructions ─────────────────────
+# These replace native MIMIC names in the dictionary section so that agents
+# cannot reverse-engineer the obfuscation via mechanical find-and-replace.
+
+_SCHEMA_DESCRIPTIONS = {
+    "mimiciv_derived": "derived/computed clinical tables",
+    "mimiciv_hosp": "hospital-level tables",
+    "mimiciv_icu": "ICU-level tables",
+}
+
+_TABLE_DESCRIPTIONS = {
+    "mimiciv_hosp.patients": "patient demographics",
+    "mimiciv_hosp.admissions": "hospital admission records",
+    "mimiciv_icu.icustays": "ICU stay records",
+    "mimiciv_icu.chartevents": "charted clinical observations",
+    "mimiciv_hosp.labevents": "laboratory test results",
+    "mimiciv_icu.inputevents": "administered medications and fluids",
+    "mimiciv_icu.outputevents": "measured outputs (urine, drains)",
+    "mimiciv_icu.procedureevents": "procedural events",
+    "mimiciv_icu.d_items": "clinical measurement definitions",
+    "mimiciv_hosp.d_labitems": "laboratory test definitions",
+    "mimiciv_hosp.services": "hospital service assignments",
+    "mimiciv_hosp.diagnoses_icd": "coded diagnoses",
+    "mimiciv_hosp.procedures_icd": "coded procedures",
+    "mimiciv_hosp.transfers": "patient transfer records",
+}
+
+_COLUMN_DESCRIPTIONS = {
+    "subject_id": "unique patient identifier",
+    "hadm_id": "hospital admission identifier",
+    "stay_id": "ICU stay identifier",
+    "itemid": "measurement/item code",
+    "charttime": "timestamp of charted observation",
+    "starttime": "event start timestamp",
+    "endtime": "event end timestamp",
+    "storetime": "timestamp value was stored",
+    "value": "recorded value (text)",
+    "valuenum": "recorded numeric value",
+    "valueuom": "unit of measurement",
+    "intime": "unit admission timestamp",
+    "outtime": "unit discharge timestamp",
+    "admittime": "hospital admission timestamp",
+    "dischtime": "hospital discharge timestamp",
+    "label": "human-readable item label",
+    "category": "item category",
+    "gender": "patient sex",
+    "anchor_age": "patient age (integer)",
+    "los": "length of stay (days)",
+    "admission_type": "type of admission",
+    "hospital_expire_flag": "died during admission (0/1)",
+    "icd_code": "diagnosis/procedure code",
+    "icd_version": "ICD version (9 or 10)",
+    "rate": "infusion rate",
+    "rateuom": "rate unit of measurement",
+    "amount": "administered amount",
+    "amountuom": "amount unit of measurement",
+    "patientweight": "patient weight (kg)",
+    "curr_service": "current hospital service",
+    "seq_num": "sequence/priority number",
+    "flag": "abnormal flag",
+    "specimen_id": "specimen identifier",
+    "labevent_id": "laboratory result identifier",
+    "caregiver_id": "clinician identifier",
+    "warning": "warning indicator",
+    "ref_range_lower": "reference range lower bound",
+    "ref_range_upper": "reference range upper bound",
+    "abbreviation": "item abbreviation",
+    "linksto": "associated event table",
+    "unitname": "unit name",
+    "param_type": "parameter type",
+    "fluid": "fluid type",
+    "dod": "date of death",
+    "deathtime": "time of death",
+    "first_careunit": "admission unit name",
+    "last_careunit": "discharge unit name",
+}
+
 # Schemas to process (skip DuckDB internal schemas)
 SKIP_SCHEMAS = {"information_schema", "pg_catalog", "main"}
 
@@ -926,41 +1003,23 @@ def _format_dictionary_section(
         "## Schema Dictionary\n",
         "This database uses obfuscated names. Use this reference to navigate.\n",
         "### Schemas",
-        "| Concept | Database name |",
-        "|---------|---------------|",
+        "| Description | Database name |",
+        "|-------------|---------------|",
     ]
     for native, obf in sorted(schema.items()):
-        label = native.replace("mimiciv_", "")
-        lines.append(f"| {label} | `{obf}` |")
-
-    # Key tables (base tables used by benchmark tasks)
-    key_tables = [
-        ("mimiciv_hosp.patients", "patients"),
-        ("mimiciv_hosp.admissions", "admissions"),
-        ("mimiciv_icu.icustays", "ICU stays"),
-        ("mimiciv_icu.chartevents", "chart events (vitals, assessments)"),
-        ("mimiciv_hosp.labevents", "lab events"),
-        ("mimiciv_icu.inputevents", "input events (medications, fluids)"),
-        ("mimiciv_icu.outputevents", "output events (urine, drains)"),
-        ("mimiciv_icu.procedureevents", "procedure events"),
-        ("mimiciv_icu.d_items", "item dictionary (ICU)"),
-        ("mimiciv_hosp.d_labitems", "item dictionary (lab)"),
-        ("mimiciv_hosp.services", "hospital services"),
-        ("mimiciv_hosp.diagnoses_icd", "ICD diagnoses"),
-        ("mimiciv_hosp.procedures_icd", "ICD procedures"),
-        ("mimiciv_hosp.transfers", "transfers"),
-    ]
+        desc = _SCHEMA_DESCRIPTIONS.get(native, "database schema")
+        lines.append(f"| {desc} | `{obf}` |")
 
     lines.extend(
         [
             "\n### Key Tables",
-            "| Concept | Database name |",
-            "|---------|---------------|",
+            "| Description | Database name |",
+            "|-------------|---------------|",
         ]
     )
-    for fqn, label in key_tables:
+    for fqn, desc in _TABLE_DESCRIPTIONS.items():
         if fqn in tbl:
-            lines.append(f"| {label} | `{tbl[fqn]}` |")
+            lines.append(f"| {desc} | `{tbl[fqn]}` |")
 
     if include_restructured:
         rtbl = dictionary["restructured_tables"]
@@ -968,12 +1027,12 @@ def _format_dictionary_section(
         lines.extend(
             [
                 "\n### Restructured Tables",
-                "| Concept | Database name | Discriminator |",
-                "|---------|---------------|---------------|",
-                f"| observations (chart+lab events) | `{rtbl['observations']}` | `{rcol['source']}`: 'chart' or 'lab' |",
-                f"| encounters (patients+admissions+ICU stays) | `{rtbl['encounters']}` | Single table, one row per admission/stay |",
-                f"| flows (input+output events) | `{rtbl['flows']}` | `{rcol['direction']}`: 'in' or 'out' |",
-                f"| item reference (ICU+lab dictionaries) | `{rtbl['item_reference']}` | `{rcol['item_type']}`: 'chart' or 'lab' |",
+                "| Description | Database name | Discriminator |",
+                "|-------------|---------------|---------------|",
+                f"| combined clinical observations | `{rtbl['observations']}` | `{rcol['source']}`: 'chart' or 'lab' |",
+                f"| patient encounter records | `{rtbl['encounters']}` | Single table, one row per admission/stay |",
+                f"| clinical substance flows | `{rtbl['flows']}` | `{rcol['direction']}`: 'in' or 'out' |",
+                f"| measurement reference dictionary | `{rtbl['item_reference']}` | `{rcol['item_type']}`: 'chart' or 'lab' |",
                 "",
                 "**Note**: The original separate tables listed above do NOT exist.",
                 "Use the restructured tables instead. Explore their columns with",
@@ -1035,21 +1094,22 @@ def _format_dictionary_section(
     lines.extend(
         [
             "\n### Key Columns",
-            "| Concept | Database name |",
-            "|---------|---------------|",
+            "| Description | Database name |",
+            "|-------------|---------------|",
         ]
     )
     for native_col in key_columns:
         if native_col in col:
-            lines.append(f"| {native_col} | `{col[native_col]}` |")
+            desc = _COLUMN_DESCRIPTIONS.get(native_col, "database column")
+            lines.append(f"| {desc} | `{col[native_col]}` |")
 
     if include_restructured:
         rcol = dictionary["restructured_columns"]
         lines.extend(
             [
-                f"| source (chart/lab discriminator) | `{rcol['source']}` |",
-                f"| direction (in/out discriminator) | `{rcol['direction']}` |",
-                f"| item_type (chart/lab item type) | `{rcol['item_type']}` |",
+                f"| observation source discriminator | `{rcol['source']}` |",
+                f"| flow direction discriminator | `{rcol['direction']}` |",
+                f"| item type discriminator | `{rcol['item_type']}` |",
             ]
         )
 

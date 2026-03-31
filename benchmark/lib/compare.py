@@ -46,19 +46,16 @@ def compare_derived_tables(
 
     # Merge: left join from truth to agent
     merged = truth_df.merge(
-        agent_df, on=key_columns, suffixes=("_truth", "_agent"), how="left"
+        agent_df,
+        on=key_columns,
+        suffixes=("_truth", "_agent"),
+        how="left",
+        indicator=True,
     )
 
-    # Track which truth rows had no agent match
-    # (agent columns will be NaN for unmatched rows)
-    first_value_col = value_columns[0]
-    agent_col_name = f"{first_value_col}_agent"
-    if agent_col_name in merged.columns:
-        missing_mask = (
-            merged[agent_col_name].isna() & merged[f"{first_value_col}_truth"].notna()
-        )
-    else:
-        missing_mask = pd.Series([False] * len(merged))
+    # Track which truth rows had no agent match (key not present in agent output)
+    missing_mask = merged["_merge"] == "left_only"
+    merged = merged.drop(columns=["_merge"])
 
     results = {}
     for col in value_columns:
