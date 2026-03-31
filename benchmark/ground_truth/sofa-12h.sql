@@ -217,13 +217,11 @@ WITH pafi1 AS (
         CASE
             WHEN rate_dopamine > 15 OR rate_epinephrine > 0.1 OR rate_norepinephrine > 0.1
             THEN 4
-            -- BUG (inherited from mimic-code): <= 0.1 is TRUE for any
-            -- non-NULL rate, making scores 2/1/0 unreachable when epi or
-            -- norepi is present. Correct intent is > 0 (i.e. drug is being
-            -- administered at any dose up to 0.1). Kept as-is to match
-            -- mimic-code; harmless in practice because the derived
-            -- vasopressor tables only contain rows with positive rates.
-            WHEN rate_dopamine > 5 OR rate_epinephrine <= 0.1 OR rate_norepinephrine <= 0.1
+            -- Deviates from mimic-code which uses <= 0.1 (true for any
+            -- non-NULL rate). We use the clinically correct > 0 AND <= 0.1.
+            -- No effect on derived values: vasopressor tables only contain
+            -- rows with positive rates, so the conditions are equivalent.
+            WHEN rate_dopamine > 5 OR (rate_epinephrine > 0 AND rate_epinephrine <= 0.1) OR (rate_norepinephrine > 0 AND rate_norepinephrine <= 0.1)
             THEN 3
             WHEN rate_dopamine > 0 OR rate_dobutamine > 0
             THEN 2

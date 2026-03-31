@@ -33,16 +33,20 @@ concepts rather than computing a score from raw measurements.
 - **Subset output**: Only stays with both SOFA >= 2 and suspected infection appear,
   not all ICU stays.
 
-## Why standard vs raw
+## Raw-only (no standard mode)
 
-- **Standard**: Only `mimiciv_derived.sepsis3` is dropped. Agent uses `mimiciv_derived.sofa`
-  and `mimiciv_derived.suspicion_of_infection` directly. Tests composition logic.
-- **Raw**: `sepsis3`, `sofa`, and `suspicion_of_infection` are all dropped. Agent must
-  derive SOFA from its intermediate tables (bg, chemistry, vitalsign, gcs, ventilation,
-  vasopressor tables, urine_output_rate) and suspicion of infection from
-  `mimiciv_derived.antibiotic` + `mimiciv_hosp.microbiologyevents`. Lower-level
-  intermediates remain available — the challenge is composing two complex concepts,
-  not rebuilding them from scratch.
+This task is raw-only. A standard variant was considered but dropped: with both
+`mimiciv_derived.sofa` and `mimiciv_derived.suspicion_of_infection` available,
+the task reduces to a trivial join + filter that wouldn't produce informative
+benchmark signal.
+
+In raw mode, `sepsis3`, `sofa`, and `suspicion_of_infection` are all dropped.
+The agent must derive SOFA from its intermediate tables (bg, chemistry,
+vitalsign, gcs, ventilation, vasopressor tables, urine_output_rate) and
+suspicion of infection from `mimiciv_derived.antibiotic` +
+`mimiciv_hosp.microbiologyevents`. Lower-level intermediates remain available —
+the challenge is composing two complex concepts, not rebuilding them from
+scratch.
 
 ## Subtleties to watch for
 

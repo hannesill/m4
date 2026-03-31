@@ -15,10 +15,10 @@ SELECT
   stay_id,
   starttime,
   endtime,
-  ROUND(
+  MAX(ROUND(
     TRY_CAST(COALESCE(norepinephrine, 0) + COALESCE(epinephrine, 0) + COALESCE(phenylephrine / 10, 0) + COALESCE(dopamine / 100, 0) + COALESCE(vasopressin * 2.5 / 60, 0) AS DECIMAL),
     4
-  ) AS norepinephrine_equivalent_dose
+  )) AS norepinephrine_equivalent_dose
 FROM mimiciv_derived.vasoactive_agent
 WHERE
   NOT norepinephrine IS NULL
@@ -26,3 +26,4 @@ WHERE
   OR NOT phenylephrine IS NULL
   OR NOT dopamine IS NULL
   OR NOT vasopressin IS NULL
+GROUP BY stay_id, starttime, endtime
