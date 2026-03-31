@@ -88,10 +88,22 @@ AGENT_COMMANDS = {
         "json_trace": True,
     },
     "gemini": {
-        "cmd": ["gemini", "-p"],
+        "cmd": ["gemini", "--sandbox", "--approval-mode", "yolo", "-p"],
         "skill_dir": ".gemini/skills",
         "json_trace": False,
     },
+}
+
+AGENT_HOME_SEEDS = {
+    "claude": [],
+    "codex": [".codex/auth.json"],
+    "gemini": [
+        ".gemini/oauth_creds.json",
+        ".gemini/google_accounts.json",
+        ".gemini/state.json",
+        ".gemini/settings.json",
+        ".gemini/installation_id",
+    ],
 }
 
 
@@ -101,19 +113,21 @@ AGENT_COMMANDS = {
 def _refresh_oauth_token() -> None:
     """Refresh the ANTHROPIC_API_KEY from macOS keychain if it's an OAuth token.
 
-    Called before each agent invocation. Uses a 15-minute cooldown to avoid
-    hammering the keychain. Thread-safe.
+    Called before each Claude invocation. Uses a 15-minute cooldown to avoid
+    hammering the keychain. Thread-safe. If no token is present, try to seed
+    one from the keychain so clean per-run HOME directories still work with a
+    Claude subscription login.
     """
     global _token_last_refresh
 
-    # Only refresh OAuth tokens (sk-ant-oat*), not permanent API keys
     current = os.environ.get("ANTHROPIC_API_KEY", "")
-    if not current.startswith("sk-ant-oat"):
+    # Leave explicit API keys alone.
+    if current and not current.startswith("sk-ant-oat"):
         return
 
     with _token_lock:
         now = time.time()
-        if now - _token_last_refresh < _TOKEN_REFRESH_INTERVAL:
+        if current and now - _token_last_refresh < _TOKEN_REFRESH_INTERVAL:
             return
 
         try:
@@ -244,7 +258,7 @@ def _get_cached_db(task_name: str, schema: str = "native") -> Path:
     return cached_db
 
 
-def setup_isolated_workdir(task_name: str, run_id: str) -> Path:
+def setup_isolated_workdir(task_name: str, run_id: str, schema: str = "native") -> Path:
     """Create an isolated workdir in /tmp with a copy of the database.
 
     The database is copied (not symlinked) from the per-task cache so that
@@ -255,7 +269,7 @@ def setup_isolated_workdir(task_name: str, run_id: str) -> Path:
     workdir.mkdir(parents=True, exist_ok=True)
 
     # Copy DB from cache into workdir (same filesystem = fast)
-    cached_db = _get_cached_db(task_name)
+    cached_db = _get_cached_db(task_name, schema)
     db_dest = workdir / "database.duckdb"
     if not db_dest.exists():
         print("  Copying database into workdir from cache...")
@@ -269,6 +283,43 @@ def setup_isolated_workdir(task_name: str, run_id: str) -> Path:
     print(f"  Sandbox hook: {SANDBOX_HOOK} (allowed dir: {workdir})")
 
     return workdir
+
+
+def _auth_source_root() -> Path:
+    """Resolve the root directory that contains host auth state."""
+    return Path(os.environ.get("M4BENCH_AUTH_ROOT", str(Path.home()))).expanduser()
+
+
+def _copy_auth_seed(src_root: Path, relative_path: str, run_home: Path) -> bool:
+    """Copy a single auth/config file into the per-run HOME if it exists."""
+    src = src_root / relative_path
+    if not src.exists():
+        return False
+
+    dest = run_home / relative_path
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if src.is_dir():
+        shutil.copytree(src, dest, dirs_exist_ok=True)
+    else:
+        shutil.copy2(src, dest)
+    return True
+
+
+def prepare_run_home(agent_name: str, run_home: Path) -> list[str]:
+    """Create a clean per-run HOME seeded with minimal auth for the agent."""
+    run_home.mkdir(parents=True, exist_ok=True)
+    (run_home / "tmp").mkdir(exist_ok=True)
+
+    copied: list[str] = []
+    src_root = _auth_source_root()
+    for relative_path in AGENT_HOME_SEEDS.get(agent_name, []):
+        if _copy_auth_seed(src_root, relative_path, run_home):
+            copied.append(relative_path)
+
+    # Ensure the agent-specific directory exists even when auth is env-based.
+    target_base = _skill_target_base(agent_name, run_home)
+    target_base.mkdir(parents=True, exist_ok=True)
+    return copied
 
 
 def copy_results_back(workdir: Path, results_dir: Path) -> None:
@@ -399,13 +450,14 @@ def run_agent(
     run_home: Path | None = None,
 ) -> dict:
     """Invoke an agent CLI with the instruction. Returns result dict."""
-    _refresh_oauth_token()
-
     agent_config = AGENT_COMMANDS.get(agent_name)
     if not agent_config:
         raise ValueError(
             f"Unknown agent: {agent_name}. Available: {list(AGENT_COMMANDS)}"
         )
+
+    if agent_name == "claude":
+        _refresh_oauth_token()
 
     cmd = list(agent_config["cmd"])
 
@@ -434,11 +486,17 @@ def run_agent(
 
     cmd.append(instruction)
 
-    # Per-run HOME isolation: when set, Claude CLI discovers skills at
-    # $HOME/.claude/skills/ and loads $HOME/.claude/CLAUDE.md — both controlled.
     env = None
-    if run_home and agent_name == "claude":
-        env = {**os.environ, "HOME": str(run_home)}
+    if run_home:
+        tmpdir = run_home / "tmp"
+        tmpdir.mkdir(parents=True, exist_ok=True)
+        env = {
+            **os.environ,
+            "HOME": str(run_home),
+            "TMPDIR": str(tmpdir),
+            "TMP": str(tmpdir),
+            "TEMP": str(tmpdir),
+        }
 
     print(f"  Running {agent_name}{'  (verbose)' if verbose else ''}...")
     start = time.time()
@@ -701,7 +759,7 @@ def run_single_task(
     run_id = f"{task_name}_{condition}{schema_tag}_{agent_name}_{model or 'default'}_t{trial}_{timestamp}"
 
     if isolated:
-        workdir = setup_isolated_workdir(task_name, run_id)
+        workdir = setup_isolated_workdir(task_name, run_id, schema)
         final_results_dir = RESULTS_DIR / run_id
     else:
         workdir = RESULTS_DIR / run_id
@@ -714,7 +772,7 @@ def run_single_task(
         f"Condition: {condition} | Schema: {schema} | Agent: {agent_name} | Model: {model or 'default'}"
     )
     if isolated:
-        print("Isolation: ON (filesystem sandboxed, network blocked)")
+        print("Isolation: ON (task-only workspace, clean per-run HOME)")
     print(f"Working dir: {workdir}")
     print(f"{'=' * 60}\n")
 
@@ -722,15 +780,16 @@ def run_single_task(
     if not isolated:
         setup_workdir(task_name, workdir, schema)
 
-    # Per-run HOME isolation is currently Claude-only. Codex ChatGPT login uses
-    # the real ~/.codex state, so overriding HOME would break subscription auth.
     run_home = None
-    use_run_home = agent_name == "claude" and os.environ.get("ANTHROPIC_API_KEY")
+    use_run_home = isolated or (
+        agent_name == "claude" and os.environ.get("ANTHROPIC_API_KEY")
+    )
 
     if use_run_home:
-        run_home = workdir / "_home"
-        (run_home / ".claude" / "skills").mkdir(parents=True, exist_ok=True)
-        print("  Per-run HOME isolation: ON (clean environment)")
+        run_home = ISOLATED_BASE / f"{run_id}_home" if isolated else workdir / "_home"
+        seeded = prepare_run_home(agent_name, run_home)
+        seed_msg = ", ".join(seeded) if seeded else "env-only auth"
+        print(f"  Per-run HOME isolation: ON ({seed_msg})")
 
     # Inject skills into the agent's workdir-local skill directory.
     # Each task's workdir is unique, so parallel runs never interfere.
@@ -816,6 +875,8 @@ def run_single_task(
     finally:
         # Skills live in the workdir's agent-specific control directory and are
         # cleaned up with the workdir. No host-level cleanup needed.
+        if isolated and run_home and run_home.exists():
+            shutil.rmtree(run_home, ignore_errors=True)
         if final_results_dir:
             print(f"\nCopying results to {final_results_dir}...")
             copy_results_back(workdir, final_results_dir)
