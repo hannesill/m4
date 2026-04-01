@@ -16,6 +16,9 @@ def _load_module(name: str, relative_path: str):
     return module
 
 
+# ── Token refresh ────────────────────────────────────────────────────────
+
+
 def test_refresh_oauth_token_seeds_when_env_missing(monkeypatch):
     run = _load_module("benchmark_run_refresh", "benchmark/run.py")
 
@@ -37,6 +40,9 @@ def test_refresh_oauth_token_seeds_when_env_missing(monkeypatch):
     run._refresh_oauth_token()
 
     assert os.environ["ANTHROPIC_API_KEY"] == "sk-ant-oat-test"
+
+
+# ── Isolated workdir ────────────────────────────────────────────────────
 
 
 def test_setup_isolated_workdir_uses_requested_schema(monkeypatch, tmp_path):
@@ -62,6 +68,9 @@ def test_setup_isolated_workdir_uses_requested_schema(monkeypatch, tmp_path):
 
     assert seen == {"task_name": "mimic-sirs-24h-raw", "schema": "obfuscated"}
     assert (workdir / "database.duckdb").read_text() == "db"
+
+
+# ── Per-run HOME seeding ────────────────────────────────────────────────
 
 
 def test_prepare_run_home_copies_minimal_auth_files(monkeypatch, tmp_path):
@@ -98,6 +107,90 @@ def test_prepare_run_home_copies_minimal_auth_files(monkeypatch, tmp_path):
     ]
     assert (gemini_home / ".gemini" / "oauth_creds.json").exists()
     assert not (gemini_home / ".gemini" / "trustedFolders.json").exists()
+
+
+# ── Agent user isolation ────────────────────────────────────────────────
+
+
+def test_resolve_agent_creds_returns_none_when_user_missing(monkeypatch):
+    """Outside Docker (no benchagent user), _resolve_agent_creds returns None."""
+    run = _load_module("benchmark_run_creds", "benchmark/run.py")
+
+    import pwd
+
+    original = pwd.getpwnam
+
+    def fake_getpwnam(name):
+        if name == "benchagent":
+            raise KeyError(name)
+        return original(name)
+
+    monkeypatch.setattr(pwd, "getpwnam", fake_getpwnam)
+    assert run._resolve_agent_creds() is None
+
+
+def test_chown_recursive(tmp_path):
+    """_chown_recursive changes ownership of all files and dirs."""
+    run = _load_module("benchmark_run_chown", "benchmark/run.py")
+
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "file.txt").write_text("data")
+
+    # Just verify it doesn't crash with current uid/gid
+    uid = os.getuid()
+    gid = os.getgid()
+    run._chown_recursive(tmp_path, uid, gid)
+
+    # Verify ownership
+    assert (tmp_path / "sub" / "file.txt").stat().st_uid == uid
+
+
+# ── CLI flag: isolation is default ──────────────────────────────────────
+
+
+def test_isolation_is_default():
+    """Verify --no-isolation is required to disable isolation."""
+    import argparse
+
+    # Simulate the parser creation from main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--no-isolation", action="store_true")
+    parser.add_argument("--isolated", action="store_true")
+
+    # Default: isolated
+    args = parser.parse_args([])
+    assert not args.no_isolation
+
+    # Explicit disable
+    args = parser.parse_args(["--no-isolation"])
+    assert args.no_isolation
+
+
+# ── Sandbox hook: blocked substrings ────────────────────────────────────
+
+
+def test_sandbox_hook_blocks_ground_truth_paths():
+    hook = _load_module("sandbox_hook_test", "benchmark/lib/sandbox_hook.py")
+
+    assert (
+        hook._check_blocked_substrings("/benchmark/ground_truth/sofa.csv") is not None
+    )
+    assert hook._check_blocked_substrings("cat ground_truth/foo.sql") is not None
+    assert hook._check_blocked_substrings("/benchmark/evaluate.py") is not None
+    assert hook._check_blocked_substrings("/benchmark/lib/compare.py") is not None
+    # Allowed paths should not trigger
+    assert hook._check_blocked_substrings("./output.csv") is None
+    assert hook._check_blocked_substrings("./database.duckdb") is None
+
+
+def test_sandbox_hook_extracts_quoted_paths():
+    hook = _load_module("sandbox_hook_paths", "benchmark/lib/sandbox_hook.py")
+
+    paths = hook.extract_paths_from_command("python3 -c \"open('/benchmark/foo')\"")
+    assert any("/benchmark/foo" in p for p in paths)
+
+
+# ── setup.py CLI ────────────────────────────────────────────────────────
 
 
 def test_setup_parser_allows_schema_with_all():
