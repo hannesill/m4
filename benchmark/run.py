@@ -2,6 +2,10 @@
 
 Orchestrates: task setup -> agent invocation -> output collection -> test execution.
 
+Isolation is ON by default: the agent runs as a non-root user in a sandboxed
+workdir, with network restricted to LLM API endpoints only.  Pass --no-isolation
+for local debugging (results are NOT publishable).
+
 Usage:
     # Run a single task
     python benchmark/run.py --task mimic-sirs-24h --condition with-skill --agent claude
@@ -15,8 +19,8 @@ Usage:
     # List available tasks
     python benchmark/run.py --list
 
-    # Isolated mode (filesystem sandboxed, network tools blocked)
-    python benchmark/run.py --task mimic-sirs-24h --condition no-skill --agent claude --isolated
+    # Local debugging only (disables isolation — NOT for publishable results)
+    python benchmark/run.py --task mimic-sirs-24h --condition no-skill --agent claude --no-isolation
 """
 
 from __future__ import annotations
@@ -52,8 +56,9 @@ _token_last_refresh: float = 0.0
 ISOLATED_BASE = Path(tempfile.gettempdir()) / "clinskillsbench"
 DB_CACHE = ISOLATED_BASE / "_db_cache"
 SANDBOX_HOOK = BENCHMARK_ROOT / "lib" / "sandbox_hook.py"
+AGENT_USER = "benchagent"
 
-# Tools to deny in isolated mode — blocks internet access from the agent.
+# Tools to deny in isolated mode — defence-in-depth on top of iptables.
 NETWORK_DENY_TOOLS = ",".join(
     [
         "WebFetch",
@@ -105,6 +110,33 @@ AGENT_HOME_SEEDS = {
         ".gemini/installation_id",
     ],
 }
+
+
+# ── Agent user isolation ───────────────────────────────────────────────────
+
+
+def _resolve_agent_creds() -> tuple[int, int] | None:
+    """Return (uid, gid) for the benchagent user, or None if unavailable.
+
+    When running inside the Docker container, benchagent exists and the agent
+    subprocess will run as this user.  Locally (outside Docker) the user
+    won't exist and we fall back to the current user.
+    """
+    try:
+        import pwd
+
+        pw = pwd.getpwnam(AGENT_USER)
+        return (pw.pw_uid, pw.pw_gid)
+    except (KeyError, ImportError):
+        return None
+
+
+def _chown_recursive(path: Path, uid: int, gid: int) -> None:
+    """Recursively change ownership of a directory tree."""
+    for dirpath, _dirnames, filenames in os.walk(path):
+        os.chown(dirpath, uid, gid)
+        for filename in filenames:
+            os.chown(os.path.join(dirpath, filename), uid, gid)
 
 
 # ── Token refresh ──────────────────────────────────────────────────────────
@@ -498,6 +530,15 @@ def run_agent(
             "TEMP": str(tmpdir),
         }
 
+    # Run agent as benchagent when isolated (user-level filesystem + network isolation).
+    agent_creds = _resolve_agent_creds() if isolated else None
+    if agent_creds:
+        uid, gid = agent_creds
+        _chown_recursive(workdir, uid, gid)
+        if run_home:
+            _chown_recursive(run_home, uid, gid)
+        print(f"  Agent user: {AGENT_USER} (uid={uid})")
+
     print(f"  Running {agent_name}{'  (verbose)' if verbose else ''}...")
     start = time.time()
 
@@ -509,6 +550,8 @@ def run_agent(
             text=True,
             cwd=str(workdir),
             env=env,
+            user=agent_creds[0] if agent_creds else None,
+            group=agent_creds[1] if agent_creds else None,
         )
         output_lines = []
         with open(trace_path, "w") as trace_file:
@@ -772,7 +815,14 @@ def run_single_task(
         f"Condition: {condition} | Schema: {schema} | Agent: {agent_name} | Model: {model or 'default'}"
     )
     if isolated:
-        print("Isolation: ON (task-only workspace, clean per-run HOME)")
+        has_agent_user = _resolve_agent_creds() is not None
+        print(
+            f"Isolation: ON (sandboxed workdir, per-run HOME"
+            f"{', user=' + AGENT_USER if has_agent_user else ''}"
+            f", network=API-only)"
+        )
+    else:
+        print("WARNING: Isolation OFF — results are NOT suitable for publication")
     print(f"Working dir: {workdir}")
     print(f"{'=' * 60}\n")
 
@@ -1083,10 +1133,12 @@ def main():
         help="Stream agent output in real time",
     )
     parser.add_argument(
-        "--isolated",
+        "--no-isolation",
         action="store_true",
-        help="Run in isolated mode: filesystem sandboxed, network tools blocked, full trace captured",
+        help="Disable isolation (local debugging ONLY — results are NOT publishable)",
     )
+    # Keep --isolated for backward compat — it's now the default and a no-op.
+    parser.add_argument("--isolated", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument(
         "--schema",
         choices=["native", "obfuscated", "restructured"],
@@ -1112,6 +1164,14 @@ def main():
         help="Number of seeds per task (each gets trial=1..N)",
     )
     args = parser.parse_args()
+
+    # Isolation is the default; --no-isolation must be explicit.
+    isolated = not args.no_isolation
+    if not isolated:
+        print(
+            "\n*** WARNING: Isolation disabled (--no-isolation). ***\n"
+            "*** Results from this run are NOT suitable for publication. ***\n"
+        )
 
     task_names = resolve_tasks(args)
 
@@ -1175,7 +1235,7 @@ def main():
                 args.model,
                 trial,
                 args.verbose,
-                args.isolated,
+                isolated,
                 args.schema,
             )
             results.append(result)
@@ -1187,7 +1247,7 @@ def main():
             args.agent,
             args.model,
             args.verbose,
-            args.isolated,
+            isolated,
             args.schema,
             args.parallel,
         )

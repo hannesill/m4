@@ -6,8 +6,8 @@ IMAGE="m4bench:latest"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 AUTH_ROOT="/host-auth"
 
+# Parse --agent from arguments (needed for API-key logic below).
 AGENT=""
-HAS_ISOLATED=0
 ARGS=("$@")
 for ((i=0; i<${#ARGS[@]}; i++)); do
     case "${ARGS[$i]}" in
@@ -19,9 +19,6 @@ for ((i=0; i<${#ARGS[@]}; i++)); do
             ;;
         --agent=*)
             AGENT="${ARGS[$i]#--agent=}"
-            ;;
-        --isolated)
-            HAS_ISOLATED=1
             ;;
     esac
 done
@@ -70,6 +67,7 @@ docker rm "$CONTAINER" 2>/dev/null || true
 DOCKER_ARGS=(
     -d
     --name "$CONTAINER"
+    --cap-add NET_ADMIN
     -v "$SCRIPT_DIR":/benchmark
     -e "M4BENCH_AUTH_ROOT=$AUTH_ROOT"
 )
@@ -92,10 +90,21 @@ docker run "${DOCKER_ARGS[@]}" "$IMAGE" >/dev/null
 docker exec "$CONTAINER" pip3 install --break-system-packages --quiet \
     duckdb pandas pytest tomli 2>/dev/null
 
-RUN_ARGS=("$@")
-if [[ "$HAS_ISOLATED" -eq 0 ]]; then
-    RUN_ARGS+=(--isolated)
-fi
+# ── Isolation hardening ─────────────────────────────────────────────────
+# 1. Lock sensitive directories: ground truth, tasks, and agent DBs become
+#    root-only (mode 700).  The orchestrator (root) can still read them;
+#    the agent subprocess (benchagent) cannot.
+echo "Locking sensitive directories (root-only)..."
+docker exec "$CONTAINER" bash -c \
+    'for d in ground_truth tasks agent_db; do
+        [ -d "/benchmark/$d" ] && chmod 700 "/benchmark/$d"
+    done'
 
-# Forward all arguments to run.py inside the container
-docker exec "$CONTAINER" python3 /benchmark/run.py "${RUN_ARGS[@]}"
+# 2. Lock network: iptables rules restrict the benchagent user to
+#    LLM-API-only outbound traffic (no web search, no package downloads).
+echo "Locking network (API-only for agent)..."
+docker exec "$CONTAINER" bash /benchmark/network_lock.sh
+
+# Forward all arguments to run.py inside the container.
+# Isolation is on by default in run.py; bench.sh no longer needs to inject it.
+docker exec "$CONTAINER" python3 /benchmark/run.py "$@"

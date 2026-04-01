@@ -4,6 +4,12 @@
 Receives JSON on stdin from Claude CLI with tool_name and tool_input.
 Exit codes: 0 = allow, 2 = block.
 
+This is defence-in-depth.  The primary filesystem barrier is user-based
+isolation (the agent subprocess runs as benchagent, which cannot read
+root-owned directories like ground_truth/).  This hook adds a second
+layer specifically for Claude, catching accidental path references before
+the OS-level check even fires.
+
 Usage (in .claude/settings.json):
     {
         "hooks": {
@@ -19,6 +25,20 @@ import json
 import os
 import re
 import sys
+
+# Substrings that must never appear in any tool input — these reference
+# benchmark internals that the agent should not access.
+BLOCKED_SUBSTRINGS = [
+    "/benchmark/ground_truth",
+    "/benchmark/evaluate",
+    "/benchmark/lib/compare",
+    "/benchmark/lib/test_task",
+    "/benchmark/lib/ground_truth",
+    "/benchmark/agent_db",
+    "ground_truth/",
+    "ground_truth.csv",
+    "ground_truth.sql",
+]
 
 
 def resolve_path(path: str, workdir: str) -> str:
@@ -43,15 +63,27 @@ def extract_paths_from_command(command: str) -> list[str]:
     - Absolute paths: /foo/bar
     - Relative paths with directory components: ../foo, ./bar
     - Home expansion: ~/foo
+    - Paths inside quotes: "/foo/bar", '/foo/bar'
     """
     paths = []
-    # Absolute paths
-    paths.extend(re.findall(r'(?<![a-zA-Z0-9_=])(/[^\s;&|><\'"(){}$`]+)', command))
+    # Absolute paths (including inside single/double quotes)
+    paths.extend(re.findall(r"""(/[^\s;&|><(){}$`]+)""", command))
+    # Quoted absolute paths
+    paths.extend(re.findall(r"""['"](/[^'"]+)['"]""", command))
     # Relative paths with ../ or ./
     paths.extend(re.findall(r'(?<![a-zA-Z0-9_=])(\.\.?/[^\s;&|><\'"(){}$`]*)', command))
     # Home directory expansion
     paths.extend(re.findall(r'(?<![a-zA-Z0-9_=])(~/[^\s;&|><\'"(){}$`]*)', command))
     return paths
+
+
+def _check_blocked_substrings(raw_input: str) -> str | None:
+    """Return the first blocked substring found in raw_input, or None."""
+    lower = raw_input.lower()
+    for pattern in BLOCKED_SUBSTRINGS:
+        if pattern.lower() in lower:
+            return pattern
+    return None
 
 
 def main():
@@ -68,6 +100,16 @@ def main():
 
     tool = data.get("tool_name", "")
     tool_input = data.get("tool_input", {})
+
+    # ── Blocked-substring check (all tools) ──────────────────────────
+    # Serialise the full tool input and scan for sensitive path fragments.
+    raw = json.dumps(tool_input)
+    hit = _check_blocked_substrings(raw)
+    if hit:
+        print(f"SANDBOX: blocked — input references '{hit}'", file=sys.stderr)
+        sys.exit(2)
+
+    # ── Per-tool path checks ─────────────────────────────────────────
 
     # Tools with explicit file_path
     if tool in ("Read", "Write", "Edit"):
