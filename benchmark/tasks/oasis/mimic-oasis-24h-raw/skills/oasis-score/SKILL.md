@@ -72,6 +72,8 @@ FROM mimiciv_derived.oasis;
 4. **Elective Surgery**: Requires BOTH:
    - Elective admission type AND
    - Surgical service (identified from first service transfer)
+   - **Scoring direction matters**: elective surgical admissions score **0**
+     points; all other stays score **6** points
 
 5. **Ventilation Flag Cannot Be Missing**: Unlike other components, ventilation defaults to 0 (no ventilation) if no data found.
 

@@ -1,7 +1,7 @@
 # M4Bench
 
 Benchmark for evaluating AI agents' ability to derive validated clinical concepts
-from real EHR databases. 14 task families (28 tasks) covering severity scores,
+from real EHR databases. 15 task families (28 tasks) covering severity scores,
 organ failure staging, comorbidity indices, infection detection, medication data,
 and temporal event classification. Ground truth from MIT-LCP mimic-code.
 
@@ -62,7 +62,7 @@ benchmark/
   setup.py         # Database and ground truth preparation
   bench.sh         # Docker wrapper for reproducible execution
   lib/             # Shared utilities (comparison, test runner, transforms, sandbox)
-  tasks/           # Task definitions (instruction, skills, config) — 14 families
+  tasks/           # Task definitions (instruction, skills, config) — 15 families
   ground_truth/    # Ground truth SQL and generated CSVs (gzipped)
   agent_db/        # Task-specific DuckDB databases (intermediates selectively dropped)
   results/         # Run outputs (agent traces, CSVs, result JSON)
@@ -70,11 +70,22 @@ benchmark/
 
 ## Evaluation Integrity
 
-**Docker is the only valid evaluation mode.** When running locally (without
-Docker), the agent process has access to the full M4 repository — including
-ground truth SQL, M4 skills, and source code. This makes local runs useful for
-development and debugging, but results cannot be reported as benchmark scores.
-Use `bench.sh` for all evaluation runs intended for publication or comparison.
+**Docker via `bench.sh` is the only valid evaluation mode for paper-quality
+runs.** Local `python benchmark/run.py` execution is still useful for
+development and debugging, including anomaly investigation, but those runs
+should not be reported as benchmark evidence.
+
+The benchmark now supports isolated per-run workdirs and per-run HOME
+directories, but outside Docker the root-owned directory protections and
+`benchagent` user isolation are absent. Use `bench.sh` for any run intended for
+publication or formal comparison.
+
+## Paper Plan
+
+The canonical paper-facing execution spec lives in
+`benchmark/PAPER.md`. `benchmark/METHOD.md` is retained only as historical
+design context, and `benchmark/matrix.py` contains the current pilot-informed
+execution plan.
 
 ## Usage
 

@@ -2,9 +2,10 @@
 
 Orchestrates: task setup -> agent invocation -> output collection -> test execution.
 
-Isolation is ON by default: the agent runs as a non-root user in a sandboxed
-workdir, with network restricted to LLM API endpoints only.  Pass --no-isolation
-for local debugging (results are NOT publishable).
+Isolation is ON by default, but paper-quality runs still require Docker via
+`benchmark/bench.sh`. Outside Docker, local runs are useful for debugging and
+anomaly investigation only. Pass --no-isolation for fully local debugging
+(also not publishable).
 
 Usage:
     # Run a single task
@@ -112,6 +113,50 @@ AGENT_HOME_SEEDS = {
 }
 
 
+def resolve_results_root(results_root: str | None = None) -> Path:
+    """Resolve the output root for benchmark artifacts."""
+    if results_root:
+        return Path(results_root).expanduser().resolve()
+    return RESULTS_DIR.resolve()
+
+
+def _running_in_container() -> bool:
+    """Best-effort check for Docker/container execution."""
+    return Path("/.dockerenv").exists()
+
+
+def _publishable_environment(isolated: bool) -> tuple[bool, str]:
+    """Return whether the current run environment is paper-eligible."""
+    if not isolated:
+        return False, "isolation disabled"
+    if not _running_in_container():
+        return False, "not running inside benchmark Docker container"
+    if _resolve_agent_creds() is None:
+        return False, "benchagent user unavailable"
+    return True, "docker + benchagent isolation active"
+
+
+def ensure_results_manifest(results_root: Path) -> Path:
+    """Create a manifest describing the provenance expectations for this root."""
+    results_root.mkdir(parents=True, exist_ok=True)
+    manifest_path = results_root / "campaign_manifest.json"
+    if manifest_path.exists():
+        return manifest_path
+
+    manifest = {
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "results_root": str(results_root),
+        "canonical_paper_spec": str((BENCHMARK_ROOT / "PAPER.md").resolve()),
+        "publishable_run_requirements": [
+            "run via benchmark/bench.sh inside Docker",
+            "do not mix with legacy benchmark/results outputs",
+            "treat local run.py executions as debugging only",
+        ],
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2))
+    return manifest_path
+
+
 # ── Agent user isolation ───────────────────────────────────────────────────
 
 
@@ -142,7 +187,7 @@ def _chown_recursive(path: Path, uid: int, gid: int) -> None:
 # ── Token refresh ──────────────────────────────────────────────────────────
 
 
-def _refresh_oauth_token() -> None:
+def _refresh_oauth_token(force: bool = False) -> None:
     """Refresh the ANTHROPIC_API_KEY from macOS keychain if it's an OAuth token.
 
     Called before each Claude invocation. Uses a 15-minute cooldown to avoid
@@ -159,7 +204,11 @@ def _refresh_oauth_token() -> None:
 
     with _token_lock:
         now = time.time()
-        if current and now - _token_last_refresh < _TOKEN_REFRESH_INTERVAL:
+        if (
+            not force
+            and current
+            and now - _token_last_refresh < _TOKEN_REFRESH_INTERVAL
+        ):
             return
 
         try:
@@ -195,6 +244,61 @@ def _refresh_oauth_token() -> None:
                 print("  [token refreshed]")
         except Exception:
             pass  # Non-fatal — keep using current token
+
+
+def _load_jsonl_events(trace_path: str | Path) -> list[dict]:
+    """Best-effort parse of a JSONL trace file."""
+    path = Path(trace_path)
+    if not path.exists():
+        return []
+
+    events: list[dict] = []
+    for line in path.read_text(errors="ignore").splitlines():
+        line = line.strip()
+        if not line or not line.startswith("{"):
+            continue
+        try:
+            events.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return events
+
+
+def _extract_claude_rate_limit_reset_at(trace_path: str | Path) -> int | None:
+    """Return the most recent Claude five-hour reset timestamp, if present."""
+    reset_at = None
+    for event in _load_jsonl_events(trace_path):
+        if event.get("type") != "rate_limit_event":
+            continue
+        info = event.get("rate_limit_info", {})
+        value = info.get("resetsAt")
+        if isinstance(value, int):
+            reset_at = value
+    return reset_at
+
+
+def _detect_agent_failure_reason(agent_name: str, agent_result: dict) -> str | None:
+    """Classify recoverable agent failures for targeted retries."""
+    text = " ".join(
+        str(agent_result.get(key, "")) for key in ("stdout", "stderr")
+    ).lower()
+
+    if agent_name == "claude":
+        if "invalid api key" in text or "fix external api key" in text:
+            return "auth"
+
+        for event in _load_jsonl_events(agent_result.get("trace_file", "")):
+            if event.get("type") != "rate_limit_event":
+                continue
+            info = event.get("rate_limit_info", {})
+            status = str(info.get("status", "")).lower()
+            if status and status != "allowed":
+                return "rate_limit"
+
+        if "rate limit" in text or "usage limit" in text or "429" in text:
+            return "rate_limit"
+
+    return None
 
 
 # ── Isolated workdir setup ──────────────────────────────────────────────────
@@ -545,6 +649,7 @@ def run_agent(
     try:
         process = subprocess.Popen(
             cmd,
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -781,8 +886,15 @@ def run_single_task(
     verbose: bool,
     isolated: bool,
     schema: str = "native",
+    results_root: Path | None = None,
+    max_retries: int = 0,
+    retry_delay_seconds: int = 15,
+    wait_on_claude_rate_limit: bool = False,
 ) -> dict:
     """Run a single benchmark task end-to-end. Returns the full result dict."""
+    results_root = (results_root or RESULTS_DIR).resolve()
+    ensure_results_manifest(results_root)
+
     # Verify prerequisites
     try:
         resolve_task_dir(task_name)
@@ -803,11 +915,13 @@ def run_single_task(
 
     if isolated:
         workdir = setup_isolated_workdir(task_name, run_id, schema)
-        final_results_dir = RESULTS_DIR / run_id
+        final_results_dir = results_root / run_id
     else:
-        workdir = RESULTS_DIR / run_id
+        workdir = results_root / run_id
         workdir.mkdir(parents=True, exist_ok=True)
         final_results_dir = None
+
+    publishable, publishable_reason = _publishable_environment(isolated)
 
     print(f"\n{'=' * 60}")
     print(f"M4Bench: {task_name}")
@@ -823,7 +937,12 @@ def run_single_task(
         )
     else:
         print("WARNING: Isolation OFF — results are NOT suitable for publication")
+    if not publishable:
+        print(f"Publication eligibility: NO ({publishable_reason})")
+    else:
+        print(f"Publication eligibility: YES ({publishable_reason})")
     print(f"Working dir: {workdir}")
+    print(f"Results root: {results_root}")
     print(f"{'=' * 60}\n")
 
     # Set up workdir with data
@@ -854,19 +973,57 @@ def run_single_task(
         instruction = prepare_instruction(task_name, workdir, condition, schema)
         (workdir / "instruction.md").write_text(instruction)
 
-        agent_result = run_agent(
-            instruction,
-            agent_name,
-            workdir,
-            model,
-            verbose=verbose,
-            isolated=isolated,
-            run_home=run_home,
-        )
-        print(
-            f"  Agent finished in {agent_result['elapsed_seconds']}s "
-            f"(exit code: {agent_result['returncode']})"
-        )
+        attempts = max_retries + 1
+        agent_result = {}
+        for attempt in range(1, attempts + 1):
+            if attempt > 1:
+                print(f"  Retry {attempt - 1}/{max_retries}...")
+
+            agent_result = run_agent(
+                instruction,
+                agent_name,
+                workdir,
+                model,
+                verbose=verbose,
+                isolated=isolated,
+                run_home=run_home,
+            )
+            print(
+                f"  Agent finished in {agent_result['elapsed_seconds']}s "
+                f"(exit code: {agent_result['returncode']})"
+            )
+
+            failure_reason = _detect_agent_failure_reason(agent_name, agent_result)
+            if not failure_reason or attempt >= attempts:
+                if failure_reason:
+                    agent_result["failure_reason"] = failure_reason
+                break
+
+            if failure_reason == "auth":
+                print("  Claude auth failed; refreshing OAuth token and retrying...")
+                _refresh_oauth_token(force=True)
+                time.sleep(retry_delay_seconds)
+                continue
+
+            if failure_reason == "rate_limit":
+                wait_seconds = retry_delay_seconds
+                if wait_on_claude_rate_limit:
+                    reset_at = _extract_claude_rate_limit_reset_at(
+                        agent_result.get("trace_file", "")
+                    )
+                    if reset_at:
+                        wait_seconds = max(reset_at - int(time.time()), 0)
+                    print(
+                        "  Claude five-hour limit hit; "
+                        f"waiting {wait_seconds}s before retry..."
+                    )
+                else:
+                    print(
+                        "  Claude rate limit detected; "
+                        f"waiting {wait_seconds}s before retry..."
+                    )
+                time.sleep(wait_seconds)
+                continue
 
         # Check if output was produced
         output_file = workdir / "output.csv"
@@ -904,8 +1061,11 @@ def run_single_task(
             "model": model,
             "trial": trial,
             "isolated": isolated,
+            "publishable": publishable,
+            "publishable_reason": publishable_reason,
             "timestamp": timestamp,
             "run_id": run_id,
+            "results_root": str(results_root),
             "agent_result": agent_result,
             "test_results": test_results,
         }
@@ -970,6 +1130,10 @@ def _run_parallel(
     isolated: bool,
     schema: str,
     max_workers: int,
+    results_root: Path,
+    max_retries: int = 0,
+    retry_delay_seconds: int = 15,
+    wait_on_claude_rate_limit: bool = False,
 ) -> list[dict]:
     """Execute runs in parallel using ThreadPoolExecutor.
 
@@ -998,6 +1162,10 @@ def _run_parallel(
                 verbose,
                 isolated,
                 schema,
+                results_root,
+                max_retries,
+                retry_delay_seconds,
+                wait_on_claude_rate_limit,
             )
         except Exception as e:
             result = {
@@ -1163,10 +1331,39 @@ def main():
         default=1,
         help="Number of seeds per task (each gets trial=1..N)",
     )
+    parser.add_argument(
+        "--results-root",
+        help="Directory for run outputs; use a fresh root for paper campaigns",
+    )
+    parser.add_argument(
+        "--delay-between-runs-seconds",
+        type=int,
+        default=0,
+        help="Sleep between sequential runs (useful for subscription-backed pacing)",
+    )
+    parser.add_argument(
+        "--max-retries",
+        type=int,
+        default=0,
+        help="Retry failed agent runs this many times",
+    )
+    parser.add_argument(
+        "--retry-delay-seconds",
+        type=int,
+        default=15,
+        help="Seconds to wait before retrying a failed run",
+    )
+    parser.add_argument(
+        "--wait-on-claude-rate-limit",
+        action="store_true",
+        help="When Claude hits a five-hour limit, wait until reset and retry",
+    )
     args = parser.parse_args()
 
     # Isolation is the default; --no-isolation must be explicit.
     isolated = not args.no_isolation
+    results_root = resolve_results_root(args.results_root)
+    ensure_results_manifest(results_root)
     if not isolated:
         print(
             "\n*** WARNING: Isolation disabled (--no-isolation). ***\n"
@@ -1184,6 +1381,14 @@ def main():
     if args.parallel > 4:
         print(
             f"Warning: --parallel {args.parallel} exceeds recommended max of 4 on 18GB RAM"
+        )
+    if args.agent == "claude" and args.parallel > 1:
+        print(
+            "Warning: Claude subscription runs are much more reliable with --parallel 1."
+        )
+    if args.delay_between_runs_seconds and args.parallel > 1:
+        print(
+            "Warning: --delay-between-runs-seconds applies only to sequential execution."
         )
 
     # Build run matrix: (task_name, trial) for all tasks x seeds.
@@ -1219,6 +1424,7 @@ def main():
     print(
         f"\nRun matrix: {len(run_matrix)} runs ({len(task_names)} tasks x {args.seeds} seeds)"
     )
+    print(f"Results root: {results_root}")
     if args.parallel > 1:
         print(f"Parallelism: {args.parallel} concurrent runs")
     print()
@@ -1237,8 +1443,15 @@ def main():
                 args.verbose,
                 isolated,
                 args.schema,
+                results_root,
+                args.max_retries,
+                args.retry_delay_seconds,
+                args.wait_on_claude_rate_limit,
             )
             results.append(result)
+            if args.delay_between_runs_seconds > 0 and len(results) < len(run_matrix):
+                print(f"Sleeping {args.delay_between_runs_seconds}s before next run...")
+                time.sleep(args.delay_between_runs_seconds)
     else:
         # Parallel execution
         results = _run_parallel(
@@ -1250,6 +1463,10 @@ def main():
             isolated,
             args.schema,
             args.parallel,
+            results_root,
+            args.max_retries,
+            args.retry_delay_seconds,
+            args.wait_on_claude_rate_limit,
         )
 
     # Print summary
@@ -1259,7 +1476,7 @@ def main():
     # Save batch result JSON
     if len(results) > 1:
         batch_ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-        batch_path = RESULTS_DIR / f"batch_{batch_ts}.json"
+        batch_path = results_root / f"batch_{batch_ts}.json"
         batch_data = {
             "condition": args.condition,
             "agent": args.agent,
@@ -1267,6 +1484,7 @@ def main():
             "schema": args.schema,
             "parallel": args.parallel,
             "seeds": args.seeds,
+            "results_root": str(results_root),
             "results": results,
         }
         with open(batch_path, "w") as f:
