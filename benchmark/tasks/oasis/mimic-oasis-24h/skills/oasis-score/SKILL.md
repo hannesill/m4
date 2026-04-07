@@ -30,7 +30,7 @@ The Oxford Acute Severity of Illness Score (OASIS) is a parsimonious severity sc
 | Temperature | <33.22 to >39.88 C | 0-6 |
 | Urine Output | <671 to >6897 mL/day | 0-10 |
 | Mechanical Ventilation | Yes/No | 0 or 9 |
-| Elective Surgery | Yes/No | 0 or 6 |
+| Elective Surgery | Yes/No | 0 for elective surgical admissions, 6 otherwise |
 
 **Total Range**: 0-67 (theoretical maximum)
 
@@ -72,6 +72,8 @@ FROM mimiciv_derived.oasis;
 4. **Elective Surgery**: Requires BOTH:
    - Elective admission type AND
    - Surgical service (identified from first service transfer)
+   - **Scoring direction matters**: elective surgical admissions score **0**
+     points; all other stays score **6** points
 
 5. **Ventilation Flag Cannot Be Missing**: Unlike other components, ventilation defaults to 0 (no ventilation) if no data found.
 

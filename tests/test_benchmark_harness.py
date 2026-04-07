@@ -42,6 +42,39 @@ def test_refresh_oauth_token_seeds_when_env_missing(monkeypatch):
     assert os.environ["ANTHROPIC_API_KEY"] == "sk-ant-oat-test"
 
 
+def test_detect_agent_failure_reason_identifies_claude_auth(tmp_path):
+    run = _load_module("benchmark_run_failure_auth", "benchmark/run.py")
+
+    trace = tmp_path / "trace.jsonl"
+    trace.write_text(
+        '{"type":"result","subtype":"success","is_error":true,'
+        '"result":"Invalid API key · Fix external API key"}\n'
+    )
+
+    reason = run._detect_agent_failure_reason(
+        "claude",
+        {
+            "stdout": "Invalid API key · Fix external API key",
+            "stderr": "",
+            "trace_file": str(trace),
+        },
+    )
+
+    assert reason == "auth"
+
+
+def test_extract_claude_rate_limit_reset_at(tmp_path):
+    run = _load_module("benchmark_run_rate_reset", "benchmark/run.py")
+
+    trace = tmp_path / "trace.jsonl"
+    trace.write_text(
+        '{"type":"rate_limit_event","rate_limit_info":{"status":"blocked",'
+        '"resetsAt":1775545200,"rateLimitType":"five_hour"}}\n'
+    )
+
+    assert run._extract_claude_rate_limit_reset_at(trace) == 1775545200
+
+
 # ── Isolated workdir ────────────────────────────────────────────────────
 
 
@@ -107,6 +140,29 @@ def test_prepare_run_home_copies_minimal_auth_files(monkeypatch, tmp_path):
     ]
     assert (gemini_home / ".gemini" / "oauth_creds.json").exists()
     assert not (gemini_home / ".gemini" / "trustedFolders.json").exists()
+
+
+def test_resolve_results_root_uses_override(tmp_path):
+    run = _load_module("benchmark_run_results_root", "benchmark/run.py")
+
+    resolved = run.resolve_results_root(str(tmp_path / "paper-run"))
+    assert resolved == (tmp_path / "paper-run").resolve()
+
+
+def test_publishable_environment_requires_container_and_agent_user(monkeypatch):
+    run = _load_module("benchmark_run_publishable", "benchmark/run.py")
+
+    monkeypatch.setattr(run, "_running_in_container", lambda: True)
+    monkeypatch.setattr(run, "_resolve_agent_creds", lambda: (123, 456))
+    assert run._publishable_environment(True) == (
+        True,
+        "docker + benchagent isolation active",
+    )
+
+    monkeypatch.setattr(run, "_running_in_container", lambda: False)
+    ok, reason = run._publishable_environment(True)
+    assert ok is False
+    assert reason == "not running inside benchmark Docker container"
 
 
 # ── Agent user isolation ────────────────────────────────────────────────
