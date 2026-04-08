@@ -1,10 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CONTAINER="m4bench"
-IMAGE="m4bench:latest"
+CONTAINER="${M4BENCH_CONTAINER_NAME:-m4bench}"
+IMAGE="${M4BENCH_IMAGE:-m4bench:latest}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 AUTH_ROOT="/host-auth"
+DOCKER_BIN="${DOCKER_BIN:-docker}"
+
+# OrbStack's doctor warns against using the Homebrew docker client against the
+# OrbStack daemon. Prefer OrbStack's bundled client when that is the active
+# context so benchmark runs use the supported pairing on macOS.
+if [[ -x "$HOME/.orbstack/bin/docker" ]]; then
+    CURRENT_DOCKER_CONTEXT="$("$DOCKER_BIN" context show 2>/dev/null || true)"
+    if [[ "$CURRENT_DOCKER_CONTEXT" == "orbstack" ]]; then
+        DOCKER_BIN="$HOME/.orbstack/bin/docker"
+    fi
+fi
 
 # Parse --agent from arguments (needed for API-key logic below).
 AGENT=""
@@ -23,22 +34,24 @@ for ((i=0; i<${#ARGS[@]}; i++)); do
     esac
 done
 
-# Load .env file if it exists (expects ANTHROPIC_API_KEY=sk-ant-api03-...)
+# Load .env file if it exists.
+# Only stable API keys should live here; Claude OAuth tokens expire quickly.
 if [[ -f "$SCRIPT_DIR/.env" ]]; then
     set -a
     source "$SCRIPT_DIR/.env"
     set +a
 fi
 
-# Fallback: on macOS, extract a fresh OAuth token from the keychain.
-# This uses your Claude subscription (no API credits).
-# On Linux/Windows, set ANTHROPIC_API_KEY in benchmark/.env instead.
-if [[ "$AGENT" == "claude" ]] && [[ -z "${ANTHROPIC_API_KEY:-}" ]] && command -v security &>/dev/null; then
-    ANTHROPIC_API_KEY=$(
+# Claude subscription auth should come from a fresh macOS keychain token when
+# available. If benchmark/.env contains an OAuth token from a past session, try
+# to replace it before launching Docker.
+if [[ "$AGENT" == "claude" ]] && command -v security &>/dev/null; then
+    FRESH_CLAUDE_OAUTH=$(
         security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null \
         | python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('claudeAiOauth',{}).get('accessToken',''))" 2>/dev/null
     ) || true
-    if [[ -n "$ANTHROPIC_API_KEY" ]]; then
+    if [[ -n "${FRESH_CLAUDE_OAUTH:-}" ]]; then
+        ANTHROPIC_API_KEY="$FRESH_CLAUDE_OAUTH"
         echo "Using OAuth token from macOS keychain (expires in a few hours)"
     fi
 fi
@@ -52,17 +65,23 @@ if [[ "$AGENT" == "claude" ]] && [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
     exit 1
 fi
 
+if [[ "$AGENT" == "claude" ]] && [[ "${ANTHROPIC_API_KEY:-}" == sk-ant-oat* ]] && ! command -v security &>/dev/null; then
+    echo "Error: benchmark/.env contains an expiring Claude OAuth token."
+    echo "Use a real Anthropic API key in benchmark/.env, or run via macOS with 'claude login'."
+    exit 1
+fi
+
 # Build image if it doesn't exist
-if ! docker image inspect "$IMAGE" &>/dev/null; then
+if ! "$DOCKER_BIN" image inspect "$IMAGE" &>/dev/null; then
     echo "Building $IMAGE..."
-    docker build -t "$IMAGE" "$SCRIPT_DIR"
+    "$DOCKER_BIN" build -t "$IMAGE" "$SCRIPT_DIR"
 fi
 
 # Start or restart container (always restart to pick up fresh token)
-if docker ps -q -f name="^${CONTAINER}$" | grep -q .; then
-    docker rm -f "$CONTAINER" >/dev/null
+if "$DOCKER_BIN" ps -q -f name="^${CONTAINER}$" | grep -q .; then
+    "$DOCKER_BIN" rm -f "$CONTAINER" >/dev/null
 fi
-docker rm "$CONTAINER" 2>/dev/null || true
+"$DOCKER_BIN" rm "$CONTAINER" 2>/dev/null || true
 
 DOCKER_ARGS=(
     -d
@@ -84,18 +103,20 @@ if [[ -d "$HOME/.gemini" ]]; then
     DOCKER_ARGS+=(-v "$HOME/.gemini:$AUTH_ROOT/.gemini:ro")
 fi
 
-docker run "${DOCKER_ARGS[@]}" "$IMAGE" >/dev/null
+"$DOCKER_BIN" run "${DOCKER_ARGS[@]}" "$IMAGE" >/dev/null
 
 # Install benchmark dependencies (lightweight, no M4 package)
-docker exec "$CONTAINER" pip3 install --break-system-packages --quiet \
+"$DOCKER_BIN" exec "$CONTAINER" pip3 install --break-system-packages --quiet \
     duckdb pandas pytest tomli 2>/dev/null
+"$DOCKER_BIN" exec "$CONTAINER" bash -lc \
+    'ln -sf /benchmark/lib/duckdb_cli.py /usr/local/bin/duckdb && chmod +x /benchmark/lib/duckdb_cli.py /usr/local/bin/duckdb'
 
 # ── Isolation hardening ─────────────────────────────────────────────────
 # 1. Lock sensitive directories: ground truth, tasks, and agent DBs become
 #    root-only (mode 700).  The orchestrator (root) can still read them;
 #    the agent subprocess (benchagent) cannot.
 echo "Locking sensitive directories (root-only)..."
-docker exec "$CONTAINER" bash -c \
+"$DOCKER_BIN" exec "$CONTAINER" bash -c \
     'for d in ground_truth tasks agent_db; do
         [ -d "/benchmark/$d" ] && chmod 700 "/benchmark/$d"
     done'
@@ -103,8 +124,8 @@ docker exec "$CONTAINER" bash -c \
 # 2. Lock network: iptables rules restrict the benchagent user to
 #    LLM-API-only outbound traffic (no web search, no package downloads).
 echo "Locking network (API-only for agent)..."
-docker exec "$CONTAINER" bash /benchmark/network_lock.sh
+"$DOCKER_BIN" exec "$CONTAINER" bash /benchmark/network_lock.sh
 
 # Forward all arguments to run.py inside the container.
 # Isolation is on by default in run.py; bench.sh no longer needs to inject it.
-docker exec "$CONTAINER" python3 /benchmark/run.py "$@"
+"$DOCKER_BIN" exec "$CONTAINER" python3 /benchmark/run.py "$@"

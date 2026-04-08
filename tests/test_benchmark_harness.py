@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 from pathlib import Path
 from types import SimpleNamespace
@@ -139,6 +140,14 @@ def test_prepare_run_home_copies_minimal_auth_files(monkeypatch, tmp_path):
         ".gemini/installation_id",
     ]
     assert (gemini_home / ".gemini" / "oauth_creds.json").exists()
+    assert (gemini_home / ".gemini" / "projects.json").exists()
+    gemini_settings = json.loads(
+        (gemini_home / ".gemini" / "settings.json").read_text()
+    )
+    assert gemini_settings["security"]["auth"]["selectedType"] == "oauth-personal"
+    assert gemini_settings["security"]["blockGitExtensions"] is True
+    assert gemini_settings["admin"]["extensions"]["enabled"] is False
+    assert gemini_settings["admin"]["skills"]["enabled"] is True
     assert not (gemini_home / ".gemini" / "trustedFolders.json").exists()
 
 
@@ -147,6 +156,51 @@ def test_resolve_results_root_uses_override(tmp_path):
 
     resolved = run.resolve_results_root(str(tmp_path / "paper-run"))
     assert resolved == (tmp_path / "paper-run").resolve()
+
+
+def test_trial_numbers_start_at_requested_trial():
+    run = _load_module("benchmark_run_trials", "benchmark/run.py")
+
+    assert run._trial_numbers(3, 2) == [3, 4]
+
+
+def test_codex_command_disables_plugins():
+    run = _load_module("benchmark_run_codex_cmd", "benchmark/run.py")
+
+    codex_cmd = run.AGENT_COMMANDS["codex"]["cmd"]
+
+    assert "--dangerously-bypass-approvals-and-sandbox" in codex_cmd
+    assert "--disable" in codex_cmd
+    assert "plugins" in codex_cmd
+
+
+def test_gemini_command_uses_external_sandbox():
+    run = _load_module("benchmark_run_gemini_cmd", "benchmark/run.py")
+
+    gemini_cmd = run.AGENT_COMMANDS["gemini"]["cmd"]
+
+    assert "--sandbox" not in gemini_cmd
+    assert "--approval-mode" in gemini_cmd
+    assert "yolo" in gemini_cmd
+
+
+def test_network_lock_allows_subscription_backed_codex_hosts():
+    script = (ROOT / "benchmark" / "network_lock.sh").read_text()
+
+    assert "api.openai.com" in script
+    assert "auth.openai.com" in script
+    assert "chatgpt.com" in script
+
+
+def test_task_discovery_uses_repo_relative_paths(monkeypatch):
+    monkeypatch.chdir(ROOT / "benchmark")
+    db = _load_module("benchmark_db_paths", "benchmark/lib/db.py")
+
+    task_dirs = db.list_task_dirs()
+
+    assert task_dirs
+    assert task_dirs[0].is_absolute()
+    assert (task_dirs[0] / "task.toml").exists()
 
 
 def test_publishable_environment_requires_container_and_agent_user(monkeypatch):

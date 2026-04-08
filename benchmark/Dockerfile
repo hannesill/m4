@@ -1,15 +1,19 @@
 FROM node:20-slim
 
-RUN apt-get update && apt-get install -y \
+ENV NPM_CONFIG_AUDIT=false \
+    NPM_CONFIG_FUND=false \
+    NPM_CONFIG_UPDATE_NOTIFIER=false
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip python3-venv git curl \
     iptables iproute2 dnsutils \
     && rm -rf /var/lib/apt/lists/*
 
-# Agent CLIs
-RUN npm install -g \
-    @anthropic-ai/claude-code \
-    @google/gemini-cli \
-    @openai/codex
+# Install agent CLIs separately so Docker can cache partial success and
+# failures are easier to isolate when a provider package changes upstream.
+RUN npm install -g --loglevel=warn @anthropic-ai/claude-code
+RUN npm install -g --loglevel=warn @google/gemini-cli
+RUN npm install -g --loglevel=warn @openai/codex
 
 # Non-root user for agent execution.
 # The orchestrator runs as root; the agent subprocess runs as benchagent.

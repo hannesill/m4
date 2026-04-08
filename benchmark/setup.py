@@ -160,7 +160,7 @@ def main():
         from lib.transform import load_dictionary, verify_gt_equivalence
 
         d = load_dictionary()
-        gt_dir = Path("benchmark/ground_truth")
+        gt_dir = Path(__file__).resolve().parent / "ground_truth"
         all_ok = True
         for sql_file in sorted(gt_dir.glob("*.sql")):
             task_key = sql_file.stem

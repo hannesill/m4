@@ -71,9 +71,10 @@ benchmark/
 ## Evaluation Integrity
 
 **Docker via `bench.sh` is the only valid evaluation mode for paper-quality
-runs.** Local `python benchmark/run.py` execution is still useful for
-development and debugging, including anomaly investigation, but those runs
-should not be reported as benchmark evidence.
+runs.** `benchmark/matrix.py` now uses `bench.sh` by default for execution, so
+matrix-driven campaigns can be publishable as long as they use a fresh
+`--results-root`. Local execution is still useful for development and anomaly
+investigation, but those runs should not be reported as benchmark evidence.
 
 The benchmark now supports isolated per-run workdirs and per-run HOME
 directories, but outside Docker the root-owned directory protections and
@@ -111,6 +112,9 @@ python benchmark/run.py --task mimic-sirs-24h-raw --condition no-skill --schema 
 
 # Parallel execution
 python benchmark/run.py --all --condition no-skill --agent claude --parallel 4
+
+# Paper-quality matrix campaign (Docker-backed)
+python benchmark/matrix.py --tier 1 --agent claude --results-root benchmark/results/paper-20260406
 ```
 
 ## Evaluation
@@ -124,7 +128,19 @@ coverage, required columns, and per-criterion accuracy.
 
 Claude Code, Codex, Gemini CLI. See `AGENT_COMMANDS` in `run.py` for configuration.
 
-For Codex CLI, the harness uses `codex exec --full-auto` and injects task
+For Codex CLI, the harness uses `codex exec --dangerously-bypass-approvals-and-sandbox`
+because Docker already provides the outer sandbox, and it injects task
 skills into `.codex/skills/` inside each run workdir. Authenticate first with
 `codex login` if you want to use ChatGPT subscription access instead of an API
 key.
+
+`benchmark/matrix.py` uses agent-specific default model sets:
+- Claude: `opus`, `sonnet`, `haiku`
+- Codex: `gpt-5-codex`
+- Gemini: `gemini-2.5-pro`, `gemini-2.5-flash`
+
+For Claude subscription campaigns, the matrix executes one `bench.sh` run per
+cell so the host can refresh OAuth-backed auth between Docker runs. Do not
+store expiring Claude OAuth tokens in `benchmark/.env`; that file should only
+hold stable Anthropic API keys. Subscription-backed Claude runs should come
+from `claude login` on macOS so `bench.sh` can pull a fresh keychain token.

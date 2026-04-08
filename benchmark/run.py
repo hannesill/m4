@@ -89,12 +89,19 @@ AGENT_COMMANDS = {
         "json_trace": True,
     },
     "codex": {
-        "cmd": ["codex", "exec", "--skip-git-repo-check", "--full-auto"],
+        "cmd": [
+            "codex",
+            "exec",
+            "--skip-git-repo-check",
+            "--dangerously-bypass-approvals-and-sandbox",
+            "--disable",
+            "plugins",
+        ],
         "skill_dir": ".codex/skills",
         "json_trace": True,
     },
     "gemini": {
-        "cmd": ["gemini", "--sandbox", "--approval-mode", "yolo", "-p"],
+        "cmd": ["gemini", "--approval-mode", "yolo", "-p"],
         "skill_dir": ".gemini/skills",
         "json_trace": False,
     },
@@ -455,6 +462,31 @@ def prepare_run_home(agent_name: str, run_home: Path) -> list[str]:
     # Ensure the agent-specific directory exists even when auth is env-based.
     target_base = _skill_target_base(agent_name, run_home)
     target_base.mkdir(parents=True, exist_ok=True)
+
+    if agent_name == "gemini":
+        projects_path = run_home / ".gemini" / "projects.json"
+        if not projects_path.exists():
+            projects_path.write_text(json.dumps({"projects": {}}, indent=2))
+        settings_path = run_home / ".gemini" / "settings.json"
+        settings_path.write_text(
+            json.dumps(
+                {
+                    "security": {
+                        "auth": {"selectedType": "oauth-personal"},
+                        "blockGitExtensions": True,
+                    },
+                    "general": {"previewFeatures": False},
+                    "ide": {"enabled": False},
+                    "skills": {"enabled": True},
+                    "admin": {
+                        "extensions": {"enabled": False},
+                        "mcp": {"enabled": False},
+                        "skills": {"enabled": True},
+                    },
+                },
+                indent=2,
+            )
+        )
     return copied
 
 
@@ -1267,6 +1299,11 @@ def _print_summary(results: list[dict], seeds: int) -> None:
     print(f"{'=' * 78}")
 
 
+def _trial_numbers(start_trial: int, seeds: int) -> list[int]:
+    """Return the trial ids that should be executed for this campaign."""
+    return list(range(start_trial, start_trial + seeds))
+
+
 # ── Main ────────────────────────────────────────────────────────────────────
 
 
@@ -1394,7 +1431,7 @@ def main():
     # Build run matrix: (task_name, trial) for all tasks x seeds.
     raw_matrix = [
         (task_name, trial)
-        for trial in range(1, args.seeds + 1)
+        for trial in _trial_numbers(args.trial, args.seeds)
         for task_name in task_names
     ]
     if args.parallel > 1 and len(task_names) > 1:

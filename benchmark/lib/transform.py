@@ -25,12 +25,16 @@ import duckdb
 
 # ── Paths ──────────────────────────────────────────────────────────────────
 
-SOURCE_DB = Path("m4_data/databases/mimic_iv.duckdb")
-OBFUSCATED_DB = Path("m4_data/databases/obfuscated_mimic_iv.duckdb")
-RESTRUCTURED_DB = Path("m4_data/databases/restructured_mimic_iv.duckdb")
-DICTIONARY_PATH = Path("benchmark/lib/dictionary.json")
-GROUND_TRUTH_DIR = Path("benchmark/ground_truth")
-AGENT_DB_DIR = Path("benchmark/agent_db")
+LIB_DIR = Path(__file__).resolve().parent
+BENCHMARK_ROOT = LIB_DIR.parent
+REPO_ROOT = BENCHMARK_ROOT.parent
+
+SOURCE_DB = REPO_ROOT / "m4_data" / "databases" / "mimic_iv.duckdb"
+OBFUSCATED_DB = REPO_ROOT / "m4_data" / "databases" / "obfuscated_mimic_iv.duckdb"
+RESTRUCTURED_DB = REPO_ROOT / "m4_data" / "databases" / "restructured_mimic_iv.duckdb"
+DICTIONARY_PATH = LIB_DIR / "dictionary.json"
+GROUND_TRUTH_DIR = BENCHMARK_ROOT / "ground_truth"
+AGENT_DB_DIR = BENCHMARK_ROOT / "agent_db"
 
 # ── Semantic descriptions for obfuscated instructions ─────────────────────
 # These replace native MIMIC names in the dictionary section so that agents
@@ -256,9 +260,9 @@ def get_obfuscated_table(dictionary: dict, native_fqn: str) -> str:
 # ── Obfuscated Database Creation ───────────────────────────────────────────
 
 
-PARQUET_DIR = Path("m4_data/parquet/mimic-iv")
-OBFUSCATED_PARQUET_DIR = Path("m4_data/parquet/obfuscated-mimic-iv")
-RESTRUCTURED_PARQUET_DIR = Path("m4_data/parquet/restructured-mimic-iv")
+PARQUET_DIR = REPO_ROOT / "m4_data" / "parquet" / "mimic-iv"
+OBFUSCATED_PARQUET_DIR = REPO_ROOT / "m4_data" / "parquet" / "obfuscated-mimic-iv"
+RESTRUCTURED_PARQUET_DIR = REPO_ROOT / "m4_data" / "parquet" / "restructured-mimic-iv"
 
 
 def create_obfuscated_db(
