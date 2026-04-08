@@ -28,7 +28,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
+import subprocess
 import sys
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -107,8 +111,173 @@ class Tier:
         return len(self.runs)
 
 
-def build_tiers(seeds: int = SEEDS) -> list[Tier]:
-    """Build the experiment matrix informed by Opus pilot data (2026-04-04).
+@dataclass(frozen=True)
+class AgentModelPlan:
+    primary_models: tuple[str, ...]
+    hurts_models: tuple[str, ...]
+    contamination_models: tuple[str, ...]
+    noise_models: tuple[str, ...]
+
+
+def _model_plan_for_agent(agent: str) -> AgentModelPlan:
+    """Return the default model set for each supported agent CLI."""
+    if agent == "claude":
+        return AgentModelPlan(
+            primary_models=("opus", "sonnet", "haiku"),
+            hurts_models=("opus", "sonnet"),
+            contamination_models=("sonnet",),
+            noise_models=("opus",),
+        )
+    if agent == "codex":
+        return AgentModelPlan(
+            primary_models=("gpt-5-codex",),
+            hurts_models=("gpt-5-codex",),
+            contamination_models=("gpt-5-codex",),
+            noise_models=("gpt-5-codex",),
+        )
+    if agent == "gemini":
+        return AgentModelPlan(
+            primary_models=("gemini-2.5-pro", "gemini-2.5-flash"),
+            hurts_models=("gemini-2.5-pro", "gemini-2.5-flash"),
+            contamination_models=("gemini-2.5-pro",),
+            noise_models=("gemini-2.5-pro",),
+        )
+    raise ValueError(f"Unsupported agent: {agent}")
+
+
+def _container_results_root(results_root: Path) -> str:
+    """Translate a host results root under benchmark/ into the container path."""
+    benchmark_root = BENCHMARK_ROOT.resolve()
+    try:
+        relative = results_root.resolve().relative_to(benchmark_root)
+    except ValueError as e:
+        raise ValueError(
+            "--results-root must live inside benchmark/ for Docker-backed campaigns"
+        ) from e
+    return str(Path("/benchmark") / relative)
+
+
+def _docker_container_name(agent: str, task: str, trial: int) -> str:
+    """Generate a unique, Docker-safe container name for a single run."""
+    raw = f"m4bench-{agent}-{task}-t{trial}-{os.getpid()}"
+    return re.sub(r"[^a-zA-Z0-9_.-]+", "-", raw).strip("-").lower()
+
+
+def _find_latest_result(
+    results_root: Path,
+    task: str,
+    condition: str,
+    agent: str,
+    model: str,
+    schema: str,
+    trial: int,
+    started_after: float | None = None,
+) -> dict | None:
+    """Find the newest matching result.json under the campaign root."""
+    latest_path = None
+    latest_mtime = -1.0
+
+    for result_file in results_root.rglob("result.json"):
+        try:
+            data = json.loads(result_file.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if (
+            data.get("task") == task
+            and data.get("condition") == condition
+            and data.get("agent") == agent
+            and data.get("model") == model
+            and data.get("schema", "native") == schema
+            and data.get("trial") == trial
+        ):
+            mtime = result_file.stat().st_mtime
+            if started_after is not None and mtime < started_after:
+                continue
+            if mtime > latest_mtime:
+                latest_mtime = mtime
+                latest_path = result_file
+
+    if latest_path is None:
+        return None
+    return json.loads(latest_path.read_text())
+
+
+def _run_via_bench(
+    run: dict,
+    condition: str,
+    model: str,
+    schema: str,
+    agent: str,
+    results_root: Path,
+    max_retries: int = 0,
+    retry_delay_seconds: int = 15,
+    wait_on_claude_rate_limit: bool = False,
+) -> dict:
+    """Execute one publishable run by invoking bench.sh on the host."""
+    bench_script = BENCHMARK_ROOT / "bench.sh"
+    container_results_root = _container_results_root(results_root)
+    container_name = _docker_container_name(agent, run["task"], run["trial"])
+
+    cmd = [
+        "bash",
+        str(bench_script),
+        "--task",
+        run["task"],
+        "--condition",
+        condition,
+        "--agent",
+        agent,
+        "--model",
+        model,
+        "--trial",
+        str(run["trial"]),
+        "--schema",
+        schema,
+        "--results-root",
+        container_results_root,
+        "--max-retries",
+        str(max_retries),
+        "--retry-delay-seconds",
+        str(retry_delay_seconds),
+    ]
+    if wait_on_claude_rate_limit:
+        cmd.append("--wait-on-claude-rate-limit")
+
+    env = {
+        **os.environ,
+        "M4BENCH_CONTAINER_NAME": container_name,
+    }
+
+    started_after = time.time()
+    proc = subprocess.run(cmd, cwd=str(BENCHMARK_ROOT.parent), env=env)
+
+    result = _find_latest_result(
+        results_root,
+        run["task"],
+        condition,
+        agent,
+        model,
+        schema,
+        run["trial"],
+        started_after=started_after,
+    )
+    if result is not None:
+        return result
+
+    return {
+        "task": run["task"],
+        "trial": run["trial"],
+        "condition": condition,
+        "schema": schema,
+        "agent": agent,
+        "model": model,
+        "test_results": {"reward": 0.0},
+        "error": f"bench.sh exited with code {proc.returncode} and produced no result.json",
+    }
+
+
+def build_tiers(seeds: int = SEEDS, agent: str = "claude") -> list[Tier]:
+    """Build the experiment matrix informed by pilot data.
 
     Pilot results (1 seed, 27 valid tasks) revealed three task categories:
       - HELPS (11 tasks): skill delta > +0.05, avg +0.32
@@ -116,10 +285,10 @@ def build_tiers(seeds: int = SEEDS) -> list[Tier]:
       - FLAT  (12 tasks): |delta| <= 0.05
 
     The matrix concentrates seeds on high-signal tasks and uses fewer seeds
-    on ceiling/flat tasks.  Each tier runs all three Anthropic models
-    (opus, sonnet, haiku) unless noted otherwise.
+    on ceiling/flat tasks. Model defaults are agent-specific.
     """
     tiers = []
+    model_plan = _model_plan_for_agent(agent)
 
     # ── Task categories from Opus pilot ────────────────────────────────
     # Tasks where skills showed large positive delta (> +0.08).
@@ -153,9 +322,9 @@ def build_tiers(seeds: int = SEEDS) -> list[Tier]:
         if t not in HIGH_DELTA and t not in SKILL_HURTS and t != "mimic-kdigo-48h"
     ]  # auth failure, separate tier
 
-    ALL_MODELS = ["opus", "sonnet", "haiku"]
+    all_models = model_plan.primary_models
 
-    # ── Tier 1: High-delta tasks — 5 seeds x 3 models ──────────────────
+    # ── Tier 1: High-delta tasks — high-signal primary model set ───────
     # The paper's main finding: skills dramatically help on tasks requiring
     # MIMIC-specific implementation knowledge (itemids, string matching,
     # rolling-window algorithms, formula precision).
@@ -166,7 +335,7 @@ def build_tiers(seeds: int = SEEDS) -> list[Tier]:
     )
     for task in HIGH_DELTA:
         for condition in ["no-skill", "with-skill"]:
-            for model in ALL_MODELS:
+            for model in all_models:
                 for seed in range(1, seeds + 1):
                     t1.runs.append(
                         dict(
@@ -179,7 +348,7 @@ def build_tiers(seeds: int = SEEDS) -> list[Tier]:
                     )
     tiers.append(t1)
 
-    # ── Tier 2: Skill-hurts investigation — 5 seeds x opus + sonnet ────
+    # ── Tier 2: Skill-hurts investigation — reduced model set ──────────
     # Confirm the OASIS skill-hurts pattern and sepsis3 failure are real.
     # Only 2 models (haiku would add noise without insight here).
     t2 = Tier(
@@ -189,7 +358,7 @@ def build_tiers(seeds: int = SEEDS) -> list[Tier]:
     )
     for task in SKILL_HURTS:
         for condition in ["no-skill", "with-skill"]:
-            for model in ["opus", "sonnet"]:
+            for model in model_plan.hurts_models:
                 for seed in range(1, seeds + 1):
                     t2.runs.append(
                         dict(
@@ -202,7 +371,7 @@ def build_tiers(seeds: int = SEEDS) -> list[Tier]:
                     )
     tiers.append(t2)
 
-    # ── Tier 3: Flat/ceiling tasks — 3 seeds x 3 models ────────────────
+    # ── Tier 3: Flat/ceiling tasks — lighter-seed primary model set ────
     # Skills had negligible effect on Opus.  Still need model-scaling data
     # (haiku might benefit where opus doesn't), but lower variance means
     # 3 seeds gives adequate confidence intervals.
@@ -214,7 +383,7 @@ def build_tiers(seeds: int = SEEDS) -> list[Tier]:
     )
     for task in FLAT:
         for condition in ["no-skill", "with-skill"]:
-            for model in ALL_MODELS:
+            for model in all_models:
                 for seed in range(1, flat_seeds + 1):
                     t3.runs.append(
                         dict(
@@ -227,11 +396,11 @@ def build_tiers(seeds: int = SEEDS) -> list[Tier]:
                     )
     tiers.append(t3)
 
-    # ── Tier 4: KDIGO-48h rerun — 5 seeds x 3 models ───────────────────
+    # ── Tier 4: KDIGO-48h rerun — clean rerun on the primary model set ─
     # Auth failure in pilot; needs clean data.
     t4 = Tier(4, "KDIGO-48h rerun", "Fill gap from auth failure in pilot")
     for condition in ["no-skill", "with-skill"]:
-        for model in ALL_MODELS:
+        for model in all_models:
             for seed in range(1, seeds + 1):
                 t4.runs.append(
                     dict(
@@ -245,7 +414,7 @@ def build_tiers(seeds: int = SEEDS) -> list[Tier]:
     tiers.append(t4)
 
     # ── Tier 5: Contamination analysis ──────────────────────────────────
-    # Raw-mode tasks with obfuscated/restructured DBs.  Sonnet only,
+    # Raw-mode tasks with obfuscated/restructured DBs.  One contamination model,
     # no-skill only — isolates memorization from skill knowledge.
     t5 = Tier(
         5,
@@ -259,7 +428,7 @@ def build_tiers(seeds: int = SEEDS) -> list[Tier]:
                     dict(
                         task=task,
                         condition="no-skill",
-                        model="sonnet",
+                        model=model_plan.contamination_models[0],
                         schema=schema,
                         trial=seed,
                     )
@@ -281,7 +450,7 @@ def build_tiers(seeds: int = SEEDS) -> list[Tier]:
                 dict(
                     task=task,
                     condition="with-skill-all",
-                    model="opus",
+                    model=model_plan.noise_models[0],
                     schema="native",
                     trial=seed,
                 )
@@ -365,6 +534,7 @@ def _run_tier(
     max_retries: int = 0,
     retry_delay_seconds: int = 15,
     wait_on_claude_rate_limit: bool = False,
+    docker_execution: bool = True,
 ) -> None:
     """Execute a single tier."""
     runs = tier.runs
@@ -423,6 +593,7 @@ def _run_tier(
                 max_retries=max_retries,
                 retry_delay_seconds=retry_delay_seconds,
                 wait_on_claude_rate_limit=wait_on_claude_rate_limit,
+                docker_execution=docker_execution,
             )
         else:
             _run_group_sequential(
@@ -437,6 +608,7 @@ def _run_tier(
                 max_retries=max_retries,
                 retry_delay_seconds=retry_delay_seconds,
                 wait_on_claude_rate_limit=wait_on_claude_rate_limit,
+                docker_execution=docker_execution,
             )
 
 
@@ -452,6 +624,7 @@ def _run_group_sequential(
     max_retries: int = 0,
     retry_delay_seconds: int = 15,
     wait_on_claude_rate_limit: bool = False,
+    docker_execution: bool = True,
 ) -> None:
     """Run a group of runs sequentially."""
     from run import run_single_task
@@ -461,20 +634,33 @@ def _run_group_sequential(
     for i, run in enumerate(runs, 1):
         print(f"\n  [{i}/{len(runs)}] {run['task']} trial={run['trial']}")
         try:
-            result = run_single_task(
-                run["task"],
-                condition,
-                agent,
-                model,
-                run["trial"],
-                verbose=False,
-                isolated=isolated,
-                schema=schema,
-                results_root=results_root,
-                max_retries=max_retries,
-                retry_delay_seconds=retry_delay_seconds,
-                wait_on_claude_rate_limit=wait_on_claude_rate_limit,
-            )
+            if docker_execution:
+                result = _run_via_bench(
+                    run,
+                    condition,
+                    model,
+                    schema,
+                    agent,
+                    results_root,
+                    max_retries=max_retries,
+                    retry_delay_seconds=retry_delay_seconds,
+                    wait_on_claude_rate_limit=wait_on_claude_rate_limit,
+                )
+            else:
+                result = run_single_task(
+                    run["task"],
+                    condition,
+                    agent,
+                    model,
+                    run["trial"],
+                    verbose=False,
+                    isolated=isolated,
+                    schema=schema,
+                    results_root=results_root,
+                    max_retries=max_retries,
+                    retry_delay_seconds=retry_delay_seconds,
+                    wait_on_claude_rate_limit=wait_on_claude_rate_limit,
+                )
             reward = result.get("test_results", {}).get("reward", 0.0)
             elapsed = result.get("agent_result", {}).get("elapsed_seconds", 0)
             print(f"    -> reward={reward:.4f} ({elapsed:.0f}s)")
@@ -499,6 +685,7 @@ def _run_group_parallel(
     max_retries: int = 0,
     retry_delay_seconds: int = 15,
     wait_on_claude_rate_limit: bool = False,
+    docker_execution: bool = True,
 ) -> None:
     """Run a group of runs in parallel."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -512,6 +699,18 @@ def _run_group_parallel(
 
     def _run_one(run: dict) -> dict:
         try:
+            if docker_execution:
+                return _run_via_bench(
+                    run,
+                    condition,
+                    model,
+                    schema,
+                    agent,
+                    results_root,
+                    max_retries=max_retries,
+                    retry_delay_seconds=retry_delay_seconds,
+                    wait_on_claude_rate_limit=wait_on_claude_rate_limit,
+                )
             return run_single_task(
                 run["task"],
                 condition,
@@ -665,6 +864,12 @@ def main():
         help="Directory for run outputs and skip-existing scans",
     )
     parser.add_argument(
+        "--driver",
+        choices=["docker", "local"],
+        default="docker",
+        help="Execution backend: docker uses bench.sh for publishable runs; local is debugging only",
+    )
+    parser.add_argument(
         "--delay-between-runs-seconds",
         type=int,
         default=0,
@@ -689,6 +894,10 @@ def main():
     )
     args = parser.parse_args()
 
+    docker_execution = args.driver == "docker"
+    if args.no_isolation and docker_execution:
+        parser.error("--no-isolation is only valid with --driver local")
+
     if args.agent == "claude" and args.parallel > 1:
         print(
             "Warning: Claude subscription runs are much more reliable with --parallel 1."
@@ -697,10 +906,16 @@ def main():
         print(
             "Warning: --delay-between-runs-seconds applies only to sequential execution."
         )
+    if (
+        docker_execution
+        and args.results_root is None
+        and not (args.summary or args.dry_run)
+    ):
+        parser.error("--results-root is required for docker-backed campaigns")
 
     _classify_tasks()
     seeds = args.seeds
-    tiers = build_tiers(seeds=seeds)
+    tiers = build_tiers(seeds=seeds, agent=args.agent)
     results_root = resolve_results_root(args.results_root)
 
     if args.summary or args.dry_run:
@@ -736,6 +951,7 @@ def main():
                 max_retries=args.max_retries,
                 retry_delay_seconds=args.retry_delay_seconds,
                 wait_on_claude_rate_limit=args.wait_on_claude_rate_limit,
+                docker_execution=docker_execution,
             )
         return
 
@@ -757,6 +973,7 @@ def main():
             max_retries=args.max_retries,
             retry_delay_seconds=args.retry_delay_seconds,
             wait_on_claude_rate_limit=args.wait_on_claude_rate_limit,
+            docker_execution=docker_execution,
         )
 
     print("\nDone.")

@@ -18,6 +18,8 @@ ALLOWED_HOSTS=(
     sentry.io
     # OpenAI (Codex)
     api.openai.com
+    auth.openai.com
+    chatgpt.com
     # Google (Gemini)
     generativelanguage.googleapis.com
     oauth2.googleapis.com

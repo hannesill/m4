@@ -6,11 +6,11 @@ Prerequisites: Derived tables must be materialized in the database first.
 from __future__ import annotations
 
 import shutil
-from pathlib import Path
 
 import duckdb
 
 from .db import (
+    BENCHMARK_ROOT,
     SOURCE_DBS,
     _task_key,
     list_task_dirs,
@@ -18,7 +18,7 @@ from .db import (
     resolve_task_dir,
 )
 
-GROUND_TRUTH_DIR = Path("benchmark/ground_truth")
+GROUND_TRUTH_DIR = BENCHMARK_ROOT / "ground_truth"
 
 
 def generate(task_name: str | None = None) -> None:
