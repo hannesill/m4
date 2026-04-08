@@ -90,6 +90,7 @@ notes/
 benchmark/shared/ground_truth/
 benchmark/agent_db/
 benchmark/results/
+benchmark/human_eval/
 
 # Scratch markdown at repo root and benchmark root (keep READMEs tracked)
 /*.md
