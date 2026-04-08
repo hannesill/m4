@@ -8,9 +8,11 @@ to 24 hours after admission) (Teasdale & Jennett, Lancet, 1974).
 
 For intubated patients who cannot give a verbal response, the verbal
 component is untestable and the total GCS is assumed to be 15
-(unimpaired consciousness). When a component is missing, use the most
-recent value within 6 hours. If no GCS data exists at all for a stay,
-default to normal (gcs_min=15, eyes=4, verbal=5, motor=6).
+(unimpaired consciousness).
+
+When a component is missing at a given time, use the most recent value
+within 6 hours. If no GCS data exists at all for a stay, default to
+normal (gcs_min=15, eyes=4, verbal=5, motor=6).
 
 Report the minimum total GCS and the component values at the time of
 the minimum total score.
