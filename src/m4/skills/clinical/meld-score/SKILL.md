@@ -54,6 +54,8 @@ MELD uses 4 laboratory values with logarithmic transformations:
 
 5. **RRT Detection**: In MIMIC-IV, dialysis is detected from the `first_day_rrt` derived table, which checks for CRRT/IHD procedures in the first 24 hours.
 
+6. **Missing Lab Values**: When a lab value is not available for a stay, the component defaults to its minimum contribution: ln(1) = 0. This means creatinine scores as 1.0, bilirubin scores as 1.0, INR scores as 1.0 (but still contributes the +0.643 constant), and sodium defaults to 137 (no adjustment). Include ALL ICU stays in the output, even those missing some or all lab values.
+
 ## Pre-computed Table
 
 MIMIC-IV provides a pre-computed MELD table:
