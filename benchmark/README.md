@@ -137,7 +137,7 @@ key.
 `benchmark/matrix.py` uses agent-specific default model sets:
 - Claude: `opus`, `sonnet`
 - Codex: `gpt-5.4`, `gpt-5.4-mini`
-- Gemini: `gemini-3.1-pro`, `gemini-3.1-flash`
+- Gemini: `gemini-2.5-pro`, `gemini-2.5-flash`
 
 For Claude subscription campaigns, the matrix executes one `bench.sh` run per
 cell so the host can refresh OAuth-backed auth between Docker runs. Do not

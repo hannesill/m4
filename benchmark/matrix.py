@@ -137,10 +137,10 @@ def _model_plan_for_agent(agent: str) -> AgentModelPlan:
         )
     if agent == "gemini":
         return AgentModelPlan(
-            primary_models=("gemini-3.1-pro", "gemini-3.1-flash"),
-            hurts_models=("gemini-3.1-pro", "gemini-3.1-flash"),
-            contamination_models=("gemini-3.1-pro",),
-            noise_models=("gemini-3.1-pro",),
+            primary_models=("gemini-2.5-pro", "gemini-2.5-flash"),
+            hurts_models=("gemini-2.5-pro", "gemini-2.5-flash"),
+            contamination_models=("gemini-2.5-pro",),
+            noise_models=("gemini-2.5-pro",),
         )
     raise ValueError(f"Unsupported agent: {agent}")
 
