@@ -35,7 +35,7 @@ def test_build_tiers_uses_agent_specific_codex_models():
     tiers = matrix.build_tiers(seeds=1, agent="codex")
     models = {run["model"] for tier in tiers for run in tier.runs}
 
-    assert models == {"gpt-5-codex"}
+    assert models == {"gpt-5.4", "gpt-5.4-mini"}
 
 
 def test_build_tiers_uses_agent_specific_gemini_models():
@@ -46,11 +46,10 @@ def test_build_tiers_uses_agent_specific_gemini_models():
     tiers = matrix.build_tiers(seeds=1, agent="gemini")
     models = {run["model"] for tier in tiers for run in tier.runs}
 
-    assert "gemini-2.5-pro" in models
-    assert "gemini-2.5-flash" in models
+    assert "gemini-3.1-pro" in models
+    assert "gemini-3.1-flash" in models
     assert "opus" not in models
     assert "sonnet" not in models
-    assert "haiku" not in models
 
 
 def test_container_results_root_maps_under_benchmark_root():

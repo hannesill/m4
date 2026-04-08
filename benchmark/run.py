@@ -1329,7 +1329,9 @@ def main():
         help="Evaluation condition",
     )
     parser.add_argument("--agent", choices=list(AGENT_COMMANDS), help="Agent to use")
-    parser.add_argument("--model", help="Model override (e.g., opus, sonnet, haiku)")
+    parser.add_argument(
+        "--model", help="Model override (e.g., opus, sonnet, gpt-5.4, gemini-3.1-pro)"
+    )
     parser.add_argument("--trial", type=int, default=1, help="Trial number")
     parser.add_argument(
         "--verbose",

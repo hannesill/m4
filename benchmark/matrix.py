@@ -123,24 +123,24 @@ def _model_plan_for_agent(agent: str) -> AgentModelPlan:
     """Return the default model set for each supported agent CLI."""
     if agent == "claude":
         return AgentModelPlan(
-            primary_models=("opus", "sonnet", "haiku"),
+            primary_models=("opus", "sonnet"),
             hurts_models=("opus", "sonnet"),
             contamination_models=("sonnet",),
             noise_models=("opus",),
         )
     if agent == "codex":
         return AgentModelPlan(
-            primary_models=("gpt-5-codex",),
-            hurts_models=("gpt-5-codex",),
-            contamination_models=("gpt-5-codex",),
-            noise_models=("gpt-5-codex",),
+            primary_models=("gpt-5.4", "gpt-5.4-mini"),
+            hurts_models=("gpt-5.4", "gpt-5.4-mini"),
+            contamination_models=("gpt-5.4-mini",),
+            noise_models=("gpt-5.4",),
         )
     if agent == "gemini":
         return AgentModelPlan(
-            primary_models=("gemini-2.5-pro", "gemini-2.5-flash"),
-            hurts_models=("gemini-2.5-pro", "gemini-2.5-flash"),
-            contamination_models=("gemini-2.5-pro",),
-            noise_models=("gemini-2.5-pro",),
+            primary_models=("gemini-3.1-pro", "gemini-3.1-flash"),
+            hurts_models=("gemini-3.1-pro", "gemini-3.1-flash"),
+            contamination_models=("gemini-3.1-pro",),
+            noise_models=("gemini-3.1-pro",),
         )
     raise ValueError(f"Unsupported agent: {agent}")
 
@@ -350,7 +350,7 @@ def build_tiers(seeds: int = SEEDS, agent: str = "claude") -> list[Tier]:
 
     # ── Tier 2: Skill-hurts investigation — reduced model set ──────────
     # Confirm the OASIS skill-hurts pattern and sepsis3 failure are real.
-    # Only 2 models (haiku would add noise without insight here).
+    # Both model tiers to confirm skill-hurts pattern across capability levels.
     t2 = Tier(
         2,
         "Skill-hurts investigation",
@@ -373,7 +373,7 @@ def build_tiers(seeds: int = SEEDS, agent: str = "claude") -> list[Tier]:
 
     # ── Tier 3: Flat/ceiling tasks — lighter-seed primary model set ────
     # Skills had negligible effect on Opus.  Still need model-scaling data
-    # (haiku might benefit where opus doesn't), but lower variance means
+    # (weaker models might benefit where frontier doesn't), but lower variance means
     # 3 seeds gives adequate confidence intervals.
     flat_seeds = min(seeds, 3)
     t3 = Tier(
