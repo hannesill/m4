@@ -91,6 +91,15 @@ benchmark/shared/ground_truth/
 benchmark/agent_db/
 benchmark/results/
 
+# Scratch markdown at repo root and benchmark root (keep READMEs tracked)
+/*.md
+!README.md
+/benchmark/*.md
+!/benchmark/README.md
+
+# Presentations
+*.pptx
+
 # Agents
 .claude/
 .research/
