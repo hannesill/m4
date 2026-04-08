@@ -16,10 +16,13 @@ Tasks come in two modes:
 - **standard** — pre-computed intermediate tables (e.g., `first_day_vitalsign`) are available
 - **raw** — intermediate tables are dropped, forcing the agent to work from base tables
 
-Three experimental conditions:
+Two primary experimental conditions:
 - **no-skill** — agent receives only the task instruction
 - **with-skill** — a task-specific clinician-reviewed skill is injected
-- **with-skill-all** — all benchmark skills injected (real-world deployment scenario)
+
+A supplementary condition, **with-skill-all** (all benchmark skills injected),
+probes whether skill discovery works when the agent must find relevant knowledge
+from a larger library. This is a Tier 6 noise probe, not the headline comparison.
 
 **Information gradient**: Task instructions describe the clinical concept
 accurately but are intentionally underspecified on dataset-specific
@@ -84,9 +87,8 @@ publication or formal comparison.
 ## Paper Plan
 
 The canonical paper-facing execution spec lives in
-`benchmark/PAPER.md`. `benchmark/METHOD.md` is retained only as historical
-design context, and `benchmark/matrix.py` contains the current pilot-informed
-execution plan.
+`benchmark/PAPER.md`, and `benchmark/matrix.py` contains the current
+pilot-informed execution plan.
 
 ## Usage
 
