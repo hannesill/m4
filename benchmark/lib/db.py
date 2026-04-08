@@ -11,13 +11,17 @@ from pathlib import Path
 
 import duckdb
 
+LIB_DIR = Path(__file__).resolve().parent
+BENCHMARK_ROOT = LIB_DIR.parent
+REPO_ROOT = BENCHMARK_ROOT.parent
+
 SOURCE_DBS = {
-    "mimic-iv": Path("m4_data/databases/mimic_iv.duckdb"),
-    "eicu": Path("m4_data/databases/eicu.duckdb"),
+    "mimic-iv": REPO_ROOT / "m4_data" / "databases" / "mimic_iv.duckdb",
+    "eicu": REPO_ROOT / "m4_data" / "databases" / "eicu.duckdb",
 }
 SOURCE_DB = SOURCE_DBS["mimic-iv"]  # default for backwards compat
-AGENT_DB_DIR = Path("benchmark/agent_db")
-TASKS_DIR = Path("benchmark/tasks")
+AGENT_DB_DIR = BENCHMARK_ROOT / "agent_db"
+TASKS_DIR = BENCHMARK_ROOT / "tasks"
 
 
 def resolve_task_dir(task_name: str) -> Path:
