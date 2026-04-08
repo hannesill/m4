@@ -46,8 +46,8 @@ def test_build_tiers_uses_agent_specific_gemini_models():
     tiers = matrix.build_tiers(seeds=1, agent="gemini")
     models = {run["model"] for tier in tiers for run in tier.runs}
 
-    assert "gemini-2.5-pro" in models
-    assert "gemini-2.5-flash" in models
+    assert "gemini-3.1-pro-preview" in models
+    assert "gemini-3-flash-preview" in models
     assert "opus" not in models
     assert "sonnet" not in models
 
