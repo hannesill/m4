@@ -17,6 +17,10 @@ The Sepsis-3 definition (Singer et al. 2016) identifies sepsis as **life-threate
 - **qSOFA** (quick SOFA): Bedside screening tool for patients outside the ICU (RR >= 22, altered mentation, SBP <= 100). Not a diagnostic criterion — meant to prompt further assessment. Sensitivity is limited; a negative qSOFA does not rule out sepsis.
 - **Septic Shock**: Sepsis with vasopressor requirement to maintain MAP >= 65 mmHg AND lactate > 2 mmol/L despite adequate fluid resuscitation. Carries substantially higher mortality than sepsis alone.
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - Creating sepsis patient cohorts for research
@@ -67,44 +71,25 @@ See [sofa-score](../sofa-score/SKILL.md) for SOFA component details.
 
 4. **Culture-Dependent**: Requires cultures obtained — may miss clinically diagnosed infections where cultures were not sent (e.g., empiric treatment of pneumonia without sputum culture).
 
-5. **Does Not Capture Septic Shock**: The sepsis3 derived table identifies sepsis only. Septic shock identification requires additional vasopressor and lactate criteria.
+5. **Does Not Capture Septic Shock**: Sepsis-3 cohort identification captures sepsis only. Septic shock identification requires additional vasopressor and lactate criteria.
 
-## Dataset Availability
+## Dataset-Specific Implementation Notes
 
 ### MIMIC-IV
 
-Sepsis-3 is available as a pre-computed derived table.
-
-```sql
-SELECT
-    subject_id,
-    stay_id,
-    antibiotic_time,
-    culture_time,
-    suspected_infection_time,
-    sofa_time,
-    sofa_score,
-    respiration, coagulation, liver, cardiovascular, cns, renal,
-    sepsis3
-FROM mimiciv_derived.sepsis3;
-```
-
-BigQuery users already have this table via `physionet-data.mimiciv_derived.sepsis3`.
-
 **MIMIC-IV implementation details:**
-- The derived tables originate from the [MIT-LCP mimic-code](https://github.com/MIT-LCP/mimic-code) repository. The full SQL query is in `scripts/mimic-iv.sql`.
-- Joins `mimiciv_derived.suspicion_of_infection` (infection component) with `mimiciv_derived.sofa` (organ dysfunction component).
+- Combines a suspected-infection component with a SOFA organ-dysfunction component.
 - Returns one row per ICU stay (earliest suspected infection event with SOFA >= 2).
 - The `sepsis3` boolean flag is TRUE when both criteria are met.
-- SOFA uses 24-hour rolling worst values (`sofa_24hours` from derived SOFA table).
+- SOFA uses 24-hour worst values aligned to the suspected infection window.
 
 **MIMIC-IV limitations:**
-- Depends on upstream derived tables (`sofa`, `suspicion_of_infection`). Any limitations in those tables propagate here.
+- Depends on the quality of both upstream concepts. Any limitations in infection timing or SOFA component extraction propagate here.
 - SOFA components draw from ICU charting tables — onset timing is relative to ICU admission, not hospital admission.
 
 ### eICU
 
-Sepsis-3 is **not pre-computed** in eICU. Building it requires constructing both components from raw tables:
+Building Sepsis-3 in eICU requires constructing both components from raw tables:
 
 **Suspected infection component:**
 
@@ -131,45 +116,7 @@ Sepsis-3 is **not pre-computed** in eICU. Building it requires constructing both
 - **Medication naming**: `medication.drugname` is free-text and varies across sites. The same antibiotic may appear as "Vancomycin", "VANCOMYCIN", "vancomycin 1g IV", etc. Antibiotic identification requires extensive text matching.
 - **Culture timing**: `microlab.culturetakenoffset` provides timing in minutes from unit admission. The antibiotic-culture pairing logic must be rebuilt for the eICU offset-based time system.
 - **SOFA computation**: Each component comes from a different table with different naming conventions. The eicu-code repository provides pivoted tables (`pivoted_lab`, `pivoted_bg`, `pivoted_score`, `pivoted_uo`) that can simplify extraction.
-- **APACHE IV alternative**: eICU provides pre-computed APACHE IV scores in `apachepatientresult`, which includes a severity/mortality prediction. While not the same as Sepsis-3, APACHE IV combined with an infection flag may serve as a pragmatic alternative for eICU sepsis studies.
-
-An eICU script is not yet available.
-
-## Example: Identify Sepsis Cohort
-
-```sql
-SELECT
-    s.stay_id,
-    ie.subject_id,
-    ie.hadm_id,
-    s.suspected_infection_time AS sepsis_onset,
-    s.sofa_score,
-    adm.hospital_expire_flag AS mortality
-FROM mimiciv_derived.sepsis3 s
-INNER JOIN mimiciv_icu.icustays ie ON s.stay_id = ie.stay_id
-INNER JOIN mimiciv_hosp.admissions adm ON ie.hadm_id = adm.hadm_id
-WHERE s.sepsis3 = TRUE;
-```
-
-## Example: Sepsis Severity Distribution
-
-```sql
-SELECT
-    CASE
-        WHEN sofa_score < 5 THEN 'Mild (SOFA 2-4)'
-        WHEN sofa_score < 10 THEN 'Moderate (SOFA 5-9)'
-        WHEN sofa_score < 15 THEN 'Severe (SOFA 10-14)'
-        ELSE 'Very Severe (SOFA 15+)'
-    END AS severity,
-    COUNT(*) AS n_patients,
-    ROUND(AVG(adm.hospital_expire_flag), 3) AS mortality_rate
-FROM mimiciv_derived.sepsis3 s
-INNER JOIN mimiciv_icu.icustays ie ON s.stay_id = ie.stay_id
-INNER JOIN mimiciv_hosp.admissions adm ON ie.hadm_id = adm.hadm_id
-WHERE s.sepsis3 = TRUE
-GROUP BY 1
-ORDER BY 1;
-```
+- **APACHE IV alternative**: eICU provides APACHE IV scores in `apachepatientresult`, which includes a severity/mortality prediction. While not the same as Sepsis-3, APACHE IV combined with an infection flag may serve as a pragmatic alternative for eICU sepsis studies.
 
 ## Related Skills
 

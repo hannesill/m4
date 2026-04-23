@@ -9,6 +9,10 @@ category: clinical
 
 The Glasgow Coma Scale assesses level of consciousness through three components: Eye opening, Verbal response, and Motor response. This concept extracts and calculates GCS with special handling for intubated patients.
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - Neurological status assessment
@@ -26,21 +30,6 @@ The Glasgow Coma Scale assesses level of consciousness through three components:
 | **Motor** | None | Extension | Flexion | Withdraws | Localizes | Obeys |
 
 **Total GCS Range**: 3-15 (lower = worse)
-
-## Pre-computed Table
-
-```sql
-SELECT
-    subject_id,
-    stay_id,
-    charttime,
-    gcs,          -- Total GCS score
-    gcs_motor,    -- Motor component (1-6)
-    gcs_verbal,   -- Verbal component (1-5)
-    gcs_eyes,     -- Eye component (1-4)
-    gcs_unable    -- 1 if unable to assess (intubated/sedated)
-FROM mimiciv_derived.gcs;
-```
 
 ## MetaVision Item IDs
 
@@ -68,87 +57,6 @@ FROM mimiciv_derived.gcs;
 4. **Sedated Patients**: Per SAPS-II guidelines, sedated patients should use pre-sedation GCS. In practice, if documented as "unable to score due to medication", this is flagged.
 
 5. **Time Series**: Each row represents a charted observation, not an hourly aggregate. Multiple observations per hour are possible.
-
-## Example: Worst GCS Per ICU Stay
-
-```sql
-SELECT
-    stay_id,
-    MIN(gcs) AS worst_gcs,
-    MIN(gcs_motor) AS worst_motor,
-    MIN(gcs_verbal) AS worst_verbal,
-    MIN(gcs_eyes) AS worst_eyes
-FROM mimiciv_derived.gcs
-WHERE gcs_unable = 0  -- Exclude intubated/sedated
-GROUP BY stay_id;
-```
-
-## Example: GCS Categories
-
-```sql
-SELECT
-    CASE
-        WHEN gcs <= 8 THEN 'Severe (3-8)'
-        WHEN gcs <= 12 THEN 'Moderate (9-12)'
-        ELSE 'Mild (13-15)'
-    END AS gcs_category,
-    COUNT(*) AS n_observations
-FROM mimiciv_derived.gcs
-WHERE gcs_unable = 0
-GROUP BY 1
-ORDER BY 1;
-```
-
-## Example: First Day Minimum GCS
-
-```sql
--- Include ALL patients (intubated patients have gcs=15, gcs_verbal=0)
-SELECT
-    ie.stay_id,
-    MIN(g.gcs) AS first_day_min_gcs
-FROM mimiciv_icu.icustays ie
-LEFT JOIN mimiciv_derived.gcs g ON g.stay_id = ie.stay_id
-    AND g.charttime >= ie.intime - INTERVAL '6' HOUR
-    AND g.charttime <= ie.intime + INTERVAL '1' DAY
-GROUP BY ie.stay_id;
-```
-
-## Example: GCS Trajectory
-
-```sql
-WITH hourly_gcs AS (
-    SELECT
-        stay_id,
-        DATETIME_TRUNC(charttime, HOUR) AS hour,
-        AVG(gcs) AS avg_gcs
-    FROM mimiciv_derived.gcs
-    WHERE gcs_unable = 0
-    GROUP BY stay_id, DATETIME_TRUNC(charttime, HOUR)
-)
-SELECT
-    stay_id,
-    hour,
-    avg_gcs,
-    avg_gcs - LAG(avg_gcs) OVER (PARTITION BY stay_id ORDER BY hour) AS gcs_change
-FROM hourly_gcs;
-```
-
-## Example: Handle Intubated Patients
-
-```sql
--- Option 1: Exclude intubated patients
-SELECT stay_id, MIN(gcs) AS min_gcs
-FROM mimiciv_derived.gcs
-WHERE gcs_unable = 0
-GROUP BY stay_id;
-
--- Option 2: Use motor score only for intubated (mGCS)
-SELECT
-    stay_id,
-    MIN(CASE WHEN gcs_unable = 1 THEN gcs_motor ELSE gcs END) AS min_gcs_or_motor
-FROM mimiciv_derived.gcs
-GROUP BY stay_id;
-```
 
 ## References
 

@@ -9,6 +9,10 @@ category: clinical
 
 Two validated comorbidity indices for risk adjustment: Charlson Comorbidity Index (CCI) and Elixhauser Comorbidity Index. Both are most commonly implemented using Quan 2005 ICD-9/ICD-10 coding algorithms, though other mapping algorithms exist.
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - Risk adjustment in outcome studies
@@ -83,30 +87,21 @@ Two validated comorbidity indices for risk adjustment: Charlson Comorbidity Inde
 
 3. **Primary Diagnosis Exclusion**: Elixhauser methodology excludes the primary diagnosis from comorbidity flagging (comorbidities should be conditions *other than* the reason for admission). Charlson typically includes all diagnoses. In administrative databases where the "primary" diagnosis field may not reflect the clinically principal diagnosis, this exclusion should be interpreted with caution.
 
-## Dataset Availability
+## Dataset-Specific Implementation Notes
 
 ### MIMIC-IV
 
-**Charlson** is available as a pre-computed derived table.
-
-The derived `mimiciv_derived.charlson` table provides `charlson_comorbidity_index` (total weighted score), `age_score`, and binary flags for all 17 conditions.
-
-BigQuery users already have this table via `physionet-data.mimiciv_derived.charlson`.
-
-**Elixhauser** is **not** in the derived tables or BigQuery. The SQL was adapted from the mimic-code MIMIC-III Elixhauser script with ICD-10-CM mappings added from Quan 2005.
-
 **MIMIC-IV implementation details:**
 - **Charlson ICD Mappings**: Uses MIT-LCP mimic-code mappings (Quan 2005).
-- **Elixhauser ICD Mappings**: ICD-10-CM mappings derived from Quan 2005 original paper, as MIT-LCP provides ICD-9-CM only.
+- **Elixhauser ICD Mappings**: ICD-10-CM mappings should be derived from the Quan 2005 original paper when needed.
 - **Diabetes Classification**: Quan 2005 classifies E10.6 (diabetic foot ulcer) as "uncomplicated." Clinically debatable, but implementations follow Quan strictly.
 - **Primary Diagnosis Handling**: Charlson includes all diagnoses. Elixhauser excludes `seq_num = 1` per the original methodology. However, MIMIC's `seq_num` does not reliably indicate the clinically principal diagnosis — it reflects billing order, not clinical primacy. This is a known limitation; alternative approaches include filtering by DRG or accepting the imprecision.
 - **ICD Version Transition**: MIMIC-IV spans ICD-9 (pre-Oct 2015) and ICD-10 (post-Oct 2015). Both versions mapped.
 
-See `scripts/mimic-iv/` for both Charlson and Elixhauser implementations.
 
 ### eICU
 
-Comorbidity indices are **not pre-computed** in eICU. Three data sources are available, each with trade-offs:
+For eICU, three data sources are available, each with trade-offs:
 
 | Source | Coverage | Reliability | Notes |
 |--------|----------|-------------|-------|
@@ -119,44 +114,6 @@ Comorbidity indices are **not pre-computed** in eICU. Three data sources are ava
 - **No ICD-10 codes**: eICU data (2014-2015) predates the ICD-10 transition. Only the ICD-9 portion of Quan 2005 algorithms applies.
 - **Primary diagnosis exclusion**: The Elixhauser `seq_num != 1` exclusion is even less reliable in eICU than MIMIC, as diagnosis ordering conventions vary across sites.
 - **Hybrid approach**: Combining ICD-9 codes with `pasthistory` text matching and `apacheapsvar` flags may improve sensitivity but adds complexity and requires clinical validation of the text-to-category mapping.
-
-An eICU script is not yet available.
-
-## Example: CCI Distribution
-
-```sql
-SELECT
-    charlson_comorbidity_index AS cci,
-    COUNT(*) AS n_admissions,
-    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1) AS pct
-FROM mimiciv_derived.charlson
-GROUP BY cci
-ORDER BY cci;
-```
-
-## Example: Elixhauser Flags for Regression
-
-```sql
-SELECT
-    e.hadm_id,
-    e.congestive_heart_failure,
-    e.diabetes_complicated,
-    e.renal_failure,
-    e.metastatic_cancer,
-    CASE WHEN a.deathtime IS NOT NULL THEN 1 ELSE 0 END AS in_hospital_death
-FROM mimiciv_derived.elixhauser e
-JOIN mimiciv_hosp.admissions a USING (hadm_id);
-```
-
-## Example: High-Risk Identification
-
-```sql
-SELECT c.subject_id, c.hadm_id, c.charlson_comorbidity_index,
-       e.congestive_heart_failure, e.renal_failure, e.metastatic_cancer
-FROM mimiciv_derived.charlson c
-JOIN mimiciv_derived.elixhauser e USING (hadm_id)
-WHERE c.charlson_comorbidity_index >= 5;
-```
 
 ## References
 

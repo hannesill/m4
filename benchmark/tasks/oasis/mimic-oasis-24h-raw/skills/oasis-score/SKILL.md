@@ -9,6 +9,10 @@ category: clinical
 
 The Oxford Acute Severity of Illness Score (OASIS) is a parsimonious severity score that achieves comparable predictive accuracy to APACHE using fewer variables. It does not require laboratory values, making it useful when lab data is missing.
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - Mortality prediction when lab data is incomplete
@@ -33,28 +37,6 @@ The Oxford Acute Severity of Illness Score (OASIS) is a parsimonious severity sc
 | Elective Surgery | Yes/No | 0 or 6 |
 
 **Total Range**: 0-67 (theoretical maximum)
-
-## Pre-computed Table
-
-```sql
-SELECT
-    subject_id,
-    hadm_id,
-    stay_id,
-    oasis,
-    oasis_prob,  -- Predicted in-hospital mortality
-    age, age_score,
-    preiculos, preiculos_score,
-    gcs, gcs_score,
-    heartrate, heart_rate_score,
-    meanbp, mbp_score,
-    resprate, resp_rate_score,
-    temp, temp_score,
-    urineoutput, urineoutput_score,
-    mechvent, mechvent_score,
-    electivesurgery, electivesurgery_score
-FROM mimiciv_derived.oasis;
-```
 
 ## Critical Implementation Notes
 
@@ -88,39 +70,6 @@ FROM mimiciv_derived.oasis;
 - No laboratory data required
 - Can be calculated earlier in admission
 - Similar predictive accuracy
-
-## Example: Quick Severity Assessment
-
-```sql
-SELECT
-    stay_id,
-    oasis,
-    oasis_prob,
-    CASE
-        WHEN oasis < 20 THEN 'Low Risk'
-        WHEN oasis < 30 THEN 'Moderate Risk'
-        WHEN oasis < 40 THEN 'High Risk'
-        ELSE 'Very High Risk'
-    END AS risk_category
-FROM mimiciv_derived.oasis
-ORDER BY oasis DESC;
-```
-
-## Example: Compare OASIS vs SAPS-II Predictions
-
-```sql
-SELECT
-    o.stay_id,
-    o.oasis,
-    o.oasis_prob AS oasis_mortality,
-    s.sapsii,
-    s.sapsii_prob AS sapsii_mortality,
-    ABS(o.oasis_prob - s.sapsii_prob) AS prediction_difference
-FROM mimiciv_derived.oasis o
-INNER JOIN mimiciv_derived.sapsii s
-    ON o.stay_id = s.stay_id
-ORDER BY prediction_difference DESC;
-```
 
 ## References
 

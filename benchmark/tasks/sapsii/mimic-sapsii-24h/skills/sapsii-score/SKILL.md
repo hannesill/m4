@@ -9,6 +9,10 @@ category: clinical
 
 The Simplified Acute Physiology Score II (SAPS-II) is a severity scoring system developed from a European/North American multicenter study. Calculated from the worst values in the first 24 hours of ICU stay.
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - Hospital mortality prediction
@@ -49,15 +53,9 @@ The Simplified Acute Physiology Score II (SAPS-II) is a severity scoring system 
 
 3. **Time Window**: Uses worst value from ICU admission to 24 hours after.
 
-## Dataset Availability
+## Dataset-Specific Implementation Notes
 
 ### MIMIC-IV
-
-SAPS-II is available as a pre-computed derived table.
-
-The derived table provides the total score, predicted mortality probability, and all 15 component sub-scores (`age_score`, `hr_score`, `sysbp_score`, `temp_score`, `pao2fio2_score`, `uo_score`, `bun_score`, `wbc_score`, `potassium_score`, `sodium_score`, `bicarbonate_score`, `bilirubin_score`, `gcs_score`, `comorbidity_score`, `admissiontype_score`).
-
-BigQuery users already have this table via `physionet-data.mimiciv_derived.sapsii`.
 
 **MIMIC-IV implementation details:**
 - **Comorbidity Definitions** (ICD-based):
@@ -69,11 +67,11 @@ BigQuery users already have this table via `physionet-data.mimiciv_derived.sapsi
 
 **MIMIC-IV limitations:**
 - Urine output is summed over available hours, not extrapolated to 24h. For stays <24h, this may overestimate severity.
-- Follows MIT-LCP/mimic-code canonical implementation.
+- Follow the MIT-LCP/mimic-code canonical component definitions.
 
 ### eICU
 
-SAPS-II is **not pre-computed** in eICU (only APACHE IV is provided in `apachepatientresult`). It must be calculated from raw tables. 13 of 15 components are straightforward:
+For eICU, SAPS-II must be calculated from raw tables. 13 of 15 components are straightforward:
 
 | Component | eICU Source |
 |-----------|-------------|
@@ -90,41 +88,6 @@ SAPS-II is **not pre-computed** in eICU (only APACHE IV is provided in `apachepa
 - **Admission type**: No direct elective/surgical classification as in MIMIC. Must approximate from `patient.unitadmitsource` and service fields.
 - **Ventilation detection**: Different logic than MIMIC — uses `respiratorycare` and `respiratorycharting` tables rather than procedural events.
 
-See `scripts/mimic-iv.sql` for the full MIMIC-IV implementation. An eICU script is not yet available.
-
-## Example: Severity Distribution
-
-```sql
-SELECT
-    CASE
-        WHEN sapsii < 25 THEN 'Low (<25)'
-        WHEN sapsii < 50 THEN 'Moderate (25-49)'
-        WHEN sapsii < 75 THEN 'High (50-74)'
-        ELSE 'Very High (>=75)'
-    END AS severity_category,
-    COUNT(*) AS n_patients,
-    ROUND(AVG(sapsii_prob), 3) AS avg_predicted_mortality
-FROM mimiciv_derived.sapsii
-GROUP BY 1
-ORDER BY 1;
-```
-
-## Example: Component Analysis
-
-```sql
--- Which components contribute most to high SAPS-II?
-SELECT
-    'Age' AS component, AVG(age_score) AS avg_score FROM mimiciv_derived.sapsii WHERE sapsii >= 50
-UNION ALL
-SELECT 'Heart Rate', AVG(hr_score) FROM mimiciv_derived.sapsii WHERE sapsii >= 50
-UNION ALL
-SELECT 'Systolic BP', AVG(sysbp_score) FROM mimiciv_derived.sapsii WHERE sapsii >= 50
-UNION ALL
-SELECT 'GCS', AVG(gcs_score) FROM mimiciv_derived.sapsii WHERE sapsii >= 50
-UNION ALL
-SELECT 'Comorbidity', AVG(comorbidity_score) FROM mimiciv_derived.sapsii WHERE sapsii >= 50
-ORDER BY avg_score DESC;
-```
 
 ## References
 
