@@ -124,8 +124,11 @@ python benchmark/run.py --task mimic-sirs-24h-raw --condition no-skill --schema 
 # Parallel execution
 python benchmark/run.py --all --condition no-skill --agent claude --parallel 4
 
-# Paper-quality matrix campaign (Docker-backed)
-python benchmark/matrix.py --tier 1 --agent claude --results-root benchmark/results/paper-20260406
+# Paper-quality GPT-primary matrix campaign (Docker-backed)
+python benchmark/matrix.py --tier 1 --agent codex --results-root benchmark/results/paper-20260406
+
+# Sparse external-provider comparison
+python benchmark/matrix.py --profile provider-comparison --agent claude --results-root benchmark/results/paper-20260406-claude-sentinel
 ```
 
 ## Evaluation
@@ -147,8 +150,13 @@ key.
 
 `benchmark/matrix.py` uses agent-specific default model sets:
 - Claude: `opus`, `sonnet`
-- Codex: `gpt-5.4`, `gpt-5.4-mini`
+- Codex: `gpt-5.5`, `gpt-5.4-mini`
 - Gemini: `gemini-3.1-pro-preview`, `gemini-3-flash-preview`
+
+The default matrix profile is GPT-primary: run the powered campaign with
+`--agent codex`, then use `--profile provider-comparison` for sparse Claude or
+Gemini sentinel runs. Provider-comparison runs are supplementary and should not
+be described as powered benchmark-wide estimates.
 
 For Claude subscription campaigns, the matrix executes one `bench.sh` run per
 cell so the host can refresh OAuth-backed auth between Docker runs. Do not

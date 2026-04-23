@@ -2,14 +2,18 @@
 
 Runs principled ablations across models, conditions, and schemas without
 doing a naive cartesian product.  Each tier answers a specific scientific
-question; tiers are ordered by priority (run opus first).
+question; the default powered profile concentrates statistical power on the
+GPT-backed Codex models.
 
 Usage:
     # Preview what would run (dry-run)
     python benchmark/matrix.py --dry-run
 
-    # Run tier 1 only (opus skill ablation)
-    python benchmark/matrix.py --tier 1
+    # Run tier 1 only (primary skill ablation)
+    python benchmark/matrix.py --tier 1 --agent codex
+
+    # Run a sparse external-provider comparison
+    python benchmark/matrix.py --profile provider-comparison --agent claude --dry-run
 
     # Run tiers 1-3
     python benchmark/matrix.py --tier 1 2 3
@@ -130,10 +134,10 @@ def _model_plan_for_agent(agent: str) -> AgentModelPlan:
         )
     if agent == "codex":
         return AgentModelPlan(
-            primary_models=("gpt-5.4", "gpt-5.4-mini"),
-            hurts_models=("gpt-5.4", "gpt-5.4-mini"),
+            primary_models=("gpt-5.5", "gpt-5.4-mini"),
+            hurts_models=("gpt-5.5", "gpt-5.4-mini"),
             contamination_models=("gpt-5.4-mini",),
-            noise_models=("gpt-5.4",),
+            noise_models=("gpt-5.5",),
         )
     if agent == "gemini":
         return AgentModelPlan(
@@ -276,7 +280,18 @@ def _run_via_bench(
     }
 
 
-def build_tiers(seeds: int = SEEDS, agent: str = "claude") -> list[Tier]:
+def build_tiers(
+    seeds: int = SEEDS, agent: str = "codex", profile: str = "powered"
+) -> list[Tier]:
+    """Build the requested experiment matrix profile."""
+    if profile == "powered":
+        return _build_powered_tiers(seeds=seeds, agent=agent)
+    if profile == "provider-comparison":
+        return _build_provider_comparison_tiers(seeds=seeds, agent=agent)
+    raise ValueError(f"Unsupported profile: {profile}")
+
+
+def _build_powered_tiers(seeds: int = SEEDS, agent: str = "codex") -> list[Tier]:
     """Build the experiment matrix informed by pilot data.
 
     Pilot results (1 seed, 27 valid tasks) revealed three task categories:
@@ -460,6 +475,85 @@ def build_tiers(seeds: int = SEEDS, agent: str = "claude") -> list[Tier]:
     return tiers
 
 
+def _build_provider_comparison_tiers(
+    seeds: int = SEEDS, agent: str = "claude"
+) -> list[Tier]:
+    """Build a sparse matrix for non-primary provider comparison.
+
+    This profile is intentionally not powered as a standalone benchmark-wide
+    comparison.  It samples tasks that represent the main failure modes and
+    skill-effect regimes so other providers can be used as external-validity
+    checks while the statistical burden stays on the GPT-backed powered matrix.
+    """
+    model_plan = _model_plan_for_agent(agent)
+    comparison_seeds = min(seeds, 2)
+    contamination_seeds = 1
+
+    sentinel_tasks = [
+        "mimic-urine-output-rate-raw",  # largest pilot skill delta; rolling windows
+        "mimic-ventilation",  # string matching + temporal episode logic
+        "mimic-creatinine-baseline-raw",  # decision tree + ICD lookup
+        "mimic-suspicion-infection",  # asymmetric temporal matching
+        "mimic-vasopressor-equivalents-raw",  # dose/unit conversion
+        "mimic-oasis-24h",  # skill-hurts sentinel
+        "mimic-sepsis3-raw",  # compositional expert task
+        "mimic-sofa-24h-raw",  # canonical flat/expert severity-score task
+    ]
+
+    tiers: list[Tier] = []
+
+    t1 = Tier(
+        1,
+        "Provider comparison sentinel",
+        "Do external providers show the same skill-effect pattern on sentinel tasks?",
+    )
+    for task in sentinel_tasks:
+        for condition in ["no-skill", "with-skill"]:
+            for model in model_plan.primary_models:
+                for seed in range(1, comparison_seeds + 1):
+                    t1.runs.append(
+                        dict(
+                            task=task,
+                            condition=condition,
+                            model=model,
+                            schema="native",
+                            trial=seed,
+                        )
+                    )
+    tiers.append(t1)
+
+    contamination_tasks = [
+        task
+        for task in [
+            "mimic-sofa-24h-raw",
+            "mimic-kdigo-48h-raw",
+            "mimic-oasis-24h-raw",
+        ]
+        if task in CONTAMINATION_TASKS
+    ]
+    if contamination_tasks:
+        t2 = Tier(
+            2,
+            "Provider contamination sentinel",
+            "Does no-skill external-provider performance survive schema perturbation?",
+        )
+        for task in contamination_tasks:
+            for schema in ["obfuscated", "restructured"]:
+                for seed in range(1, contamination_seeds + 1):
+                    t2.runs.append(
+                        dict(
+                            task=task,
+                            condition="no-skill",
+                            model=model_plan.contamination_models[0],
+                            schema=schema,
+                            trial=seed,
+                        )
+                    )
+        tiers.append(t2)
+
+    return tiers
+
+
 # ── Existing result detection ────────────────────────────────────────────────
 
 
@@ -499,20 +593,23 @@ def _scan_existing(results_root: Path) -> dict[str, int]:
     return counts
 
 
-def _filter_existing(
-    runs: list[dict], existing: dict[str, int], seeds: int = SEEDS
-) -> list[dict]:
-    """Remove runs for cells that already have >= seeds completed seeds."""
+def _filter_existing(runs: list[dict], existing: dict[str, int]) -> list[dict]:
+    """Remove runs for cells that already have their planned completed seeds."""
     filtered = []
     # Group by cell (task+condition+model+schema) and count how many seeds
     # are already done, then only schedule the deficit.
+    planned: dict[str, int] = defaultdict(int)
+    for run in runs:
+        key = f"{run['task']}|{run['condition']}|{run['model']}|{run['schema']}"
+        planned[key] += 1
+
     cell_scheduled: dict[str, int] = defaultdict(int)
 
     for run in runs:
         key = f"{run['task']}|{run['condition']}|{run['model']}|{run['schema']}"
         done = existing.get(key, 0)
         scheduled = cell_scheduled[key]
-        if done + scheduled < seeds:
+        if done + scheduled < planned[key]:
             filtered.append(run)
             cell_scheduled[key] += 1
 
@@ -836,7 +933,7 @@ def main():
     parser.add_argument(
         "--skip-existing",
         action="store_true",
-        help="Skip cells that already have >= 5 completed seeds",
+        help="Skip cells that already have the profile's planned completed seeds",
     )
     parser.add_argument(
         "--no-isolation",
@@ -849,8 +946,17 @@ def main():
         help="Print matrix summary and exit (implies --dry-run)",
     )
     parser.add_argument(
+        "--profile",
+        choices=["powered", "provider-comparison"],
+        default="powered",
+        help=(
+            "Matrix profile: powered is the GPT-primary campaign; "
+            "provider-comparison is a sparse external-provider sentinel set"
+        ),
+    )
+    parser.add_argument(
         "--agent",
-        default="claude",
+        default="codex",
         help="Agent CLI to use (claude, codex, gemini)",
     )
     parser.add_argument(
@@ -915,7 +1021,7 @@ def main():
 
     _classify_tasks()
     seeds = args.seeds
-    tiers = build_tiers(seeds=seeds, agent=args.agent)
+    tiers = build_tiers(seeds=seeds, agent=args.agent, profile=args.profile)
     results_root = resolve_results_root(args.results_root)
 
     if args.summary or args.dry_run:
