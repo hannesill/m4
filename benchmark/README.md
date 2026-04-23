@@ -13,7 +13,8 @@ agent's output CSV is compared column-by-column against ground truth generated
 from mimic-code's validated SQL.
 
 Tasks come in two modes:
-- **standard** — pre-computed intermediate tables (e.g., `first_day_vitalsign`) are available
+- **standard** — validated target tables are removed, but intermediate feature
+  tables (e.g., `first_day_vitalsign`) are available
 - **raw** — intermediate tables are dropped, forcing the agent to work from base tables
 
 Two primary experimental conditions:
@@ -31,6 +32,11 @@ edge-case handling). Skills fill that gap with MIMIC-specific procedural
 knowledge. This creates a measurable difference between what an agent can
 figure out from schema exploration alone versus what it gets from
 clinician-reviewed guidance.
+
+Benchmark skill snapshots are intentionally benchmark-safe: they should not
+include runnable examples that query dropped target concept tables, and they do
+not ship the production SQL scripts. Run `python benchmark/preflight.py` before
+launching a paper campaign to check that this separation still holds.
 
 A contamination analysis dimension (`--schema`) tests memorization vs genuine
 understanding by running tasks on obfuscated (renamed) and restructured
@@ -96,6 +102,9 @@ pilot-informed execution plan.
 # Setup (creates agent DB and ground truth for a task)
 python benchmark/setup.py --task mimic-sirs-24h
 python benchmark/setup.py --all
+
+# Preflight before paper-quality runs
+python benchmark/preflight.py
 
 # Run a single task
 python benchmark/run.py --task mimic-sirs-24h --condition with-skill --agent claude

@@ -9,6 +9,10 @@ category: clinical
 
 Classifies each ICU charting observation into a ventilation status category and groups consecutive observations into ventilation episodes. This concept is used directly by SOFA (respiratory component requires mechanical ventilation for scores 3-4), OASIS, and many other severity scores and research definitions.
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - Determining ventilation type and duration for ICU stays
@@ -93,17 +97,6 @@ Individual charting observations are grouped into ventilation episodes using the
 
 3. **14-hour gap rule**: If two consecutive observations of the same ventilation status are more than 14 hours apart, they are treated as separate episodes. This prevents spanning overnight gaps where ventilation may have been discontinued and restarted.
 
-## Pre-computed Table
-
-```sql
-SELECT
-    stay_id,
-    starttime,      -- Episode start timestamp
-    endtime,        -- Episode end timestamp
-    ventilation_status  -- InvasiveVent, NonInvasiveVent, HFNC, SupplementalOxygen, Tracheostomy, or None
-FROM mimiciv_derived.ventilation;
-```
-
 ## Required Tables for Custom Calculation
 
 ### Standard Mode (intermediate tables available)
@@ -154,41 +147,6 @@ For classification, the critical itemids are:
 6. **NULL Ventilation Status Excluded**: Observations that don't match any classification rule produce NULL status and are excluded from episode detection.
 
 7. **LAG Partitioning**: The gap detection LAG function partitions by `(stay_id, ventilation_status)` — not just `stay_id`. This means the 14-hour gap rule applies within each status category separately.
-
-## Example: Ventilation Duration by Type
-
-```sql
-SELECT
-    ventilation_status,
-    COUNT(*) AS n_episodes,
-    ROUND(AVG(DATE_DIFF('hour', starttime, endtime)), 1) AS avg_hours,
-    ROUND(MEDIAN(DATE_DIFF('hour', starttime, endtime)), 1) AS median_hours
-FROM mimiciv_derived.ventilation
-GROUP BY ventilation_status
-ORDER BY n_episodes DESC;
-```
-
-## Example: Patients with Invasive Ventilation
-
-```sql
-SELECT DISTINCT stay_id
-FROM mimiciv_derived.ventilation
-WHERE ventilation_status = 'InvasiveVent';
-```
-
-## Example: Ventilation Timeline for a Stay
-
-```sql
-SELECT
-    stay_id,
-    ventilation_status,
-    starttime,
-    endtime,
-    DATE_DIFF('hour', starttime, endtime) AS duration_hours
-FROM mimiciv_derived.ventilation
-WHERE stay_id = 30000110
-ORDER BY starttime;
-```
 
 ## References
 

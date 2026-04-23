@@ -9,6 +9,10 @@ category: clinical
 
 The Oxford Acute Severity of Illness Score (OASIS) is a parsimonious severity score that achieves comparable predictive accuracy to APACHE using fewer variables. It does not require laboratory values, making it useful when lab data is missing.
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - Mortality prediction when lab data is incomplete
@@ -33,28 +37,6 @@ The Oxford Acute Severity of Illness Score (OASIS) is a parsimonious severity sc
 | Elective Surgery | Yes/No | 0 for elective surgical admissions, 6 otherwise |
 
 **Total Range**: 0-67 (theoretical maximum)
-
-## Pre-computed Table
-
-```sql
-SELECT
-    subject_id,
-    hadm_id,
-    stay_id,
-    oasis,
-    oasis_prob,  -- Predicted in-hospital mortality
-    age, age_score,
-    preiculos, preiculos_score,
-    gcs, gcs_score,
-    heartrate, heart_rate_score,
-    meanbp, mbp_score,
-    resprate, resp_rate_score,
-    temp, temp_score,
-    urineoutput, urineoutput_score,
-    mechvent, mechvent_score,
-    electivesurgery, electivesurgery_score
-FROM mimiciv_derived.oasis;
-```
 
 ## Critical Implementation Notes
 
@@ -84,17 +66,12 @@ FROM mimiciv_derived.oasis;
 
 ## Benchmark Implementation Notes
 
-For the benchmark tasks, the answer table `mimiciv_derived.oasis` is not
-available to the agent and should not be queried as the solution.
-
-- In the **standard** MIMIC task, prefer:
-  `mimiciv_derived.icustay_detail`, `first_day_gcs`,
-  `first_day_vitalsign`, `first_day_urine_output`, `ventilation`,
-  `mimiciv_hosp.admissions`, and `mimiciv_hosp.services`
+- In the **standard** MIMIC task, use available first-day vitals, GCS, urine
+  output, ventilation, admissions, and service-transfer information.
 - In the **raw** MIMIC task, derive the same components from base ICU/hospital
-  tables
+  tables.
 - In the **eICU** task, use eICU-native tables and keep the same scoring logic;
-  do not assume MIMIC derived-table names are present
+  do not assume MIMIC table names are present.
 
 ## Advantages Over APACHE/SAPS
 
@@ -102,39 +79,6 @@ available to the agent and should not be queried as the solution.
 - No laboratory data required
 - Can be calculated earlier in admission
 - Similar predictive accuracy
-
-## Example: Quick Severity Assessment
-
-```sql
-SELECT
-    stay_id,
-    oasis,
-    oasis_prob,
-    CASE
-        WHEN oasis < 20 THEN 'Low Risk'
-        WHEN oasis < 30 THEN 'Moderate Risk'
-        WHEN oasis < 40 THEN 'High Risk'
-        ELSE 'Very High Risk'
-    END AS risk_category
-FROM mimiciv_derived.oasis
-ORDER BY oasis DESC;
-```
-
-## Example: Compare OASIS vs SAPS-II Predictions
-
-```sql
-SELECT
-    o.stay_id,
-    o.oasis,
-    o.oasis_prob AS oasis_mortality,
-    s.sapsii,
-    s.sapsii_prob AS sapsii_mortality,
-    ABS(o.oasis_prob - s.sapsii_prob) AS prediction_difference
-FROM mimiciv_derived.oasis o
-INNER JOIN mimiciv_derived.sapsii s
-    ON o.stay_id = s.stay_id
-ORDER BY prediction_difference DESC;
-```
 
 ## References
 

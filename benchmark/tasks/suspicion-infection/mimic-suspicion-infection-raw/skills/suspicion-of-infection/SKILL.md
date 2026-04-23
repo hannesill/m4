@@ -9,6 +9,10 @@ category: clinical
 
 This concept identifies when clinicians suspected infection based on clinical actions: **systemic antibiotic administration** combined with **culture collection** within a defined time window. It operationalizes the infection component of the Sepsis-3 definition (Seymour et al. 2016).
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - Building Sepsis-3 cohorts (infection component)
@@ -66,33 +70,12 @@ Priority: Culture-before-antibiotic takes precedence when both exist.
 
 4. **Does Not Distinguish Empiric vs Targeted Therapy**: The concept captures the initial antibiotic-culture pairing regardless of whether the antibiotic was empiric (before results) or targeted (after susceptibility).
 
-## Dataset Availability
+## Dataset-Specific Implementation Notes
 
 ### MIMIC-IV
 
-Suspicion of infection is available as a pre-computed derived table.
-
-```sql
-SELECT
-    subject_id,
-    stay_id,
-    hadm_id,
-    ab_id,                     -- Unique antibiotic ID per patient
-    antibiotic,                -- Antibiotic name
-    antibiotic_time,           -- When antibiotic started
-    suspected_infection,       -- 1 if meets criteria, 0 otherwise
-    suspected_infection_time,  -- Onset time of suspected infection
-    culture_time,              -- When culture was obtained
-    specimen,                  -- Culture specimen type
-    positive_culture           -- 1 if culture positive, 0 if negative
-FROM mimiciv_derived.suspicion_of_infection;
-```
-
-BigQuery users already have this table via `physionet-data.mimiciv_derived.suspicion_of_infection`.
-
 **MIMIC-IV implementation details:**
-- The derived tables originate from the [MIT-LCP mimic-code](https://github.com/MIT-LCP/mimic-code) repository. The full SQL query is in `scripts/mimic-iv.sql`.
-- Antibiotics sourced from `mimiciv_derived.antibiotic` (which filters the `prescriptions` table for systemic routes, excluding topical routes: OU, OS, OD, AU, AS, AD, TP, and topical formulations like creams, gels, ophthalmic ointments).
+- Antibiotics are sourced from systemic medication orders. When a curated antibiotic concept is available, it filters the `prescriptions` table for systemic routes, excluding topical routes: OU, OS, OD, AU, AS, AD, TP, and topical formulations like creams, gels, ophthalmic ointments.
 - Cultures from `mimiciv_hosp.microbiologyevents`. Positive culture identified by non-null `org_name` excluding itemid 90856 ("NEGATIVE").
 - `stay_id` is populated when antibiotic timing overlaps with an ICU stay. May be NULL for floor patients.
 - **Chart dates vs times**: Microbiology cultures sometimes only have dates (not times). When `charttime` is null, the query falls back to `chartdate` with day-level matching (72h becomes 3 days, 24h becomes 1 day).
@@ -103,7 +86,7 @@ BigQuery users already have this table via `physionet-data.mimiciv_derived.suspi
 
 ### eICU
 
-Suspicion of infection is **not pre-computed** in eICU. Both components must be derived from raw tables:
+For eICU, both components must be derived from raw tables:
 
 | Component | eICU Table | Columns | Notes |
 |-----------|-----------|---------|-------|
@@ -115,37 +98,7 @@ Suspicion of infection is **not pre-computed** in eICU. Both components must be 
 - **Medication naming**: `drugname` is free-text and varies across sites. The same antibiotic may appear as "Vancomycin", "VANCOMYCIN", "vancomycin 1g IV", etc. Building a reliable antibiotic identification filter requires extensive text matching and validation.
 - **Route coding**: `routeadmin` also varies by site. Excluding topical routes requires site-aware filtering.
 - **Offset-based timing**: Both `drugstartoffset` and `culturetakenoffset` are in minutes from unit admission (not absolute timestamps). The antibiotic-culture pairing logic must use offset arithmetic rather than datetime comparisons.
-- **No upstream antibiotic table**: Unlike MIMIC (which has a derived `antibiotic` table that pre-filters systemic antibiotics), eICU requires building the antibiotic filtering from scratch.
-
-An eICU script is not yet available.
-
-## Example: Infection Events Per Patient
-
-```sql
-SELECT
-    subject_id,
-    COUNT(*) AS n_suspected_infections,
-    SUM(positive_culture) AS n_positive_cultures
-FROM mimiciv_derived.suspicion_of_infection
-WHERE suspected_infection = 1
-GROUP BY subject_id
-ORDER BY n_suspected_infections DESC;
-```
-
-## Example: Most Common Antibiotics in Suspected Infection
-
-```sql
-SELECT
-    antibiotic,
-    COUNT(*) AS n_prescriptions,
-    SUM(positive_culture) AS n_positive,
-    ROUND(AVG(positive_culture), 2) AS positive_rate
-FROM mimiciv_derived.suspicion_of_infection
-WHERE suspected_infection = 1
-GROUP BY antibiotic
-ORDER BY n_prescriptions DESC
-LIMIT 20;
-```
+- **No upstream antibiotic table**: Unlike MIMIC installations that have a curated antibiotic concept, eICU requires building the antibiotic filtering from scratch.
 
 ## Related Skills
 

@@ -9,6 +9,10 @@ category: clinical
 
 Calculates weight-normalized urine output rates over rolling 6, 12, and 24-hour windows. These rates are used for KDIGO AKI staging (oliguria criterion: UO < 0.5 mL/kg/hr for >= 6 hours) and the SOFA renal component.
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - KDIGO AKI staging (urine output criterion)
@@ -17,25 +21,11 @@ Calculates weight-normalized urine output rates over rolling 6, 12, and 24-hour 
 - Oliguria detection and monitoring
 - Renal function assessment in critically ill patients
 
-## Pre-computed Table
-
-```sql
-SELECT
-    stay_id,
-    charttime,
-    weight,
-    uo,
-    urineoutput_6hr, urineoutput_12hr, urineoutput_24hr,
-    uo_mlkghr_6hr, uo_mlkghr_12hr, uo_mlkghr_24hr,
-    uo_tm_6hr, uo_tm_12hr, uo_tm_24hr
-FROM mimiciv_derived.urine_output_rate;
-```
-
 ## Computation Methodology
 
 ### 1. Urine Output Aggregation
 
-The intermediate table `mimiciv_derived.urine_output` aggregates raw output events per (stay_id, charttime) from `mimiciv_icu.outputevents`.
+Aggregate raw output events per (stay_id, charttime) from `mimiciv_icu.outputevents`.
 
 **Urine output itemids** (MIMIC-IV):
 - 226559, 226560, 226561, 226584, 226563, 226564, 226565, 226567, 226557, 226558, 227488, 227489
@@ -78,7 +68,7 @@ Both `urineoutput` (mL) and `tm_since_last_uo` (minutes → hours) are summed wi
 
 ### 5. Weight Normalization
 
-Patient weight comes from `mimiciv_derived.weight_durations`, joined with temporal overlap:
+Patient weight comes from charted weight intervals, joined with temporal overlap:
 ```sql
 LEFT JOIN weight_durations wd
   ON ur.stay_id = wd.stay_id
@@ -118,27 +108,9 @@ Formula: `rate = urineoutput_Xhr / weight / uo_tm_Xhr`
 
 ## Source Tables
 
-- `mimiciv_derived.urine_output` — Aggregated UO per charttime
-- `mimiciv_derived.weight_durations` — Patient weight intervals
 - `mimiciv_icu.outputevents` — Raw UO events (for raw mode)
-- `mimiciv_icu.chartevents` — HR for ICU boundaries, weight for raw mode
+- `mimiciv_icu.chartevents` — HR for ICU boundaries and charted weight
 - `mimiciv_icu.icustays` — ICU stay identifiers
-
-## Example: Identify Oliguria Episodes
-
-```sql
-SELECT
-    stay_id,
-    charttime,
-    uo_mlkghr_6hr,
-    CASE
-        WHEN uo_mlkghr_6hr < 0.5 THEN 'Oliguria (<0.5 mL/kg/hr)'
-        WHEN uo_mlkghr_6hr < 1.0 THEN 'Reduced (0.5-1.0)'
-        ELSE 'Normal (>=1.0)'
-    END AS uo_category
-FROM mimiciv_derived.urine_output_rate
-WHERE uo_mlkghr_6hr IS NOT NULL;
-```
 
 ## References
 

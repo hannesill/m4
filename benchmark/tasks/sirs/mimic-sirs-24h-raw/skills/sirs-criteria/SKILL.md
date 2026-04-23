@@ -9,6 +9,11 @@ The Systemic Inflammatory Response Syndrome (SIRS) criteria quantify the body's 
 
 The 2016 SCCM Sepsis-3 consensus **removed SIRS from the sepsis definition**, replacing it with SOFA-based criteria (SOFA >= 2 + suspected infection). The rationale: SIRS criteria are overly sensitive and poorly specific for the dysregulated host response that defines sepsis. SIRS remains relevant for research comparing definitions, studying inflammatory response independent of infection, and legacy quality metrics.
 
+
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## SIRS Criteria (0-4 Points)
 
 Each criterion met = 1 point:
