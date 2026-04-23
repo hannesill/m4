@@ -158,6 +158,12 @@ The default matrix profile is GPT-primary: run the powered campaign with
 Gemini sentinel runs. Provider-comparison runs are supplementary and should not
 be described as powered benchmark-wide estimates.
 
+Reasoning policy is pinned by default through `--reasoning-effort auto`: Codex
+and Claude Code run at `medium`, while Gemini CLI is recorded as
+`provider-default` because it does not expose the same named effort scale. Pass
+`--reasoning-effort default` to leave each CLI/provider default untouched, or an
+explicit supported level for Codex/Claude ablations.
+
 For Claude subscription campaigns, the matrix executes one `bench.sh` run per
 cell so the host can refresh OAuth-backed auth between Docker runs. Do not
 store expiring Claude OAuth tokens in `benchmark/.env`; that file should only
