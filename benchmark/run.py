@@ -1331,7 +1331,7 @@ def main():
     parser.add_argument("--agent", choices=list(AGENT_COMMANDS), help="Agent to use")
     parser.add_argument(
         "--model",
-        help="Model override (e.g., opus, sonnet, gpt-5.4, gemini-3.1-pro-preview)",
+        help="Model override (e.g., opus, sonnet, gpt-5.5, gemini-3.1-pro-preview)",
     )
     parser.add_argument("--trial", type=int, default=1, help="Trial number")
     parser.add_argument(
