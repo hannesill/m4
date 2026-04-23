@@ -9,6 +9,10 @@ category: clinical
 
 The Sequential Organ Failure Assessment (SOFA) score quantifies organ dysfunction across 6 systems. Each component scores 0-4, with a total range of 0-24. Higher scores indicate greater organ dysfunction.
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - User asks about SOFA score calculation
@@ -30,38 +34,13 @@ The Sequential Organ Failure Assessment (SOFA) score quantifies organ dysfunctio
 
 Note: Vasopressor doses are in mcg/kg/min. UO is urine output in mL/day.
 
-## Pre-computed Table
-
-MIMIC-IV provides a pre-computed SOFA table with hourly values:
-
-```sql
-SELECT
-    stay_id,
-    hr,
-    starttime,
-    endtime,
-    respiration_24hours,
-    coagulation_24hours,
-    liver_24hours,
-    cardiovascular_24hours,
-    cns_24hours,
-    renal_24hours,
-    sofa_24hours
-FROM mimiciv_derived.sofa
-WHERE hr = 24;  -- 24 hours after ICU admission
-```
-
 ## Required Tables for Custom Calculation
 
 - `mimiciv_icu.icustays` - ICU stay identifiers
-- `mimiciv_derived.bg` - Blood gas for PaO2/FiO2 (specimen = 'ART.')
-- `mimiciv_derived.chemistry` - Creatinine
-- `mimiciv_derived.enzyme` - Bilirubin
-- `mimiciv_derived.complete_blood_count` - Platelets
-- `mimiciv_derived.gcs` - Glasgow Coma Scale
-- `mimiciv_derived.urine_output_rate` - Daily urine output
-- `mimiciv_derived.ventilation` - Ventilation status
-- `mimiciv_derived.norepinephrine`, `epinephrine`, `dopamine`, `dobutamine` - Vasopressors
+- `mimiciv_icu.chartevents` - vitals, GCS components, ventilation settings, weight
+- `mimiciv_hosp.labevents` - blood gas, creatinine, bilirubin, platelets
+- `mimiciv_icu.inputevents` - vasopressor infusions
+- `mimiciv_icu.outputevents` - urine output
 
 ## Critical Implementation Notes
 
@@ -74,7 +53,7 @@ WHERE hr = 24;  -- 24 hours after ICU admission
 
 3. **FiO2 Sources**: FiO2 can come from blood gas measurement OR charted FiO2. When not documented, estimate from supplemental O2 device.
 
-4. **Vasopressor Units**: All vasopressor doses must be in mcg/kg/min. Weight is often estimated (check `mimiciv_derived.weight_durations`).
+4. **Vasopressor Units**: All vasopressor doses must be in mcg/kg/min. Weight is often estimated from charted weight records when not directly documented.
 
 5. **GCS in Sedated Patients**: For sedated/intubated patients, use pre-sedation GCS or assume normal (GCS=15). The verbal component may be 0 for intubated patients - this is handled specially.
 
@@ -83,49 +62,6 @@ WHERE hr = 24;  -- 24 hours after ICU admission
 7. **Missing Components**: Missing data is imputed as 0 (normal) in the final score. Document which components are missing; do not claim complete scores when data is absent. If you prefer to treat missing data as NA rather than 0, you will need to modify the SQL (remove the COALESCE(..., 0) wrapper). Statistically, it is more appropriate to treat missing values as missing and calculate SOFA scores after proper imputation.
 
 8. **Urine Output Calculation**: Uses `uo_tm_24hr` to verify 24 hours of data available before calculating rate.
-
-## Example: Get SOFA at 24h for All ICU Stays
-
-```sql
-SELECT
-    ie.stay_id,
-    ie.subject_id,
-    ie.hadm_id,
-    s.sofa_24hours,
-    s.respiration_24hours,
-    s.coagulation_24hours,
-    s.liver_24hours,
-    s.cardiovascular_24hours,
-    s.cns_24hours,
-    s.renal_24hours
-FROM mimiciv_icu.icustays ie
-LEFT JOIN mimiciv_derived.sofa s
-    ON ie.stay_id = s.stay_id
-    AND s.hr = 24
-ORDER BY s.sofa_24hours DESC NULLS LAST;
-```
-
-## Example: Delta-SOFA (Change Over Time)
-
-```sql
-WITH sofa_change AS (
-    SELECT
-        stay_id,
-        sofa_24hours AS sofa_day1,
-        LEAD(sofa_24hours, 24) OVER (
-            PARTITION BY stay_id ORDER BY hr
-        ) AS sofa_day2
-    FROM mimiciv_derived.sofa
-    WHERE hr = 24 OR hr = 48
-)
-SELECT
-    stay_id,
-    sofa_day1,
-    sofa_day2,
-    sofa_day2 - sofa_day1 AS delta_sofa
-FROM sofa_change
-WHERE sofa_day2 IS NOT NULL;
-```
 
 ## References
 

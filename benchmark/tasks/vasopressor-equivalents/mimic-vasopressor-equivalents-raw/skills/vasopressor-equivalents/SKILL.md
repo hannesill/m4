@@ -9,6 +9,10 @@ category: clinical
 
 Calculates norepinephrine-equivalent dose (NED) to enable comparison across different vasopressor agents. Based on the Goradia et al. 2020 scoping review of vasopressor dose equivalence.
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - Comparing vasopressor exposure across different agents
@@ -29,17 +33,6 @@ Calculates norepinephrine-equivalent dose (NED) to enable comparison across diff
 
 *Vasopressin is converted: `vasopressin_units_per_hr * 2.5 / 60`
 
-## Pre-computed Table
-
-```sql
-SELECT
-    stay_id,
-    starttime,
-    endtime,
-    norepinephrine_equivalent_dose
-FROM mimiciv_derived.norepinephrine_equivalent_dose;
-```
-
 ## Calculation Formula
 
 ```sql
@@ -55,21 +48,15 @@ norepinephrine_equivalent_dose = ROUND(
 
 ## Source Tables
 
-Individual vasopressor tables provide dose rates:
-- `mimiciv_derived.norepinephrine`
-- `mimiciv_derived.epinephrine`
-- `mimiciv_derived.dopamine`
-- `mimiciv_derived.phenylephrine`
-- `mimiciv_derived.vasopressin`
-
-All consolidated in:
-- `mimiciv_derived.vasoactive_agent`
+For raw M4Bench tasks, derive vasopressor intervals from medication infusion
+records and normalize dose units yourself. Use charted weight records when a
+rate is stored in non-weight-normalized units.
 
 ## Critical Implementation Notes
 
 1. **Weight-Based Dosing**: All doses are in mcg/kg/min (except vasopressin in units/hr). The underlying tables use patient weight for conversion.
 
-2. **Weight Estimation**: When weight is not documented, it may be estimated. Check `mimiciv_derived.weight_durations` for weight source.
+2. **Weight Estimation**: When weight is not documented, estimate from charted weight records and carry the source through the calculation for auditability.
 
 3. **Vasopressin Units**: Vasopressin is charted in units/hour, not units/min. The formula converts appropriately.
 
@@ -81,70 +68,6 @@ All consolidated in:
 5. **Time Intervals**: Each row has a starttime/endtime representing when that dose was active.
 
 6. **Multiple Simultaneous Agents**: NED sums all concurrent vasopressors.
-
-## Example: Maximum NED Per ICU Stay
-
-```sql
-SELECT
-    stay_id,
-    MAX(norepinephrine_equivalent_dose) AS max_ned
-FROM mimiciv_derived.norepinephrine_equivalent_dose
-GROUP BY stay_id
-ORDER BY max_ned DESC;
-```
-
-## Example: Vasopressor Duration
-
-```sql
-SELECT
-    stay_id,
-    SUM(TIMESTAMP_DIFF(endtime, starttime, HOUR)) AS vasopressor_hours
-FROM mimiciv_derived.norepinephrine_equivalent_dose
-WHERE norepinephrine_equivalent_dose > 0
-GROUP BY stay_id;
-```
-
-## Example: Time-Weighted Average NED
-
-```sql
-WITH weighted AS (
-    SELECT
-        stay_id,
-        norepinephrine_equivalent_dose *
-        TIMESTAMP_DIFF(endtime, starttime, MINUTE) AS dose_minutes,
-        TIMESTAMP_DIFF(endtime, starttime, MINUTE) AS duration_minutes
-    FROM mimiciv_derived.norepinephrine_equivalent_dose
-)
-SELECT
-    stay_id,
-    SUM(dose_minutes) / NULLIF(SUM(duration_minutes), 0) AS time_weighted_ned
-FROM weighted
-GROUP BY stay_id;
-```
-
-## Example: Shock Severity Categories
-
-```sql
-WITH max_ned AS (
-    SELECT
-        stay_id,
-        MAX(norepinephrine_equivalent_dose) AS max_ned
-    FROM mimiciv_derived.norepinephrine_equivalent_dose
-    GROUP BY stay_id
-)
-SELECT
-    CASE
-        WHEN max_ned = 0 THEN 'No vasopressors'
-        WHEN max_ned < 0.1 THEN 'Low dose (<0.1)'
-        WHEN max_ned < 0.3 THEN 'Moderate (0.1-0.3)'
-        WHEN max_ned < 0.5 THEN 'High (0.3-0.5)'
-        ELSE 'Very high (>=0.5)'
-    END AS vasopressor_category,
-    COUNT(*) AS n_stays
-FROM max_ned
-GROUP BY 1
-ORDER BY 1;
-```
 
 ## References
 

@@ -9,6 +9,10 @@ category: clinical
 
 The Model for End-Stage Liver Disease (MELD) score predicts 3-month mortality in patients with liver disease. Originally developed for TIPS procedure prognostication, it is now the primary organ allocation criterion for liver transplantation in the US. The MELD-Na variant incorporates serum sodium for improved prediction.
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - Liver disease severity assessment
@@ -52,32 +56,15 @@ MELD uses 4 laboratory values with logarithmic transformations:
 
 4. **Score Range**: Theoretical minimum ~6 (all normal values), maximum 40 (hard cap).
 
-5. **RRT Detection**: In MIMIC-IV, dialysis is detected from the `first_day_rrt` derived table, which checks for CRRT/IHD procedures in the first 24 hours.
+5. **RRT Detection**: In raw M4Bench tasks, detect dialysis/renal replacement therapy from available procedure or charted treatment records in the first 24 hours.
 
 6. **Missing Lab Values**: When a lab value is not available for a stay, the component defaults to its minimum contribution: ln(1) = 0. This means creatinine scores as 1.0, bilirubin scores as 1.0, INR scores as 1.0 (but still contributes the +0.643 constant), and sodium defaults to 137 (no adjustment). Include ALL ICU stays in the output, even those missing some or all lab values.
-
-## Pre-computed Table
-
-MIMIC-IV provides a pre-computed MELD table:
-
-```sql
-SELECT
-    stay_id,
-    meld,
-    meld_initial,
-    rrt,
-    creatinine_max,
-    bilirubin_total_max,
-    inr_max,
-    sodium_min
-FROM mimiciv_derived.meld;
-```
 
 ## Required Tables for Custom Calculation
 
 - `mimiciv_icu.icustays` — ICU stay identifiers
-- `mimiciv_derived.first_day_lab` — creatinine_max, bilirubin_total_max, inr_max, sodium_min
-- `mimiciv_derived.first_day_rrt` — dialysis_present flag
+- `mimiciv_hosp.labevents` — creatinine, total bilirubin, INR, sodium
+- ICU procedure or charting tables — dialysis/renal replacement therapy flags
 
 ## References
 

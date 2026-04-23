@@ -9,6 +9,10 @@ category: clinical
 
 Estimates the patient's baseline (pre-illness) serum creatinine, which is critical for accurate AKI staging. The true baseline is often unknown; this query uses a hierarchical approach.
 
+## M4Bench Use
+
+In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
+
 ## When to Use This Skill
 
 - KDIGO AKI staging (requires baseline comparison)
@@ -23,20 +27,6 @@ The baseline creatinine is determined hierarchically:
 1. **If lowest admission creatinine <= 1.1 mg/dL**: Use the lowest value (assumed normal)
 2. **If patient has CKD diagnosis**: Use the lowest admission value (even if elevated)
 3. **Otherwise**: Estimate baseline using MDRD equation assuming GFR = 75 mL/min/1.73m^2
-
-## Pre-computed Table
-
-```sql
-SELECT
-    hadm_id,
-    gender,
-    age,
-    scr_min,      -- Lowest creatinine during admission
-    ckd,          -- 1 if CKD diagnosis present
-    mdrd_est,     -- Estimated creatinine from MDRD
-    scr_baseline  -- Final baseline determination
-FROM mimiciv_derived.creatinine_baseline;
-```
 
 ## MDRD Estimation Formula
 
@@ -75,55 +65,6 @@ CKD is identified from ICD codes:
 5. **Missing Values**: If no creatinine measured during admission, baseline will be NULL.
 
 6. **Race Coefficient**: The original MDRD had a race coefficient; this implementation does not use it, consistent with recent guidelines removing race from eGFR calculations.
-
-## Example: Baseline Distribution
-
-```sql
-SELECT
-    CASE
-        WHEN scr_min <= 1.1 THEN 'Normal admission Cr'
-        WHEN ckd = 1 THEN 'CKD (using min)'
-        ELSE 'MDRD estimated'
-    END AS baseline_source,
-    COUNT(*) AS n_admissions,
-    ROUND(AVG(scr_baseline), 2) AS avg_baseline
-FROM mimiciv_derived.creatinine_baseline
-GROUP BY 1;
-```
-
-## Example: Compare Baseline vs Admission Creatinine
-
-```sql
-SELECT
-    cb.hadm_id,
-    cb.scr_baseline,
-    cb.scr_min AS admission_min_cr,
-    ROUND(cb.scr_min / NULLIF(cb.scr_baseline, 0), 2) AS cr_ratio,
-    CASE
-        WHEN cb.scr_min >= cb.scr_baseline * 1.5 THEN 'AKI Stage 1+'
-        ELSE 'No AKI at admission'
-    END AS admission_aki_status
-FROM mimiciv_derived.creatinine_baseline cb
-WHERE cb.scr_baseline IS NOT NULL;
-```
-
-## Example: Age-Stratified Estimated Baselines
-
-```sql
-SELECT
-    CASE
-        WHEN age < 40 THEN '<40'
-        WHEN age < 60 THEN '40-59'
-        WHEN age < 80 THEN '60-79'
-        ELSE '80+'
-    END AS age_group,
-    gender,
-    ROUND(AVG(mdrd_est), 2) AS avg_mdrd_baseline
-FROM mimiciv_derived.creatinine_baseline
-WHERE ckd = 0 AND scr_min > 1.1
-GROUP BY 1, 2
-ORDER BY 1, 2;
-```
 
 ## Alternative Baseline Methods
 
