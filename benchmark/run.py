@@ -119,6 +119,61 @@ AGENT_HOME_SEEDS = {
     ],
 }
 
+REASONING_EFFORT_CHOICES = (
+    "auto",
+    "default",
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+)
+BENCHMARK_REASONING_EFFORT = "auto"
+PROVIDER_DEFAULT_REASONING = "provider-default"
+AGENT_REASONING_EFFORTS = {
+    "claude": {"low", "medium", "high", "xhigh", "max"},
+    "codex": {"minimal", "low", "medium", "high", "xhigh"},
+}
+
+
+def _resolve_reasoning_effort(agent_name: str, reasoning_effort: str | None) -> str:
+    """Resolve benchmark reasoning policy to the setting applied to an agent."""
+    requested = reasoning_effort or BENCHMARK_REASONING_EFFORT
+    if requested == "auto":
+        if agent_name in ("claude", "codex"):
+            return "medium"
+        return PROVIDER_DEFAULT_REASONING
+    if requested == "default":
+        return PROVIDER_DEFAULT_REASONING
+
+    allowed = AGENT_REASONING_EFFORTS.get(agent_name)
+    if not allowed:
+        raise ValueError(
+            f"{agent_name} does not support named reasoning effort in this harness; "
+            "use --reasoning-effort auto or default"
+        )
+    if requested not in allowed:
+        allowed_values = ", ".join(sorted(allowed))
+        raise ValueError(
+            f"{agent_name} does not support reasoning effort '{requested}'. "
+            f"Supported values: auto, default, {allowed_values}"
+        )
+    return requested
+
+
+def _reasoning_args_for_agent(
+    agent_name: str, resolved_reasoning_effort: str
+) -> list[str]:
+    """Return CLI args that apply an already-resolved reasoning effort."""
+    if resolved_reasoning_effort == PROVIDER_DEFAULT_REASONING:
+        return []
+    if agent_name == "claude":
+        return ["--effort", resolved_reasoning_effort]
+    if agent_name == "codex":
+        return ["-c", f'model_reasoning_effort="{resolved_reasoning_effort}"']
+    return []
+
 
 def resolve_results_root(results_root: str | None = None) -> Path:
     """Resolve the output root for benchmark artifacts."""
@@ -616,6 +671,7 @@ def run_agent(
     verbose: bool = False,
     isolated: bool = False,
     run_home: Path | None = None,
+    reasoning_effort: str | None = BENCHMARK_REASONING_EFFORT,
 ) -> dict:
     """Invoke an agent CLI with the instruction. Returns result dict."""
     agent_config = AGENT_COMMANDS.get(agent_name)
@@ -640,6 +696,9 @@ def run_agent(
                 cmd.extend(["-m", model, "-p"])
             else:
                 cmd.extend(["-m", model])
+
+    resolved_reasoning_effort = _resolve_reasoning_effort(agent_name, reasoning_effort)
+    cmd.extend(_reasoning_args_for_agent(agent_name, resolved_reasoning_effort))
 
     if isolated and agent_name == "claude":
         cmd.extend(["--disallowedTools", NETWORK_DENY_TOOLS])
@@ -711,6 +770,7 @@ def run_agent(
             "stderr": "",
             "elapsed_seconds": round(elapsed, 1),
             "trace_file": str(trace_path),
+            "reasoning_effort": resolved_reasoning_effort,
         }
     except (subprocess.TimeoutExpired, Exception):
         elapsed = time.time() - start
@@ -722,6 +782,11 @@ def run_agent(
             "stderr": "TIMEOUT after 30 minutes",
             "elapsed_seconds": round(elapsed, 1),
             "trace_file": str(trace_path),
+            "reasoning_effort": (
+                resolved_reasoning_effort
+                if "resolved_reasoning_effort" in locals()
+                else PROVIDER_DEFAULT_REASONING
+            ),
         }
 
 
@@ -922,6 +987,7 @@ def run_single_task(
     max_retries: int = 0,
     retry_delay_seconds: int = 15,
     wait_on_claude_rate_limit: bool = False,
+    reasoning_effort: str | None = BENCHMARK_REASONING_EFFORT,
 ) -> dict:
     """Run a single benchmark task end-to-end. Returns the full result dict."""
     results_root = (results_root or RESULTS_DIR).resolve()
@@ -939,6 +1005,8 @@ def run_single_task(
         msg = f"Agent DB not found: {agent_db_path}. Run: python benchmark/setup.py --task {task_name}"
         print(f"Error: {msg}")
         return {"task": task_name, "test_results": {"reward": 0.0}, "error": msg}
+
+    resolved_reasoning_effort = _resolve_reasoning_effort(agent_name, reasoning_effort)
 
     # Create working directory
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
@@ -959,6 +1027,10 @@ def run_single_task(
     print(f"M4Bench: {task_name}")
     print(
         f"Condition: {condition} | Schema: {schema} | Agent: {agent_name} | Model: {model or 'default'}"
+    )
+    print(
+        f"Reasoning: {resolved_reasoning_effort}"
+        f" (requested: {reasoning_effort or BENCHMARK_REASONING_EFFORT})"
     )
     if isolated:
         has_agent_user = _resolve_agent_creds() is not None
@@ -1016,6 +1088,7 @@ def run_single_task(
                 agent_name,
                 workdir,
                 model,
+                reasoning_effort=reasoning_effort,
                 verbose=verbose,
                 isolated=isolated,
                 run_home=run_home,
@@ -1091,6 +1164,8 @@ def run_single_task(
             "schema": schema,
             "agent": agent_name,
             "model": model,
+            "reasoning_effort": reasoning_effort or BENCHMARK_REASONING_EFFORT,
+            "resolved_reasoning_effort": resolved_reasoning_effort,
             "trial": trial,
             "isolated": isolated,
             "publishable": publishable,
@@ -1166,6 +1241,7 @@ def _run_parallel(
     max_retries: int = 0,
     retry_delay_seconds: int = 15,
     wait_on_claude_rate_limit: bool = False,
+    reasoning_effort: str | None = BENCHMARK_REASONING_EFFORT,
 ) -> list[dict]:
     """Execute runs in parallel using ThreadPoolExecutor.
 
@@ -1198,6 +1274,7 @@ def _run_parallel(
                 max_retries,
                 retry_delay_seconds,
                 wait_on_claude_rate_limit,
+                reasoning_effort=reasoning_effort,
             )
         except Exception as e:
             result = {
@@ -1333,6 +1410,15 @@ def main():
         "--model",
         help="Model override (e.g., opus, sonnet, gpt-5.5, gemini-3.1-pro-preview)",
     )
+    parser.add_argument(
+        "--reasoning-effort",
+        choices=REASONING_EFFORT_CHOICES,
+        default=BENCHMARK_REASONING_EFFORT,
+        help=(
+            "Reasoning policy. auto pins Codex/Claude to medium and leaves "
+            "Gemini at provider-default; default leaves each CLI/provider default"
+        ),
+    )
     parser.add_argument("--trial", type=int, default=1, help="Trial number")
     parser.add_argument(
         "--verbose",
@@ -1417,6 +1503,12 @@ def main():
         parser.error("--condition is required when running tasks")
     if not args.agent:
         parser.error("--agent is required when running tasks")
+    try:
+        resolved_reasoning_effort = _resolve_reasoning_effort(
+            args.agent, args.reasoning_effort
+        )
+    except ValueError as e:
+        parser.error(str(e))
 
     if args.parallel > 4:
         print(
@@ -1465,6 +1557,9 @@ def main():
         f"\nRun matrix: {len(run_matrix)} runs ({len(task_names)} tasks x {args.seeds} seeds)"
     )
     print(f"Results root: {results_root}")
+    print(
+        f"Reasoning: {resolved_reasoning_effort} (requested: {args.reasoning_effort})"
+    )
     if args.parallel > 1:
         print(f"Parallelism: {args.parallel} concurrent runs")
     print()
@@ -1487,6 +1582,7 @@ def main():
                 args.max_retries,
                 args.retry_delay_seconds,
                 args.wait_on_claude_rate_limit,
+                reasoning_effort=args.reasoning_effort,
             )
             results.append(result)
             if args.delay_between_runs_seconds > 0 and len(results) < len(run_matrix):
@@ -1507,6 +1603,7 @@ def main():
             args.max_retries,
             args.retry_delay_seconds,
             args.wait_on_claude_rate_limit,
+            reasoning_effort=args.reasoning_effort,
         )
 
     # Print summary
@@ -1521,6 +1618,8 @@ def main():
             "condition": args.condition,
             "agent": args.agent,
             "model": args.model,
+            "reasoning_effort": args.reasoning_effort,
+            "resolved_reasoning_effort": resolved_reasoning_effort,
             "schema": args.schema,
             "parallel": args.parallel,
             "seeds": args.seeds,

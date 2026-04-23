@@ -43,6 +43,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from lib.db import list_task_dirs, load_task_config
+from run import (
+    BENCHMARK_REASONING_EFFORT,
+    PROVIDER_DEFAULT_REASONING,
+    REASONING_EFFORT_CHOICES,
+    _resolve_reasoning_effort,
+)
 
 BENCHMARK_ROOT = Path(__file__).parent
 RESULTS_DIR = BENCHMARK_ROOT / "results"
@@ -216,6 +222,7 @@ def _run_via_bench(
     max_retries: int = 0,
     retry_delay_seconds: int = 15,
     wait_on_claude_rate_limit: bool = False,
+    reasoning_effort: str = BENCHMARK_REASONING_EFFORT,
 ) -> dict:
     """Execute one publishable run by invoking bench.sh on the host."""
     bench_script = BENCHMARK_ROOT / "bench.sh"
@@ -239,6 +246,8 @@ def _run_via_bench(
         schema,
         "--results-root",
         container_results_root,
+        "--reasoning-effort",
+        reasoning_effort,
         "--max-retries",
         str(max_retries),
         "--retry-delay-seconds",
@@ -275,6 +284,8 @@ def _run_via_bench(
         "schema": schema,
         "agent": agent,
         "model": model,
+        "reasoning_effort": reasoning_effort,
+        "resolved_reasoning_effort": _resolve_reasoning_effort(agent, reasoning_effort),
         "test_results": {"reward": 0.0},
         "error": f"bench.sh exited with code {proc.returncode} and produced no result.json",
     }
@@ -557,6 +568,17 @@ def _build_provider_comparison_tiers(
 # ── Existing result detection ────────────────────────────────────────────────
 
 
+def _cell_key(
+    task: str,
+    condition: str,
+    model: str,
+    schema: str,
+    resolved_reasoning_effort: str,
+) -> str:
+    """Return the scheduling cell key used for skip-existing accounting."""
+    return f"{task}|{condition}|{model}|{schema}|{resolved_reasoning_effort}"
+
+
 def _scan_existing(results_root: Path) -> dict[str, int]:
     """Scan results/ for completed runs. Returns {run_key: count_of_seeds}.
 
@@ -577,6 +599,10 @@ def _scan_existing(results_root: Path) -> dict[str, int]:
         condition = data.get("condition", "")
         model = data.get("model", "")
         schema = data.get("schema", "native")
+        resolved_reasoning_effort = data.get(
+            "resolved_reasoning_effort",
+            data.get("reasoning_effort", "legacy-default"),
+        )
 
         # Normalize condition names from older batch runs
         if condition.startswith("_batch-"):
@@ -587,26 +613,42 @@ def _scan_existing(results_root: Path) -> dict[str, int]:
         if reward is None:
             continue
 
-        key = f"{task}|{condition}|{model}|{schema}"
+        key = _cell_key(task, condition, model, schema, resolved_reasoning_effort)
         counts[key] += 1
 
     return counts
 
 
-def _filter_existing(runs: list[dict], existing: dict[str, int]) -> list[dict]:
+def _filter_existing(
+    runs: list[dict],
+    existing: dict[str, int],
+    resolved_reasoning_effort: str = PROVIDER_DEFAULT_REASONING,
+) -> list[dict]:
     """Remove runs for cells that already have their planned completed seeds."""
     filtered = []
     # Group by cell (task+condition+model+schema) and count how many seeds
     # are already done, then only schedule the deficit.
     planned: dict[str, int] = defaultdict(int)
     for run in runs:
-        key = f"{run['task']}|{run['condition']}|{run['model']}|{run['schema']}"
+        key = _cell_key(
+            run["task"],
+            run["condition"],
+            run["model"],
+            run["schema"],
+            resolved_reasoning_effort,
+        )
         planned[key] += 1
 
     cell_scheduled: dict[str, int] = defaultdict(int)
 
     for run in runs:
-        key = f"{run['task']}|{run['condition']}|{run['model']}|{run['schema']}"
+        key = _cell_key(
+            run["task"],
+            run["condition"],
+            run["model"],
+            run["schema"],
+            resolved_reasoning_effort,
+        )
         done = existing.get(key, 0)
         scheduled = cell_scheduled[key]
         if done + scheduled < planned[key]:
@@ -626,6 +668,8 @@ def _run_tier(
     dry_run: bool,
     no_isolation: bool,
     agent: str = "claude",
+    reasoning_effort: str = BENCHMARK_REASONING_EFFORT,
+    resolved_reasoning_effort: str = PROVIDER_DEFAULT_REASONING,
     results_root: Path | None = None,
     delay_between_runs_seconds: int = 0,
     max_retries: int = 0,
@@ -640,7 +684,7 @@ def _run_tier(
     if skip_existing:
         existing = _scan_existing(results_root)
         original = len(runs)
-        runs = _filter_existing(runs, existing)
+        runs = _filter_existing(runs, existing, resolved_reasoning_effort)
         skipped = original - len(runs)
         if skipped:
             print(f"  Skipping {skipped} runs with sufficient existing data")
@@ -686,6 +730,7 @@ def _run_tier(
                 parallel,
                 no_isolation,
                 agent,
+                reasoning_effort,
                 results_root,
                 max_retries=max_retries,
                 retry_delay_seconds=retry_delay_seconds,
@@ -700,6 +745,7 @@ def _run_tier(
                 schema,
                 no_isolation,
                 agent,
+                reasoning_effort,
                 results_root,
                 delay_between_runs_seconds=delay_between_runs_seconds,
                 max_retries=max_retries,
@@ -716,6 +762,7 @@ def _run_group_sequential(
     schema: str,
     no_isolation: bool,
     agent: str = "claude",
+    reasoning_effort: str = BENCHMARK_REASONING_EFFORT,
     results_root: Path | None = None,
     delay_between_runs_seconds: int = 0,
     max_retries: int = 0,
@@ -739,6 +786,7 @@ def _run_group_sequential(
                     schema,
                     agent,
                     results_root,
+                    reasoning_effort=reasoning_effort,
                     max_retries=max_retries,
                     retry_delay_seconds=retry_delay_seconds,
                     wait_on_claude_rate_limit=wait_on_claude_rate_limit,
@@ -757,6 +805,7 @@ def _run_group_sequential(
                     max_retries=max_retries,
                     retry_delay_seconds=retry_delay_seconds,
                     wait_on_claude_rate_limit=wait_on_claude_rate_limit,
+                    reasoning_effort=reasoning_effort,
                 )
             reward = result.get("test_results", {}).get("reward", 0.0)
             elapsed = result.get("agent_result", {}).get("elapsed_seconds", 0)
@@ -778,6 +827,7 @@ def _run_group_parallel(
     max_workers: int,
     no_isolation: bool,
     agent: str = "claude",
+    reasoning_effort: str = BENCHMARK_REASONING_EFFORT,
     results_root: Path | None = None,
     max_retries: int = 0,
     retry_delay_seconds: int = 15,
@@ -804,6 +854,7 @@ def _run_group_parallel(
                     schema,
                     agent,
                     results_root,
+                    reasoning_effort=reasoning_effort,
                     max_retries=max_retries,
                     retry_delay_seconds=retry_delay_seconds,
                     wait_on_claude_rate_limit=wait_on_claude_rate_limit,
@@ -821,6 +872,7 @@ def _run_group_parallel(
                 max_retries=max_retries,
                 retry_delay_seconds=retry_delay_seconds,
                 wait_on_claude_rate_limit=wait_on_claude_rate_limit,
+                reasoning_effort=reasoning_effort,
             )
         except Exception as e:
             return {
@@ -851,7 +903,10 @@ def _run_group_parallel(
 
 
 def _print_matrix_summary(
-    tiers: list[Tier], skip_existing: bool, results_root: Path | None = None
+    tiers: list[Tier],
+    skip_existing: bool,
+    results_root: Path | None = None,
+    resolved_reasoning_effort: str = PROVIDER_DEFAULT_REASONING,
 ) -> None:
     """Print a human-readable summary of the experiment matrix."""
     results_root = results_root or RESULTS_DIR
@@ -869,7 +924,7 @@ def _print_matrix_summary(
         runs = tier.runs
         skipped = 0
         if skip_existing:
-            filtered = _filter_existing(runs, existing)
+            filtered = _filter_existing(runs, existing, resolved_reasoning_effort)
             skipped = len(runs) - len(filtered)
             runs = filtered
 
@@ -960,6 +1015,15 @@ def main():
         help="Agent CLI to use (claude, codex, gemini)",
     )
     parser.add_argument(
+        "--reasoning-effort",
+        choices=REASONING_EFFORT_CHOICES,
+        default=BENCHMARK_REASONING_EFFORT,
+        help=(
+            "Reasoning policy. auto pins Codex/Claude to medium and leaves "
+            "Gemini at provider-default; default leaves each CLI/provider default"
+        ),
+    )
+    parser.add_argument(
         "--seeds",
         type=int,
         default=SEEDS,
@@ -1023,9 +1087,24 @@ def main():
     seeds = args.seeds
     tiers = build_tiers(seeds=seeds, agent=args.agent, profile=args.profile)
     results_root = resolve_results_root(args.results_root)
+    try:
+        resolved_reasoning_effort = _resolve_reasoning_effort(
+            args.agent, args.reasoning_effort
+        )
+    except ValueError as e:
+        parser.error(str(e))
 
     if args.summary or args.dry_run:
-        _print_matrix_summary(tiers, args.skip_existing, results_root)
+        print(
+            f"Reasoning: {resolved_reasoning_effort}"
+            f" (requested: {args.reasoning_effort})"
+        )
+        _print_matrix_summary(
+            tiers,
+            args.skip_existing,
+            results_root,
+            resolved_reasoning_effort,
+        )
 
     if args.summary:
         return
@@ -1052,6 +1131,8 @@ def main():
                 dry_run=True,
                 no_isolation=args.no_isolation,
                 agent=args.agent,
+                reasoning_effort=args.reasoning_effort,
+                resolved_reasoning_effort=resolved_reasoning_effort,
                 results_root=results_root,
                 delay_between_runs_seconds=args.delay_between_runs_seconds,
                 max_retries=args.max_retries,
@@ -1074,6 +1155,8 @@ def main():
             dry_run=False,
             no_isolation=args.no_isolation,
             agent=args.agent,
+            reasoning_effort=args.reasoning_effort,
+            resolved_reasoning_effort=resolved_reasoning_effort,
             results_root=results_root,
             delay_between_runs_seconds=args.delay_between_runs_seconds,
             max_retries=args.max_retries,

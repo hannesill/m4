@@ -184,6 +184,39 @@ def test_gemini_command_uses_external_sandbox():
     assert "yolo" in gemini_cmd
 
 
+def test_reasoning_auto_policy_resolves_by_agent():
+    run = _load_module("benchmark_run_reasoning_policy", "benchmark/run.py")
+
+    assert run._resolve_reasoning_effort("codex", "auto") == "medium"
+    assert run._resolve_reasoning_effort("claude", "auto") == "medium"
+    assert run._resolve_reasoning_effort("gemini", "auto") == "provider-default"
+
+
+def test_reasoning_args_match_supported_agent_clis():
+    run = _load_module("benchmark_run_reasoning_args", "benchmark/run.py")
+
+    assert run._reasoning_args_for_agent("codex", "medium") == [
+        "-c",
+        'model_reasoning_effort="medium"',
+    ]
+    assert run._reasoning_args_for_agent("claude", "medium") == [
+        "--effort",
+        "medium",
+    ]
+    assert run._reasoning_args_for_agent("gemini", "provider-default") == []
+
+
+def test_named_reasoning_rejects_unsupported_agent_scale():
+    run = _load_module("benchmark_run_reasoning_invalid", "benchmark/run.py")
+
+    try:
+        run._resolve_reasoning_effort("gemini", "high")
+    except ValueError as exc:
+        assert "does not support named reasoning effort" in str(exc)
+    else:
+        raise AssertionError("expected ValueError for Gemini named effort")
+
+
 def test_network_lock_allows_subscription_backed_codex_hosts():
     script = (ROOT / "benchmark" / "network_lock.sh").read_text()
 

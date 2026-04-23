@@ -68,9 +68,33 @@ def test_filter_existing_uses_planned_profile_seed_count():
             "trial": 2,
         },
     ]
-    existing = {"mimic-sofa-24h|no-skill|gpt-5.5|native": 2}
+    existing = {
+        matrix._cell_key(
+            "mimic-sofa-24h",
+            "no-skill",
+            "gpt-5.5",
+            "native",
+            "medium",
+        ): 2
+    }
 
-    assert matrix._filter_existing(runs, existing) == []
+    assert matrix._filter_existing(runs, existing, "medium") == []
+
+
+def test_filter_existing_keeps_legacy_runs_separate_from_pinned_reasoning():
+    matrix = _load_module("benchmark_matrix_filter_reasoning", "benchmark/matrix.py")
+    runs = [
+        {
+            "task": "mimic-sofa-24h",
+            "condition": "no-skill",
+            "model": "gpt-5.5",
+            "schema": "native",
+            "trial": 1,
+        }
+    ]
+    existing = {"mimic-sofa-24h|no-skill|gpt-5.5|native|legacy-default": 1}
+
+    assert matrix._filter_existing(runs, existing, "medium") == runs
 
 
 def test_build_tiers_uses_agent_specific_gemini_models():
@@ -136,6 +160,7 @@ def test_run_via_bench_builds_publishable_command(monkeypatch):
         schema="native",
         agent="codex",
         results_root=results_root,
+        reasoning_effort="medium",
         max_retries=2,
         retry_delay_seconds=30,
     )
@@ -146,4 +171,6 @@ def test_run_via_bench_builds_publishable_command(monkeypatch):
     assert "mimic-kdigo-48h" in seen["cmd"]
     assert "--results-root" in seen["cmd"]
     assert "/benchmark/results/paper-smoke" in seen["cmd"]
+    assert "--reasoning-effort" in seen["cmd"]
+    assert "medium" in seen["cmd"]
     assert seen["env"]["M4BENCH_CONTAINER_NAME"].startswith("m4bench-codex-")
