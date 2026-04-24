@@ -1696,6 +1696,7 @@ dependencies = [
     { name = "requests" },
     { name = "rich" },
     { name = "sqlparse" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typer" },
     { name = "vitrine" },
 ]
@@ -1737,6 +1738,7 @@ requires-dist = [
     { name = "scikit-learn", marker = "extra == 'research'", specifier = ">=1.7.2" },
     { name = "sqlparse", specifier = ">=0.4.0" },
     { name = "statsmodels", marker = "extra == 'research'", specifier = ">=0.14.6" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0" },
     { name = "typer", specifier = ">=0.9.0" },
     { name = "vitrine", git = "https://github.com/hannesill/vitrine.git" },
 ]

@@ -46,6 +46,7 @@ dependencies = [
     "httpx>=0.24.0", # Modern HTTP client for OAuth2 token validation
     "duckdb>=1.4.1",
     "vitrine>=0.1.0",
+    "tomli>=2.0.0; python_version < '3.11'", # TOML parser for Python 3.10
 ]
 
 [project.optional-dependencies]
