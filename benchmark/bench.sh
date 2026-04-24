@@ -205,6 +205,15 @@ fi
 
 "$DOCKER_BIN" run "${DOCKER_ARGS[@]}" "$IMAGE" >/dev/null
 
+cleanup_container() {
+    local status=$?
+    if [[ "${M4BENCH_KEEP_CONTAINER:-0}" != "1" ]]; then
+        "$DOCKER_BIN" rm -f "$CONTAINER" >/dev/null 2>&1 || true
+    fi
+    return "$status"
+}
+trap cleanup_container EXIT
+
 # Install benchmark dependencies (lightweight, no M4 package)
 "$DOCKER_BIN" exec "$CONTAINER" pip3 install --break-system-packages --quiet \
     duckdb pandas pytest tomli 2>/dev/null

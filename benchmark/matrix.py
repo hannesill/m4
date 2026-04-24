@@ -24,7 +24,7 @@ Usage:
     # With parallelism
     python benchmark/matrix.py --tier 1 --parallel 3
 
-    # Skip tasks that already have enough completed seeds
+    # Skip exact task/model/condition/schema/trial runs that already completed
     python benchmark/matrix.py --tier 1 --skip-existing
 """
 
@@ -586,15 +586,17 @@ def _cell_key(
     return f"{task}|{condition}|{model}|{schema}|{resolved_reasoning_effort}"
 
 
-def _scan_existing(results_root: Path) -> dict[str, int]:
-    """Scan results/ for completed runs. Returns {run_key: count_of_seeds}.
+def _scan_existing(results_root: Path) -> dict[str, set[int]]:
+    """Scan results/ for completed runs. Returns {run_key: completed_trials}.
 
-    A "completed" run is one with a result.json that has reward > -1
-    (i.e., the evaluation ran, even if the agent scored 0).
+    A "completed" run is one with a result.json that has a recorded reward
+    (i.e., the evaluation ran, even if the agent scored 0). Tracking exact
+    trial ids prevents interrupted resumes from duplicating already completed
+    seed labels.
     """
-    counts: dict[str, int] = defaultdict(int)
+    completed: dict[str, set[int]] = defaultdict(set)
     if not results_root.exists():
-        return counts
+        return completed
 
     for result_file in results_root.rglob("result.json"):
         try:
@@ -619,23 +621,24 @@ def _scan_existing(results_root: Path) -> dict[str, int]:
         reward = data.get("test_results", {}).get("reward")
         if reward is None:
             continue
+        try:
+            trial = int(data.get("trial"))
+        except (TypeError, ValueError):
+            continue
 
         key = _cell_key(task, condition, model, schema, resolved_reasoning_effort)
-        counts[key] += 1
+        completed[key].add(trial)
 
-    return counts
+    return completed
 
 
 def _filter_existing(
     runs: list[dict],
-    existing: dict[str, int],
+    existing: dict[str, set[int]],
     resolved_reasoning_effort: str = PROVIDER_DEFAULT_REASONING,
 ) -> list[dict]:
-    """Remove runs for cells that already have their planned completed seeds."""
+    """Remove runs whose exact scheduling cell and trial already completed."""
     filtered = []
-    # Group by cell (task+condition+model+schema) and count how many seeds
-    # are already done, then only schedule the deficit.
-    planned: dict[str, int] = defaultdict(int)
     for run in runs:
         key = _cell_key(
             run["task"],
@@ -644,23 +647,8 @@ def _filter_existing(
             run["schema"],
             resolved_reasoning_effort,
         )
-        planned[key] += 1
-
-    cell_scheduled: dict[str, int] = defaultdict(int)
-
-    for run in runs:
-        key = _cell_key(
-            run["task"],
-            run["condition"],
-            run["model"],
-            run["schema"],
-            resolved_reasoning_effort,
-        )
-        done = existing.get(key, 0)
-        scheduled = cell_scheduled[key]
-        if done + scheduled < planned[key]:
+        if int(run["trial"]) not in existing.get(key, set()):
             filtered.append(run)
-            cell_scheduled[key] += 1
 
     return filtered
 
@@ -995,7 +983,7 @@ def main():
     parser.add_argument(
         "--skip-existing",
         action="store_true",
-        help="Skip cells that already have the profile's planned completed seeds",
+        help="Skip exact task/model/condition/schema/trial runs that already have result.json",
     )
     parser.add_argument(
         "--no-isolation",
