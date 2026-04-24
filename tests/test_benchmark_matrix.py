@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -50,7 +51,7 @@ def test_provider_comparison_profile_is_sparse_for_claude():
     assert {run["condition"] for run in tiers[0].runs} == {"no-skill", "with-skill"}
 
 
-def test_filter_existing_uses_planned_profile_seed_count():
+def test_filter_existing_skips_completed_trial_ids():
     matrix = _load_module("benchmark_matrix_filter_existing", "benchmark/matrix.py")
     runs = [
         {
@@ -75,10 +76,68 @@ def test_filter_existing_uses_planned_profile_seed_count():
             "gpt-5.5",
             "native",
             "medium",
-        ): 2
+        ): {1, 2}
     }
 
     assert matrix._filter_existing(runs, existing, "medium") == []
+
+
+def test_filter_existing_resumes_missing_non_prefix_trial():
+    matrix = _load_module("benchmark_matrix_filter_non_prefix", "benchmark/matrix.py")
+    runs = [
+        {
+            "task": "mimic-sofa-24h",
+            "condition": "no-skill",
+            "model": "gpt-5.5",
+            "schema": "native",
+            "trial": trial,
+        }
+        for trial in [1, 2, 3]
+    ]
+    existing = {
+        matrix._cell_key(
+            "mimic-sofa-24h",
+            "no-skill",
+            "gpt-5.5",
+            "native",
+            "medium",
+        ): {1, 3}
+    }
+
+    filtered = matrix._filter_existing(runs, existing, "medium")
+
+    assert [run["trial"] for run in filtered] == [2]
+
+
+def test_scan_existing_tracks_completed_trial_ids(tmp_path):
+    matrix = _load_module("benchmark_matrix_scan_existing", "benchmark/matrix.py")
+    result_dir = tmp_path / "run"
+    result_dir.mkdir()
+    (result_dir / "result.json").write_text(
+        json.dumps(
+            {
+                "task": "mimic-sofa-24h",
+                "condition": "no-skill",
+                "model": "gpt-5.5",
+                "schema": "native",
+                "resolved_reasoning_effort": "medium",
+                "trial": 2,
+                "test_results": {"reward": 0.0},
+            }
+        )
+    )
+
+    existing = matrix._scan_existing(tmp_path)
+
+    assert existing[
+        matrix._cell_key(
+            "mimic-sofa-24h",
+            "no-skill",
+            "gpt-5.5",
+            "native",
+            "medium",
+        )
+    ] == {2}
 
 
 def test_filter_existing_keeps_legacy_runs_separate_from_pinned_reasoning():
@@ -92,7 +151,7 @@ def test_filter_existing_keeps_legacy_runs_separate_from_pinned_reasoning():
             "trial": 1,
         }
     ]
-    existing = {"mimic-sofa-24h|no-skill|gpt-5.5|native|legacy-default": 1}
+    existing = {"mimic-sofa-24h|no-skill|gpt-5.5|native|legacy-default": {1}}
 
     assert matrix._filter_existing(runs, existing, "medium") == runs
 

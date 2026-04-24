@@ -134,6 +134,9 @@ python benchmark/run.py --all --condition no-skill --agent claude --parallel 4
 # Paper-quality GPT-primary matrix campaign (Docker-backed)
 python benchmark/matrix.py --tier 1 --agent codex --results-root benchmark/results/paper-20260406
 
+# Resume an interrupted campaign from the same results root
+python benchmark/matrix.py --tier 1 --agent codex --results-root benchmark/results/paper-20260406 --skip-existing
+
 # Sparse external-provider comparison
 python benchmark/matrix.py --profile provider-comparison --agent claude --results-root benchmark/results/paper-20260406-claude-sentinel
 ```
@@ -267,3 +270,16 @@ bash benchmark/bench.sh --task mimic-sirs-24h-raw --condition no-skill \
 When `--agent pi-ollama` is used, the Docker network lock allows the configured
 Ollama host and port for the `benchagent` user while continuing to reject other
 non-allowlisted outbound traffic.
+
+## Interrupted Runs
+
+Stop an overnight matrix run with `Ctrl-C`. Any run that already wrote a
+`result.json` under the campaign `--results-root` is complete; an in-flight run
+may be lost and will be scheduled again. Resume with the same command plus
+`--skip-existing`. The skip logic matches task, condition, model, schema,
+reasoning effort, and trial id, so it resumes missing trials without duplicating
+completed seed labels.
+
+Docker-backed runs remove their temporary benchmark container when `bench.sh`
+exits. Set `M4BENCH_KEEP_CONTAINER=1` only when you want to inspect a failed
+container manually.
