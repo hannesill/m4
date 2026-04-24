@@ -15,7 +15,8 @@ def compare_derived_tables(
     """Compare agent output to ground truth CSV.
 
     Joins on key_columns, compares value_columns with optional per-column
-    tolerance. Returns per-column match statistics.
+    tolerance. Missing truth keys, extra agent keys, and duplicate agent keys
+    all count against the per-column match rate.
 
     Args:
         agent_output_path: Path to agent's output CSV.
@@ -27,9 +28,10 @@ def compare_derived_tables(
     Returns:
         Dict keyed by column name, each containing:
           - match_rate: fraction of rows that match
-          - total: total rows in ground truth
+          - total: ground-truth rows plus extra and duplicate agent keys
           - matched: number of matching rows
           - agent_rows: number of rows in agent output
+          - extra_rows: unique agent keys not present in ground truth
           - missing_rows: rows in ground truth but not in agent output
           - mismatched_examples: up to 5 example mismatches
 
@@ -55,6 +57,15 @@ def compare_derived_tables(
     agent_rows_raw = len(agent_df)
     agent_dupes = int(agent_df.duplicated(subset=key_columns).sum())
     agent_df = agent_df.drop_duplicates(subset=key_columns, keep="first")
+    truth_keys = truth_df[key_columns].drop_duplicates()
+    agent_keys = agent_df[key_columns].drop_duplicates()
+    extra_keys = agent_keys.merge(
+        truth_keys, on=key_columns, how="left", indicator=True
+    )
+    extra_keys = extra_keys[extra_keys["_merge"] == "left_only"].drop(
+        columns=["_merge"]
+    )
+    extra_rows = len(extra_keys)
 
     # --- Key-level cohort diagnostics (precision complement to match_rate) ---
     truth_keys = set(
@@ -95,10 +106,11 @@ def compare_derived_tables(
         if not agent_has_column[col]:
             results[col] = {
                 "match_rate": 0.0,
-                "total": len(truth_df),
+                "total": len(truth_df) + extra_rows + agent_dupes,
                 "matched": 0,
                 "agent_rows": agent_rows_raw,
                 "agent_duplicates": agent_dupes,
+                "extra_rows": extra_rows,
                 "missing_rows": len(truth_df),
                 "mismatched_examples": [],
                 "error": f"Column '{col}' not found in agent output",
@@ -115,7 +127,7 @@ def compare_derived_tables(
         matches = matches | both_nan
 
         matched = int(matches.sum())
-        total = len(merged)
+        total = len(merged) + extra_rows + agent_dupes
         mismatched = merged[~matches].head(5)
 
         example_cols = [*key_columns]
@@ -130,6 +142,7 @@ def compare_derived_tables(
             "matched": matched,
             "agent_rows": agent_rows_raw,
             "agent_duplicates": agent_dupes,
+            "extra_rows": extra_rows,
             "missing_rows": int(missing_mask.sum()),
             "mismatched_examples": mismatched[example_cols].to_dict("records"),
         }

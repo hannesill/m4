@@ -36,7 +36,8 @@ In M4Bench, target concept tables listed in the task configuration are removed o
 | Mechanical Ventilation | Yes/No | 0 or 9 |
 | Elective Surgery | Yes/No | 0 or 6 |
 
-**Total Range**: 0-67 (theoretical maximum)
+The OASIS total is the sum of the 10 component scores. Report the component
+scores alongside the total so implementation differences are auditable.
 
 ## Critical Implementation Notes
 

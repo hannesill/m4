@@ -2,7 +2,7 @@
 
 ## What it is
 
-OASIS is a severity score (0-71) that predicts hospital mortality using only 10
+OASIS is a severity score that predicts hospital mortality using only 10
 variables — none of which require laboratory data. Developed by Johnson et al.
 (2013) as a simpler alternative to APACHE/SAPS when lab values are unavailable
 or unreliable.
@@ -43,8 +43,9 @@ custom windowing and recalibration.
 ## Why standard vs raw
 
 - **Standard**: derived tables (`first_day_vitalsign`, `age`, `ventilation`, etc.) available
-- **Raw**: derived tables dropped; agent must aggregate from `chartevents`, compute age,
-  detect ventilation from procedures, and sum urine from `outputevents`
+- **Raw**: OASIS and task-relevant upstream derived tables are dropped; agent
+  must aggregate from `chartevents`, compute age, detect ventilation from
+  procedures, and sum urine from `outputevents`
 
 ## Subtleties to watch for
 

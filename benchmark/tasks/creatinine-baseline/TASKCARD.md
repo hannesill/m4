@@ -38,8 +38,9 @@ to the estimated baseline.
 ## Why standard vs raw
 
 - **Standard**: `mimiciv_derived.age` and `mimiciv_derived.chemistry` are available
-- **Raw**: Both intermediate tables are dropped; agent must compute age from
-  `patients.anchor_age` + year math, and extract creatinine from `labevents`
+- **Raw**: Baseline creatinine and task-relevant age/chemistry intermediates are
+  dropped; agent must compute age from `patients.anchor_age` + year math, and
+  extract creatinine from `labevents`
 
 ## Subtleties to watch for
 

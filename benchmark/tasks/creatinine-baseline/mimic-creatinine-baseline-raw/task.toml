@@ -2,7 +2,7 @@
 name = "mimic-creatinine-baseline-raw"
 description = "Estimate baseline serum creatinine (raw tables) for hospital admissions from MIMIC-IV data"
 difficulty = "hard"
-mode = "raw"  # no intermediate tables
+mode = "raw"  # task-relevant upstream tables dropped
 category = "Healthcare"
 tags = ["clinical", "nephrology", "mimic-iv", "creatinine", "baseline", "aki", "raw"]
 database = "mimic-iv"

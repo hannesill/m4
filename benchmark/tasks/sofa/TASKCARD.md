@@ -44,8 +44,9 @@ data by definition. The 12h variant uses **creatinine only** for renal scoring.
 ## Why standard vs raw
 
 - **Standard**: derived measurement tables (`mimiciv_derived.bg`, `vitalsign`, etc.) are available
-- **Raw**: derived tables are dropped, forcing the agent to aggregate from
-  `chartevents`, `labevents`, `inputevents`, and `outputevents` directly
+- **Raw**: SOFA and task-relevant upstream derived tables are dropped, forcing
+  the agent to aggregate from `chartevents`, `labevents`, `inputevents`, and
+  `outputevents` directly
 
 ## Subtleties to watch for
 

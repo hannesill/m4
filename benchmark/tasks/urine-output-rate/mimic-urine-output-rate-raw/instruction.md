@@ -1,6 +1,8 @@
 # Task: Calculate Urine Output Rate (Raw Tables)
 
-Only base tables are available — there are no pre-computed derived tables.
+The target table and task-relevant upstream derived tables have been removed.
+Other non-target derived tables may still be present; do not use them as a
+shortcut for the requested urine-output-rate calculation.
 
 Calculate rolling urine output rates (mL/kg/hr) over 6, 12, and 24-hour
 windows for each UO measurement time, normalized by patient weight,
