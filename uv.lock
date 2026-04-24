@@ -1283,6 +1283,7 @@ dependencies = [
     { name = "requests" },
     { name = "rich" },
     { name = "sqlparse" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typer" },
 ]
 
@@ -1312,6 +1313,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.30.0" },
     { name = "rich", specifier = ">=13.0.0" },
     { name = "sqlparse", specifier = ">=0.4.0" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0" },
     { name = "typer", specifier = ">=0.9.0" },
 ]
 
