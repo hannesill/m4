@@ -1,6 +1,8 @@
 # Task: Calculate OASIS Score (Raw Tables)
 
-Only base tables are available — there are no pre-computed derived tables.
+The target table and task-relevant upstream derived tables have been removed.
+Other non-target derived tables may still be present; do not use them as a
+shortcut for the requested OASIS calculation.
 
 Calculate the Oxford Acute Severity of Illness Score (OASIS) for each
 ICU stay using data from the first 24 hours of ICU admission

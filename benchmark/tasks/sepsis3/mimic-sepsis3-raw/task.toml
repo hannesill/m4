@@ -2,7 +2,7 @@
 name = "mimic-sepsis3-raw"
 description = "Identify Sepsis-3 patients (raw tables) from MIMIC-IV data"
 difficulty = "expert"
-mode = "raw"  # no intermediate tables
+mode = "raw"  # target component tables dropped
 category = "Healthcare"
 tags = ["clinical", "sepsis", "icu", "mimic-iv", "sepsis-3", "compositional", "raw"]
 database = "mimic-iv"

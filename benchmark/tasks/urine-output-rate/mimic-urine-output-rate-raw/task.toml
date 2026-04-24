@@ -2,7 +2,7 @@
 name = "mimic-urine-output-rate-raw"
 description = "Calculate rolling urine output rates (raw tables) for ICU patients from MIMIC-IV data"
 difficulty = "expert"
-mode = "raw"  # no intermediate tables
+mode = "raw"  # task-relevant upstream tables dropped
 category = "Healthcare"
 tags = ["clinical", "icu", "nephrology", "mimic-iv", "urine-output", "temporal", "raw"]
 database = "mimic-iv"

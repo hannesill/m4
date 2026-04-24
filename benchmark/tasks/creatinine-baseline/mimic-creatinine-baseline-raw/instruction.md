@@ -1,6 +1,8 @@
 # Task: Estimate Baseline Creatinine (Raw Tables)
 
-Only base tables are available — there are no pre-computed derived tables.
+The target table and task-relevant upstream derived tables have been removed.
+Other non-target derived tables may still be present; do not use them as a
+shortcut for the requested baseline creatinine calculation.
 
 Estimate the baseline (pre-illness) serum creatinine for each hospital
 admission, following the approach in Siew et al. (CJASN, 2012).

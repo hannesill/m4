@@ -53,7 +53,8 @@ applicable to any window, SAPS-II is a fixed-window prognostic score.
 ## Why standard vs raw
 
 - **Standard**: derived measurement tables available (`vitalsign`, `chemistry`, `bg`, etc.)
-- **Raw**: derived tables dropped, forcing aggregation from `chartevents`, `labevents`, `outputevents`
+- **Raw**: SAPS-II and task-relevant upstream derived tables are dropped,
+  forcing aggregation from `chartevents`, `labevents`, and `outputevents`
 
 Note: `diagnoses_icd`, `admissions`, and `services` are base hospital tables, NOT derived —
 they remain available in raw mode.

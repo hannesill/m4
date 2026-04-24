@@ -76,6 +76,38 @@ def check_instruction_sparsity() -> CheckResult:
     )
 
 
+def check_raw_mode_contract() -> CheckResult:
+    """Raw task wording must match the actual task-specific drop strategy."""
+    problems: list[str] = []
+    forbidden = [
+        "Only base tables are available",
+        "there are no pre-computed derived tables",
+        "forcing the agent to work from base tables",
+    ]
+    for task_dir in list_task_dirs():
+        config = load_task_config(task_dir)
+        if config["metadata"].get("mode") != "raw":
+            continue
+        instruction_path = task_dir / "instruction.md"
+        text = instruction_path.read_text()
+        for needle in forbidden:
+            if needle in text:
+                problems.append(
+                    f"{_task_name(task_dir)}: raw instruction still says `{needle}`"
+                )
+
+    readme_text = (BENCHMARK_ROOT / "README.md").read_text()
+    if "forcing the agent to work from base tables" in readme_text:
+        problems.append("README raw-mode definition still claims base-table-only mode")
+
+    if problems:
+        return _fail("raw-mode contract", problems)
+    return _ok(
+        "raw-mode contract",
+        "raw tasks describe task-relevant derived-table removal, not base-only DBs",
+    )
+
+
 def check_skill_snapshots() -> CheckResult:
     """Task-local skill snapshots should not expose target table answers."""
     problems: list[str] = []
@@ -105,7 +137,22 @@ def check_skill_snapshots() -> CheckResult:
         for skill_path in sorted(skills_dir.glob("*/SKILL.md")):
             text = skill_path.read_text()
             rel = skill_path.relative_to(BENCHMARK_ROOT)
-            if BENCHMARK_NOTE not in text:
+            if not text.startswith("---"):
+                problems.append(f"{task_name}: missing frontmatter in {rel}")
+            else:
+                frontmatter = text.split("---", 2)[1]
+                keys = {
+                    line.split(":", 1)[0].strip()
+                    for line in frontmatter.splitlines()
+                    if ":" in line
+                }
+                for key in ("name", "description", "tier", "category"):
+                    if key not in keys:
+                        problems.append(
+                            f"{task_name}: missing `{key}` frontmatter in {rel}"
+                        )
+            normalized_text = " ".join(text.split())
+            if BENCHMARK_NOTE not in normalized_text:
                 problems.append(f"{task_name}: missing M4Bench-use note in {rel}")
             for needle in forbidden_text:
                 if needle in text:
@@ -267,6 +314,7 @@ def run_checks(
 ) -> list[CheckResult]:
     checks = [
         check_instruction_sparsity(),
+        check_raw_mode_contract(),
         check_skill_snapshots(),
         check_ground_truth(self_check=self_check_ground_truth),
         check_contamination_ready(),
