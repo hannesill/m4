@@ -67,6 +67,15 @@ def evaluate(task_name: str, output_path: str) -> dict:
     test_results["match_rates"] = match_rates
     test_results["reward"] = round(sum(match_rates.values()) / len(match_rates), 4)
 
+    # Surface task-level cohort diagnostics alongside reward. Reward is a
+    # recall-style metric (per-column match rate); key_precision tells the
+    # reader whether the agent's output cohort is clean or inflated with
+    # keys that do not belong. Reward is intentionally unchanged.
+    meta = comparison.get("__meta__", {})
+    test_results["key_precision"] = round(meta.get("key_precision", 0.0), 4)
+    test_results["extra_keys"] = int(meta.get("extra_keys", 0))
+    test_results["agent_unique_keys"] = int(meta.get("agent_unique_keys", 0))
+
     return test_results
 
 
@@ -87,6 +96,11 @@ def main():
     print(f"Output: {args.output}")
     print(f"Results: {results['passed']}/{results['total']} tests passed")
     print(f"Reward: {results['reward']}")
+    print(
+        f"Key precision: {results.get('key_precision', 0.0)} "
+        f"({results.get('extra_keys', 0)} extra keys, "
+        f"{results.get('agent_unique_keys', 0)} agent keys total)"
+    )
     print(f"{'=' * 60}")
     print(f"\n{results['pytest_output']}")
 
