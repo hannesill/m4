@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -162,6 +163,62 @@ def test_trial_numbers_start_at_requested_trial():
     run = _load_module("benchmark_run_trials", "benchmark/run.py")
 
     assert run._trial_numbers(3, 2) == [3, 4]
+
+
+def test_bench_sh_handles_empty_mount_array_with_bash_nounset(tmp_path):
+    fake_docker = tmp_path / "docker"
+    docker_log = tmp_path / "docker.log"
+    fake_docker.write_text(
+        """#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\\n' "$*" >> "$FAKE_DOCKER_LOG"
+if [[ "${1:-}" == "context" && "${2:-}" == "show" ]]; then
+    echo default
+    exit 0
+fi
+if [[ "${1:-}" == "image" && "${2:-}" == "inspect" ]]; then
+    exit 0
+fi
+if [[ "${1:-}" == "ps" ]]; then
+    exit 0
+fi
+exit 0
+"""
+    )
+    fake_docker.chmod(0o755)
+
+    env = {
+        **os.environ,
+        "DOCKER_BIN": str(fake_docker),
+        "FAKE_DOCKER_LOG": str(docker_log),
+        "HOME": str(tmp_path / "home"),
+        "M4BENCH_CONTAINER_NAME": "m4bench-test",
+        "M4BENCH_M4_DATA_DIR": str(tmp_path / "m4_data"),
+    }
+
+    result = subprocess.run(
+        [
+            "bash",
+            "benchmark/bench.sh",
+            "--task",
+            "eicu-gcs",
+            "--condition",
+            "with-skill",
+            "--agent",
+            "codex",
+            "--results-root",
+            "/benchmark/results/fake",
+        ],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "unbound variable" not in result.stderr
+    assert "python3 /benchmark/run.py" in docker_log.read_text()
 
 
 def test_codex_command_disables_plugins():

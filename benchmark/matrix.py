@@ -804,7 +804,11 @@ def _run_group_sequential(
                 )
             reward = result.get("test_results", {}).get("reward", 0.0)
             elapsed = result.get("agent_result", {}).get("elapsed_seconds", 0)
-            print(f"    -> reward={reward:.4f} ({elapsed:.0f}s)")
+            error = result.get("error")
+            if error:
+                print(f"    -> ERROR: {error}")
+            else:
+                print(f"    -> reward={reward:.4f} ({elapsed:.0f}s)")
             if delay_between_runs_seconds > 0 and i < len(runs):
                 print(f"    -> sleeping {delay_between_runs_seconds}s")
                 import time
@@ -886,10 +890,17 @@ def _run_group_parallel(
                 result = future.result()
                 reward = result.get("test_results", {}).get("reward", 0.0)
                 elapsed = result.get("agent_result", {}).get("elapsed_seconds", 0)
-                print(
-                    f"  [{done}/{total}] {run['task']} t{run['trial']} -> "
-                    f"reward={reward:.4f} ({elapsed:.0f}s)"
-                )
+                error = result.get("error")
+                if error:
+                    print(
+                        f"  [{done}/{total}] {run['task']} t{run['trial']} -> "
+                        f"ERROR: {error}"
+                    )
+                else:
+                    print(
+                        f"  [{done}/{total}] {run['task']} t{run['trial']} -> "
+                        f"reward={reward:.4f} ({elapsed:.0f}s)"
+                    )
             except Exception as e:
                 print(f"  [{done}/{total}] {run['task']} t{run['trial']} -> ERROR: {e}")
 
