@@ -151,9 +151,11 @@ DATA_MOUNT_SOURCES=()
 
 add_data_mount_source() {
     local source="$1"
-    for existing in "${DATA_MOUNT_SOURCES[@]+"${DATA_MOUNT_SOURCES[@]}"}"; do
-        [[ "$existing" == "$source" ]] && return
-    done
+    if (( ${#DATA_MOUNT_SOURCES[@]} > 0 )); then
+        for existing in "${DATA_MOUNT_SOURCES[@]}"; do
+            [[ "$existing" == "$source" ]] && return
+        done
+    fi
     DATA_MOUNT_SOURCES+=("$source")
 }
 
@@ -176,16 +178,18 @@ else
 fi
 
 DOCKER_ARGS+=(-e "M4BENCH_DATA_ROOT=$M4_DATA_CONTAINER_DIR")
-for source in "${DATA_MOUNT_SOURCES[@]}"; do
-    host_source="$M4_DATA_DIR/parquet/$source"
-    container_source="$M4_DATA_CONTAINER_DIR/parquet/$source"
-    if [[ -d "$host_source" ]]; then
-        DOCKER_ARGS+=(-v "$host_source:$container_source:ro")
-    else
-        echo "Warning: required parquet source not found at $host_source"
-        echo "         Agent DB views that reference $source may fail."
-    fi
-done
+if (( ${#DATA_MOUNT_SOURCES[@]} > 0 )); then
+    for source in "${DATA_MOUNT_SOURCES[@]}"; do
+        host_source="$M4_DATA_DIR/parquet/$source"
+        container_source="$M4_DATA_CONTAINER_DIR/parquet/$source"
+        if [[ -d "$host_source" ]]; then
+            DOCKER_ARGS+=(-v "$host_source:$container_source:ro")
+        else
+            echo "Warning: required parquet source not found at $host_source"
+            echo "         Agent DB views that reference $source may fail."
+        fi
+    done
+fi
 
 if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
     DOCKER_ARGS+=(-e "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY")
