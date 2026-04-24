@@ -44,6 +44,17 @@ def test_preflight_skill_snapshots_have_no_target_leakage():
     assert result.ok, result.details
 
 
+def test_preflight_external_view_sources_are_present():
+    preflight = _load_module(
+        "benchmark_preflight_external_views", "benchmark/preflight.py"
+    )
+
+    result = preflight.check_external_view_sources()
+
+    assert result.ok, result.details
+    assert "bench.sh mounts only required Parquet sources" in result.details[0]
+
+
 def test_preflight_results_root_requires_fresh_directory(tmp_path):
     preflight = _load_module("benchmark_preflight_results", "benchmark/preflight.py")
 

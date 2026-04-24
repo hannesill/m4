@@ -56,7 +56,11 @@ iptables -A OUTPUT -m owner --uid-owner "$AGENT_UID" -p tcp --dport 53 -j ACCEPT
 iptables -A OUTPUT -m owner --uid-owner "$AGENT_UID" \
     -m state --state ESTABLISHED,RELATED -j ACCEPT
 
-# Drop everything else from benchagent
-iptables -A OUTPUT -m owner --uid-owner "$AGENT_UID" -j DROP
+# Reject everything else from benchagent.  REJECT is intentional here: if an
+# agent tries curl/urllib/etc., it should fail immediately rather than burning
+# minutes on a network timeout.
+iptables -A OUTPUT -m owner --uid-owner "$AGENT_UID" \
+    -p tcp -j REJECT --reject-with tcp-reset
+iptables -A OUTPUT -m owner --uid-owner "$AGENT_UID" -j REJECT
 
 echo "Network locked for $AGENT_USER (uid=$AGENT_UID): LLM API only"

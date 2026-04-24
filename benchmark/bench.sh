@@ -4,8 +4,11 @@ set -euo pipefail
 CONTAINER="${M4BENCH_CONTAINER_NAME:-m4bench}"
 IMAGE="${M4BENCH_IMAGE:-m4bench:latest}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 AUTH_ROOT="/host-auth"
 DOCKER_BIN="${DOCKER_BIN:-docker}"
+M4_DATA_DIR="${M4BENCH_M4_DATA_DIR:-$REPO_ROOT/m4_data}"
+M4_DATA_CONTAINER_DIR="${M4BENCH_M4_DATA_CONTAINER_DIR:-/m4_data}"
 
 # OrbStack's doctor warns against using the Homebrew docker client against the
 # OrbStack daemon. Prefer OrbStack's bundled client when that is the active
@@ -17,8 +20,11 @@ if [[ -x "$HOME/.orbstack/bin/docker" ]]; then
     fi
 fi
 
-# Parse --agent from arguments (needed for API-key logic below).
+# Parse selected arguments (needed for API-key and data-mount logic below).
 AGENT=""
+TASK=""
+SCHEMA="native"
+FAMILY=""
 ARGS=("$@")
 for ((i=0; i<${#ARGS[@]}; i++)); do
     case "${ARGS[$i]}" in
@@ -30,6 +36,33 @@ for ((i=0; i<${#ARGS[@]}; i++)); do
             ;;
         --agent=*)
             AGENT="${ARGS[$i]#--agent=}"
+            ;;
+        --task)
+            if (( i + 1 < ${#ARGS[@]} )); then
+                TASK="${ARGS[$((i + 1))]}"
+                ((i+=1))
+            fi
+            ;;
+        --task=*)
+            TASK="${ARGS[$i]#--task=}"
+            ;;
+        --schema)
+            if (( i + 1 < ${#ARGS[@]} )); then
+                SCHEMA="${ARGS[$((i + 1))]}"
+                ((i+=1))
+            fi
+            ;;
+        --schema=*)
+            SCHEMA="${ARGS[$i]#--schema=}"
+            ;;
+        --family)
+            if (( i + 1 < ${#ARGS[@]} )); then
+                FAMILY="${ARGS[$((i + 1))]}"
+                ((i+=1))
+            fi
+            ;;
+        --family=*)
+            FAMILY="${ARGS[$i]#--family=}"
             ;;
     esac
 done
@@ -71,8 +104,8 @@ if [[ "$AGENT" == "claude" ]] && [[ "${ANTHROPIC_API_KEY:-}" == sk-ant-oat* ]] &
     exit 1
 fi
 
-# Build image if it doesn't exist
-if ! "$DOCKER_BIN" image inspect "$IMAGE" &>/dev/null; then
+# Build image if it doesn't exist, or when explicitly requested.
+if [[ "${M4BENCH_REBUILD:-0}" == "1" ]] || ! "$DOCKER_BIN" image inspect "$IMAGE" &>/dev/null; then
     echo "Building $IMAGE..."
     "$DOCKER_BIN" build -t "$IMAGE" "$SCRIPT_DIR"
 fi
@@ -90,6 +123,46 @@ DOCKER_ARGS=(
     -v "$SCRIPT_DIR":/benchmark
     -e "M4BENCH_AUTH_ROOT=$AUTH_ROOT"
 )
+
+DATA_MOUNT_SOURCES=()
+
+add_data_mount_source() {
+    local source="$1"
+    for existing in "${DATA_MOUNT_SOURCES[@]}"; do
+        [[ "$existing" == "$source" ]] && return
+    done
+    DATA_MOUNT_SOURCES+=("$source")
+}
+
+if [[ "$SCHEMA" == "obfuscated" ]]; then
+    add_data_mount_source "obfuscated-mimic-iv"
+elif [[ "$SCHEMA" == "restructured" ]]; then
+    # Restructured DBs retain obfuscated source-table views plus merged tables.
+    add_data_mount_source "obfuscated-mimic-iv"
+    add_data_mount_source "restructured-mimic-iv"
+elif [[ "$TASK" == eicu-* ]] || [[ "$FAMILY" == "gcs" ]] || [[ "$FAMILY" == "oasis" ]]; then
+    add_data_mount_source "eicu"
+    # The gcs/oasis families include both eICU and MIMIC tasks when invoked by
+    # family, so include MIMIC as well only for family-wide runs.
+    [[ -n "$FAMILY" ]] && add_data_mount_source "mimic-iv"
+elif [[ "$TASK" == "all" ]] || [[ -n "$FAMILY" ]] || [[ -z "$TASK" ]]; then
+    add_data_mount_source "mimic-iv"
+    add_data_mount_source "eicu"
+else
+    add_data_mount_source "mimic-iv"
+fi
+
+DOCKER_ARGS+=(-e "M4BENCH_DATA_ROOT=$M4_DATA_CONTAINER_DIR")
+for source in "${DATA_MOUNT_SOURCES[@]}"; do
+    host_source="$M4_DATA_DIR/parquet/$source"
+    container_source="$M4_DATA_CONTAINER_DIR/parquet/$source"
+    if [[ -d "$host_source" ]]; then
+        DOCKER_ARGS+=(-v "$host_source:$container_source:ro")
+    else
+        echo "Warning: required parquet source not found at $host_source"
+        echo "         Agent DB views that reference $source may fail."
+    fi
+done
 
 if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
     DOCKER_ARGS+=(-e "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY")

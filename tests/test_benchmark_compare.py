@@ -20,6 +20,17 @@ def _load_compare():
     return module
 
 
+def _load_evaluate():
+    spec = importlib.util.spec_from_file_location(
+        "benchmark_evaluate", ROOT / "benchmark/evaluate.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    sys.modules["benchmark_evaluate"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 def _write_csv(path: Path, rows: list[dict]) -> None:
     pd.DataFrame(rows).to_csv(path, index=False)
 
@@ -70,3 +81,12 @@ def test_compare_penalizes_duplicate_agent_keys(tmp_path):
     assert result["score"]["total"] == 3
     assert result["score"]["agent_duplicates"] == 1
     assert result["score"]["match_rate"] == 2 / 3
+
+
+def test_metric_rounding_preserves_near_perfect_mismatch():
+    evaluate = _load_evaluate()
+
+    rounded = evaluate._round_metric(200858 / 200859)
+
+    assert rounded == 0.99999502
+    assert rounded < 1.0

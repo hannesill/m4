@@ -15,6 +15,12 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 BENCHMARK_ROOT = Path(__file__).parent
 GROUND_TRUTH_DIR = BENCHMARK_ROOT / "ground_truth"
+METRIC_DECIMALS = 8
+
+
+def _round_metric(value: float) -> float:
+    """Round reported metrics without masking one-row mismatches as perfect."""
+    return round(float(value), METRIC_DECIMALS)
 
 
 def resolve_ground_truth(task_name: str) -> Path:
@@ -61,18 +67,18 @@ def evaluate(task_name: str, output_path: str) -> dict:
         tolerance=eval_config.get("tolerance", {}),
     )
     match_rates = {
-        col: round(comparison[col]["match_rate"], 4)
+        col: _round_metric(comparison[col]["match_rate"])
         for col in eval_config["value_columns"]
     }
     test_results["match_rates"] = match_rates
-    test_results["reward"] = round(sum(match_rates.values()) / len(match_rates), 4)
+    test_results["reward"] = _round_metric(sum(match_rates.values()) / len(match_rates))
 
     # Surface task-level cohort diagnostics alongside reward. Reward is a
     # recall-style metric (per-column match rate); key_precision tells the
     # reader whether the agent's output cohort is clean or inflated with
     # keys that do not belong. Reward is intentionally unchanged.
     meta = comparison.get("__meta__", {})
-    test_results["key_precision"] = round(meta.get("key_precision", 0.0), 4)
+    test_results["key_precision"] = _round_metric(meta.get("key_precision", 0.0))
     test_results["extra_keys"] = int(meta.get("extra_keys", 0))
     test_results["agent_unique_keys"] = int(meta.get("agent_unique_keys", 0))
 
