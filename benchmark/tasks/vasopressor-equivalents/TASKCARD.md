@@ -37,8 +37,9 @@ Missing agents are COALESCEd to 0. Result is rounded to 4 decimal places.
 
 - **Standard**: `mimiciv_derived.vasoactive_agent` is available — agent applies the NED formula
   directly. Tests formula application and filtering.
-- **Raw**: All vasopressor derived tables are dropped. Agent must extract from
-  `mimiciv_icu.inputevents` using correct itemids (221906 norepinephrine, 221289 epinephrine,
+- **Raw**: Vasopressor equivalent and task-relevant vasoactive derived tables are
+  dropped. Agent must extract from `mimiciv_icu.inputevents` using correct
+  itemids (221906 norepinephrine, 221289 epinephrine,
   221662 dopamine, 221749 phenylephrine, 222315 vasopressin), handle weight-based dose
   conversion, and construct time intervals.
 

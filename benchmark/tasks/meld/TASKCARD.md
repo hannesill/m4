@@ -29,8 +29,8 @@ now the primary organ allocation criterion for liver transplantation in the US.
 ## Why standard vs raw
 
 - **Standard**: `meld` dropped; agent has `first_day_lab` and `first_day_rrt`
-- **Raw**: all derived tables dropped; agent must aggregate labs from `labevents`
-  and detect RRT from procedures
+- **Raw**: MELD and task-relevant lab/RRT intermediates are dropped; agent must
+  aggregate labs from `labevents` and detect RRT from procedures
 
 ## Subtleties to watch for
 

@@ -36,8 +36,9 @@ legitimate parameter change rather than blindly following convention.
 ## Why standard vs raw
 
 - **Standard**: derived tables (`mimiciv_derived.vitalsign`, etc.) are available
-- **Raw**: derived tables are dropped, forcing the agent to aggregate from
-`chartevents` / `labevents` directly using correct itemids and units
+- **Raw**: SIRS and task-relevant first-day derived tables are dropped, forcing
+  the agent to aggregate from `chartevents` / `labevents` directly using correct
+  itemids and units
 
 ## Subtleties to watch for
 

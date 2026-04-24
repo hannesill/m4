@@ -5,60 +5,66 @@ tier: validated
 category: clinical
 ---
 
-# Glasgow Coma Scale (GCS) Calculation
+# Glasgow Coma Scale (GCS) Calculation for eICU
 
-The Glasgow Coma Scale assesses level of consciousness through three components: Eye opening, Verbal response, and Motor response. This concept extracts and calculates GCS with special handling for intubated patients.
+The Glasgow Coma Scale assesses level of consciousness through three
+components: Eye opening, Verbal response, and Motor response. This benchmark
+task asks for the minimum first-day GCS per eICU ICU stay.
 
 ## M4Bench Use
 
 In M4Bench, target concept tables listed in the task configuration are removed or unavailable in the agent database. Use this skill as procedural guidance and derive the requested output from available source or intermediate tables; do not rely on a precomputed target table or bundled SQL script.
 
-## When to Use This Skill
+## eICU Source Tables
 
-- Neurological status assessment
-- Trauma severity scoring
-- Sedation monitoring
-- Severity scores (SOFA CNS, APACHE, SAPS)
-- Consciousness trajectory analysis
+- `main.patient` — one row per ICU stay; use for output identifiers.
+- `main.nursecharting` — primary source for GCS total and components.
 
-## GCS Components and Scoring
+The time axis is eICU offset minutes from ICU admission. For this task, include
+charting from 6 hours before admission through 24 hours after admission:
+`nursingchartoffset >= -360` and `nursingchartoffset <= 1440`.
 
-| Response | Score 1 | Score 2 | Score 3 | Score 4 | Score 5 | Score 6 |
-|----------|---------|---------|---------|---------|---------|---------|
-| **Eye** | None | To pain | To speech | Spontaneous | - | - |
-| **Verbal** | None | Incomprehensible | Inappropriate | Confused | Oriented | - |
-| **Motor** | None | Extension | Flexion | Withdraws | Localizes | Obeys |
+## Nursecharting Labels
 
-**Total GCS Range**: 3-15 (lower = worse)
+Use rows in `nursecharting` where `nursingchartcelltypecat` is `Scores` or
+`Other Vital Signs and Infusions`.
 
-## MetaVision Item IDs
+GCS total can be charted under either of these label/name pairs:
 
-| Component | Item ID | Description |
-|-----------|---------|-------------|
-| Verbal | 223900 | GCS - Verbal Response |
-| Motor | 223901 | GCS - Motor Response |
-| Eyes | 220739 | GCS - Eye Opening |
+| Label | Name |
+|-------|------|
+| `Glasgow coma score` | `GCS Total` |
+| `Score (Glasgow Coma Scale)` | `Value` |
+
+Components are charted under label `Glasgow coma score` with names:
+
+| Output Component | Nursecharting Name | Normal Default |
+|------------------|--------------------|----------------|
+| `gcs_motor` | `Motor` | 6 |
+| `gcs_verbal` | `Verbal` | 5 |
+| `gcs_eyes` | `Eyes` | 4 |
 
 ## Critical Implementation Notes
 
-1. **Intubated Patients**: When verbal response is documented as "No Response-ETT" (endotracheal tube), the verbal component is set to **0** (not 1, not 5) and flagged with `gcs_unable = 1`. The total GCS is then set to **15** (assumed normal if only intubation prevents assessment). **Important**: report `gcs_verbal = 0` in the output — do NOT replace it with 5. The value 0 is a sentinel meaning "untestable."
+1. **Validate total GCS**: Use charted total GCS only when it is numeric and
+   between 3 and 15 inclusive.
 
-2. **Component Carry-Forward**: If only one or two components are documented at a time, previous values from the past 6 hours are carried forward. This prevents artificially low scores from incomplete charting.
+2. **Component fallback**: If total GCS is not charted at a timepoint, compute
+   total as `eyes + motor + verbal`, using the normal defaults above for any
+   missing component at that timepoint.
 
-3. **Calculation Logic**:
-   ```
-   GCS = Motor + Verbal + Eyes
+3. **Minimum selection**: Return the timepoint with the lowest total GCS in the
+   first-day window. If there is a tie, choose the earliest chart offset.
 
-   IF current verbal = 0 (intubated) THEN GCS = 15 (but keep gcs_verbal = 0 in output)
-   ELSE IF previous verbal = 0 THEN use current components only (don't carry forward)
-   ELSE carry forward missing components from past 6 hours
-   ```
+4. **No data default**: If a stay has no usable GCS data in the window, return
+   normal values: `gcs_min = 15`, `gcs_motor = 6`, `gcs_verbal = 5`,
+   `gcs_eyes = 4`.
 
-4. **Sedated Patients**: Per SAPS-II guidelines, sedated patients should use pre-sedation GCS. In practice, if documented as "unable to score due to medication", this is flagged.
-
-5. **Time Series**: Each row represents a charted observation, not an hourly aggregate. Multiple observations per hour are possible.
+5. **Output cardinality**: Return one row per `patientunitstayid`, including
+   `uniquepid` and `patienthealthsystemstayid`.
 
 ## References
 
-- Teasdale G, Jennett B. "Assessment of coma and impaired consciousness: A practical scale." Lancet. 1974;2(7872):81-84.
-- Teasdale G et al. "The Glasgow Coma Scale at 40 years: standing the test of time." Lancet Neurology. 2014;13(8):844-854.
+- Teasdale G, Jennett B. "Assessment of coma and impaired consciousness: A
+  practical scale." Lancet. 1974;2(7872):81-84.
+- MIT-LCP eICU code GCS concept, adapted to this benchmark's DuckDB schema.

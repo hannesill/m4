@@ -39,9 +39,9 @@ OASIS, and many other severity scores and research definitions.
 
 - **Standard**: `mimiciv_derived.ventilator_setting` and `mimiciv_derived.oxygen_delivery`
   are available (already pivoted from chartevents)
-- **Raw**: Both intermediate tables are dropped; agent must extract ventilator mode,
-  oxygen device, and other settings directly from `mimiciv_icu.chartevents` using
-  specific itemids
+- **Raw**: Ventilation and task-relevant ventilator/oxygen intermediates are
+  dropped; agent must extract ventilator mode, oxygen device, and other settings
+  directly from `mimiciv_icu.chartevents` using specific itemids
 
 ## Subtleties to watch for
 

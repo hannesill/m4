@@ -1,6 +1,8 @@
 # Task: Calculate SIRS Criteria (Raw Tables)
 
-Only base tables are available — there are no pre-computed derived tables.
+The target table and task-relevant upstream derived tables have been removed.
+Other non-target derived tables may still be present; do not use them as a
+shortcut for the requested SIRS calculation.
 
 Calculate the Systemic Inflammatory Response Syndrome (SIRS) criteria
 for each ICU stay using data from the first 24 hours (from 6 hours

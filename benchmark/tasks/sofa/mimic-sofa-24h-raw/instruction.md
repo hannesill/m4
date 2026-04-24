@@ -1,6 +1,8 @@
 # Task: Calculate SOFA Score (Raw Tables)
 
-Only base tables are available — there are no pre-computed derived tables.
+The target table and task-relevant upstream derived tables have been removed.
+Other non-target derived tables may still be present; do not use them as a
+shortcut for the requested SOFA calculation.
 
 Calculate the Sequential Organ Failure Assessment (SOFA) score for each
 ICU stay using data from the first 24 hours (from 6 hours before ICU

@@ -2,7 +2,7 @@
 name = "mimic-sapsii-24h-raw"
 description = "Calculate SAPS-II score (24h, raw tables) for ICU patients from MIMIC-IV data"
 difficulty = "expert"
-mode = "raw"  # no intermediate tables, standard time window
+mode = "raw"  # task-relevant upstream tables dropped, standard time window
 category = "Healthcare"
 tags = ["clinical", "icu", "severity-score", "mimic-iv", "sapsii", "raw"]
 database = "mimic-iv"

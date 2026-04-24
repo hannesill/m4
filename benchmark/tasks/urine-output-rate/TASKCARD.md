@@ -47,9 +47,10 @@ windows, LAG-based time deltas, weight normalization, and conditional rate compu
 - **Standard**: Only `mimiciv_derived.urine_output_rate` is dropped. Agent uses
   `mimiciv_derived.urine_output` (pre-aggregated UO) and
   `mimiciv_derived.weight_durations` (pre-computed weight intervals).
-- **Raw**: `urine_output_rate`, `urine_output`, and `weight_durations` are all dropped.
-  Agent must extract UO from `mimiciv_icu.outputevents` (12 itemids, with sign-flip
-  for itemid 227488) and compute weight from `mimiciv_icu.chartevents`.
+- **Raw**: `urine_output_rate`, `urine_output`, and `weight_durations` are
+  dropped. Agent must extract UO from `mimiciv_icu.outputevents` (12 itemids,
+  with sign-flip for itemid 227488) and compute weight from
+  `mimiciv_icu.chartevents`.
 
 ## Subtleties to watch for
 

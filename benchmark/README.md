@@ -3,19 +3,26 @@
 Benchmark for evaluating AI agents' ability to derive validated clinical concepts
 from real EHR databases. 15 task families (28 tasks) covering severity scores,
 organ failure staging, comorbidity indices, infection detection, medication data,
-and temporal event classification. Ground truth from MIT-LCP mimic-code.
+and temporal event classification. Ground truth SQL is adapted from MIT-LCP
+mimic-code with benchmark-specific conventions documented inline, such as
+treating missing component scores as normal when the task instruction requires
+that behavior.
 
 ## Design
 
 Each task asks an agent to compute a clinical concept (e.g., SOFA score, KDIGO
 AKI staging, Charlson comorbidity index) from a MIMIC-IV DuckDB database. The
 agent's output CSV is compared column-by-column against ground truth generated
-from mimic-code's validated SQL.
+from validated mimic-code concepts adapted to the benchmark's explicit task
+semantics.
 
 Tasks come in two modes:
 - **standard** — validated target tables are removed, but intermediate feature
   tables (e.g., `first_day_vitalsign`) are available
-- **raw** — intermediate tables are dropped, forcing the agent to work from base tables
+- **raw** — the target table and task-relevant upstream derived tables are
+  removed, forcing the agent to rebuild the requested concept from source
+  tables or remaining non-target context. Raw mode is not a guarantee that the
+  entire `mimiciv_derived` schema is absent.
 
 Two primary experimental conditions:
 - **no-skill** — agent receives only the task instruction

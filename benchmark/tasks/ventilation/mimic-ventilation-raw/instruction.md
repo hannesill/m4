@@ -1,6 +1,8 @@
 # Task: Classify Ventilation Status (Raw Tables)
 
-Only base tables are available — there are no pre-computed derived tables.
+The target table and task-relevant upstream derived tables have been removed.
+Other non-target derived tables may still be present; do not use them as a
+shortcut for the requested ventilation classification.
 
 Classify ventilation status from charting data and group consecutive
 observations into ventilation episodes for each ICU stay, following

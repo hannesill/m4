@@ -43,7 +43,8 @@ Total = sum of all 16 scores. Missing data → score 0.
 ## Why standard vs raw
 
 - **Standard**: `apsiii` dropped; agent has all first_day tables + bg + ventilation
-- **Raw**: all upstream derived tables also dropped; most complex raw task in benchmark
+- **Raw**: APS III and task-relevant upstream derived tables are dropped; most
+  complex raw task in benchmark
 
 ## Subtleties to watch for
 

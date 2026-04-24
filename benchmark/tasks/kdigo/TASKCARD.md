@@ -38,8 +38,9 @@ a 48h lookback). A 24h window would miss the majority of AKI events.
 
 - **Standard**: `kdigo_stages` dropped; agent has `kdigo_creatinine`, `kdigo_uo`, and
   upstream measurement tables to work with
-- **Raw**: all intermediate tables dropped; agent must compute creatinine baselines,
-  weight-normalized UO rates, and CRRT detection from base tables
+- **Raw**: KDIGO and task-relevant renal intermediate tables are dropped; agent
+  must compute creatinine baselines, weight-normalized UO rates, and CRRT
+  detection from source tables
 
 ## Subtleties to watch for
 
