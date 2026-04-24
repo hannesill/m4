@@ -54,7 +54,10 @@ def list_task_dirs() -> list[Path]:
 
 def load_task_config(task_dir: Path) -> dict:
     """Load task.toml from a task directory."""
-    import tomllib
+    try:
+        import tomllib
+    except ModuleNotFoundError:
+        import tomli as tomllib
 
     config_path = task_dir / "task.toml"
     if not config_path.exists():

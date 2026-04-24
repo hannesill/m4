@@ -16,7 +16,11 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-import tomllib
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 # Ensure benchmark/lib is importable
 sys.path.insert(0, str(Path(__file__).parent))
