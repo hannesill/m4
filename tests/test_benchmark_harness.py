@@ -172,6 +172,54 @@ def test_codex_command_disables_plugins():
     assert "--dangerously-bypass-approvals-and-sandbox" in codex_cmd
     assert "--disable" in codex_cmd
     assert "plugins" in codex_cmd
+    assert 'web_search="disabled"' in codex_cmd
+    assert "tools.web_search=false" in codex_cmd
+
+
+def test_rewrite_m4_data_sql_path_points_at_container_mount():
+    run = _load_module("benchmark_run_rewrite_sql", "benchmark/run.py")
+
+    sql = (
+        "CREATE VIEW patient AS SELECT * FROM "
+        "read_parquet('/Users/example/m4_data/parquet/eicu/patient.parquet');"
+    )
+
+    rewritten = run._rewrite_m4_data_sql_path(sql, "/m4_data")
+
+    assert "/Users/example/m4_data" not in rewritten
+    assert "read_parquet('/m4_data/parquet/eicu/patient.parquet')" in rewritten
+
+
+def test_detect_external_tool_use_flags_web_search(tmp_path):
+    run = _load_module("benchmark_run_external_tools", "benchmark/run.py")
+
+    trace = tmp_path / "trace.jsonl"
+    trace.write_text('{"type":"item.started","item":{"type":"web_search","id":"x"}}\n')
+
+    assert run._detect_external_tool_use(trace) == ["web_search"]
+
+
+def test_detect_external_tool_use_flags_shell_network_attempt(tmp_path):
+    run = _load_module("benchmark_run_external_shell", "benchmark/run.py")
+
+    trace = tmp_path / "trace.jsonl"
+    trace.write_text(
+        json.dumps(
+            {
+                "type": "item.started",
+                "item": {
+                    "type": "command_execution",
+                    "command": (
+                        'python3 -c "from urllib.request import urlopen; '
+                        "urlopen('https://example.com')\""
+                    ),
+                },
+            }
+        )
+        + "\n"
+    )
+
+    assert run._detect_external_tool_use(trace) == ["external_network_command"]
 
 
 def test_gemini_command_uses_external_sandbox():

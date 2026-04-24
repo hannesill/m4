@@ -11,6 +11,7 @@ round-trip over every ground-truth file.
 from __future__ import annotations
 
 import argparse
+import glob
 import re
 import sys
 from dataclasses import dataclass
@@ -224,6 +225,69 @@ def check_agent_databases() -> CheckResult:
     )
 
 
+def _external_view_paths(db_path: Path) -> list[Path]:
+    """Return external m4_data paths referenced by read_parquet() views."""
+    import duckdb
+
+    paths: list[Path] = []
+    con = duckdb.connect(str(db_path), read_only=True)
+    try:
+        rows = con.execute(
+            """
+            SELECT sql
+            FROM duckdb_views()
+            WHERE NOT internal
+              AND lower(sql) LIKE '%read_parquet(%m4_data/%'
+            """
+        ).fetchall()
+    finally:
+        con.close()
+
+    for (sql,) in rows:
+        for match in re.finditer(r"read_parquet\('([^']+)'\)", sql, re.IGNORECASE):
+            paths.append(Path(match.group(1)))
+    return paths
+
+
+def check_external_view_sources() -> CheckResult:
+    """External Parquet-backed views must point at local m4_data files."""
+    try:
+        import duckdb  # noqa: F401
+    except ImportError:
+        return _fail("external view sources", ["duckdb is not installed"])
+
+    problems: list[str] = []
+    checked_dbs = 0
+    checked_paths: set[Path] = set()
+
+    for db_path in sorted(AGENT_DB_DIR.glob("*.duckdb")):
+        checked_dbs += 1
+        for path in _external_view_paths(db_path):
+            if path in checked_paths:
+                continue
+            checked_paths.add(path)
+            if glob.has_magic(str(path)):
+                if not glob.glob(str(path)):
+                    problems.append(f"{db_path.name}: no files match {path}")
+            elif not path.exists():
+                problems.append(f"{db_path.name}: missing external view source {path}")
+
+    if problems:
+        return _fail("external view sources", problems[:20])
+    if not checked_paths:
+        return _ok(
+            "external view sources",
+            f"{checked_dbs} agent DBs have no external Parquet-backed views",
+        )
+    return _ok(
+        "external view sources",
+        (
+            f"{len(checked_paths)} external Parquet sources exist; "
+            "bench.sh mounts only required Parquet sources into Docker"
+        ),
+    )
+
+
 def check_ground_truth(self_check: bool = False) -> CheckResult:
     """Ground-truth files must exist; optionally verify GT evaluates to 1.0."""
     problems: list[str] = []
@@ -322,6 +386,7 @@ def run_checks(
     ]
     if check_dbs:
         checks.insert(2, check_agent_databases())
+        checks.insert(3, check_external_view_sources())
     return checks
 
 

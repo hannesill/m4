@@ -29,6 +29,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import statistics
 import subprocess
@@ -58,6 +59,11 @@ ISOLATED_BASE = Path(tempfile.gettempdir()) / "clinskillsbench"
 DB_CACHE = ISOLATED_BASE / "_db_cache"
 SANDBOX_HOOK = BENCHMARK_ROOT / "lib" / "sandbox_hook.py"
 AGENT_USER = "benchagent"
+M4_DATA_VIEW_PATTERN = re.compile(r"'/[^']*/m4_data/")
+EXTERNAL_NETWORK_COMMAND_PATTERN = re.compile(
+    r"\b(curl|wget)\b|https?://|\burllib\b|requests\.get|urlopen|duckduckgo|github\.com",
+    re.IGNORECASE,
+)
 
 # Tools to deny in isolated mode — defence-in-depth on top of iptables.
 NETWORK_DENY_TOOLS = ",".join(
@@ -94,6 +100,17 @@ AGENT_COMMANDS = {
             "exec",
             "--skip-git-repo-check",
             "--dangerously-bypass-approvals-and-sandbox",
+            "-c",
+            'web_search="disabled"',
+            "-c",
+            "tools.web_search=false",
+            "-c",
+            (
+                'developer_instructions="M4Bench isolation: use only local files, '
+                "the provided DuckDB database, and injected skills. Do not use web "
+                "search, web fetch, curl, wget, package installation, or any other "
+                'external network source."'
+            ),
             "--disable",
             "plugins",
         ],
@@ -363,6 +380,27 @@ def _detect_agent_failure_reason(agent_name: str, agent_result: dict) -> str | N
     return None
 
 
+def _detect_external_tool_use(trace_path: str | Path) -> list[str]:
+    """Return disallowed external tools observed in a structured agent trace."""
+    disallowed: list[str] = []
+    for event in _load_jsonl_events(trace_path):
+        item = event.get("item", {})
+        candidates = [
+            event.get("type", ""),
+            item.get("type", ""),
+            item.get("name", ""),
+            item.get("tool", ""),
+        ]
+        text = " ".join(str(candidate).lower() for candidate in candidates)
+        if "web_search" in text or "websearch" in text or "web_fetch" in text:
+            disallowed.append("web_search")
+        if item.get("type") == "command_execution":
+            command = str(item.get("command", ""))
+            if EXTERNAL_NETWORK_COMMAND_PATTERN.search(command):
+                disallowed.append("external_network_command")
+    return sorted(set(disallowed))
+
+
 # ── Isolated workdir setup ──────────────────────────────────────────────────
 
 
@@ -456,6 +494,52 @@ def _get_cached_db(task_name: str, schema: str = "native") -> Path:
     return cached_db
 
 
+def _rewrite_m4_data_sql_path(sql: str, data_root: str) -> str:
+    """Point DuckDB external Parquet views at the mounted container data root."""
+    root = data_root.rstrip("/")
+    return M4_DATA_VIEW_PATTERN.sub(f"'{root}/", sql)
+
+
+def _rewrite_external_data_views(db_path: Path) -> int:
+    """Rewrite copied DuckDB views from host m4_data paths to M4BENCH_DATA_ROOT.
+
+    Source databases store some schemas as read_parquet() views with absolute
+    host paths. Docker mounts m4_data at a stable container path and this rewrites
+    the per-run database copy so agents can query those views inside the
+    container without exposing benchmark/tasks or ground_truth.
+    """
+    data_root = os.environ.get("M4BENCH_DATA_ROOT")
+    if not data_root:
+        return 0
+
+    try:
+        import duckdb
+    except ImportError:
+        return 0
+
+    con = duckdb.connect(str(db_path))
+    try:
+        rows = con.execute(
+            """
+            SELECT sql
+            FROM duckdb_views()
+            WHERE NOT internal
+              AND lower(sql) LIKE '%read_parquet(%m4_data/%'
+            """
+        ).fetchall()
+        rewritten = 0
+        for (sql,) in rows:
+            new_sql = _rewrite_m4_data_sql_path(sql, data_root)
+            if new_sql == sql:
+                continue
+            new_sql = new_sql.replace("CREATE VIEW ", "CREATE OR REPLACE VIEW ", 1)
+            con.execute(new_sql)
+            rewritten += 1
+        return rewritten
+    finally:
+        con.close()
+
+
 def setup_isolated_workdir(task_name: str, run_id: str, schema: str = "native") -> Path:
     """Create an isolated workdir in /tmp with a copy of the database.
 
@@ -475,6 +559,13 @@ def setup_isolated_workdir(task_name: str, run_id: str, schema: str = "native") 
         wal_src = cached_db.with_suffix(".duckdb.wal")
         if wal_src.exists():
             shutil.copy2(wal_src, db_dest.with_suffix(".duckdb.wal"))
+
+    rewritten = _rewrite_external_data_views(db_dest)
+    if rewritten:
+        print(
+            f"  Rewrote {rewritten} external data views to "
+            f"{os.environ['M4BENCH_DATA_ROOT']}"
+        )
 
     # Install sandbox hook
     _create_isolated_settings(workdir)
@@ -575,12 +666,19 @@ def prepare_instruction(
     """Load instruction.md and fill in paths. Apply schema transforms if needed."""
     task_dir = resolve_task_dir(task_name)
     instruction = (task_dir / "instruction.md").read_text()
+    isolation_note = (
+        "Benchmark isolation: use only local files in the current working "
+        "directory, the provided DuckDB database, and any injected skills. "
+        "Do not use web search, web fetch, package installation, or external "
+        "network resources.\n\n"
+    )
 
     db_path = "./database.duckdb"
     output_path = "./output.csv"
 
     instruction = instruction.replace("{db_path}", db_path)
     instruction = instruction.replace("{output_path}", output_path)
+    instruction = isolation_note + instruction
 
     if schema in ("obfuscated", "restructured"):
         from lib.transform import generate_obfuscated_instruction, load_dictionary
@@ -1098,6 +1196,18 @@ def run_single_task(
                 f"(exit code: {agent_result['returncode']})"
             )
 
+            external_tools = _detect_external_tool_use(
+                agent_result.get("trace_file", "")
+            )
+            if external_tools:
+                agent_result["failure_reason"] = "external_tool_use"
+                agent_result["external_tools"] = external_tools
+                print(
+                    "  Disallowed external tool use detected: "
+                    + ", ".join(external_tools)
+                )
+                break
+
             failure_reason = _detect_agent_failure_reason(agent_name, agent_result)
             if not failure_reason or attempt >= attempts:
                 if failure_reason:
@@ -1132,7 +1242,20 @@ def run_single_task(
 
         # Check if output was produced
         output_file = workdir / "output.csv"
-        if not output_file.exists():
+        if agent_result.get("failure_reason") == "external_tool_use":
+            test_results = {
+                "passed": 0,
+                "failed": 0,
+                "errors": 1,
+                "total": 1,
+                "reward": 0.0,
+                "pytest_output": (
+                    "Disallowed external tool use: "
+                    + ", ".join(agent_result.get("external_tools", []))
+                ),
+                "pytest_stderr": "",
+            }
+        elif not output_file.exists():
             print(f"\nNo output file produced at {output_file}")
             test_results = {
                 "passed": 0,
