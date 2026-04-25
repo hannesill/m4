@@ -3,6 +3,7 @@ FROM node:20-slim
 ARG CLAUDE_CODE_VERSION=2.1.119
 ARG GEMINI_CLI_VERSION=0.39.1
 ARG CODEX_CLI_VERSION=0.124.0
+ARG PI_CODING_AGENT_VERSION=0.70.2
 
 ENV NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false \
@@ -18,6 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN npm install -g --loglevel=warn @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 RUN npm install -g --loglevel=warn @google/gemini-cli@${GEMINI_CLI_VERSION}
 RUN npm install -g --loglevel=warn @openai/codex@${CODEX_CLI_VERSION}
+RUN npm install -g --loglevel=warn @mariozechner/pi-coding-agent@${PI_CODING_AGENT_VERSION}
 
 # Non-root user for agent execution.
 # The orchestrator runs as root; the agent subprocess runs as benchagent.
