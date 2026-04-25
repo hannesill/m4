@@ -297,9 +297,7 @@ def test_prepare_run_home_pi_ollama_seeds_only_models_json(monkeypatch, tmp_path
     assert not (pi_home / ".pi" / "agent" / "auth.json").exists()
 
 
-def test_prepare_run_home_pi_ollama_rewrites_docker_ollama_url(
-    monkeypatch, tmp_path
-):
+def test_prepare_run_home_pi_ollama_rewrites_docker_ollama_url(monkeypatch, tmp_path):
     run = _load_module("benchmark_run_pi_home_ollama_url", "benchmark/run.py")
 
     auth_root = tmp_path / "auth"
@@ -391,7 +389,7 @@ def test_network_lock_allows_configured_ollama_for_pi():
     assert "M4BENCH_ALLOW_OLLAMA" in script
     assert "M4BENCH_OLLAMA_HOST" in script
     assert "M4BENCH_OLLAMA_PORT" in script
-    assert "--dport \"$OLLAMA_PORT\"" in script
+    assert '--dport "$OLLAMA_PORT"' in script
 
 
 def test_benchmark_dockerfile_installs_pi_cli():
@@ -408,7 +406,7 @@ def test_bench_sh_mounts_pi_config_and_configures_ollama_endpoint():
     assert "command -v pi" in bench
     assert "M4BENCH_OLLAMA_BASE_URL" in bench
     assert "--add-host=host.docker.internal:host-gateway" in bench
-    assert '$HOME/.pi:$AUTH_ROOT/.pi:ro' in bench
+    assert "$HOME/.pi:$AUTH_ROOT/.pi:ro" in bench
 
 
 def test_task_discovery_uses_repo_relative_paths(monkeypatch):
