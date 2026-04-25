@@ -11,6 +11,7 @@ database = "mimic-iv"
 source = "mimic-iv"
 drop_tables = [
     "mimiciv_derived.suspicion_of_infection",
+    "mimiciv_derived.sepsis3",
     "mimiciv_derived.antibiotic",
 ]
 

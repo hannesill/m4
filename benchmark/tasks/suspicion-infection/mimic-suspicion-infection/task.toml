@@ -9,7 +9,10 @@ database = "mimic-iv"
 
 [database]
 source = "mimic-iv"
-drop_tables = ["mimiciv_derived.suspicion_of_infection"]
+drop_tables = [
+    "mimiciv_derived.suspicion_of_infection",
+    "mimiciv_derived.sepsis3",
+]
 
 [ground_truth]
 # Generated from ground_truth/suspicion-infection.sql
