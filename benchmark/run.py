@@ -122,6 +122,22 @@ AGENT_COMMANDS = {
         "skill_dir": ".gemini/skills",
         "json_trace": False,
     },
+    "pi-ollama": {
+        "cmd": [
+            "pi",
+            "-p",
+            "--provider",
+            "ollama",
+            "--no-context-files",
+            "--no-themes",
+            "--no-prompt-templates",
+            "--no-extensions",
+            "--skill",
+            ".pi/skills",
+        ],
+        "skill_dir": ".pi/skills",
+        "json_trace": False,
+    },
 }
 
 AGENT_HOME_SEEDS = {
@@ -134,6 +150,7 @@ AGENT_HOME_SEEDS = {
         ".gemini/settings.json",
         ".gemini/installation_id",
     ],
+    "pi-ollama": [".pi/agent/models.json"],
 }
 
 REASONING_EFFORT_CHOICES = (
@@ -794,6 +811,8 @@ def run_agent(
                 cmd.extend(["-m", model, "-p"])
             else:
                 cmd.extend(["-m", model])
+        elif agent_name == "pi-ollama":
+            cmd.extend(["--model", model])
 
     resolved_reasoning_effort = _resolve_reasoning_effort(agent_name, reasoning_effort)
     cmd.extend(_reasoning_args_for_agent(agent_name, resolved_reasoning_effort))

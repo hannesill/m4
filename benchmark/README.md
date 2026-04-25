@@ -147,7 +147,8 @@ coverage, required columns, and per-criterion accuracy.
 
 ## Supported Agents
 
-Claude Code, Codex, Gemini CLI. See `AGENT_COMMANDS` in `run.py` for configuration.
+Claude Code, Codex, Gemini CLI, and Pi over Ollama (`pi-ollama`). See
+`AGENT_COMMANDS` in `run.py` for configuration.
 
 For Codex CLI, the harness uses `codex exec --dangerously-bypass-approvals-and-sandbox`
 because Docker already provides the outer sandbox, and it injects task
@@ -155,24 +156,92 @@ skills into `.codex/skills/` inside each run workdir. Authenticate first with
 `codex login` if you want to use ChatGPT subscription access instead of an API
 key.
 
+For `pi-ollama`, the harness invokes Pi in non-interactive mode with the
+Ollama provider and disables user-global discovery features (`--no-context-files`,
+`--no-themes`, `--no-prompt-templates`, `--no-extensions`) so runs are not
+affected by local themes, prompt templates, extensions, or context files. Task
+skills are injected into `.pi/skills/` inside each run workdir. The per-run HOME
+seeds only `.pi/agent/models.json`, which lets Pi find the local Ollama model
+configuration without copying unrelated auth files.
+
 `benchmark/matrix.py` uses agent-specific default model sets:
 - Claude: `opus`, `sonnet`
 - Codex: `gpt-5.5`, `gpt-5.4-mini`
 - Gemini: `gemini-3.1-pro-preview`, `gemini-3-flash-preview`
+- Pi/Ollama: `qwen3:4b`
 
 The default matrix profile is GPT-primary: run the powered campaign with
 `--agent codex`, then use `--profile provider-comparison` for sparse Claude or
-Gemini sentinel runs. Provider-comparison runs are supplementary and should not
-be described as powered benchmark-wide estimates.
+Gemini sentinel runs. `pi-ollama` is the Tier 3 OSS local-model baseline for
+zero-API-cost reproducibility. Provider-comparison runs are supplementary and
+should not be described as powered benchmark-wide estimates.
 
 Reasoning policy is pinned by default through `--reasoning-effort auto`: Codex
-and Claude Code run at `medium`, while Gemini CLI is recorded as
-`provider-default` because it does not expose the same named effort scale. Pass
-`--reasoning-effort default` to leave each CLI/provider default untouched, or an
-explicit supported level for Codex/Claude ablations.
+and Claude Code run at `medium`, while Gemini CLI and `pi-ollama` are recorded
+as `provider-default` because they do not expose the same named effort scale.
+Pass `--reasoning-effort default` to leave each CLI/provider default untouched,
+or an explicit supported level for Codex/Claude ablations.
 
 For Claude subscription campaigns, the matrix executes one `bench.sh` run per
 cell so the host can refresh OAuth-backed auth between Docker runs. Do not
 store expiring Claude OAuth tokens in `benchmark/.env`; that file should only
 hold stable Anthropic API keys. Subscription-backed Claude runs should come
 from `claude login` on macOS so `bench.sh` can pull a fresh keychain token.
+
+### Pi/Ollama local setup
+
+`pi-ollama` requires Pi, Ollama, and at least one local model. A minimal setup
+uses `qwen3:4b`:
+
+```bash
+node --version
+npm --version
+which pi
+which ollama
+
+npm install -g @mariozechner/pi-coding-agent
+brew install ollama
+ollama serve
+ollama pull qwen3:4b
+```
+
+Create or update `~/.pi/agent/models.json` with an Ollama provider:
+
+```json
+{
+  "providers": {
+    "ollama": {
+      "baseUrl": "http://localhost:11434/v1",
+      "api": "openai-completions",
+      "apiKey": "ollama",
+      "compat": {
+        "supportsUsageInStreaming": false,
+        "maxTokensField": "max_tokens"
+      },
+      "models": [
+        { "id": "qwen3:4b" }
+      ]
+    }
+  }
+}
+```
+
+Then confirm Pi can see the model:
+
+```bash
+pi --list-models ollama
+```
+
+Loopback access is allowed by the Docker network lock, so Ollama on
+`localhost:11434` remains reachable from isolated benchmark runs.
+
+Optional smoke test without MIMIC data:
+
+```bash
+SMOKE_DIR=$(mktemp -d -t m4_pi_smoke)
+cd "$SMOKE_DIR"
+printf "stay_id,score\n1,2\n2,3\n3,5\n4,7\n5,11\n" > input.csv
+
+pi --provider ollama --model qwen3:4b -p \
+  "Read input.csv. For each row, double the score column. Write the result to output.csv with the same columns and row count. Do not include extra columns. Do not print the CSV; write it to disk."
+```
