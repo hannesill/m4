@@ -11,11 +11,23 @@ database = "mimic-iv"
 source = "mimic-iv"
 drop_tables = [
     "mimiciv_derived.meld",
+    "mimiciv_derived.apsiii",
+    "mimiciv_derived.bg",
+    "mimiciv_derived.chemistry",
+    "mimiciv_derived.coagulation",
+    "mimiciv_derived.creatinine_baseline",
+    "mimiciv_derived.crrt",
+    "mimiciv_derived.enzyme",
+    "mimiciv_derived.first_day_bg",
+    "mimiciv_derived.first_day_bg_art",
     "mimiciv_derived.first_day_lab",
     "mimiciv_derived.first_day_rrt",
-    "mimiciv_derived.chemistry",
-    "mimiciv_derived.enzyme",
-    "mimiciv_derived.coagulation",
+    "mimiciv_derived.first_day_sofa",
+    "mimiciv_derived.kdigo_creatinine",
+    "mimiciv_derived.kdigo_stages",
+    "mimiciv_derived.rrt",
+    "mimiciv_derived.sapsii",
+    "mimiciv_derived.sofa",
 ]
 
 [ground_truth]

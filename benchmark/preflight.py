@@ -98,6 +98,26 @@ TASK_REQUIRED_DROPS = {
         "mimiciv_derived.urine_output_rate",
         "mimiciv_derived.weight_durations",
     },
+    "mimic-meld-24h-raw": {
+        "mimiciv_derived.apsiii",
+        "mimiciv_derived.bg",
+        "mimiciv_derived.chemistry",
+        "mimiciv_derived.coagulation",
+        "mimiciv_derived.creatinine_baseline",
+        "mimiciv_derived.crrt",
+        "mimiciv_derived.enzyme",
+        "mimiciv_derived.first_day_bg",
+        "mimiciv_derived.first_day_bg_art",
+        "mimiciv_derived.first_day_lab",
+        "mimiciv_derived.first_day_rrt",
+        "mimiciv_derived.first_day_sofa",
+        "mimiciv_derived.kdigo_creatinine",
+        "mimiciv_derived.kdigo_stages",
+        "mimiciv_derived.meld",
+        "mimiciv_derived.rrt",
+        "mimiciv_derived.sapsii",
+        "mimiciv_derived.sofa",
+    },
     "mimic-vasopressor-equivalents-raw": {
         "mimiciv_derived.dobutamine",
         "mimiciv_derived.dopamine",
@@ -136,6 +156,10 @@ TASK_FORBIDDEN_DERIVED_COLUMN_PATTERNS = {
     ),
     "mimic-kdigo-48h-raw": re.compile(
         r"aki|creat|crrt|dialysis|kdigo|renal|rrt|urine|uo|weight",
+        re.IGNORECASE,
+    ),
+    "mimic-meld-24h-raw": re.compile(
+        r"meld|bilirubin|creat|crrt|dialysis|inr|rrt|sodium",
         re.IGNORECASE,
     ),
 }
