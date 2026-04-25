@@ -704,14 +704,22 @@ def _agent_process_env(
     }
 
     if agent_name == "codex":
-        # Codex stores auth/session state under CODEX_HOME, but generated shell
-        # commands may still use HOME as their default cwd. Keep HOME on the
-        # scored workdir so relative ./output.csv writes land where the harness
-        # checks, while preserving a separate per-run Codex auth/state directory.
-        codex_home = run_home / ".codex"
+        # Codex stores auth/session state under CODEX_HOME, and some Linux CLI
+        # builds anchor generated shell commands at that directory's parent.
+        # Keep both HOME and CODEX_HOME inside the scored workdir so relative
+        # ./output.csv writes land where the harness checks. copy_results_back()
+        # skips .codex, so auth/session state is not copied into result artifacts.
+        codex_home = workdir / ".codex"
         codex_home.mkdir(parents=True, exist_ok=True)
         env["HOME"] = str(workdir)
         env["CODEX_HOME"] = str(codex_home)
+
+        for relative_path in AGENT_HOME_SEEDS["codex"]:
+            src = run_home / relative_path
+            if src.exists():
+                dest = workdir / relative_path
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src, dest)
 
     return env
 

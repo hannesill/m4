@@ -159,7 +159,8 @@ def test_codex_run_home_keeps_shell_writes_in_workdir(monkeypatch, tmp_path):
     workdir = tmp_path / "work"
     run_home = tmp_path / "home"
     workdir.mkdir()
-    run_home.mkdir()
+    (run_home / ".codex").mkdir(parents=True)
+    (run_home / ".codex" / "auth.json").write_text("{}")
     captured = {}
 
     class FakeProcess:
@@ -192,9 +193,10 @@ def test_codex_run_home_keeps_shell_writes_in_workdir(monkeypatch, tmp_path):
     assert result["returncode"] == 0
     assert captured["kwargs"]["cwd"] == str(workdir)
     assert env["HOME"] == str(workdir)
-    assert env["CODEX_HOME"] == str(run_home / ".codex")
+    assert env["CODEX_HOME"] == str(workdir / ".codex")
     assert env["TMPDIR"] == str(run_home / "tmp")
     assert captured["cmd"][captured["cmd"].index("-C") + 1] == str(workdir)
+    assert (workdir / ".codex" / "auth.json").read_text() == "{}"
     assert (workdir / "trace.jsonl").exists()
 
 
