@@ -200,6 +200,49 @@ def test_codex_run_home_keeps_shell_writes_in_workdir(monkeypatch, tmp_path):
     assert (workdir / "trace.jsonl").exists()
 
 
+def test_run_agent_timeout_kills_process_group(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_timeout", "benchmark/run.py")
+
+    captured = {}
+    killpg_calls = []
+
+    class SlowProcess:
+        pid = 4242
+        stdout = io.StringIO("")
+        returncode = None
+
+        def wait(self, timeout):
+            raise subprocess.TimeoutExpired(["agent"], timeout)
+
+        def poll(self):
+            return None
+
+        def kill(self):
+            raise AssertionError("process group kill should be used")
+
+    def fake_popen(cmd, **kwargs):
+        captured["cmd"] = cmd
+        captured["kwargs"] = kwargs
+        return SlowProcess()
+
+    def fake_killpg(pid, sig):
+        killpg_calls.append((pid, sig))
+
+    monkeypatch.setattr(run.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(run.os, "killpg", fake_killpg)
+
+    result = run.run_agent("write output.csv", "gemini", tmp_path)
+
+    assert result["returncode"] == -1
+    assert result["stderr"] == "TIMEOUT after 30 minutes"
+    assert result["elapsed_seconds"] < 10
+    assert captured["kwargs"]["start_new_session"] is True
+    assert killpg_calls == [
+        (4242, run.signal.SIGTERM),
+        (4242, run.signal.SIGKILL),
+    ]
+
+
 def test_resolve_results_root_uses_override(tmp_path):
     run = _load_module("benchmark_run_results_root", "benchmark/run.py")
 

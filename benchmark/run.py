@@ -31,6 +31,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import statistics
 import subprocess
 import sys
@@ -921,6 +922,26 @@ def run_agent(
     print(f"  Running {agent_name}{'  (verbose)' if verbose else ''}...")
     start = time.time()
 
+    def _kill_process_group(process: subprocess.Popen[str]) -> None:
+        if process.poll() is not None:
+            return
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            return
+        except OSError:
+            process.kill()
+            return
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                return
+            except OSError:
+                process.kill()
+
     try:
         process = subprocess.Popen(
             cmd,
@@ -932,20 +953,29 @@ def run_agent(
             env=env,
             user=agent_creds[0] if agent_creds else None,
             group=agent_creds[1] if agent_creds else None,
+            start_new_session=True,
         )
         output_lines = []
-        with open(trace_path, "w") as trace_file:
-            for line in process.stdout:
-                if use_json_trace:
-                    trace_file.write(line)
-                    if verbose:
-                        _print_trace_line(line, agent_name)
-                else:
-                    trace_file.write(line)
-                    if verbose:
-                        print(f"  │ {line}", end="")
-                output_lines.append(line)
+
+        def _drain_stdout() -> None:
+            with open(trace_path, "w") as trace_file:
+                if process.stdout is None:
+                    return
+                for line in process.stdout:
+                    if use_json_trace:
+                        trace_file.write(line)
+                        if verbose:
+                            _print_trace_line(line, agent_name)
+                    else:
+                        trace_file.write(line)
+                        if verbose:
+                            print(f"  │ {line}", end="")
+                    output_lines.append(line)
+
+        reader = threading.Thread(target=_drain_stdout, daemon=True)
+        reader.start()
         process.wait(timeout=1800)
+        reader.join(timeout=5)
         elapsed = time.time() - start
         full_output = "".join(output_lines)
         return {
@@ -956,14 +986,33 @@ def run_agent(
             "trace_file": str(trace_path),
             "reasoning_effort": resolved_reasoning_effort,
         }
-    except (subprocess.TimeoutExpired, Exception):
+    except subprocess.TimeoutExpired:
         elapsed = time.time() - start
         if "process" in locals():
-            process.kill()
+            _kill_process_group(process)
+            reader.join(timeout=5)
         return {
             "returncode": -1,
             "stdout": "",
             "stderr": "TIMEOUT after 30 minutes",
+            "elapsed_seconds": round(elapsed, 1),
+            "trace_file": str(trace_path),
+            "reasoning_effort": (
+                resolved_reasoning_effort
+                if "resolved_reasoning_effort" in locals()
+                else PROVIDER_DEFAULT_REASONING
+            ),
+        }
+    except Exception as exc:
+        elapsed = time.time() - start
+        if "process" in locals():
+            _kill_process_group(process)
+            if "reader" in locals():
+                reader.join(timeout=5)
+        return {
+            "returncode": -1,
+            "stdout": "",
+            "stderr": str(exc),
             "elapsed_seconds": round(elapsed, 1),
             "trace_file": str(trace_path),
             "reasoning_effort": (
