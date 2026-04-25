@@ -237,6 +237,8 @@ def test_pi_ollama_command_disables_context_discovery():
 
     pi_cmd = run.AGENT_COMMANDS["pi-ollama"]["cmd"]
 
+    assert pi_cmd[0] == "pi"
+    assert pi_cmd[-1] == "-p"
     assert "--no-context-files" in pi_cmd
     assert "--no-themes" in pi_cmd
     assert "--no-prompt-templates" in pi_cmd
@@ -244,6 +246,37 @@ def test_pi_ollama_command_disables_context_discovery():
     assert "--provider" in pi_cmd
     assert "ollama" in pi_cmd
     assert ".pi/skills" in pi_cmd
+
+
+def test_pi_ollama_model_flag_precedes_prompt_flag(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_pi_ollama_model_cmd", "benchmark/run.py")
+    seen: dict[str, list[str]] = {}
+
+    class FakeProcess:
+        returncode = 0
+        stdout = iter(["ok\n"])
+
+        def wait(self, timeout=None):
+            return 0
+
+    def fake_popen(cmd, **kwargs):
+        seen["cmd"] = cmd
+        return FakeProcess()
+
+    monkeypatch.setattr(run.subprocess, "Popen", fake_popen)
+
+    result = run.run_agent(
+        "double the scores",
+        "pi-ollama",
+        tmp_path,
+        model="qwen3:4b",
+    )
+
+    cmd = seen["cmd"]
+    assert result["returncode"] == 0
+    assert cmd[-2:] == ["-p", "double the scores"]
+    assert cmd[cmd.index("--model") + 1] == "qwen3:4b"
+    assert cmd.index("--model") < cmd.index("-p")
 
 
 def test_prepare_run_home_pi_ollama_seeds_only_models_json(monkeypatch, tmp_path):
@@ -262,6 +295,44 @@ def test_prepare_run_home_pi_ollama_seeds_only_models_json(monkeypatch, tmp_path
     assert copied == [".pi/agent/models.json"]
     assert (pi_home / ".pi" / "agent" / "models.json").exists()
     assert not (pi_home / ".pi" / "agent" / "auth.json").exists()
+
+
+def test_prepare_run_home_pi_ollama_rewrites_docker_ollama_url(
+    monkeypatch, tmp_path
+):
+    run = _load_module("benchmark_run_pi_home_ollama_url", "benchmark/run.py")
+
+    auth_root = tmp_path / "auth"
+    models_path = auth_root / ".pi" / "agent" / "models.json"
+    models_path.parent.mkdir(parents=True)
+    models_path.write_text(
+        json.dumps(
+            {
+                "providers": {
+                    "ollama": {
+                        "baseUrl": "http://localhost:11434/v1",
+                        "api": "openai-completions",
+                        "apiKey": "ollama",
+                        "models": [{"id": "qwen3:4b"}],
+                    }
+                }
+            }
+        )
+    )
+
+    monkeypatch.setenv("M4BENCH_AUTH_ROOT", str(auth_root))
+    monkeypatch.setenv(
+        "M4BENCH_OLLAMA_BASE_URL", "http://host.docker.internal:11434/v1"
+    )
+
+    pi_home = tmp_path / "pi-home"
+    run.prepare_run_home("pi-ollama", pi_home)
+
+    copied = json.loads((pi_home / ".pi" / "agent" / "models.json").read_text())
+    assert (
+        copied["providers"]["ollama"]["baseUrl"]
+        == "http://host.docker.internal:11434/v1"
+    )
 
 
 def test_reasoning_auto_policy_resolves_by_agent():
@@ -312,6 +383,32 @@ def test_network_lock_allows_subscription_backed_codex_hosts():
     assert "api.openai.com" in script
     assert "auth.openai.com" in script
     assert "chatgpt.com" in script
+
+
+def test_network_lock_allows_configured_ollama_for_pi():
+    script = (ROOT / "benchmark" / "network_lock.sh").read_text()
+
+    assert "M4BENCH_ALLOW_OLLAMA" in script
+    assert "M4BENCH_OLLAMA_HOST" in script
+    assert "M4BENCH_OLLAMA_PORT" in script
+    assert "--dport \"$OLLAMA_PORT\"" in script
+
+
+def test_benchmark_dockerfile_installs_pi_cli():
+    dockerfile = (ROOT / "benchmark" / "Dockerfile").read_text()
+
+    assert "PI_CODING_AGENT_VERSION=0.70.2" in dockerfile
+    assert "@mariozechner/pi-coding-agent@${PI_CODING_AGENT_VERSION}" in dockerfile
+
+
+def test_bench_sh_mounts_pi_config_and_configures_ollama_endpoint():
+    bench = (ROOT / "benchmark" / "bench.sh").read_text()
+
+    assert 'AGENT" == "pi-ollama"' in bench
+    assert "command -v pi" in bench
+    assert "M4BENCH_OLLAMA_BASE_URL" in bench
+    assert "--add-host=host.docker.internal:host-gateway" in bench
+    assert '$HOME/.pi:$AUTH_ROOT/.pi:ro' in bench
 
 
 def test_task_discovery_uses_repo_relative_paths(monkeypatch):

@@ -111,6 +111,17 @@ def test_build_tiers_uses_agent_specific_gemini_models():
     assert "sonnet" not in models
 
 
+def test_build_tiers_uses_agent_specific_pi_ollama_models():
+    matrix = _load_module("benchmark_matrix_pi_ollama", "benchmark/matrix.py")
+    _reset_task_globals(matrix)
+    matrix._classify_tasks()
+
+    tiers = matrix.build_tiers(seeds=1, agent="pi-ollama")
+    models = {run["model"] for tier in tiers for run in tier.runs}
+
+    assert models == {"qwen3:4b"}
+
+
 def test_container_results_root_maps_under_benchmark_root():
     matrix = _load_module("benchmark_matrix_container_root", "benchmark/matrix.py")
     results_root = (ROOT / "benchmark" / "results" / "paper-smoke").resolve()

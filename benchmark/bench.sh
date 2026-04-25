@@ -104,8 +104,18 @@ if [[ "$AGENT" == "claude" ]] && [[ "${ANTHROPIC_API_KEY:-}" == sk-ant-oat* ]] &
     exit 1
 fi
 
-# Build image if it doesn't exist, or when explicitly requested.
+NEEDS_BUILD=0
 if [[ "${M4BENCH_REBUILD:-0}" == "1" ]] || ! "$DOCKER_BIN" image inspect "$IMAGE" &>/dev/null; then
+    NEEDS_BUILD=1
+elif [[ "$AGENT" == "pi-ollama" ]] && ! "$DOCKER_BIN" run --rm "$IMAGE" \
+    sh -lc 'command -v pi >/dev/null 2>&1'; then
+    echo "Existing $IMAGE image does not include Pi; rebuilding..."
+    NEEDS_BUILD=1
+fi
+
+# Build image if it doesn't exist, when explicitly requested, or when the
+# selected agent requires tooling missing from an older local image.
+if [[ "$NEEDS_BUILD" == "1" ]]; then
     echo "Building $IMAGE..."
     "$DOCKER_BIN" build -t "$IMAGE" "$SCRIPT_DIR"
 fi
@@ -123,6 +133,19 @@ DOCKER_ARGS=(
     -v "$SCRIPT_DIR":/benchmark
     -e "M4BENCH_AUTH_ROOT=$AUTH_ROOT"
 )
+
+if [[ "$AGENT" == "pi-ollama" ]]; then
+    M4BENCH_OLLAMA_HOST="${M4BENCH_OLLAMA_HOST:-host.docker.internal}"
+    M4BENCH_OLLAMA_PORT="${M4BENCH_OLLAMA_PORT:-11434}"
+    M4BENCH_OLLAMA_BASE_URL="${M4BENCH_OLLAMA_BASE_URL:-http://${M4BENCH_OLLAMA_HOST}:${M4BENCH_OLLAMA_PORT}/v1}"
+    DOCKER_ARGS+=(
+        --add-host=host.docker.internal:host-gateway
+        -e "M4BENCH_ALLOW_OLLAMA=1"
+        -e "M4BENCH_OLLAMA_HOST=$M4BENCH_OLLAMA_HOST"
+        -e "M4BENCH_OLLAMA_PORT=$M4BENCH_OLLAMA_PORT"
+        -e "M4BENCH_OLLAMA_BASE_URL=$M4BENCH_OLLAMA_BASE_URL"
+    )
+fi
 
 DATA_MOUNT_SOURCES=()
 
@@ -174,6 +197,10 @@ fi
 
 if [[ -d "$HOME/.gemini" ]]; then
     DOCKER_ARGS+=(-v "$HOME/.gemini:$AUTH_ROOT/.gemini:ro")
+fi
+
+if [[ -d "$HOME/.pi" ]]; then
+    DOCKER_ARGS+=(-v "$HOME/.pi:$AUTH_ROOT/.pi:ro")
 fi
 
 "$DOCKER_BIN" run "${DOCKER_ARGS[@]}" "$IMAGE" >/dev/null

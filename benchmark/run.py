@@ -125,7 +125,6 @@ AGENT_COMMANDS = {
     "pi-ollama": {
         "cmd": [
             "pi",
-            "-p",
             "--provider",
             "ollama",
             "--no-context-files",
@@ -134,6 +133,7 @@ AGENT_COMMANDS = {
             "--no-extensions",
             "--skill",
             ".pi/skills",
+            "-p",
         ],
         "skill_dir": ".pi/skills",
         "json_trace": False,
@@ -650,7 +650,42 @@ def prepare_run_home(agent_name: str, run_home: Path) -> list[str]:
                 indent=2,
             )
         )
+    elif agent_name == "pi-ollama":
+        _configure_pi_ollama_home(run_home)
     return copied
+
+
+def _configure_pi_ollama_home(run_home: Path) -> None:
+    """Point Pi's copied Ollama provider config at the benchmark endpoint."""
+    base_url = os.environ.get("M4BENCH_OLLAMA_BASE_URL")
+    if not base_url:
+        return
+
+    models_path = run_home / ".pi" / "agent" / "models.json"
+    models_path.parent.mkdir(parents=True, exist_ok=True)
+    if models_path.exists():
+        try:
+            data = json.loads(models_path.read_text())
+        except json.JSONDecodeError:
+            data = {}
+    else:
+        data = {}
+
+    providers = data.setdefault("providers", {})
+    ollama = providers.setdefault("ollama", {})
+    ollama.update(
+        {
+            "baseUrl": base_url,
+            "api": ollama.get("api", "openai-completions"),
+            "apiKey": ollama.get("apiKey", "ollama"),
+        }
+    )
+    ollama.setdefault(
+        "compat",
+        {"supportsUsageInStreaming": False, "maxTokensField": "max_tokens"},
+    )
+    ollama.setdefault("models", [{"id": "qwen3:4b"}])
+    models_path.write_text(json.dumps(data, indent=2) + "\n")
 
 
 def copy_results_back(workdir: Path, results_dir: Path) -> None:
@@ -812,7 +847,11 @@ def run_agent(
             else:
                 cmd.extend(["-m", model])
         elif agent_name == "pi-ollama":
-            cmd.extend(["--model", model])
+            if cmd and cmd[-1] == "-p":
+                cmd = cmd[:-1]
+                cmd.extend(["--model", model, "-p"])
+            else:
+                cmd.extend(["--model", model])
 
     resolved_reasoning_effort = _resolve_reasoning_effort(agent_name, reasoning_effort)
     cmd.extend(_reasoning_args_for_agent(agent_name, resolved_reasoning_effort))

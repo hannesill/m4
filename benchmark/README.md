@@ -205,7 +205,8 @@ ollama serve
 ollama pull qwen3:4b
 ```
 
-Create or update `~/.pi/agent/models.json` with an Ollama provider:
+Create or update `~/.pi/agent/models.json` with an Ollama provider. Use
+`localhost` for fully local smoke tests:
 
 ```json
 {
@@ -232,9 +233,6 @@ Then confirm Pi can see the model:
 pi --list-models ollama
 ```
 
-Loopback access is allowed by the Docker network lock, so Ollama on
-`localhost:11434` remains reachable from isolated benchmark runs.
-
 Optional smoke test without MIMIC data:
 
 ```bash
@@ -245,3 +243,20 @@ printf "stay_id,score\n1,2\n2,3\n3,5\n4,7\n5,11\n" > input.csv
 pi --provider ollama --model qwen3:4b -p \
   "Read input.csv. For each row, double the score column. Write the result to output.csv with the same columns and row count. Do not include extra columns. Do not print the CSV; write it to disk."
 ```
+
+For paper-quality Docker runs, `bench.sh` installs Pi in the benchmark image,
+mounts `~/.pi` read-only, and rewrites the per-run copy of
+`.pi/agent/models.json` to use `M4BENCH_OLLAMA_BASE_URL`. By default that URL is
+`http://host.docker.internal:11434/v1`, which points from the container back to
+the host Ollama server. Override the host or port when needed:
+
+```bash
+M4BENCH_OLLAMA_HOST=host.docker.internal \
+M4BENCH_OLLAMA_PORT=11434 \
+bash benchmark/bench.sh --task mimic-sirs-24h-raw --condition no-skill \
+  --agent pi-ollama --model qwen3:4b
+```
+
+When `--agent pi-ollama` is used, the Docker network lock allows the configured
+Ollama host and port for the `benchagent` user while continuing to reject other
+non-allowlisted outbound traffic.
