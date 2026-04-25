@@ -9,7 +9,10 @@ database = "mimic-iv"
 
 [database]
 source = "mimic-iv"
-drop_tables = ["mimiciv_derived.urine_output_rate"]
+drop_tables = [
+    "mimiciv_derived.urine_output_rate",
+    "mimiciv_derived.kdigo_uo",
+]
 
 [ground_truth]
 # Generated from ground_truth/urine-output-rate.sql
