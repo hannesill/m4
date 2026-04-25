@@ -43,6 +43,15 @@ TASK_REQUIRED_DROPS = {
         "mimiciv_derived.oasis",
         "mimiciv_derived.sofa",
     },
+    "mimic-suspicion-infection": {
+        "mimiciv_derived.sepsis3",
+        "mimiciv_derived.suspicion_of_infection",
+    },
+    "mimic-suspicion-infection-raw": {
+        "mimiciv_derived.antibiotic",
+        "mimiciv_derived.sepsis3",
+        "mimiciv_derived.suspicion_of_infection",
+    },
     "mimic-urine-output-rate": {
         "mimiciv_derived.kdigo_stages",
         "mimiciv_derived.kdigo_uo",
@@ -80,6 +89,16 @@ TASK_REQUIRED_DROPS = {
 TASK_FORBIDDEN_DERIVED_COLUMN_PATTERNS = {
     "mimic-creatinine-baseline-raw": re.compile(
         r"creat|scr|mdrd|\bage\b",
+        re.IGNORECASE,
+    ),
+    "mimic-suspicion-infection": re.compile(
+        r"sepsis3|suspicion_of_infection|suspected_infection|"
+        r"positive_culture|culture_time",
+        re.IGNORECASE,
+    ),
+    "mimic-suspicion-infection-raw": re.compile(
+        r"antibiotic|sepsis3|suspicion_of_infection|suspected_infection|"
+        r"positive_culture|culture_time",
         re.IGNORECASE,
     ),
     "mimic-vasopressor-equivalents-raw": re.compile(
