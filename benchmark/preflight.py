@@ -49,6 +49,27 @@ TASK_REQUIRED_DROPS = {
         "mimiciv_derived.urine_output_rate",
         "mimiciv_derived.weight_durations",
     },
+    "mimic-vasopressor-equivalents-raw": {
+        "mimiciv_derived.dobutamine",
+        "mimiciv_derived.dopamine",
+        "mimiciv_derived.epinephrine",
+        "mimiciv_derived.first_day_sofa",
+        "mimiciv_derived.milrinone",
+        "mimiciv_derived.norepinephrine",
+        "mimiciv_derived.norepinephrine_equivalent_dose",
+        "mimiciv_derived.phenylephrine",
+        "mimiciv_derived.sofa",
+        "mimiciv_derived.vasoactive_agent",
+        "mimiciv_derived.vasopressin",
+    },
+}
+
+TASK_FORBIDDEN_DERIVED_COLUMN_PATTERNS = {
+    "mimic-vasopressor-equivalents-raw": re.compile(
+        r"vaso|norepi|epinephrine|dopamine|phenylephrine|vasopressin|"
+        r"dobutamine|milrinone",
+        re.IGNORECASE,
+    ),
 }
 
 
@@ -244,6 +265,27 @@ def check_agent_databases() -> CheckResult:
                 if present:
                     problems.append(
                         f"{task_name}: dropped table still present: {table}"
+                    )
+
+            pattern = TASK_FORBIDDEN_DERIVED_COLUMN_PATTERNS.get(task_name)
+            if pattern is not None:
+                rows = con.execute(
+                    """
+                    SELECT table_schema, table_name, column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'mimiciv_derived'
+                    ORDER BY table_schema, table_name, ordinal_position
+                    """
+                ).fetchall()
+                leaks = [
+                    f"{schema}.{table_name}.{column_name}"
+                    for schema, table_name, column_name in rows
+                    if pattern.search(f"{table_name} {column_name}")
+                ]
+                if leaks:
+                    problems.append(
+                        f"{task_name}: derived vasopressor shortcut columns "
+                        f"still present: {', '.join(leaks)}"
                     )
         finally:
             con.close()
