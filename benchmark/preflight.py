@@ -61,6 +61,7 @@ TASK_REQUIRED_DROPS = {
         "mimiciv_derived.sofa",
         "mimiciv_derived.vasoactive_agent",
         "mimiciv_derived.vasopressin",
+        "mimiciv_derived.weight_durations",
     },
 }
 

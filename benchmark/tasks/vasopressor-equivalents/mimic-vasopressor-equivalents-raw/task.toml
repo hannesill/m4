@@ -21,6 +21,7 @@ drop_tables = [
     "mimiciv_derived.milrinone",
     "mimiciv_derived.sofa",
     "mimiciv_derived.first_day_sofa",
+    "mimiciv_derived.weight_durations",
 ]
 
 [ground_truth]
