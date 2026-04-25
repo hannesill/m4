@@ -688,6 +688,34 @@ def _configure_pi_ollama_home(run_home: Path) -> None:
     models_path.write_text(json.dumps(data, indent=2) + "\n")
 
 
+def _agent_process_env(
+    agent_name: str, workdir: Path, run_home: Path
+) -> dict[str, str]:
+    """Build the isolated environment for an agent subprocess."""
+    tmpdir = run_home / "tmp"
+    tmpdir.mkdir(parents=True, exist_ok=True)
+
+    env = {
+        **os.environ,
+        "HOME": str(run_home),
+        "TMPDIR": str(tmpdir),
+        "TMP": str(tmpdir),
+        "TEMP": str(tmpdir),
+    }
+
+    if agent_name == "codex":
+        # Codex stores auth/session state under CODEX_HOME, but generated shell
+        # commands may still use HOME as their default cwd. Keep HOME on the
+        # scored workdir so relative ./output.csv writes land where the harness
+        # checks, while preserving a separate per-run Codex auth/state directory.
+        codex_home = run_home / ".codex"
+        codex_home.mkdir(parents=True, exist_ok=True)
+        env["HOME"] = str(workdir)
+        env["CODEX_HOME"] = str(codex_home)
+
+    return env
+
+
 def copy_results_back(workdir: Path, results_dir: Path) -> None:
     """Copy result files from the isolated workdir to benchmark/results/.
 
@@ -871,15 +899,7 @@ def run_agent(
 
     env = None
     if run_home:
-        tmpdir = run_home / "tmp"
-        tmpdir.mkdir(parents=True, exist_ok=True)
-        env = {
-            **os.environ,
-            "HOME": str(run_home),
-            "TMPDIR": str(tmpdir),
-            "TMP": str(tmpdir),
-            "TEMP": str(tmpdir),
-        }
+        env = _agent_process_env(agent_name, workdir, run_home)
 
     # Run agent as benchagent when isolated (user-level filesystem + network isolation).
     agent_creds = _resolve_agent_creds() if isolated else None
