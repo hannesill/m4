@@ -376,17 +376,19 @@ def run_checks(
     check_dbs: bool = True,
     self_check_ground_truth: bool = False,
 ) -> list[CheckResult]:
+    # Keep check_dbs=False source-only so preflight can run in fresh checkouts
+    # before expensive generated benchmark artifacts exist locally.
     checks = [
         check_instruction_sparsity(),
         check_raw_mode_contract(),
         check_skill_snapshots(),
-        check_ground_truth(self_check=self_check_ground_truth),
-        check_contamination_ready(),
         check_results_root(results_root),
     ]
     if check_dbs:
         checks.insert(2, check_agent_databases())
         checks.insert(3, check_external_view_sources())
+        checks.insert(4, check_ground_truth(self_check=self_check_ground_truth))
+        checks.insert(5, check_contamination_ready())
     return checks
 
 
@@ -407,7 +409,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--skip-db-check",
         action="store_true",
-        help="Skip agent DB existence/drop-table checks",
+        help="Skip generated benchmark artifact checks (agent DBs, ground truth, contamination DBs)",
     )
     parser.add_argument(
         "--ground-truth-self-check",

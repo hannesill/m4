@@ -110,6 +110,7 @@ known-first-party = ["m4"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["src"]
 addopts = "-m 'not requires_mimic_iv' --ignore=benchmark"
 markers = [
     "requires_mimic_iv: test requires local MIMIC-IV data (run with: uv run pytest -m requires_mimic_iv)",
