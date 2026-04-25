@@ -48,10 +48,11 @@ windows, LAG-based time deltas, weight normalization, and conditional rate compu
   `mimiciv_derived.kdigo_uo` shortcut are dropped. Agent uses
   `mimiciv_derived.urine_output` (pre-aggregated UO) and
   `mimiciv_derived.weight_durations` (pre-computed weight intervals).
-- **Raw**: `urine_output_rate`, `kdigo_uo`, `urine_output`, and
-  `weight_durations` are dropped. Agent must extract UO from
-  `mimiciv_icu.outputevents` (12 itemids, with sign-flip for itemid 227488) and
-  compute weight from `mimiciv_icu.chartevents`.
+- **Raw**: `urine_output_rate`, `kdigo_uo`, `kdigo_stages`, `urine_output`,
+  first-day UO/weight helpers, ICU-time helpers, and `weight_durations` are
+  dropped. Agent must extract UO from `mimiciv_icu.outputevents` (12 itemids,
+  with sign-flip for itemid 227488), compute weight from
+  `mimiciv_icu.chartevents`, and derive ICU boundaries from heart-rate events.
 
 ## Subtleties to watch for
 
