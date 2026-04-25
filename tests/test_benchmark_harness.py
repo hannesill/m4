@@ -232,12 +232,45 @@ def test_gemini_command_uses_external_sandbox():
     assert "yolo" in gemini_cmd
 
 
+def test_pi_ollama_command_disables_context_discovery():
+    run = _load_module("benchmark_run_pi_ollama_cmd", "benchmark/run.py")
+
+    pi_cmd = run.AGENT_COMMANDS["pi-ollama"]["cmd"]
+
+    assert "--no-context-files" in pi_cmd
+    assert "--no-themes" in pi_cmd
+    assert "--no-prompt-templates" in pi_cmd
+    assert "--no-extensions" in pi_cmd
+    assert "--provider" in pi_cmd
+    assert "ollama" in pi_cmd
+    assert ".pi/skills" in pi_cmd
+
+
+def test_prepare_run_home_pi_ollama_seeds_only_models_json(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_pi_home", "benchmark/run.py")
+
+    auth_root = tmp_path / "auth"
+    (auth_root / ".pi" / "agent").mkdir(parents=True)
+    (auth_root / ".pi" / "agent" / "models.json").write_text("{}")
+    (auth_root / ".pi" / "agent" / "auth.json").write_text("{}")
+
+    monkeypatch.setenv("M4BENCH_AUTH_ROOT", str(auth_root))
+
+    pi_home = tmp_path / "pi-home"
+    copied = run.prepare_run_home("pi-ollama", pi_home)
+
+    assert copied == [".pi/agent/models.json"]
+    assert (pi_home / ".pi" / "agent" / "models.json").exists()
+    assert not (pi_home / ".pi" / "agent" / "auth.json").exists()
+
+
 def test_reasoning_auto_policy_resolves_by_agent():
     run = _load_module("benchmark_run_reasoning_policy", "benchmark/run.py")
 
     assert run._resolve_reasoning_effort("codex", "auto") == "medium"
     assert run._resolve_reasoning_effort("claude", "auto") == "medium"
     assert run._resolve_reasoning_effort("gemini", "auto") == "provider-default"
+    assert run._resolve_reasoning_effort("pi-ollama", "auto") == "provider-default"
 
 
 def test_reasoning_args_match_supported_agent_clis():
@@ -252,6 +285,7 @@ def test_reasoning_args_match_supported_agent_clis():
         "medium",
     ]
     assert run._reasoning_args_for_agent("gemini", "provider-default") == []
+    assert run._reasoning_args_for_agent("pi-ollama", "provider-default") == []
 
 
 def test_named_reasoning_rejects_unsupported_agent_scale():
@@ -263,6 +297,13 @@ def test_named_reasoning_rejects_unsupported_agent_scale():
         assert "does not support named reasoning effort" in str(exc)
     else:
         raise AssertionError("expected ValueError for Gemini named effort")
+
+    try:
+        run._resolve_reasoning_effort("pi-ollama", "high")
+    except ValueError as exc:
+        assert "does not support named reasoning effort" in str(exc)
+    else:
+        raise AssertionError("expected ValueError for pi-ollama named effort")
 
 
 def test_network_lock_allows_subscription_backed_codex_hosts():

@@ -152,6 +152,13 @@ def _model_plan_for_agent(agent: str) -> AgentModelPlan:
             contamination_models=("gemini-3-flash-preview",),
             noise_models=("gemini-3.1-pro-preview",),
         )
+    if agent == "pi-ollama":
+        return AgentModelPlan(
+            primary_models=("qwen3:4b",),
+            hurts_models=("qwen3:4b",),
+            contamination_models=("qwen3:4b",),
+            noise_models=("qwen3:4b",),
+        )
     raise ValueError(f"Unsupported agent: {agent}")
 
 
@@ -1012,7 +1019,7 @@ def main():
     parser.add_argument(
         "--agent",
         default="codex",
-        help="Agent CLI to use (claude, codex, gemini)",
+        help="Agent CLI to use (claude, codex, gemini, pi-ollama)",
     )
     parser.add_argument(
         "--reasoning-effort",
