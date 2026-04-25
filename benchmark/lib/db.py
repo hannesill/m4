@@ -24,6 +24,37 @@ AGENT_DB_DIR = BENCHMARK_ROOT / "agent_db"
 TASKS_DIR = BENCHMARK_ROOT / "tasks"
 
 
+def _quote_duckdb_path(path: Path) -> str:
+    return "'" + str(path).replace("'", "''") + "'"
+
+
+def _remove_wal(db_path: Path) -> None:
+    wal = db_path.with_suffix(".duckdb.wal")
+    if wal.exists():
+        wal.unlink()
+
+
+def compact_duckdb_file(db_path: Path) -> None:
+    """Rewrite a DuckDB file so dropped-table catalog strings are not retained."""
+    tmp = db_path.with_suffix(".compact.duckdb")
+    if tmp.exists():
+        tmp.unlink()
+    _remove_wal(tmp)
+
+    con = duckdb.connect()
+    try:
+        con.execute(f"ATTACH {_quote_duckdb_path(db_path)} AS src")
+        con.execute(f"ATTACH {_quote_duckdb_path(tmp)} AS dst")
+        con.execute("COPY FROM DATABASE src TO dst")
+    finally:
+        con.close()
+
+    _remove_wal(db_path)
+    db_path.unlink()
+    tmp.replace(db_path)
+    _remove_wal(tmp)
+
+
 def resolve_task_dir(task_name: str) -> Path:
     """Find a task directory by name within the (possibly nested) tasks tree.
 
@@ -122,6 +153,8 @@ def setup_agent_db(task_dir: Path) -> Path:
             print(f"Dropping {table} ...")
             con.execute(f"DROP TABLE IF EXISTS {table}")
         con.close()
+        print("Compacting agent DB ...")
+        compact_duckdb_file(dest)
 
     print(f"Agent DB ready at {dest}")
     return dest

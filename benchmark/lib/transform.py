@@ -1134,7 +1134,7 @@ def setup_transformed_agent_db(
     Copies the transformed source DB and drops the mapped table names
     from the task's drop_tables list.
     """
-    from .db import load_task_config
+    from .db import compact_duckdb_file, load_task_config
 
     if dictionary is None:
         dictionary = load_dictionary()
@@ -1189,6 +1189,9 @@ def setup_transformed_agent_db(
             print(f"  WARNING: {native_table} not in dictionary")
 
     con.close()
+    if drop_tables:
+        print("  Compacting agent DB ...")
+        compact_duckdb_file(dest)
     print(f"Agent DB ready at {dest}")
     return dest
 
@@ -1342,7 +1345,6 @@ def _drop_table_or_view(con: duckdb.DuckDBPyConnection, fqn: str) -> None:
 
 def _get_column_names(con: duckdb.DuckDBPyConnection, fqn: str) -> list[str]:
     """Get column names for a table in order."""
-    schema, table = fqn.split(".")
     rows = con.execute(f"PRAGMA table_info('{fqn}')").fetchall()
     return [row[1] for row in rows]
 
