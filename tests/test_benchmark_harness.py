@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 import os
 import subprocess
@@ -150,6 +151,51 @@ def test_prepare_run_home_copies_minimal_auth_files(monkeypatch, tmp_path):
     assert gemini_settings["admin"]["extensions"]["enabled"] is False
     assert gemini_settings["admin"]["skills"]["enabled"] is True
     assert not (gemini_home / ".gemini" / "trustedFolders.json").exists()
+
+
+def test_codex_run_home_keeps_shell_writes_in_workdir(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_codex_env", "benchmark/run.py")
+
+    workdir = tmp_path / "work"
+    run_home = tmp_path / "home"
+    workdir.mkdir()
+    run_home.mkdir()
+    captured = {}
+
+    class FakeProcess:
+        def __init__(self):
+            self.stdout = io.StringIO('{"type":"turn.completed","usage":{}}\n')
+            self.returncode = 0
+
+        def wait(self, timeout):
+            return 0
+
+        def kill(self):
+            raise AssertionError("process should not be killed")
+
+    def fake_popen(cmd, **kwargs):
+        captured["cmd"] = cmd
+        captured["kwargs"] = kwargs
+        return FakeProcess()
+
+    monkeypatch.setattr(run.subprocess, "Popen", fake_popen)
+
+    result = run.run_agent(
+        "write ./output.csv",
+        "codex",
+        workdir,
+        model="gpt-5.4-mini",
+        run_home=run_home,
+    )
+
+    env = captured["kwargs"]["env"]
+    assert result["returncode"] == 0
+    assert captured["kwargs"]["cwd"] == str(workdir)
+    assert env["HOME"] == str(workdir)
+    assert env["CODEX_HOME"] == str(run_home / ".codex")
+    assert env["TMPDIR"] == str(run_home / "tmp")
+    assert captured["cmd"][captured["cmd"].index("-C") + 1] == str(workdir)
+    assert (workdir / "trace.jsonl").exists()
 
 
 def test_resolve_results_root_uses_override(tmp_path):
