@@ -190,23 +190,26 @@ from `claude login` on macOS so `bench.sh` can pull a fresh keychain token.
 
 ### Pi/Ollama local setup
 
-`pi-ollama` requires Pi, Ollama, and at least one local model. A minimal setup
-uses `qwen3:4b`:
+`pi-ollama` requires Ollama and at least one local model. The Docker benchmark
+path installs Pi inside the benchmark image, so a host Pi install is needed only
+for the optional local smoke test. A minimal setup uses `qwen3:4b`:
 
 ```bash
-node --version
-npm --version
-which pi
 which ollama
 
-npm install -g @mariozechner/pi-coding-agent
 brew install ollama
 ollama serve
 ollama pull qwen3:4b
 ```
 
-Create or update `~/.pi/agent/models.json` with an Ollama provider. Use
-`localhost` for fully local smoke tests:
+For the optional local smoke test outside Docker, install Pi on the host and
+create or update `~/.pi/agent/models.json` with an Ollama provider that uses
+`localhost`:
+
+```bash
+npm install -g @mariozechner/pi-coding-agent
+mkdir -p ~/.pi/agent
+```
 
 ```json
 {
@@ -233,7 +236,7 @@ Then confirm Pi can see the model:
 pi --list-models ollama
 ```
 
-Optional smoke test without MIMIC data:
+Optional local smoke test without MIMIC data:
 
 ```bash
 SMOKE_DIR=$(mktemp -d -t m4_pi_smoke)
@@ -244,11 +247,15 @@ pi --provider ollama --model qwen3:4b -p \
   "Read input.csv. For each row, double the score column. Write the result to output.csv with the same columns and row count. Do not include extra columns. Do not print the CSV; write it to disk."
 ```
 
-For paper-quality Docker runs, `bench.sh` installs Pi in the benchmark image,
-mounts `~/.pi` read-only, and rewrites the per-run copy of
-`.pi/agent/models.json` to use `M4BENCH_OLLAMA_BASE_URL`. By default that URL is
+For paper-quality Docker runs, host `~/.pi` is optional. `bench.sh` installs Pi
+in the benchmark image, mounts `~/.pi` read-only only when it exists, and the
+harness creates or rewrites the per-run copy of `.pi/agent/models.json` from
+`M4BENCH_OLLAMA_BASE_URL`. By default that URL is
 `http://host.docker.internal:11434/v1`, which points from the container back to
-the host Ollama server. Override the host or port when needed:
+the host Ollama server. The required fresh-machine setup is therefore: Docker
+running, Ollama running on the host, and the selected model pulled.
+
+Override the host or port when needed:
 
 ```bash
 M4BENCH_OLLAMA_HOST=host.docker.internal \
