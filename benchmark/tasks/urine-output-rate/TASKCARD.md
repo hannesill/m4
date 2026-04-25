@@ -44,13 +44,14 @@ windows, LAG-based time deltas, weight normalization, and conditional rate compu
 
 ## Why standard vs raw
 
-- **Standard**: Only `mimiciv_derived.urine_output_rate` is dropped. Agent uses
+- **Standard**: `mimiciv_derived.urine_output_rate` and the task-equivalent
+  `mimiciv_derived.kdigo_uo` shortcut are dropped. Agent uses
   `mimiciv_derived.urine_output` (pre-aggregated UO) and
   `mimiciv_derived.weight_durations` (pre-computed weight intervals).
-- **Raw**: `urine_output_rate`, `urine_output`, and `weight_durations` are
-  dropped. Agent must extract UO from `mimiciv_icu.outputevents` (12 itemids,
-  with sign-flip for itemid 227488) and compute weight from
-  `mimiciv_icu.chartevents`.
+- **Raw**: `urine_output_rate`, `kdigo_uo`, `urine_output`, and
+  `weight_durations` are dropped. Agent must extract UO from
+  `mimiciv_icu.outputevents` (12 itemids, with sign-flip for itemid 227488) and
+  compute weight from `mimiciv_icu.chartevents`.
 
 ## Subtleties to watch for
 
