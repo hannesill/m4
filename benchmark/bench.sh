@@ -151,7 +151,7 @@ DATA_MOUNT_SOURCES=()
 
 add_data_mount_source() {
     local source="$1"
-    for existing in "${DATA_MOUNT_SOURCES[@]}"; do
+    for existing in "${DATA_MOUNT_SOURCES[@]+"${DATA_MOUNT_SOURCES[@]}"}"; do
         [[ "$existing" == "$source" ]] && return
     done
     DATA_MOUNT_SOURCES+=("$source")
@@ -218,7 +218,9 @@ fi
 echo "Locking sensitive directories (root-only)..."
 "$DOCKER_BIN" exec "$CONTAINER" bash -c \
     'for d in ground_truth tasks agent_db; do
-        [ -d "/benchmark/$d" ] && chmod 700 "/benchmark/$d"
+        if [ -d "/benchmark/$d" ]; then
+            chmod 700 "/benchmark/$d"
+        fi
     done'
 
 # 2. Lock network: iptables rules restrict the benchagent user to
