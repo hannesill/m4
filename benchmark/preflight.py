@@ -30,7 +30,12 @@ BENCHMARK_NOTE = (
     "unavailable in the agent database"
 )
 
-RAW_TASK_REQUIRED_DROPS = {
+TASK_REQUIRED_DROPS = {
+    "mimic-urine-output-rate": {
+        "mimiciv_derived.kdigo_stages",
+        "mimiciv_derived.kdigo_uo",
+        "mimiciv_derived.urine_output_rate",
+    },
     "mimic-urine-output-rate-raw": {
         "mimiciv_derived.first_day_urine_output",
         "mimiciv_derived.first_day_weight",
@@ -103,6 +108,16 @@ def check_raw_mode_contract() -> CheckResult:
     ]
     for task_dir in list_task_dirs():
         config = load_task_config(task_dir)
+        task_name = config["metadata"]["name"]
+        required_drops = TASK_REQUIRED_DROPS.get(task_name, set())
+        configured_drops = set(config.get("database", {}).get("drop_tables", []))
+        missing_drops = sorted(required_drops - configured_drops)
+        if missing_drops:
+            problems.append(
+                f"{task_name}: task is missing required shortcut drops: "
+                + ", ".join(missing_drops)
+            )
+
         if config["metadata"].get("mode") != "raw":
             continue
         instruction_path = task_dir / "instruction.md"
@@ -112,15 +127,6 @@ def check_raw_mode_contract() -> CheckResult:
                 problems.append(
                     f"{_task_name(task_dir)}: raw instruction still says `{needle}`"
                 )
-        task_name = config["metadata"]["name"]
-        required_drops = RAW_TASK_REQUIRED_DROPS.get(task_name, set())
-        configured_drops = set(config.get("database", {}).get("drop_tables", []))
-        missing_drops = sorted(required_drops - configured_drops)
-        if missing_drops:
-            problems.append(
-                f"{task_name}: raw task is missing required shortcut drops: "
-                + ", ".join(missing_drops)
-            )
 
     readme_text = (BENCHMARK_ROOT / "README.md").read_text()
     if "forcing the agent to work from base tables" in readme_text:
