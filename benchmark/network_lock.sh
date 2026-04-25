@@ -45,6 +45,17 @@ for host in "${ALLOWED_HOSTS[@]}"; do
     done
 done
 
+if [[ "${M4BENCH_ALLOW_OLLAMA:-0}" == "1" ]]; then
+    OLLAMA_HOST="${M4BENCH_OLLAMA_HOST:-host.docker.internal}"
+    OLLAMA_PORT="${M4BENCH_OLLAMA_PORT:-11434}"
+    echo "Resolving Ollama host for local Pi baseline..."
+    for ip in $(getent ahostsv4 "$OLLAMA_HOST" 2>/dev/null | awk '{print $1}' | sort -u); do
+        iptables -A OUTPUT -m owner --uid-owner "$AGENT_UID" \
+            -d "$ip" -p tcp --dport "$OLLAMA_PORT" -j ACCEPT
+        echo "  $OLLAMA_HOST:$OLLAMA_PORT -> $ip"
+    done
+fi
+
 # Allow loopback (agent CLI may use local sockets)
 iptables -A OUTPUT -m owner --uid-owner "$AGENT_UID" -o lo -j ACCEPT
 
