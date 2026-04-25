@@ -10,6 +10,13 @@ database = "mimic-iv"
 [database]
 source = "mimic-iv"
 drop_tables = [
+    "mimiciv_derived.first_day_urine_output",
+    "mimiciv_derived.first_day_weight",
+    "mimiciv_derived.icustay_detail",
+    "mimiciv_derived.icustay_hourly",
+    "mimiciv_derived.icustay_times",
+    "mimiciv_derived.kdigo_creatinine",
+    "mimiciv_derived.kdigo_stages",
     "mimiciv_derived.urine_output_rate",
     "mimiciv_derived.kdigo_uo",
     "mimiciv_derived.urine_output",
