@@ -13,6 +13,13 @@ drop_tables = [
     "mimiciv_derived.creatinine_baseline",
     "mimiciv_derived.age",
     "mimiciv_derived.chemistry",
+    "mimiciv_derived.apsiii",
+    "mimiciv_derived.first_day_lab",
+    "mimiciv_derived.kdigo_creatinine",
+    "mimiciv_derived.kdigo_stages",
+    "mimiciv_derived.meld",
+    "mimiciv_derived.oasis",
+    "mimiciv_derived.sofa",
 ]
 
 [ground_truth]

@@ -31,6 +31,18 @@ BENCHMARK_NOTE = (
 )
 
 TASK_REQUIRED_DROPS = {
+    "mimic-creatinine-baseline-raw": {
+        "mimiciv_derived.age",
+        "mimiciv_derived.apsiii",
+        "mimiciv_derived.chemistry",
+        "mimiciv_derived.creatinine_baseline",
+        "mimiciv_derived.first_day_lab",
+        "mimiciv_derived.kdigo_creatinine",
+        "mimiciv_derived.kdigo_stages",
+        "mimiciv_derived.meld",
+        "mimiciv_derived.oasis",
+        "mimiciv_derived.sofa",
+    },
     "mimic-urine-output-rate": {
         "mimiciv_derived.kdigo_stages",
         "mimiciv_derived.kdigo_uo",
@@ -66,6 +78,10 @@ TASK_REQUIRED_DROPS = {
 }
 
 TASK_FORBIDDEN_DERIVED_COLUMN_PATTERNS = {
+    "mimic-creatinine-baseline-raw": re.compile(
+        r"creat|scr|mdrd|\bage\b",
+        re.IGNORECASE,
+    ),
     "mimic-vasopressor-equivalents-raw": re.compile(
         r"vaso|norepi|epinephrine|dopamine|phenylephrine|vasopressin|"
         r"dobutamine|milrinone",
@@ -285,7 +301,7 @@ def check_agent_databases() -> CheckResult:
                 ]
                 if leaks:
                     problems.append(
-                        f"{task_name}: derived vasopressor shortcut columns "
+                        f"{task_name}: derived shortcut columns "
                         f"still present: {', '.join(leaks)}"
                     )
         finally:
