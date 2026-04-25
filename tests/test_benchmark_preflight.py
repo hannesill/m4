@@ -38,17 +38,18 @@ def test_preflight_raw_mode_contract_matches_current_tasks():
     assert result.ok, result.details
 
 
-def test_urine_output_raw_drops_derived_shortcuts():
+def test_urine_output_tasks_drop_derived_shortcuts():
     preflight = _load_module(
-        "benchmark_preflight_urine_raw_drops", "benchmark/preflight.py"
+        "benchmark_preflight_urine_drops", "benchmark/preflight.py"
     )
-    task_dir = ROOT / "benchmark/tasks/urine-output-rate/mimic-urine-output-rate-raw"
-    config = preflight.load_task_config(task_dir)
-    drop_tables = set(config["database"]["drop_tables"])
+    task_root = ROOT / "benchmark/tasks/urine-output-rate"
 
-    assert (
-        preflight.RAW_TASK_REQUIRED_DROPS["mimic-urine-output-rate-raw"] <= drop_tables
-    )
+    for task_name, required_drops in preflight.TASK_REQUIRED_DROPS.items():
+        task_dir = task_root / task_name
+        config = preflight.load_task_config(task_dir)
+        drop_tables = set(config["database"]["drop_tables"])
+
+        assert required_drops <= drop_tables
 
 
 def test_preflight_skill_snapshots_have_no_target_leakage():

@@ -12,6 +12,7 @@ source = "mimic-iv"
 drop_tables = [
     "mimiciv_derived.urine_output_rate",
     "mimiciv_derived.kdigo_uo",
+    "mimiciv_derived.kdigo_stages",
 ]
 
 [ground_truth]
