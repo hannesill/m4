@@ -4,6 +4,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import duckdb
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -44,10 +46,31 @@ def test_preflight_skill_snapshots_have_no_target_leakage():
     assert result.ok, result.details
 
 
-def test_preflight_external_view_sources_are_present():
+def test_preflight_external_view_sources_are_present(monkeypatch, tmp_path):
     preflight = _load_module(
         "benchmark_preflight_external_views", "benchmark/preflight.py"
     )
+    agent_db_dir = tmp_path / "agent_db"
+    parquet_path = (
+        tmp_path / "m4_data" / "parquet" / "mimic-iv" / "hosp" / "admissions.parquet"
+    )
+    db_path = agent_db_dir / "mimic_test.duckdb"
+    agent_db_dir.mkdir()
+    parquet_path.parent.mkdir(parents=True)
+
+    con = duckdb.connect(str(db_path))
+    try:
+        con.execute(
+            f"COPY (SELECT 1 AS subject_id) TO '{parquet_path.as_posix()}' "
+            "(FORMAT PARQUET)"
+        )
+        con.execute(
+            "CREATE VIEW admissions AS SELECT * FROM "
+            f"read_parquet('{parquet_path.as_posix()}')"
+        )
+    finally:
+        con.close()
+    monkeypatch.setattr(preflight, "AGENT_DB_DIR", agent_db_dir)
 
     result = preflight.check_external_view_sources()
 
