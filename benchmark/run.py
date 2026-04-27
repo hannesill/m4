@@ -1095,13 +1095,37 @@ def _agent_process_env(
     tmpdir = run_home / "tmp"
     tmpdir.mkdir(parents=True, exist_ok=True)
 
-    env = {
-        **os.environ,
-        "HOME": str(run_home),
-        "TMPDIR": str(tmpdir),
-        "TMP": str(tmpdir),
-        "TEMP": str(tmpdir),
+    passthrough_keys = {
+        "PATH",
+        "LANG",
+        "LC_ALL",
+        "SHELL",
+        "TERM",
+        "ANTHROPIC_API_KEY",
+        "OPENAI_API_KEY",
+        "GOOGLE_API_KEY",
+        "GEMINI_API_KEY",
+        "M4BENCH_ALLOW_OLLAMA",
+        "M4BENCH_OLLAMA_BASE_URL",
+        "M4BENCH_OLLAMA_HOST",
+        "M4BENCH_OLLAMA_PORT",
+        "SSL_CERT_FILE",
+        "REQUESTS_CA_BUNDLE",
+        "NODE_EXTRA_CA_CERTS",
     }
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if key in passthrough_keys or key.startswith("LC_")
+    }
+    env.update(
+        {
+            "HOME": str(run_home),
+            "TMPDIR": str(tmpdir),
+            "TMP": str(tmpdir),
+            "TEMP": str(tmpdir),
+        }
+    )
 
     if agent_name == "claude" and _claude_auth_mode() == "container-login":
         # Force Claude Code to use the copied login state in the fresh HOME.

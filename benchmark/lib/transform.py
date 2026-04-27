@@ -1171,6 +1171,7 @@ def setup_transformed_agent_db(
     # Map native drop_tables to obfuscated/restructured names
     con = duckdb.connect(str(dest))
 
+    dropped = []
     for native_table in drop_tables:
         # Try obfuscated table name first
         if native_table in dictionary["tables"]:
@@ -1182,7 +1183,8 @@ def setup_transformed_agent_db(
                 f"WHERE table_schema || '.' || table_name = '{obf_table}'"
             ).fetchone()[0]
             if exists:
-                con.execute(f"DROP TABLE IF EXISTS {obf_table}")
+                _drop_table_or_view(con, obf_table)
+                dropped.append((native_table, obf_table))
                 print(f"  Dropped {obf_table} (was {native_table})")
             else:
                 print(
@@ -1190,6 +1192,21 @@ def setup_transformed_agent_db(
                 )
         else:
             print(f"  WARNING: {native_table} not in dictionary")
+
+    failures = []
+    for native_table, obf_table in dropped:
+        still_present = con.execute(
+            "SELECT COUNT(*) FROM information_schema.tables "
+            f"WHERE table_schema || '.' || table_name = '{obf_table}'"
+        ).fetchone()[0]
+        if still_present:
+            failures.append(f"{obf_table} (was {native_table})")
+    if failures:
+        con.close()
+        raise RuntimeError(
+            f"{schema_type}/{task_key}: transformed DB still contains dropped "
+            f"relations: {', '.join(failures)}"
+        )
 
     con.close()
     if drop_tables:
@@ -1263,9 +1280,22 @@ def verify_gt_equivalence(
 
     import pandas as pd
 
+    from .db import _task_key, list_task_dirs, load_task_config
+
     native_sql = (GROUND_TRUTH_DIR / f"{task_key}.sql").read_text()
     obf_sql_path = GROUND_TRUTH_DIR / "obfuscated" / f"{task_key}.sql"
     rst_sql_path = GROUND_TRUTH_DIR / "restructured" / f"{task_key}.sql"
+
+    key_columns: list[str] = []
+    for task_dir in list_task_dirs():
+        config = load_task_config(task_dir)
+        if config.get("database", {}).get("source", "mimic-iv") != "mimic-iv":
+            continue
+        name = config["metadata"]["name"]
+        gt_key = config.get("ground_truth", {}).get("alias", _task_key(name))
+        if gt_key == task_key:
+            key_columns = config["evaluation"]["key_columns"]
+            break
 
     # Run native
     con_native = duckdb.connect(str(SOURCE_DB), read_only=True)
@@ -1274,15 +1304,32 @@ def verify_gt_equivalence(
 
     ok = True
 
+    def _sort_columns(
+        df, native_df, native_columns: list[str], transformed: bool
+    ) -> list[str]:
+        mapped_columns = [
+            dictionary["columns"].get(col, col) if transformed else col
+            for col in native_columns
+        ]
+        if all(col in df.columns for col in mapped_columns):
+            return mapped_columns
+        fallback = []
+        for col in native_columns:
+            if col in native_df.columns:
+                idx = list(native_df.columns).index(col)
+                if idx < len(df.columns):
+                    fallback.append(df.columns[idx])
+        return fallback or list(df.columns[:3])
+
     def _compare_dfs(df_a, df_b, label: str) -> bool:
-        """Compare two DataFrames by sorting on first 3 columns (key columns)."""
+        """Compare two DataFrames by sorting on configured task key columns."""
         if df_a.shape != df_b.shape:
             print(f"  {task_key} {label}: SHAPE MISMATCH {df_a.shape} vs {df_b.shape}")
             return False
 
-        # Sort both by first 3 columns (subject_id, hadm_id, stay_id or equivalents)
-        sort_cols_a = list(df_a.columns[:3])
-        sort_cols_b = list(df_b.columns[:3])
+        sort_keys = key_columns or list(df_a.columns[:3])
+        sort_cols_a = _sort_columns(df_a, df_a, sort_keys, transformed=False)
+        sort_cols_b = _sort_columns(df_b, df_a, sort_keys, transformed=True)
         df_a = df_a.sort_values(sort_cols_a).reset_index(drop=True)
         df_b = df_b.sort_values(sort_cols_b).reset_index(drop=True)
 

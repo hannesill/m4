@@ -337,6 +337,20 @@ def test_codex_run_home_keeps_shell_writes_in_workdir(monkeypatch, tmp_path):
     assert (workdir / "trace.jsonl").exists()
 
 
+def test_agent_process_env_filters_host_environment(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_env_filter", "benchmark/run.py")
+
+    monkeypatch.setenv("HTTP_PROXY", "http://proxy.invalid")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "secret")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+
+    env = run._agent_process_env("claude", tmp_path / "work", tmp_path / "home")
+
+    assert env["ANTHROPIC_API_KEY"] == "sk-ant-test"
+    assert "HTTP_PROXY" not in env
+    assert "AWS_SECRET_ACCESS_KEY" not in env
+
+
 def test_run_agent_timeout_kills_process_group(monkeypatch, tmp_path):
     run = _load_module("benchmark_run_timeout", "benchmark/run.py")
 

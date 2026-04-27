@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import argparse
 import glob
+import hashlib
+import json
 import re
 import sys
 from dataclasses import dataclass
@@ -20,10 +22,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from evaluate import evaluate, resolve_ground_truth
-from lib.db import _db_prefix, _task_key, list_task_dirs, load_task_config
+from lib.db import SOURCE_DBS, _db_prefix, _task_key, list_task_dirs, load_task_config
 
 BENCHMARK_ROOT = Path(__file__).parent
 AGENT_DB_DIR = BENCHMARK_ROOT / "agent_db"
+GROUND_TRUTH_DIR = BENCHMARK_ROOT / "ground_truth"
 
 BENCHMARK_NOTE = (
     "target concept tables listed in the task configuration are removed or "
@@ -528,17 +531,153 @@ def check_external_view_sources() -> CheckResult:
     )
 
 
+def _sha256_file(path: Path, cache: dict[Path, str] | None = None) -> str:
+    resolved = path.resolve()
+    if cache is not None and resolved in cache:
+        return cache[resolved]
+    digest = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            digest.update(chunk)
+    value = digest.hexdigest()
+    if cache is not None:
+        cache[resolved] = value
+    return value
+
+
+def _sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _manifest_path(csv_path: Path) -> Path:
+    return csv_path.with_suffix("").with_suffix(".manifest.json")
+
+
+def _validate_ground_truth_manifest(
+    *,
+    task_name: str,
+    task_key: str,
+    csv_path: Path,
+    config: dict,
+    file_hashes: dict[Path, str],
+) -> list[str]:
+    problems: list[str] = []
+    manifest_path = _manifest_path(csv_path)
+    if not manifest_path.exists():
+        return [f"{task_name}: missing ground-truth manifest {manifest_path}"]
+
+    try:
+        manifest = json.loads(manifest_path.read_text())
+    except (json.JSONDecodeError, OSError) as exc:
+        return [f"{task_name}: unreadable ground-truth manifest {manifest_path}: {exc}"]
+
+    csv_sha = _sha256_file(csv_path, file_hashes)
+    if manifest.get("csv_sha256") != csv_sha:
+        problems.append(f"{task_name}: manifest CSV hash does not match {csv_path}")
+
+    source = manifest.get("source")
+    if source == "alias":
+        alias = manifest.get("alias_target")
+        alias_path = GROUND_TRUTH_DIR / f"{alias}.csv.gz"
+        if not alias or not alias_path.exists():
+            problems.append(f"{task_name}: alias target CSV missing for {alias}")
+            return problems
+        if manifest.get("alias_csv_sha256") != _sha256_file(alias_path, file_hashes):
+            problems.append(f"{task_name}: alias target hash is stale for {alias}")
+        alias_manifest_path = _manifest_path(alias_path)
+        if not alias_manifest_path.exists():
+            problems.append(f"{task_name}: alias target manifest missing for {alias}")
+        else:
+            try:
+                alias_manifest = json.loads(alias_manifest_path.read_text())
+            except (json.JSONDecodeError, OSError) as exc:
+                problems.append(
+                    f"{task_name}: unreadable alias target manifest for {alias}: {exc}"
+                )
+                return problems
+            if manifest.get("alias_manifest", {}).get("csv_sha256") != _sha256_file(
+                alias_path, file_hashes
+            ):
+                problems.append(
+                    f"{task_name}: embedded alias manifest is stale for {alias}"
+                )
+            sql_rel = alias_manifest.get("sql_path")
+            sql_path = (
+                BENCHMARK_ROOT / sql_rel
+                if sql_rel
+                else GROUND_TRUTH_DIR / f"{alias}.sql"
+            )
+            if not sql_path.exists():
+                problems.append(f"{task_name}: alias SQL path missing: {sql_path}")
+            elif alias_manifest.get("sql_sha256") != _sha256_text(sql_path.read_text()):
+                problems.append(f"{task_name}: alias SQL hash is stale for {alias}")
+            db_source = config.get("database", {}).get("source", "mimic-iv")
+            db_path = SOURCE_DBS.get(db_source, SOURCE_DBS["mimic-iv"])
+            if not db_path.exists():
+                problems.append(
+                    f"{task_name}: source DB missing for alias manifest validation: "
+                    f"{db_path}"
+                )
+            elif alias_manifest.get("db_sha256") != _sha256_file(db_path, file_hashes):
+                problems.append(
+                    f"{task_name}: source DB hash changed since alias generation"
+                )
+        return problems
+
+    if source != "sql":
+        problems.append(f"{task_name}: unknown ground-truth manifest source {source!r}")
+        return problems
+
+    sql_rel = manifest.get("sql_path")
+    sql_path = (
+        BENCHMARK_ROOT / sql_rel if sql_rel else GROUND_TRUTH_DIR / f"{task_key}.sql"
+    )
+    if not sql_path.exists():
+        problems.append(f"{task_name}: manifest SQL path missing: {sql_path}")
+    elif manifest.get("sql_sha256") != _sha256_text(sql_path.read_text()):
+        problems.append(f"{task_name}: ground-truth SQL hash is stale: {sql_path}")
+
+    db_source = config.get("database", {}).get("source", "mimic-iv")
+    db_path = SOURCE_DBS.get(db_source, SOURCE_DBS["mimic-iv"])
+    if not db_path.exists():
+        problems.append(
+            f"{task_name}: source DB missing for manifest validation: {db_path}"
+        )
+    elif manifest.get("db_sha256") != _sha256_file(db_path, file_hashes):
+        problems.append(
+            f"{task_name}: source DB hash changed since ground truth generation"
+        )
+
+    if not manifest.get("duckdb_version"):
+        problems.append(f"{task_name}: manifest missing DuckDB version")
+    if not manifest.get("sorted_by"):
+        problems.append(f"{task_name}: manifest missing deterministic sort columns")
+    return problems
+
+
 def check_ground_truth(self_check: bool = False) -> CheckResult:
     """Ground-truth files must exist; optionally verify GT evaluates to 1.0."""
     problems: list[str] = []
     checked = 0
+    file_hashes: dict[Path, str] = {}
     for task_dir in list_task_dirs():
+        config = load_task_config(task_dir)
         task_name = _task_name(task_dir)
+        task_key = _task_key(task_name)
         try:
             gt_path = resolve_ground_truth(task_name)
         except FileNotFoundError as exc:
             problems.append(str(exc))
             continue
+        problems.extend(
+            _validate_ground_truth_manifest(
+                task_name=task_name,
+                task_key=task_key,
+                csv_path=Path(gt_path),
+                config=config,
+                file_hashes=file_hashes,
+            )
+        )
 
         if self_check:
             results = evaluate(task_name, str(gt_path))

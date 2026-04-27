@@ -45,9 +45,11 @@ include runnable examples that query dropped target concept tables, and they do
 not ship the production SQL scripts. Run `python benchmark/preflight.py` before
 launching a paper campaign to check that this separation still holds.
 
-A contamination analysis dimension (`--schema`) tests memorization vs genuine
-understanding by running tasks on obfuscated (renamed) and restructured
-(merged/denormalized) versions of MIMIC-IV.
+A contamination analysis dimension (`--schema`) probes schema memorization by
+running tasks on obfuscated (renamed) and restructured (merged/denormalized)
+versions of MIMIC-IV. These conditions perturb schema and query structure, but
+they preserve clinical values and provide a schema dictionary to the agent, so
+they should not be described as full data-value decontamination.
 
 ## Task Families
 
@@ -146,10 +148,18 @@ python benchmark/matrix.py --profile provider-comparison --agent claude --result
 
 ## Evaluation
 
-Reward is the mean per-column match rate (0.0–1.0) between the agent's output
-and ground truth. Per-column tolerances are configurable in each task's
-`task.toml`. Pytest-based assertions provide pass/fail diagnostics on row
-coverage, required columns, and per-criterion accuracy.
+Reward is the mean per-column match rate (0.0–1.0) over
+`evaluation.value_columns`, not over identifiers or required metadata columns.
+`evaluation.required_columns` is a schema contract only. Per-column tolerances
+are configurable in each task's `task.toml`. Pytest-based assertions provide
+pass/fail diagnostics on row coverage, required columns, and per-criterion
+accuracy.
+
+Ground-truth generation writes deterministic gzipped CSVs plus sidecar
+manifests containing the SQL hash, source DB hash, DuckDB version, row count,
+column list, CSV hash, and sort keys. Preflight validates those manifests so a
+paper run fails closed when ground truth is stale or alias-derived files were
+not reproducibly generated.
 
 ## Supported Agents
 
@@ -181,6 +191,11 @@ The default matrix profile is GPT-primary: run the powered campaign with
 Gemini sentinel runs. `pi-ollama` is the Tier 3 OSS local-model baseline for
 zero-API-cost reproducibility. Provider-comparison runs are supplementary and
 should not be described as powered benchmark-wide estimates.
+
+Because the powered matrix is pilot-informed and uses different seed counts by
+tier, final reporting should pre-register equal task/cell weighting or
+tier-specific estimands. Do not report naive run-weighted averages as headline
+effects.
 
 Reasoning policy is pinned by default through `--reasoning-effort auto`: Codex
 and Claude Code run at `medium`, while Gemini CLI and `pi-ollama` are recorded
