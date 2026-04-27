@@ -1589,6 +1589,13 @@ def run_agent(
     resolved_reasoning_effort = _resolve_reasoning_effort(agent_name, reasoning_effort)
     cmd.extend(_reasoning_args_for_agent(agent_name, resolved_reasoning_effort))
 
+    agent_container = isolated and _agent_container_enabled()
+    if agent_container and agent_name == "codex":
+        # The outer Docker container is the isolation boundary in publishable
+        # runs. Codex's inner bwrap sandbox cannot create user namespaces inside
+        # that container on common Docker Desktop setups.
+        cmd.extend(["-c", 'sandbox_mode="danger-full-access"'])
+
     if isolated and agent_name == "claude":
         cmd.extend(["--disallowedTools", NETWORK_DENY_TOOLS])
 
@@ -1607,7 +1614,6 @@ def run_agent(
         env = _agent_process_env(agent_name, workdir, run_home)
 
     # Run agent as benchagent when isolated (user-level filesystem + network isolation).
-    agent_container = isolated and _agent_container_enabled()
     agent_creds = _resolve_agent_creds() if isolated and not agent_container else None
     if agent_creds:
         uid, gid = agent_creds
