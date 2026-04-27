@@ -113,6 +113,9 @@ python benchmark/setup.py --all
 # Preflight before paper-quality runs
 python benchmark/preflight.py
 
+# Adversarial isolation canary (Docker-backed; run before paper campaigns)
+bash benchmark/bench.sh --leak-canary --agent codex --model gpt-5.4-mini --results-root /benchmark/results/canary-YYYYMMDD
+
 # Run a single task
 python benchmark/run.py --task mimic-sirs-24h --condition with-skill --agent claude
 

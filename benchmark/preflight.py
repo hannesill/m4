@@ -320,6 +320,67 @@ def check_skill_snapshots() -> CheckResult:
     )
 
 
+def check_isolation_guardrails() -> CheckResult:
+    """Source-level check that publishable Docker isolation covers known leaks."""
+    problems: list[str] = []
+
+    from run import FILESYSTEM_CANARY_CHECKS
+
+    canary_commands = "\n".join(cmd for _name, cmd in FILESYSTEM_CANARY_CHECKS)
+    required_canary_paths = [
+        "/benchmark/ground_truth",
+        "/benchmark/tasks",
+        "/benchmark/agent_db",
+        "/benchmark/results",
+        "/tmp/clinskillsbench/_db_cache",
+        "/host-auth",
+        "/benchmark/lib/dictionary.json",
+    ]
+    for path in required_canary_paths:
+        if path not in canary_commands:
+            problems.append(f"filesystem canary does not cover {path}")
+
+    bench_text = (BENCHMARK_ROOT / "bench.sh").read_text()
+    forbidden_mounts = [
+        "$HOME/.codex:$AUTH_ROOT/.codex:ro",
+        "$HOME/.gemini:$AUTH_ROOT/.gemini:ro",
+        "$HOME/.pi:$AUTH_ROOT/.pi:ro",
+    ]
+    for needle in forbidden_mounts:
+        if needle in bench_text:
+            problems.append(f"bench.sh still mounts full auth directory: {needle}")
+
+    required_bench_fragments = [
+        "AUTH_STAGING_DIR=",
+        'stage_auth_file ".codex/auth.json"',
+        'stage_auth_file ".gemini/oauth_creds.json"',
+        'stage_auth_file ".pi/agent/models.json"',
+        'chmod -R go-rwx "$AUTH_STAGING_DIR"',
+        "chmod 600 /benchmark/lib/dictionary.json",
+        "chmod -R go-rwx /claude-auth",
+    ]
+    for fragment in required_bench_fragments:
+        if fragment not in bench_text:
+            problems.append(f"bench.sh missing isolation guard: {fragment}")
+
+    login_text = (BENCHMARK_ROOT / "claude_login_container.sh").read_text()
+    if "chmod -R go-rwx /claude-auth" not in login_text:
+        problems.append("claude_login_container.sh does not lock Claude auth volume")
+
+    run_text = (BENCHMARK_ROOT / "run.py").read_text()
+    if "DB_CACHE.chmod(0o700)" not in run_text:
+        problems.append("run.py does not make the cross-task DB cache private")
+    if "cached_db.chmod(0o600)" not in run_text:
+        problems.append("run.py does not make cached DB files private")
+
+    if problems:
+        return _fail("isolation guardrails", problems)
+    return _ok(
+        "isolation guardrails",
+        "canaries cover real sensitive paths; auth/dictionary/cache are private",
+    )
+
+
 def check_agent_databases() -> CheckResult:
     """Agent DBs must exist and have task target tables dropped."""
     try:
@@ -547,6 +608,7 @@ def run_checks(
         check_instruction_sparsity(),
         check_raw_mode_contract(),
         check_skill_snapshots(),
+        check_isolation_guardrails(),
         check_results_root(results_root),
     ]
     if check_dbs:
