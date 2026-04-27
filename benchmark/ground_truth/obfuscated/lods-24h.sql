@@ -51,7 +51,7 @@ WITH cpap AS (
     INNER JOIN ds_3.t_005 AS ie
         ON bg.c_263 = ie.c_263
         AND bg.c_114 >= ie.c_310
-        AND bg.c_114 < ie.c_412
+        AND bg.c_114 < LEAST(ie.c_412, ie.c_310 + INTERVAL '1' DAY)
     LEFT JOIN ds_1.t_060 AS vd
         ON ie.c_552 = vd.c_552
         AND bg.c_114 >= vd.c_549

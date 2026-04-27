@@ -451,6 +451,20 @@ def check_agent_databases() -> CheckResult:
     )
 
 
+def _duckdb_relation_exists(con, fqn: str) -> bool:
+    schema, table_name = fqn.split(".", 1)
+    return bool(
+        con.execute(
+            """
+            SELECT COUNT(*)
+            FROM information_schema.tables
+            WHERE table_schema = ? AND table_name = ?
+            """,
+            [schema, table_name],
+        ).fetchone()[0]
+    )
+
+
 def _external_view_paths(db_path: Path) -> list[Path]:
     """Return external m4_data paths referenced by read_parquet() views."""
     import duckdb
@@ -540,12 +554,26 @@ def check_ground_truth(self_check: bool = False) -> CheckResult:
 
 
 def check_contamination_ready() -> CheckResult:
-    """Tier 5 should have paired obfuscated/restructured task DBs and GT SQL."""
+    """Tier 5 should have paired transformed DBs, GT SQL, and no target tables."""
+    try:
+        import duckdb
+    except ImportError:
+        return _fail("contamination readiness", ["duckdb is not installed"])
+
+    try:
+        from lib.transform import load_dictionary
+
+        dictionary = load_dictionary()
+    except Exception as exc:
+        return _fail("contamination readiness", [f"dictionary unavailable: {exc}"])
+
     gt_key_by_task_key: dict[str, str] = {}
+    config_by_task_key: dict[str, dict] = {}
     for task_dir in list_task_dirs():
         config = load_task_config(task_dir)
         task_name = config["metadata"]["name"]
         task_key = _task_key(task_name)
+        config_by_task_key[task_key] = config
         gt_key_by_task_key[task_key] = config.get("ground_truth", {}).get(
             "alias", task_key
         )
@@ -561,9 +589,15 @@ def check_contamination_ready() -> CheckResult:
     paired = sorted(obfuscated & restructured)
 
     problems: list[str] = []
+    checked_tables = 0
     if not paired:
         problems.append("no paired obfuscated/restructured agent DBs found")
     for task_key in paired:
+        config = config_by_task_key.get(task_key)
+        if config is None:
+            problems.append(f"{task_key}: no task.toml found for transformed DB")
+            continue
+
         gt_key = gt_key_by_task_key.get(task_key, task_key)
         for schema in ("obfuscated", "restructured"):
             sql_path = BENCHMARK_ROOT / "ground_truth" / schema / f"{gt_key}.sql"
@@ -572,11 +606,38 @@ def check_contamination_ready() -> CheckResult:
                     f"{schema}: missing transformed ground-truth SQL for {task_key}"
                 )
 
+            db_path = AGENT_DB_DIR / f"{schema}_{task_key}.duckdb"
+            if not db_path.exists():
+                problems.append(f"{schema}: missing transformed DB for {task_key}")
+                continue
+
+            con = duckdb.connect(str(db_path), read_only=True)
+            try:
+                for native_table in config.get("database", {}).get("drop_tables", []):
+                    mapped_table = dictionary["tables"].get(native_table)
+                    if mapped_table is None:
+                        problems.append(
+                            f"{schema}/{task_key}: dropped table not in dictionary: "
+                            f"{native_table}"
+                        )
+                        continue
+                    checked_tables += 1
+                    if _duckdb_relation_exists(con, mapped_table):
+                        problems.append(
+                            f"{schema}/{task_key}: dropped table still present: "
+                            f"{mapped_table} (was {native_table})"
+                        )
+            finally:
+                con.close()
+
     if problems:
         return _fail("contamination readiness", problems)
     return _ok(
         "contamination readiness",
-        f"{len(paired)} paired transformed task DBs ready for Tier 5",
+        (
+            f"{len(paired)} paired transformed task DBs ready for Tier 5; "
+            f"{checked_tables} mapped drop-table checks passed"
+        ),
     )
 
 

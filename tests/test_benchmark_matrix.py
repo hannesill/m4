@@ -39,8 +39,25 @@ def test_build_tiers_uses_agent_specific_codex_models():
     assert models == {"gpt-5.5", "gpt-5.4-mini"}
 
 
-def test_provider_comparison_profile_uses_requested_seeds_for_claude():
+def _seed_contamination_db_markers(matrix, tmp_path: Path, task_names: list[str]):
+    matrix.AGENT_DB_DIR = tmp_path
+    for task_name in task_names:
+        task_key = task_name.replace("mimic-", "").replace("eicu-", "")
+        (tmp_path / f"obfuscated_{task_key}.duckdb").touch()
+        (tmp_path / f"restructured_{task_key}.duckdb").touch()
+
+
+def test_provider_comparison_profile_uses_requested_seeds_for_claude(tmp_path):
     matrix = _load_module("benchmark_matrix_provider_comparison", "benchmark/matrix.py")
+    _seed_contamination_db_markers(
+        matrix,
+        tmp_path,
+        [
+            "mimic-sofa-24h-raw",
+            "mimic-kdigo-48h-raw",
+            "mimic-oasis-24h-raw",
+        ],
+    )
     _reset_task_globals(matrix)
     matrix._classify_tasks()
 
@@ -124,10 +141,14 @@ def test_scan_existing_tracks_completed_trial_ids(tmp_path):
                 "resolved_reasoning_effort": "medium",
                 "trial": 2,
                 "publishable": True,
-                "agent_result": {},
+                "agent_result": {"returncode": 0},
+                "agent_db": {
+                    "path": "/benchmark/agent_db/example.duckdb",
+                    "sha256": "abc",
+                },
                 "filesystem_canary": {"passed": True},
                 "contamination_lint": {"passed": True},
-                "test_results": {"reward": 0.0},
+                "test_results": {"reward": 0.0, "errors": 0},
             }
         )
     )
@@ -157,14 +178,18 @@ def test_scan_existing_ignores_non_publishable_or_failed_runs(tmp_path):
         "schema": "native",
         "resolved_reasoning_effort": "medium",
         "trial": 1,
-        "test_results": {"reward": 1.0},
+        "test_results": {"reward": 1.0, "errors": 0},
         "filesystem_canary": {"passed": True},
         "contamination_lint": {"passed": True},
-        "agent_result": {},
+        "agent_result": {"returncode": 0},
+        "agent_db": {"path": "/benchmark/agent_db/example.duckdb", "sha256": "abc"},
     }
     cases = [
         {"publishable": False},
         {"publishable": True, "agent_result": {"failure_reason": "auth"}},
+        {"publishable": True, "agent_result": {"returncode": -1}},
+        {"publishable": True, "test_results": {"reward": 0.0, "errors": 1}},
+        {"publishable": True, "agent_db": {}},
         {"publishable": True, "filesystem_canary": {"passed": False}},
         {"publishable": True, "contamination_lint": {"passed": False}},
     ]

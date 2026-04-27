@@ -157,13 +157,26 @@ def main():
     if args.verify_equivalence:
         if args.task or args.all:
             parser.error("--verify-equivalence cannot be combined with --task/--all")
+        from lib.db import _task_key, list_task_dirs, load_task_config
         from lib.transform import load_dictionary, verify_gt_equivalence
 
         d = load_dictionary()
         gt_dir = Path(__file__).resolve().parent / "ground_truth"
+        mimic_gt_keys: set[str] = set()
+        for task_dir in list_task_dirs():
+            config = load_task_config(task_dir)
+            if config.get("database", {}).get("source", "mimic-iv") != "mimic-iv":
+                continue
+            task_name = config["metadata"]["name"]
+            task_key = _task_key(task_name)
+            mimic_gt_keys.add(config.get("ground_truth", {}).get("alias", task_key))
+
         all_ok = True
         for sql_file in sorted(gt_dir.glob("*.sql")):
             task_key = sql_file.stem
+            if task_key not in mimic_gt_keys:
+                print(f"  {task_key}: skipped (no MIMIC-IV transformed task)")
+                continue
             ok = verify_gt_equivalence(task_key, dictionary=d)
             if not ok:
                 all_ok = False

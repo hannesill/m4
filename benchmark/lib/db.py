@@ -140,12 +140,15 @@ def setup_agent_db(task_dir: Path) -> Path:
     dest = AGENT_DB_DIR / f"{db_prefix}_{task_key}.duckdb"
 
     print(f"Copying {source} → {dest} ...")
+    _remove_wal(dest)
     shutil.copy2(source, dest)
 
     # Also copy WAL file if it exists
     wal = source.with_suffix(".duckdb.wal")
     if wal.exists():
         shutil.copy2(wal, dest.with_suffix(".duckdb.wal"))
+    else:
+        _remove_wal(dest)
 
     if drop_tables:
         con = duckdb.connect(str(dest))

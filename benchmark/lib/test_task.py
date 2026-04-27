@@ -24,7 +24,7 @@ except ModuleNotFoundError:
 
 # Ensure benchmark/lib is importable
 sys.path.insert(0, str(Path(__file__).parent))
-from compare import compare_derived_tables
+from compare import compare_derived_tables, scored_value_columns
 
 # --- Load task config ---
 
@@ -37,6 +37,7 @@ with open(Path(TASK_DIR) / "task.toml", "rb") as _f:
 _eval = _config["evaluation"]
 KEY_COLUMNS = _eval["key_columns"]
 VALUE_COLUMNS = _eval["value_columns"]
+SCORE_COLUMNS = scored_value_columns(_eval)
 REQUIRED_COLUMNS = _eval.get("required_columns", KEY_COLUMNS + VALUE_COLUMNS)
 ROW_COVERAGE_THRESHOLD = _eval.get("row_coverage_threshold", 0.95)
 ACCURACY_THRESHOLD = _eval.get("accuracy_threshold", 0.90)
@@ -82,7 +83,7 @@ def test_row_coverage():
     )
 
 
-@pytest.mark.parametrize("column", VALUE_COLUMNS)
+@pytest.mark.parametrize("column", SCORE_COLUMNS)
 def test_score_accuracy(column):
     """Each value column should match ground truth at the configured threshold."""
     results = compare_derived_tables(

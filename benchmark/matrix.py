@@ -100,9 +100,11 @@ def _classify_tasks() -> None:
         if name.startswith("eicu-"):
             CROSS_DB_TASKS.append(name)
 
-        # Check for obfuscated/restructured agent DBs
+        # Check for paired transformed agent DBs
         task_key = name.replace("mimic-", "").replace("eicu-", "")
-        if (AGENT_DB_DIR / f"obfuscated_{task_key}.duckdb").exists():
+        if (AGENT_DB_DIR / f"obfuscated_{task_key}.duckdb").exists() and (
+            AGENT_DB_DIR / f"restructured_{task_key}.duckdb"
+        ).exists():
             CONTAMINATION_TASKS.append(name)
 
 
@@ -632,11 +634,20 @@ def _scan_existing(results_root: Path) -> dict[str, set[int]]:
 
 def _is_publishable_completed_result(data: dict) -> bool:
     """Return whether a result is valid enough to satisfy --skip-existing."""
-    if data.get("test_results", {}).get("reward") is None:
+    test_results = data.get("test_results", {})
+    agent_result = data.get("agent_result", {})
+    agent_db = data.get("agent_db", {})
+    if test_results.get("reward") is None:
         return False
     if data.get("publishable") is not True:
         return False
-    if data.get("agent_result", {}).get("failure_reason"):
+    if agent_result.get("failure_reason"):
+        return False
+    if agent_result.get("returncode") != 0:
+        return False
+    if test_results.get("errors", 0) != 0:
+        return False
+    if not agent_db.get("path") or not agent_db.get("sha256"):
         return False
     if data.get("filesystem_canary", {}).get("passed") is not True:
         return False

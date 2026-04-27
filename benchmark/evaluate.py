@@ -48,7 +48,7 @@ def evaluate(task_name: str, output_path: str) -> dict:
     Pytest tests are kept for pass/fail diagnostics.
     """
     try:
-        from lib.compare import compare_derived_tables
+        from lib.compare import compare_derived_tables, scored_value_columns
         from lib.db import load_task_config, resolve_task_dir
         from lib.runner import run_tests
 
@@ -60,16 +60,16 @@ def evaluate(task_name: str, output_path: str) -> dict:
         # Compute continuous reward from raw match rates
         config = load_task_config(task_dir)
         eval_config = config["evaluation"]
+        score_columns = scored_value_columns(eval_config)
         comparison = compare_derived_tables(
             output_path,
             str(gt_path),
             key_columns=eval_config["key_columns"],
-            value_columns=eval_config["value_columns"],
+            value_columns=score_columns,
             tolerance=eval_config.get("tolerance", {}),
         )
         match_rates = {
-            col: _round_metric(comparison[col]["match_rate"])
-            for col in eval_config["value_columns"]
+            col: _round_metric(comparison[col]["match_rate"]) for col in score_columns
         }
         test_results["match_rates"] = match_rates
         test_results["reward"] = _round_metric(

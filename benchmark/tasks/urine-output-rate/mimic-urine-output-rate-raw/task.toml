@@ -34,9 +34,14 @@ row_coverage_threshold = 0.95
 accuracy_threshold = 0.85
 
 [evaluation.tolerance]
+weight = 0.01
+uo = 0.01
 uo_mlkghr_6hr = 0.01
 uo_mlkghr_12hr = 0.01
 uo_mlkghr_24hr = 0.01
 urineoutput_6hr = 0.01
 urineoutput_12hr = 0.01
 urineoutput_24hr = 0.01
+uo_tm_6hr = 0.01
+uo_tm_12hr = 0.01
+uo_tm_24hr = 0.01

@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:20.20.0-slim
 
 ARG CLAUDE_CODE_VERSION=2.1.119
 ARG GEMINI_CLI_VERSION=0.39.1
@@ -13,6 +13,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip python3-venv git curl \
     iptables iproute2 dnsutils \
     && rm -rf /var/lib/apt/lists/*
+
+COPY requirements-benchmark.txt /tmp/requirements-benchmark.txt
+RUN pip3 install --break-system-packages --no-cache-dir --requirement \
+    /tmp/requirements-benchmark.txt \
+    && rm /tmp/requirements-benchmark.txt
 
 # Install agent CLIs separately so Docker can cache partial success and
 # failures are easier to isolate when a provider package changes upstream.

@@ -1134,7 +1134,7 @@ def setup_transformed_agent_db(
     Copies the transformed source DB and drops the mapped table names
     from the task's drop_tables list.
     """
-    from .db import compact_duckdb_file, load_task_config
+    from .db import _remove_wal, compact_duckdb_file, load_task_config
 
     if dictionary is None:
         dictionary = load_dictionary()
@@ -1160,10 +1160,13 @@ def setup_transformed_agent_db(
     dest = AGENT_DB_DIR / f"{schema_type}_{task_key}.duckdb"
 
     print(f"Copying {source_db} → {dest} ...")
+    _remove_wal(dest)
     shutil.copy2(source_db, dest)
     wal = source_db.with_suffix(".duckdb.wal")
     if wal.exists():
         shutil.copy2(wal, dest.with_suffix(".duckdb.wal"))
+    else:
+        _remove_wal(dest)
 
     # Map native drop_tables to obfuscated/restructured names
     con = duckdb.connect(str(dest))

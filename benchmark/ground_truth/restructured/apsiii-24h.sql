@@ -33,7 +33,7 @@ WITH pa AS (
   INNER JOIN ds_2.t_901 AS ie
     ON bg.c_263 = ie.c_263
     AND bg.c_114 >= ie.c_310
-    AND bg.c_114 < ie.c_412
+    AND bg.c_114 < LEAST(ie.c_412, ie.c_310 + INTERVAL '1' DAY)
   LEFT JOIN ds_1.t_060 AS vd
     ON ie.c_552 = vd.c_552
     AND bg.c_114 >= vd.c_549
@@ -54,7 +54,7 @@ WITH pa AS (
   INNER JOIN ds_2.t_901 AS ie
     ON bg.c_263 = ie.c_263
     AND bg.c_114 >= ie.c_310
-    AND bg.c_114 < ie.c_412
+    AND bg.c_114 < LEAST(ie.c_412, ie.c_310 + INTERVAL '1' DAY)
   INNER JOIN ds_1.t_060 AS vd
     ON ie.c_552 = vd.c_552
     AND bg.c_114 >= vd.c_549
@@ -91,7 +91,7 @@ WITH pa AS (
   INNER JOIN ds_2.t_901 AS ie
     ON bg.c_263 = ie.c_263
     AND bg.c_114 >= ie.c_310
-    AND bg.c_114 < ie.c_412
+    AND bg.c_114 < LEAST(ie.c_412, ie.c_310 + INTERVAL '1' DAY)
   WHERE
     NOT c_431 IS NULL AND NOT c_425 IS NULL AND bg.c_543 = 'ART.'
 ), acidbase_max AS (

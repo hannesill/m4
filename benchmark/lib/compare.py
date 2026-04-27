@@ -5,6 +5,16 @@ from __future__ import annotations
 import pandas as pd
 
 
+def scored_value_columns(eval_config: dict) -> list[str]:
+    """Return all non-key columns that should affect task scoring."""
+    key_columns = set(eval_config["key_columns"])
+    configured = list(eval_config["value_columns"])
+    required = [
+        col for col in eval_config.get("required_columns", []) if col not in key_columns
+    ]
+    return list(dict.fromkeys([*configured, *required]))
+
+
 def _normalize_key_columns(df: pd.DataFrame, key_columns: list[str]) -> pd.DataFrame:
     """Normalize join keys so CSV parser dtype guesses do not change scoring."""
     normalized = df.copy()

@@ -591,6 +591,16 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _agent_db_metadata(db_path: str | Path) -> dict:
+    """Record the exact task DB used for auditability."""
+    path = Path(db_path).resolve()
+    return {
+        "path": str(path),
+        "sha256": _sha256_file(path),
+        "size_bytes": path.stat().st_size,
+    }
+
+
 def lint_run_contamination(
     workdir: Path,
     task_name: str,
@@ -780,19 +790,23 @@ def _create_isolated_settings(workdir: Path) -> Path:
 
 
 def _resolve_agent_db(task_name: str, schema: str = "native") -> str:
-    """Find the agent DB for a task and schema condition."""
+    """Find the exact task-specific agent DB for a task and schema condition."""
     from lib.db import _db_prefix, _task_key
 
     task_key = _task_key(task_name)
     db_prefix = _db_prefix(task_name)
     if schema == "native":
         task_db = AGENT_DB_DIR / f"{db_prefix}_{task_key}.duckdb"
-        generic_db = AGENT_DB_DIR / f"{db_prefix}.duckdb"
     else:
         # obfuscated or restructured (MIMIC-IV only)
         task_db = AGENT_DB_DIR / f"{schema}_{task_key}.duckdb"
-        generic_db = AGENT_DB_DIR / f"{schema}_mimic_iv.duckdb"
-    return str(task_db if task_db.exists() else generic_db)
+    if not task_db.exists():
+        raise FileNotFoundError(
+            f"Exact task DB not found for {task_name}/{schema}: {task_db}. "
+            f"Run: python benchmark/setup.py --task {task_name}"
+            + (f" --schema {schema}" if schema != "native" else "")
+        )
+    return str(task_db)
 
 
 def setup_workdir(task_name: str, workdir: Path, schema: str = "native") -> None:
@@ -1427,6 +1441,7 @@ def run_agent(
             "stderr": "TIMEOUT after 30 minutes",
             "elapsed_seconds": round(elapsed, 1),
             "trace_file": str(trace_path),
+            "failure_reason": "timeout",
             "reasoning_effort": (
                 resolved_reasoning_effort
                 if "resolved_reasoning_effort" in locals()
@@ -1445,6 +1460,7 @@ def run_agent(
             "stderr": str(exc),
             "elapsed_seconds": round(elapsed, 1),
             "trace_file": str(trace_path),
+            "failure_reason": "exception",
             "reasoning_effort": (
                 resolved_reasoning_effort
                 if "resolved_reasoning_effort" in locals()
@@ -1663,11 +1679,19 @@ def run_single_task(
         print(f"Error: {e}")
         return {"task": task_name, "test_results": {"reward": 0.0}, "error": str(e)}
 
-    agent_db_path = _resolve_agent_db(task_name, schema)
-    if not Path(agent_db_path).exists():
-        msg = f"Agent DB not found: {agent_db_path}. Run: python benchmark/setup.py --task {task_name}"
+    try:
+        agent_db_path = _resolve_agent_db(task_name, schema)
+    except FileNotFoundError as exc:
+        msg = str(exc)
         print(f"Error: {msg}")
-        return {"task": task_name, "test_results": {"reward": 0.0}, "error": msg}
+        return {
+            "task": task_name,
+            "schema": schema,
+            "test_results": {"reward": 0.0},
+            "agent_result": {"failure_reason": "missing_agent_db"},
+            "error": msg,
+        }
+    agent_db = _agent_db_metadata(agent_db_path)
 
     resolved_reasoning_effort = _resolve_reasoning_effort(agent_name, reasoning_effort)
 
@@ -1866,6 +1890,13 @@ def run_single_task(
                     time.sleep(wait_seconds)
                     continue
 
+        if (
+            agent_result
+            and not agent_result.get("failure_reason")
+            and agent_result.get("returncode") not in (0, None)
+        ):
+            agent_result["failure_reason"] = "agent_nonzero_exit"
+
         # Check if output was produced
         output_file = workdir / "output.csv"
         contamination_lint = {
@@ -1946,8 +1977,20 @@ def run_single_task(
                 ),
                 "pytest_stderr": "",
             }
+        elif agent_result.get("failure_reason"):
+            reason = agent_result["failure_reason"]
+            test_results = {
+                "passed": 0,
+                "failed": 0,
+                "errors": 1,
+                "total": 1,
+                "reward": 0.0,
+                "pytest_output": f"Agent run failed: {reason}",
+                "pytest_stderr": str(agent_result.get("stderr", "")),
+            }
         elif not output_file.exists():
             print(f"\nNo output file produced at {output_file}")
+            agent_result["failure_reason"] = "no_output"
             test_results = {
                 "passed": 0,
                 "failed": 0,
@@ -1987,6 +2030,7 @@ def run_single_task(
             "timestamp": timestamp,
             "run_id": run_id,
             "results_root": str(results_root),
+            "agent_db": agent_db,
             "agent_result": agent_result,
             "test_results": sanitize_test_results_for_storage(test_results),
             "filesystem_canary": filesystem_canary,
