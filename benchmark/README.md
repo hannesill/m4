@@ -156,11 +156,11 @@ coverage, required columns, and per-criterion accuracy.
 Claude Code, Codex, Gemini CLI, and Pi over Ollama (`pi-ollama`). See
 `AGENT_COMMANDS` in `run.py` for configuration.
 
-For Codex CLI, the harness uses `codex exec --dangerously-bypass-approvals-and-sandbox`
-because Docker already provides the outer sandbox, and it injects task
-skills into `.codex/skills/` inside each run workdir. Authenticate first with
-`codex login` if you want to use ChatGPT subscription access instead of an API
-key.
+For Codex CLI, the harness uses `codex exec` with web search disabled and
+`sandbox_mode="workspace-write"` inside the Docker-backed benchmark container.
+It injects task skills into `.codex/skills/` inside each run workdir.
+Authenticate first with `codex login` if you want to use ChatGPT subscription
+access instead of an API key.
 
 For `pi-ollama`, the harness invokes Pi in non-interactive mode with the
 Ollama provider and disables user-global discovery features (`--no-context-files`,

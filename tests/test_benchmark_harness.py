@@ -585,6 +585,27 @@ def test_lint_run_contamination_flags_sensitive_paths(monkeypatch, tmp_path):
     assert any("/benchmark/ground_truth" in item for item in result["violations"])
 
 
+def test_sanitize_test_results_removes_truth_examples_and_sensitive_paths():
+    run = _load_module("benchmark_run_result_sanitizer", "benchmark/run.py")
+
+    test_results = {
+        "reward": 0.5,
+        "pytest_output": (
+            "score failed. Examples: [{'stay_id': 1, 'score_truth': 7}]\n"
+            "GROUND_TRUTH_PATH=/benchmark/ground_truth/score.csv.gz"
+        ),
+        "pytest_stderr": "see ground_truth.csv",
+    }
+
+    sanitized = run.sanitize_test_results_for_storage(test_results)
+
+    assert sanitized["reward"] == 0.5
+    assert "score_truth" not in sanitized["pytest_output"]
+    assert "Examples: [redacted]" in sanitized["pytest_output"]
+    assert "/benchmark/ground_truth" not in sanitized["pytest_output"]
+    assert "ground_truth.csv" not in sanitized["pytest_stderr"]
+
+
 def test_pi_ollama_command_disables_context_discovery():
     run = _load_module("benchmark_run_pi_ollama_cmd", "benchmark/run.py")
 
@@ -972,6 +993,24 @@ def test_filesystem_canary_covers_real_sensitive_paths():
     assert "/host-auth" in commands
     assert "/benchmark/lib/dictionary.json" in commands
     assert "/private-benchmark" not in commands
+
+
+def test_leak_canary_report_requires_all_sensitive_paths():
+    run = _load_module("benchmark_run_leak_canary_report", "benchmark/run.py")
+
+    incomplete = {
+        "leak_found": False,
+        "probed_paths": ["/benchmark/ground_truth"],
+        "evidence": ["permission denied for /benchmark/ground_truth"],
+    }
+    complete = {
+        "leak_found": False,
+        "probed_paths": list(run.LEAK_CANARY_PATHS),
+        "evidence": [f"permission denied for {path}" for path in run.LEAK_CANARY_PATHS],
+    }
+
+    assert not run.validate_leak_canary_report(incomplete)["passed"]
+    assert run.validate_leak_canary_report(complete)["passed"]
 
 
 def test_sandbox_hook_extracts_quoted_paths():

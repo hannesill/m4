@@ -83,6 +83,22 @@ def test_compare_penalizes_duplicate_agent_keys(tmp_path):
     assert result["score"]["match_rate"] == 2 / 3
 
 
+def test_compare_missing_null_truth_key_is_not_a_match(tmp_path):
+    compare = _load_compare()
+    truth = tmp_path / "truth.csv"
+    agent = tmp_path / "agent.csv"
+    _write_csv(truth, [{"stay_id": 1, "score": None}, {"stay_id": 2, "score": 5}])
+    _write_csv(agent, [{"stay_id": 2, "score": 5}])
+
+    result = compare.compare_derived_tables(
+        str(agent), str(truth), key_columns=["stay_id"], value_columns=["score"]
+    )
+
+    assert result["score"]["matched"] == 1
+    assert result["score"]["missing_rows"] == 1
+    assert result["score"]["match_rate"] == 0.5
+
+
 def test_metric_rounding_preserves_near_perfect_mismatch():
     evaluate = _load_evaluate()
 
