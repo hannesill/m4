@@ -183,8 +183,10 @@ def compare_derived_tables(
 
         matches = _compare_values(merged[truth_col], merged[agent_col], tol)
 
-        # Both NaN = match
-        both_nan = merged[truth_col].isna() & merged[agent_col].isna()
+        # Both NaN = match only when the agent supplied the key.  For a
+        # left-join miss, the agent value is also NaN, but that is missing
+        # output, not a correct null prediction.
+        both_nan = merged[truth_col].isna() & merged[agent_col].isna() & ~missing_mask
         matches = matches | both_nan
 
         matched = int(matches.sum())
