@@ -5,6 +5,7 @@ IMAGE="${M4BENCH_IMAGE:-m4bench:latest}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DOCKER_BIN="${DOCKER_BIN:-docker}"
 CLAUDE_AUTH_VOLUME="${M4BENCH_CLAUDE_AUTH_VOLUME:-m4bench-claude-auth}"
+CLAUDE_LOGIN_CONTAINER="${M4BENCH_CLAUDE_LOGIN_CONTAINER:-m4bench-claude-login}"
 
 if [[ -x "$HOME/.orbstack/bin/docker" ]]; then
     CURRENT_DOCKER_CONTEXT="$("$DOCKER_BIN" context show 2>/dev/null || true)"
@@ -20,12 +21,20 @@ fi
 
 "$DOCKER_BIN" volume create "$CLAUDE_AUTH_VOLUME" >/dev/null
 
-echo "Logging Claude Code into Docker volume: $CLAUDE_AUTH_VOLUME"
+if ! "$DOCKER_BIN" ps -a --format '{{.Names}}' | grep -Fxq "$CLAUDE_LOGIN_CONTAINER"; then
+    "$DOCKER_BIN" run -d \
+        --name "$CLAUDE_LOGIN_CONTAINER" \
+        -v "$CLAUDE_AUTH_VOLUME:/claude-auth" \
+        "$IMAGE" >/dev/null
+elif ! "$DOCKER_BIN" ps --format '{{.Names}}' | grep -Fxq "$CLAUDE_LOGIN_CONTAINER"; then
+    "$DOCKER_BIN" start "$CLAUDE_LOGIN_CONTAINER" >/dev/null
+fi
+
+echo "Logging Claude Code into persistent Docker container: $CLAUDE_LOGIN_CONTAINER"
+echo "Auth volume: $CLAUDE_AUTH_VOLUME"
 echo "Only allowlisted auth files will be persisted; project memory is discarded."
 
-"$DOCKER_BIN" run --rm -it \
-    -v "$CLAUDE_AUTH_VOLUME:/claude-auth" \
-    "$IMAGE" \
+"$DOCKER_BIN" exec -it "$CLAUDE_LOGIN_CONTAINER" \
     bash -lc '
 set -euo pipefail
 

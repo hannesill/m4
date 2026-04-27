@@ -16,9 +16,6 @@ CLAUDE_AUTH_ROOT="/claude-auth"
 
 cleanup() {
     local status=$?
-    if [[ "${M4BENCH_KEEP_CONTAINER:-0}" != "1" ]]; then
-        "$DOCKER_BIN" rm -f "$CONTAINER" >/dev/null 2>&1 || true
-    fi
     rm -rf "$AUTH_STAGING_DIR"
     return "$status"
 }
@@ -118,10 +115,6 @@ if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" != "container-login" ]] 
     exit 1
 fi
 
-if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" == "container-login" ]]; then
-    echo "Using Claude container-login auth volume: $CLAUDE_AUTH_VOLUME"
-fi
-
 stage_auth_file() {
     local relative_path="$1"
     local src="$HOME/$relative_path"
@@ -164,42 +157,18 @@ if [[ "$NEEDS_BUILD" == "1" ]]; then
     "$DOCKER_BIN" build -t "$IMAGE" "$SCRIPT_DIR"
 fi
 
-# Start or restart container (always restart to pick up fresh token)
-if "$DOCKER_BIN" ps -q -f name="^${CONTAINER}$" | grep -q .; then
-    "$DOCKER_BIN" rm -f "$CONTAINER" >/dev/null
-fi
-"$DOCKER_BIN" rm "$CONTAINER" 2>/dev/null || true
-
-DOCKER_ARGS=(
-    -d
-    --name "$CONTAINER"
-    --cap-add NET_ADMIN
-    -v "$SCRIPT_DIR":/benchmark
-    -v "$AUTH_STAGING_DIR:$AUTH_ROOT:ro"
-    -e "M4BENCH_AUTH_ROOT=$AUTH_ROOT"
-    -e "M4BENCH_CLAUDE_AUTH_MODE=$CLAUDE_AUTH_MODE"
-)
-
 if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" == "container-login" ]]; then
-    "$DOCKER_BIN" run --rm -v "$CLAUDE_AUTH_VOLUME:$CLAUDE_AUTH_ROOT" "$IMAGE" \
-        bash -lc 'chmod -R go-rwx /claude-auth'
-    DOCKER_ARGS+=(
-        -v "$CLAUDE_AUTH_VOLUME:$CLAUDE_AUTH_ROOT:ro"
-        -e "M4BENCH_CLAUDE_AUTH_ROOT=$CLAUDE_AUTH_ROOT"
-    )
+    echo "Using Claude container-login auth volume: $CLAUDE_AUTH_VOLUME"
 fi
 
 if [[ "$AGENT" == "pi-ollama" ]]; then
     M4BENCH_OLLAMA_HOST="${M4BENCH_OLLAMA_HOST:-host.docker.internal}"
     M4BENCH_OLLAMA_PORT="${M4BENCH_OLLAMA_PORT:-11434}"
     M4BENCH_OLLAMA_BASE_URL="${M4BENCH_OLLAMA_BASE_URL:-http://${M4BENCH_OLLAMA_HOST}:${M4BENCH_OLLAMA_PORT}/v1}"
-    DOCKER_ARGS+=(
-        --add-host=host.docker.internal:host-gateway
-        -e "M4BENCH_ALLOW_OLLAMA=1"
-        -e "M4BENCH_OLLAMA_HOST=$M4BENCH_OLLAMA_HOST"
-        -e "M4BENCH_OLLAMA_PORT=$M4BENCH_OLLAMA_PORT"
-        -e "M4BENCH_OLLAMA_BASE_URL=$M4BENCH_OLLAMA_BASE_URL"
-    )
+    export M4BENCH_ALLOW_OLLAMA=1
+    export M4BENCH_OLLAMA_HOST
+    export M4BENCH_OLLAMA_PORT
+    export M4BENCH_OLLAMA_BASE_URL
 fi
 
 DATA_MOUNT_SOURCES=()
@@ -232,13 +201,16 @@ else
     add_data_mount_source "mimic-iv"
 fi
 
-DOCKER_ARGS+=(-e "M4BENCH_DATA_ROOT=$M4_DATA_CONTAINER_DIR")
+AGENT_MOUNTS_SPEC=""
+if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" == "container-login" ]]; then
+    AGENT_MOUNTS_SPEC+="${CLAUDE_AUTH_VOLUME}=${CLAUDE_AUTH_ROOT}"$'\n'
+fi
 if (( ${#DATA_MOUNT_SOURCES[@]} > 0 )); then
     for source in "${DATA_MOUNT_SOURCES[@]}"; do
         host_source="$M4_DATA_DIR/parquet/$source"
         container_source="$M4_DATA_CONTAINER_DIR/parquet/$source"
         if [[ -d "$host_source" ]]; then
-            DOCKER_ARGS+=(-v "$host_source:$container_source:ro")
+            AGENT_MOUNTS_SPEC+="${host_source}=${container_source}"$'\n'
         else
             echo "Warning: required parquet source not found at $host_source"
             echo "         Agent DB views that reference $source may fail."
@@ -247,34 +219,56 @@ if (( ${#DATA_MOUNT_SOURCES[@]} > 0 )); then
 fi
 
 if [[ "$CLAUDE_AUTH_MODE" != "container-login" ]] && [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
-    DOCKER_ARGS+=(-e "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY")
+    export ANTHROPIC_API_KEY
 fi
 
-"$DOCKER_BIN" run "${DOCKER_ARGS[@]}" "$IMAGE" >/dev/null
+translate_benchmark_path() {
+    local value="$1"
+    if [[ "$value" == /benchmark/* ]]; then
+        printf '%s/%s' "$SCRIPT_DIR" "${value#/benchmark/}"
+    else
+        printf '%s' "$value"
+    fi
+}
 
-"$DOCKER_BIN" exec "$CONTAINER" bash -lc \
-    'ln -sf /benchmark/lib/duckdb_cli.py /usr/local/bin/duckdb && chmod +x /benchmark/lib/duckdb_cli.py /usr/local/bin/duckdb'
+RUN_ARGS=()
+for ((i=0; i<${#ARGS[@]}; i++)); do
+    case "${ARGS[$i]}" in
+        --results-root)
+            RUN_ARGS+=("${ARGS[$i]}")
+            if (( i + 1 < ${#ARGS[@]} )); then
+                RUN_ARGS+=("$(translate_benchmark_path "${ARGS[$((i + 1))]}")")
+                ((i+=1))
+            fi
+            ;;
+        --results-root=*)
+            value="${ARGS[$i]#--results-root=}"
+            RUN_ARGS+=("--results-root=$(translate_benchmark_path "$value")")
+            ;;
+        *)
+            RUN_ARGS+=("${ARGS[$i]}")
+            ;;
+    esac
+done
 
-# ── Isolation hardening ─────────────────────────────────────────────────
-# 1. Lock sensitive directories: ground truth, tasks, agent DBs, and results become
-#    root-only (mode 700).  The orchestrator (root) can still read them;
-#    the agent subprocess (benchagent) cannot.
-echo "Locking sensitive directories (root-only)..."
-"$DOCKER_BIN" exec "$CONTAINER" bash -c \
-    'for d in ground_truth tasks agent_db results; do
-        if [ -d "/benchmark/$d" ]; then
-            chmod 700 "/benchmark/$d"
-        fi
-    done
-    if [ -f /benchmark/lib/dictionary.json ]; then
-        chmod 600 /benchmark/lib/dictionary.json
-    fi'
+export M4BENCH_AGENT_CONTAINER=1
+export M4BENCH_AGENT_CONTAINER_IMAGE="$IMAGE"
+export M4BENCH_DOCKER_BIN="$DOCKER_BIN"
+export M4BENCH_AUTH_ROOT="$AUTH_STAGING_DIR"
+export M4BENCH_CLAUDE_AUTH_MODE="$CLAUDE_AUTH_MODE"
+export M4BENCH_CLAUDE_AUTH_ROOT="$CLAUDE_AUTH_ROOT"
+export M4BENCH_DATA_ROOT="$M4_DATA_CONTAINER_DIR"
+export M4BENCH_AGENT_CONTAINER_MOUNTS="$AGENT_MOUNTS_SPEC"
 
-# 2. Lock network: iptables rules restrict the benchagent user to
-#    LLM-API-only outbound traffic (no web search, no package downloads).
-echo "Locking network (API-only for agent)..."
-"$DOCKER_BIN" exec "$CONTAINER" bash /benchmark/network_lock.sh
+echo "Running host orchestrator with agent-only Docker isolation..."
+echo "Agent image: $IMAGE"
 
-# Forward all arguments to run.py inside the container.
-# Isolation is on by default in run.py; bench.sh no longer needs to inject it.
-"$DOCKER_BIN" exec "$CONTAINER" python3 /benchmark/run.py "$@"
+if [[ "${M4BENCH_BENCH_SH_NO_RUN:-0}" == "1" ]]; then
+    exit 0
+fi
+
+if command -v uv >/dev/null 2>&1; then
+    (cd "$REPO_ROOT" && uv run python "$SCRIPT_DIR/run.py" "${RUN_ARGS[@]}")
+else
+    (cd "$REPO_ROOT" && python3 "$SCRIPT_DIR/run.py" "${RUN_ARGS[@]}")
+fi
