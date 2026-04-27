@@ -127,6 +127,24 @@ def test_setup_isolated_workdir_uses_requested_schema(monkeypatch, tmp_path):
     assert (workdir / "database.duckdb").read_text() == "db"
 
 
+def test_db_cache_is_private(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_db_cache_private", "benchmark/run.py")
+
+    agent_db = tmp_path / "agent_db"
+    agent_db.mkdir()
+    source = agent_db / "mimic_iv_sirs.duckdb"
+    source.write_text("db")
+
+    monkeypatch.setattr(run, "AGENT_DB_DIR", agent_db)
+    monkeypatch.setattr(run, "DB_CACHE", tmp_path / "cache")
+
+    cached = run._get_cached_db("mimic-sirs")
+
+    assert cached.read_text() == "db"
+    assert (run.DB_CACHE.stat().st_mode & 0o777) == 0o700
+    assert (cached.stat().st_mode & 0o777) == 0o600
+
+
 # ── Per-run HOME seeding ────────────────────────────────────────────────
 
 
@@ -734,14 +752,27 @@ def test_benchmark_dockerfile_installs_pi_cli():
     assert "@mariozechner/pi-coding-agent@${PI_CODING_AGENT_VERSION}" in dockerfile
 
 
-def test_bench_sh_mounts_pi_config_and_configures_ollama_endpoint():
+def test_bench_sh_stages_pi_config_and_configures_ollama_endpoint():
     bench = (ROOT / "benchmark" / "bench.sh").read_text()
 
     assert 'AGENT" == "pi-ollama"' in bench
     assert "command -v pi" in bench
     assert "M4BENCH_OLLAMA_BASE_URL" in bench
     assert "--add-host=host.docker.internal:host-gateway" in bench
-    assert "$HOME/.pi:$AUTH_ROOT/.pi:ro" in bench
+    assert 'stage_auth_file ".pi/agent/models.json"' in bench
+    assert "$HOME/.pi:$AUTH_ROOT/.pi:ro" not in bench
+
+
+def test_bench_sh_stages_minimal_auth_instead_of_full_provider_dirs():
+    bench = (ROOT / "benchmark" / "bench.sh").read_text()
+
+    assert "AUTH_STAGING_DIR=" in bench
+    assert 'stage_auth_file ".codex/auth.json"' in bench
+    assert 'stage_auth_file ".gemini/oauth_creds.json"' in bench
+    assert 'chmod -R go-rwx "$AUTH_STAGING_DIR"' in bench
+    assert "$HOME/.codex:$AUTH_ROOT/.codex:ro" not in bench
+    assert "$HOME/.gemini:$AUTH_ROOT/.gemini:ro" not in bench
+    assert "$HOME/.pi:$AUTH_ROOT/.pi:ro" not in bench
 
 
 def test_bench_sh_supports_claude_container_login_mode():
@@ -821,6 +852,7 @@ def test_claude_login_container_script_persists_allowlisted_auth_only():
     assert ".claude.json" in script
     assert ".claude/.credentials.json" in script
     assert ".claude/projects" not in script
+    assert "chmod -R go-rwx /claude-auth" in script
     assert "claude-ok" in script
 
 
@@ -920,9 +952,26 @@ def test_sandbox_hook_blocks_ground_truth_paths():
     assert hook._check_blocked_substrings("cat ground_truth/foo.sql") is not None
     assert hook._check_blocked_substrings("/benchmark/evaluate.py") is not None
     assert hook._check_blocked_substrings("/benchmark/lib/compare.py") is not None
+    assert hook._check_blocked_substrings("/benchmark/tasks") is not None
+    assert hook._check_blocked_substrings("/host-auth/.codex/auth.json") is not None
+    assert hook._check_blocked_substrings("/benchmark/lib/dictionary.json") is not None
     # Allowed paths should not trigger
     assert hook._check_blocked_substrings("./output.csv") is None
     assert hook._check_blocked_substrings("./database.duckdb") is None
+
+
+def test_filesystem_canary_covers_real_sensitive_paths():
+    run = _load_module("benchmark_run_canary_paths", "benchmark/run.py")
+
+    commands = "\n".join(cmd for _name, cmd in run.FILESYSTEM_CANARY_CHECKS)
+
+    assert "/benchmark/ground_truth" in commands
+    assert "/benchmark/tasks" in commands
+    assert "/benchmark/agent_db" in commands
+    assert "/tmp/clinskillsbench/_db_cache" in commands
+    assert "/host-auth" in commands
+    assert "/benchmark/lib/dictionary.json" in commands
+    assert "/private-benchmark" not in commands
 
 
 def test_sandbox_hook_extracts_quoted_paths():

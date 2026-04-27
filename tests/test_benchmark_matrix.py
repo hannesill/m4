@@ -123,6 +123,10 @@ def test_scan_existing_tracks_completed_trial_ids(tmp_path):
                 "schema": "native",
                 "resolved_reasoning_effort": "medium",
                 "trial": 2,
+                "publishable": True,
+                "agent_result": {},
+                "filesystem_canary": {"passed": True},
+                "contamination_lint": {"passed": True},
                 "test_results": {"reward": 0.0},
             }
         )
@@ -139,6 +143,38 @@ def test_scan_existing_tracks_completed_trial_ids(tmp_path):
             "medium",
         )
     ] == {2}
+
+
+def test_scan_existing_ignores_non_publishable_or_failed_runs(tmp_path):
+    matrix = _load_module(
+        "benchmark_matrix_scan_existing_invalid", "benchmark/matrix.py"
+    )
+
+    base = {
+        "task": "mimic-sofa-24h",
+        "condition": "no-skill",
+        "model": "gpt-5.5",
+        "schema": "native",
+        "resolved_reasoning_effort": "medium",
+        "trial": 1,
+        "test_results": {"reward": 1.0},
+        "filesystem_canary": {"passed": True},
+        "contamination_lint": {"passed": True},
+        "agent_result": {},
+    }
+    cases = [
+        {"publishable": False},
+        {"publishable": True, "agent_result": {"failure_reason": "auth"}},
+        {"publishable": True, "filesystem_canary": {"passed": False}},
+        {"publishable": True, "contamination_lint": {"passed": False}},
+    ]
+    for i, override in enumerate(cases):
+        run_dir = tmp_path / f"run{i}"
+        run_dir.mkdir()
+        data = {**base, **override}
+        (run_dir / "result.json").write_text(json.dumps(data))
+
+    assert matrix._scan_existing(tmp_path) == {}
 
 
 def test_filter_existing_keeps_legacy_runs_separate_from_pinned_reasoning():

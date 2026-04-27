@@ -589,10 +589,10 @@ def _cell_key(
 def _scan_existing(results_root: Path) -> dict[str, set[int]]:
     """Scan results/ for completed runs. Returns {run_key: completed_trials}.
 
-    A "completed" run is one with a result.json that has a recorded reward
-    (i.e., the evaluation ran, even if the agent scored 0). Tracking exact
-    trial ids prevents interrupted resumes from duplicating already completed
-    seed labels.
+    A "completed" run must be publishable, pass the isolation/lint checks, and
+    have a recorded reward. Tracking exact trial ids prevents interrupted
+    resumes from duplicating already completed seed labels without letting
+    contaminated or failed runs satisfy a paper campaign.
     """
     completed: dict[str, set[int]] = defaultdict(set)
     if not results_root.exists():
@@ -617,9 +617,7 @@ def _scan_existing(results_root: Path) -> dict[str, set[int]]:
         if condition.startswith("_batch-"):
             condition = condition.replace("_batch-", "")
 
-        # Skip runs that errored before evaluation
-        reward = data.get("test_results", {}).get("reward")
-        if reward is None:
+        if not _is_publishable_completed_result(data):
             continue
         try:
             trial = int(data.get("trial"))
@@ -630,6 +628,21 @@ def _scan_existing(results_root: Path) -> dict[str, set[int]]:
         completed[key].add(trial)
 
     return completed
+
+
+def _is_publishable_completed_result(data: dict) -> bool:
+    """Return whether a result is valid enough to satisfy --skip-existing."""
+    if data.get("test_results", {}).get("reward") is None:
+        return False
+    if data.get("publishable") is not True:
+        return False
+    if data.get("agent_result", {}).get("failure_reason"):
+        return False
+    if data.get("filesystem_canary", {}).get("passed") is not True:
+        return False
+    if data.get("contamination_lint", {}).get("passed") is not True:
+        return False
+    return True
 
 
 def _filter_existing(

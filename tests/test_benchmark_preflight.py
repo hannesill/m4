@@ -62,6 +62,14 @@ def test_preflight_skill_snapshots_have_no_target_leakage():
     assert result.ok, result.details
 
 
+def test_preflight_isolation_guardrails_cover_known_leaks():
+    preflight = _load_module("benchmark_preflight_isolation", "benchmark/preflight.py")
+
+    result = preflight.check_isolation_guardrails()
+
+    assert result.ok, result.details
+
+
 def test_preflight_external_view_sources_are_present(monkeypatch, tmp_path):
     preflight = _load_module(
         "benchmark_preflight_external_views", "benchmark/preflight.py"

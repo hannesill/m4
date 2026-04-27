@@ -63,6 +63,8 @@ if [[ "$copied" -eq 0 ]]; then
     exit 1
 fi
 
+chmod -R go-rwx /claude-auth
+
 echo "Testing persisted login in a fresh HOME..."
 TEST_HOME="$(mktemp -d -t claude-test-home-XXXXXX)"
 trap "rm -rf \"$LOGIN_HOME\" \"$TEST_HOME\"" EXIT

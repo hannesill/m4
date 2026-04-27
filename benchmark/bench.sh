@@ -6,12 +6,23 @@ IMAGE="${M4BENCH_IMAGE:-m4bench:latest}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 AUTH_ROOT="/host-auth"
+AUTH_STAGING_DIR="$(mktemp -d -t m4bench-auth-XXXXXX)"
 DOCKER_BIN="${DOCKER_BIN:-docker}"
 M4_DATA_DIR="${M4BENCH_M4_DATA_DIR:-$REPO_ROOT/m4_data}"
 M4_DATA_CONTAINER_DIR="${M4BENCH_M4_DATA_CONTAINER_DIR:-/m4_data}"
 CLAUDE_AUTH_MODE="${M4BENCH_CLAUDE_AUTH_MODE:-api-key}"
 CLAUDE_AUTH_VOLUME="${M4BENCH_CLAUDE_AUTH_VOLUME:-m4bench-claude-auth}"
 CLAUDE_AUTH_ROOT="/claude-auth"
+
+cleanup() {
+    local status=$?
+    if [[ "${M4BENCH_KEEP_CONTAINER:-0}" != "1" ]]; then
+        "$DOCKER_BIN" rm -f "$CONTAINER" >/dev/null 2>&1 || true
+    fi
+    rm -rf "$AUTH_STAGING_DIR"
+    return "$status"
+}
+trap cleanup EXIT
 
 # OrbStack's doctor warns against using the Homebrew docker client against the
 # OrbStack daemon. Prefer OrbStack's bundled client when that is the active
@@ -111,6 +122,28 @@ if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" == "container-login" ]];
     echo "Using Claude container-login auth volume: $CLAUDE_AUTH_VOLUME"
 fi
 
+stage_auth_file() {
+    local relative_path="$1"
+    local src="$HOME/$relative_path"
+    local dest="$AUTH_STAGING_DIR/$relative_path"
+    if [[ -f "$src" ]]; then
+        mkdir -p "$(dirname "$dest")"
+        cp "$src" "$dest"
+    fi
+}
+
+# Stage only the minimal auth/config files the harness explicitly copies into
+# per-run HOME directories. Do not mount full provider config directories into
+# the benchmark container; they may contain histories, memories, or prior runs.
+stage_auth_file ".codex/auth.json"
+stage_auth_file ".gemini/oauth_creds.json"
+stage_auth_file ".gemini/google_accounts.json"
+stage_auth_file ".gemini/state.json"
+stage_auth_file ".gemini/settings.json"
+stage_auth_file ".gemini/installation_id"
+stage_auth_file ".pi/agent/models.json"
+chmod -R go-rwx "$AUTH_STAGING_DIR"
+
 NEEDS_BUILD=0
 if [[ "${M4BENCH_REBUILD:-0}" == "1" ]] || ! "$DOCKER_BIN" image inspect "$IMAGE" &>/dev/null; then
     NEEDS_BUILD=1
@@ -138,11 +171,14 @@ DOCKER_ARGS=(
     --name "$CONTAINER"
     --cap-add NET_ADMIN
     -v "$SCRIPT_DIR":/benchmark
+    -v "$AUTH_STAGING_DIR:$AUTH_ROOT:ro"
     -e "M4BENCH_AUTH_ROOT=$AUTH_ROOT"
     -e "M4BENCH_CLAUDE_AUTH_MODE=$CLAUDE_AUTH_MODE"
 )
 
 if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" == "container-login" ]]; then
+    "$DOCKER_BIN" run --rm -v "$CLAUDE_AUTH_VOLUME:$CLAUDE_AUTH_ROOT" "$IMAGE" \
+        bash -lc 'chmod -R go-rwx /claude-auth'
     DOCKER_ARGS+=(
         -v "$CLAUDE_AUTH_VOLUME:$CLAUDE_AUTH_ROOT:ro"
         -e "M4BENCH_CLAUDE_AUTH_ROOT=$CLAUDE_AUTH_ROOT"
@@ -210,28 +246,7 @@ if [[ "$CLAUDE_AUTH_MODE" != "container-login" ]] && [[ -n "${ANTHROPIC_API_KEY:
     DOCKER_ARGS+=(-e "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY")
 fi
 
-if [[ -d "$HOME/.codex" ]]; then
-    DOCKER_ARGS+=(-v "$HOME/.codex:$AUTH_ROOT/.codex:ro")
-fi
-
-if [[ -d "$HOME/.gemini" ]]; then
-    DOCKER_ARGS+=(-v "$HOME/.gemini:$AUTH_ROOT/.gemini:ro")
-fi
-
-if [[ -d "$HOME/.pi" ]]; then
-    DOCKER_ARGS+=(-v "$HOME/.pi:$AUTH_ROOT/.pi:ro")
-fi
-
 "$DOCKER_BIN" run "${DOCKER_ARGS[@]}" "$IMAGE" >/dev/null
-
-cleanup_container() {
-    local status=$?
-    if [[ "${M4BENCH_KEEP_CONTAINER:-0}" != "1" ]]; then
-        "$DOCKER_BIN" rm -f "$CONTAINER" >/dev/null 2>&1 || true
-    fi
-    return "$status"
-}
-trap cleanup_container EXIT
 
 # Install benchmark dependencies (lightweight, no M4 package)
 "$DOCKER_BIN" exec "$CONTAINER" pip3 install --break-system-packages --quiet \
@@ -249,7 +264,10 @@ echo "Locking sensitive directories (root-only)..."
         if [ -d "/benchmark/$d" ]; then
             chmod 700 "/benchmark/$d"
         fi
-    done'
+    done
+    if [ -f /benchmark/lib/dictionary.json ]; then
+        chmod 600 /benchmark/lib/dictionary.json
+    fi'
 
 # 2. Lock network: iptables rules restrict the benchagent user to
 #    LLM-API-only outbound traffic (no web search, no package downloads).

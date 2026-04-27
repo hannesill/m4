@@ -35,9 +35,16 @@ BLOCKED_SUBSTRINGS = [
     "/benchmark/lib/test_task",
     "/benchmark/lib/ground_truth",
     "/benchmark/agent_db",
+    "/benchmark/tasks",
+    "/benchmark/results",
+    "/benchmark/lib/dictionary.json",
+    "/tmp/clinskillsbench/_db_cache",
+    "/host-auth",
+    "/claude-auth",
     "ground_truth/",
     "ground_truth.csv",
     "ground_truth.sql",
+    "dictionary.json",
 ]
 
 
