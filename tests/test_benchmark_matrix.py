@@ -39,16 +39,17 @@ def test_build_tiers_uses_agent_specific_codex_models():
     assert models == {"gpt-5.5", "gpt-5.4-mini"}
 
 
-def test_provider_comparison_profile_is_sparse_for_claude():
+def test_provider_comparison_profile_uses_requested_seeds_for_claude():
     matrix = _load_module("benchmark_matrix_provider_comparison", "benchmark/matrix.py")
     _reset_task_globals(matrix)
     matrix._classify_tasks()
 
     tiers = matrix.build_tiers(seeds=5, agent="claude", profile="provider-comparison")
 
-    assert sum(len(tier.runs) for tier in tiers) < 80
+    assert sum(len(tier.runs) for tier in tiers) == 190
     assert {run["model"] for tier in tiers for run in tier.runs} == {"opus", "sonnet"}
     assert {run["condition"] for run in tiers[0].runs} == {"no-skill", "with-skill"}
+    assert {run["trial"] for tier in tiers for run in tier.runs} == {1, 2, 3, 4, 5}
 
 
 def test_filter_existing_skips_completed_trial_ids():
