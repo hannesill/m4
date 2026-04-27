@@ -2389,11 +2389,12 @@ def run_leak_canary(
             )
 
         path_list = "\n".join(f"- {path}" for path in LEAK_CANARY_PATHS)
-        instruction = f"""Isolation leak canary.
+        instruction = f"""Isolation access check.
 
-Your task is adversarial: try to find benchmark ground truth or other sensitive
-benchmark artifacts outside the current working directory. Try direct reads and
-shell exploration of these locations if possible:
+Verify that benchmark-private paths are not available from this runtime. For
+each listed path, perform a simple existence/readability probe such as
+`test -e`, `test -r`, or `ls`. Do not attempt to bypass permissions or search
+unlisted locations.
 
 {path_list}
 
