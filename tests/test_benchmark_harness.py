@@ -78,6 +78,27 @@ def test_extract_claude_rate_limit_reset_at(tmp_path):
     assert run._extract_claude_rate_limit_reset_at(trace) == 1775545200
 
 
+def test_detect_agent_failure_reason_ignores_429_inside_paths(tmp_path):
+    run = _load_module("benchmark_run_rate_path", "benchmark/run.py")
+
+    trace = tmp_path / "trace.jsonl"
+    trace.write_text(
+        '{"type":"rate_limit_event","rate_limit_info":{"status":"allowed",'
+        '"resetsAt":1777280400,"rateLimitType":"five_hour"}}\n'
+    )
+
+    reason = run._detect_agent_failure_reason(
+        "claude",
+        {
+            "stdout": "output at /tmp/run_042930/output.csv",
+            "stderr": "",
+            "trace_file": str(trace),
+        },
+    )
+
+    assert reason is None
+
+
 # ── Isolated workdir ────────────────────────────────────────────────────
 
 
@@ -151,6 +172,104 @@ def test_prepare_run_home_copies_minimal_auth_files(monkeypatch, tmp_path):
     assert gemini_settings["admin"]["extensions"]["enabled"] is False
     assert gemini_settings["admin"]["skills"]["enabled"] is True
     assert not (gemini_home / ".gemini" / "trustedFolders.json").exists()
+
+
+def test_prepare_run_home_claude_container_login_copies_only_auth_files(
+    monkeypatch, tmp_path
+):
+    run = _load_module("benchmark_run_claude_container_home", "benchmark/run.py")
+
+    auth_root = tmp_path / "claude-auth"
+    (auth_root / ".claude" / "projects" / "memory").mkdir(parents=True)
+    (auth_root / ".claude.json").write_text("{}")
+    (auth_root / ".claude" / ".credentials.json").write_text("{}")
+    (auth_root / ".claude" / "projects" / "memory" / "state.json").write_text("{}")
+
+    monkeypatch.setenv("M4BENCH_CLAUDE_AUTH_MODE", "container-login")
+    monkeypatch.setenv("M4BENCH_CLAUDE_AUTH_ROOT", str(auth_root))
+
+    claude_home = tmp_path / "claude-home"
+    copied = run.prepare_run_home("claude", claude_home)
+
+    assert copied == [".claude.json", ".claude/.credentials.json"]
+    assert (claude_home / ".claude.json").exists()
+    assert (claude_home / ".claude" / ".credentials.json").exists()
+    assert not (claude_home / ".claude" / "projects").exists()
+
+
+def test_claude_container_login_removes_env_api_key(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_claude_env", "benchmark/run.py")
+
+    workdir = tmp_path / "work"
+    run_home = tmp_path / "home"
+    workdir.mkdir()
+    run_home.mkdir()
+    captured = {}
+
+    class FakeProcess:
+        def __init__(self):
+            self.stdout = io.StringIO('{"type":"system","memory_paths":{}}\n')
+            self.returncode = 0
+
+        def wait(self, timeout):
+            return 0
+
+        def kill(self):
+            raise AssertionError("process should not be killed")
+
+    def fake_popen(cmd, **kwargs):
+        captured["kwargs"] = kwargs
+        return FakeProcess()
+
+    monkeypatch.setenv("M4BENCH_CLAUDE_AUTH_MODE", "container-login")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-oat-stale")
+    monkeypatch.setattr(run.subprocess, "Popen", fake_popen)
+
+    result = run.run_agent("write output.csv", "claude", workdir, run_home=run_home)
+
+    assert result["returncode"] == 0
+    assert "ANTHROPIC_API_KEY" not in captured["kwargs"]["env"]
+    assert captured["kwargs"]["env"]["HOME"] == str(run_home)
+
+
+def test_validate_claude_memory_paths_requires_run_home(tmp_path):
+    run = _load_module("benchmark_run_claude_memory", "benchmark/run.py")
+
+    run_home = tmp_path / "home"
+    run_home.mkdir()
+    trace = tmp_path / "trace.jsonl"
+    trace.write_text(
+        json.dumps(
+            {
+                "type": "system",
+                "memory_paths": {
+                    "auto": str(run_home / ".claude" / "projects" / "x" / "memory")
+                },
+            }
+        )
+        + "\n"
+    )
+
+    result = run._validate_claude_memory_paths(trace, run_home)
+
+    assert result["validated"] is True
+    assert result["violations"] == []
+
+
+def test_validate_claude_memory_paths_flags_persistent_auth_escape(tmp_path):
+    run = _load_module("benchmark_run_claude_memory_escape", "benchmark/run.py")
+
+    run_home = tmp_path / "home"
+    run_home.mkdir()
+    trace = tmp_path / "trace.jsonl"
+    trace.write_text(
+        '{"type":"system","memory_paths":{"auto":"/claude-auth/.claude/projects/x/memory"}}\n'
+    )
+
+    result = run._validate_claude_memory_paths(trace, run_home)
+
+    assert result["validated"] is False
+    assert result["violations"] == ["/claude-auth/.claude/projects/x/memory"]
 
 
 def test_codex_run_home_keeps_shell_writes_in_workdir(monkeypatch, tmp_path):
@@ -555,6 +674,86 @@ def test_bench_sh_mounts_pi_config_and_configures_ollama_endpoint():
     assert "M4BENCH_OLLAMA_BASE_URL" in bench
     assert "--add-host=host.docker.internal:host-gateway" in bench
     assert "$HOME/.pi:$AUTH_ROOT/.pi:ro" in bench
+
+
+def test_bench_sh_supports_claude_container_login_mode():
+    bench = (ROOT / "benchmark" / "bench.sh").read_text()
+
+    assert "M4BENCH_CLAUDE_AUTH_MODE" in bench
+    assert "container-login" in bench
+    assert "m4bench-claude-auth" in bench
+    assert "$CLAUDE_AUTH_VOLUME:$CLAUDE_AUTH_ROOT:ro" in bench
+    assert "M4BENCH_CLAUDE_AUTH_ROOT=$CLAUDE_AUTH_ROOT" in bench
+
+
+def test_bench_sh_container_login_does_not_require_api_key(tmp_path):
+    fake_docker = tmp_path / "docker"
+    docker_log = tmp_path / "docker.log"
+    fake_docker.write_text(
+        """#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\\n' "$*" >> "$FAKE_DOCKER_LOG"
+if [[ "${1:-}" == "context" && "${2:-}" == "show" ]]; then
+    echo default
+    exit 0
+fi
+if [[ "${1:-}" == "image" && "${2:-}" == "inspect" ]]; then
+    exit 0
+fi
+if [[ "${1:-}" == "ps" ]]; then
+    exit 0
+fi
+exit 0
+"""
+    )
+    fake_docker.chmod(0o755)
+
+    env = {
+        **os.environ,
+        "DOCKER_BIN": str(fake_docker),
+        "FAKE_DOCKER_LOG": str(docker_log),
+        "HOME": str(tmp_path / "home"),
+        "M4BENCH_CONTAINER_NAME": "m4bench-test",
+        "M4BENCH_CLAUDE_AUTH_MODE": "container-login",
+        "M4BENCH_M4_DATA_DIR": str(tmp_path / "m4_data"),
+    }
+    env.pop("ANTHROPIC_API_KEY", None)
+
+    result = subprocess.run(
+        [
+            "bash",
+            "benchmark/bench.sh",
+            "--task",
+            "mimic-sirs-24h-raw",
+            "--condition",
+            "no-skill",
+            "--agent",
+            "claude",
+            "--results-root",
+            "/benchmark/results/fake",
+        ],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    log = docker_log.read_text()
+    assert "m4bench-claude-auth:/claude-auth:ro" in log
+    assert "M4BENCH_CLAUDE_AUTH_MODE=container-login" in log
+    assert "ANTHROPIC_API_KEY" not in log
+
+
+def test_claude_login_container_script_persists_allowlisted_auth_only():
+    script = (ROOT / "benchmark" / "claude_login_container.sh").read_text()
+
+    assert "claude login" in script
+    assert ".claude.json" in script
+    assert ".claude/.credentials.json" in script
+    assert ".claude/projects" not in script
+    assert "claude-ok" in script
 
 
 def test_task_discovery_uses_repo_relative_paths(monkeypatch):

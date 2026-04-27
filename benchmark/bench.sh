@@ -9,6 +9,9 @@ AUTH_ROOT="/host-auth"
 DOCKER_BIN="${DOCKER_BIN:-docker}"
 M4_DATA_DIR="${M4BENCH_M4_DATA_DIR:-$REPO_ROOT/m4_data}"
 M4_DATA_CONTAINER_DIR="${M4BENCH_M4_DATA_CONTAINER_DIR:-/m4_data}"
+CLAUDE_AUTH_MODE="${M4BENCH_CLAUDE_AUTH_MODE:-api-key}"
+CLAUDE_AUTH_VOLUME="${M4BENCH_CLAUDE_AUTH_VOLUME:-m4bench-claude-auth}"
+CLAUDE_AUTH_ROOT="/claude-auth"
 
 # OrbStack's doctor warns against using the Homebrew docker client against the
 # OrbStack daemon. Prefer OrbStack's bundled client when that is the active
@@ -78,7 +81,7 @@ fi
 # Claude subscription auth should come from a fresh macOS keychain token when
 # available. If benchmark/.env contains an OAuth token from a past session, try
 # to replace it before launching Docker.
-if [[ "$AGENT" == "claude" ]] && command -v security &>/dev/null; then
+if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" != "container-login" ]] && command -v security &>/dev/null; then
     FRESH_CLAUDE_OAUTH=$(
         security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null \
         | python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('claudeAiOauth',{}).get('accessToken',''))" 2>/dev/null
@@ -89,7 +92,7 @@ if [[ "$AGENT" == "claude" ]] && command -v security &>/dev/null; then
     fi
 fi
 
-if [[ "$AGENT" == "claude" ]] && [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
+if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" != "container-login" ]] && [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
     echo "Error: No ANTHROPIC_API_KEY found."
     echo "Options:"
     echo "  1. Create benchmark/.env with: ANTHROPIC_API_KEY=sk-ant-api03-..."
@@ -98,10 +101,14 @@ if [[ "$AGENT" == "claude" ]] && [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
     exit 1
 fi
 
-if [[ "$AGENT" == "claude" ]] && [[ "${ANTHROPIC_API_KEY:-}" == sk-ant-oat* ]] && ! command -v security &>/dev/null; then
+if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" != "container-login" ]] && [[ "${ANTHROPIC_API_KEY:-}" == sk-ant-oat* ]] && ! command -v security &>/dev/null; then
     echo "Error: benchmark/.env contains an expiring Claude OAuth token."
     echo "Use a real Anthropic API key in benchmark/.env, or run via macOS with 'claude login'."
     exit 1
+fi
+
+if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" == "container-login" ]]; then
+    echo "Using Claude container-login auth volume: $CLAUDE_AUTH_VOLUME"
 fi
 
 NEEDS_BUILD=0
@@ -132,7 +139,15 @@ DOCKER_ARGS=(
     --cap-add NET_ADMIN
     -v "$SCRIPT_DIR":/benchmark
     -e "M4BENCH_AUTH_ROOT=$AUTH_ROOT"
+    -e "M4BENCH_CLAUDE_AUTH_MODE=$CLAUDE_AUTH_MODE"
 )
+
+if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" == "container-login" ]]; then
+    DOCKER_ARGS+=(
+        -v "$CLAUDE_AUTH_VOLUME:$CLAUDE_AUTH_ROOT:ro"
+        -e "M4BENCH_CLAUDE_AUTH_ROOT=$CLAUDE_AUTH_ROOT"
+    )
+fi
 
 if [[ "$AGENT" == "pi-ollama" ]]; then
     M4BENCH_OLLAMA_HOST="${M4BENCH_OLLAMA_HOST:-host.docker.internal}"
@@ -191,7 +206,7 @@ if (( ${#DATA_MOUNT_SOURCES[@]} > 0 )); then
     done
 fi
 
-if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+if [[ "$CLAUDE_AUTH_MODE" != "container-login" ]] && [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
     DOCKER_ARGS+=(-e "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY")
 fi
 
