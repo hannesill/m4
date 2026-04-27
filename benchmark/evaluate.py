@@ -47,42 +47,59 @@ def evaluate(task_name: str, output_path: str) -> dict:
     computed directly from comparing agent output to ground truth.
     Pytest tests are kept for pass/fail diagnostics.
     """
-    from lib.compare import compare_derived_tables
-    from lib.db import load_task_config, resolve_task_dir
-    from lib.runner import run_tests
+    try:
+        from lib.compare import compare_derived_tables
+        from lib.db import load_task_config, resolve_task_dir
+        from lib.runner import run_tests
 
-    task_dir = resolve_task_dir(task_name)
+        task_dir = resolve_task_dir(task_name)
 
-    gt_path = resolve_ground_truth(task_name)
-    test_results = run_tests(task_dir, output_path, gt_path)
+        gt_path = resolve_ground_truth(task_name)
+        test_results = run_tests(task_dir, output_path, gt_path)
 
-    # Compute continuous reward from raw match rates
-    config = load_task_config(task_dir)
-    eval_config = config["evaluation"]
-    comparison = compare_derived_tables(
-        output_path,
-        str(gt_path),
-        key_columns=eval_config["key_columns"],
-        value_columns=eval_config["value_columns"],
-        tolerance=eval_config.get("tolerance", {}),
-    )
-    match_rates = {
-        col: _round_metric(comparison[col]["match_rate"])
-        for col in eval_config["value_columns"]
-    }
-    test_results["match_rates"] = match_rates
-    test_results["reward"] = _round_metric(sum(match_rates.values()) / len(match_rates))
+        # Compute continuous reward from raw match rates
+        config = load_task_config(task_dir)
+        eval_config = config["evaluation"]
+        comparison = compare_derived_tables(
+            output_path,
+            str(gt_path),
+            key_columns=eval_config["key_columns"],
+            value_columns=eval_config["value_columns"],
+            tolerance=eval_config.get("tolerance", {}),
+        )
+        match_rates = {
+            col: _round_metric(comparison[col]["match_rate"])
+            for col in eval_config["value_columns"]
+        }
+        test_results["match_rates"] = match_rates
+        test_results["reward"] = _round_metric(
+            sum(match_rates.values()) / len(match_rates)
+        )
 
-    # Surface task-level cohort diagnostics alongside reward. Reward is a
-    # recall-style metric (per-column match rate); key_precision tells the
-    # reader whether the agent's output cohort is clean or inflated with
-    # keys that do not belong. Reward is intentionally unchanged.
-    meta = comparison.get("__meta__", {})
-    test_results["key_precision"] = _round_metric(meta.get("key_precision", 0.0))
-    test_results["extra_keys"] = int(meta.get("extra_keys", 0))
-    test_results["agent_unique_keys"] = int(meta.get("agent_unique_keys", 0))
+        # Surface task-level cohort diagnostics alongside reward. Reward is a
+        # recall-style metric (per-column match rate); key_precision tells the
+        # reader whether the agent's output cohort is clean or inflated with
+        # keys that do not belong. Reward is intentionally unchanged.
+        meta = comparison.get("__meta__", {})
+        test_results["key_precision"] = _round_metric(meta.get("key_precision", 0.0))
+        test_results["extra_keys"] = int(meta.get("extra_keys", 0))
+        test_results["agent_unique_keys"] = int(meta.get("agent_unique_keys", 0))
 
-    return test_results
+        return test_results
+    except Exception as exc:
+        return {
+            "passed": 0,
+            "failed": 0,
+            "errors": 1,
+            "total": 1,
+            "reward": 0.0,
+            "match_rates": {},
+            "key_precision": 0.0,
+            "extra_keys": 0,
+            "agent_unique_keys": 0,
+            "pytest_output": f"Evaluation failed: {exc}",
+            "pytest_stderr": "",
+        }
 
 
 def main():

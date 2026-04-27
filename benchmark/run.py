@@ -27,6 +27,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import gzip
+import hashlib
 import json
 import os
 import re
@@ -65,6 +67,60 @@ EXTERNAL_NETWORK_COMMAND_PATTERN = re.compile(
     r"\b(curl|wget)\b|https?://|\burllib\b|requests\.get|urlopen|duckduckgo|github\.com",
     re.IGNORECASE,
 )
+SENSITIVE_CONTENT_PATTERNS = (
+    "/private-benchmark",
+    "/benchmark/ground_truth",
+    "/benchmark/tasks",
+    "/benchmark/agent_db",
+    "/benchmark/results",
+    "ground_truth/",
+    "ground_truth.csv",
+    "ground_truth.sql",
+)
+FILESYSTEM_CANARY_CHECKS = (
+    ("private_ground_truth", "test ! -r /private-benchmark/ground_truth"),
+    ("private_tasks", "test ! -r /private-benchmark/tasks"),
+    ("private_agent_db", "test ! -r /private-benchmark/agent_db"),
+    ("out_staging", "test ! -r /out"),
+    ("benchmark_results", "test ! -r /benchmark/results"),
+    (
+        "previous_run_marker",
+        "test ! -e /tmp/clinskillsbench/previous_run_marker",
+    ),
+)
+DATABASE_ARTIFACT_SUFFIXES = (
+    ".duckdb",
+    ".duckdb.wal",
+    ".db",
+    ".sqlite",
+    ".sqlite-shm",
+    ".sqlite-wal",
+)
+RESULT_EXPORT_SKIP_DIRS = {
+    ".cache",
+    ".claude",
+    ".codex",
+    ".gemini",
+    ".pi",
+    "__pycache__",
+    "_home",
+}
+RESULT_EXPORT_MAX_FILE_BYTES = 50 * 1024 * 1024
+TEXT_LINT_SUFFIXES = {
+    ".csv",
+    ".json",
+    ".jsonl",
+    ".md",
+    ".py",
+    ".r",
+    ".R",
+    ".sh",
+    ".sql",
+    ".toml",
+    ".txt",
+    ".yaml",
+    ".yml",
+}
 
 # Tools to deny in isolated mode — defence-in-depth on top of iptables.
 NETWORK_DENY_TOOLS = ",".join(
@@ -100,11 +156,12 @@ AGENT_COMMANDS = {
             "codex",
             "exec",
             "--skip-git-repo-check",
-            "--dangerously-bypass-approvals-and-sandbox",
             "-c",
             'web_search="disabled"',
             "-c",
             "tools.web_search=false",
+            "-c",
+            'sandbox_mode="workspace-write"',
             "-c",
             (
                 'developer_instructions="M4Bench isolation: use only local files, '
@@ -293,6 +350,68 @@ def _chown_recursive(path: Path, uid: int, gid: int) -> None:
             os.chown(os.path.join(dirpath, filename), uid, gid)
 
 
+def _agent_visible_results_root(
+    results_root: Path, *visible_roots: Path | None
+) -> bool:
+    """Return True when result staging is inside an agent-visible root."""
+    resolved_results = results_root.resolve()
+    for root in visible_roots:
+        if root is None:
+            continue
+        try:
+            resolved_results.relative_to(root.resolve())
+            return True
+        except ValueError:
+            continue
+    return False
+
+
+def run_filesystem_canary(
+    agent_name: str,
+    workdir: Path,
+    run_home: Path | None,
+    *,
+    isolated: bool,
+    enforce: bool,
+) -> dict:
+    """Verify sensitive benchmark paths are unreadable by the agent user."""
+    env = _agent_process_env(agent_name, workdir, run_home) if run_home else None
+    agent_creds = _resolve_agent_creds() if isolated else None
+
+    if agent_creds:
+        uid, gid = agent_creds
+        _chown_recursive(workdir, uid, gid)
+        if run_home:
+            _chown_recursive(run_home, uid, gid)
+
+    failures: list[str] = []
+    for name, shell_check in FILESYSTEM_CANARY_CHECKS:
+        completed = subprocess.run(
+            ["bash", "-lc", shell_check],
+            cwd=str(workdir),
+            env=env,
+            user=agent_creds[0] if agent_creds else None,
+            group=agent_creds[1] if agent_creds else None,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        if completed.returncode != 0:
+            failures.append(name)
+
+    passed = not failures
+    required = bool(enforce)
+    return {
+        "passed": passed,
+        "required": required,
+        "agent": agent_name,
+        "agent_user": AGENT_USER if agent_creds else None,
+        "checks": [name for name, _cmd in FILESYSTEM_CANARY_CHECKS],
+        "failures": failures,
+    }
+
+
 # ── Token refresh ──────────────────────────────────────────────────────────
 
 
@@ -433,6 +552,86 @@ def _detect_external_tool_use(trace_path: str | Path) -> list[str]:
             if EXTERNAL_NETWORK_COMMAND_PATTERN.search(command):
                 disallowed.append("external_network_command")
     return sorted(set(disallowed))
+
+
+def _read_text_for_lint(path: Path) -> str | None:
+    if path.suffix not in TEXT_LINT_SUFFIXES:
+        return None
+    try:
+        return path.read_text(errors="ignore")
+    except OSError:
+        return None
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def lint_run_contamination(
+    workdir: Path,
+    task_name: str,
+    *,
+    run_id: str,
+    prior_run_ids: set[str] | None = None,
+) -> dict:
+    """Fail runs whose agent-visible artifacts reference benchmark internals."""
+    violations: list[str] = []
+    prior_run_ids = prior_run_ids or set()
+
+    for path in sorted(workdir.rglob("*")):
+        if path.is_dir() or path.is_symlink():
+            continue
+        rel = path.relative_to(workdir).as_posix()
+        if _is_database_artifact(path):
+            if path.name not in {"database.duckdb", "database.duckdb.wal"}:
+                violations.append(f"{rel}: database artifact present")
+            continue
+        text = _read_text_for_lint(path)
+        if text is None:
+            continue
+        for pattern in SENSITIVE_CONTENT_PATTERNS:
+            if pattern in text:
+                violations.append(f"{rel}: references {pattern}")
+        for prior_run_id in prior_run_ids:
+            if prior_run_id != run_id and prior_run_id in text:
+                violations.append(f"{rel}: references prior run {prior_run_id}")
+
+    output_path = workdir / "output.csv"
+    if output_path.exists():
+        try:
+            from evaluate import resolve_ground_truth
+
+            gt_path = resolve_ground_truth(task_name)
+            if _sha256_file(output_path) == _sha256_file(gt_path):
+                violations.append("output.csv: byte-identical to ground truth")
+        except Exception as exc:
+            violations.append(f"ground truth hash check failed: {exc}")
+
+    return {
+        "passed": not violations,
+        "violations": violations,
+        "patterns": list(SENSITIVE_CONTENT_PATTERNS),
+    }
+
+
+def _collect_prior_run_ids(results_root: Path, current_run_id: str) -> set[str]:
+    run_ids: set[str] = set()
+    if not results_root.exists():
+        return run_ids
+    for result_file in results_root.rglob("result.json"):
+        try:
+            data = json.loads(result_file.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        run_id = data.get("run_id")
+        if isinstance(run_id, str) and run_id != current_run_id:
+            run_ids.add(run_id)
+    return run_ids
 
 
 def _collect_claude_memory_paths(trace_path: str | Path) -> list[str]:
@@ -836,25 +1035,65 @@ def _agent_process_env(
     return env
 
 
+def _is_database_artifact(path: Path) -> bool:
+    name = path.name.lower()
+    return any(name.endswith(suffix) for suffix in DATABASE_ARTIFACT_SUFFIXES)
+
+
+def _should_export_result_path(path: Path) -> bool:
+    """Return whether a workdir artifact is safe to export to results."""
+    if path.is_symlink():
+        return False
+    if path.is_dir():
+        return path.name not in RESULT_EXPORT_SKIP_DIRS
+    if _is_database_artifact(path):
+        return False
+    if path.stat().st_size > RESULT_EXPORT_MAX_FILE_BYTES:
+        return False
+    return True
+
+
+def _copy_result_item(src: Path, dest: Path) -> None:
+    """Copy one artifact, recursively filtering sensitive result files."""
+    if not _should_export_result_path(src):
+        return
+    if src.is_dir():
+        dest.mkdir(parents=True, exist_ok=True)
+        for child in src.iterdir():
+            _copy_result_item(child, dest / child.name)
+        return
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dest)
+
+
 def copy_results_back(workdir: Path, results_dir: Path) -> None:
     """Copy result files from the isolated workdir to benchmark/results/.
 
-    Skips the database and sandbox config (only copies useful outputs).
+    Skips databases, auth/provider state, symlinks, and large binary artifacts.
     """
     results_dir.mkdir(parents=True, exist_ok=True)
-    skip = {"database.duckdb", "database.duckdb.wal", "_home"} | {
+    for item in workdir.iterdir():
+        _copy_result_item(item, results_dir / item.name)
+
+
+def _reset_workdir_for_retry(workdir: Path) -> None:
+    """Remove stale agent outputs before another attempt in the same run."""
+    preserve = {
+        "database.duckdb",
+        "database.duckdb.wal",
+        "instruction.md",
+    } | {
         Path(cfg["skill_dir"]).parts[0]
         for cfg in AGENT_COMMANDS.values()
         if cfg.get("skill_dir")
     }
     for item in workdir.iterdir():
-        if item.name in skip or item.is_symlink():
+        if item.name in preserve:
             continue
-        dest = results_dir / item.name
-        if item.is_dir():
-            shutil.copytree(item, dest, dirs_exist_ok=True)
+        if item.is_dir() and not item.is_symlink():
+            shutil.rmtree(item, ignore_errors=True)
         else:
-            shutil.copy2(item, dest)
+            item.unlink(missing_ok=True)
 
 
 # ── Instruction and skill management ────────────────────────────────────────
@@ -1412,6 +1651,11 @@ def run_single_task(
         seed_msg = ", ".join(seeded) if seeded else "env-only auth"
         print(f"  Per-run HOME isolation: ON ({seed_msg})")
 
+    if isolated and _agent_visible_results_root(results_root, workdir, run_home):
+        raise RuntimeError(
+            f"Refusing publishable run: results root is agent-visible: {results_root}"
+        )
+
     # Inject skills into the agent's workdir-local skill directory.
     # Each task's workdir is unique, so parallel runs never interfere.
     try:
@@ -1425,88 +1669,161 @@ def run_single_task(
         instruction = prepare_instruction(task_name, workdir, condition, schema)
         (workdir / "instruction.md").write_text(instruction)
 
+        filesystem_canary = run_filesystem_canary(
+            agent_name,
+            workdir,
+            run_home,
+            isolated=isolated,
+            enforce=isolated and _running_in_container(),
+        )
+        if filesystem_canary["passed"]:
+            print("  Filesystem canary: PASS")
+        elif filesystem_canary["required"]:
+            print(
+                "  Filesystem canary: FAIL ("
+                + ", ".join(filesystem_canary["failures"])
+                + ")"
+            )
+        else:
+            print(
+                "  Filesystem canary: WARN ("
+                + ", ".join(filesystem_canary["failures"])
+                + ")"
+            )
+
         attempts = max_retries + 1
         agent_result = {}
         claude_memory_validation: dict | None = None
-        for attempt in range(1, attempts + 1):
-            if attempt > 1:
-                print(f"  Retry {attempt - 1}/{max_retries}...")
+        if not filesystem_canary["passed"] and filesystem_canary["required"]:
+            agent_result = {
+                "returncode": -1,
+                "stdout": "",
+                "stderr": "Filesystem canary failed",
+                "elapsed_seconds": 0,
+                "trace_file": "",
+                "failure_reason": "filesystem_canary",
+                "filesystem_canary": filesystem_canary,
+            }
+        else:
+            for attempt in range(1, attempts + 1):
+                if attempt > 1:
+                    print(f"  Retry {attempt - 1}/{max_retries}...")
+                    _reset_workdir_for_retry(workdir)
 
-            agent_result = run_agent(
-                instruction,
-                agent_name,
-                workdir,
-                model,
-                reasoning_effort=reasoning_effort,
-                verbose=verbose,
-                isolated=isolated,
-                run_home=run_home,
-            )
-            print(
-                f"  Agent finished in {agent_result['elapsed_seconds']}s "
-                f"(exit code: {agent_result['returncode']})"
-            )
-
-            external_tools = _detect_external_tool_use(
-                agent_result.get("trace_file", "")
-            )
-            if external_tools:
-                agent_result["failure_reason"] = "external_tool_use"
-                agent_result["external_tools"] = external_tools
+                agent_result = run_agent(
+                    instruction,
+                    agent_name,
+                    workdir,
+                    model,
+                    reasoning_effort=reasoning_effort,
+                    verbose=verbose,
+                    isolated=isolated,
+                    run_home=run_home,
+                )
                 print(
-                    "  Disallowed external tool use detected: "
-                    + ", ".join(external_tools)
+                    f"  Agent finished in {agent_result['elapsed_seconds']}s "
+                    f"(exit code: {agent_result['returncode']})"
                 )
-                break
 
-            if agent_name == "claude":
-                claude_memory_validation = _validate_claude_memory_paths(
-                    agent_result.get("trace_file", ""), run_home
+                external_tools = _detect_external_tool_use(
+                    agent_result.get("trace_file", "")
                 )
-                if claude_memory_validation["violations"]:
-                    agent_result["failure_reason"] = "claude_memory_escape"
-                    agent_result["claude_memory_validation"] = claude_memory_validation
+                if external_tools:
+                    agent_result["failure_reason"] = "external_tool_use"
+                    agent_result["external_tools"] = external_tools
                     print(
-                        "  Claude memory path escaped per-run HOME: "
-                        + ", ".join(claude_memory_validation["violations"])
+                        "  Disallowed external tool use detected: "
+                        + ", ".join(external_tools)
                     )
                     break
 
-            failure_reason = _detect_agent_failure_reason(agent_name, agent_result)
-            if not failure_reason or attempt >= attempts:
-                if failure_reason:
-                    agent_result["failure_reason"] = failure_reason
-                break
+                if agent_name == "claude":
+                    claude_memory_validation = _validate_claude_memory_paths(
+                        agent_result.get("trace_file", ""), run_home
+                    )
+                    if claude_memory_validation["violations"]:
+                        agent_result["failure_reason"] = "claude_memory_escape"
+                        agent_result["claude_memory_validation"] = (
+                            claude_memory_validation
+                        )
+                        print(
+                            "  Claude memory path escaped per-run HOME: "
+                            + ", ".join(claude_memory_validation["violations"])
+                        )
+                        break
 
-            if failure_reason == "auth":
-                print("  Claude auth failed; refreshing OAuth token and retrying...")
-                _refresh_oauth_token(force=True)
-                time.sleep(retry_delay_seconds)
-                continue
+                failure_reason = _detect_agent_failure_reason(agent_name, agent_result)
+                if not failure_reason or attempt >= attempts:
+                    if failure_reason:
+                        agent_result["failure_reason"] = failure_reason
+                    break
 
-            if failure_reason == "rate_limit":
-                wait_seconds = retry_delay_seconds
-                if wait_on_claude_rate_limit:
-                    reset_at = _extract_claude_rate_limit_reset_at(
-                        agent_result.get("trace_file", "")
-                    )
-                    if reset_at:
-                        wait_seconds = max(reset_at - int(time.time()), 0)
+                if failure_reason == "auth":
                     print(
-                        "  Claude five-hour limit hit; "
-                        f"waiting {wait_seconds}s before retry..."
+                        "  Claude auth failed; refreshing OAuth token and retrying..."
                     )
-                else:
-                    print(
-                        "  Claude rate limit detected; "
-                        f"waiting {wait_seconds}s before retry..."
-                    )
-                time.sleep(wait_seconds)
-                continue
+                    _refresh_oauth_token(force=True)
+                    time.sleep(retry_delay_seconds)
+                    continue
+
+                if failure_reason == "rate_limit":
+                    wait_seconds = retry_delay_seconds
+                    if wait_on_claude_rate_limit:
+                        reset_at = _extract_claude_rate_limit_reset_at(
+                            agent_result.get("trace_file", "")
+                        )
+                        if reset_at:
+                            wait_seconds = max(reset_at - int(time.time()), 0)
+                        print(
+                            "  Claude five-hour limit hit; "
+                            f"waiting {wait_seconds}s before retry..."
+                        )
+                    else:
+                        print(
+                            "  Claude rate limit detected; "
+                            f"waiting {wait_seconds}s before retry..."
+                        )
+                    time.sleep(wait_seconds)
+                    continue
 
         # Check if output was produced
         output_file = workdir / "output.csv"
-        if agent_result.get("failure_reason") == "external_tool_use":
+        contamination_lint = {
+            "passed": True,
+            "violations": [],
+            "patterns": list(SENSITIVE_CONTENT_PATTERNS),
+        }
+        if agent_result.get("failure_reason"):
+            pass
+        else:
+            contamination_lint = lint_run_contamination(
+                workdir,
+                task_name,
+                run_id=run_id,
+                prior_run_ids=_collect_prior_run_ids(results_root, run_id),
+            )
+            if contamination_lint["passed"]:
+                print("  Contamination lint: PASS")
+            else:
+                print(
+                    "  Contamination lint: FAIL ("
+                    + "; ".join(contamination_lint["violations"][:5])
+                    + ")"
+                )
+                agent_result["failure_reason"] = "contamination_lint"
+                agent_result["contamination_lint"] = contamination_lint
+
+        if agent_result.get("failure_reason") == "filesystem_canary":
+            test_results = {
+                "passed": 0,
+                "failed": 0,
+                "errors": 1,
+                "total": 1,
+                "reward": 0.0,
+                "pytest_output": "Filesystem canary failed",
+                "pytest_stderr": "",
+            }
+        elif agent_result.get("failure_reason") == "external_tool_use":
             test_results = {
                 "passed": 0,
                 "failed": 0,
@@ -1533,6 +1850,19 @@ def run_single_task(
                             "violations", []
                         )
                     )
+                ),
+                "pytest_stderr": "",
+            }
+        elif agent_result.get("failure_reason") == "contamination_lint":
+            test_results = {
+                "passed": 0,
+                "failed": 0,
+                "errors": 1,
+                "total": 1,
+                "reward": 0.0,
+                "pytest_output": (
+                    "Contamination lint failed: "
+                    + "; ".join(contamination_lint["violations"])
                 ),
                 "pytest_stderr": "",
             }
@@ -1579,6 +1909,8 @@ def run_single_task(
             "results_root": str(results_root),
             "agent_result": agent_result,
             "test_results": test_results,
+            "filesystem_canary": filesystem_canary,
+            "contamination_lint": contamination_lint,
         }
         if agent_name == "claude":
             claude_memory_validation = claude_memory_validation or (
@@ -1628,6 +1960,8 @@ def run_single_task(
             print(f"\nCopying results to {final_results_dir}...")
             copy_results_back(workdir, final_results_dir)
             print(f"Results available at: {final_results_dir}")
+        if isolated and workdir.exists():
+            shutil.rmtree(workdir, ignore_errors=True)
 
 
 # ── Thread safety ──────────────────────────────────────────────────────────

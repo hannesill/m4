@@ -5,6 +5,43 @@ from __future__ import annotations
 import pandas as pd
 
 
+def _normalize_key_columns(df: pd.DataFrame, key_columns: list[str]) -> pd.DataFrame:
+    """Normalize join keys so CSV parser dtype guesses do not change scoring."""
+    normalized = df.copy()
+    for col in key_columns:
+        numeric = pd.to_numeric(normalized[col], errors="coerce")
+        if numeric.notna().all():
+            normalized[col] = numeric
+            continue
+        datetimes = pd.to_datetime(normalized[col], errors="coerce")
+        if datetimes.notna().all():
+            normalized[col] = datetimes
+            continue
+        normalized[col] = normalized[col].astype("string")
+    return normalized
+
+
+def _compare_values(
+    truth: pd.Series, agent: pd.Series, tolerance: float | int | str
+) -> pd.Series:
+    """Compare values with numeric or timestamp tolerance where applicable."""
+    truth_num = pd.to_numeric(truth, errors="coerce")
+    agent_num = pd.to_numeric(agent, errors="coerce")
+    agent_present = agent.notna()
+    if truth_num.notna().all() and agent_num[agent_present].notna().all():
+        return (truth_num - agent_num).abs() <= float(tolerance or 0)
+
+    truth_dt = pd.to_datetime(truth, errors="coerce")
+    agent_dt = pd.to_datetime(agent, errors="coerce")
+    if truth_dt.notna().all() and agent_dt[agent_present].notna().all():
+        tol = pd.to_timedelta(tolerance, unit="s", errors="coerce")
+        if pd.isna(tol):
+            tol = pd.Timedelta(0)
+        return (truth_dt - agent_dt).abs() <= tol
+
+    return truth.astype("string") == agent.astype("string")
+
+
 def compare_derived_tables(
     agent_output_path: str,
     ground_truth_path: str,
@@ -54,6 +91,30 @@ def compare_derived_tables(
     agent_df = pd.read_csv(agent_output_path)
     truth_df = pd.read_csv(ground_truth_path)
 
+    required_columns = set(key_columns) | set(value_columns)
+    missing_agent_columns = [col for col in required_columns if col not in agent_df]
+    missing_truth_columns = [col for col in required_columns if col not in truth_df]
+    if missing_truth_columns:
+        raise ValueError(
+            "Ground truth missing required columns: "
+            + ", ".join(sorted(missing_truth_columns))
+        )
+    if any(col not in agent_df for col in key_columns):
+        raise ValueError(
+            "Agent output missing key columns: "
+            + ", ".join(col for col in key_columns if col not in agent_df)
+        )
+
+    truth_dupes = int(truth_df.duplicated(subset=key_columns).sum())
+    if truth_dupes:
+        raise ValueError(
+            f"Ground truth contains {truth_dupes} duplicate key rows for "
+            f"{', '.join(key_columns)}"
+        )
+
+    agent_df = _normalize_key_columns(agent_df, key_columns)
+    truth_df = _normalize_key_columns(truth_df, key_columns)
+
     agent_rows_raw = len(agent_df)
     agent_dupes = int(agent_df.duplicated(subset=key_columns).sum())
     agent_df = agent_df.drop_duplicates(subset=key_columns, keep="first")
@@ -82,7 +143,10 @@ def compare_derived_tables(
     )
 
     # Check which value columns exist in agent output before merging
-    agent_has_column = {col: col in agent_df.columns for col in value_columns}
+    agent_has_column = {
+        col: col in agent_df.columns and col not in missing_agent_columns
+        for col in value_columns
+    }
 
     # Merge: left join from truth to agent
     merged = truth_df.merge(
@@ -117,10 +181,7 @@ def compare_derived_tables(
             }
             continue
 
-        if tol == 0:
-            matches = merged[truth_col] == merged[agent_col]
-        else:
-            matches = (merged[truth_col] - merged[agent_col]).abs() <= tol
+        matches = _compare_values(merged[truth_col], merged[agent_col], tol)
 
         # Both NaN = match
         both_nan = merged[truth_col].isna() & merged[agent_col].isna()

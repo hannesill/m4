@@ -436,11 +436,12 @@ def test_codex_command_disables_plugins():
 
     codex_cmd = run.AGENT_COMMANDS["codex"]["cmd"]
 
-    assert "--dangerously-bypass-approvals-and-sandbox" in codex_cmd
+    assert "--dangerously-bypass-approvals-and-sandbox" not in codex_cmd
     assert "--disable" in codex_cmd
     assert "plugins" in codex_cmd
     assert 'web_search="disabled"' in codex_cmd
     assert "tools.web_search=false" in codex_cmd
+    assert 'sandbox_mode="workspace-write"' in codex_cmd
 
 
 def test_rewrite_m4_data_sql_path_points_at_container_mount():
@@ -498,6 +499,72 @@ def test_gemini_command_uses_external_sandbox():
     assert "--approval-mode" in gemini_cmd
     assert "yolo" in gemini_cmd
     assert "--skip-trust" in gemini_cmd
+
+
+def test_copy_results_back_filters_database_and_auth_artifacts(tmp_path):
+    run = _load_module("benchmark_run_copy_filters", "benchmark/run.py")
+
+    workdir = tmp_path / "work"
+    results = tmp_path / "results"
+    workdir.mkdir()
+    (workdir / "output.csv").write_text("stay_id,score\n1,2\n")
+    (workdir / "database.duckdb").write_text("db")
+    (workdir / "scratch.sqlite").write_text("db")
+    (workdir / ".codex").mkdir()
+    (workdir / ".codex" / "auth.json").write_text("{}")
+    (workdir / "nested").mkdir()
+    (workdir / "nested" / "copy.duckdb").write_text("db")
+    (workdir / "nested" / "notes.txt").write_text("ok")
+
+    run.copy_results_back(workdir, results)
+
+    assert (results / "output.csv").exists()
+    assert (results / "nested" / "notes.txt").exists()
+    assert not (results / "database.duckdb").exists()
+    assert not (results / "scratch.sqlite").exists()
+    assert not (results / ".codex").exists()
+    assert not (results / "nested" / "copy.duckdb").exists()
+
+
+def test_reset_workdir_for_retry_removes_stale_outputs(tmp_path):
+    run = _load_module("benchmark_run_retry_reset", "benchmark/run.py")
+
+    workdir = tmp_path / "work"
+    workdir.mkdir()
+    (workdir / "database.duckdb").write_text("db")
+    (workdir / "instruction.md").write_text("instruction")
+    (workdir / "output.csv").write_text("stale")
+    (workdir / "scratch").mkdir()
+    (workdir / "scratch" / "x.txt").write_text("stale")
+    (workdir / ".claude").mkdir()
+
+    run._reset_workdir_for_retry(workdir)
+
+    assert (workdir / "database.duckdb").exists()
+    assert (workdir / "instruction.md").exists()
+    assert (workdir / ".claude").exists()
+    assert not (workdir / "output.csv").exists()
+    assert not (workdir / "scratch").exists()
+
+
+def test_lint_run_contamination_flags_sensitive_paths(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_contamination_lint", "benchmark/run.py")
+
+    workdir = tmp_path / "work"
+    workdir.mkdir()
+    (workdir / "output.csv").write_text("stay_id,score\n1,2\n")
+    (workdir / "trace.jsonl").write_text("cat /benchmark/ground_truth/answer.csv\n")
+    monkeypatch.setattr(run, "_sha256_file", lambda path: str(path))
+
+    result = run.lint_run_contamination(
+        workdir,
+        "mimic-sirs-24h",
+        run_id="current",
+        prior_run_ids={"old-run"},
+    )
+
+    assert not result["passed"]
+    assert any("/benchmark/ground_truth" in item for item in result["violations"])
 
 
 def test_pi_ollama_command_disables_context_discovery():

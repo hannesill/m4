@@ -240,12 +240,12 @@ trap cleanup_container EXIT
     'ln -sf /benchmark/lib/duckdb_cli.py /usr/local/bin/duckdb && chmod +x /benchmark/lib/duckdb_cli.py /usr/local/bin/duckdb'
 
 # ── Isolation hardening ─────────────────────────────────────────────────
-# 1. Lock sensitive directories: ground truth, tasks, and agent DBs become
+# 1. Lock sensitive directories: ground truth, tasks, agent DBs, and results become
 #    root-only (mode 700).  The orchestrator (root) can still read them;
 #    the agent subprocess (benchagent) cannot.
 echo "Locking sensitive directories (root-only)..."
 "$DOCKER_BIN" exec "$CONTAINER" bash -c \
-    'for d in ground_truth tasks agent_db; do
+    'for d in ground_truth tasks agent_db results; do
         if [ -d "/benchmark/$d" ]; then
             chmod 700 "/benchmark/$d"
         fi
