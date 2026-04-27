@@ -119,7 +119,7 @@ AGENT_COMMANDS = {
         "json_trace": True,
     },
     "gemini": {
-        "cmd": ["gemini", "--approval-mode", "yolo", "-p"],
+        "cmd": ["gemini", "--approval-mode", "yolo", "--skip-trust", "-p"],
         "skill_dir": ".gemini/skills",
         "json_trace": False,
     },

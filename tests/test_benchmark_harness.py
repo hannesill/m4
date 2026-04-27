@@ -497,6 +497,7 @@ def test_gemini_command_uses_external_sandbox():
     assert "--sandbox" not in gemini_cmd
     assert "--approval-mode" in gemini_cmd
     assert "yolo" in gemini_cmd
+    assert "--skip-trust" in gemini_cmd
 
 
 def test_pi_ollama_command_disables_context_discovery():

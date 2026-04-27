@@ -504,8 +504,8 @@ def _build_provider_comparison_tiers(
     checks while the statistical burden stays on the GPT-backed powered matrix.
     """
     model_plan = _model_plan_for_agent(agent)
-    comparison_seeds = min(seeds, 2)
-    contamination_seeds = 1
+    comparison_seeds = seeds
+    contamination_seeds = seeds
 
     sentinel_tasks = [
         "mimic-urine-output-rate-raw",  # largest pilot skill delta; rolling windows
