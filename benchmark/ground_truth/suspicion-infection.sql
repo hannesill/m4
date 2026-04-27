@@ -21,7 +21,15 @@ WITH ab_tbl AS (
     abx.starttime AS antibiotic_time,
     DATE_TRUNC('DAY', abx.starttime) AS antibiotic_date,
     abx.stoptime AS antibiotic_stoptime,
-    ROW_NUMBER() OVER (PARTITION BY subject_id ORDER BY starttime NULLS FIRST, stoptime NULLS FIRST, antibiotic NULLS FIRST) AS ab_id
+    ROW_NUMBER() OVER (
+      PARTITION BY subject_id
+      ORDER BY
+        starttime NULLS FIRST,
+        stoptime NULLS FIRST,
+        antibiotic NULLS FIRST,
+        hadm_id NULLS FIRST,
+        stay_id NULLS FIRST
+    ) AS ab_id
   FROM mimiciv_derived.antibiotic AS abx
 ), me AS (
   SELECT
@@ -54,7 +62,10 @@ me_then_ab AS (
   SELECT
     subject_id, hadm_id, stay_id, ab_id, micro_specimen_id,
     last72_charttime, last72_positiveculture, last72_specimen,
-    ROW_NUMBER() OVER (PARTITION BY subject_id, ab_id ORDER BY chartdate NULLS FIRST, charttime) AS micro_seq
+    ROW_NUMBER() OVER (
+      PARTITION BY subject_id, ab_id
+      ORDER BY chartdate NULLS FIRST, charttime NULLS FIRST, micro_specimen_id NULLS FIRST
+    ) AS micro_seq
   FROM (
     -- Cultures with charttime: antibiotic within 72h after culture
     SELECT
@@ -91,7 +102,10 @@ ab_then_me AS (
   SELECT
     subject_id, hadm_id, stay_id, ab_id, micro_specimen_id,
     next24_charttime, next24_positiveculture, next24_specimen,
-    ROW_NUMBER() OVER (PARTITION BY subject_id, ab_id ORDER BY chartdate NULLS FIRST, charttime) AS micro_seq
+    ROW_NUMBER() OVER (
+      PARTITION BY subject_id, ab_id
+      ORDER BY chartdate NULLS FIRST, charttime NULLS FIRST, micro_specimen_id NULLS FIRST
+    ) AS micro_seq
   FROM (
     -- Cultures with charttime: antibiotic within 24h before culture
     SELECT

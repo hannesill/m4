@@ -1,4 +1,10 @@
-# EHR SQL Benchmark (NAACL 2024)
+# EHR SQL Benchmark (NAACL 2024) Prior Results
+
+This directory is a quarantined prior-results archive. It contains gold
+answers, gold SQL, correctness labels, grading notes, and conversation traces,
+so it must not be used as a benchmark corpus, retrieval source, or agent
+context. Use `benchmarks/ehrsql-question-corpus/` for the sanitized
+question-only corpus.
 
 ## Overview
 

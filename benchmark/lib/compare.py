@@ -6,13 +6,12 @@ import pandas as pd
 
 
 def scored_value_columns(eval_config: dict) -> list[str]:
-    """Return all non-key columns that should affect task scoring."""
-    key_columns = set(eval_config["key_columns"])
-    configured = list(eval_config["value_columns"])
-    required = [
-        col for col in eval_config.get("required_columns", []) if col not in key_columns
-    ]
-    return list(dict.fromkeys([*configured, *required]))
+    """Return the clinical value columns that should affect task scoring.
+
+    required_columns is a schema contract: agents must emit those columns, but
+    identifiers and audit metadata should not dilute the clinical reward.
+    """
+    return list(dict.fromkeys(eval_config["value_columns"]))
 
 
 def _normalize_key_columns(df: pd.DataFrame, key_columns: list[str]) -> pd.DataFrame:
@@ -37,13 +36,21 @@ def _compare_values(
     """Compare values with numeric or timestamp tolerance where applicable."""
     truth_num = pd.to_numeric(truth, errors="coerce")
     agent_num = pd.to_numeric(agent, errors="coerce")
+    truth_present = truth.notna()
     agent_present = agent.notna()
-    if truth_num.notna().all() and agent_num[agent_present].notna().all():
+    comparable_present = truth_present & agent_present
+    if (
+        truth_num[truth_present].notna().all()
+        and agent_num[comparable_present].notna().all()
+    ):
         return (truth_num - agent_num).abs() <= float(tolerance or 0)
 
     truth_dt = pd.to_datetime(truth, errors="coerce")
     agent_dt = pd.to_datetime(agent, errors="coerce")
-    if truth_dt.notna().all() and agent_dt[agent_present].notna().all():
+    if (
+        truth_dt[truth_present].notna().all()
+        and agent_dt[comparable_present].notna().all()
+    ):
         tol = pd.to_timedelta(tolerance, unit="s", errors="coerce")
         if pd.isna(tol):
             tol = pd.Timedelta(0)
