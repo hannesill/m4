@@ -30,7 +30,7 @@ WITH pa AS (
   INNER JOIN mimiciv_icu.icustays AS ie
     ON bg.hadm_id = ie.hadm_id
     AND bg.charttime >= ie.intime
-    AND bg.charttime < ie.outtime
+    AND bg.charttime < LEAST(ie.outtime, ie.intime + INTERVAL '1' DAY)
   LEFT JOIN mimiciv_derived.ventilation AS vd
     ON ie.stay_id = vd.stay_id
     AND bg.charttime >= vd.starttime
@@ -51,7 +51,7 @@ WITH pa AS (
   INNER JOIN mimiciv_icu.icustays AS ie
     ON bg.hadm_id = ie.hadm_id
     AND bg.charttime >= ie.intime
-    AND bg.charttime < ie.outtime
+    AND bg.charttime < LEAST(ie.outtime, ie.intime + INTERVAL '1' DAY)
   INNER JOIN mimiciv_derived.ventilation AS vd
     ON ie.stay_id = vd.stay_id
     AND bg.charttime >= vd.starttime
@@ -88,7 +88,7 @@ WITH pa AS (
   INNER JOIN mimiciv_icu.icustays AS ie
     ON bg.hadm_id = ie.hadm_id
     AND bg.charttime >= ie.intime
-    AND bg.charttime < ie.outtime
+    AND bg.charttime < LEAST(ie.outtime, ie.intime + INTERVAL '1' DAY)
   WHERE
     NOT ph IS NULL AND NOT pco2 IS NULL AND bg.specimen = 'ART.'
 ), acidbase_max AS (

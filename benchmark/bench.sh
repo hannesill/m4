@@ -151,6 +151,10 @@ elif [[ "$AGENT" == "pi-ollama" ]] && ! "$DOCKER_BIN" run --rm "$IMAGE" \
     sh -lc 'command -v pi >/dev/null 2>&1'; then
     echo "Existing $IMAGE image does not include Pi; rebuilding..."
     NEEDS_BUILD=1
+elif ! "$DOCKER_BIN" run --rm "$IMAGE" \
+    python3 -c 'import duckdb, pandas, pytest, tomli' >/dev/null 2>&1; then
+    echo "Existing $IMAGE image is missing benchmark Python dependencies; rebuilding..."
+    NEEDS_BUILD=1
 fi
 
 # Build image if it doesn't exist, when explicitly requested, or when the
@@ -248,9 +252,6 @@ fi
 
 "$DOCKER_BIN" run "${DOCKER_ARGS[@]}" "$IMAGE" >/dev/null
 
-# Install benchmark dependencies (lightweight, no M4 package)
-"$DOCKER_BIN" exec "$CONTAINER" pip3 install --break-system-packages --quiet \
-    duckdb pandas pytest tomli 2>/dev/null
 "$DOCKER_BIN" exec "$CONTAINER" bash -lc \
     'ln -sf /benchmark/lib/duckdb_cli.py /usr/local/bin/duckdb && chmod +x /benchmark/lib/duckdb_cli.py /usr/local/bin/duckdb'
 

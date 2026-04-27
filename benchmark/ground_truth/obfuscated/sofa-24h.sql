@@ -84,14 +84,11 @@ WITH vaso_stg AS (
         bg.c_416,
         CASE WHEN NOT vd.c_552 IS NULL THEN 1 ELSE 0 END AS isvent
     FROM ds_3.t_005 AS ie
-    -- [REVIEW] mimic-c_134 omits c_543='ART.' here, unlike the hourly
-    -- c_537.sql which filters arterial only. This means venous PaO2/FiO2
-    -- values may contribute to the c_498 score. Consider adding:
-    --     AND bg.c_543 = 'ART.'
     LEFT JOIN ds_1.t_005 AS bg
         ON ie.c_556 = bg.c_556
         AND bg.c_114 >= ie.c_310 - INTERVAL '6' HOUR
         AND bg.c_114 <= ie.c_310 + INTERVAL '1' DAY
+        AND bg.c_543 = 'ART.'
     LEFT JOIN ds_1.t_060 AS vd
         ON ie.c_552 = vd.c_552
         AND bg.c_114 >= vd.c_549

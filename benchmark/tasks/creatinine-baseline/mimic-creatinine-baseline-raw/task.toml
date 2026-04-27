@@ -33,5 +33,7 @@ row_coverage_threshold = 1.0
 accuracy_threshold = 0.90
 
 [evaluation.tolerance]
+age = 0.01
+scr_min = 0.01
 scr_baseline = 0.01
 mdrd_est = 0.01
