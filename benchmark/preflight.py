@@ -348,6 +348,7 @@ def check_isolation_guardrails() -> CheckResult:
         "$HOME/.codex:$AUTH_ROOT/.codex:ro",
         "$HOME/.gemini:$AUTH_ROOT/.gemini:ro",
         "$HOME/.pi:$AUTH_ROOT/.pi:ro",
+        '-v "$SCRIPT_DIR":/benchmark',
     ]
     for needle in forbidden_mounts:
         if needle in bench_text:
@@ -359,8 +360,9 @@ def check_isolation_guardrails() -> CheckResult:
         'stage_auth_file ".gemini/oauth_creds.json"',
         'stage_auth_file ".pi/agent/models.json"',
         'chmod -R go-rwx "$AUTH_STAGING_DIR"',
-        "chmod 600 /benchmark/lib/dictionary.json",
-        "chmod -R go-rwx /claude-auth",
+        "M4BENCH_AGENT_CONTAINER=1",
+        "M4BENCH_AGENT_CONTAINER_MOUNTS",
+        "M4BENCH_CLAUDE_AUTH_ROOT",
     ]
     for fragment in required_bench_fragments:
         if fragment not in bench_text:
@@ -375,12 +377,17 @@ def check_isolation_guardrails() -> CheckResult:
         problems.append("run.py does not make the cross-task DB cache private")
     if "cached_db.chmod(0o600)" not in run_text:
         problems.append("run.py does not make cached DB files private")
+    if (
+        "mount benchmark/tasks, benchmark/ground_truth, benchmark/results"
+        not in run_text
+    ):
+        problems.append("run.py does not document sensitive paths as unmounted")
 
     if problems:
         return _fail("isolation guardrails", problems)
     return _ok(
         "isolation guardrails",
-        "canaries cover real sensitive paths; auth/dictionary/cache are private",
+        "canaries cover real sensitive paths; agent container omits benchmark secrets",
     )
 
 

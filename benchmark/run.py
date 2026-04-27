@@ -32,6 +32,7 @@ import hashlib
 import json
 import os
 import re
+import shlex
 import shutil
 import signal
 import statistics
@@ -62,6 +63,7 @@ ISOLATED_BASE = Path(tempfile.gettempdir()) / "clinskillsbench"
 DB_CACHE = ISOLATED_BASE / "_db_cache"
 SANDBOX_HOOK = BENCHMARK_ROOT / "lib" / "sandbox_hook.py"
 AGENT_USER = "benchagent"
+CONTAINER_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 M4_DATA_VIEW_PATTERN = re.compile(r"'/[^']*/m4_data/")
 EXTERNAL_NETWORK_COMMAND_PATTERN = re.compile(
     r"\b(curl|wget)\b|https?://|\burllib\b|requests\.get|urlopen|duckduckgo|github\.com",
@@ -120,6 +122,7 @@ RESULT_EXPORT_SKIP_DIRS = {
     ".claude",
     ".codex",
     ".gemini",
+    ".m4bench",
     ".pi",
     "__pycache__",
     "_home",
@@ -310,10 +313,17 @@ def _running_in_container() -> bool:
     return Path("/.dockerenv").exists()
 
 
+def _agent_container_enabled() -> bool:
+    """Return True when agents should run in a minimal Docker container."""
+    return os.environ.get("M4BENCH_AGENT_CONTAINER") == "1"
+
+
 def _publishable_environment(isolated: bool) -> tuple[bool, str]:
     """Return whether the current run environment is paper-eligible."""
     if not isolated:
         return False, "isolation disabled"
+    if _agent_container_enabled():
+        return True, "agent-only Docker isolation active"
     if not _running_in_container():
         return False, "not running inside benchmark Docker container"
     if _resolve_agent_creds() is None:
@@ -395,6 +405,53 @@ def run_filesystem_canary(
 ) -> dict:
     """Verify sensitive benchmark paths are unreadable by the agent user."""
     env = _agent_process_env(agent_name, workdir, run_home) if run_home else None
+    if isolated and _agent_container_enabled():
+        failures_path = workdir / ".m4bench" / "filesystem_canary_failures.txt"
+        failures_path.parent.mkdir(parents=True, exist_ok=True)
+        lines = [
+            "set -euo pipefail",
+            "failures=()",
+            "check() {",
+            '  local name="$1"',
+            '  local shell_check="$2"',
+            '  if ! bash -lc "$shell_check"; then failures+=("$name"); fi',
+            "}",
+        ]
+        for name, shell_check in FILESYSTEM_CANARY_CHECKS:
+            lines.append(f"check {shlex.quote(name)} {shlex.quote(shell_check)}")
+        lines.extend(
+            [
+                f"printf '%s\\n' \"${{failures[@]}}\" > {shlex.quote(str(failures_path))}",
+                "exit 0",
+            ]
+        )
+        completed = _run_agent_container_check(
+            ["bash", "-lc", "\n".join(lines)],
+            env=env,
+            workdir=workdir,
+            run_home=run_home,
+        )
+        if completed.returncode != 0:
+            failures = ["agent_container_canary"]
+        elif failures_path.exists():
+            failures = [
+                line.strip()
+                for line in failures_path.read_text().splitlines()
+                if line.strip()
+            ]
+        else:
+            failures = ["agent_container_canary"]
+        passed = not failures
+        return {
+            "passed": passed,
+            "required": bool(enforce),
+            "agent": agent_name,
+            "agent_user": AGENT_USER,
+            "checks": [name for name, _cmd in FILESYSTEM_CANARY_CHECKS],
+            "failures": failures,
+            "containerized_agent": True,
+        }
+
     agent_creds = _resolve_agent_creds() if isolated else None
 
     if agent_creds:
@@ -764,6 +821,13 @@ def _validate_claude_memory_paths(
 
 def _create_isolated_settings(workdir: Path) -> Path:
     """Write a .claude/settings.json in the workdir that enforces the sandbox hook."""
+    hook_path = SANDBOX_HOOK
+    if _agent_container_enabled():
+        runtime_dir = workdir / ".m4bench"
+        runtime_dir.mkdir(exist_ok=True)
+        hook_path = runtime_dir / "sandbox_hook.py"
+        shutil.copy2(SANDBOX_HOOK, hook_path)
+
     claude_dir = workdir / ".claude"
     claude_dir.mkdir(exist_ok=True)
     settings = {
@@ -774,7 +838,7 @@ def _create_isolated_settings(workdir: Path) -> Path:
                     "hooks": [
                         {
                             "type": "command",
-                            "command": f"python3 {SANDBOX_HOOK} {workdir}",
+                            "command": f"python3 {hook_path} {workdir}",
                         }
                     ],
                 }
@@ -1109,6 +1173,8 @@ def _agent_process_env(
         "M4BENCH_OLLAMA_BASE_URL",
         "M4BENCH_OLLAMA_HOST",
         "M4BENCH_OLLAMA_PORT",
+        "M4BENCH_CLAUDE_AUTH_MODE",
+        "M4BENCH_CLAUDE_AUTH_ROOT",
         "SSL_CERT_FILE",
         "REQUESTS_CA_BUNDLE",
         "NODE_EXTRA_CA_CERTS",
@@ -1126,6 +1192,19 @@ def _agent_process_env(
             "TEMP": str(tmpdir),
         }
     )
+    if _agent_container_enabled():
+        env.update(
+            {
+                "PATH": CONTAINER_PATH,
+                "SHELL": "/bin/bash",
+            }
+        )
+        for host_only_key in (
+            "SSL_CERT_FILE",
+            "REQUESTS_CA_BUNDLE",
+            "NODE_EXTRA_CA_CERTS",
+        ):
+            env.pop(host_only_key, None)
 
     if agent_name == "claude" and _claude_auth_mode() == "container-login":
         # Force Claude Code to use the copied login state in the fresh HOME.
@@ -1318,6 +1397,155 @@ def inject_all_skills(workdir: Path, agent_name: str) -> list[Path]:
 # ── Agent execution ─────────────────────────────────────────────────────────
 
 
+def _agent_container_image() -> str:
+    return os.environ.get("M4BENCH_AGENT_CONTAINER_IMAGE", "m4bench:latest")
+
+
+def _docker_bin() -> str:
+    return os.environ.get("M4BENCH_DOCKER_BIN", "docker")
+
+
+def _agent_container_extra_mounts() -> list[tuple[str, str]]:
+    """Parse host=container mount lines provided by bench.sh."""
+    mounts: list[tuple[str, str]] = []
+    for line in os.environ.get("M4BENCH_AGENT_CONTAINER_MOUNTS", "").splitlines():
+        if not line.strip():
+            continue
+        if "=" not in line:
+            raise RuntimeError(f"Invalid M4BENCH_AGENT_CONTAINER_MOUNTS line: {line}")
+        host_path, container_path = line.split("=", 1)
+        mounts.append((host_path, container_path))
+    return mounts
+
+
+def _agent_container_command(
+    command: list[str],
+    *,
+    env: dict[str, str] | None,
+    workdir: Path,
+    run_home: Path | None,
+) -> list[str]:
+    """Build a Docker command that runs one agent command as benchagent.
+
+    The container mounts only the agent workdir, per-run HOME, the selected
+    source-data mounts, and the network-lock script. It deliberately does not
+    mount benchmark/tasks, benchmark/ground_truth, benchmark/results,
+    benchmark/agent_db, or dictionary.json.
+    """
+    network_lock = (BENCHMARK_ROOT / "network_lock.sh").resolve()
+    docker_cmd = [
+        _docker_bin(),
+        "run",
+        "--rm",
+        "--cap-add",
+        "NET_ADMIN",
+        "-v",
+        f"{network_lock}:/m4bench-runtime/network_lock.sh:ro",
+        "-v",
+        f"{workdir}:{workdir}:rw",
+        "-w",
+        str(workdir),
+        "-e",
+        f"M4BENCH_CONTAINER_WORKDIR={workdir}",
+    ]
+    if run_home:
+        docker_cmd.extend(
+            [
+                "-v",
+                f"{run_home}:{run_home}:rw",
+                "-e",
+                f"M4BENCH_CONTAINER_HOME={run_home}",
+            ]
+        )
+    if os.environ.get("M4BENCH_ALLOW_OLLAMA") == "1":
+        docker_cmd.append("--add-host=host.docker.internal:host-gateway")
+
+    for host_path, container_path in _agent_container_extra_mounts():
+        docker_cmd.extend(["-v", f"{host_path}:{container_path}:ro"])
+
+    for key, value in (env or {}).items():
+        docker_cmd.extend(["-e", f"{key}={value}"])
+
+    wrapper = r"""
+set -euo pipefail
+bash /m4bench-runtime/network_lock.sh
+paths=("$M4BENCH_CONTAINER_WORKDIR")
+if [[ -n "${M4BENCH_CONTAINER_HOME:-}" ]]; then
+    paths+=("$M4BENCH_CONTAINER_HOME")
+fi
+if [[ "${M4BENCH_CLAUDE_AUTH_MODE:-}" == "container-login" && -n "${M4BENCH_CONTAINER_HOME:-}" ]]; then
+    auth_root="${M4BENCH_CLAUDE_AUTH_ROOT:-/claude-auth}"
+    for rel in .claude.json .claude/.credentials.json; do
+        if [[ -f "$auth_root/$rel" ]]; then
+            mkdir -p "$M4BENCH_CONTAINER_HOME/$(dirname "$rel")"
+            cp "$auth_root/$rel" "$M4BENCH_CONTAINER_HOME/$rel"
+        fi
+    done
+fi
+for path in "${paths[@]}"; do
+    mkdir -p "$path"
+    chown -R benchagent:benchagent "$path" 2>/dev/null || true
+done
+set +e
+runuser -u benchagent -m -- bash -lc 'cd "$M4BENCH_CONTAINER_WORKDIR"; exec "$@"' bash "$@"
+status=$?
+chmod -R a+rwX "${paths[@]}" 2>/dev/null || true
+exit "$status"
+"""
+    docker_cmd.extend([_agent_container_image(), "bash", "-lc", wrapper, "bash"])
+    docker_cmd.extend(command)
+    return docker_cmd
+
+
+def _run_agent_container_process(
+    command: list[str],
+    *,
+    env: dict[str, str] | None,
+    workdir: Path,
+    run_home: Path | None,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+) -> subprocess.Popen[str]:
+    return subprocess.Popen(
+        _agent_container_command(
+            command,
+            env=env,
+            workdir=workdir,
+            run_home=run_home,
+        ),
+        stdin=subprocess.DEVNULL,
+        stdout=stdout,
+        stderr=stderr,
+        text=True,
+        cwd=str(workdir),
+        start_new_session=True,
+    )
+
+
+def _run_agent_container_check(
+    command: list[str],
+    *,
+    env: dict[str, str] | None,
+    workdir: Path,
+    run_home: Path | None,
+    timeout: int = 60,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        _agent_container_command(
+            command,
+            env=env,
+            workdir=workdir,
+            run_home=run_home,
+        ),
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+        cwd=str(workdir),
+        timeout=timeout,
+        check=False,
+    )
+
+
 def run_agent(
     instruction: str,
     agent_name: str,
@@ -1379,13 +1607,16 @@ def run_agent(
         env = _agent_process_env(agent_name, workdir, run_home)
 
     # Run agent as benchagent when isolated (user-level filesystem + network isolation).
-    agent_creds = _resolve_agent_creds() if isolated else None
+    agent_container = isolated and _agent_container_enabled()
+    agent_creds = _resolve_agent_creds() if isolated and not agent_container else None
     if agent_creds:
         uid, gid = agent_creds
         _chown_recursive(workdir, uid, gid)
         if run_home:
             _chown_recursive(run_home, uid, gid)
         print(f"  Agent user: {AGENT_USER} (uid={uid})")
+    elif agent_container:
+        print(f"  Agent container: {_agent_container_image()} ({AGENT_USER})")
 
     print(f"  Running {agent_name}{'  (verbose)' if verbose else ''}...")
     start = time.time()
@@ -1411,18 +1642,26 @@ def run_agent(
                 process.kill()
 
     try:
-        process = subprocess.Popen(
-            cmd,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            cwd=str(workdir),
-            env=env,
-            user=agent_creds[0] if agent_creds else None,
-            group=agent_creds[1] if agent_creds else None,
-            start_new_session=True,
-        )
+        if agent_container:
+            process = _run_agent_container_process(
+                cmd,
+                env=env,
+                workdir=workdir,
+                run_home=run_home,
+            )
+        else:
+            process = subprocess.Popen(
+                cmd,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                cwd=str(workdir),
+                env=env,
+                user=agent_creds[0] if agent_creds else None,
+                group=agent_creds[1] if agent_creds else None,
+                start_new_session=True,
+            )
         output_lines = []
 
         def _drain_stdout() -> None:
@@ -1802,7 +2041,8 @@ def run_single_task(
             workdir,
             run_home,
             isolated=isolated,
-            enforce=isolated and _running_in_container(),
+            enforce=isolated
+            and (_running_in_container() or _agent_container_enabled()),
         )
         if filesystem_canary["passed"]:
             print("  Filesystem canary: PASS")
@@ -2170,7 +2410,8 @@ path you attempted in probed_paths using the exact path strings above.
             workdir,
             run_home,
             isolated=isolated,
-            enforce=isolated and _running_in_container(),
+            enforce=isolated
+            and (_running_in_container() or _agent_container_enabled()),
         )
         agent_result: dict
         if not filesystem_canary["passed"] and filesystem_canary["required"]:

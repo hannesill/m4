@@ -351,6 +351,52 @@ def test_agent_process_env_filters_host_environment(monkeypatch, tmp_path):
     assert "AWS_SECRET_ACCESS_KEY" not in env
 
 
+def test_agent_process_env_uses_container_paths(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_container_env", "benchmark/run.py")
+
+    monkeypatch.setenv("M4BENCH_AGENT_CONTAINER", "1")
+    monkeypatch.setenv("PATH", "/host/bin")
+    monkeypatch.setenv("SSL_CERT_FILE", "/host/cert.pem")
+
+    env = run._agent_process_env("claude", tmp_path / "work", tmp_path / "home")
+
+    assert env["PATH"].startswith("/usr/local/sbin:")
+    assert env["SHELL"] == "/bin/bash"
+    assert "SSL_CERT_FILE" not in env
+
+
+def test_agent_container_command_mounts_only_agent_inputs(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_container_cmd", "benchmark/run.py")
+
+    workdir = tmp_path / "work"
+    run_home = tmp_path / "home"
+    workdir.mkdir()
+    run_home.mkdir()
+    monkeypatch.setenv("M4BENCH_AGENT_CONTAINER_IMAGE", "m4bench:test")
+    monkeypatch.setenv("M4BENCH_DOCKER_BIN", "docker-test")
+    monkeypatch.setenv(
+        "M4BENCH_AGENT_CONTAINER_MOUNTS",
+        f"{tmp_path / 'm4_data' / 'parquet' / 'mimic-iv'}=/m4_data/parquet/mimic-iv\n",
+    )
+
+    cmd = run._agent_container_command(
+        ["bash", "-lc", "echo ok"],
+        env={"HOME": str(run_home), "PATH": run.CONTAINER_PATH},
+        workdir=workdir,
+        run_home=run_home,
+    )
+    joined = "\n".join(cmd)
+
+    assert "docker-test" == cmd[0]
+    assert f"{workdir}:{workdir}:rw" in cmd
+    assert f"{run_home}:{run_home}:rw" in cmd
+    assert "/m4_data/parquet/mimic-iv:ro" in joined
+    assert ":/benchmark" not in joined
+    assert "benchmark/ground_truth" not in joined
+    assert "benchmark/tasks" not in joined
+    assert "benchmark/agent_db" not in joined
+
+
 def test_run_agent_timeout_kills_process_group(monkeypatch, tmp_path):
     run = _load_module("benchmark_run_timeout", "benchmark/run.py")
 
@@ -436,6 +482,7 @@ exit 0
         "HOME": str(tmp_path / "home"),
         "M4BENCH_CONTAINER_NAME": "m4bench-test",
         "M4BENCH_M4_DATA_DIR": str(tmp_path / "m4_data"),
+        "M4BENCH_BENCH_SH_NO_RUN": "1",
     }
 
     result = subprocess.run(
@@ -460,7 +507,7 @@ exit 0
 
     assert result.returncode == 0
     assert "unbound variable" not in result.stderr
-    assert "python3 /benchmark/run.py" in docker_log.read_text()
+    assert "Running host orchestrator with agent-only Docker isolation" in result.stdout
 
 
 def test_codex_command_disables_plugins():
@@ -793,7 +840,10 @@ def test_bench_sh_stages_pi_config_and_configures_ollama_endpoint():
     assert 'AGENT" == "pi-ollama"' in bench
     assert "command -v pi" in bench
     assert "M4BENCH_OLLAMA_BASE_URL" in bench
-    assert "--add-host=host.docker.internal:host-gateway" in bench
+    assert (
+        "--add-host=host.docker.internal:host-gateway"
+        in (ROOT / "benchmark" / "run.py").read_text()
+    )
     assert 'stage_auth_file ".pi/agent/models.json"' in bench
     assert "$HOME/.pi:$AUTH_ROOT/.pi:ro" not in bench
 
@@ -816,8 +866,8 @@ def test_bench_sh_supports_claude_container_login_mode():
     assert "M4BENCH_CLAUDE_AUTH_MODE" in bench
     assert "container-login" in bench
     assert "m4bench-claude-auth" in bench
-    assert "$CLAUDE_AUTH_VOLUME:$CLAUDE_AUTH_ROOT:ro" in bench
-    assert "M4BENCH_CLAUDE_AUTH_ROOT=$CLAUDE_AUTH_ROOT" in bench
+    assert "${CLAUDE_AUTH_VOLUME}=${CLAUDE_AUTH_ROOT}" in bench
+    assert 'M4BENCH_CLAUDE_AUTH_ROOT="$CLAUDE_AUTH_ROOT"' in bench
 
 
 def test_bench_sh_container_login_does_not_require_api_key(tmp_path):
@@ -850,6 +900,7 @@ exit 0
         "M4BENCH_CONTAINER_NAME": "m4bench-test",
         "M4BENCH_CLAUDE_AUTH_MODE": "container-login",
         "M4BENCH_M4_DATA_DIR": str(tmp_path / "m4_data"),
+        "M4BENCH_BENCH_SH_NO_RUN": "1",
     }
     env.pop("ANTHROPIC_API_KEY", None)
 
@@ -875,8 +926,10 @@ exit 0
 
     assert result.returncode == 0
     log = docker_log.read_text()
-    assert "m4bench-claude-auth:/claude-auth:ro" in log
-    assert "M4BENCH_CLAUDE_AUTH_MODE=container-login" in log
+    assert (
+        "Using Claude container-login auth volume: m4bench-claude-auth" in result.stdout
+    )
+    assert "Running host orchestrator with agent-only Docker isolation" in result.stdout
     assert "ANTHROPIC_API_KEY" not in log
 
 
@@ -884,6 +937,8 @@ def test_claude_login_container_script_persists_allowlisted_auth_only():
     script = (ROOT / "benchmark" / "claude_login_container.sh").read_text()
 
     assert "claude login" in script
+    assert "M4BENCH_CLAUDE_LOGIN_CONTAINER" in script
+    assert '"$DOCKER_BIN" exec -it "$CLAUDE_LOGIN_CONTAINER"' in script
     assert ".claude.json" in script
     assert ".claude/.credentials.json" in script
     assert ".claude/projects" not in script
@@ -904,6 +959,13 @@ def test_task_discovery_uses_repo_relative_paths(monkeypatch):
 
 def test_publishable_environment_requires_container_and_agent_user(monkeypatch):
     run = _load_module("benchmark_run_publishable", "benchmark/run.py")
+
+    monkeypatch.setenv("M4BENCH_AGENT_CONTAINER", "1")
+    assert run._publishable_environment(True) == (
+        True,
+        "agent-only Docker isolation active",
+    )
+    monkeypatch.delenv("M4BENCH_AGENT_CONTAINER")
 
     monkeypatch.setattr(run, "_running_in_container", lambda: True)
     monkeypatch.setattr(run, "_resolve_agent_creds", lambda: (123, 456))

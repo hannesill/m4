@@ -94,10 +94,12 @@ matrix-driven campaigns can be publishable as long as they use a fresh
 `--results-root`. Local execution is still useful for development and anomaly
 investigation, but those runs should not be reported as benchmark evidence.
 
-The benchmark now supports isolated per-run workdirs and per-run HOME
-directories, but outside Docker the root-owned directory protections and
-`benchagent` user isolation are absent. Use `bench.sh` for any run intended for
-publication or formal comparison.
+`bench.sh` runs orchestration and evaluation outside the agent runtime, then
+launches each agent in a minimal Docker container. That container receives only
+the per-run workdir, ephemeral HOME/auth seed, selected source-data mounts, and
+the task database copied into the workdir. It does not mount `benchmark/tasks`,
+`benchmark/ground_truth`, `benchmark/results`, `benchmark/agent_db`, or the
+obfuscation dictionary.
 
 ## Paper Plan
 
@@ -203,11 +205,22 @@ as `provider-default` because they do not expose the same named effort scale.
 Pass `--reasoning-effort default` to leave each CLI/provider default untouched,
 or an explicit supported level for Codex/Claude ablations.
 
-For Claude subscription campaigns, the matrix executes one `bench.sh` run per
-cell so the host can refresh OAuth-backed auth between Docker runs. Do not
-store expiring Claude OAuth tokens in `benchmark/.env`; that file should only
-hold stable Anthropic API keys. Subscription-backed Claude runs should come
-from `claude login` on macOS so `bench.sh` can pull a fresh keychain token.
+For Claude subscription campaigns, use the persistent Docker auth volume rather
+than host keychain tokens:
+
+```bash
+bash benchmark/claude_login_container.sh
+M4BENCH_CLAUDE_AUTH_MODE=container-login bash benchmark/bench.sh \
+  --task mimic-sirs-24h --condition no-skill --agent claude --model opus
+```
+
+The login helper creates or reuses the persistent `m4bench-claude-login`
+container and stores only allowlisted Claude auth files in the
+`m4bench-claude-auth` Docker volume. Each benchmark agent container mounts that
+volume read-only, copies those files into its ephemeral per-run HOME, and does
+not mount host Claude projects, memories, histories, tasks, ground truth, or
+results. `benchmark/.env` should hold only stable Anthropic API keys for API-key
+runs, not expiring OAuth tokens.
 
 ### Pi/Ollama local setup
 
@@ -298,6 +311,7 @@ may be lost and will be scheduled again. Resume with the same command plus
 reasoning effort, and trial id, so it resumes missing trials without duplicating
 completed seed labels.
 
-Docker-backed runs remove their temporary benchmark container when `bench.sh`
-exits. Set `M4BENCH_KEEP_CONTAINER=1` only when you want to inspect a failed
-container manually.
+Docker-backed runs use one short-lived agent container per task attempt. Claude
+subscription login state persists separately in the `m4bench-claude-login`
+container and `m4bench-claude-auth` Docker volume created by
+`benchmark/claude_login_container.sh`.
