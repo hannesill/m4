@@ -154,6 +154,18 @@ AGENT_HOME_SEEDS = {
     "pi-ollama": [".pi/agent/models.json"],
 }
 
+CLAUDE_CONTAINER_LOGIN_AUTH_SEEDS = [
+    ".claude.json",
+    ".claude/.credentials.json",
+    ".claude/credentials.json",
+]
+
+CLAUDE_MEMORY_ESCAPE_PREFIXES = (
+    "/claude-auth",
+    "/home/benchagent",
+    "/root",
+)
+
 REASONING_EFFORT_CHOICES = (
     "auto",
     "default",
@@ -392,7 +404,11 @@ def _detect_agent_failure_reason(agent_name: str, agent_result: dict) -> str | N
             if status and status != "allowed":
                 return "rate_limit"
 
-        if "rate limit" in text or "usage limit" in text or "429" in text:
+        if (
+            "rate limit" in text
+            or "usage limit" in text
+            or re.search(r"(?<!\d)429(?!\d)", text)
+        ):
             return "rate_limit"
 
     return None
@@ -417,6 +433,62 @@ def _detect_external_tool_use(trace_path: str | Path) -> list[str]:
             if EXTERNAL_NETWORK_COMMAND_PATTERN.search(command):
                 disallowed.append("external_network_command")
     return sorted(set(disallowed))
+
+
+def _collect_claude_memory_paths(trace_path: str | Path) -> list[str]:
+    """Return Claude memory paths reported in structured trace init events."""
+    paths: list[str] = []
+    for event in _load_jsonl_events(trace_path):
+        memory_paths = event.get("memory_paths")
+        if not isinstance(memory_paths, dict):
+            continue
+        for value in memory_paths.values():
+            if isinstance(value, str):
+                paths.append(value)
+            elif isinstance(value, list):
+                paths.extend(item for item in value if isinstance(item, str))
+            elif isinstance(value, dict):
+                paths.extend(item for item in value.values() if isinstance(item, str))
+    return paths
+
+
+def _path_is_under(path: str, root: Path) -> bool:
+    """Return whether an absolute path string is contained by root."""
+    try:
+        return os.path.commonpath([path, str(root)]) == str(root)
+    except ValueError:
+        return False
+
+
+def _validate_claude_memory_paths(
+    trace_path: str | Path, run_home: Path | None
+) -> dict:
+    """Validate that Claude memory paths stay inside the fresh per-run HOME."""
+    paths = _collect_claude_memory_paths(trace_path)
+    if run_home is None:
+        return {
+            "validated": False,
+            "paths": paths,
+            "violations": paths,
+            "reason": "missing per-run HOME",
+        }
+
+    run_home_resolved = run_home.resolve()
+    violations = []
+    for path in paths:
+        escaped_prefix = any(
+            path == prefix or path.startswith(prefix + "/")
+            for prefix in CLAUDE_MEMORY_ESCAPE_PREFIXES
+        )
+        if escaped_prefix or not _path_is_under(path, run_home_resolved):
+            violations.append(path)
+
+    return {
+        "validated": bool(paths) and not violations,
+        "paths": paths,
+        "violations": violations,
+        "reason": "" if paths else "no Claude memory paths found in trace",
+    }
 
 
 # ── Isolated workdir setup ──────────────────────────────────────────────────
@@ -597,6 +669,18 @@ def _auth_source_root() -> Path:
     return Path(os.environ.get("M4BENCH_AUTH_ROOT", str(Path.home()))).expanduser()
 
 
+def _claude_auth_source_root() -> Path:
+    """Resolve the mounted Claude auth root for container-login mode."""
+    return Path(
+        os.environ.get("M4BENCH_CLAUDE_AUTH_ROOT", str(_auth_source_root()))
+    ).expanduser()
+
+
+def _claude_auth_mode() -> str:
+    """Return the configured Claude auth mode for result metadata."""
+    return os.environ.get("M4BENCH_CLAUDE_AUTH_MODE", "api-key")
+
+
 def _copy_auth_seed(src_root: Path, relative_path: str, run_home: Path) -> bool:
     """Copy a single auth/config file into the per-run HOME if it exists."""
     src = src_root / relative_path
@@ -612,6 +696,25 @@ def _copy_auth_seed(src_root: Path, relative_path: str, run_home: Path) -> bool:
     return True
 
 
+def _copy_claude_container_login_auth(run_home: Path) -> list[str]:
+    """Seed only allowlisted Claude login files into a clean per-run HOME."""
+    copied: list[str] = []
+    src_root = _claude_auth_source_root()
+    for relative_path in CLAUDE_CONTAINER_LOGIN_AUTH_SEEDS:
+        src = src_root / relative_path
+        if not src.exists():
+            continue
+        if not src.is_file():
+            raise RuntimeError(
+                f"Refusing to copy non-file Claude auth seed: {relative_path}"
+            )
+        dest = run_home / relative_path
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+        copied.append(relative_path)
+    return copied
+
+
 def prepare_run_home(agent_name: str, run_home: Path) -> list[str]:
     """Create a clean per-run HOME seeded with minimal auth for the agent."""
     run_home.mkdir(parents=True, exist_ok=True)
@@ -619,9 +722,12 @@ def prepare_run_home(agent_name: str, run_home: Path) -> list[str]:
 
     copied: list[str] = []
     src_root = _auth_source_root()
-    for relative_path in AGENT_HOME_SEEDS.get(agent_name, []):
-        if _copy_auth_seed(src_root, relative_path, run_home):
-            copied.append(relative_path)
+    if agent_name == "claude" and _claude_auth_mode() == "container-login":
+        copied.extend(_copy_claude_container_login_auth(run_home))
+    else:
+        for relative_path in AGENT_HOME_SEEDS.get(agent_name, []):
+            if _copy_auth_seed(src_root, relative_path, run_home):
+                copied.append(relative_path)
 
     # Ensure the agent-specific directory exists even when auth is env-based.
     target_base = _skill_target_base(agent_name, run_home)
@@ -703,6 +809,11 @@ def _agent_process_env(
         "TMP": str(tmpdir),
         "TEMP": str(tmpdir),
     }
+
+    if agent_name == "claude" and _claude_auth_mode() == "container-login":
+        # Force Claude Code to use the copied login state in the fresh HOME.
+        # Stale OAuth tokens in benchmark/.env must not shadow container login.
+        env.pop("ANTHROPIC_API_KEY", None)
 
     if agent_name == "codex":
         # Codex stores auth/session state under CODEX_HOME, and some Linux CLI
@@ -1288,7 +1399,11 @@ def run_single_task(
 
     run_home = None
     use_run_home = isolated or (
-        agent_name == "claude" and os.environ.get("ANTHROPIC_API_KEY")
+        agent_name == "claude"
+        and (
+            os.environ.get("ANTHROPIC_API_KEY")
+            or _claude_auth_mode() == "container-login"
+        )
     )
 
     if use_run_home:
@@ -1312,6 +1427,7 @@ def run_single_task(
 
         attempts = max_retries + 1
         agent_result = {}
+        claude_memory_validation: dict | None = None
         for attempt in range(1, attempts + 1):
             if attempt > 1:
                 print(f"  Retry {attempt - 1}/{max_retries}...")
@@ -1342,6 +1458,19 @@ def run_single_task(
                     + ", ".join(external_tools)
                 )
                 break
+
+            if agent_name == "claude":
+                claude_memory_validation = _validate_claude_memory_paths(
+                    agent_result.get("trace_file", ""), run_home
+                )
+                if claude_memory_validation["violations"]:
+                    agent_result["failure_reason"] = "claude_memory_escape"
+                    agent_result["claude_memory_validation"] = claude_memory_validation
+                    print(
+                        "  Claude memory path escaped per-run HOME: "
+                        + ", ".join(claude_memory_validation["violations"])
+                    )
+                    break
 
             failure_reason = _detect_agent_failure_reason(agent_name, agent_result)
             if not failure_reason or attempt >= attempts:
@@ -1390,6 +1519,23 @@ def run_single_task(
                 ),
                 "pytest_stderr": "",
             }
+        elif agent_result.get("failure_reason") == "claude_memory_escape":
+            test_results = {
+                "passed": 0,
+                "failed": 0,
+                "errors": 1,
+                "total": 1,
+                "reward": 0.0,
+                "pytest_output": (
+                    "Claude memory path escaped per-run HOME: "
+                    + ", ".join(
+                        agent_result.get("claude_memory_validation", {}).get(
+                            "violations", []
+                        )
+                    )
+                ),
+                "pytest_stderr": "",
+            }
         elif not output_file.exists():
             print(f"\nNo output file produced at {output_file}")
             test_results = {
@@ -1434,6 +1580,32 @@ def run_single_task(
             "agent_result": agent_result,
             "test_results": test_results,
         }
+        if agent_name == "claude":
+            claude_memory_validation = claude_memory_validation or (
+                _validate_claude_memory_paths(
+                    agent_result.get("trace_file", ""), run_home
+                )
+                if agent_result
+                else {
+                    "validated": False,
+                    "paths": [],
+                    "violations": [],
+                    "reason": "Claude agent did not run",
+                }
+            )
+            full_result.update(
+                {
+                    "claude_auth_mode": _claude_auth_mode(),
+                    "claude_auth_persistent": (
+                        _claude_auth_mode() == "container-login"
+                    ),
+                    "claude_home_ephemeral": run_home is not None,
+                    "claude_memory_validated_ephemeral": claude_memory_validation[
+                        "validated"
+                    ],
+                    "claude_memory_validation": claude_memory_validation,
+                }
+            )
         result_file = workdir / "result.json"
         with open(result_file, "w") as f:
             json.dump(full_result, f, indent=2, default=str)
