@@ -27,6 +27,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
+import fcntl
 import gzip
 import hashlib
 import json
@@ -970,23 +972,32 @@ def _get_cached_db(task_name: str, schema: str = "native") -> Path:
     cached_db = DB_CACHE / cache_name
 
     lock = _get_db_cache_lock(cache_name)
-    with lock:
+    with lock, _db_cache_file_lock(cache_name):
         if not cached_db.exists():
             agent_db_src = Path(_resolve_agent_db(task_name, schema)).resolve()
             size_gb = agent_db_src.stat().st_size / 1e9
             print(f"  Caching database for {task_key}/{schema} ({size_gb:.1f} GB)...")
-            shutil.copy2(agent_db_src, cached_db)
+            tmp_db = cached_db.with_name(f".{cache_name}.{os.getpid()}.tmp")
+            tmp_db.unlink(missing_ok=True)
+            shutil.copy2(agent_db_src, tmp_db)
             try:
-                cached_db.chmod(0o600)
+                tmp_db.chmod(0o600)
             except OSError:
                 pass
+            os.replace(tmp_db, cached_db)
             wal_src = agent_db_src.with_suffix(".duckdb.wal")
+            cached_wal = cached_db.with_suffix(".duckdb.wal")
             if wal_src.exists():
-                shutil.copy2(wal_src, cached_db.with_suffix(".duckdb.wal"))
+                tmp_wal = cached_wal.with_name(f".{cached_wal.name}.{os.getpid()}.tmp")
+                tmp_wal.unlink(missing_ok=True)
+                shutil.copy2(wal_src, tmp_wal)
                 try:
-                    cached_db.with_suffix(".duckdb.wal").chmod(0o600)
+                    tmp_wal.chmod(0o600)
                 except OSError:
                     pass
+                os.replace(tmp_wal, cached_wal)
+            else:
+                cached_wal.unlink(missing_ok=True)
         else:
             try:
                 cached_db.chmod(0o600)
@@ -2692,6 +2703,23 @@ def _get_db_cache_lock(cache_name: str) -> threading.Lock:
     """Get a per-cache-name lock for thread-safe DB caching."""
     with _db_cache_locks_guard:
         return _db_cache_locks[cache_name]
+
+
+@contextlib.contextmanager
+def _db_cache_file_lock(cache_name: str):
+    """Serialize DB cache creation across parallel matrix processes."""
+    DB_CACHE.mkdir(parents=True, exist_ok=True)
+    lock_path = DB_CACHE / f"{cache_name}.lock"
+    with lock_path.open("a+") as handle:
+        try:
+            lock_path.chmod(0o600)
+        except OSError:
+            pass
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 # ── Parallel execution ─────────────────────────────────────────────────────

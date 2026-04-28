@@ -396,6 +396,17 @@ def test_agent_container_allows_host_visible_m4_data_mount(monkeypatch, tmp_path
     assert run._agent_container_extra_mounts() == [(str(source.resolve()), str(source))]
 
 
+def test_db_cache_file_lock_creates_private_lock_file(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_db_cache_lock", "benchmark/run.py")
+    cache_dir = tmp_path / "cache"
+    monkeypatch.setattr(run, "DB_CACHE", cache_dir)
+
+    with run._db_cache_file_lock("example.duckdb"):
+        lock_path = cache_dir / "example.duckdb.lock"
+        assert lock_path.exists()
+        assert lock_path.stat().st_mode & 0o077 == 0
+
+
 def test_agent_container_command_writes_api_keys_to_secret_env_file(
     monkeypatch, tmp_path
 ):
