@@ -411,8 +411,6 @@ def check_isolation_guardrails() -> CheckResult:
     if "CONNECT" not in network_text or "M4BENCH_ALLOWED_LLM_HOSTS" not in network_text:
         problems.append("network_lock.sh does not enforce hostname-level proxy egress")
     forbidden_network_hosts = [
-        "chatgpt.com",
-        "auth.openai.com",
         "oauth2.googleapis.com",
         "accounts.google.com",
         "statsig.anthropic.com",

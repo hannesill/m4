@@ -93,6 +93,8 @@ SECRET_CONTENT_PATTERNS = (
     ),
 )
 SECRET_ENV_KEYS = {
+    "ANTHROPIC_API_KEY",
+    "CODEX_API_KEY",
     "OPENAI_API_KEY",
     "GOOGLE_API_KEY",
     "GEMINI_API_KEY",
@@ -100,6 +102,8 @@ SECRET_ENV_KEYS = {
 ALLOWED_LLM_API_HOSTS = {
     "api.anthropic.com",
     "api.openai.com",
+    "auth.openai.com",
+    "chatgpt.com",
     "cloudcode-pa.googleapis.com",
     "generativelanguage.googleapis.com",
 }
@@ -1183,11 +1187,12 @@ def _agent_process_env(
     }
     provider_keys = {
         "claude": {
+            "ANTHROPIC_API_KEY",
             "M4BENCH_CLAUDE_AUTH_ROOT",
             "M4BENCH_CLAUDE_AUTH_VOLUME",
         },
-        "codex": set(),
-        "gemini": set(),
+        "codex": {"CODEX_API_KEY", "OPENAI_API_KEY"},
+        "gemini": {"GOOGLE_API_KEY", "GEMINI_API_KEY"},
         "pi-ollama": {
             "M4BENCH_ALLOW_OLLAMA",
             "M4BENCH_OLLAMA_BASE_URL",
@@ -2437,7 +2442,11 @@ def run_single_task(
             )
             full_result.update(
                 {
-                    "claude_auth_method": "claude-login",
+                    "claude_auth_method": (
+                        "api-key"
+                        if os.environ.get("ANTHROPIC_API_KEY")
+                        else "claude-login"
+                    ),
                     "claude_home_ephemeral": run_home is not None,
                     "claude_memory_validated_ephemeral": claude_memory_validation[
                         "validated"

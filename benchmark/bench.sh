@@ -84,10 +84,6 @@ if [[ -f "$SCRIPT_DIR/.env" ]]; then
     set +a
 fi
 
-if [[ "$AGENT" == "claude" ]]; then
-    unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN CLAUDE_CODE_OAUTH_TOKEN
-fi
-
 stage_auth_file() {
     local relative_path="$1"
     local src="$HOME/$relative_path"
