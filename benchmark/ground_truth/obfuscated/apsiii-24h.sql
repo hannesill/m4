@@ -14,7 +14,7 @@
 --
 -- DEVIATION from source implementation: fixed "worst from normal" tiebreaker equality
 -- checks for 6 variables (respiratory rate, hematocrit, WBC, sodium, albumin,
-^-- glucose). The source implementation compares ABS(x_max - midpoint) to
+-- glucose). The source implementation compares ABS(x_max - midpoint) to
 -- itself, which
 -- is trivially TRUE and short-circuits the real tie logic. We correct these
 -- to compare max vs min: ABS(x_max - midpoint) = ABS(x_min - midpoint).

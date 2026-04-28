@@ -21,8 +21,8 @@ WITH gcs_final AS (
         g.c_244,
         g.c_248,
         -- Deterministic tie-breaker: minimum total GCS alone can
-        -- select multiple rows with different component values. Chart time
-        -- chart time plus components keeps the chosen tuple stable across
+        -- select multiple rows with different component values. Chart time plus
+        -- components keeps the chosen tuple stable across
         -- execution plans while preserving minimum total GCS as the primary clinical rule.
         ROW_NUMBER() OVER (
             PARTITION BY g.c_552
