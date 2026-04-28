@@ -6,18 +6,18 @@
 
 -- ------------------------------------------------------------------
 -- Title: Suspicion of Infection
--- Identifies suspected infection events by pairing systemic c_060
+-- Identifies suspected infection events by pairing systemic antibiotic
 -- administration with culture collection within asymmetric time windows:
--- culture within 72h before OR 24h after c_060 start.
+-- culture within 72h before OR 24h after antibiotic start.
 -- ------------------------------------------------------------------
 
 -- Reference:
 --    Seymour CW et al. "Assessment of Clinical Criteria for Sepsis."
 --    JAMA. 2016;315(8):762-774.
 
--- Adapted from mimic-c_134 suspicion_of_infection.sql
+-- Adapted from mimic-code suspicion_of_infection.sql
 -- Optimized for DuckDB: split OR joins into UNION ALL for IEJoin.
--- DEVIATION from mimic-code: ROW_NUMBER() orderings include stable tie-breakers
+-- DEVIATION from source implementation: ROW_NUMBER() orderings include stable tie-breakers
 -- so exact timestamp/name ties select deterministically across execution plans.
 
 WITH ab_tbl AS (
@@ -75,7 +75,7 @@ me_then_ab AS (
       ORDER BY c_113 NULLS FIRST, c_114 NULLS FIRST, c_369 NULLS FIRST
     ) AS micro_seq
   FROM (
-    -- Cultures with c_114: c_060 within 72h after culture
+    -- Cultures with charttime: antibiotic within 72h after culture
     SELECT
       ab_tbl.c_556, ab_tbl.c_263, ab_tbl.c_552, ab_tbl.c_007,
       me72.c_369,
@@ -90,7 +90,7 @@ me_then_ab AS (
       AND ab_tbl.c_061 > me72.c_114
       AND ab_tbl.c_061 <= me72.c_114 + INTERVAL '72' HOUR
     UNION ALL
-    -- Cultures with only c_113: c_060 within 3 days after culture
+    -- Cultures with only chartdate: antibiotic within 3 days after culture
     SELECT
       ab_tbl.c_556, ab_tbl.c_263, ab_tbl.c_552, ab_tbl.c_007,
       me72.c_369,
@@ -115,7 +115,7 @@ ab_then_me AS (
       ORDER BY c_113 NULLS FIRST, c_114 NULLS FIRST, c_369 NULLS FIRST
     ) AS micro_seq
   FROM (
-    -- Cultures with c_114: c_060 within 24h before culture
+    -- Cultures with charttime: antibiotic within 24h before culture
     SELECT
       ab_tbl.c_556, ab_tbl.c_263, ab_tbl.c_552, ab_tbl.c_007,
       me24.c_369,
@@ -130,7 +130,7 @@ ab_then_me AS (
       AND ab_tbl.c_061 >= me24.c_114 - INTERVAL '24' HOUR
       AND ab_tbl.c_061 < me24.c_114
     UNION ALL
-    -- Cultures with only c_113: c_060 within 1 day before culture
+    -- Cultures with only chartdate: antibiotic within 1 day before culture
     SELECT
       ab_tbl.c_556, ab_tbl.c_263, ab_tbl.c_552, ab_tbl.c_007,
       me24.c_369,

@@ -19,10 +19,10 @@ semantics.
 Tasks come in two modes:
 - **standard** — validated target tables are removed, but intermediate feature
   tables (e.g., `first_day_vitalsign`) are available
-- **raw** — the target table and task-relevant upstream derived tables are
-  removed, forcing the agent to rebuild the requested concept from source
-  tables or remaining non-target context. Raw mode is not a guarantee that the
-  entire `mimiciv_derived` schema is absent.
+- **raw** — for MIMIC-IV tasks, the entire `mimiciv_derived` schema is removed
+  from the agent database, forcing the agent to rebuild the requested concept
+  from source clinical tables. eICU raw tasks use the source eICU database,
+  which has no comparable derived shortcut schema.
 
 Two primary experimental conditions:
 - **no-skill** — agent receives only the task instruction

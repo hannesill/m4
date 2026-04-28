@@ -810,7 +810,10 @@ def generate_obfuscated_gt_sql(dictionary: dict | None = None) -> None:
     out_dir = GROUND_TRUTH_DIR / "obfuscated"
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    task_keys = set(_mimic_ground_truth_task_keys())
     for sql_file in sorted(GROUND_TRUTH_DIR.glob("*.sql")):
+        if sql_file.stem not in task_keys:
+            continue
         native_sql = sql_file.read_text()
         obf_sql = transform_sql_to_obfuscated(native_sql, dictionary)
         out_path = out_dir / sql_file.name
@@ -833,13 +836,14 @@ def _mimic_ground_truth_task_keys() -> list[str]:
 
 
 def generate_restructured_gt_sql(dictionary: dict | None = None) -> None:
-    """Validate manually authored restructured ground-truth SQL.
+    """Validate that manually authored restructured ground-truth SQL is present.
 
     Restructured schemas merge and split source tables, so preserving query
     semantics requires hand-authored SQL plus differential verification against
-    native and obfuscated outputs. This function intentionally does not rewrite
-    SQL; it fails closed when a MIMIC-IV task is missing a restructured SQL file
-    or when any transformed output differs from native ground truth.
+    native and obfuscated outputs. This setup hook intentionally does not
+    rewrite SQL and does not run the expensive equivalence suite; use
+    `setup.py --verify-equivalence` or `python -m benchmark.lib.transform verify`
+    for differential verification.
     """
     if dictionary is None:
         dictionary = load_dictionary()
@@ -855,12 +859,9 @@ def generate_restructured_gt_sql(dictionary: dict | None = None) -> None:
             + ", ".join(missing)
         )
 
-    ok = True
     for task_key in _mimic_ground_truth_task_keys():
-        ok = verify_gt_equivalence(task_key, dictionary=dictionary) and ok
-
-    if not ok:
-        raise RuntimeError("restructured ground-truth SQL failed equivalence checks")
+        out_path = GROUND_TRUTH_DIR / "restructured" / f"{task_key}.sql"
+        print(f"  {task_key}.sql ready at {out_path}")
 
 
 def _generate_restructured_gt_sql_unsafe(dictionary: dict | None = None) -> None:
@@ -1042,7 +1043,12 @@ def _format_dictionary_section(
     lines = [
         "\n\n---\n",
         "## Schema Dictionary\n",
-        "This database uses obfuscated names. Use this reference to navigate.\n",
+        (
+            "This database uses renamed schema objects with a semantic map. "
+            "Use this reference to navigate.\n"
+            if include_restructured
+            else "This database uses obfuscated names. Use this reference to navigate.\n"
+        ),
         "### Schemas",
         "| Description | Database name |",
         "|-------------|---------------|",
@@ -1179,7 +1185,7 @@ def setup_transformed_agent_db(
     config = load_task_config(task_dir)
     task_name = config["metadata"]["name"]
     task_key = task_name.replace("mimic-", "")
-    drop_tables = config.get("database", {}).get("drop_tables", [])
+    drop_tables = list(config.get("database", {}).get("drop_tables", []))
 
     if schema_type == "obfuscated":
         source_db = OBFUSCATED_DB
@@ -1205,8 +1211,26 @@ def setup_transformed_agent_db(
     else:
         _remove_wal(dest)
 
-    # Map native drop_tables to obfuscated/restructured names
+    # Map native drop_tables to obfuscated/restructured names. Raw MIMIC tasks
+    # remove the whole transformed derived schema so shortcut exposure cannot
+    # depend on task wording or incomplete task-local drop lists.
     con = duckdb.connect(str(dest))
+
+    if config.get("metadata", {}).get("mode") == "raw":
+        derived_schema = dictionary["schemas"].get("mimiciv_derived")
+        if derived_schema:
+            derived_relations = con.execute(
+                """
+                SELECT table_schema || '.' || table_name
+                FROM information_schema.tables
+                WHERE table_schema = ?
+                ORDER BY table_name
+                """,
+                [derived_schema],
+            ).fetchall()
+            for (relation,) in derived_relations:
+                _drop_table_or_view(con, relation)
+                print(f"  Dropped {relation} (raw derived schema)")
 
     dropped = []
     for native_table in drop_tables:

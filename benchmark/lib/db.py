@@ -119,6 +119,74 @@ def _source_db(task_name: str) -> Path:
     return SOURCE_DBS["mimic-iv"]
 
 
+def _is_raw_mimic_task(config: dict) -> bool:
+    return (
+        config.get("metadata", {}).get("mode") == "raw"
+        and config.get("database", {}).get("source", "mimic-iv") == "mimic-iv"
+    )
+
+
+def _relations_in_schema(con: duckdb.DuckDBPyConnection, schema: str) -> list[str]:
+    """Return fully qualified tables/views in a schema."""
+    rows = con.execute(
+        """
+        SELECT table_schema, table_name
+        FROM information_schema.tables
+        WHERE table_schema = ?
+        ORDER BY table_name
+        """,
+        [schema],
+    ).fetchall()
+    return [f"{row[0]}.{row[1]}" for row in rows]
+
+
+def _drop_table_or_view(con: duckdb.DuckDBPyConnection, relation: str) -> None:
+    """Drop a relation without assuming whether DuckDB stored it as a table or view."""
+
+    def quote_ident(identifier: str) -> str:
+        return '"' + identifier.replace('"', '""') + '"'
+
+    if "." in relation:
+        schema, name = relation.split(".", 1)
+        quoted = f"{quote_ident(schema)}.{quote_ident(name)}"
+    else:
+        schema, name = "main", relation
+        quoted = quote_ident(relation)
+
+    table_type = con.execute(
+        """
+        SELECT table_type
+        FROM information_schema.tables
+        WHERE table_schema = ? AND table_name = ?
+        """,
+        [schema, name],
+    ).fetchone()
+    if not table_type:
+        return
+    if str(table_type[0]).upper() == "VIEW":
+        con.execute(f"DROP VIEW IF EXISTS {quoted}")
+    else:
+        con.execute(f"DROP TABLE IF EXISTS {quoted}")
+
+
+def effective_drop_tables(
+    config: dict, con: duckdb.DuckDBPyConnection | None = None
+) -> list[str]:
+    """Return the relations that must be unavailable in the task DB.
+
+    Raw MIMIC tasks are enforced at schema level: all `mimiciv_derived`
+    relations are removed from the agent database, not only the shortcuts
+    listed in task.toml. The task list remains useful documentation, while this
+    helper is the actual leakage control used by setup and preflight.
+    """
+    configured = list(config.get("database", {}).get("drop_tables", []))
+    if _is_raw_mimic_task(config):
+        if con is None:
+            return sorted(set(configured) | {"mimiciv_derived.*"})
+        configured.extend(_relations_in_schema(con, "mimiciv_derived"))
+    return sorted(dict.fromkeys(configured))
+
+
 def setup_agent_db(task_dir: Path) -> Path:
     """Create an agent database for a task by dropping specified tables.
 
@@ -134,8 +202,6 @@ def setup_agent_db(task_dir: Path) -> Path:
     db_prefix = _db_prefix(task_name)
     source = _source_db(task_name)
 
-    drop_tables = config.get("database", {}).get("drop_tables", [])
-
     AGENT_DB_DIR.mkdir(parents=True, exist_ok=True)
     dest = AGENT_DB_DIR / f"{db_prefix}_{task_key}.duckdb"
 
@@ -150,14 +216,17 @@ def setup_agent_db(task_dir: Path) -> Path:
     else:
         _remove_wal(dest)
 
+    con = duckdb.connect(str(dest))
+    drop_tables = effective_drop_tables(config, con)
     if drop_tables:
-        con = duckdb.connect(str(dest))
         for table in drop_tables:
             print(f"Dropping {table} ...")
-            con.execute(f"DROP TABLE IF EXISTS {table}")
+            _drop_table_or_view(con, table)
         con.close()
         print("Compacting agent DB ...")
         compact_duckdb_file(dest)
+    else:
+        con.close()
 
     print(f"Agent DB ready at {dest}")
     return dest

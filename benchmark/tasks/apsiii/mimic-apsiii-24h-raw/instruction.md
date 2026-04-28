@@ -1,8 +1,7 @@
 # Task: Calculate APS III (APACHE III) Score (Raw Tables)
 
-The target table and task-relevant upstream derived tables have been removed.
-Other non-target derived tables may still be present; do not use them as a
-shortcut for the requested APS III calculation.
+All derived shortcut tables have been removed from the task database.
+You must derive the requested concept from source clinical tables.
 
 Calculate the Acute Physiology Score III (APS III) for each ICU stay
 using the worst values from the first 24 hours of ICU admission

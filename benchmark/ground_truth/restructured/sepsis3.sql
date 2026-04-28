@@ -16,7 +16,7 @@
 --    Singer M et al. "The Third International Consensus Definitions
 --    for Sepsis and Septic Shock (Sepsis-3)." JAMA. 2016;315(8):801-810.
 
--- Adapted from mimic-c_134 c_522.sql
+-- Adapted from source Sepsis-3 implementation
 -- Returns one row per ICU stay (earliest matching infection event).
 
 WITH c_537 AS (

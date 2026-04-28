@@ -1,8 +1,7 @@
 # Task: Calculate Norepinephrine-Equivalent Dose (Raw Tables)
 
-The target table and task-relevant upstream derived tables have been removed.
-Other non-target derived tables may still be present; do not use them as a
-shortcut for the requested vasopressor-equivalent dose calculation.
+All derived shortcut tables have been removed from the task database.
+You must derive the requested concept from source clinical tables.
 
 Calculate the norepinephrine-equivalent dose (NED) for each vasopressor
 administration interval, enabling comparison across different vasopressor

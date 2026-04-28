@@ -10,15 +10,15 @@
 --    prognostic system. Risk prediction of hospital mortality for
 --    critically ill hospitalized adults." Chest. 1991;100(6):1619-36.
 
--- Adapted from mimic-c_134 c_062.sql
+-- Adapted from source APS III implementation
 --
--- DEVIATION from mimic-c_134: Fixed "worst from normal" tiebreaker equality
--- checks for 6 variables (c_492, c_273, c_620, c_533, c_039,
--- c_257). The mimic-c_134 originals compare ABS(x_max - midpoint) to
--- itself — e.g. ABS(c_493 - 19) = ABS(c_493 - 19) — which
+-- DEVIATION from source implementation: fixed "worst from normal" tiebreaker equality
+-- checks for 6 variables (respiratory rate, hematocrit, WBC, sodium, albumin,
+^-- glucose). The source implementation compares ABS(x_max - midpoint) to
+-- itself, which
 -- is trivially TRUE and short-circuits the real tie logic. We correct these
 -- to compare max vs min: ABS(x_max - midpoint) = ABS(x_min - midpoint).
--- See individual FIX c_135 in the scorecomp CTE below.
+-- See individual FIX comments in the scorecomp CTE below.
 
 WITH pa AS (
   SELECT
@@ -671,7 +671,7 @@ WITH pa AS (
       THEN smax.c_496
       WHEN ABS(c_493 - 19) < ABS(c_495 - 19)
       THEN smin.c_496
-      -- FIX: mimic-c_134 has ABS(c_493 - 19) = ABS(c_493 - 19)
+      -- FIX: source implementation self-compares the max-side expression
       -- which is always TRUE (self-comparison). Corrected to compare max vs min.
       WHEN ABS(c_493 - 19) = ABS(c_495 - 19)
       AND smax.c_496 >= smin.c_496
@@ -687,7 +687,7 @@ WITH pa AS (
       THEN smax.c_276
       WHEN ABS(c_274 - 45.5) < ABS(c_275 - 45.5)
       THEN smin.c_276
-      -- FIX: mimic-c_134 has ABS(c_274 - 45.5) = ABS(c_274 - 45.5)
+      -- FIX: source implementation self-compares the max-side expression
       -- which is always TRUE (self-comparison). Corrected to compare max vs min.
       WHEN ABS(c_274 - 45.5) = ABS(c_275 - 45.5)
       AND smax.c_276 >= smin.c_276
@@ -703,7 +703,7 @@ WITH pa AS (
       THEN smax.c_623
       WHEN ABS(c_621 - 11.5) < ABS(c_622 - 11.5)
       THEN smin.c_623
-      -- FIX: mimic-c_134 has ABS(c_621 - 11.5) = ABS(c_621 - 11.5)
+      -- FIX: source implementation self-compares the max-side expression
       -- which is always TRUE (self-comparison). Corrected to compare max vs min.
       WHEN ABS(c_621 - 11.5) = ABS(c_622 - 11.5) AND smax.c_623 >= smin.c_623
       THEN smax.c_623
@@ -732,7 +732,7 @@ WITH pa AS (
       THEN smax.c_536
       WHEN ABS(c_534 - 145.5) < ABS(c_535 - 145.5)
       THEN smin.c_536
-      -- FIX: mimic-c_134 has ABS(c_534 - 145.5) = ABS(c_534 - 145.5)
+      -- FIX: source implementation self-compares the max-side expression
       -- which is always TRUE (self-comparison). Corrected to compare max vs min.
       WHEN ABS(c_534 - 145.5) = ABS(c_535 - 145.5)
       AND smax.c_536 >= smin.c_536
@@ -748,7 +748,7 @@ WITH pa AS (
       THEN smax.c_042
       WHEN ABS(c_040 - 3.5) < ABS(c_041 - 3.5)
       THEN smin.c_042
-      -- FIX: mimic-c_134 has ABS(c_040 - 3.5) = ABS(c_040 - 3.5)
+      -- FIX: source implementation self-compares the max-side expression
       -- which is always TRUE (self-comparison). Corrected to compare max vs min.
       WHEN ABS(c_040 - 3.5) = ABS(c_041 - 3.5)
       AND smax.c_042 >= smin.c_042
@@ -765,7 +765,7 @@ WITH pa AS (
       THEN smax.c_261
       WHEN ABS(c_258 - 130) < ABS(c_260 - 130)
       THEN smin.c_261
-      -- FIX: mimic-c_134 has ABS(c_258 - 130) = ABS(c_258 - 130)
+      -- FIX: source implementation self-compares the max-side expression
       -- which is always TRUE (self-comparison). Corrected to compare max vs min.
       WHEN ABS(c_258 - 130) = ABS(c_260 - 130)
       AND smax.c_261 >= smin.c_261
@@ -875,8 +875,8 @@ WITH pa AS (
 SELECT
     ie.c_556, ie.c_263, ie.c_552
     , c_062
-    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
-    -- See c_537-24h.sql for rationale.
+    -- DEVIATION from source implementation: COALESCE component scores to 0.
+    -- See sofa-24h.sql for rationale.
     , COALESCE(c_289, 0) AS c_289
     , COALESCE(c_350, 0) AS c_350
     , COALESCE(c_562, 0) AS c_562

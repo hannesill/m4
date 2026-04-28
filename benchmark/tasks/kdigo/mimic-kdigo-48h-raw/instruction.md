@@ -1,8 +1,7 @@
 # Task: KDIGO AKI Staging (Raw Tables)
 
-The target table and task-relevant upstream derived tables have been removed.
-Other non-target derived tables may still be present; do not use them as a
-shortcut for the requested KDIGO staging calculation.
+All derived shortcut tables have been removed from the task database.
+You must derive the requested concept from source clinical tables.
 
 Determine the maximum KDIGO Acute Kidney Injury (AKI) stage for each
 ICU stay within the first 48 hours of admission

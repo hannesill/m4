@@ -1,15 +1,15 @@
 -- SOFA score calculated over the first 12 hours of ICU stay
--- (instead of the standard 24-hour window used by mimic-c_134)
+-- (instead of the standard 24-hour source window)
 --
 -- Uses time-series derived tables (vitalsign, bg, chemistry, enzyme,
--- complete_blood_count, c_243, vasopressors) with a 12-hour window:
--- c_310 - 6h to c_310 + 12h
+-- complete blood count, GCS, vasopressors) with a 12-hour window:
+-- intime - 6h to intime + 12h
 --
--- NOTE: Urine output criteria are NOT applied for the c_487 component.
--- The SOFA c_487 UO thresholds are defined in mL/day (< 500, < 200),
+-- NOTE: Urine output criteria are NOT applied for the renal component.
+-- The SOFA renal UO thresholds are defined in mL/day (< 500, < 200),
 -- which requires 24 hours of data. Using partial UO from a 12h window
--- would be methodologically incorrect. Only serum c_145 is used
--- for c_487 scoring in this variant.
+-- would be methodologically incorrect. Only serum creatinine is used
+-- for renal scoring in this variant.
 
 WITH pafi1 AS (
     SELECT
@@ -18,9 +18,9 @@ WITH pafi1 AS (
         bg.c_416,
         CASE WHEN NOT vd.c_552 IS NULL THEN 1 ELSE 0 END AS isvent
     FROM ds_3.t_005 AS ie
-    -- [REVIEW] mimic-c_134 omits c_543='ART.' here, unlike the hourly
-    -- c_537.sql which filters arterial only. This means venous PaO2/FiO2
-    -- values may contribute to the c_498 score. Consider adding:
+    -- [REVIEW] mimic-code omits the arterial specimen filter here, unlike the hourly
+    -- time-series SOFA implementation which filters arterial only. This means venous PaO2/FiO2
+    -- values may contribute to the respiratory score. Consider adding:
     --     AND bg.c_543 = 'ART.'
     LEFT JOIN ds_1.t_005 AS bg
         ON ie.c_556 = bg.c_556
@@ -217,8 +217,8 @@ WITH pafi1 AS (
         CASE
             WHEN c_477 > 15 OR c_478 > 0.1 OR c_479 > 0.1
             THEN 4
-            -- Deviates from mimic-c_134 which uses <= 0.1 (true for any
-            -- non-NULL c_475). We use the clinically correct > 0 AND <= 0.1.
+            -- Deviates from mimic-code which uses <= 0.1 (true for any
+            -- non-NULL dose). We use the clinically correct > 0 AND <= 0.1.
             -- No effect on derived values: vasopressor tables only contain
             -- rows with positive rates, so the conditions are equivalent.
             WHEN c_477 > 5 OR (c_478 > 0 AND c_478 <= 0.1) OR (c_479 > 0 AND c_479 <= 0.1)
@@ -244,7 +244,7 @@ WITH pafi1 AS (
             THEN NULL
             ELSE 0
         END AS c_130,
-        -- Renal: c_145 only (no urine output for 12h window)
+        -- Renal: creatinine only (no urine output for 12h window)
         CASE
             WHEN (c_146 >= 5.0)
             THEN 4
@@ -272,8 +272,8 @@ SELECT
     + COALESCE(c_130, 0)
     + COALESCE(c_487, 0)
     AS c_537
-    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
-    -- See c_537-24h.sql for rationale.
+    -- DEVIATION from source implementation: COALESCE component scores to 0.
+    -- See sofa-24h.sql for rationale.
     , COALESCE(c_498, 0) AS c_498
     , COALESCE(c_132, 0) AS c_132
     , COALESCE(c_329, 0) AS c_329

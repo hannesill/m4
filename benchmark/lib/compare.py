@@ -46,7 +46,7 @@ def read_benchmark_csv(path: str) -> pd.DataFrame:
     return pd.read_csv(path, keep_default_na=False, na_values=[""])
 
 
-def _normalize_key_columns(df: pd.DataFrame, key_columns: list[str]) -> pd.DataFrame:
+def normalize_key_columns(df: pd.DataFrame, key_columns: list[str]) -> pd.DataFrame:
     """Normalize join keys so CSV parser dtype guesses do not change scoring."""
     normalized = df.copy()
     for col in key_columns:
@@ -168,8 +168,8 @@ def compare_derived_tables(
             f"{', '.join(key_columns)}"
         )
 
-    agent_df = _normalize_key_columns(agent_df, key_columns)
-    truth_df = _normalize_key_columns(truth_df, key_columns)
+    agent_df = normalize_key_columns(agent_df, key_columns)
+    truth_df = normalize_key_columns(truth_df, key_columns)
 
     agent_rows_raw = len(agent_df)
     agent_dupes = int(agent_df.duplicated(subset=key_columns).sum())

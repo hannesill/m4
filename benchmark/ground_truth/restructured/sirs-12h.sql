@@ -1,10 +1,10 @@
 -- Restructured: encounters (ds_2.t_901) replaces icustays; filter c_552 IS NOT NULL for ICU stays
 
 -- SIRS criteria calculated over the first 12 hours of ICU stay
--- (instead of the standard 24-hour window used by mimic-c_134)
+-- (instead of the standard 24-hour source window)
 --
 -- Uses time-series derived tables (vitalsign, bg, complete_blood_count)
--- with a 12-hour window: c_310 - 6h to c_310 + 12h
+-- with a 12-hour window: intime - 6h to intime + 12h
 
 WITH vitals_12h AS (
     SELECT
@@ -118,12 +118,12 @@ SELECT
     + COALESCE(c_497, 0)
     + COALESCE(c_623, 0)
     AS c_527
-    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
+    -- DEVIATION from source implementation: COALESCE component scores to 0.
     -- The original SQL leaves them NULL when underlying data is missing.
     -- We impute 0 here so the ground truth matches the task instruction
     -- ("treat missing data as normal, score 0") and agents are not
     -- penalised for following the instruction. The NULL→0 semantics are
-    -- already applied to the c_527 total above; this extends it to the
+    -- already applied to the SIRS total above; this extends it to the
     -- individual components for consistency.
     , COALESCE(c_562, 0) AS c_562
     , COALESCE(c_269, 0) AS c_269

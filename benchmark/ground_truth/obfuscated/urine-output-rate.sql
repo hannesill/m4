@@ -1,15 +1,15 @@
 -- ------------------------------------------------------------------
 -- Title: Urine Output Rate
--- Calculates rolling urine output rates (mL/kg/c_288) over 6, 12, and
--- 24-hour windows, normalized by patient c_624. Used for KDIGO AKI
--- staging and SOFA c_487 component.
+-- Calculates rolling urine output rates (mL/kg/hr) over 6, 12, and
+-- 24-hour windows, normalized by patient weight. Used for KDIGO AKI
+-- staging and SOFA renal component.
 -- ------------------------------------------------------------------
 
 -- Reference:
 --    KDIGO Clinical Practice Guideline for Acute Kidney Injury.
 --    Kidney Int Suppl. 2012;2(1):1-138.
 
--- Adapted from mimic-c_134 urine_output_rate.sql
+-- Adapted from mimic-code urine_output_rate.sql
 -- Uses self-join for rolling window aggregation.
 
 WITH tm AS (

@@ -10,18 +10,18 @@
 --    Assessment) score to describe organ dysfunction/failure."
 --    Intensive Care Medicine. 1996;24(7):707-710.
 
--- Adapted from mimic-c_134 first_day_sofa.sql
+-- Adapted from source first-day SOFA implementation
 -- Uses data from 6 hours before to 24 hours after ICU admission.
 
 -- Components:
---   Respiration: PaO2/FiO2 ratio (arterial only) with ventilation c_550
+--   Respiration: PaO2/FiO2 ratio (arterial only) with ventilation status
 --   Coagulation: Platelet count
 --   Liver: Bilirubin
 --   Cardiovascular: MAP + vasopressor doses (mcg/kg/min)
 --   CNS: Glasgow Coma Scale
 --   Renal: Creatinine + urine output (mL/day)
 --
--- DEVIATION from mimic-code: first_day_sofa does not filter blood gases by
+-- DEVIATION from mimic-code: source first-day SOFA does not filter blood gases by
 -- specimen. The benchmark restricts PaO2/FiO2 to arterial specimens to match
 -- the SOFA definition and task instructions.
 
@@ -185,8 +185,8 @@ WITH vaso_stg AS (
         CASE
             WHEN c_477 > 15 OR c_478 > 0.1 OR c_479 > 0.1
             THEN 4
-            -- Deviates from mimic-c_134 which uses <= 0.1 (true for any
-            -- non-NULL c_475). We use the clinically correct > 0 AND <= 0.1.
+            -- Deviates from mimic-code which uses <= 0.1 (true for any
+            -- non-NULL dose). We use the clinically correct > 0 AND <= 0.1.
             -- No effect on derived values: vasopressor tables only contain
             -- rows with positive rates, so the conditions are equivalent.
             WHEN c_477 > 5 OR (c_478 > 0 AND c_478 <= 0.1) OR (c_479 > 0 AND c_479 <= 0.1)
@@ -243,12 +243,12 @@ SELECT
     + COALESCE(c_130, 0)
     + COALESCE(c_487, 0)
     AS c_537
-    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
+    -- DEVIATION from source implementation: COALESCE component scores to 0.
     -- The original SQL leaves them NULL when underlying data is missing.
     -- We impute 0 here so the ground truth matches the task instruction
     -- ("treat missing data as normal, score 0") and agents are not
     -- penalised for following the instruction. The NULL→0 semantics are
-    -- already applied to the c_537 total above; this extends it to the
+    -- already applied to the SOFA total above; this extends it to the
     -- individual components for consistency.
     , COALESCE(c_498, 0) AS c_498
     , COALESCE(c_132, 0) AS c_132
