@@ -43,6 +43,9 @@ WITH gcs_final AS (
 
 SELECT
     ie.subject_id, ie.hadm_id, ie.stay_id
+    -- DEVIATION from mimic-code: first_day_gcs leaves missing values NULL
+    -- and returns gcs_unable. The benchmark evaluates only total/motor/verbal/
+    -- eyes and follows the task instruction to treat missing GCS as normal.
     , COALESCE(gs.gcs, 15) AS gcs_min
     , COALESCE(gs.gcs_motor, 6) AS gcs_motor
     , COALESCE(gs.gcs_verbal, 5) AS gcs_verbal

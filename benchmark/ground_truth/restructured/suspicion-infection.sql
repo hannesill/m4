@@ -17,6 +17,8 @@
 
 -- Adapted from mimic-c_134 suspicion_of_infection.sql
 -- Optimized for DuckDB: split OR joins into UNION ALL for IEJoin.
+-- DEVIATION from mimic-code: ROW_NUMBER() orderings include stable tie-breakers
+-- so exact timestamp/name ties select deterministically across execution plans.
 
 WITH ab_tbl AS (
   SELECT
