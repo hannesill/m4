@@ -21,6 +21,7 @@ ALLOWED_HOSTS=(
     auth.openai.com
     chatgpt.com
     # Google (Gemini)
+    cloudcode-pa.googleapis.com
     generativelanguage.googleapis.com
     oauth2.googleapis.com
     accounts.google.com
