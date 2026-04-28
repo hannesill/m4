@@ -10,6 +10,10 @@
 --    and suggested formula." J Crit Care. 2020;61:233-240.
 
 -- Adapted from mimic-c_134 c_384.sql
+-- DEVIATION from mimic-code: the source interval table can contain duplicate
+-- rows for the same stay/start/end interval. The benchmark key is
+-- interval-level, so duplicates are collapsed with MAX dose to provide one
+-- deterministic target row per interval.
 
 SELECT
   c_552,

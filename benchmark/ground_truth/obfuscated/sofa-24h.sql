@@ -20,6 +20,10 @@
 --   Cardiovascular: MAP + vasopressor doses (mcg/kg/min)
 --   CNS: Glasgow Coma Scale
 --   Renal: Creatinine + urine output (mL/day)
+--
+-- DEVIATION from mimic-code: first_day_sofa does not filter blood gases by
+-- specimen. The benchmark restricts PaO2/FiO2 to arterial specimens to match
+-- the SOFA definition and task instructions.
 
 WITH vaso_stg AS (
     SELECT
