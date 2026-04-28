@@ -397,6 +397,32 @@ def test_agent_container_command_mounts_only_agent_inputs(monkeypatch, tmp_path)
     assert "benchmark/agent_db" not in joined
 
 
+def test_agent_container_mounts_claude_auth_for_root_copy_only(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_container_claude_auth_cmd", "benchmark/run.py")
+
+    workdir = tmp_path / "work"
+    run_home = tmp_path / "home"
+    workdir.mkdir()
+    run_home.mkdir()
+
+    cmd = run._agent_container_command(
+        ["claude", "-p", "ok"],
+        env={
+            "HOME": str(run_home),
+            "PATH": run.CONTAINER_PATH,
+            "M4BENCH_CLAUDE_AUTH_MODE": "container-login",
+            "M4BENCH_CLAUDE_AUTH_ROOT": "/claude-auth",
+            "M4BENCH_CLAUDE_AUTH_VOLUME": "m4bench-claude-auth",
+        },
+        workdir=workdir,
+        run_home=run_home,
+    )
+    joined = "\n".join(cmd)
+
+    assert "m4bench-claude-auth:/claude-auth:rw" in cmd
+    assert 'chmod -R go-rwx "$auth_root"' in joined
+
+
 def test_run_agent_timeout_kills_process_group(monkeypatch, tmp_path):
     run = _load_module("benchmark_run_timeout", "benchmark/run.py")
 
@@ -866,8 +892,8 @@ def test_bench_sh_supports_claude_container_login_mode():
     assert "M4BENCH_CLAUDE_AUTH_MODE" in bench
     assert "container-login" in bench
     assert "m4bench-claude-auth" in bench
-    assert "${CLAUDE_AUTH_VOLUME}=${CLAUDE_AUTH_ROOT}" in bench
     assert 'M4BENCH_CLAUDE_AUTH_ROOT="$CLAUDE_AUTH_ROOT"' in bench
+    assert 'M4BENCH_CLAUDE_AUTH_VOLUME="$CLAUDE_AUTH_VOLUME"' in bench
 
 
 def test_bench_sh_container_login_does_not_require_api_key(tmp_path):
