@@ -106,7 +106,15 @@ ALLOWED_LLM_API_HOSTS = {
     "chatgpt.com",
     "cloudcode-pa.googleapis.com",
     "generativelanguage.googleapis.com",
+    "http-intake.logs.us5.datadoghq.com",
+    "oauth2.googleapis.com",
+    "play.googleapis.com",
+    "platform.claude.com",
 }
+ALLOWED_LLM_API_HOST_SUFFIXES = (
+    ".chatgpt.com",
+    ".auth.openai.com",
+)
 LEAK_CANARY_PATHS = (
     "/benchmark/ground_truth",
     "/benchmark/tasks",
@@ -165,6 +173,9 @@ TEXT_LINT_SUFFIXES = {
     ".txt",
     ".yaml",
     ".yml",
+}
+AUTH_ARTIFACT_RELATIVE_PATHS = {
+    ".codex/auth.json",
 }
 
 # Tools to deny in isolated mode — defence-in-depth on top of iptables.
@@ -545,6 +556,13 @@ def _load_egress_events(workdir: Path) -> list[dict]:
     return _load_jsonl_events(workdir / "egress.jsonl")
 
 
+def _is_allowed_llm_host(host: str) -> bool:
+    host = host.lower()
+    return host in ALLOWED_LLM_API_HOSTS or any(
+        host.endswith(suffix) for suffix in ALLOWED_LLM_API_HOST_SUFFIXES
+    )
+
+
 def _detect_disallowed_egress(workdir: Path) -> list[str]:
     """Return blocked or non-allowlisted network attempts from proxy logs."""
     violations: list[str] = []
@@ -554,7 +572,7 @@ def _detect_disallowed_egress(workdir: Path) -> list[str]:
         allowed = event.get("allowed") is True
         if not allowed:
             violations.append(f"{host}:{port}")
-        elif host not in ALLOWED_LLM_API_HOSTS or port != 443:
+        elif not _is_allowed_llm_host(host) or port != 443:
             violations.append(f"{host}:{port}")
     return sorted(set(violations))
 
@@ -630,6 +648,17 @@ def _read_text_for_lint(path: Path) -> str | None:
         return None
 
 
+def _is_auth_artifact_for_lint(rel_path: str) -> bool:
+    """Return True for allowlisted provider auth seeds copied into the workdir."""
+    return rel_path in AUTH_ARTIFACT_RELATIVE_PATHS
+
+
+def _is_internal_artifact_for_lint(rel_path: str) -> bool:
+    """Return True for provider/harness state that is not a scored artifact."""
+    first_part = Path(rel_path).parts[0] if Path(rel_path).parts else ""
+    return first_part in RESULT_EXPORT_SKIP_DIRS or _is_auth_artifact_for_lint(rel_path)
+
+
 def _sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     opener = gzip.open if path.suffix == ".gz" else open
@@ -664,6 +693,8 @@ def lint_run_contamination(
         if path.is_dir() or path.is_symlink():
             continue
         rel = path.relative_to(workdir).as_posix()
+        if _is_internal_artifact_for_lint(rel):
+            continue
         if _is_database_artifact(path):
             if path.name not in {"database.duckdb", "database.duckdb.wal"}:
                 violations.append(f"{rel}: database artifact present")
@@ -801,7 +832,11 @@ def _collect_claude_memory_paths(trace_path: str | Path) -> list[str]:
 def _path_is_under(path: str, root: Path) -> bool:
     """Return whether an absolute path string is contained by root."""
     try:
-        return os.path.commonpath([path, str(root)]) == str(root)
+        resolved_path = Path(path).expanduser().resolve()
+        resolved_root = root.expanduser().resolve()
+        return os.path.commonpath([str(resolved_path), str(resolved_root)]) == str(
+            resolved_root
+        )
     except ValueError:
         return False
 
@@ -1453,12 +1488,19 @@ def _agent_container_extra_mounts() -> list[tuple[str, str]]:
         host_resolved = Path(host_path).expanduser().resolve()
         if host_resolved != allowed_root and allowed_root not in host_resolved.parents:
             raise RuntimeError(f"host mount outside M4 data root: {host_path}")
+        container_parts = Path(container_path).parts
+        container_resolved = Path(container_path).expanduser().resolve()
+        container_is_m4_mount = container_path.startswith(allowed_container_prefix)
+        container_is_host_data_mount = container_resolved == host_resolved and (
+            container_resolved == allowed_root
+            or allowed_root in container_resolved.parents
+        )
         if not (
-            container_path.startswith(allowed_container_prefix)
-            and ".." not in Path(container_path).parts
+            (container_is_m4_mount or container_is_host_data_mount)
+            and ".." not in container_parts
         ):
             raise RuntimeError(
-                f"container mount outside /m4_data/parquet: {container_path}"
+                f"container mount outside allowed M4 data roots: {container_path}"
             )
         mounts.append((str(host_resolved), container_path))
     return mounts

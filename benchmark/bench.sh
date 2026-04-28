@@ -9,7 +9,11 @@ AUTH_ROOT="/host-auth"
 AUTH_STAGING_DIR="$(mktemp -d -t m4bench-auth-XXXXXX)"
 DOCKER_BIN="${DOCKER_BIN:-docker}"
 M4_DATA_DIR="${M4BENCH_M4_DATA_DIR:-$REPO_ROOT/m4_data}"
-M4_DATA_CONTAINER_DIR="${M4BENCH_M4_DATA_CONTAINER_DIR:-/m4_data}"
+# DuckDB validates read_parquet() view schemas when the host orchestrator
+# rewrites per-run DB copies, so the mounted container path must also be
+# visible on the host. By default, mount the selected Parquet source trees at
+# their host paths inside the agent container.
+M4_DATA_CONTAINER_DIR="${M4BENCH_M4_DATA_CONTAINER_DIR:-$M4_DATA_DIR}"
 CLAUDE_AUTH_VOLUME="${M4BENCH_CLAUDE_AUTH_VOLUME:-m4bench-claude-auth}"
 CLAUDE_AUTH_ROOT="/claude-auth"
 

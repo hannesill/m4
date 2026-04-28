@@ -381,6 +381,21 @@ def test_agent_container_command_mounts_only_agent_inputs(monkeypatch, tmp_path)
     assert "benchmark/agent_db" not in joined
 
 
+def test_agent_container_allows_host_visible_m4_data_mount(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_container_host_data_mount", "benchmark/run.py")
+
+    data_root = tmp_path / "m4_data"
+    source = data_root / "parquet" / "mimic-iv"
+    source.mkdir(parents=True)
+    monkeypatch.setenv("M4BENCH_M4_DATA_DIR", str(data_root))
+    monkeypatch.setenv(
+        "M4BENCH_AGENT_CONTAINER_MOUNTS",
+        f"{source}={source}\n",
+    )
+
+    assert run._agent_container_extra_mounts() == [(str(source.resolve()), str(source))]
+
+
 def test_agent_container_command_writes_api_keys_to_secret_env_file(
     monkeypatch, tmp_path
 ):
@@ -716,6 +731,69 @@ def test_lint_run_contamination_flags_sensitive_paths(monkeypatch, tmp_path):
     assert any("/benchmark/ground_truth" in item for item in result["violations"])
 
 
+def test_lint_run_contamination_allows_codex_auth_seed(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_contamination_lint_auth", "benchmark/run.py")
+
+    workdir = tmp_path / "work"
+    workdir.mkdir()
+    (workdir / ".codex").mkdir()
+    (workdir / ".codex" / "auth.json").write_text(
+        '{"tokens": {"access_token": "abcdefghijklmnopqrstuvwxyz"}}\n'
+    )
+    (workdir / "output.csv").write_text("stay_id,score\n1,2\n")
+    monkeypatch.setattr(run, "_sha256_file", lambda path: str(path))
+
+    result = run.lint_run_contamination(
+        workdir,
+        "mimic-sirs-24h",
+        run_id="current",
+    )
+
+    assert result["passed"], result["violations"]
+
+
+def test_lint_run_contamination_ignores_harness_runtime_files(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_contamination_lint_harness", "benchmark/run.py")
+
+    workdir = tmp_path / "work"
+    workdir.mkdir()
+    (workdir / ".m4bench").mkdir()
+    (workdir / ".m4bench" / "sandbox_hook.py").write_text("/benchmark/ground_truth\n")
+    (workdir / ".codex").mkdir()
+    (workdir / ".codex" / "state.sqlite").write_text("sqlite")
+    (workdir / "output.csv").write_text("stay_id,score\n1,2\n")
+    monkeypatch.setattr(run, "_sha256_file", lambda path: str(path))
+
+    result = run.lint_run_contamination(
+        workdir,
+        "mimic-sirs-24h",
+        run_id="current",
+    )
+
+    assert result["passed"], result["violations"]
+
+
+def test_lint_run_contamination_still_flags_non_auth_secrets(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_contamination_lint_secret", "benchmark/run.py")
+
+    workdir = tmp_path / "work"
+    workdir.mkdir()
+    (workdir / "notes.json").write_text(
+        '{"access_token": "abcdefghijklmnopqrstuvwxyz"}\n'
+    )
+    (workdir / "output.csv").write_text("stay_id,score\n1,2\n")
+    monkeypatch.setattr(run, "_sha256_file", lambda path: str(path))
+
+    result = run.lint_run_contamination(
+        workdir,
+        "mimic-sirs-24h",
+        run_id="current",
+    )
+
+    assert not result["passed"]
+    assert any("contains token-shaped secret" in item for item in result["violations"])
+
+
 def test_sanitize_test_results_removes_truth_examples_and_sensitive_paths():
     run = _load_module("benchmark_run_result_sanitizer", "benchmark/run.py")
 
@@ -886,12 +964,33 @@ def test_network_lock_allows_codex_api_and_subscription_hosts():
     assert "api.openai.com" in script
     assert "auth.openai.com" in script
     assert "chatgpt.com" in script
+    assert ".chatgpt.com" in script
+
+
+def test_egress_lint_allows_chatgpt_subscription_subdomains(tmp_path):
+    run = _load_module("benchmark_run_egress_chatgpt_subdomains", "benchmark/run.py")
+
+    (tmp_path / "egress.jsonl").write_text(
+        '{"allowed": true, "host": "ab.chatgpt.com", "port": 443}\n'
+    )
+
+    assert run._detect_disallowed_egress(tmp_path) == []
 
 
 def test_network_lock_allows_gemini_code_assist_host():
     script = (ROOT / "benchmark" / "network_lock.sh").read_text()
 
     assert "cloudcode-pa.googleapis.com" in script
+    assert "oauth2.googleapis.com" in script
+    assert "play.googleapis.com" in script
+
+
+def test_network_lock_allows_claude_runtime_hosts():
+    script = (ROOT / "benchmark" / "network_lock.sh").read_text()
+
+    assert "api.anthropic.com" in script
+    assert "platform.claude.com" in script
+    assert "http-intake.logs.us5.datadoghq.com" in script
 
 
 def test_network_lock_allows_configured_ollama_for_pi():
