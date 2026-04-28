@@ -818,17 +818,49 @@ def generate_obfuscated_gt_sql(dictionary: dict | None = None) -> None:
         print(f"  {sql_file.name} → {out_path}")
 
 
+def _mimic_ground_truth_task_keys() -> list[str]:
+    """Return ground-truth SQL keys used by MIMIC-IV benchmark tasks."""
+    from .db import _task_key, list_task_dirs, load_task_config
+
+    keys: set[str] = set()
+    for task_dir in list_task_dirs():
+        config = load_task_config(task_dir)
+        if config.get("database", {}).get("source", "mimic-iv") != "mimic-iv":
+            continue
+        name = config["metadata"]["name"]
+        keys.add(config.get("ground_truth", {}).get("alias", _task_key(name)))
+    return sorted(keys)
+
+
 def generate_restructured_gt_sql(dictionary: dict | None = None) -> None:
-    """Refuse automated restructured GT generation.
+    """Validate manually authored restructured ground-truth SQL.
 
     Restructured schemas merge and split source tables, so preserving query
-    semantics requires manual SQL that is verified against native output. A
-    simple name rewrite can silently produce invalid contamination results.
+    semantics requires hand-authored SQL plus differential verification against
+    native and obfuscated outputs. This function intentionally does not rewrite
+    SQL; it fails closed when a MIMIC-IV task is missing a restructured SQL file
+    or when any transformed output differs from native ground truth.
     """
-    raise RuntimeError(
-        "restructured ground-truth SQL must be authored manually and verified; "
-        "automated structural rewriting is disabled"
-    )
+    if dictionary is None:
+        dictionary = load_dictionary()
+
+    missing = [
+        task_key
+        for task_key in _mimic_ground_truth_task_keys()
+        if not (GROUND_TRUTH_DIR / "restructured" / f"{task_key}.sql").exists()
+    ]
+    if missing:
+        raise FileNotFoundError(
+            "missing manually authored restructured ground-truth SQL for: "
+            + ", ".join(missing)
+        )
+
+    ok = True
+    for task_key in _mimic_ground_truth_task_keys():
+        ok = verify_gt_equivalence(task_key, dictionary=dictionary) and ok
+
+    if not ok:
+        raise RuntimeError("restructured ground-truth SQL failed equivalence checks")
 
 
 def _generate_restructured_gt_sql_unsafe(dictionary: dict | None = None) -> None:
@@ -1464,11 +1496,11 @@ def main():
     elif args.command == "verify":
         d = load_dictionary()
         print("Verifying dictionary completeness ...")
-        verify_dictionary_completeness(dictionary=d)
-        print("\nVerifying GT equivalence ...")
-        for sql_file in sorted(GROUND_TRUTH_DIR.glob("*.sql")):
-            task_key = sql_file.stem
-            verify_gt_equivalence(task_key, dictionary=d)
+        ok = verify_dictionary_completeness(dictionary=d)
+        print("\nVerifying GT equivalence for MIMIC-IV task ground truth ...")
+        for task_key in _mimic_ground_truth_task_keys():
+            ok = verify_gt_equivalence(task_key, dictionary=d) and ok
+        raise SystemExit(0 if ok else 1)
 
     else:
         parser.print_help()
