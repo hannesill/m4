@@ -16,6 +16,8 @@ AGENT_USER="benchagent"
 ALLOWED_HOSTS=(
     # Anthropic (Claude)
     api.anthropic.com
+    platform.claude.com
+    http-intake.logs.us5.datadoghq.com
     # OpenAI (Codex)
     api.openai.com
     auth.openai.com
@@ -23,6 +25,13 @@ ALLOWED_HOSTS=(
     # Google (Gemini)
     cloudcode-pa.googleapis.com
     generativelanguage.googleapis.com
+    oauth2.googleapis.com
+    play.googleapis.com
+)
+ALLOWED_HOST_SUFFIXES=(
+    # Codex subscription auth/runtime may use regional or feature subdomains.
+    .chatgpt.com
+    .auth.openai.com
 )
 
 if ! id "$AGENT_USER" &>/dev/null; then
@@ -41,7 +50,9 @@ fi
 PROXY_PORT="${M4BENCH_LLM_PROXY_PORT:-18080}"
 EGRESS_LOG="${M4BENCH_EGRESS_LOG:-/tmp/m4bench-egress.jsonl}"
 ALLOWED_CSV="$(IFS=,; echo "${ALLOWED_HOSTS[*]}")"
+ALLOWED_SUFFIX_CSV="$(IFS=,; echo "${ALLOWED_HOST_SUFFIXES[*]}")"
 export M4BENCH_ALLOWED_LLM_HOSTS="$ALLOWED_CSV"
+export M4BENCH_ALLOWED_LLM_HOST_SUFFIXES="$ALLOWED_SUFFIX_CSV"
 export M4BENCH_LLM_PROXY_PORT="$PROXY_PORT"
 export M4BENCH_EGRESS_LOG="$EGRESS_LOG"
 
@@ -62,6 +73,11 @@ ALLOWED = {
     for host in os.environ["M4BENCH_ALLOWED_LLM_HOSTS"].split(",")
     if host.strip()
 }
+ALLOWED_SUFFIXES = tuple(
+    suffix.strip().lower()
+    for suffix in os.environ.get("M4BENCH_ALLOWED_LLM_HOST_SUFFIXES", "").split(",")
+    if suffix.strip()
+)
 PORT = int(os.environ["M4BENCH_LLM_PROXY_PORT"])
 LOG_PATH = os.environ["M4BENCH_EGRESS_LOG"]
 
@@ -70,6 +86,10 @@ def log_event(**event):
     event.setdefault("ts", time.time())
     with open(LOG_PATH, "a", encoding="utf-8") as handle:
         handle.write(json.dumps(event, sort_keys=True) + "\n")
+
+
+def host_allowed(host: str) -> bool:
+    return host in ALLOWED or any(host.endswith(suffix) for suffix in ALLOWED_SUFFIXES)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -86,7 +106,7 @@ class Handler(BaseHTTPRequestHandler):
             port = int(port_text) if sep else 443
         except ValueError:
             port = -1
-        allowed = host in ALLOWED and port == 443
+        allowed = host_allowed(host) and port == 443
         log_event(method="CONNECT", host=host, port=port, allowed=allowed)
         if not allowed:
             self.send_error(403, "host not in LLM API allowlist")

@@ -100,10 +100,13 @@ def _classify_tasks() -> None:
         if name.startswith("eicu-"):
             CROSS_DB_TASKS.append(name)
 
-        # Check for publishable transformed agent DBs. Restructured schemas are
-        # excluded until their ground-truth SQL is manually authored and verified.
+        # Check for publishable transformed agent DBs. Both schema variants
+        # must be present because the contamination tier schedules them as a
+        # paired probe.
         task_key = name.replace("mimic-", "").replace("eicu-", "")
-        if (AGENT_DB_DIR / f"obfuscated_{task_key}.duckdb").exists():
+        if (AGENT_DB_DIR / f"obfuscated_{task_key}.duckdb").exists() and (
+            AGENT_DB_DIR / f"restructured_{task_key}.duckdb"
+        ).exists():
             CONTAMINATION_TASKS.append(name)
 
 
@@ -462,25 +465,26 @@ def _build_powered_tiers(seeds: int = SEEDS, agent: str = "codex") -> list[Tier]
     tiers.append(t4)
 
     # ── Tier 5: Contamination analysis ──────────────────────────────────
-    # Raw-mode tasks with validated obfuscated DBs. One contamination model,
-    # no-skill only: isolates schema memorization from skill knowledge.
-    # Restructured schemas remain experimental until verified GT SQL is complete.
+    # MIMIC-IV tasks with validated obfuscated and restructured DBs. One
+    # contamination model, no-skill only: isolates schema memorization from
+    # skill knowledge.
     t5 = Tier(
         5,
         "Contamination analysis",
         "Is no-skill performance driven by MIMIC memorization?",
     )
     for task in CONTAMINATION_TASKS:
-        for seed in range(1, seeds + 1):
-            t5.runs.append(
-                dict(
-                    task=task,
-                    condition="no-skill",
-                    model=model_plan.contamination_models[0],
-                    schema="obfuscated",
-                    trial=seed,
+        for schema in ["obfuscated", "restructured"]:
+            for seed in range(1, seeds + 1):
+                t5.runs.append(
+                    dict(
+                        task=task,
+                        condition="no-skill",
+                        model=model_plan.contamination_models[0],
+                        schema=schema,
+                        trial=seed,
+                    )
                 )
-            )
     tiers.append(t5)
 
     # ── Tier 6: Skill noise (with-skill-all) ────────────────────────────
