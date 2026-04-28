@@ -1345,6 +1345,11 @@ def copy_results_back(
         _copy_result_item(item, results_dir / item.name)
 
 
+def _should_export_run_record(*, publishable: bool, agent_result: dict) -> bool:
+    """Return whether a completed task run should appear in results discovery."""
+    return publishable is True and not agent_result.get("failure_reason")
+
+
 def _reset_workdir_for_retry(workdir: Path) -> None:
     """Remove stale agent outputs before another attempt in the same run."""
     preserve = {
@@ -2156,6 +2161,7 @@ def run_single_task(
         setup_workdir(task_name, workdir, schema)
 
     export_full_artifacts = False
+    export_result_record = False
     run_home = None
     use_run_home = isolated or agent_name == "claude"
 
@@ -2510,6 +2516,10 @@ def run_single_task(
         result_file = workdir / "result.json"
         with open(result_file, "w") as f:
             json.dump(full_result, f, indent=2, default=str)
+        export_result_record = _should_export_run_record(
+            publishable=publishable,
+            agent_result=agent_result,
+        )
         print(f"\nFull result saved to: {result_file}")
 
         # Report trace location
@@ -2525,7 +2535,7 @@ def run_single_task(
         # cleaned up with the workdir. No host-level cleanup needed.
         if isolated and run_home and run_home.exists():
             shutil.rmtree(run_home, ignore_errors=True)
-        if final_results_dir:
+        if final_results_dir and export_result_record:
             print(f"\nCopying results to {final_results_dir}...")
             copy_results_back(
                 workdir,
@@ -2533,6 +2543,11 @@ def run_single_task(
                 include_full_artifacts=export_full_artifacts,
             )
             print(f"Results available at: {final_results_dir}")
+        elif final_results_dir:
+            print(
+                "\nSkipping results export for non-publishable or failed run: "
+                f"{final_results_dir}"
+            )
         if isolated and workdir.exists():
             shutil.rmtree(workdir, ignore_errors=True)
 
