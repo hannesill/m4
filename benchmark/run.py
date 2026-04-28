@@ -1175,6 +1175,7 @@ def _agent_process_env(
         "M4BENCH_OLLAMA_PORT",
         "M4BENCH_CLAUDE_AUTH_MODE",
         "M4BENCH_CLAUDE_AUTH_ROOT",
+        "M4BENCH_CLAUDE_AUTH_VOLUME",
         "SSL_CERT_FILE",
         "REQUESTS_CA_BUNDLE",
         "NODE_EXTRA_CA_CERTS",
@@ -1460,6 +1461,14 @@ def _agent_container_command(
     if os.environ.get("M4BENCH_ALLOW_OLLAMA") == "1":
         docker_cmd.append("--add-host=host.docker.internal:host-gateway")
 
+    if (
+        env
+        and env.get("M4BENCH_CLAUDE_AUTH_MODE") == "container-login"
+        and env.get("M4BENCH_CLAUDE_AUTH_VOLUME")
+    ):
+        auth_root = env.get("M4BENCH_CLAUDE_AUTH_ROOT", "/claude-auth")
+        docker_cmd.extend(["-v", f"{env['M4BENCH_CLAUDE_AUTH_VOLUME']}:{auth_root}:rw"])
+
     for host_path, container_path in _agent_container_extra_mounts():
         docker_cmd.extend(["-v", f"{host_path}:{container_path}:ro"])
 
@@ -1481,6 +1490,7 @@ if [[ "${M4BENCH_CLAUDE_AUTH_MODE:-}" == "container-login" && -n "${M4BENCH_CONT
             cp "$auth_root/$rel" "$M4BENCH_CONTAINER_HOME/$rel"
         fi
     done
+    chmod -R go-rwx "$auth_root" 2>/dev/null || true
 fi
 for path in "${paths[@]}"; do
     mkdir -p "$path"
