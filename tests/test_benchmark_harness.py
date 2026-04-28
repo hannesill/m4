@@ -343,10 +343,12 @@ def test_agent_process_env_filters_host_environment(monkeypatch, tmp_path):
     monkeypatch.setenv("HTTP_PROXY", "http://proxy.invalid")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "secret")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-openai-test")
 
     env = run._agent_process_env("claude", tmp_path / "work", tmp_path / "home")
 
     assert env["ANTHROPIC_API_KEY"] == "sk-ant-test"
+    assert "OPENAI_API_KEY" not in env
     assert "HTTP_PROXY" not in env
     assert "AWS_SECRET_ACCESS_KEY" not in env
 
@@ -374,6 +376,7 @@ def test_agent_container_command_mounts_only_agent_inputs(monkeypatch, tmp_path)
     run_home.mkdir()
     monkeypatch.setenv("M4BENCH_AGENT_CONTAINER_IMAGE", "m4bench:test")
     monkeypatch.setenv("M4BENCH_DOCKER_BIN", "docker-test")
+    monkeypatch.setenv("M4BENCH_M4_DATA_DIR", str(tmp_path / "m4_data"))
     monkeypatch.setenv(
         "M4BENCH_AGENT_CONTAINER_MOUNTS",
         f"{tmp_path / 'm4_data' / 'parquet' / 'mimic-iv'}=/m4_data/parquet/mimic-iv\n",
@@ -395,6 +398,35 @@ def test_agent_container_command_mounts_only_agent_inputs(monkeypatch, tmp_path)
     assert "benchmark/ground_truth" not in joined
     assert "benchmark/tasks" not in joined
     assert "benchmark/agent_db" not in joined
+
+
+def test_agent_container_rejects_unapproved_extra_mounts(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_container_mount_validation", "benchmark/run.py")
+
+    monkeypatch.setenv(
+        "M4BENCH_AGENT_CONTAINER_MOUNTS",
+        f"{tmp_path / 'repo'}=/workspace/repo\n",
+    )
+
+    try:
+        run._agent_container_extra_mounts()
+    except RuntimeError as exc:
+        assert "host mount outside M4 data root" in str(exc)
+    else:
+        raise AssertionError("expected invalid host mount to fail")
+
+
+def test_agent_container_rejects_broad_data_root(monkeypatch):
+    run = _load_module("benchmark_run_container_broad_root", "benchmark/run.py")
+
+    monkeypatch.setenv("M4BENCH_M4_DATA_DIR", "/")
+
+    try:
+        run._agent_container_extra_mounts()
+    except RuntimeError as exc:
+        assert "M4 data root must be a directory named m4_data" in str(exc)
+    else:
+        raise AssertionError("expected broad data root to fail")
 
 
 def test_agent_container_mounts_claude_auth_for_root_copy_only(monkeypatch, tmp_path):
@@ -859,6 +891,13 @@ def test_network_lock_allows_configured_ollama_for_pi():
     assert '--dport "$OLLAMA_PORT"' in script
 
 
+def test_network_lock_blocks_ipv6_egress():
+    script = (ROOT / "benchmark" / "network_lock.sh").read_text()
+
+    assert "ip6tables" in script
+    assert 'ip6tables -A OUTPUT -m owner --uid-owner "$AGENT_UID" -j REJECT' in script
+
+
 def test_benchmark_dockerfile_installs_pi_cli():
     dockerfile = (ROOT / "benchmark" / "Dockerfile").read_text()
 
@@ -998,18 +1037,15 @@ def test_publishable_environment_requires_container_and_agent_user(monkeypatch):
         "agent-only Docker isolation active",
     )
     monkeypatch.delenv("M4BENCH_AGENT_CONTAINER")
-
-    monkeypatch.setattr(run, "_running_in_container", lambda: True)
-    monkeypatch.setattr(run, "_resolve_agent_creds", lambda: (123, 456))
-    assert run._publishable_environment(True) == (
-        True,
-        "docker + benchagent isolation active",
-    )
-
-    monkeypatch.setattr(run, "_running_in_container", lambda: False)
     ok, reason = run._publishable_environment(True)
     assert ok is False
-    assert reason == "not running inside benchmark Docker container"
+    assert reason == "agent-container isolation required"
+
+    monkeypatch.setenv("M4BENCH_AGENT_CONTAINER", "1")
+    monkeypatch.setenv("M4BENCH_ALLOW_OLLAMA", "1")
+    ok, reason = run._publishable_environment(True)
+    assert ok is False
+    assert reason == "local Ollama host exception enabled"
 
 
 # ── Agent user isolation ────────────────────────────────────────────────
@@ -1083,6 +1119,7 @@ def test_sandbox_hook_blocks_ground_truth_paths():
     assert hook._check_blocked_substrings("/benchmark/lib/compare.py") is not None
     assert hook._check_blocked_substrings("/benchmark/tasks") is not None
     assert hook._check_blocked_substrings("/host-auth/.codex/auth.json") is not None
+    assert hook._check_blocked_substrings("/claude-auth/.claude.json") is not None
     assert hook._check_blocked_substrings("/benchmark/lib/dictionary.json") is not None
     # Allowed paths should not trigger
     assert hook._check_blocked_substrings("./output.csv") is None
@@ -1099,6 +1136,7 @@ def test_filesystem_canary_covers_real_sensitive_paths():
     assert "/benchmark/agent_db" in commands
     assert "/tmp/clinskillsbench/_db_cache" in commands
     assert "/host-auth" in commands
+    assert "/claude-auth" in commands
     assert "/benchmark/lib/dictionary.json" in commands
     assert "/private-benchmark" not in commands
 

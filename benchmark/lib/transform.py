@@ -819,14 +819,20 @@ def generate_obfuscated_gt_sql(dictionary: dict | None = None) -> None:
 
 
 def generate_restructured_gt_sql(dictionary: dict | None = None) -> None:
-    """Generate restructured ground truth SQL from obfuscated SQL.
+    """Refuse automated restructured GT generation.
 
-    Applies structural rewrites on top of obfuscated SQL:
-    - chartevents/labevents → observations (with source filter)
-    - patients+admissions+icustays → encounters
-    - inputevents/outputevents → flows (with direction filter)
-    - d_items/d_labitems → item_reference
+    Restructured schemas merge and split source tables, so preserving query
+    semantics requires manual SQL that is verified against native output. A
+    simple name rewrite can silently produce invalid contamination results.
     """
+    raise RuntimeError(
+        "restructured ground-truth SQL must be authored manually and verified; "
+        "automated structural rewriting is disabled"
+    )
+
+
+def _generate_restructured_gt_sql_unsafe(dictionary: dict | None = None) -> None:
+    """Legacy best-effort generator retained only for manual migration work."""
     if dictionary is None:
         dictionary = load_dictionary()
 
@@ -913,11 +919,10 @@ def _build_structural_replacements(dictionary: dict) -> dict:
 
 
 def _apply_structural_rewrites(sql: str, dictionary: dict) -> str:
-    """Apply structural table replacements to obfuscated SQL.
+    """Apply legacy structural table replacements to obfuscated SQL.
 
-    This is a best-effort automated transformation. Complex queries
-    (especially the encounters merge which eliminates JOINs) may need
-    manual review.
+    This helper is intentionally not used by the public generator because it
+    does not preserve discriminator filters or merged-table join semantics.
     """
     replacements = _build_structural_replacements(dictionary)
     result = sql
@@ -1285,6 +1290,14 @@ def verify_gt_equivalence(
     native_sql = (GROUND_TRUTH_DIR / f"{task_key}.sql").read_text()
     obf_sql_path = GROUND_TRUTH_DIR / "obfuscated" / f"{task_key}.sql"
     rst_sql_path = GROUND_TRUTH_DIR / "restructured" / f"{task_key}.sql"
+    missing_sql = [
+        str(path.relative_to(GROUND_TRUTH_DIR))
+        for path in (obf_sql_path, rst_sql_path)
+        if not path.exists()
+    ]
+    if missing_sql:
+        print(f"  {task_key}: missing transformed GT SQL: {', '.join(missing_sql)}")
+        return False
 
     key_columns: list[str] = []
     for task_dir in list_task_dirs():
@@ -1352,32 +1365,30 @@ def verify_gt_equivalence(
         return col_ok
 
     # Run obfuscated
-    if obf_sql_path.exists():
-        obf_sql = obf_sql_path.read_text()
-        con_obf = duckdb.connect(str(OBFUSCATED_DB), read_only=True)
-        try:
-            df_obf = con_obf.execute(obf_sql).df()
-            if not _compare_dfs(df_native, df_obf, "obfuscated"):
-                ok = False
-        except Exception as e:
-            print(f"  {task_key} obfuscated: ERROR — {e}")
+    obf_sql = obf_sql_path.read_text()
+    con_obf = duckdb.connect(str(OBFUSCATED_DB), read_only=True)
+    try:
+        df_obf = con_obf.execute(obf_sql).df()
+        if not _compare_dfs(df_native, df_obf, "obfuscated"):
             ok = False
-        finally:
-            con_obf.close()
+    except Exception as e:
+        print(f"  {task_key} obfuscated: ERROR — {e}")
+        ok = False
+    finally:
+        con_obf.close()
 
     # Run restructured
-    if rst_sql_path.exists():
-        rst_sql = rst_sql_path.read_text()
-        con_rst = duckdb.connect(str(RESTRUCTURED_DB), read_only=True)
-        try:
-            df_rst = con_rst.execute(rst_sql).df()
-            if not _compare_dfs(df_native, df_rst, "restructured"):
-                ok = False
-        except Exception as e:
-            print(f"  {task_key} restructured: ERROR — {e}")
+    rst_sql = rst_sql_path.read_text()
+    con_rst = duckdb.connect(str(RESTRUCTURED_DB), read_only=True)
+    try:
+        df_rst = con_rst.execute(rst_sql).df()
+        if not _compare_dfs(df_native, df_rst, "restructured"):
             ok = False
-        finally:
-            con_rst.close()
+    except Exception as e:
+        print(f"  {task_key} restructured: ERROR — {e}")
+        ok = False
+    finally:
+        con_rst.close()
 
     return ok
 
@@ -1444,8 +1455,11 @@ def main():
         d = load_dictionary()
         print("Generating obfuscated GT SQL ...")
         generate_obfuscated_gt_sql(d)
-        print("\nGenerating restructured GT SQL ...")
-        generate_restructured_gt_sql(d)
+        print("\nSkipping restructured GT SQL generation.")
+        print(
+            "Restructured ground-truth SQL must be authored manually and "
+            "verified with `verify`."
+        )
 
     elif args.command == "verify":
         d = load_dictionary()

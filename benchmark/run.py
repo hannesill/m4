@@ -84,6 +84,18 @@ SENSITIVE_CONTENT_PATTERNS = (
     "ground_truth.sql",
     "dictionary.json",
 )
+SECRET_CONTENT_PATTERNS = (
+    re.compile(r"\bsk-[A-Za-z0-9][A-Za-z0-9_-]{20,}\b"),
+    re.compile(r"\bsk-ant-[A-Za-z0-9][A-Za-z0-9_-]{20,}\b"),
+    re.compile(r"\bAIza[0-9A-Za-z_-]{20,}\b"),
+    re.compile(r"\bgh[pousr]_[0-9A-Za-z]{20,}\b"),
+    re.compile(r"\bxox[baprs]-[0-9A-Za-z-]{20,}\b"),
+    re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
+    re.compile(
+        r'"(?:access_token|refresh_token|id_token|api[_-]?key)"\s*:\s*"[^"]{12,}"',
+        re.IGNORECASE,
+    ),
+)
 LEAK_CANARY_PATHS = (
     "/benchmark/ground_truth",
     "/benchmark/tasks",
@@ -318,17 +330,21 @@ def _agent_container_enabled() -> bool:
     return os.environ.get("M4BENCH_AGENT_CONTAINER") == "1"
 
 
-def _publishable_environment(isolated: bool) -> tuple[bool, str]:
+def _publishable_environment(
+    isolated: bool, agent_name: str | None = None
+) -> tuple[bool, str]:
     """Return whether the current run environment is paper-eligible."""
     if not isolated:
         return False, "isolation disabled"
-    if _agent_container_enabled():
-        return True, "agent-only Docker isolation active"
-    if not _running_in_container():
-        return False, "not running inside benchmark Docker container"
-    if _resolve_agent_creds() is None:
-        return False, "benchagent user unavailable"
-    return True, "docker + benchagent isolation active"
+    if not _agent_container_enabled():
+        return False, "agent-container isolation required"
+    if os.environ.get("M4BENCH_ALLOW_OLLAMA") == "1":
+        return False, "local Ollama host exception enabled"
+    try:
+        _agent_container_extra_mounts()
+    except RuntimeError as exc:
+        return False, f"invalid agent-container mounts: {exc}"
+    return True, "agent-only Docker isolation active"
 
 
 def ensure_results_manifest(results_root: Path) -> Path:
@@ -683,6 +699,10 @@ def lint_run_contamination(
         for pattern in SENSITIVE_CONTENT_PATTERNS:
             if pattern in text:
                 violations.append(f"{rel}: references {pattern}")
+        for pattern in SECRET_CONTENT_PATTERNS:
+            if pattern.search(text):
+                violations.append(f"{rel}: contains token-shaped secret")
+                break
         for prior_run_id in prior_run_ids:
             if prior_run_id != run_id and prior_run_id in text:
                 violations.append(f"{rel}: references prior run {prior_run_id}")
@@ -1159,27 +1179,33 @@ def _agent_process_env(
     tmpdir = run_home / "tmp"
     tmpdir.mkdir(parents=True, exist_ok=True)
 
-    passthrough_keys = {
+    base_passthrough_keys = {
         "PATH",
         "LANG",
         "LC_ALL",
         "SHELL",
         "TERM",
-        "ANTHROPIC_API_KEY",
-        "OPENAI_API_KEY",
-        "GOOGLE_API_KEY",
-        "GEMINI_API_KEY",
-        "M4BENCH_ALLOW_OLLAMA",
-        "M4BENCH_OLLAMA_BASE_URL",
-        "M4BENCH_OLLAMA_HOST",
-        "M4BENCH_OLLAMA_PORT",
-        "M4BENCH_CLAUDE_AUTH_MODE",
-        "M4BENCH_CLAUDE_AUTH_ROOT",
-        "M4BENCH_CLAUDE_AUTH_VOLUME",
         "SSL_CERT_FILE",
         "REQUESTS_CA_BUNDLE",
         "NODE_EXTRA_CA_CERTS",
     }
+    provider_keys = {
+        "claude": {
+            "ANTHROPIC_API_KEY",
+            "M4BENCH_CLAUDE_AUTH_MODE",
+            "M4BENCH_CLAUDE_AUTH_ROOT",
+            "M4BENCH_CLAUDE_AUTH_VOLUME",
+        },
+        "codex": {"OPENAI_API_KEY"},
+        "gemini": {"GOOGLE_API_KEY", "GEMINI_API_KEY"},
+        "pi-ollama": {
+            "M4BENCH_ALLOW_OLLAMA",
+            "M4BENCH_OLLAMA_BASE_URL",
+            "M4BENCH_OLLAMA_HOST",
+            "M4BENCH_OLLAMA_PORT",
+        },
+    }
+    passthrough_keys = base_passthrough_keys | provider_keys.get(agent_name, set())
     env = {
         key: value
         for key, value in os.environ.items()
@@ -1409,13 +1435,33 @@ def _docker_bin() -> str:
 def _agent_container_extra_mounts() -> list[tuple[str, str]]:
     """Parse host=container mount lines provided by bench.sh."""
     mounts: list[tuple[str, str]] = []
+    allowed_root = (
+        Path(os.environ.get("M4BENCH_M4_DATA_DIR", BENCHMARK_ROOT.parent / "m4_data"))
+        .expanduser()
+        .resolve()
+    )
+    if allowed_root.name != "m4_data":
+        raise RuntimeError(
+            f"M4 data root must be a directory named m4_data: {allowed_root}"
+        )
+    allowed_container_prefix = "/m4_data/parquet/"
     for line in os.environ.get("M4BENCH_AGENT_CONTAINER_MOUNTS", "").splitlines():
         if not line.strip():
             continue
         if "=" not in line:
             raise RuntimeError(f"Invalid M4BENCH_AGENT_CONTAINER_MOUNTS line: {line}")
         host_path, container_path = line.split("=", 1)
-        mounts.append((host_path, container_path))
+        host_resolved = Path(host_path).expanduser().resolve()
+        if host_resolved != allowed_root and allowed_root not in host_resolved.parents:
+            raise RuntimeError(f"host mount outside M4 data root: {host_path}")
+        if not (
+            container_path.startswith(allowed_container_prefix)
+            and ".." not in Path(container_path).parts
+        ):
+            raise RuntimeError(
+                f"container mount outside /m4_data/parquet: {container_path}"
+            )
+        mounts.append((str(host_resolved), container_path))
     return mounts
 
 
@@ -1987,7 +2033,7 @@ def run_single_task(
         workdir.mkdir(parents=True, exist_ok=True)
         final_results_dir = None
 
-    publishable, publishable_reason = _publishable_environment(isolated)
+    publishable, publishable_reason = _publishable_environment(isolated, agent_name)
 
     print(f"\n{'=' * 60}")
     print(f"M4Bench: {task_name}")
@@ -2393,7 +2439,7 @@ def run_leak_canary(
         final_results_dir = None
 
     run_home = None
-    publishable, publishable_reason = _publishable_environment(isolated)
+    publishable, publishable_reason = _publishable_environment(isolated, agent_name)
     try:
         if isolated:
             run_home = ISOLATED_BASE / f"{run_id}_home"

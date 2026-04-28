@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Restrict the benchagent user to LLM-API-only network access.
 #
-# Uses iptables with --uid-owner matching so that only the agent subprocess
+# Uses iptables/ip6tables with --uid-owner matching so that only the agent subprocess
 # (running as benchagent) is restricted.  The orchestrator (root) keeps full
 # network access for package installs and ground-truth downloads.
 #
@@ -36,6 +36,9 @@ AGENT_UID=$(id -u "$AGENT_USER")
 
 # Flush any previous benchagent rules (idempotent re-runs)
 iptables -F OUTPUT 2>/dev/null || true
+if command -v ip6tables >/dev/null 2>&1; then
+    ip6tables -F OUTPUT 2>/dev/null || true
+fi
 
 add_allowed_host() {
     local host="$1"
@@ -78,6 +81,9 @@ fi
 
 # Allow loopback (agent CLI may use local sockets)
 iptables -A OUTPUT -m owner --uid-owner "$AGENT_UID" -o lo -j ACCEPT
+if command -v ip6tables >/dev/null 2>&1; then
+    ip6tables -A OUTPUT -m owner --uid-owner "$AGENT_UID" -o lo -j ACCEPT
+fi
 
 # Do not allow benchagent DNS.  API hostnames are resolved above and pinned in
 # /etc/hosts, which prevents DNS-query exfiltration to arbitrary domains.
@@ -92,5 +98,10 @@ iptables -A OUTPUT -m owner --uid-owner "$AGENT_UID" \
 iptables -A OUTPUT -m owner --uid-owner "$AGENT_UID" \
     -p tcp -j REJECT --reject-with tcp-reset
 iptables -A OUTPUT -m owner --uid-owner "$AGENT_UID" -j REJECT
+if command -v ip6tables >/dev/null 2>&1; then
+    ip6tables -A OUTPUT -m owner --uid-owner "$AGENT_UID" \
+        -p tcp -j REJECT --reject-with tcp-reset
+    ip6tables -A OUTPUT -m owner --uid-owner "$AGENT_UID" -j REJECT
+fi
 
 echo "Network locked for $AGENT_USER (uid=$AGENT_UID): LLM API only"

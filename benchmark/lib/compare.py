@@ -4,14 +4,46 @@ from __future__ import annotations
 
 import pandas as pd
 
+NON_SCORING_REQUIRED_COLUMNS = {
+    "subject_id",
+    "hadm_id",
+    "stay_id",
+    "patientunitstayid",
+    "patienthealthsystemstayid",
+    "uniquepid",
+}
+
 
 def scored_value_columns(eval_config: dict) -> list[str]:
     """Return the clinical value columns that should affect task scoring.
 
-    required_columns is a schema contract: agents must emit those columns, but
-    identifiers and audit metadata should not dilute the clinical reward.
+    value_columns are always scored. Required clinical fields such as timestamps,
+    labels, and intermediate values are also scored unless a task explicitly
+    lists scored_columns. Stable identifiers are kept as schema/join columns and
+    do not dilute the clinical reward.
     """
-    return list(dict.fromkeys(eval_config["value_columns"]))
+    if "scored_columns" in eval_config:
+        return list(dict.fromkeys(eval_config["scored_columns"]))
+
+    value_columns = list(eval_config["value_columns"])
+    key_columns = set(eval_config.get("key_columns", []))
+    required_columns = eval_config.get("required_columns", value_columns)
+    non_scoring = (
+        key_columns
+        | NON_SCORING_REQUIRED_COLUMNS
+        | set(eval_config.get("non_scoring_columns", []))
+    )
+    clinical_required = [
+        col
+        for col in required_columns
+        if col not in non_scoring and col not in value_columns
+    ]
+    return list(dict.fromkeys([*value_columns, *clinical_required]))
+
+
+def read_benchmark_csv(path: str) -> pd.DataFrame:
+    """Read benchmark CSV while preserving literal clinical labels like "None"."""
+    return pd.read_csv(path, keep_default_na=False, na_values=[""])
 
 
 def _normalize_key_columns(df: pd.DataFrame, key_columns: list[str]) -> pd.DataFrame:
@@ -44,6 +76,13 @@ def _compare_values(
         and agent_num[comparable_present].notna().all()
     ):
         return (truth_num - agent_num).abs() <= float(tolerance or 0)
+
+    truth_sample = truth[truth_present].astype("string").head(50)
+    looks_temporal = truth_sample.str.contains(
+        r"\d{4}-\d{2}-\d{2}|T\d{2}:|\d{1,2}:\d{2}", regex=True, na=False
+    ).any()
+    if not looks_temporal:
+        return truth.astype("string") == agent.astype("string")
 
     truth_dt = pd.to_datetime(truth, errors="coerce")
     agent_dt = pd.to_datetime(agent, errors="coerce")
@@ -105,8 +144,8 @@ def compare_derived_tables(
             here.
     """
     tolerance = tolerance or {}
-    agent_df = pd.read_csv(agent_output_path)
-    truth_df = pd.read_csv(ground_truth_path)
+    agent_df = read_benchmark_csv(agent_output_path)
+    truth_df = read_benchmark_csv(ground_truth_path)
 
     required_columns = set(key_columns) | set(value_columns)
     missing_agent_columns = [col for col in required_columns if col not in agent_df]

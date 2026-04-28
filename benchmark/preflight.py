@@ -337,6 +337,7 @@ def check_isolation_guardrails() -> CheckResult:
         "/benchmark/results",
         "/tmp/clinskillsbench/_db_cache",
         "/host-auth",
+        "/claude-auth",
         "/benchmark/lib/dictionary.json",
     ]
     for path in required_canary_paths:
@@ -700,7 +701,7 @@ def check_ground_truth(self_check: bool = False) -> CheckResult:
 
 
 def check_contamination_ready() -> CheckResult:
-    """Tier 5 should have paired transformed DBs, GT SQL, and no target tables."""
+    """Tier 5 should have complete verified obfuscated DBs, GT SQL, and no targets."""
     try:
         import duckdb
     except ImportError:
@@ -717,6 +718,8 @@ def check_contamination_ready() -> CheckResult:
     config_by_task_key: dict[str, dict] = {}
     for task_dir in list_task_dirs():
         config = load_task_config(task_dir)
+        if config.get("database", {}).get("source", "mimic-iv") != "mimic-iv":
+            continue
         task_name = config["metadata"]["name"]
         task_key = _task_key(task_name)
         config_by_task_key[task_key] = config
@@ -728,60 +731,57 @@ def check_contamination_ready() -> CheckResult:
         path.name.removeprefix("obfuscated_").removesuffix(".duckdb")
         for path in AGENT_DB_DIR.glob("obfuscated_*.duckdb")
     }
-    restructured = {
-        path.name.removeprefix("restructured_").removesuffix(".duckdb")
-        for path in AGENT_DB_DIR.glob("restructured_*.duckdb")
-    }
-    paired = sorted(obfuscated & restructured)
+    expected = sorted(config_by_task_key)
 
     problems: list[str] = []
     checked_tables = 0
-    if not paired:
-        problems.append("no paired obfuscated/restructured agent DBs found")
-    for task_key in paired:
+    if not expected:
+        problems.append("no MIMIC-IV tasks found for contamination readiness")
+    if not obfuscated:
+        problems.append("no obfuscated agent DBs found")
+    for task_key in expected:
         config = config_by_task_key.get(task_key)
         if config is None:
             problems.append(f"{task_key}: no task.toml found for transformed DB")
             continue
 
         gt_key = gt_key_by_task_key.get(task_key, task_key)
-        for schema in ("obfuscated", "restructured"):
-            sql_path = BENCHMARK_ROOT / "ground_truth" / schema / f"{gt_key}.sql"
-            if not sql_path.exists():
-                problems.append(
-                    f"{schema}: missing transformed ground-truth SQL for {task_key}"
-                )
+        sql_path = BENCHMARK_ROOT / "ground_truth" / "obfuscated" / f"{gt_key}.sql"
+        if not sql_path.exists():
+            problems.append(
+                f"obfuscated: missing transformed ground-truth SQL for {task_key}"
+            )
 
-            db_path = AGENT_DB_DIR / f"{schema}_{task_key}.duckdb"
-            if not db_path.exists():
-                problems.append(f"{schema}: missing transformed DB for {task_key}")
-                continue
+        db_path = AGENT_DB_DIR / f"obfuscated_{task_key}.duckdb"
+        if not db_path.exists():
+            problems.append(f"obfuscated: missing transformed DB for {task_key}")
+            continue
 
-            con = duckdb.connect(str(db_path), read_only=True)
-            try:
-                for native_table in config.get("database", {}).get("drop_tables", []):
-                    mapped_table = dictionary["tables"].get(native_table)
-                    if mapped_table is None:
-                        problems.append(
-                            f"{schema}/{task_key}: dropped table not in dictionary: "
-                            f"{native_table}"
-                        )
-                        continue
-                    checked_tables += 1
-                    if _duckdb_relation_exists(con, mapped_table):
-                        problems.append(
-                            f"{schema}/{task_key}: dropped table still present: "
-                            f"{mapped_table} (was {native_table})"
-                        )
-            finally:
-                con.close()
+        con = duckdb.connect(str(db_path), read_only=True)
+        try:
+            for native_table in config.get("database", {}).get("drop_tables", []):
+                mapped_table = dictionary["tables"].get(native_table)
+                if mapped_table is None:
+                    problems.append(
+                        f"obfuscated/{task_key}: dropped table not in dictionary: "
+                        f"{native_table}"
+                    )
+                    continue
+                checked_tables += 1
+                if _duckdb_relation_exists(con, mapped_table):
+                    problems.append(
+                        f"obfuscated/{task_key}: dropped table still present: "
+                        f"{mapped_table} (was {native_table})"
+                    )
+        finally:
+            con.close()
 
     if problems:
         return _fail("contamination readiness", problems)
     return _ok(
         "contamination readiness",
         (
-            f"{len(paired)} paired transformed task DBs ready for Tier 5; "
+            f"{len(expected)} obfuscated transformed task DBs ready for Tier 5; "
             f"{checked_tables} mapped drop-table checks passed"
         ),
     )
