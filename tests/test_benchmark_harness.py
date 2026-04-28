@@ -6,7 +6,6 @@ import json
 import os
 import subprocess
 from pathlib import Path
-from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -17,32 +16,6 @@ def _load_module(name: str, relative_path: str):
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
-
-
-# ── Token refresh ────────────────────────────────────────────────────────
-
-
-def test_refresh_oauth_token_seeds_when_env_missing(monkeypatch):
-    run = _load_module("benchmark_run_refresh", "benchmark/run.py")
-
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    run._token_last_refresh = 0.0
-
-    def fake_run(cmd, **kwargs):
-        if cmd[:2] == ["security", "find-generic-password"]:
-            return SimpleNamespace(
-                returncode=0,
-                stdout='{"claudeAiOauth":{"accessToken":"sk-ant-oat-test"}}',
-            )
-        if cmd[:2] == ["python3", "-c"]:
-            return SimpleNamespace(returncode=0, stdout="sk-ant-oat-test\n")
-        raise AssertionError(f"Unexpected subprocess call: {cmd}")
-
-    monkeypatch.setattr(run.subprocess, "run", fake_run)
-
-    run._refresh_oauth_token()
-
-    assert os.environ["ANTHROPIC_API_KEY"] == "sk-ant-oat-test"
 
 
 def test_detect_agent_failure_reason_identifies_claude_auth(tmp_path):
@@ -192,9 +165,7 @@ def test_prepare_run_home_copies_minimal_auth_files(monkeypatch, tmp_path):
     assert not (gemini_home / ".gemini" / "trustedFolders.json").exists()
 
 
-def test_prepare_run_home_claude_container_login_copies_only_auth_files(
-    monkeypatch, tmp_path
-):
+def test_prepare_run_home_claude_login_copies_only_auth_files(monkeypatch, tmp_path):
     run = _load_module("benchmark_run_claude_container_home", "benchmark/run.py")
 
     auth_root = tmp_path / "claude-auth"
@@ -203,7 +174,6 @@ def test_prepare_run_home_claude_container_login_copies_only_auth_files(
     (auth_root / ".claude" / ".credentials.json").write_text("{}")
     (auth_root / ".claude" / "projects" / "memory" / "state.json").write_text("{}")
 
-    monkeypatch.setenv("M4BENCH_CLAUDE_AUTH_MODE", "container-login")
     monkeypatch.setenv("M4BENCH_CLAUDE_AUTH_ROOT", str(auth_root))
 
     claude_home = tmp_path / "claude-home"
@@ -215,7 +185,7 @@ def test_prepare_run_home_claude_container_login_copies_only_auth_files(
     assert not (claude_home / ".claude" / "projects").exists()
 
 
-def test_claude_container_login_removes_env_api_key(monkeypatch, tmp_path):
+def test_claude_login_env_excludes_api_key(monkeypatch, tmp_path):
     run = _load_module("benchmark_run_claude_env", "benchmark/run.py")
 
     workdir = tmp_path / "work"
@@ -239,8 +209,7 @@ def test_claude_container_login_removes_env_api_key(monkeypatch, tmp_path):
         captured["kwargs"] = kwargs
         return FakeProcess()
 
-    monkeypatch.setenv("M4BENCH_CLAUDE_AUTH_MODE", "container-login")
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-oat-stale")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     monkeypatch.setattr(run.subprocess, "Popen", fake_popen)
 
     result = run.run_agent("write output.csv", "claude", workdir, run_home=run_home)
@@ -347,7 +316,7 @@ def test_agent_process_env_filters_host_environment(monkeypatch, tmp_path):
 
     env = run._agent_process_env("claude", tmp_path / "work", tmp_path / "home")
 
-    assert env["ANTHROPIC_API_KEY"] == "sk-ant-test"
+    assert "ANTHROPIC_API_KEY" not in env
     assert "OPENAI_API_KEY" not in env
     assert "HTTP_PROXY" not in env
     assert "AWS_SECRET_ACCESS_KEY" not in env
@@ -429,7 +398,9 @@ def test_agent_container_rejects_broad_data_root(monkeypatch):
         raise AssertionError("expected broad data root to fail")
 
 
-def test_agent_container_mounts_claude_auth_for_root_copy_only(monkeypatch, tmp_path):
+def test_agent_container_mounts_claude_login_auth_for_root_copy_only(
+    monkeypatch, tmp_path
+):
     run = _load_module("benchmark_run_container_claude_auth_cmd", "benchmark/run.py")
 
     workdir = tmp_path / "work"
@@ -442,7 +413,6 @@ def test_agent_container_mounts_claude_auth_for_root_copy_only(monkeypatch, tmp_
         env={
             "HOME": str(run_home),
             "PATH": run.CONTAINER_PATH,
-            "M4BENCH_CLAUDE_AUTH_MODE": "container-login",
             "M4BENCH_CLAUDE_AUTH_ROOT": "/claude-auth",
             "M4BENCH_CLAUDE_AUTH_VOLUME": "m4bench-claude-auth",
         },
@@ -931,17 +901,16 @@ def test_bench_sh_stages_minimal_auth_instead_of_full_provider_dirs():
     assert "$HOME/.pi:$AUTH_ROOT/.pi:ro" not in bench
 
 
-def test_bench_sh_supports_claude_container_login_mode():
+def test_bench_sh_supports_claude_login_volume():
     bench = (ROOT / "benchmark" / "bench.sh").read_text()
 
-    assert "M4BENCH_CLAUDE_AUTH_MODE" in bench
-    assert "container-login" in bench
+    assert "M4BENCH_CLAUDE_AUTH_MODE" not in bench
     assert "m4bench-claude-auth" in bench
     assert 'M4BENCH_CLAUDE_AUTH_ROOT="$CLAUDE_AUTH_ROOT"' in bench
     assert 'M4BENCH_CLAUDE_AUTH_VOLUME="$CLAUDE_AUTH_VOLUME"' in bench
 
 
-def test_bench_sh_container_login_does_not_require_api_key(tmp_path):
+def test_bench_sh_claude_login_does_not_require_api_key(tmp_path):
     fake_docker = tmp_path / "docker"
     docker_log = tmp_path / "docker.log"
     fake_docker.write_text(
@@ -969,7 +938,6 @@ exit 0
         "FAKE_DOCKER_LOG": str(docker_log),
         "HOME": str(tmp_path / "home"),
         "M4BENCH_CONTAINER_NAME": "m4bench-test",
-        "M4BENCH_CLAUDE_AUTH_MODE": "container-login",
         "M4BENCH_M4_DATA_DIR": str(tmp_path / "m4_data"),
         "M4BENCH_BENCH_SH_NO_RUN": "1",
     }
@@ -997,9 +965,7 @@ exit 0
 
     assert result.returncode == 0
     log = docker_log.read_text()
-    assert (
-        "Using Claude container-login auth volume: m4bench-claude-auth" in result.stdout
-    )
+    assert "Using Claude login auth volume: m4bench-claude-auth" in result.stdout
     assert "Running host orchestrator with agent-only Docker isolation" in result.stdout
     assert "ANTHROPIC_API_KEY" not in log
 
@@ -1009,6 +975,7 @@ def test_claude_login_container_script_persists_allowlisted_auth_only():
 
     assert "claude login" in script
     assert "M4BENCH_CLAUDE_LOGIN_CONTAINER" in script
+    assert "M4BENCH_CLAUDE_AUTH_MODE" not in script
     assert '"$DOCKER_BIN" exec -it "$CLAUDE_LOGIN_CONTAINER"' in script
     assert ".claude.json" in script
     assert ".claude/.credentials.json" in script

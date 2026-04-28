@@ -372,6 +372,8 @@ def check_isolation_guardrails() -> CheckResult:
     login_text = (BENCHMARK_ROOT / "claude_login_container.sh").read_text()
     if "chmod -R go-rwx /claude-auth" not in login_text:
         problems.append("claude_login_container.sh does not lock Claude auth volume")
+    if "M4BENCH_CLAUDE_AUTH_MODE" in bench_text + login_text:
+        problems.append("Claude auth mode switch should not be used")
 
     run_text = (BENCHMARK_ROOT / "run.py").read_text()
     if "DB_CACHE.chmod(0o700)" not in run_text:

@@ -45,7 +45,7 @@ cleanup() {
 trap cleanup EXIT
 
 export HOME="$LOGIN_HOME"
-unset ANTHROPIC_API_KEY
+unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN CLAUDE_CODE_OAUTH_TOKEN
 
 claude login
 
@@ -68,7 +68,7 @@ done
 
 if [[ "$copied" -eq 0 ]]; then
     echo "Error: Claude login completed but no allowlisted auth files were found." >&2
-    echo "Inspect a clean Claude login and update CLAUDE_CONTAINER_LOGIN_AUTH_SEEDS." >&2
+    echo "Inspect a clean Claude login and update CLAUDE_LOGIN_AUTH_SEEDS." >&2
     exit 1
 fi
 
@@ -95,5 +95,5 @@ HOME="$TEST_HOME" claude -p "Reply with exactly: claude-ok"
 '
 
 echo
-echo "Use this mode for Claude benchmark runs:"
-echo "  M4BENCH_CLAUDE_AUTH_MODE=container-login bash benchmark/bench.sh ..."
+echo "Claude login is ready for Docker-backed benchmark runs:"
+echo "  bash benchmark/bench.sh ... --agent claude"

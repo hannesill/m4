@@ -55,10 +55,6 @@ BENCHMARK_ROOT = Path(__file__).parent
 AGENT_DB_DIR = BENCHMARK_ROOT / "agent_db"
 RESULTS_DIR = BENCHMARK_ROOT / "results"
 
-# Token refresh: interval (seconds) and lock for thread-safe refresh.
-_TOKEN_REFRESH_INTERVAL = 900  # 15 minutes
-_token_lock = threading.Lock()
-_token_last_refresh: float = 0.0
 ISOLATED_BASE = Path(tempfile.gettempdir()) / "clinskillsbench"
 DB_CACHE = ISOLATED_BASE / "_db_cache"
 SANDBOX_HOOK = BENCHMARK_ROOT / "lib" / "sandbox_hook.py"
@@ -233,7 +229,11 @@ AGENT_COMMANDS = {
 }
 
 AGENT_HOME_SEEDS = {
-    "claude": [],
+    "claude": [
+        ".claude.json",
+        ".claude/.credentials.json",
+        ".claude/credentials.json",
+    ],
     "codex": [".codex/auth.json"],
     "gemini": [
         ".gemini/oauth_creds.json",
@@ -245,7 +245,7 @@ AGENT_HOME_SEEDS = {
     "pi-ollama": [".pi/agent/models.json"],
 }
 
-CLAUDE_CONTAINER_LOGIN_AUTH_SEEDS = [
+CLAUDE_LOGIN_AUTH_SEEDS = [
     ".claude.json",
     ".claude/.credentials.json",
     ".claude/credentials.json",
@@ -502,68 +502,6 @@ def run_filesystem_canary(
         "checks": [name for name, _cmd in FILESYSTEM_CANARY_CHECKS],
         "failures": failures,
     }
-
-
-# ── Token refresh ──────────────────────────────────────────────────────────
-
-
-def _refresh_oauth_token(force: bool = False) -> None:
-    """Refresh the ANTHROPIC_API_KEY from macOS keychain if it's an OAuth token.
-
-    Called before each Claude invocation. Uses a 15-minute cooldown to avoid
-    hammering the keychain. Thread-safe. If no token is present, try to seed
-    one from the keychain so clean per-run HOME directories still work with a
-    Claude subscription login.
-    """
-    global _token_last_refresh
-
-    current = os.environ.get("ANTHROPIC_API_KEY", "")
-    # Leave explicit API keys alone.
-    if current and not current.startswith("sk-ant-oat"):
-        return
-
-    with _token_lock:
-        now = time.time()
-        if (
-            not force
-            and current
-            and now - _token_last_refresh < _TOKEN_REFRESH_INTERVAL
-        ):
-            return
-
-        try:
-            raw = subprocess.run(
-                [
-                    "security",
-                    "find-generic-password",
-                    "-s",
-                    "Claude Code-credentials",
-                    "-w",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if raw.returncode != 0:
-                return
-            token = subprocess.run(
-                [
-                    "python3",
-                    "-c",
-                    "import sys,json; print(json.loads(sys.stdin.read()).get('claudeAiOauth',{}).get('accessToken',''))",
-                ],
-                input=raw.stdout,
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            new_token = token.stdout.strip()
-            if new_token:
-                os.environ["ANTHROPIC_API_KEY"] = new_token
-                _token_last_refresh = now
-                print("  [token refreshed]")
-        except Exception:
-            pass  # Non-fatal — keep using current token
 
 
 def _load_jsonl_events(trace_path: str | Path) -> list[dict]:
@@ -1047,15 +985,10 @@ def _auth_source_root() -> Path:
 
 
 def _claude_auth_source_root() -> Path:
-    """Resolve the mounted Claude auth root for container-login mode."""
+    """Resolve the root directory that contains Claude login state."""
     return Path(
         os.environ.get("M4BENCH_CLAUDE_AUTH_ROOT", str(_auth_source_root()))
     ).expanduser()
-
-
-def _claude_auth_mode() -> str:
-    """Return the configured Claude auth mode for result metadata."""
-    return os.environ.get("M4BENCH_CLAUDE_AUTH_MODE", "api-key")
 
 
 def _copy_auth_seed(src_root: Path, relative_path: str, run_home: Path) -> bool:
@@ -1073,11 +1006,11 @@ def _copy_auth_seed(src_root: Path, relative_path: str, run_home: Path) -> bool:
     return True
 
 
-def _copy_claude_container_login_auth(run_home: Path) -> list[str]:
+def _copy_claude_login_auth(run_home: Path) -> list[str]:
     """Seed only allowlisted Claude login files into a clean per-run HOME."""
     copied: list[str] = []
     src_root = _claude_auth_source_root()
-    for relative_path in CLAUDE_CONTAINER_LOGIN_AUTH_SEEDS:
+    for relative_path in CLAUDE_LOGIN_AUTH_SEEDS:
         src = src_root / relative_path
         if not src.exists():
             continue
@@ -1099,8 +1032,8 @@ def prepare_run_home(agent_name: str, run_home: Path) -> list[str]:
 
     copied: list[str] = []
     src_root = _auth_source_root()
-    if agent_name == "claude" and _claude_auth_mode() == "container-login":
-        copied.extend(_copy_claude_container_login_auth(run_home))
+    if agent_name == "claude":
+        copied.extend(_copy_claude_login_auth(run_home))
     else:
         for relative_path in AGENT_HOME_SEEDS.get(agent_name, []):
             if _copy_auth_seed(src_root, relative_path, run_home):
@@ -1191,8 +1124,6 @@ def _agent_process_env(
     }
     provider_keys = {
         "claude": {
-            "ANTHROPIC_API_KEY",
-            "M4BENCH_CLAUDE_AUTH_MODE",
             "M4BENCH_CLAUDE_AUTH_ROOT",
             "M4BENCH_CLAUDE_AUTH_VOLUME",
         },
@@ -1232,11 +1163,6 @@ def _agent_process_env(
             "NODE_EXTRA_CA_CERTS",
         ):
             env.pop(host_only_key, None)
-
-    if agent_name == "claude" and _claude_auth_mode() == "container-login":
-        # Force Claude Code to use the copied login state in the fresh HOME.
-        # Stale OAuth tokens in benchmark/.env must not shadow container login.
-        env.pop("ANTHROPIC_API_KEY", None)
 
     if agent_name == "codex":
         # Codex stores auth/session state under CODEX_HOME, and some Linux CLI
@@ -1509,7 +1435,7 @@ def _agent_container_command(
 
     if (
         env
-        and env.get("M4BENCH_CLAUDE_AUTH_MODE") == "container-login"
+        and env.get("M4BENCH_CLAUDE_AUTH_ROOT")
         and env.get("M4BENCH_CLAUDE_AUTH_VOLUME")
     ):
         auth_root = env.get("M4BENCH_CLAUDE_AUTH_ROOT", "/claude-auth")
@@ -1528,9 +1454,9 @@ paths=("$M4BENCH_CONTAINER_WORKDIR")
 if [[ -n "${M4BENCH_CONTAINER_HOME:-}" ]]; then
     paths+=("$M4BENCH_CONTAINER_HOME")
 fi
-if [[ "${M4BENCH_CLAUDE_AUTH_MODE:-}" == "container-login" && -n "${M4BENCH_CONTAINER_HOME:-}" ]]; then
+if [[ -n "${M4BENCH_CLAUDE_AUTH_ROOT:-}" && -n "${M4BENCH_CONTAINER_HOME:-}" ]]; then
     auth_root="${M4BENCH_CLAUDE_AUTH_ROOT:-/claude-auth}"
-    for rel in .claude.json .claude/.credentials.json; do
+    for rel in .claude.json .claude/.credentials.json .claude/credentials.json; do
         if [[ -f "$auth_root/$rel" ]]; then
             mkdir -p "$M4BENCH_CONTAINER_HOME/$(dirname "$rel")"
             cp "$auth_root/$rel" "$M4BENCH_CONTAINER_HOME/$rel"
@@ -1618,9 +1544,6 @@ def run_agent(
         raise ValueError(
             f"Unknown agent: {agent_name}. Available: {list(AGENT_COMMANDS)}"
         )
-
-    if agent_name == "claude":
-        _refresh_oauth_token()
 
     cmd = list(agent_config["cmd"])
 
@@ -2066,13 +1989,7 @@ def run_single_task(
         setup_workdir(task_name, workdir, schema)
 
     run_home = None
-    use_run_home = isolated or (
-        agent_name == "claude"
-        and (
-            os.environ.get("ANTHROPIC_API_KEY")
-            or _claude_auth_mode() == "container-login"
-        )
-    )
+    use_run_home = isolated or agent_name == "claude"
 
     if use_run_home:
         run_home = ISOLATED_BASE / f"{run_id}_home" if isolated else workdir / "_home"
@@ -2189,12 +2106,11 @@ def run_single_task(
                     break
 
                 if failure_reason == "auth":
+                    agent_result["failure_reason"] = failure_reason
                     print(
-                        "  Claude auth failed; refreshing OAuth token and retrying..."
+                        "  Claude auth failed; run 'claude login' in the benchmark runtime and retry."
                     )
-                    _refresh_oauth_token(force=True)
-                    time.sleep(retry_delay_seconds)
-                    continue
+                    break
 
                 if failure_reason == "rate_limit":
                     wait_seconds = retry_delay_seconds
@@ -2377,10 +2293,7 @@ def run_single_task(
             )
             full_result.update(
                 {
-                    "claude_auth_mode": _claude_auth_mode(),
-                    "claude_auth_persistent": (
-                        _claude_auth_mode() == "container-login"
-                    ),
+                    "claude_auth_method": "claude-login",
                     "claude_home_ephemeral": run_home is not None,
                     "claude_memory_validated_ephemeral": claude_memory_validation[
                         "validated"
