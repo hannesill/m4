@@ -40,6 +40,7 @@ def verify_ground_truth(task_names: list[str]) -> bool:
 
 def setup_schema(schema_type: str, task_dirs: list[Path] | None = None) -> None:
     """Set up obfuscated or restructured schema: source DB + GT SQL + agent DBs."""
+    from lib.db import load_task_config
     from lib.transform import (
         DICTIONARY_PATH,
         OBFUSCATED_DB,
@@ -97,6 +98,13 @@ def setup_schema(schema_type: str, task_dirs: list[Path] | None = None) -> None:
     if task_dirs:
         print(f"\n--- Setting up {schema_type} agent DBs ---")
         for task_dir in task_dirs:
+            config = load_task_config(task_dir)
+            db_source = config.get("database", {}).get("source", "mimic-iv")
+            if db_source != "mimic-iv":
+                print(
+                    f"\n  {task_dir.name}: skipped ({db_source} has no transformed schema)"
+                )
+                continue
             print(f"\n  {task_dir.name}:")
             setup_transformed_agent_db(task_dir, schema_type, d)
 
