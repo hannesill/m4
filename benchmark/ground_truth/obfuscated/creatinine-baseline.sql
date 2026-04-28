@@ -28,7 +28,7 @@ WITH p AS (
   LEFT JOIN ds_2.t_014 AS p
     ON ag.c_556 = p.c_556
   WHERE
-    ag.age >= 18
+    ag.c_031 >= 18
 ), lab AS (
   SELECT
     c_263,
