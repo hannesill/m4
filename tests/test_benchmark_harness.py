@@ -844,6 +844,12 @@ def test_network_lock_allows_subscription_backed_codex_hosts():
     assert "chatgpt.com" in script
 
 
+def test_network_lock_allows_gemini_code_assist_host():
+    script = (ROOT / "benchmark" / "network_lock.sh").read_text()
+
+    assert "cloudcode-pa.googleapis.com" in script
+
+
 def test_network_lock_allows_configured_ollama_for_pi():
     script = (ROOT / "benchmark" / "network_lock.sh").read_text()
 
