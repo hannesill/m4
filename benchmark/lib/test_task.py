@@ -23,7 +23,12 @@ except ModuleNotFoundError:
 
 # Ensure benchmark/lib is importable
 sys.path.insert(0, str(Path(__file__).parent))
-from compare import compare_derived_tables, read_benchmark_csv, scored_value_columns
+from compare import (
+    compare_derived_tables,
+    normalize_key_columns,
+    read_benchmark_csv,
+    scored_value_columns,
+)
 
 # --- Load task config ---
 
@@ -69,8 +74,8 @@ def test_has_required_columns():
 
 def test_row_coverage():
     """Agent should produce matching keys for at least the configured coverage threshold."""
-    agent = read_benchmark_csv(AGENT_OUTPUT)
-    truth = read_benchmark_csv(GROUND_TRUTH)
+    agent = normalize_key_columns(read_benchmark_csv(AGENT_OUTPUT), KEY_COLUMNS)
+    truth = normalize_key_columns(read_benchmark_csv(GROUND_TRUTH), KEY_COLUMNS)
     matched_keys = truth.merge(
         agent[KEY_COLUMNS].drop_duplicates(), on=KEY_COLUMNS, how="inner"
     )

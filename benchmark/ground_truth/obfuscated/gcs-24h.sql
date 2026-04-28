@@ -9,7 +9,7 @@
 --    Teasdale G, Jennett B. "Assessment of coma and impaired
 --    consciousness. A practical scale." Lancet. 1974;2(7872):81-84.
 
--- Adapted from mimic-c_134 first_day_gcs.sql
+-- Adapted from source first-day GCS implementation
 
 WITH gcs_final AS (
     SELECT
@@ -20,10 +20,10 @@ WITH gcs_final AS (
         g.c_249,
         g.c_244,
         g.c_248,
-        -- Deterministic tie-breaker: minimum total GCS (c_243) alone can
+        -- Deterministic tie-breaker: minimum total GCS alone can
         -- select multiple rows with different component values. Chart time
-        -- (c_114) plus components keeps the chosen tuple stable across
-        -- execution plans while preserving c_243 as the primary rule.
+        -- chart time plus components keeps the chosen tuple stable across
+        -- execution plans while preserving minimum total GCS as the primary clinical rule.
         ROW_NUMBER() OVER (
             PARTITION BY g.c_552
             ORDER BY
@@ -43,8 +43,8 @@ WITH gcs_final AS (
 
 SELECT
     ie.c_556, ie.c_263, ie.c_552
-    -- DEVIATION from mimic-code: first_day_gcs leaves missing values NULL
-    -- and returns gcs_unable. The benchmark evaluates only total/motor/verbal/
+    -- DEVIATION from mimic-code: source first-day GCS leaves missing values NULL
+    -- and returns an intubation/unable flag. The benchmark evaluates only total/motor/verbal/
     -- eyes and follows the task instruction to treat missing GCS as normal.
     , COALESCE(gs.c_243, 15) AS c_245
     , COALESCE(gs.c_246, 6) AS c_246

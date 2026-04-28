@@ -336,7 +336,7 @@ def test_run_via_bench_fails_when_no_result_file(monkeypatch):
             retry_delay_seconds=30,
         )
     except RuntimeError as exc:
-        assert "produced no result.json" in str(exc)
+        assert "bench.sh failed" in str(exc)
         assert "exit code 2" in str(exc)
     else:
         raise AssertionError("expected missing result.json to fail")

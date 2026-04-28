@@ -6,15 +6,15 @@
 
 -- ------------------------------------------------------------------
 -- Title: Ventilation Classification
--- Classifies ventilation c_550 from charting data and groups
+-- Classifies ventilation status from charting data and groups
 -- consecutive observations into episodes. Categories: InvasiveVent,
 -- NonInvasiveVent, HFNC, SupplementalOxygen, Tracheostomy, None.
 -- ------------------------------------------------------------------
 
 -- Reference:
---    MIT-LCP mimic-c_134 ventilation concept definition.
+--    MIT-LCP mimic-code ventilation concept definition.
 
--- Adapted from mimic-c_134 ventilation.sql
+-- Adapted from mimic-code ventilation.sql
 -- Adds ventilation_seq column for deterministic row matching.
 
 WITH tm AS (

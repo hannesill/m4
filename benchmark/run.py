@@ -92,6 +92,17 @@ SECRET_CONTENT_PATTERNS = (
         re.IGNORECASE,
     ),
 )
+SECRET_ENV_KEYS = {
+    "OPENAI_API_KEY",
+    "GOOGLE_API_KEY",
+    "GEMINI_API_KEY",
+}
+ALLOWED_LLM_API_HOSTS = {
+    "api.anthropic.com",
+    "api.openai.com",
+    "cloudcode-pa.googleapis.com",
+    "generativelanguage.googleapis.com",
+}
 LEAK_CANARY_PATHS = (
     "/benchmark/ground_truth",
     "/benchmark/tasks",
@@ -504,6 +515,9 @@ def run_filesystem_canary(
     }
 
 
+# ── Token refresh ──────────────────────────────────────────────────────────
+
+
 def _load_jsonl_events(trace_path: str | Path) -> list[dict]:
     """Best-effort parse of a JSONL trace file."""
     path = Path(trace_path)
@@ -520,6 +534,25 @@ def _load_jsonl_events(trace_path: str | Path) -> list[dict]:
         except json.JSONDecodeError:
             continue
     return events
+
+
+def _load_egress_events(workdir: Path) -> list[dict]:
+    """Load structured egress-proxy decisions, if Docker isolation produced them."""
+    return _load_jsonl_events(workdir / "egress.jsonl")
+
+
+def _detect_disallowed_egress(workdir: Path) -> list[str]:
+    """Return blocked or non-allowlisted network attempts from proxy logs."""
+    violations: list[str] = []
+    for event in _load_egress_events(workdir):
+        host = str(event.get("host", "")).lower()
+        port = event.get("port")
+        allowed = event.get("allowed") is True
+        if not allowed:
+            violations.append(f"{host}:{port}")
+        elif host not in ALLOWED_LLM_API_HOSTS or port != 443:
+            violations.append(f"{host}:{port}")
+    return sorted(set(violations))
 
 
 def _extract_claude_rate_limit_reset_at(trace_path: str | Path) -> int | None:
@@ -674,6 +707,32 @@ def _sanitize_pytest_diagnostics(text: str) -> str:
                 line = line.replace(pattern, "[redacted]")
         sanitized_lines.append(line)
     return "\n".join(sanitized_lines)
+
+
+def _sanitize_agent_text(text: str, *, redact_all: bool = False) -> str:
+    """Remove secrets and benchmark-internal paths before storing agent output."""
+    if redact_all and text:
+        return "[redacted: failed or contaminated run]"
+    sanitized = str(text)
+    for pattern in SENSITIVE_CONTENT_PATTERNS:
+        sanitized = sanitized.replace(pattern, "[redacted]")
+    for pattern in SECRET_CONTENT_PATTERNS:
+        sanitized = pattern.sub("[redacted-secret]", sanitized)
+    return sanitized
+
+
+def sanitize_agent_result_for_storage(agent_result: dict, *, safe_run: bool) -> dict:
+    """Return agent metadata without preserving leaked stdout/stderr."""
+    sanitized = dict(agent_result)
+    redact_all = not safe_run
+    for key in ("stdout", "stderr"):
+        if key in sanitized:
+            sanitized[key] = _sanitize_agent_text(
+                str(sanitized[key]), redact_all=redact_all
+            )
+    if not safe_run and sanitized.get("trace_file"):
+        sanitized["trace_file"] = "[redacted: trace not exported for failed run]"
+    return sanitized
 
 
 def sanitize_test_results_for_storage(test_results: dict) -> dict:
@@ -1127,8 +1186,8 @@ def _agent_process_env(
             "M4BENCH_CLAUDE_AUTH_ROOT",
             "M4BENCH_CLAUDE_AUTH_VOLUME",
         },
-        "codex": {"OPENAI_API_KEY"},
-        "gemini": {"GOOGLE_API_KEY", "GEMINI_API_KEY"},
+        "codex": set(),
+        "gemini": set(),
         "pi-ollama": {
             "M4BENCH_ALLOW_OLLAMA",
             "M4BENCH_OLLAMA_BASE_URL",
@@ -1216,12 +1275,21 @@ def _copy_result_item(src: Path, dest: Path) -> None:
     shutil.copy2(src, dest)
 
 
-def copy_results_back(workdir: Path, results_dir: Path) -> None:
+def copy_results_back(
+    workdir: Path, results_dir: Path, *, include_full_artifacts: bool = True
+) -> None:
     """Copy result files from the isolated workdir to benchmark/results/.
 
     Skips databases, auth/provider state, symlinks, and large binary artifacts.
+    Failed or contaminated runs export only result.json, so traces, stdout
+    mirrors, and arbitrary agent artifacts cannot preserve leaked contents.
     """
     results_dir.mkdir(parents=True, exist_ok=True)
+    if not include_full_artifacts:
+        result_file = workdir / "result.json"
+        if result_file.exists():
+            shutil.copy2(result_file, results_dir / "result.json")
+        return
     for item in workdir.iterdir():
         _copy_result_item(item, results_dir / item.name)
 
@@ -1406,6 +1474,29 @@ def _agent_container_command(
     benchmark/agent_db, or dictionary.json.
     """
     network_lock = (BENCHMARK_ROOT / "network_lock.sh").resolve()
+    public_env = dict(env or {})
+    secret_env_file: Path | None = None
+    if run_home:
+        secret_env = {
+            key: public_env.pop(key)
+            for key in list(public_env)
+            if key in SECRET_ENV_KEYS and public_env.get(key)
+        }
+        if secret_env:
+            secret_env_file = run_home / ".m4bench" / "agent_env.sh"
+            secret_env_file.parent.mkdir(parents=True, exist_ok=True)
+            lines = [
+                "# Generated by M4Bench. Mounted into the agent container; not passed via docker -e.",
+                "set -a",
+            ]
+            lines.extend(
+                f"{key}={shlex.quote(value)}"
+                for key, value in sorted(secret_env.items())
+            )
+            lines.append("set +a")
+            secret_env_file.write_text("\n".join(lines) + "\n")
+            secret_env_file.chmod(0o600)
+
     docker_cmd = [
         _docker_bin(),
         "run",
@@ -1420,6 +1511,8 @@ def _agent_container_command(
         str(workdir),
         "-e",
         f"M4BENCH_CONTAINER_WORKDIR={workdir}",
+        "-e",
+        f"M4BENCH_EGRESS_LOG={workdir / 'egress.jsonl'}",
     ]
     if run_home:
         docker_cmd.extend(
@@ -1430,26 +1523,42 @@ def _agent_container_command(
                 f"M4BENCH_CONTAINER_HOME={run_home}",
             ]
         )
+    if secret_env_file:
+        docker_cmd.extend(["-e", f"M4BENCH_AGENT_ENV_FILE={secret_env_file}"])
     if os.environ.get("M4BENCH_ALLOW_OLLAMA") == "1":
         docker_cmd.append("--add-host=host.docker.internal:host-gateway")
 
     if (
-        env
-        and env.get("M4BENCH_CLAUDE_AUTH_ROOT")
-        and env.get("M4BENCH_CLAUDE_AUTH_VOLUME")
+        public_env
+        and public_env.get("M4BENCH_CLAUDE_AUTH_ROOT")
+        and public_env.get("M4BENCH_CLAUDE_AUTH_VOLUME")
     ):
-        auth_root = env.get("M4BENCH_CLAUDE_AUTH_ROOT", "/claude-auth")
-        docker_cmd.extend(["-v", f"{env['M4BENCH_CLAUDE_AUTH_VOLUME']}:{auth_root}:rw"])
+        auth_root = public_env.get("M4BENCH_CLAUDE_AUTH_ROOT", "/claude-auth")
+        docker_cmd.extend(
+            ["-v", f"{public_env['M4BENCH_CLAUDE_AUTH_VOLUME']}:{auth_root}:rw"]
+        )
 
     for host_path, container_path in _agent_container_extra_mounts():
         docker_cmd.extend(["-v", f"{host_path}:{container_path}:ro"])
 
-    for key, value in (env or {}).items():
+    for key, value in public_env.items():
         docker_cmd.extend(["-e", f"{key}={value}"])
 
     wrapper = r"""
 set -euo pipefail
 bash /m4bench-runtime/network_lock.sh
+export HTTPS_PROXY="http://127.0.0.1:${M4BENCH_LLM_PROXY_PORT:-18080}"
+export HTTP_PROXY="$HTTPS_PROXY"
+export ALL_PROXY="$HTTPS_PROXY"
+export NO_PROXY="127.0.0.1,localhost"
+export https_proxy="$HTTPS_PROXY"
+export http_proxy="$HTTP_PROXY"
+export all_proxy="$ALL_PROXY"
+export no_proxy="$NO_PROXY"
+if [[ -n "${M4BENCH_AGENT_ENV_FILE:-}" && -f "$M4BENCH_AGENT_ENV_FILE" ]]; then
+    # shellcheck source=/dev/null
+    source "$M4BENCH_AGENT_ENV_FILE"
+fi
 paths=("$M4BENCH_CONTAINER_WORKDIR")
 if [[ -n "${M4BENCH_CONTAINER_HOME:-}" ]]; then
     paths+=("$M4BENCH_CONTAINER_HOME")
@@ -1988,6 +2097,7 @@ def run_single_task(
     if not isolated:
         setup_workdir(task_name, workdir, schema)
 
+    export_full_artifacts = False
     run_home = None
     use_run_home = isolated or agent_name == "claude"
 
@@ -2075,6 +2185,15 @@ def run_single_task(
                 external_tools = _detect_external_tool_use(
                     agent_result.get("trace_file", "")
                 )
+                disallowed_egress = _detect_disallowed_egress(workdir)
+                if disallowed_egress:
+                    agent_result["failure_reason"] = "disallowed_egress"
+                    agent_result["egress_violations"] = disallowed_egress
+                    print(
+                        "  Disallowed network egress detected: "
+                        + ", ".join(disallowed_egress[:5])
+                    )
+                    break
                 if external_tools:
                     agent_result["failure_reason"] = "external_tool_use"
                     agent_result["external_tools"] = external_tools
@@ -2189,6 +2308,19 @@ def run_single_task(
                 ),
                 "pytest_stderr": "",
             }
+        elif agent_result.get("failure_reason") == "disallowed_egress":
+            test_results = {
+                "passed": 0,
+                "failed": 0,
+                "errors": 1,
+                "total": 1,
+                "reward": 0.0,
+                "pytest_output": (
+                    "Disallowed network egress: "
+                    + ", ".join(agent_result.get("egress_violations", []))
+                ),
+                "pytest_stderr": "",
+            }
         elif agent_result.get("failure_reason") == "claude_memory_escape":
             test_results = {
                 "passed": 0,
@@ -2256,6 +2388,15 @@ def run_single_task(
         print(f"{'=' * 60}")
         print(f"\nPytest output:\n{test_results.get('pytest_output', '')}")
 
+        safe_run = (
+            not agent_result.get("failure_reason")
+            and agent_result.get("returncode") == 0
+            and test_results.get("failed", 0) == 0
+            and test_results.get("errors", 0) == 0
+            and contamination_lint.get("passed") is True
+        )
+        export_full_artifacts = safe_run
+
         # Save full result
         full_result = {
             "task": task_name,
@@ -2271,9 +2412,12 @@ def run_single_task(
             "publishable_reason": publishable_reason,
             "timestamp": timestamp,
             "run_id": run_id,
+            "container_name": os.environ.get("M4BENCH_CONTAINER_NAME"),
             "results_root": str(results_root),
             "agent_db": agent_db,
-            "agent_result": agent_result,
+            "agent_result": sanitize_agent_result_for_storage(
+                agent_result, safe_run=safe_run
+            ),
             "test_results": sanitize_test_results_for_storage(test_results),
             "filesystem_canary": filesystem_canary,
             "contamination_lint": contamination_lint,
@@ -2321,7 +2465,11 @@ def run_single_task(
             shutil.rmtree(run_home, ignore_errors=True)
         if final_results_dir:
             print(f"\nCopying results to {final_results_dir}...")
-            copy_results_back(workdir, final_results_dir)
+            copy_results_back(
+                workdir,
+                final_results_dir,
+                include_full_artifacts=export_full_artifacts,
+            )
             print(f"Results available at: {final_results_dir}")
         if isolated and workdir.exists():
             shutil.rmtree(workdir, ignore_errors=True)

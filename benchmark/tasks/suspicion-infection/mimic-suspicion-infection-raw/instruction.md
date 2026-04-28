@@ -1,8 +1,7 @@
 # Task: Identify Suspicion of Infection (Raw Tables)
 
-The target table and task-relevant upstream derived tables have been removed.
-Other non-target derived tables may still be present; do not use them as a
-shortcut for the requested suspicion-of-infection calculation.
+All derived shortcut tables have been removed from the task database.
+You must derive the requested concept from source clinical tables.
 You must identify systemic antibiotics from the raw prescriptions table.
 
 Identify suspected infection events by pairing systemic antibiotic

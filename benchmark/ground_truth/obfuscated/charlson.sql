@@ -2,7 +2,7 @@
 -- Title: Charlson Comorbidity Index
 -- Calculates the Charlson Comorbidity Index (CCI) for each hospital
 -- admission using ICD-9 and ICD-10 diagnosis codes. Includes 17
--- comorbidity conditions with original Charlson weights and c_031 score.
+-- comorbidity conditions with original Charlson weights and age score.
 -- ------------------------------------------------------------------
 
 -- Reference:
@@ -13,7 +13,7 @@
 --    Quan H et al. "Coding algorithms for defining comorbidities in
 --    ICD-9-CM and ICD-10 administrative data." Med Care. 2005;43(11):1130-9.
 
--- Adapted from mimic-c_134 charlson.sql
+-- Adapted from mimic-code charlson.sql
 
 WITH diag AS (
   SELECT

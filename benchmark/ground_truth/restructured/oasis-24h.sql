@@ -5,7 +5,7 @@
 -- Title: Oxford Acute Severity of Illness Score (OASIS)
 -- This query extracts the OASIS score for the first 24 hours of each
 -- ICU patient's stay. OASIS uses 10 components — vitals, urine output,
--- GCS, ventilation c_550, c_031, pre-ICU LOS, and admission type.
+-- GCS, ventilation status, age, pre-ICU LOS, and admission type.
 -- Notably, it requires NO laboratory values.
 -- ------------------------------------------------------------------
 
@@ -14,7 +14,7 @@
 --    scale using a subset of APACHE data elements shows comparable
 --    predictive accuracy." Crit Care Med. 2013;41(7):1711-1718.
 
--- Adapted from mimic-c_134 c_396.sql
+-- Adapted from source OASIS implementation
 
 WITH surgflag AS (
     SELECT
@@ -193,8 +193,8 @@ SELECT
     + COALESCE(c_358, 0)
     + COALESCE(c_209, 0)
     AS c_396
-    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
-    -- See c_537-24h.sql for rationale.
+    -- DEVIATION from source implementation: COALESCE component scores to 0.
+    -- See sofa-24h.sql for rationale.
     , COALESCE(c_454, 0) AS c_454
     , COALESCE(c_032, 0) AS c_032
     , COALESCE(c_247, 0) AS c_247

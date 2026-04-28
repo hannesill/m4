@@ -78,11 +78,8 @@ def evaluate(task_name: str, output_path: str) -> dict:
         test_results["match_rates"] = match_rates
         continuous_reward = _round_metric(sum(match_rates.values()) / len(match_rates))
         test_results["reward_uncapped"] = continuous_reward
-        test_results["reward"] = (
-            0.0 if _pytest_failed(test_results) else continuous_reward
-        )
-        if test_results["reward"] == 0.0 and continuous_reward > 0:
-            test_results["reward_cap_reason"] = "pytest diagnostics failed"
+        test_results["reward"] = continuous_reward
+        test_results["diagnostics_failed"] = _pytest_failed(test_results)
 
         # Surface task-level cohort diagnostics alongside reward. Reward is a
         # recall-style metric (per-column match rate); key_precision tells the

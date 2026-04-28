@@ -15,7 +15,7 @@
 --    Physiology Score (SAPS II) based on a European/North American
 --    multicenter study." JAMA. 1993;270(24):2957-2963.
 
--- Adapted from mimic-c_134 c_511.sql
+-- Adapted from source SAPS-II implementation
 
 WITH co AS (
     SELECT
@@ -461,8 +461,8 @@ SELECT
     + COALESCE(c_136, 0)
     + COALESCE(c_028, 0)
     AS c_511
-    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
-    -- See c_537-24h.sql for rationale.
+    -- DEVIATION from source implementation: COALESCE component scores to 0.
+    -- See sofa-24h.sql for rationale.
     , COALESCE(c_032, 0) AS c_032
     , COALESCE(c_289, 0) AS c_289
     , COALESCE(c_559, 0) AS c_559

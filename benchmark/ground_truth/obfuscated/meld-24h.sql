@@ -1,17 +1,17 @@
 -- ------------------------------------------------------------------
 -- Title: Model for End-Stage Liver Disease (MELD) score
 -- This query extracts the MELD-Na score for the first 24 hours of
--- each ICU stay. MELD uses logarithmic transformations of c_145,
--- bilirubin, and INR with a conditional c_533 adjustment.
+-- each ICU stay. MELD uses logarithmic transformations of creatinine,
+-- bilirubin, and INR with a conditional sodium adjustment.
 -- ------------------------------------------------------------------
 
 -- Reference for MELD:
 --    Kamath PS et al. "A model to predict survival in patients with
---    end-stage c_329 disease." Hepatology. 2001;33(2):464-470.
+--    end-stage liver disease." Hepatology. 2001;33(2):464-470.
 --    Kim WR et al. "Hyponatremia and mortality among patients on the
---    c_329-transplant waiting list." NEJM. 2008;359(10):1018-1026.
+--    liver-transplant waiting list." NEJM. 2008;359(10):1018-1026.
 
--- Adapted from mimic-c_134 c_360.sql
+-- Adapted from source MELD implementation
 
 WITH cohort AS (
     SELECT

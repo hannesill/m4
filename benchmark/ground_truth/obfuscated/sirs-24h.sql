@@ -14,12 +14,12 @@
 --    doi:10.1097/00003246-199206000-00025. PMID 1597042.
 
 -- Variables used in SIRS:
---  Body c_563 (min and max)
---  Heart c_475 (max)
---  Respiratory c_475 (max)
+--  Body temperature (min and max)
+--  Heart rate (max)
+--  Respiratory rate (max)
 --  PaCO2 (min)
 --  White blood cell count (min and max)
---  the presence of greater than 10% immature c_379 (band forms)
+--  the presence of greater than 10% immature neutrophils (band forms)
 
 -- Note:
 --  The score is calculated for *all* ICU patients, with the assumption
@@ -93,12 +93,12 @@ SELECT
     + COALESCE(c_497, 0)
     + COALESCE(c_623, 0)
     AS c_527
-    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
+    -- DEVIATION from source implementation: COALESCE component scores to 0.
     -- The original SQL leaves them NULL when underlying data is missing.
     -- We impute 0 here so the ground truth matches the task instruction
     -- ("treat missing data as normal, score 0") and agents are not
     -- penalised for following the instruction. The NULL→0 semantics are
-    -- already applied to the c_527 total above; this extends it to the
+    -- already applied to the SIRS total above; this extends it to the
     -- individual components for consistency.
     , COALESCE(c_562, 0) AS c_562
     , COALESCE(c_269, 0) AS c_269

@@ -10,7 +10,7 @@
 --    Dysfunction system. A new way to assess organ dysfunction in
 --    the intensive care unit." JAMA. 1996;276(10):802-810.
 
--- Adapted from mimic-c_134 c_334.sql
+-- Adapted from source LODS implementation
 
 WITH cpap AS (
     SELECT
@@ -183,8 +183,8 @@ SELECT
     + COALESCE(c_277, 0)
     + COALESCE(c_283, 0)
     AS c_334
-    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
-    -- See c_537-24h.sql for rationale.
+    -- DEVIATION from source implementation: COALESCE component scores to 0.
+    -- See sofa-24h.sql for rationale.
     , COALESCE(c_378, 0) AS c_378
     , COALESCE(c_106, 0) AS c_106
     , COALESCE(c_487, 0) AS c_487

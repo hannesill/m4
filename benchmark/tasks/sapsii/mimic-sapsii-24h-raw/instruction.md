@@ -1,8 +1,7 @@
 # Task: Calculate SAPS-II Score (Raw Tables)
 
-The target table and task-relevant upstream derived tables have been removed.
-Other non-target derived tables may still be present; do not use them as a
-shortcut for the requested SAPS-II calculation.
+All derived shortcut tables have been removed from the task database.
+You must derive the requested concept from source clinical tables.
 
 Calculate the Simplified Acute Physiology Score II (SAPS-II) for each
 ICU stay using the worst values from the first 24 hours of ICU admission

@@ -1,9 +1,8 @@
 # Task: Calculate Urine Output Rate (Raw Tables)
 
-The target table and task-relevant derived shortcuts for urine output, weight,
-KDIGO staging, and ICU timing have been removed. Other non-target derived tables
-may still be present; do not use them as a shortcut for the requested
-urine-output-rate calculation.
+All derived shortcut tables have been removed from the task database.
+You must derive urine output, weight, ICU timing, and the requested rolling
+rate concept from source clinical tables.
 
 Calculate rolling urine output rates (mL/kg/hr) over 6, 12, and 24-hour
 windows for each UO measurement time, normalized by patient weight,

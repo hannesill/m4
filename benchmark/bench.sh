@@ -198,18 +198,23 @@ translate_benchmark_path() {
 }
 
 RUN_ARGS=()
+PREFLIGHT_RESULTS_ROOT=""
 for ((i=0; i<${#ARGS[@]}; i++)); do
     case "${ARGS[$i]}" in
         --results-root)
             RUN_ARGS+=("${ARGS[$i]}")
             if (( i + 1 < ${#ARGS[@]} )); then
-                RUN_ARGS+=("$(translate_benchmark_path "${ARGS[$((i + 1))]}")")
+                translated="$(translate_benchmark_path "${ARGS[$((i + 1))]}")"
+                RUN_ARGS+=("$translated")
+                PREFLIGHT_RESULTS_ROOT="$translated"
                 ((i+=1))
             fi
             ;;
         --results-root=*)
             value="${ARGS[$i]#--results-root=}"
-            RUN_ARGS+=("--results-root=$(translate_benchmark_path "$value")")
+            translated="$(translate_benchmark_path "$value")"
+            RUN_ARGS+=("--results-root=$translated")
+            PREFLIGHT_RESULTS_ROOT="$translated"
             ;;
         *)
             RUN_ARGS+=("${ARGS[$i]}")
@@ -231,6 +236,17 @@ echo "Agent image: $IMAGE"
 
 if [[ "${M4BENCH_BENCH_SH_NO_RUN:-0}" == "1" ]]; then
     exit 0
+fi
+
+echo "Running preflight checks..."
+PREFLIGHT_CMD=("$SCRIPT_DIR/preflight.py")
+if [[ -n "$PREFLIGHT_RESULTS_ROOT" ]]; then
+    PREFLIGHT_CMD+=(--results-root "$PREFLIGHT_RESULTS_ROOT" --allow-existing-results-root)
+fi
+if command -v uv >/dev/null 2>&1; then
+    (cd "$REPO_ROOT" && uv run python "${PREFLIGHT_CMD[@]}")
+else
+    (cd "$REPO_ROOT" && python3 "${PREFLIGHT_CMD[@]}")
 fi
 
 if command -v uv >/dev/null 2>&1; then

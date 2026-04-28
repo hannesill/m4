@@ -1,6 +1,6 @@
 -- ------------------------------------------------------------------
 -- Title: Baseline Creatinine Estimation
--- Estimates baseline (pre-illness) serum c_145 for each hospital
+-- Estimates baseline (pre-illness) serum creatinine for each hospital
 -- admission using a hierarchical approach: (1) observed minimum if
 -- <= 1.1, (2) observed minimum if CKD, (3) MDRD-estimated at eGFR=75.
 -- ------------------------------------------------------------------
@@ -10,8 +10,8 @@
 --    hospitalized patients with impaired kidney function."
 --    Clin J Am Soc Nephrol. 2012;7(5):712-719.
 
--- Adapted from mimic-c_134 creatinine_baseline.sql
--- Adults only (c_031 >= 18).
+-- Adapted from mimic-code creatinine_baseline.sql
+-- Adults only (age >= 18).
 
 WITH p AS (
   SELECT
@@ -28,7 +28,7 @@ WITH p AS (
   LEFT JOIN ds_2.t_014 AS p
     ON ag.c_556 = p.c_556
   WHERE
-    ag.c_031 >= 18
+    ag.age >= 18
 ), lab AS (
   SELECT
     c_263,

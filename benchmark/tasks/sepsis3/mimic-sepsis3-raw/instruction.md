@@ -1,8 +1,8 @@
 # Task: Identify Sepsis-3 Patients (Raw Tables)
 
-Only the pre-computed tables for SOFA, suspected infection, and
-Sepsis-3 are unavailable. Other intermediate derived tables may
-still be present. You must derive the missing concepts yourself.
+All derived shortcut tables, including SOFA, suspected infection,
+and Sepsis-3, have been removed from the task database. You must derive the
+missing concepts from source clinical tables.
 
 Identify patients meeting the Sepsis-3 criteria: SOFA score >= 2
 coinciding with suspected infection within a defined time window

@@ -1,8 +1,7 @@
 # Task: Classify Ventilation Status (Raw Tables)
 
-The target table and task-relevant upstream derived tables have been removed.
-Other non-target derived tables may still be present; do not use them as a
-shortcut for the requested ventilation classification.
+All derived shortcut tables have been removed from the task database.
+You must derive ventilation status from source clinical tables.
 
 Classify ventilation status from charting data and group consecutive
 observations into ventilation episodes for each ICU stay, following

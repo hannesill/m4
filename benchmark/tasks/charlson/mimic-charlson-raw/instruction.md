@@ -1,8 +1,7 @@
 # Task: Calculate Charlson Comorbidity Index (Raw Tables)
 
-The target table and task-relevant upstream derived tables have been removed.
-Other non-target derived tables may still be present; do not use them as a
-shortcut for the requested Charlson calculation.
+All derived shortcut tables have been removed from the task database.
+You must derive the requested concept from source clinical tables.
 
 Calculate the Charlson Comorbidity Index (CCI) for each hospital
 admission using ICD-9 and ICD-10 diagnosis codes

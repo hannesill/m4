@@ -190,6 +190,8 @@ def _find_latest_result(
     schema: str,
     trial: int,
     started_after: float | None = None,
+    reasoning_effort: str | None = None,
+    container_name: str | None = None,
 ) -> dict | None:
     """Find the newest matching result.json under the campaign root."""
     latest_path = None
@@ -200,6 +202,10 @@ def _find_latest_result(
             data = json.loads(result_file.read_text())
         except (json.JSONDecodeError, OSError):
             continue
+        resolved_reasoning_effort = data.get(
+            "resolved_reasoning_effort",
+            data.get("reasoning_effort", "legacy-default"),
+        )
         if (
             data.get("task") == task
             and data.get("condition") == condition
@@ -207,6 +213,12 @@ def _find_latest_result(
             and data.get("model") == model
             and data.get("schema", "native") == schema
             and data.get("trial") == trial
+            and (
+                reasoning_effort is None
+                or resolved_reasoning_effort == reasoning_effort
+                or data.get("reasoning_effort") == reasoning_effort
+            )
+            and (container_name is None or data.get("container_name") == container_name)
         ):
             mtime = result_file.stat().st_mtime
             if started_after is not None and mtime < started_after:
@@ -271,6 +283,11 @@ def _run_via_bench(
 
     started_after = time.time()
     proc = subprocess.run(cmd, cwd=str(BENCHMARK_ROOT.parent), env=env)
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"bench.sh failed with exit code {proc.returncode} for {run['task']} "
+            f"trial={run['trial']} condition={condition} model={model} schema={schema}"
+        )
 
     result = _find_latest_result(
         results_root,
@@ -281,6 +298,8 @@ def _run_via_bench(
         schema,
         run["trial"],
         started_after=started_after,
+        reasoning_effort=reasoning_effort,
+        container_name=container_name,
     )
     if result is not None:
         return result

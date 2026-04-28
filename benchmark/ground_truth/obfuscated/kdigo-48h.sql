@@ -2,7 +2,7 @@
 -- Title: KDIGO Acute Kidney Injury (AKI) staging
 -- This query extracts the maximum KDIGO AKI stage for each ICU stay
 -- within the first 48 hours of admission. KDIGO stages range 0-3
--- based on c_145 changes, urine output rates, and CRRT.
+-- based on creatinine changes, urine output rates, and CRRT.
 -- ------------------------------------------------------------------
 
 -- Reference for KDIGO:

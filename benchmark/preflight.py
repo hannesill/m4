@@ -214,6 +214,23 @@ def check_instruction_sparsity() -> CheckResult:
     )
 
 
+def check_taskcards_not_agent_adjacent() -> CheckResult:
+    """Solution-level taskcards must not live under benchmark/tasks."""
+    taskcards = sorted(BENCHMARK_ROOT.glob("tasks/*/TASKCARD.md"))
+    if taskcards:
+        return _fail(
+            "taskcard release safety",
+            [
+                f"{path.relative_to(BENCHMARK_ROOT)} should live under internal_taskcards/"
+                for path in taskcards
+            ],
+        )
+    return _ok(
+        "taskcard release safety",
+        "solution-level taskcards are outside the task tree scanned/mounted for runs",
+    )
+
+
 def check_raw_mode_contract() -> CheckResult:
     """Raw task wording must match the actual task-specific drop strategy."""
     problems: list[str] = []
@@ -252,7 +269,7 @@ def check_raw_mode_contract() -> CheckResult:
         return _fail("raw-mode contract", problems)
     return _ok(
         "raw-mode contract",
-        "raw tasks describe task-relevant derived-table removal, not base-only DBs",
+        "raw MIMIC tasks remove the derived shortcut schema at DB setup time",
     )
 
 
@@ -364,6 +381,7 @@ def check_isolation_guardrails() -> CheckResult:
         "M4BENCH_AGENT_CONTAINER=1",
         "M4BENCH_AGENT_CONTAINER_MOUNTS",
         "M4BENCH_CLAUDE_AUTH_ROOT",
+        "Running preflight checks",
     ]
     for fragment in required_bench_fragments:
         if fragment not in bench_text:
@@ -376,6 +394,7 @@ def check_isolation_guardrails() -> CheckResult:
         problems.append("Claude auth mode switch should not be used")
 
     run_text = (BENCHMARK_ROOT / "run.py").read_text()
+    network_text = (BENCHMARK_ROOT / "network_lock.sh").read_text()
     if "DB_CACHE.chmod(0o700)" not in run_text:
         problems.append("run.py does not make the cross-task DB cache private")
     if "cached_db.chmod(0o600)" not in run_text:
@@ -385,6 +404,23 @@ def check_isolation_guardrails() -> CheckResult:
         not in run_text
     ):
         problems.append("run.py does not document sensitive paths as unmounted")
+    if "SECRET_ENV_KEYS" not in run_text or "M4BENCH_AGENT_ENV_FILE" not in run_text:
+        problems.append("run.py still passes API keys through docker metadata")
+    if "egress.jsonl" not in run_text or "disallowed_egress" not in run_text:
+        problems.append("run.py does not lint structured egress proxy logs")
+    if "CONNECT" not in network_text or "M4BENCH_ALLOWED_LLM_HOSTS" not in network_text:
+        problems.append("network_lock.sh does not enforce hostname-level proxy egress")
+    forbidden_network_hosts = [
+        "chatgpt.com",
+        "auth.openai.com",
+        "oauth2.googleapis.com",
+        "accounts.google.com",
+        "statsig.anthropic.com",
+        "sentry.io",
+    ]
+    for host in forbidden_network_hosts:
+        if host in network_text:
+            problems.append(f"network allowlist still includes non-API host: {host}")
 
     if problems:
         return _fail("isolation guardrails", problems)
@@ -417,6 +453,23 @@ def check_agent_databases() -> CheckResult:
 
         con = duckdb.connect(str(db_path), read_only=True)
         try:
+            if (
+                config.get("metadata", {}).get("mode") == "raw"
+                and config.get("database", {}).get("source", "mimic-iv") == "mimic-iv"
+            ):
+                remaining_derived = con.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM information_schema.tables
+                    WHERE table_schema = 'mimiciv_derived'
+                    """
+                ).fetchone()[0]
+                if remaining_derived:
+                    problems.append(
+                        f"{task_name}: raw DB still exposes "
+                        f"{remaining_derived} mimiciv_derived relations"
+                    )
+
             for table in drop_tables:
                 schema, table_name = table.split(".", 1)
                 present = con.execute(
@@ -703,7 +756,7 @@ def check_ground_truth(self_check: bool = False) -> CheckResult:
 
 
 def check_contamination_ready() -> CheckResult:
-    """Tier 5 should have complete verified obfuscated DBs, GT SQL, and no targets."""
+    """Tier 5 should have complete transformed DBs, GT SQL, and no targets."""
     try:
         import duckdb
     except ImportError:
@@ -729,18 +782,20 @@ def check_contamination_ready() -> CheckResult:
             "alias", task_key
         )
 
-    obfuscated = {
-        path.name.removeprefix("obfuscated_").removesuffix(".duckdb")
-        for path in AGENT_DB_DIR.glob("obfuscated_*.duckdb")
-    }
     expected = sorted(config_by_task_key)
 
     problems: list[str] = []
     checked_tables = 0
     if not expected:
         problems.append("no MIMIC-IV tasks found for contamination readiness")
-    if not obfuscated:
-        problems.append("no obfuscated agent DBs found")
+    for schema_type in ("obfuscated", "restructured"):
+        present = {
+            path.name.removeprefix(f"{schema_type}_").removesuffix(".duckdb")
+            for path in AGENT_DB_DIR.glob(f"{schema_type}_*.duckdb")
+        }
+        if not present:
+            problems.append(f"no {schema_type} agent DBs found")
+
     for task_key in expected:
         config = config_by_task_key.get(task_key)
         if config is None:
@@ -748,48 +803,68 @@ def check_contamination_ready() -> CheckResult:
             continue
 
         gt_key = gt_key_by_task_key.get(task_key, task_key)
-        sql_path = BENCHMARK_ROOT / "ground_truth" / "obfuscated" / f"{gt_key}.sql"
-        if not sql_path.exists():
-            problems.append(
-                f"obfuscated: missing transformed ground-truth SQL for {task_key}"
-            )
+        for schema_type in ("obfuscated", "restructured"):
+            sql_path = BENCHMARK_ROOT / "ground_truth" / schema_type / f"{gt_key}.sql"
+            if not sql_path.exists():
+                problems.append(
+                    f"{schema_type}: missing transformed ground-truth SQL for "
+                    f"{task_key}"
+                )
 
-        db_path = AGENT_DB_DIR / f"obfuscated_{task_key}.duckdb"
-        if not db_path.exists():
-            problems.append(f"obfuscated: missing transformed DB for {task_key}")
-            continue
+            db_path = AGENT_DB_DIR / f"{schema_type}_{task_key}.duckdb"
+            if not db_path.exists():
+                problems.append(f"{schema_type}: missing transformed DB for {task_key}")
+                continue
 
-        con = duckdb.connect(str(db_path), read_only=True)
-        try:
-            for native_table in config.get("database", {}).get("drop_tables", []):
-                mapped_table = dictionary["tables"].get(native_table)
-                if mapped_table is None:
-                    problems.append(
-                        f"obfuscated/{task_key}: dropped table not in dictionary: "
-                        f"{native_table}"
-                    )
-                    continue
-                checked_tables += 1
-                if _duckdb_relation_exists(con, mapped_table):
-                    problems.append(
-                        f"obfuscated/{task_key}: dropped table still present: "
-                        f"{mapped_table} (was {native_table})"
-                    )
-        finally:
-            con.close()
+            con = duckdb.connect(str(db_path), read_only=True)
+            try:
+                if config.get("metadata", {}).get("mode") == "raw":
+                    derived_schema = dictionary["schemas"].get("mimiciv_derived")
+                    remaining_derived = con.execute(
+                        """
+                        SELECT COUNT(*)
+                        FROM information_schema.tables
+                        WHERE table_schema = ?
+                        """,
+                        [derived_schema],
+                    ).fetchone()[0]
+                    if remaining_derived:
+                        problems.append(
+                            f"{schema_type}/{task_key}: raw DB still exposes "
+                            f"{remaining_derived} transformed derived relations"
+                        )
+
+                for native_table in config.get("database", {}).get("drop_tables", []):
+                    mapped_table = dictionary["tables"].get(native_table)
+                    if mapped_table is None:
+                        problems.append(
+                            f"{schema_type}/{task_key}: dropped table not in "
+                            f"dictionary: {native_table}"
+                        )
+                        continue
+                    checked_tables += 1
+                    if _duckdb_relation_exists(con, mapped_table):
+                        problems.append(
+                            f"{schema_type}/{task_key}: dropped table still present: "
+                            f"{mapped_table} (was {native_table})"
+                        )
+            finally:
+                con.close()
 
     if problems:
         return _fail("contamination readiness", problems)
     return _ok(
         "contamination readiness",
         (
-            f"{len(expected)} obfuscated transformed task DBs ready for Tier 5; "
+            f"{len(expected)} obfuscated/restructured transformed task DBs ready for Tier 5; "
             f"{checked_tables} mapped drop-table checks passed"
         ),
     )
 
 
-def check_results_root(results_root: str | None) -> CheckResult:
+def check_results_root(
+    results_root: str | None, *, allow_existing: bool = False
+) -> CheckResult:
     if not results_root:
         return _ok(
             "results root",
@@ -799,6 +874,11 @@ def check_results_root(results_root: str | None) -> CheckResult:
     path = Path(results_root).expanduser().resolve()
     result_files = list(path.rglob("result.json")) if path.exists() else []
     if result_files:
+        if allow_existing:
+            return _ok(
+                "results root",
+                f"{path} contains {len(result_files)} existing result.json files",
+            )
         return _fail(
             "results root",
             [f"{path} already contains {len(result_files)} result.json files"],
@@ -810,15 +890,17 @@ def run_checks(
     results_root: str | None = None,
     check_dbs: bool = True,
     self_check_ground_truth: bool = False,
+    allow_existing_results_root: bool = False,
 ) -> list[CheckResult]:
     # Keep check_dbs=False source-only so preflight can run in fresh checkouts
     # before expensive generated benchmark artifacts exist locally.
     checks = [
         check_instruction_sparsity(),
+        check_taskcards_not_agent_adjacent(),
         check_raw_mode_contract(),
         check_skill_snapshots(),
         check_isolation_guardrails(),
-        check_results_root(results_root),
+        check_results_root(results_root, allow_existing=allow_existing_results_root),
     ]
     if check_dbs:
         checks.insert(2, check_agent_databases())
@@ -852,6 +934,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Evaluate each ground-truth file against itself (slower)",
     )
+    parser.add_argument(
+        "--allow-existing-results-root",
+        action="store_true",
+        help="Allow --results-root to contain previous runs",
+    )
     return parser
 
 
@@ -861,6 +948,7 @@ def main() -> int:
         results_root=args.results_root,
         check_dbs=not args.skip_db_check,
         self_check_ground_truth=args.ground_truth_self_check,
+        allow_existing_results_root=args.allow_existing_results_root,
     )
     print_results(results)
     return 0 if all(result.ok for result in results) else 1

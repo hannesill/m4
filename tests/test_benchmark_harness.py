@@ -838,12 +838,12 @@ def test_named_reasoning_rejects_unsupported_agent_scale():
         raise AssertionError("expected ValueError for pi-ollama named effort")
 
 
-def test_network_lock_allows_subscription_backed_codex_hosts():
+def test_network_lock_allows_codex_api_host_only():
     script = (ROOT / "benchmark" / "network_lock.sh").read_text()
 
     assert "api.openai.com" in script
-    assert "auth.openai.com" in script
-    assert "chatgpt.com" in script
+    assert "auth.openai.com" not in script
+    assert "chatgpt.com" not in script
 
 
 def test_network_lock_allows_gemini_code_assist_host():
