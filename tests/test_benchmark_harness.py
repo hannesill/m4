@@ -185,7 +185,7 @@ def test_prepare_run_home_claude_login_copies_only_auth_files(monkeypatch, tmp_p
     assert not (claude_home / ".claude" / "projects").exists()
 
 
-def test_claude_login_env_excludes_api_key(monkeypatch, tmp_path):
+def test_claude_env_includes_api_key(monkeypatch, tmp_path):
     run = _load_module("benchmark_run_claude_env", "benchmark/run.py")
 
     workdir = tmp_path / "work"
@@ -215,7 +215,7 @@ def test_claude_login_env_excludes_api_key(monkeypatch, tmp_path):
     result = run.run_agent("write output.csv", "claude", workdir, run_home=run_home)
 
     assert result["returncode"] == 0
-    assert "ANTHROPIC_API_KEY" not in captured["kwargs"]["env"]
+    assert captured["kwargs"]["env"]["ANTHROPIC_API_KEY"] == "sk-ant-test"
     assert captured["kwargs"]["env"]["HOME"] == str(run_home)
 
 
@@ -312,14 +312,26 @@ def test_agent_process_env_filters_host_environment(monkeypatch, tmp_path):
     monkeypatch.setenv("HTTP_PROXY", "http://proxy.invalid")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "secret")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+    monkeypatch.setenv("CODEX_API_KEY", "codex-test")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-openai-test")
+    monkeypatch.setenv("GOOGLE_API_KEY", "google-test")
+    monkeypatch.setenv("GEMINI_API_KEY", "gemini-test")
 
-    env = run._agent_process_env("claude", tmp_path / "work", tmp_path / "home")
+    claude_env = run._agent_process_env("claude", tmp_path / "work", tmp_path / "home")
+    codex_env = run._agent_process_env("codex", tmp_path / "work", tmp_path / "home")
+    gemini_env = run._agent_process_env("gemini", tmp_path / "work", tmp_path / "home")
 
-    assert "ANTHROPIC_API_KEY" not in env
-    assert "OPENAI_API_KEY" not in env
-    assert "HTTP_PROXY" not in env
-    assert "AWS_SECRET_ACCESS_KEY" not in env
+    assert claude_env["ANTHROPIC_API_KEY"] == "sk-ant-test"
+    assert "OPENAI_API_KEY" not in claude_env
+    assert codex_env["CODEX_API_KEY"] == "codex-test"
+    assert codex_env["OPENAI_API_KEY"] == "sk-openai-test"
+    assert "ANTHROPIC_API_KEY" not in codex_env
+    assert gemini_env["GOOGLE_API_KEY"] == "google-test"
+    assert gemini_env["GEMINI_API_KEY"] == "gemini-test"
+    assert "ANTHROPIC_API_KEY" not in gemini_env
+    for env in (claude_env, codex_env, gemini_env):
+        assert "HTTP_PROXY" not in env
+        assert "AWS_SECRET_ACCESS_KEY" not in env
 
 
 def test_agent_process_env_uses_container_paths(monkeypatch, tmp_path):
@@ -367,6 +379,36 @@ def test_agent_container_command_mounts_only_agent_inputs(monkeypatch, tmp_path)
     assert "benchmark/ground_truth" not in joined
     assert "benchmark/tasks" not in joined
     assert "benchmark/agent_db" not in joined
+
+
+def test_agent_container_command_writes_api_keys_to_secret_env_file(
+    monkeypatch, tmp_path
+):
+    run = _load_module("benchmark_run_container_secret_env", "benchmark/run.py")
+
+    workdir = tmp_path / "work"
+    run_home = tmp_path / "home"
+    workdir.mkdir()
+    run_home.mkdir()
+    monkeypatch.setenv("M4BENCH_M4_DATA_DIR", str(tmp_path / "m4_data"))
+
+    cmd = run._agent_container_command(
+        ["claude", "-p", "ok"],
+        env={
+            "HOME": str(run_home),
+            "PATH": run.CONTAINER_PATH,
+            "ANTHROPIC_API_KEY": "sk-ant-test",
+        },
+        workdir=workdir,
+        run_home=run_home,
+    )
+    joined = "\n".join(cmd)
+    secret_env_file = run_home / ".m4bench" / "agent_env.sh"
+
+    assert secret_env_file.exists()
+    assert "ANTHROPIC_API_KEY=sk-ant-test" in secret_env_file.read_text()
+    assert "ANTHROPIC_API_KEY=sk-ant-test" not in joined
+    assert f"M4BENCH_AGENT_ENV_FILE={secret_env_file}" in joined
 
 
 def test_agent_container_rejects_unapproved_extra_mounts(monkeypatch, tmp_path):
@@ -838,12 +880,12 @@ def test_named_reasoning_rejects_unsupported_agent_scale():
         raise AssertionError("expected ValueError for pi-ollama named effort")
 
 
-def test_network_lock_allows_codex_api_host_only():
+def test_network_lock_allows_codex_api_and_subscription_hosts():
     script = (ROOT / "benchmark" / "network_lock.sh").read_text()
 
     assert "api.openai.com" in script
-    assert "auth.openai.com" not in script
-    assert "chatgpt.com" not in script
+    assert "auth.openai.com" in script
+    assert "chatgpt.com" in script
 
 
 def test_network_lock_allows_gemini_code_assist_host():

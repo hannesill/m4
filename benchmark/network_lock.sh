@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Restrict the benchagent user to LLM-API-only network access.
+# Restrict the benchagent user to provider LLM endpoints.
 #
 # Uses iptables/ip6tables with --uid-owner matching so that only the agent subprocess
 # (running as benchagent) is restricted.  The orchestrator (root) keeps full
@@ -10,13 +10,16 @@ set -euo pipefail
 
 AGENT_USER="benchagent"
 
-# LLM API hosts — the only external services the agent should reach. OAuth,
-# product UI, and telemetry endpoints are intentionally not included.
+# Provider hosts the agent may use for model access. Codex subscription-backed
+# runs use ChatGPT endpoints rather than api.openai.com, so those hosts are
+# intentionally allowed.
 ALLOWED_HOSTS=(
     # Anthropic (Claude)
     api.anthropic.com
     # OpenAI (Codex)
     api.openai.com
+    auth.openai.com
+    chatgpt.com
     # Google (Gemini)
     cloudcode-pa.googleapis.com
     generativelanguage.googleapis.com

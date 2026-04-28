@@ -171,8 +171,13 @@ Claude Code, Codex, Gemini CLI, and Pi over Ollama (`pi-ollama`). See
 For Codex CLI, the harness uses `codex exec` with web search disabled and
 `sandbox_mode="workspace-write"` inside the Docker-backed benchmark container.
 It injects task skills into `.codex/skills/` inside each run workdir.
-Authenticate first with `codex login` if you want to use ChatGPT subscription
-access instead of an API key.
+Authenticate first with `codex login` for ChatGPT subscription access. As an
+alternative, set `CODEX_API_KEY` or `OPENAI_API_KEY` in `benchmark/.env` or the
+shell environment before launching `bench.sh`.
+
+For Gemini CLI, authenticate first with Gemini CLI's Google login flow. As an
+alternative, set `GEMINI_API_KEY` or `GOOGLE_API_KEY` in `benchmark/.env` or the
+shell environment before launching `bench.sh`.
 
 For `pi-ollama`, the harness invokes Pi in non-interactive mode with the
 Ollama provider and disables user-global discovery features (`--no-context-files`,
@@ -220,8 +225,10 @@ container and stores only allowlisted Claude auth files in the
 `m4bench-claude-auth` Docker volume. Each benchmark agent container mounts that
 volume read-only, copies those files into its ephemeral per-run HOME, and does
 not mount host Claude projects, memories, histories, tasks, ground truth, or
-results. Do not use `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, long-lived
-token exports, or copied OAuth access tokens for Claude benchmark runs.
+results. As an alternative to Claude login, set a stable `ANTHROPIC_API_KEY` in
+`benchmark/.env` or the shell environment before launching `bench.sh`. Do not
+use `ANTHROPIC_AUTH_TOKEN`, long-lived token exports, or copied OAuth access
+tokens for Claude benchmark runs.
 
 ### Pi/Ollama local setup
 
