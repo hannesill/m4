@@ -205,12 +205,13 @@ as `provider-default` because they do not expose the same named effort scale.
 Pass `--reasoning-effort default` to leave each CLI/provider default untouched,
 or an explicit supported level for Codex/Claude ablations.
 
-For Claude subscription campaigns, use the persistent Docker auth volume rather
-than host keychain tokens:
+For Claude campaigns, authenticate with Claude Code itself. Local debugging uses
+the same host login state as `claude -p`. Docker-backed paper runs should first
+log Claude into the benchmark image with the helper:
 
 ```bash
 bash benchmark/claude_login_container.sh
-M4BENCH_CLAUDE_AUTH_MODE=container-login bash benchmark/bench.sh \
+bash benchmark/bench.sh \
   --task mimic-sirs-24h --condition no-skill --agent claude --model opus
 ```
 
@@ -219,8 +220,8 @@ container and stores only allowlisted Claude auth files in the
 `m4bench-claude-auth` Docker volume. Each benchmark agent container mounts that
 volume read-only, copies those files into its ephemeral per-run HOME, and does
 not mount host Claude projects, memories, histories, tasks, ground truth, or
-results. `benchmark/.env` should hold only stable Anthropic API keys for API-key
-runs, not expiring OAuth tokens.
+results. Do not use `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, long-lived
+token exports, or copied OAuth access tokens for Claude benchmark runs.
 
 ### Pi/Ollama local setup
 
@@ -312,6 +313,6 @@ reasoning effort, and trial id, so it resumes missing trials without duplicating
 completed seed labels.
 
 Docker-backed runs use one short-lived agent container per task attempt. Claude
-subscription login state persists separately in the `m4bench-claude-login`
-container and `m4bench-claude-auth` Docker volume created by
+login state persists separately in the `m4bench-claude-login` container and
+`m4bench-claude-auth` Docker volume created by
 `benchmark/claude_login_container.sh`.

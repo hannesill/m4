@@ -10,7 +10,6 @@ AUTH_STAGING_DIR="$(mktemp -d -t m4bench-auth-XXXXXX)"
 DOCKER_BIN="${DOCKER_BIN:-docker}"
 M4_DATA_DIR="${M4BENCH_M4_DATA_DIR:-$REPO_ROOT/m4_data}"
 M4_DATA_CONTAINER_DIR="${M4BENCH_M4_DATA_CONTAINER_DIR:-/m4_data}"
-CLAUDE_AUTH_MODE="${M4BENCH_CLAUDE_AUTH_MODE:-api-key}"
 CLAUDE_AUTH_VOLUME="${M4BENCH_CLAUDE_AUTH_VOLUME:-m4bench-claude-auth}"
 CLAUDE_AUTH_ROOT="/claude-auth"
 
@@ -79,40 +78,14 @@ for ((i=0; i<${#ARGS[@]}; i++)); do
 done
 
 # Load .env file if it exists.
-# Only stable API keys should live here; Claude OAuth tokens expire quickly.
 if [[ -f "$SCRIPT_DIR/.env" ]]; then
     set -a
     source "$SCRIPT_DIR/.env"
     set +a
 fi
 
-# Claude subscription auth should come from a fresh macOS keychain token when
-# available. If benchmark/.env contains an OAuth token from a past session, try
-# to replace it before launching Docker.
-if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" != "container-login" ]] && command -v security &>/dev/null; then
-    FRESH_CLAUDE_OAUTH=$(
-        security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null \
-        | python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('claudeAiOauth',{}).get('accessToken',''))" 2>/dev/null
-    ) || true
-    if [[ -n "${FRESH_CLAUDE_OAUTH:-}" ]]; then
-        ANTHROPIC_API_KEY="$FRESH_CLAUDE_OAUTH"
-        echo "Using OAuth token from macOS keychain (expires in a few hours)"
-    fi
-fi
-
-if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" != "container-login" ]] && [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
-    echo "Error: No ANTHROPIC_API_KEY found."
-    echo "Options:"
-    echo "  1. Create benchmark/.env with: ANTHROPIC_API_KEY=sk-ant-api03-..."
-    echo "     (from console.anthropic.com — uses API credits)"
-    echo "  2. On macOS: log in with 'claude login' and the keychain fallback will work"
-    exit 1
-fi
-
-if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" != "container-login" ]] && [[ "${ANTHROPIC_API_KEY:-}" == sk-ant-oat* ]] && ! command -v security &>/dev/null; then
-    echo "Error: benchmark/.env contains an expiring Claude OAuth token."
-    echo "Use a real Anthropic API key in benchmark/.env, or run via macOS with 'claude login'."
-    exit 1
+if [[ "$AGENT" == "claude" ]]; then
+    unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN CLAUDE_CODE_OAUTH_TOKEN
 fi
 
 stage_auth_file() {
@@ -157,8 +130,8 @@ if [[ "$NEEDS_BUILD" == "1" ]]; then
     "$DOCKER_BIN" build -t "$IMAGE" "$SCRIPT_DIR"
 fi
 
-if [[ "$AGENT" == "claude" ]] && [[ "$CLAUDE_AUTH_MODE" == "container-login" ]]; then
-    echo "Using Claude container-login auth volume: $CLAUDE_AUTH_VOLUME"
+if [[ "$AGENT" == "claude" ]]; then
+    echo "Using Claude login auth volume: $CLAUDE_AUTH_VOLUME"
 fi
 
 if [[ "$AGENT" == "pi-ollama" ]]; then
@@ -215,10 +188,6 @@ if (( ${#DATA_MOUNT_SOURCES[@]} > 0 )); then
     done
 fi
 
-if [[ "$CLAUDE_AUTH_MODE" != "container-login" ]] && [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
-    export ANTHROPIC_API_KEY
-fi
-
 translate_benchmark_path() {
     local value="$1"
     if [[ "$value" == /benchmark/* ]]; then
@@ -252,7 +221,6 @@ export M4BENCH_AGENT_CONTAINER=1
 export M4BENCH_AGENT_CONTAINER_IMAGE="$IMAGE"
 export M4BENCH_DOCKER_BIN="$DOCKER_BIN"
 export M4BENCH_AUTH_ROOT="$AUTH_STAGING_DIR"
-export M4BENCH_CLAUDE_AUTH_MODE="$CLAUDE_AUTH_MODE"
 export M4BENCH_CLAUDE_AUTH_ROOT="$CLAUDE_AUTH_ROOT"
 export M4BENCH_CLAUDE_AUTH_VOLUME="$CLAUDE_AUTH_VOLUME"
 export M4BENCH_DATA_ROOT="$M4_DATA_CONTAINER_DIR"
