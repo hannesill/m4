@@ -306,3 +306,37 @@ def test_run_via_bench_builds_publishable_command(monkeypatch):
     assert "--reasoning-effort" in seen["cmd"]
     assert "medium" in seen["cmd"]
     assert seen["env"]["M4BENCH_CONTAINER_NAME"].startswith("m4bench-codex-")
+
+
+def test_run_via_bench_fails_when_no_result_file(monkeypatch):
+    matrix = _load_module(
+        "benchmark_matrix_run_via_bench_no_result", "benchmark/matrix.py"
+    )
+
+    results_root = (ROOT / "benchmark" / "results" / "paper-smoke").resolve()
+    run = {"task": "mimic-kdigo-48h", "trial": 2}
+
+    monkeypatch.setattr(
+        matrix.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(returncode=2),
+    )
+    monkeypatch.setattr(matrix, "_find_latest_result", lambda *args, **kwargs: None)
+
+    try:
+        matrix._run_via_bench(
+            run,
+            condition="with-skill",
+            model="gpt-5-codex",
+            schema="native",
+            agent="codex",
+            results_root=results_root,
+            reasoning_effort="medium",
+            max_retries=2,
+            retry_delay_seconds=30,
+        )
+    except RuntimeError as exc:
+        assert "produced no result.json" in str(exc)
+        assert "exit code 2" in str(exc)
+    else:
+        raise AssertionError("expected missing result.json to fail")

@@ -22,7 +22,20 @@ WITH gcs_final AS (
         g.c_249,
         g.c_244,
         g.c_248,
-        ROW_NUMBER() OVER (PARTITION BY g.c_552 ORDER BY g.c_243 NULLS FIRST) AS gcs_seq
+        -- Deterministic tie-breaker: minimum total GCS (c_243) alone can
+        -- select multiple rows with different component values. Chart time
+        -- (c_114) plus components keeps the chosen tuple stable across
+        -- execution plans while preserving c_243 as the primary rule.
+        ROW_NUMBER() OVER (
+            PARTITION BY g.c_552
+            ORDER BY
+                g.c_243 NULLS FIRST,
+                g.c_114 NULLS LAST,
+                g.c_246 NULLS LAST,
+                g.c_249 NULLS LAST,
+                g.c_244 NULLS LAST,
+                g.c_248 NULLS LAST
+        ) AS gcs_seq
     FROM ds_2.t_901 AS ie
     LEFT JOIN ds_1.t_028 AS g
         ON ie.c_552 = g.c_552

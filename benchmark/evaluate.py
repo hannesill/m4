@@ -23,6 +23,10 @@ def _round_metric(value: float) -> float:
     return round(float(value), METRIC_DECIMALS)
 
 
+def _pytest_failed(test_results: dict) -> bool:
+    return bool(test_results.get("failed", 0) or test_results.get("errors", 0))
+
+
 def resolve_ground_truth(task_name: str) -> Path:
     """Find the ground truth file for a task."""
     from lib.db import _task_key
@@ -72,9 +76,13 @@ def evaluate(task_name: str, output_path: str) -> dict:
             col: _round_metric(comparison[col]["match_rate"]) for col in score_columns
         }
         test_results["match_rates"] = match_rates
-        test_results["reward"] = _round_metric(
-            sum(match_rates.values()) / len(match_rates)
+        continuous_reward = _round_metric(sum(match_rates.values()) / len(match_rates))
+        test_results["reward_uncapped"] = continuous_reward
+        test_results["reward"] = (
+            0.0 if _pytest_failed(test_results) else continuous_reward
         )
+        if test_results["reward"] == 0.0 and continuous_reward > 0:
+            test_results["reward_cap_reason"] = "pytest diagnostics failed"
 
         # Surface task-level cohort diagnostics alongside reward. Reward is a
         # recall-style metric (per-column match rate); key_precision tells the

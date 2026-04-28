@@ -217,13 +217,11 @@ WITH pafi1 AS (
         CASE
             WHEN c_477 > 15 OR c_478 > 0.1 OR c_479 > 0.1
             THEN 4
-            -- BUG (inherited from mimic-c_134): <= 0.1 is TRUE for any
-            -- non-NULL c_475, making scores 2/1/0 unreachable when epi or
-            -- norepi is present. Correct intent is > 0 (i.e. c_195 is being
-            -- administered at any dose up to 0.1). Kept as-is to match
-            -- mimic-c_134; harmless in practice because the derived
-            -- vasopressor tables only contain rows with positive rates.
-            WHEN c_477 > 5 OR c_478 <= 0.1 OR c_479 <= 0.1
+            -- Deviates from mimic-c_134 which uses <= 0.1 (true for any
+            -- non-NULL c_475). We use the clinically correct > 0 AND <= 0.1.
+            -- No effect on derived values: vasopressor tables only contain
+            -- rows with positive rates, so the conditions are equivalent.
+            WHEN c_477 > 5 OR (c_478 > 0 AND c_478 <= 0.1) OR (c_479 > 0 AND c_479 <= 0.1)
             THEN 3
             WHEN c_477 > 0 OR c_476 > 0
             THEN 2

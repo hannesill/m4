@@ -20,7 +20,20 @@ WITH gcs_final AS (
         g.gcs_verbal,
         g.gcs_eyes,
         g.gcs_unable,
-        ROW_NUMBER() OVER (PARTITION BY g.stay_id ORDER BY g.gcs NULLS FIRST) AS gcs_seq
+        -- Deterministic tie-breaker: minimum total GCS alone can select
+        -- multiple rows with different component values. Chart time plus
+        -- components keeps the chosen tuple stable across execution plans
+        -- while preserving minimum total GCS as the primary clinical rule.
+        ROW_NUMBER() OVER (
+            PARTITION BY g.stay_id
+            ORDER BY
+                g.gcs NULLS FIRST,
+                g.charttime NULLS LAST,
+                g.gcs_motor NULLS LAST,
+                g.gcs_verbal NULLS LAST,
+                g.gcs_eyes NULLS LAST,
+                g.gcs_unable NULLS LAST
+        ) AS gcs_seq
     FROM mimiciv_icu.icustays AS ie
     LEFT JOIN mimiciv_derived.gcs AS g
         ON ie.stay_id = g.stay_id

@@ -70,7 +70,7 @@ RAW_TASKS: list[str] = []
 EXPERT_TASKS: list[str] = []
 COMPOSITIONAL_TASKS: list[str] = []  # tasks that combine multiple clinical concepts
 CROSS_DB_TASKS: list[str] = []  # eICU tasks (cross-database generalization)
-CONTAMINATION_TASKS: list[str] = []  # raw tasks with obfuscated/restructured DBs
+CONTAMINATION_TASKS: list[str] = []  # raw tasks with validated obfuscated DBs
 
 AGENT_DB_DIR = BENCHMARK_ROOT / "agent_db"
 
@@ -100,11 +100,10 @@ def _classify_tasks() -> None:
         if name.startswith("eicu-"):
             CROSS_DB_TASKS.append(name)
 
-        # Check for paired transformed agent DBs
+        # Check for publishable transformed agent DBs. Restructured schemas are
+        # excluded until their ground-truth SQL is manually authored and verified.
         task_key = name.replace("mimic-", "").replace("eicu-", "")
-        if (AGENT_DB_DIR / f"obfuscated_{task_key}.duckdb").exists() and (
-            AGENT_DB_DIR / f"restructured_{task_key}.duckdb"
-        ).exists():
+        if (AGENT_DB_DIR / f"obfuscated_{task_key}.duckdb").exists():
             CONTAMINATION_TASKS.append(name)
 
 
@@ -286,18 +285,11 @@ def _run_via_bench(
     if result is not None:
         return result
 
-    return {
-        "task": run["task"],
-        "trial": run["trial"],
-        "condition": condition,
-        "schema": schema,
-        "agent": agent,
-        "model": model,
-        "reasoning_effort": reasoning_effort,
-        "resolved_reasoning_effort": _resolve_reasoning_effort(agent, reasoning_effort),
-        "test_results": {"reward": 0.0},
-        "error": f"bench.sh exited with code {proc.returncode} and produced no result.json",
-    }
+    raise RuntimeError(
+        "bench.sh produced no result.json "
+        f"(exit code {proc.returncode}) for {run['task']} "
+        f"trial={run['trial']} condition={condition} model={model} schema={schema}"
+    )
 
 
 def build_tiers(
@@ -312,15 +304,17 @@ def build_tiers(
 
 
 def _build_powered_tiers(seeds: int = SEEDS, agent: str = "codex") -> list[Tier]:
-    """Build the experiment matrix informed by pilot data.
+    """Build the exploratory experiment matrix informed by pilot data.
 
     Pilot results (1 seed, 27 valid tasks) revealed three task categories:
       - HELPS (11 tasks): skill delta > +0.05, avg +0.32
       - HURTS  (4 tasks): skill delta < -0.05, avg -0.20
       - FLAT  (12 tasks): |delta| <= 0.05
 
-    The matrix concentrates seeds on high-signal tasks and uses fewer seeds
-    on ceiling/flat tasks. Model defaults are agent-specific.
+    Because this allocation is pilot-informed, it is suitable for exploratory
+    follow-up and operational planning. Confirmatory headline estimates should
+    use a balanced clean profile or analyze the adaptive allocation explicitly.
+    Model defaults are agent-specific.
     """
     tiers = []
     model_plan = _model_plan_for_agent(agent)
@@ -449,25 +443,25 @@ def _build_powered_tiers(seeds: int = SEEDS, agent: str = "codex") -> list[Tier]
     tiers.append(t4)
 
     # ── Tier 5: Contamination analysis ──────────────────────────────────
-    # Raw-mode tasks with obfuscated/restructured DBs.  One contamination model,
-    # no-skill only — isolates memorization from skill knowledge.
+    # Raw-mode tasks with validated obfuscated DBs. One contamination model,
+    # no-skill only: isolates schema memorization from skill knowledge.
+    # Restructured schemas remain experimental until verified GT SQL is complete.
     t5 = Tier(
         5,
         "Contamination analysis",
         "Is no-skill performance driven by MIMIC memorization?",
     )
     for task in CONTAMINATION_TASKS:
-        for schema in ["obfuscated", "restructured"]:
-            for seed in range(1, seeds + 1):
-                t5.runs.append(
-                    dict(
-                        task=task,
-                        condition="no-skill",
-                        model=model_plan.contamination_models[0],
-                        schema=schema,
-                        trial=seed,
-                    )
+        for seed in range(1, seeds + 1):
+            t5.runs.append(
+                dict(
+                    task=task,
+                    condition="no-skill",
+                    model=model_plan.contamination_models[0],
+                    schema="obfuscated",
+                    trial=seed,
                 )
+            )
     tiers.append(t5)
 
     # ── Tier 6: Skill noise (with-skill-all) ────────────────────────────
@@ -734,7 +728,7 @@ def _run_tier(
         if dry_run:
             for task in tasks:
                 trials = sorted(task_trials[task])
-                print(f"    {task:<40s} seeds {trials}")
+                print(f"    {task:<40s} trials {trials}")
             continue
 
         # Build the run.py command.  We invoke run.py per-group because it
@@ -979,7 +973,7 @@ def _print_matrix_summary(
         seeds_per = max(len(tier.runs) // len(cells), 1) if cells else 0
         print(
             f"  Tasks: {len(tasks)} | Cells: {len(cells)} | "
-            f"Runs: {len(tier.runs)} ({seeds_per} seeds each)"
+            f"Runs: {len(tier.runs)} ({seeds_per} trial replicates each)"
         )
         if skipped:
             print(f"  Skippable: {skipped} (already have data) -> {len(runs)} new runs")
@@ -1035,7 +1029,7 @@ def main():
         choices=["powered", "provider-comparison"],
         default="powered",
         help=(
-            "Matrix profile: powered is the GPT-primary campaign; "
+            "Matrix profile: powered is exploratory/pilot-informed; "
             "provider-comparison is a sparse external-provider sentinel set"
         ),
     )
@@ -1057,7 +1051,7 @@ def main():
         "--seeds",
         type=int,
         default=SEEDS,
-        help=f"Seeds per cell (default: {SEEDS})",
+        help=f"Trial replicates per cell (legacy name: seeds; default: {SEEDS})",
     )
     parser.add_argument(
         "--results-root",

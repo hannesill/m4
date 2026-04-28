@@ -14,7 +14,6 @@ import os
 import sys
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
 try:
@@ -24,7 +23,7 @@ except ModuleNotFoundError:
 
 # Ensure benchmark/lib is importable
 sys.path.insert(0, str(Path(__file__).parent))
-from compare import compare_derived_tables, scored_value_columns
+from compare import compare_derived_tables, read_benchmark_csv, scored_value_columns
 
 # --- Load task config ---
 
@@ -58,20 +57,20 @@ def test_output_exists():
 
 
 def test_output_is_valid_csv():
-    df = pd.read_csv(AGENT_OUTPUT)
+    df = read_benchmark_csv(AGENT_OUTPUT)
     assert len(df) > 0, "Output CSV is empty"
 
 
 def test_has_required_columns():
-    df = pd.read_csv(AGENT_OUTPUT)
+    df = read_benchmark_csv(AGENT_OUTPUT)
     missing = [c for c in REQUIRED_COLUMNS if c not in df.columns]
     assert not missing, f"Missing columns: {missing}. Got: {list(df.columns)}"
 
 
 def test_row_coverage():
     """Agent should produce matching keys for at least the configured coverage threshold."""
-    agent = pd.read_csv(AGENT_OUTPUT)
-    truth = pd.read_csv(GROUND_TRUTH)
+    agent = read_benchmark_csv(AGENT_OUTPUT)
+    truth = read_benchmark_csv(GROUND_TRUTH)
     matched_keys = truth.merge(
         agent[KEY_COLUMNS].drop_duplicates(), on=KEY_COLUMNS, how="inner"
     )

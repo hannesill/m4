@@ -99,7 +99,27 @@ def test_compare_missing_null_truth_key_is_not_a_match(tmp_path):
     assert result["score"]["match_rate"] == 0.5
 
 
-def test_scored_value_columns_excludes_required_metadata():
+def test_scored_value_columns_includes_required_clinical_fields():
+    compare = _load_compare()
+
+    score_columns = compare.scored_value_columns(
+        {
+            "key_columns": ["stay_id", "ventilation_seq"],
+            "value_columns": ["ventilation_status"],
+            "required_columns": [
+                "stay_id",
+                "ventilation_seq",
+                "starttime",
+                "endtime",
+                "ventilation_status",
+            ],
+        }
+    )
+
+    assert score_columns == ["ventilation_status", "starttime", "endtime"]
+
+
+def test_scored_value_columns_excludes_identifier_metadata():
     compare = _load_compare()
 
     score_columns = compare.scored_value_columns(
@@ -144,6 +164,24 @@ def test_compare_numeric_tolerance_handles_nullable_truth(tmp_path):
     assert result["scr_baseline"]["match_rate"] == 1.0
 
 
+def test_compare_preserves_literal_none_label(tmp_path):
+    compare = _load_compare()
+    truth = tmp_path / "truth.csv"
+    agent = tmp_path / "agent.csv"
+    _write_csv(truth, [{"stay_id": 1, "ventilation_status": "None"}])
+    _write_csv(agent, [{"stay_id": 1, "ventilation_status": ""}])
+
+    result = compare.compare_derived_tables(
+        str(agent),
+        str(truth),
+        key_columns=["stay_id"],
+        value_columns=["ventilation_status"],
+    )
+
+    assert result["ventilation_status"]["matched"] == 0
+    assert result["ventilation_status"]["match_rate"] == 0.0
+
+
 def test_metric_rounding_preserves_near_perfect_mismatch():
     evaluate = _load_evaluate()
 
@@ -151,3 +189,11 @@ def test_metric_rounding_preserves_near_perfect_mismatch():
 
     assert rounded == 0.99999502
     assert rounded < 1.0
+
+
+def test_pytest_failures_cap_continuous_reward():
+    evaluate = _load_evaluate()
+
+    assert evaluate._pytest_failed({"failed": 1, "errors": 0})
+    assert evaluate._pytest_failed({"failed": 0, "errors": 1})
+    assert not evaluate._pytest_failed({"failed": 0, "errors": 0})
