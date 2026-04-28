@@ -118,6 +118,23 @@ def test_db_cache_is_private(monkeypatch, tmp_path):
     assert (cached.stat().st_mode & 0o777) == 0o600
 
 
+def test_failed_runs_are_excluded_from_results_discovery():
+    run = _load_module("benchmark_run_export_gate", "benchmark/run.py")
+
+    assert run._should_export_run_record(
+        publishable=True,
+        agent_result={"returncode": 0},
+    )
+    assert not run._should_export_run_record(
+        publishable=True,
+        agent_result={"returncode": 0, "failure_reason": "contamination_lint"},
+    )
+    assert not run._should_export_run_record(
+        publishable=False,
+        agent_result={"returncode": 0},
+    )
+
+
 # ── Per-run HOME seeding ────────────────────────────────────────────────
 
 
