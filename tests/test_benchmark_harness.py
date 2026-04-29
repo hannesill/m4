@@ -1017,6 +1017,7 @@ def test_network_lock_allows_claude_runtime_hosts():
     script = (ROOT / "benchmark" / "network_lock.sh").read_text()
 
     assert "api.anthropic.com" in script
+    assert "mcp-proxy.anthropic.com" in script
     assert "platform.claude.com" in script
     assert "http-intake.logs.us5.datadoghq.com" in script
 
