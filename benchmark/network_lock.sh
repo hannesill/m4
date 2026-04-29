@@ -16,6 +16,7 @@ AGENT_USER="benchagent"
 ALLOWED_HOSTS=(
     # Anthropic (Claude)
     api.anthropic.com
+    mcp-proxy.anthropic.com
     platform.claude.com
     http-intake.logs.us5.datadoghq.com
     # OpenAI (Codex)

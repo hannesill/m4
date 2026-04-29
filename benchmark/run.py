@@ -103,6 +103,7 @@ SECRET_ENV_KEYS = {
 }
 ALLOWED_LLM_API_HOSTS = {
     "api.anthropic.com",
+    "mcp-proxy.anthropic.com",
     "api.openai.com",
     "auth.openai.com",
     "chatgpt.com",
