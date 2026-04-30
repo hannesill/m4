@@ -52,7 +52,7 @@ WITH nc AS (
                 THEN CAST(nursingchartvalue AS NUMERIC)
             ELSE NULL
         END) AS gcseyes
-    FROM main.nursecharting
+    FROM eicu_crd.nursecharting
     WHERE nursingchartcelltypecat IN ('Scores', 'Other Vital Signs and Infusions')
     GROUP BY patientunitstayid, nursingchartoffset
 )
@@ -103,7 +103,7 @@ SELECT
     COALESCE(g.gcsmotor, 6) AS gcs_motor,
     COALESCE(g.gcsverbal, 5) AS gcs_verbal,
     COALESCE(g.gcseyes, 4) AS gcs_eyes
-FROM main.patient p
+FROM eicu_crd.patient p
 LEFT JOIN gcs_first_day g
     ON p.patientunitstayid = g.patientunitstayid
     AND g.rn = 1

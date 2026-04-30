@@ -216,5 +216,5 @@ SELECT
         ELSE 'Other'
     END AS apachedxgroup,
     apacheadmissiondx
-FROM main.patient
+FROM eicu_crd.patient
 ;
