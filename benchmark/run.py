@@ -608,10 +608,10 @@ def _detect_agent_failure_reason(agent_name: str, agent_result: dict) -> str | N
                 continue
             info = event.get("rate_limit_info", {})
             status = str(info.get("status", "")).lower()
-            if status and status != "allowed":
+            if status and status not in {"allowed", "allowed_warning"}:
                 return "rate_limit"
 
-        if (
+        if agent_result.get("returncode") not in (0, None) and (
             "rate limit" in text
             or "usage limit" in text
             or re.search(r"(?<!\d)429(?!\d)", text)
@@ -1644,6 +1644,15 @@ done
 set +e
 runuser -u benchagent -m -- bash -lc 'cd "$M4BENCH_CONTAINER_WORKDIR"; exec "$@"' bash "$@"
 status=$?
+if [[ -n "${M4BENCH_CLAUDE_AUTH_ROOT:-}" && -n "${M4BENCH_CONTAINER_HOME:-}" ]]; then
+    auth_root="${M4BENCH_CLAUDE_AUTH_ROOT:-/claude-auth}"
+    for rel in .claude.json .claude/.credentials.json .claude/credentials.json; do
+        if [[ -f "$M4BENCH_CONTAINER_HOME/$rel" ]]; then
+            mkdir -p "$auth_root/$(dirname "$rel")"
+            cp "$M4BENCH_CONTAINER_HOME/$rel" "$auth_root/$rel"
+        fi
+    done
+fi
 chmod -R a+rwX "${paths[@]}" 2>/dev/null || true
 exit "$status"
 """

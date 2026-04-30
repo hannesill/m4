@@ -72,6 +72,50 @@ def test_detect_agent_failure_reason_ignores_429_inside_paths(tmp_path):
     assert reason is None
 
 
+def test_detect_agent_failure_reason_allows_claude_usage_warning(tmp_path):
+    run = _load_module("benchmark_run_rate_allowed_warning", "benchmark/run.py")
+
+    trace = tmp_path / "trace.jsonl"
+    trace.write_text(
+        '{"type":"rate_limit_event","rate_limit_info":{"status":"allowed_warning",'
+        '"resetsAt":1778058000,"rateLimitType":"seven_day","utilization":0.26}}\n'
+    )
+
+    reason = run._detect_agent_failure_reason(
+        "claude",
+        {
+            "stdout": "",
+            "stderr": "",
+            "trace_file": str(trace),
+        },
+    )
+
+    assert reason is None
+
+
+def test_detect_agent_failure_reason_ignores_rate_text_after_success(tmp_path):
+    run = _load_module("benchmark_run_rate_success_text", "benchmark/run.py")
+
+    trace = tmp_path / "trace.jsonl"
+    trace.write_text(
+        '{"type":"result","subtype":"success","is_error":false,'
+        '"result":"Output written"}\n'
+    )
+
+    reason = run._detect_agent_failure_reason(
+        "claude",
+        {
+            "returncode": 0,
+            "stdout": '{"type":"rate_limit_event","rate_limit_info":'
+            '{"status":"allowed_warning","rateLimitType":"seven_day"}}',
+            "stderr": "",
+            "trace_file": str(trace),
+        },
+    )
+
+    assert reason is None
+
+
 # ── Isolated workdir ────────────────────────────────────────────────────
 
 
@@ -507,6 +551,8 @@ def test_agent_container_mounts_claude_login_auth_for_root_copy_only(
     joined = "\n".join(cmd)
 
     assert "m4bench-claude-auth:/claude-auth:rw" in cmd
+    assert 'cp "$auth_root/$rel" "$M4BENCH_CONTAINER_HOME/$rel"' in joined
+    assert 'cp "$M4BENCH_CONTAINER_HOME/$rel" "$auth_root/$rel"' in joined
     assert 'chmod -R go-rwx "$auth_root"' in joined
 
 
