@@ -62,6 +62,14 @@ def test_preflight_skill_snapshots_have_no_target_leakage():
     assert result.ok, result.details
 
 
+def test_preflight_canonical_schema_references_pass_current_tasks():
+    preflight = _load_module("benchmark_preflight_schemas", "benchmark/preflight.py")
+
+    result = preflight.check_canonical_schema_references()
+
+    assert result.ok, result.details
+
+
 def test_preflight_isolation_guardrails_cover_known_leaks():
     preflight = _load_module("benchmark_preflight_isolation", "benchmark/preflight.py")
 

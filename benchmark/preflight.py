@@ -340,6 +340,29 @@ def check_skill_snapshots() -> CheckResult:
     )
 
 
+def check_canonical_schema_references() -> CheckResult:
+    """Benchmark SQL and task-local skills should use canonical schemas."""
+    problems: list[str] = []
+    main_schema = re.compile(r"\bmain\.[A-Za-z_][A-Za-z0-9_]*")
+    paths = [
+        *GROUND_TRUTH_DIR.rglob("*.sql"),
+        *list((BENCHMARK_ROOT / "tasks").rglob("SKILL.md")),
+    ]
+    for path in sorted(paths):
+        text = path.read_text()
+        matches = sorted(set(main_schema.findall(text)))
+        if matches:
+            rel = path.relative_to(BENCHMARK_ROOT)
+            problems.append(f"{rel}: replace {', '.join(matches)}")
+
+    if problems:
+        return _fail("canonical schema references", problems)
+    return _ok(
+        "canonical schema references",
+        "benchmark SQL and task-local skills avoid DuckDB main.* table references",
+    )
+
+
 def check_isolation_guardrails() -> CheckResult:
     """Source-level check that publishable Docker isolation covers known leaks."""
     problems: list[str] = []
@@ -896,6 +919,7 @@ def run_checks(
         check_taskcards_not_agent_adjacent(),
         check_raw_mode_contract(),
         check_skill_snapshots(),
+        check_canonical_schema_references(),
         check_isolation_guardrails(),
         check_results_root(results_root, allow_existing=allow_existing_results_root),
     ]

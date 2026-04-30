@@ -17,8 +17,8 @@ In M4Bench, target concept tables listed in the task configuration are removed o
 
 ## eICU Source Tables
 
-- `main.patient` — one row per ICU stay; use for output identifiers.
-- `main.nursecharting` — primary source for GCS total and components.
+- `eicu_crd.patient` — one row per ICU stay; use for output identifiers.
+- `eicu_crd.nursecharting` — primary source for GCS total and components.
 
 The time axis is eICU offset minutes from ICU admission. For this task, include
 charting from 6 hours before admission through 24 hours after admission:

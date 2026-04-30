@@ -26,7 +26,7 @@ WITH pre_icu_los_data AS (
             WHEN hospitaladmitoffset < (-311.80 * 60) THEN 1
             ELSE NULL
         END AS pre_icu_los_oasis
-    FROM main.patient
+    FROM eicu_crd.patient
 )
 
 -- ══════════════════════════════════════════════════════════════════
@@ -43,7 +43,7 @@ WITH pre_icu_los_data AS (
             WHEN MAX(CASE WHEN age = '> 89' THEN 91 ELSE TRY_CAST(age AS INT) END) > 89 THEN 7
             ELSE NULL
         END AS age_oasis
-    FROM main.patient
+    FROM eicu_crd.patient
     GROUP BY patientunitstayid
 )
 
@@ -67,7 +67,7 @@ WITH pre_icu_los_data AS (
                 THEN CAST(nursingchartvalue AS NUMERIC)
             ELSE NULL
         END) AS gcs
-    FROM main.nursecharting
+    FROM eicu_crd.nursecharting
     WHERE nursingchartcelltypecat IN ('Scores', 'Other Vital Signs and Infusions')
     GROUP BY patientunitstayid, nursingchartoffset
 )
@@ -86,7 +86,7 @@ WITH pre_icu_los_data AS (
     SELECT
         patientunitstayid,
         MIN(TRY_CAST(physicalexamvalue AS NUMERIC)) AS gcs
-    FROM main.physicalexam
+    FROM eicu_crd.physicalexam
     WHERE (
         physicalexampath LIKE 'notes/Progress Notes/Physical Exam/Physical Exam/Neurologic/GCS/_'
         OR physicalexampath LIKE 'notes/Progress Notes/Physical Exam/Physical Exam/Neurologic/GCS/__'
@@ -107,7 +107,7 @@ WITH pre_icu_los_data AS (
              AND pg.chartoffset > 0 AND pg.chartoffset <= 1440),
             pe.gcs
         ) AS gcs_min
-    FROM main.patient p
+    FROM eicu_crd.patient p
     LEFT JOIN physexam_gcs pe ON p.patientunitstayid = pe.patientunitstayid
 )
 
@@ -179,7 +179,7 @@ WITH pre_icu_los_data AS (
                 THEN CAST(nursingchartvalue AS NUMERIC)
             ELSE NULL
         END AS nibp_mean
-    FROM main.nursecharting
+    FROM eicu_crd.nursecharting
     WHERE nursingchartcelltypecat IN ('Vital Signs', 'Scores', 'Other Vital Signs and Infusions')
 )
 
@@ -428,7 +428,7 @@ WITH pre_icu_los_data AS (
             WHEN cellpath LIKE 'flowsheet|Flowsheet Cell Labels|I&O|Output (ml)|Urinary Catheter Output%' THEN 1
             ELSE 0
         END AS is_uo
-    FROM main.intakeoutput
+    FROM eicu_crd.intakeoutput
 )
 
 -- Sum urine output in first 24h, with fallback to apacheapsvar.urine
@@ -448,11 +448,11 @@ WITH pre_icu_los_data AS (
     SELECT
         p.patientunitstayid,
         COALESCE(uo.urineoutput, apache_uo.urine) AS uo_comb
-    FROM main.patient p
+    FROM eicu_crd.patient p
     LEFT JOIN pivoted_uo_sum uo ON p.patientunitstayid = uo.patientunitstayid
     LEFT JOIN (
         SELECT patientunitstayid, urine
-        FROM main.apacheapsvar
+        FROM eicu_crd.apacheapsvar
         WHERE urine > 0 AND urine IS NOT NULL
     ) apache_uo ON p.patientunitstayid = apache_uo.patientunitstayid
 )
@@ -482,8 +482,8 @@ WITH pre_icu_los_data AS (
             WHEN pat.unitadmitsource = 'Emergency Department' THEN 0
             ELSE 1
         END AS adm_elective1
-    FROM main.patient pat
-    LEFT JOIN main.apachepredvar apache
+    FROM eicu_crd.patient pat
+    LEFT JOIN eicu_crd.apachepredvar apache
         ON pat.patientunitstayid = apache.patientunitstayid
 )
 
@@ -511,14 +511,14 @@ WITH pre_icu_los_data AS (
         COALESCE(predvar.oobintub_flag, 0) AS vent_predvar,
         -- respiratorycare airway
         COALESCE(rc.vent_rc, 0) AS vent_rc
-    FROM main.patient p
+    FROM eicu_crd.patient p
     LEFT JOIN (
         SELECT patientunitstayid, 1 AS intubated_flag
-        FROM main.apacheapsvar WHERE intubated = 1
+        FROM eicu_crd.apacheapsvar WHERE intubated = 1
     ) apsvar ON p.patientunitstayid = apsvar.patientunitstayid
     LEFT JOIN (
         SELECT patientunitstayid, 1 AS oobintub_flag
-        FROM main.apachepredvar WHERE oobintubday1 = 1
+        FROM eicu_crd.apachepredvar WHERE oobintubday1 = 1
     ) predvar ON p.patientunitstayid = predvar.patientunitstayid
     LEFT JOIN (
         SELECT patientunitstayid,
@@ -530,7 +530,7 @@ WITH pre_icu_los_data AS (
                 WHEN COUNT(setapneatv) >= 1 THEN 1
                 ELSE NULL
             END AS vent_rc
-        FROM main.respiratorycare
+        FROM eicu_crd.respiratorycare
         WHERE respcarestatusoffset > 0 AND respcarestatusoffset <= 1440
         GROUP BY patientunitstayid
     ) rc ON p.patientunitstayid = rc.patientunitstayid
@@ -577,7 +577,7 @@ SELECT
     COALESCE(uo.urineoutput_oasis, 0) AS urineoutput_score,
     COALESCE(vo.vent_oasis, 0) AS mechvent_score,
     COALESCE(eo.electivesurgery_oasis, 0) AS electivesurgery_score
-FROM main.patient p
+FROM eicu_crd.patient p
 LEFT JOIN pre_icu_los_data plos ON p.patientunitstayid = plos.patientunitstayid
 LEFT JOIN age_oasis ao ON p.patientunitstayid = ao.patientunitstayid
 LEFT JOIN gcs_oasis go ON p.patientunitstayid = go.patientunitstayid
