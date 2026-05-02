@@ -2,7 +2,7 @@
 
 Orchestrates: task setup -> agent invocation -> output collection -> test execution.
 
-Isolation is ON by default, but paper-quality runs still require Docker via
+Isolation is ON by default, but release-grade runs still require Docker via
 `benchmark/bench.sh`. Outside Docker, local runs are useful for debugging and
 anomaly investigation only. Pass --no-isolation for fully local debugging
 (also not publishable).
@@ -362,7 +362,7 @@ def _agent_container_enabled() -> bool:
 def _publishable_environment(
     isolated: bool, agent_name: str | None = None
 ) -> tuple[bool, str]:
-    """Return whether the current run environment is paper-eligible."""
+    """Return whether the current run environment is release-eligible."""
     if not isolated:
         return False, "isolation disabled"
     if not _agent_container_enabled():
@@ -386,7 +386,7 @@ def ensure_results_manifest(results_root: Path) -> Path:
     manifest = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "results_root": str(results_root),
-        "canonical_paper_spec": str((BENCHMARK_ROOT / "PAPER.md").resolve()),
+        "canonical_release_spec": str((BENCHMARK_ROOT / "README.md").resolve()),
         "publishable_run_requirements": [
             "run via benchmark/bench.sh inside Docker",
             "do not mix with legacy benchmark/results outputs",
@@ -557,6 +557,60 @@ def _load_jsonl_events(trace_path: str | Path) -> list[dict]:
 def _load_egress_events(workdir: Path) -> list[dict]:
     """Load structured egress-proxy decisions, if Docker isolation produced them."""
     return _load_jsonl_events(workdir / "egress.jsonl")
+
+
+def aggregate_token_usage(agent_name: str, trace_path: str | Path) -> dict:
+    """Sum token usage from agent trace events.
+
+    Returns a dict with input_tokens, cached_input_tokens, output_tokens, turns,
+    and provider strings recovered from the trace. Empty values are returned
+    when usage events are unavailable (e.g., agent CLI did not stream JSON).
+    """
+    summary = {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "output_tokens": 0,
+        "turns": 0,
+        "model_strings": [],
+    }
+    seen_models: set[str] = set()
+    events = _load_jsonl_events(trace_path)
+
+    if agent_name == "codex":
+        for event in events:
+            if event.get("type") == "thread.started":
+                model = event.get("model") or event.get("model_id")
+                if isinstance(model, str) and model not in seen_models:
+                    seen_models.add(model)
+                    summary["model_strings"].append(model)
+            elif event.get("type") == "turn.completed":
+                usage = event.get("usage") or {}
+                summary["turns"] += 1
+                summary["input_tokens"] += int(usage.get("input_tokens") or 0)
+                summary["cached_input_tokens"] += int(
+                    usage.get("cached_input_tokens") or 0
+                )
+                summary["output_tokens"] += int(usage.get("output_tokens") or 0)
+
+    elif agent_name == "claude":
+        for event in events:
+            usage = (
+                event.get("usage") or (event.get("message") or {}).get("usage") or {}
+            )
+            if not usage:
+                continue
+            summary["input_tokens"] += int(usage.get("input_tokens") or 0)
+            summary["output_tokens"] += int(usage.get("output_tokens") or 0)
+            summary["cached_input_tokens"] += int(
+                usage.get("cache_read_input_tokens") or 0
+            )
+            summary["turns"] += 1
+            model = (event.get("message") or {}).get("model")
+            if isinstance(model, str) and model not in seen_models:
+                seen_models.add(model)
+                summary["model_strings"].append(model)
+
+    return summary
 
 
 def _is_allowed_llm_host(host: str) -> bool:
@@ -1386,13 +1440,21 @@ def prepare_instruction(
         "Do not use web search, web fetch, package installation, or external "
         "network resources.\n\n"
     )
+    convention_note = (
+        "Where multiple valid definitions exist (e.g., scoring thresholds, "
+        "missingness handling, time-window boundaries, item-id selection), "
+        "follow the standard public concept conventions for this database "
+        "release. The evaluator scores agreement against a reference "
+        "implementation derived from those conventions; intentional deviations "
+        "will reduce reward.\n\n"
+    )
 
     db_path = "./database.duckdb"
     output_path = "./output.csv"
 
     instruction = instruction.replace("{db_path}", db_path)
     instruction = instruction.replace("{output_path}", output_path)
-    instruction = isolation_note + instruction
+    instruction = isolation_note + convention_note + instruction
 
     if schema in ("obfuscated", "restructured"):
         from lib.transform import generate_obfuscated_instruction, load_dictionary
@@ -1442,6 +1504,40 @@ def inject_skill(task_name: str, workdir: Path, agent_name: str) -> list[Path]:
         shutil.copytree(skill_dir, target)
         created_paths.append(target)
         print(f"  Injected skill: {target}")
+
+    return created_paths
+
+
+def inject_skill_variant(
+    task_name: str, workdir: Path, agent_name: str, variant: str
+) -> list[Path]:
+    """Inject a non-canonical skill variant from `skills-<variant>/` if present.
+
+    Used by the with-skill-nosql and with-skill-decoy conditions. Falls back to
+    the canonical skills/ directory only if the variant directory is missing
+    AND the caller passes variant="" (defensive default for legacy callers).
+    """
+    task_dir = resolve_task_dir(task_name)
+    variant_dir = task_dir / f"skills-{variant}" if variant else task_dir / "skills"
+
+    if not variant_dir.exists():
+        raise FileNotFoundError(
+            f"Skill variant '{variant}' missing for task {task_name}: {variant_dir}"
+        )
+
+    target_base = _skill_target_base(agent_name, workdir)
+    target_base.mkdir(parents=True, exist_ok=True)
+    created_paths: list[Path] = []
+
+    for skill_dir in variant_dir.iterdir():
+        if not skill_dir.is_dir():
+            continue
+        target = target_base / skill_dir.name
+        if target.exists():
+            continue
+        shutil.copytree(skill_dir, target)
+        created_paths.append(target)
+        print(f"  Injected skill ({variant}): {target}")
 
     return created_paths
 
@@ -1752,7 +1848,7 @@ def run_agent(
 
     agent_container = isolated and _agent_container_enabled()
     if agent_container and agent_name == "codex":
-        # The outer Docker container is the isolation boundary in publishable
+        # The outer Docker container is the isolation boundary in release-grade
         # runs. Codex's inner bwrap sandbox cannot create user namespaces inside
         # that container on common Docker Desktop setups.
         cmd.extend(["-c", 'sandbox_mode="danger-full-access"'])
@@ -2157,11 +2253,11 @@ def run_single_task(
             f", network=API-only)"
         )
     else:
-        print("WARNING: Isolation OFF — results are NOT suitable for publication")
+        print("WARNING: Isolation OFF - results are NOT suitable for release")
     if not publishable:
-        print(f"Publication eligibility: NO ({publishable_reason})")
+        print(f"Release eligibility: NO ({publishable_reason})")
     else:
-        print(f"Publication eligibility: YES ({publishable_reason})")
+        print(f"Release eligibility: YES ({publishable_reason})")
     print(f"Working dir: {workdir}")
     print(f"Results root: {results_root}")
     print(f"{'=' * 60}\n")
@@ -2195,6 +2291,15 @@ def run_single_task(
         elif condition == "with-skill-all":
             print("Injecting all benchmark skills into workdir...")
             inject_all_skills(workdir, agent_name)
+        elif condition == "with-skill-nosql":
+            print("Injecting NO-SQL skill variant into workdir...")
+            inject_skill_variant(task_name, workdir, agent_name, variant="nosql")
+        elif condition == "with-skill-decoy":
+            print("Injecting DECOY skill variant into workdir...")
+            inject_skill_variant(task_name, workdir, agent_name, variant="decoy")
+        elif condition == "with-skill-rawsql":
+            print("Injecting RAW-SQL skill variant (matched-content) into workdir...")
+            inject_skill_variant(task_name, workdir, agent_name, variant="rawsql")
 
         instruction = prepare_instruction(task_name, workdir, condition, schema)
         (workdir / "instruction.md").write_text(instruction)
@@ -2462,14 +2567,19 @@ def run_single_task(
         print(f"{'=' * 60}")
         print(f"\nPytest output:\n{test_results.get('pytest_output', '')}")
 
-        safe_run = (
-            not agent_result.get("failure_reason")
-            and agent_result.get("returncode") == 0
-            and test_results.get("failed", 0) == 0
-            and test_results.get("errors", 0) == 0
-            and contamination_lint.get("passed") is True
+        # Decouple artifact retention from strict diagnostic pass. We keep
+        # output.csv + trace.jsonl whenever the run is contamination-clean and
+        # the agent did not trip an explicit failure reason. This preserves
+        # partial-correct attempts for audit while still redacting traces from
+        # contaminated/failure runs (sanitize_agent_result_for_storage handles
+        # the stricter stdout/stderr redaction below via export_full_artifacts).
+        export_full_artifacts = contamination_lint.get(
+            "passed"
+        ) is True and not agent_result.get("failure_reason")
+
+        token_usage = aggregate_token_usage(
+            agent_name, agent_result.get("trace_file", "")
         )
-        export_full_artifacts = safe_run
 
         # Save full result
         full_result = {
@@ -2490,11 +2600,12 @@ def run_single_task(
             "results_root": str(results_root),
             "agent_db": agent_db,
             "agent_result": sanitize_agent_result_for_storage(
-                agent_result, safe_run=safe_run
+                agent_result, safe_run=export_full_artifacts
             ),
             "test_results": sanitize_test_results_for_storage(test_results),
             "filesystem_canary": filesystem_canary,
             "contamination_lint": contamination_lint,
+            "token_usage": token_usage,
         }
         if agent_name == "claude":
             claude_memory_validation = claude_memory_validation or (
@@ -2942,7 +3053,14 @@ def main():
     )
     parser.add_argument(
         "--condition",
-        choices=["no-skill", "with-skill", "with-skill-all"],
+        choices=[
+            "no-skill",
+            "with-skill",
+            "with-skill-all",
+            "with-skill-nosql",
+            "with-skill-decoy",
+            "with-skill-rawsql",
+        ],
         help="Evaluation condition",
     )
     parser.add_argument("--agent", choices=list(AGENT_COMMANDS), help="Agent to use")
@@ -2999,7 +3117,7 @@ def main():
     )
     parser.add_argument(
         "--results-root",
-        help="Directory for run outputs; use a fresh root for paper campaigns",
+        help="Directory for run outputs; use a fresh root for release-grade campaigns",
     )
     parser.add_argument(
         "--delay-between-runs-seconds",
@@ -3033,7 +3151,7 @@ def main():
     if not isolated:
         print(
             "\n*** WARNING: Isolation disabled (--no-isolation). ***\n"
-            "*** Results from this run are NOT suitable for publication. ***\n"
+            "*** Results from this run are NOT suitable for release. ***\n"
         )
 
     if args.list:

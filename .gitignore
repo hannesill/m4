@@ -87,6 +87,7 @@ m4_data/
 .vitrine/
 
 notes/
+/paper/
 
 # Benchmark data (large, generated)
 benchmark/shared/ground_truth/
@@ -104,6 +105,7 @@ benchmark/human_eval/
 *.pptx
 
 # Agents
+.agents/
 .claude/
 .agents/
 .research/

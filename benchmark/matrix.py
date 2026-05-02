@@ -322,7 +322,183 @@ def build_tiers(
         return _build_powered_tiers(seeds=seeds, agent=agent)
     if profile == "provider-comparison":
         return _build_provider_comparison_tiers(seeds=seeds, agent=agent)
+    if profile == "rerun-v1.1":
+        return _build_rerun_v1_1_tiers(seeds=seeds, agent=agent)
     raise ValueError(f"Unsupported profile: {profile}")
+
+
+def _build_rerun_v1_1_tiers(seeds: int = 5, agent: str = "codex") -> list[Tier]:
+    """Build the v1.1 audited rerun campaign.
+
+    Closes audit-risk vectors: artifact retention (every cell), instruction
+    disambiguation (convention paragraph already added in run.py), SQL-leakage
+    ablation (with-skill-nosql on the two SQL-bearing skills), and matched-content
+    decoy ablation (with-skill-decoy on selected high-delta tasks).
+    """
+    tiers: list[Tier] = []
+    model_plan = _model_plan_for_agent(agent)
+    primary_models = model_plan.primary_models
+
+    # -- Tier 1: full replication (28 tasks x NS+WS) ------------------------
+    # Recomputes the headline under the new instruction text and full artifact
+    # retention. ~560 runs at 5 seeds x 2 models.
+    t1 = Tier(
+        1,
+        "Full NS+WS replication",
+        "Replicate headline under disambiguated instruction with full retention.",
+    )
+    for task in ALL_TASKS:
+        for condition in ("no-skill", "with-skill"):
+            for model in primary_models:
+                for seed in range(1, seeds + 1):
+                    t1.runs.append(
+                        dict(
+                            task=task,
+                            condition=condition,
+                            model=model,
+                            schema="native",
+                            trial=seed,
+                        )
+                    )
+    tiers.append(t1)
+
+    # ── Tier 2: SQL-strip ablation on the two SQL-bearing skill families ─
+    # An audit of `^```sql` fences across all 28 task-skill pairs identified
+    # exactly two skill families with embedded SQL code blocks: urine-output
+    # rate (2 fences in the SKILL.md, applied to standard and raw variants)
+    # and vasopressor-equivalents (1 fence, applied to standard and raw
+    # variants). gcs-calculation, despite earlier informal triage, has no
+    # ```sql fences. Strip them, rerun, compare against tier-1 with-skill.
+    SQL_BEARING = [
+        "mimic-urine-output-rate",
+        "mimic-urine-output-rate-raw",
+        "mimic-vasopressor-equivalents",
+        "mimic-vasopressor-equivalents-raw",
+    ]
+    t2 = Tier(
+        2,
+        "SQL-strip ablation",
+        "Does delta survive removing fenced SQL fragments from the skill?",
+    )
+    for task in SQL_BEARING:
+        for model in primary_models:
+            for seed in range(1, seeds + 1):
+                t2.runs.append(
+                    dict(
+                        task=task,
+                        condition="with-skill-nosql",
+                        model=model,
+                        schema="native",
+                        trial=seed,
+                    )
+                )
+    tiers.append(t2)
+
+    # ── Tier 4: Raw-SQL matched-content control ──────────────────────────
+    # Inject the public reference SQL as the agent's skill content. This is
+    # the strongest matched-content control: same task-relevant material as
+    # WITH-SKILL but stripped of the procedural prose packaging. If raw SQL
+    # alone matches WITH-SKILL, the gain is "summary of the answer code"
+    # rather than "procedural skill packaging." If raw SQL underperforms
+    # WITH-SKILL, the procedural framing carries non-trivial weight.
+    RAWSQL_TASKS = [
+        "mimic-urine-output-rate",
+        "mimic-urine-output-rate-raw",
+        "mimic-meld-24h",
+        "mimic-meld-24h-raw",
+        "mimic-suspicion-infection",
+        "mimic-suspicion-infection-raw",
+        "mimic-creatinine-baseline",
+        "mimic-creatinine-baseline-raw",
+        "mimic-ventilation",
+        "eicu-oasis",
+    ]
+    t4 = Tier(
+        4,
+        "Raw-SQL matched-content control",
+        "Does the public reference SQL alone match the procedural skill?",
+    )
+    for task in RAWSQL_TASKS:
+        for model in primary_models:
+            for seed in range(1, seeds + 1):
+                t4.runs.append(
+                    dict(
+                        task=task,
+                        condition="with-skill-rawsql",
+                        model=model,
+                        schema="native",
+                        trial=seed,
+                    )
+                )
+    tiers.append(t4)
+
+    # ── Tier 3: decoy-skill matched-context ablation ─────────────────────
+    # Inject a clinically-related but task-mismatched skill on selected
+    # high-delta tasks. If decoy reward >> NO-SKILL, "any task-relevant text
+    # helps" hypothesis survives; if decoy ≈ NO-SKILL, task-specific content
+    # is doing the work.
+    DECOY_TASKS = [
+        "mimic-urine-output-rate",
+        "mimic-urine-output-rate-raw",
+        "mimic-meld-24h",
+        "mimic-meld-24h-raw",
+        "mimic-suspicion-infection",
+        "mimic-suspicion-infection-raw",
+        "mimic-creatinine-baseline",
+        "mimic-creatinine-baseline-raw",
+        "mimic-ventilation",
+        "eicu-oasis",
+    ]
+    t3 = Tier(
+        3,
+        "Decoy-skill matched-context",
+        "Does any task-relevant clinical text help equally?",
+    )
+    for task in DECOY_TASKS:
+        for model in primary_models:
+            for seed in range(1, seeds + 1):
+                t3.runs.append(
+                    dict(
+                        task=task,
+                        condition="with-skill-decoy",
+                        model=model,
+                        schema="native",
+                        trial=seed,
+                    )
+                )
+    tiers.append(t3)
+
+    # ── Tier 5 (Claude only): RAWSQL cross-provider replication ──────────
+    # Selectively replicates the matched-content control on Claude using the
+    # 4 highest-delta Claude sentinel tasks. Sequential, rate-limited, so we
+    # use 3 trials rather than 5 to stay inside a half-day budget.
+    if agent == "claude":
+        CLAUDE_RAWSQL_TASKS = [
+            "mimic-urine-output-rate-raw",
+            "mimic-ventilation",
+            "mimic-creatinine-baseline-raw",
+            "mimic-suspicion-infection",
+        ]
+        t5 = Tier(
+            5,
+            "Claude RAWSQL cross-provider control",
+            "Does the public reference SQL alone match the procedural skill on Claude?",
+        )
+        for task in CLAUDE_RAWSQL_TASKS:
+            for model in primary_models:
+                for seed in range(1, 4):
+                    t5.runs.append(
+                        dict(
+                            task=task,
+                            condition="with-skill-rawsql",
+                            model=model,
+                            schema="native",
+                            trial=seed,
+                        )
+                    )
+        tiers.append(t5)
+
+    return tiers
 
 
 def _build_powered_tiers(seeds: int = SEEDS, agent: str = "codex") -> list[Tier]:
@@ -376,7 +552,7 @@ def _build_powered_tiers(seeds: int = SEEDS, agent: str = "codex") -> list[Tier]
     all_models = model_plan.primary_models
 
     # ── Tier 1: High-delta tasks — high-signal primary model set ───────
-    # The paper's main finding: skills dramatically help on tasks requiring
+    # The primary finding: skills dramatically help on tasks requiring
     # MIMIC-specific implementation knowledge (itemids, string matching,
     # rolling-window algorithms, formula precision).
     t1 = Tier(
@@ -611,7 +787,7 @@ def _scan_existing(results_root: Path) -> dict[str, set[int]]:
     A "completed" run must be publishable, pass the isolation/lint checks, and
     have a recorded reward. Tracking exact trial ids prevents interrupted
     resumes from duplicating already completed seed labels without letting
-    contaminated or failed runs satisfy a paper campaign.
+    contaminated or failed runs satisfy a release-grade campaign.
     """
     completed: dict[str, set[int]] = defaultdict(set)
     if not results_root.exists():
@@ -1049,11 +1225,13 @@ def main():
     )
     parser.add_argument(
         "--profile",
-        choices=["powered", "provider-comparison"],
+        choices=["powered", "provider-comparison", "rerun-v1.1"],
         default="powered",
         help=(
             "Matrix profile: powered is exploratory/pilot-informed; "
-            "provider-comparison is a sparse external-provider sentinel set"
+            "provider-comparison is a sparse external-provider sentinel set; "
+            "rerun-v1.1 is the audited reproduction with NS+WS, NO-SQL, and "
+            "decoy ablations under the disambiguated instruction"
         ),
     )
     parser.add_argument(

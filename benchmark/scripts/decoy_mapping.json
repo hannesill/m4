@@ -1,0 +1,288 @@
+{
+  "decoy_mapping": {
+    "mimic-urine-output-rate": "ventilation-classification",
+    "mimic-urine-output-rate-raw": "ventilation-classification",
+    "mimic-kdigo-48h": "meld-score",
+    "mimic-kdigo-48h-raw": "meld-score",
+    "mimic-creatinine-baseline": "comorbidity-score",
+    "mimic-creatinine-baseline-raw": "comorbidity-score",
+    "mimic-meld-24h": "kdigo-aki-staging",
+    "mimic-meld-24h-raw": "kdigo-aki-staging",
+    "mimic-sofa-24h": "sapsii-score",
+    "mimic-sofa-24h-raw": "sapsii-score",
+    "mimic-sapsii-24h": "oasis-score",
+    "mimic-sapsii-24h-raw": "oasis-score",
+    "mimic-apsiii-24h": "sofa-score",
+    "mimic-apsiii-24h-raw": "sofa-score",
+    "mimic-oasis-24h": "apsiii-score",
+    "mimic-oasis-24h-raw": "apsiii-score",
+    "eicu-oasis": "apsiii-score",
+    "eicu-gcs": "meld-score",
+    "mimic-gcs-24h-raw": "meld-score",
+    "mimic-sirs-24h-raw": "meld-score",
+    "mimic-suspicion-infection": "ventilation-classification",
+    "mimic-suspicion-infection-raw": "ventilation-classification",
+    "mimic-sepsis3-raw": "kdigo-aki-staging",
+    "mimic-charlson-raw": "sofa-score",
+    "mimic-vasopressor-equivalents": "kdigo-aki-staging",
+    "mimic-vasopressor-equivalents-raw": "kdigo-aki-staging",
+    "mimic-ventilation": "suspicion-of-infection",
+    "mimic-ventilation-raw": "suspicion-of-infection"
+  },
+  "summary": [
+    {
+      "task": "mimic-apsiii-24h",
+      "skipped": false,
+      "decoy": "sofa-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "apsiii-score"
+      ]
+    },
+    {
+      "task": "mimic-apsiii-24h-raw",
+      "skipped": false,
+      "decoy": "sofa-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "apsiii-score"
+      ]
+    },
+    {
+      "task": "mimic-charlson-raw",
+      "skipped": false,
+      "decoy": "sofa-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "comorbidity-score"
+      ]
+    },
+    {
+      "task": "mimic-creatinine-baseline",
+      "skipped": false,
+      "decoy": "comorbidity-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "baseline-creatinine"
+      ]
+    },
+    {
+      "task": "mimic-creatinine-baseline-raw",
+      "skipped": false,
+      "decoy": "comorbidity-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "baseline-creatinine"
+      ]
+    },
+    {
+      "task": "eicu-gcs",
+      "skipped": false,
+      "decoy": "meld-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "gcs-calculation"
+      ]
+    },
+    {
+      "task": "mimic-gcs-24h-raw",
+      "skipped": false,
+      "decoy": "meld-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "gcs-calculation"
+      ]
+    },
+    {
+      "task": "mimic-kdigo-48h",
+      "skipped": false,
+      "decoy": "meld-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "kdigo-aki-staging"
+      ]
+    },
+    {
+      "task": "mimic-kdigo-48h-raw",
+      "skipped": false,
+      "decoy": "meld-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "kdigo-aki-staging"
+      ]
+    },
+    {
+      "task": "mimic-meld-24h",
+      "skipped": false,
+      "decoy": "kdigo-aki-staging",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "meld-score"
+      ]
+    },
+    {
+      "task": "mimic-meld-24h-raw",
+      "skipped": false,
+      "decoy": "kdigo-aki-staging",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "meld-score"
+      ]
+    },
+    {
+      "task": "eicu-oasis",
+      "skipped": false,
+      "decoy": "apsiii-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "oasis-score"
+      ]
+    },
+    {
+      "task": "mimic-oasis-24h",
+      "skipped": false,
+      "decoy": "apsiii-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "oasis-score"
+      ]
+    },
+    {
+      "task": "mimic-oasis-24h-raw",
+      "skipped": false,
+      "decoy": "apsiii-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "oasis-score"
+      ]
+    },
+    {
+      "task": "mimic-sapsii-24h",
+      "skipped": false,
+      "decoy": "oasis-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "sapsii-score"
+      ]
+    },
+    {
+      "task": "mimic-sapsii-24h-raw",
+      "skipped": false,
+      "decoy": "oasis-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "sapsii-score"
+      ]
+    },
+    {
+      "task": "mimic-sepsis3-raw",
+      "skipped": false,
+      "decoy": "kdigo-aki-staging",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "sepsis-3-cohort",
+        "sofa-score",
+        "suspicion-of-infection"
+      ]
+    },
+    {
+      "task": "mimic-sirs-24h-raw",
+      "skipped": false,
+      "decoy": "meld-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "sirs-criteria"
+      ]
+    },
+    {
+      "task": "mimic-sofa-24h",
+      "skipped": false,
+      "decoy": "sapsii-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "sofa-score"
+      ]
+    },
+    {
+      "task": "mimic-sofa-24h-raw",
+      "skipped": false,
+      "decoy": "sapsii-score",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "sofa-score"
+      ]
+    },
+    {
+      "task": "mimic-suspicion-infection",
+      "skipped": false,
+      "decoy": "ventilation-classification",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "suspicion-of-infection"
+      ]
+    },
+    {
+      "task": "mimic-suspicion-infection-raw",
+      "skipped": false,
+      "decoy": "ventilation-classification",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "suspicion-of-infection"
+      ]
+    },
+    {
+      "task": "mimic-urine-output-rate",
+      "skipped": false,
+      "decoy": "ventilation-classification",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "urine-output-rate"
+      ]
+    },
+    {
+      "task": "mimic-urine-output-rate-raw",
+      "skipped": false,
+      "decoy": "ventilation-classification",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "urine-output-rate"
+      ]
+    },
+    {
+      "task": "mimic-vasopressor-equivalents",
+      "skipped": false,
+      "decoy": "kdigo-aki-staging",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "vasopressor-equivalents"
+      ]
+    },
+    {
+      "task": "mimic-vasopressor-equivalents-raw",
+      "skipped": false,
+      "decoy": "kdigo-aki-staging",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "vasopressor-equivalents"
+      ]
+    },
+    {
+      "task": "mimic-ventilation",
+      "skipped": false,
+      "decoy": "suspicion-of-infection",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "ventilation-classification"
+      ]
+    },
+    {
+      "task": "mimic-ventilation-raw",
+      "skipped": false,
+      "decoy": "suspicion-of-infection",
+      "rawsql_built": true,
+      "nosql_skills": [
+        "ventilation-classification"
+      ]
+    }
+  ]
+}
