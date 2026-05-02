@@ -86,6 +86,10 @@ benchmark/
   results/         # Run outputs (agent traces, CSVs, result JSON)
 ```
 
+Task definitions are nested as `tasks/{family}/{task-name}/task.toml`. The
+family level is retained even when a family currently has one task, so
+`--family` selection, task listing, and paper tables use one consistent layout.
+
 ## Evaluation Integrity
 
 **Docker via `bench.sh` is the only valid evaluation mode for release-grade

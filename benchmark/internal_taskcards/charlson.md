@@ -49,14 +49,12 @@ Three condition pairs have hierarchy overrides:
 - **Hierarchy logic**: Agent must handle the 3 override pairs correctly
 - **Large specification**: The ICD code mappings make for a lengthy instruction
 
-## Why standard vs raw
+## Why only raw
 
-- **Standard**: `mimiciv_derived.age` is available for age scoring
-- **Raw**: `age` table is dropped; agent must compute age from
-  `patients.anchor_age` and the admittime-to-anchor_year offset
-
-The raw variant is only marginally harder since the core complexity (ICD code mapping)
-uses raw tables in both modes.
+The standard variant was removed because the standard/raw gap was negligible:
+the core complexity (ICD code mapping) uses raw tables in both modes. The
+remaining raw task drops the derived `age` table, so the agent must compute age
+from `patients.anchor_age` and the admittime-to-anchor_year offset.
 
 ## Subtleties to watch for
 
