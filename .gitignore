@@ -84,6 +84,7 @@ Desktop.ini
 m4_data/
 
 notes/
+/paper/
 
 # Benchmark data (large, generated)
 benchmark/shared/ground_truth/
@@ -101,6 +102,7 @@ benchmark/human_eval/
 *.pptx
 
 # Agents
+.agents/
 .claude/
 .research/
 

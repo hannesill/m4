@@ -43,7 +43,7 @@ clinician-reviewed guidance.
 Benchmark skill snapshots are intentionally benchmark-safe: they should not
 include runnable examples that query dropped target concept tables, and they do
 not ship the production SQL scripts. Run `python benchmark/preflight.py` before
-launching a paper campaign to check that this separation still holds.
+launching a release-grade campaign to check that this separation still holds.
 
 A contamination analysis dimension (`--schema`) probes schema memorization by
 running tasks on obfuscated (renamed) and restructured (merged/denormalized)
@@ -88,7 +88,7 @@ benchmark/
 
 ## Evaluation Integrity
 
-**Docker via `bench.sh` is the only valid evaluation mode for paper-quality
+**Docker via `bench.sh` is the only valid evaluation mode for release-grade
 runs.** `benchmark/matrix.py` now uses `bench.sh` by default for execution, so
 matrix-driven campaigns can be publishable as long as they use a fresh
 `--results-root`. Local execution is still useful for development and anomaly
@@ -101,10 +101,10 @@ the task database copied into the workdir. It does not mount `benchmark/tasks`,
 `benchmark/ground_truth`, `benchmark/results`, `benchmark/agent_db`, or the
 obfuscation dictionary.
 
-## Paper Plan
+## Release Plan
 
-The canonical paper-facing execution spec lives in
-`benchmark/PAPER.md`, and `benchmark/matrix.py` contains the current
+The canonical release-facing execution spec lives in this README, and
+`benchmark/matrix.py` contains the current
 pilot-informed execution plan.
 
 ## Usage
@@ -114,10 +114,10 @@ pilot-informed execution plan.
 python benchmark/setup.py --task mimic-sirs-24h
 python benchmark/setup.py --all
 
-# Preflight before paper-quality runs
+# Preflight before release-grade runs
 python benchmark/preflight.py
 
-# Adversarial isolation canary (Docker-backed; run before paper campaigns)
+# Adversarial isolation canary (Docker-backed; run before release-grade campaigns)
 bash benchmark/bench.sh --leak-canary --agent codex --model gpt-5.4-mini --results-root /benchmark/results/canary-YYYYMMDD
 
 # Run a single task
@@ -138,14 +138,14 @@ python benchmark/run.py --task mimic-sirs-24h-raw --condition no-skill --schema 
 # Parallel execution
 python benchmark/run.py --all --condition no-skill --agent claude --parallel 4
 
-# Paper-quality GPT-primary matrix campaign (Docker-backed)
-python benchmark/matrix.py --tier 1 --agent codex --results-root benchmark/results/paper-20260406
+# Release-grade GPT-primary matrix campaign (Docker-backed)
+python benchmark/matrix.py --tier 1 --agent codex --results-root benchmark/results/release-20260406
 
 # Resume an interrupted campaign from the same results root
-python benchmark/matrix.py --tier 1 --agent codex --results-root benchmark/results/paper-20260406 --skip-existing
+python benchmark/matrix.py --tier 1 --agent codex --results-root benchmark/results/release-20260406 --skip-existing
 
 # Sparse external-provider comparison
-python benchmark/matrix.py --profile provider-comparison --agent claude --results-root benchmark/results/paper-20260406-claude-sentinel
+python benchmark/matrix.py --profile provider-comparison --agent claude --results-root benchmark/results/release-20260406-claude-sentinel
 ```
 
 ## Evaluation
@@ -160,7 +160,7 @@ accuracy.
 Ground-truth generation writes deterministic gzipped CSVs plus sidecar
 manifests containing the SQL hash, source DB hash, DuckDB version, row count,
 column list, CSV hash, and sort keys. Preflight validates those manifests so a
-paper run fails closed when ground truth is stale or alias-derived files were
+release-grade run fails closed when ground truth is stale or alias-derived files were
 not reproducibly generated.
 
 ## Supported Agents
@@ -211,7 +211,7 @@ Pass `--reasoning-effort default` to leave each CLI/provider default untouched,
 or an explicit supported level for Codex/Claude ablations.
 
 For Claude campaigns, authenticate with Claude Code itself. Local debugging uses
-the same host login state as `claude -p`. Docker-backed paper runs should first
+the same host login state as `claude -p`. Docker-backed release-grade runs should first
 log Claude into the benchmark image with the helper:
 
 ```bash
@@ -289,7 +289,7 @@ pi --provider ollama --model qwen3:4b -p \
   "Read input.csv. For each row, double the score column. Write the result to output.csv with the same columns and row count. Do not include extra columns. Do not print the CSV; write it to disk."
 ```
 
-For paper-quality Docker runs, host `~/.pi` is optional. `bench.sh` installs Pi
+For release-grade Docker runs, host `~/.pi` is optional. `bench.sh` installs Pi
 in the benchmark image, mounts `~/.pi` read-only only when it exists, and the
 harness creates or rewrites the per-run copy of `.pi/agent/models.json` from
 `M4BENCH_OLLAMA_BASE_URL`. By default that URL is

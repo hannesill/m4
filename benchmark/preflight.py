@@ -1,8 +1,8 @@
-"""Preflight checks for paper-quality M4Bench campaigns.
+"""Preflight checks for release-grade M4Bench campaigns.
 
 Run before launching expensive model runs:
 
-    python benchmark/preflight.py --results-root benchmark/results/paper-YYYYMMDD
+    python benchmark/preflight.py --results-root benchmark/results/release-YYYYMMDD
 
 Use `--ground-truth-self-check` when you also want the slower evaluator
 round-trip over every ground-truth file.
@@ -943,7 +943,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run M4Bench preflight checks")
     parser.add_argument(
         "--results-root",
-        help="Fresh result directory planned for a paper campaign",
+        help="Fresh result directory planned for a release-grade campaign",
     )
     parser.add_argument(
         "--skip-db-check",
