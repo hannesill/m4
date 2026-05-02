@@ -162,6 +162,13 @@ RESULT_EXPORT_SKIP_DIRS = {
     "_home",
 }
 RESULT_EXPORT_MAX_FILE_BYTES = 50 * 1024 * 1024
+REQUIRED_RESULT_ARTIFACTS = {
+    "egress.jsonl",
+    "instruction.md",
+    "output.csv",
+    "result.json",
+    "trace.jsonl",
+}
 TEXT_LINT_SUFFIXES = {
     ".csv",
     ".json",
@@ -1363,6 +1370,8 @@ def _should_export_result_path(path: Path) -> bool:
         return path.name not in RESULT_EXPORT_SKIP_DIRS
     if _is_database_artifact(path):
         return False
+    if path.name in REQUIRED_RESULT_ARTIFACTS:
+        return True
     if path.stat().st_size > RESULT_EXPORT_MAX_FILE_BYTES:
         return False
     return True
