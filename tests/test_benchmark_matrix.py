@@ -131,6 +131,8 @@ def test_scan_existing_tracks_completed_trial_ids(tmp_path):
     matrix = _load_module("benchmark_matrix_scan_existing", "benchmark/matrix.py")
     result_dir = tmp_path / "run"
     result_dir.mkdir()
+    (result_dir / "output.csv").write_text("stay_id,score\n1,0\n")
+    (result_dir / "trace.jsonl").write_text("{}\n")
     (result_dir / "result.json").write_text(
         json.dumps(
             {

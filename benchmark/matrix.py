@@ -814,6 +814,10 @@ def _scan_existing(results_root: Path) -> dict[str, set[int]]:
 
         if not _is_publishable_completed_result(data):
             continue
+        if not (result_file.parent / "output.csv").is_file():
+            continue
+        if not (result_file.parent / "trace.jsonl").is_file():
+            continue
         try:
             trial = int(data.get("trial"))
         except (TypeError, ValueError):
