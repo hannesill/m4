@@ -1409,9 +1409,9 @@ def copy_results_back(
         _copy_result_item(item, results_dir / item.name)
 
 
-def _should_export_run_record(*, publishable: bool, agent_result: dict) -> bool:
+def _should_export_run_record(*, publishable: bool, contamination_clean: bool) -> bool:
     """Return whether a completed task run should appear in results discovery."""
-    return publishable is True and not agent_result.get("failure_reason")
+    return publishable is True and contamination_clean is True
 
 
 def _reset_workdir_for_retry(workdir: Path) -> None:
@@ -2576,15 +2576,10 @@ def run_single_task(
         print(f"{'=' * 60}")
         print(f"\nPytest output:\n{test_results.get('pytest_output', '')}")
 
-        # Decouple artifact retention from strict diagnostic pass. We keep
-        # output.csv + trace.jsonl whenever the run is contamination-clean and
-        # the agent did not trip an explicit failure reason. This preserves
-        # partial-correct attempts for audit while still redacting traces from
-        # contaminated/failure runs (sanitize_agent_result_for_storage handles
-        # the stricter stdout/stderr redaction below via export_full_artifacts).
-        export_full_artifacts = contamination_lint.get(
-            "passed"
-        ) is True and not agent_result.get("failure_reason")
+        # Decouple artifact retention from task success. A timeout or nonzero
+        # agent exit is still a benchmark attempt and must keep its trace when
+        # the run passed isolation and contamination checks.
+        export_full_artifacts = contamination_lint.get("passed") is True
 
         token_usage = aggregate_token_usage(
             agent_name, agent_result.get("trace_file", "")
@@ -2648,7 +2643,7 @@ def run_single_task(
             json.dump(full_result, f, indent=2, default=str)
         export_result_record = _should_export_run_record(
             publishable=publishable,
-            agent_result=agent_result,
+            contamination_clean=contamination_lint.get("passed") is True,
         )
         print(f"\nFull result saved to: {result_file}")
 
