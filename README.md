@@ -290,6 +290,7 @@ M4 exposes these tools to your AI client. Tools are filtered based on the active
 | [Tools Reference](docs/TOOLS.md) | MCP tool documentation |
 | [BigQuery Setup](docs/BIGQUERY.md) | Google Cloud for full datasets |
 | [Custom Datasets](docs/CUSTOM_DATASETS.md) | Add your own PhysioNet datasets |
+| [M4Bench Reproducibility](benchmark/REPRODUCIBILITY.md) | Reviewer workflow for MIMIC-IV/eICU initialization and benchmark reruns |
 | [Development](docs/DEVELOPMENT.md) | Contributing, testing, code style |
 | [OAuth2 Authentication](docs/OAUTH2_AUTHENTICATION.md) | Enterprise security setup |
 

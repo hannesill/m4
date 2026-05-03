@@ -14,8 +14,8 @@ from collections.abc import Iterable
 from pathlib import Path
 
 BENCHMARK_ROOT = Path(__file__).resolve().parent
-DEFAULT_RESULTS_ROOT = BENCHMARK_ROOT / "results" / "codex-full-20260428"
-DEFAULT_PROFILE = "powered"
+DEFAULT_RESULTS_ROOT = BENCHMARK_ROOT / "results" / "codex-rerun-v1.1"
+DEFAULT_PROFILE = "rerun-v1.1"
 
 
 def run_key(row: dict) -> tuple:
@@ -812,7 +812,10 @@ def main() -> None:
         "--profile",
         default=DEFAULT_PROFILE,
         choices=["powered", "provider-comparison", "rerun-v1.1"],
-        help="Matrix profile used to check completeness and assign tiers.",
+        help=(
+            "Matrix profile used to check completeness and assign tiers. "
+            "Defaults to the audited v1.1 submission profile."
+        ),
     )
     parser.add_argument("--agent", default="codex")
     parser.add_argument("--seeds", type=int, default=5)

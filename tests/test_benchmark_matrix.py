@@ -39,6 +39,20 @@ def test_build_tiers_uses_agent_specific_codex_models():
     assert models == {"gpt-5.5", "gpt-5.4-mini"}
 
 
+def test_default_profile_is_audited_v1_1_alias():
+    matrix = _load_module("benchmark_matrix_default_profile", "benchmark/matrix.py")
+    _reset_task_globals(matrix)
+    matrix._classify_tasks()
+
+    default_tiers = matrix.build_tiers(seeds=1, agent="codex")
+    explicit_tiers = matrix.build_tiers(seeds=1, agent="codex", profile="rerun-v1.1")
+
+    default_runs = [run for tier in default_tiers for run in tier.runs]
+    explicit_runs = [run for tier in explicit_tiers for run in tier.runs]
+    assert matrix.DEFAULT_PROFILE == "rerun-v1.1"
+    assert default_runs == explicit_runs
+
+
 def _seed_contamination_db_markers(matrix, tmp_path: Path, task_names: list[str]):
     matrix.AGENT_DB_DIR = tmp_path
     for task_name in task_names:

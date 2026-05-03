@@ -805,6 +805,15 @@ def test_lint_run_contamination_flags_sensitive_paths(monkeypatch, tmp_path):
     assert any("/benchmark/ground_truth" in item for item in result["violations"])
 
 
+def _stub_ground_truth(monkeypatch, tmp_path):
+    import evaluate
+
+    ground_truth = tmp_path / "ground_truth.csv"
+    ground_truth.write_text("stay_id,score\n1,3\n")
+    monkeypatch.setattr(evaluate, "resolve_ground_truth", lambda _task: ground_truth)
+    return ground_truth
+
+
 def test_lint_run_contamination_allows_codex_auth_seed(monkeypatch, tmp_path):
     run = _load_module("benchmark_run_contamination_lint_auth", "benchmark/run.py")
 
@@ -815,6 +824,7 @@ def test_lint_run_contamination_allows_codex_auth_seed(monkeypatch, tmp_path):
         '{"tokens": {"access_token": "abcdefghijklmnopqrstuvwxyz"}}\n'
     )
     (workdir / "output.csv").write_text("stay_id,score\n1,2\n")
+    _stub_ground_truth(monkeypatch, tmp_path)
     monkeypatch.setattr(run, "_sha256_file", lambda path: str(path))
 
     result = run.lint_run_contamination(
@@ -836,6 +846,7 @@ def test_lint_run_contamination_ignores_harness_runtime_files(monkeypatch, tmp_p
     (workdir / ".codex").mkdir()
     (workdir / ".codex" / "state.sqlite").write_text("sqlite")
     (workdir / "output.csv").write_text("stay_id,score\n1,2\n")
+    _stub_ground_truth(monkeypatch, tmp_path)
     monkeypatch.setattr(run, "_sha256_file", lambda path: str(path))
 
     result = run.lint_run_contamination(

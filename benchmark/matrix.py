@@ -1,9 +1,9 @@
 """Smart experiment matrix for M4Bench.
 
 Runs principled ablations across models, conditions, and schemas without
-doing a naive cartesian product.  Each tier answers a specific scientific
-question; the default powered profile concentrates statistical power on the
-GPT-backed Codex models.
+doing a naive cartesian product. Each tier answers a specific scientific
+question; the default profile is the audited v1.1 submission profile. The
+legacy `powered` profile remains available for exploratory comparisons.
 
 Usage:
     # Preview what would run (dry-run)
@@ -314,8 +314,11 @@ def _run_via_bench(
     )
 
 
+DEFAULT_PROFILE = "rerun-v1.1"
+
+
 def build_tiers(
-    seeds: int = SEEDS, agent: str = "codex", profile: str = "powered"
+    seeds: int = SEEDS, agent: str = "codex", profile: str = DEFAULT_PROFILE
 ) -> list[Tier]:
     """Build the requested experiment matrix profile."""
     if profile == "powered":
@@ -1226,12 +1229,13 @@ def main():
     parser.add_argument(
         "--profile",
         choices=["powered", "provider-comparison", "rerun-v1.1"],
-        default="powered",
+        default=DEFAULT_PROFILE,
         help=(
-            "Matrix profile: powered is exploratory/pilot-informed; "
+            "Matrix profile: rerun-v1.1 is the default audited submission "
+            "profile with NS+WS, NO-SQL, raw-SQL, and decoy ablations; "
+            "powered is exploratory/pilot-informed; "
             "provider-comparison is a sparse external-provider sentinel set; "
-            "rerun-v1.1 is the audited reproduction with NS+WS, NO-SQL, and "
-            "decoy ablations under the disambiguated instruction"
+            "rerun-v1.1 is retained as an explicit stable alias for provenance"
         ),
     )
     parser.add_argument(

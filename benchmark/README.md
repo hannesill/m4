@@ -108,8 +108,14 @@ obfuscation dictionary.
 ## Release Plan
 
 The canonical release-facing execution spec lives in this README, and
-`benchmark/matrix.py` contains the current
-pilot-informed execution plan.
+`benchmark/matrix.py` contains the current execution plan. The default matrix
+profile is the audited v1.1 submission profile. The explicit
+`--profile rerun-v1.1` flag is retained as a stable alias for provenance.
+
+For a fresh-machine reviewer workflow covering PhysioNet downloads, `m4 init`
+for MIMIC-IV and eICU, benchmark artifact generation, canary checks, full
+campaign execution, and analysis export, see
+[`REPRODUCIBILITY.md`](REPRODUCIBILITY.md).
 
 ## Usage
 
@@ -142,11 +148,14 @@ python benchmark/run.py --task mimic-sirs-24h-raw --condition no-skill --schema 
 # Parallel execution
 python benchmark/run.py --all --condition no-skill --agent claude --parallel 4
 
-# Release-grade GPT-primary matrix campaign (Docker-backed)
-python benchmark/matrix.py --tier 1 --agent codex --results-root benchmark/results/release-20260406
+# Release-grade audited v1.1 matrix campaign (Docker-backed by default)
+python benchmark/matrix.py --tier all --agent codex --results-root benchmark/results/codex-rerun-v1.1
 
 # Resume an interrupted campaign from the same results root
-python benchmark/matrix.py --tier 1 --agent codex --results-root benchmark/results/release-20260406 --skip-existing
+python benchmark/matrix.py --tier all --agent codex --results-root benchmark/results/codex-rerun-v1.1 --skip-existing
+
+# Equivalent explicit provenance form
+python benchmark/matrix.py --profile rerun-v1.1 --tier all --agent codex --results-root benchmark/results/codex-rerun-v1.1
 
 # Sparse external-provider comparison
 python benchmark/matrix.py --profile provider-comparison --agent claude --results-root benchmark/results/release-20260406-claude-sentinel
@@ -197,16 +206,15 @@ configuration without copying unrelated auth files.
 - Gemini: `gemini-3.1-pro-preview`, `gemini-3-flash-preview`
 - Pi/Ollama: `qwen3:4b`
 
-The default matrix profile is GPT-primary: run the powered campaign with
-`--agent codex`, then use `--profile provider-comparison` for sparse Claude or
-Gemini sentinel runs. `pi-ollama` is the Tier 3 OSS local-model baseline for
+The default matrix profile is the audited v1.1 GPT-primary submission profile:
+run it with `--agent codex`, then use `--profile provider-comparison` for sparse
+Claude or Gemini sentinel runs. `pi-ollama` is the OSS local-model baseline for
 zero-API-cost reproducibility. Provider-comparison runs are supplementary and
 should not be described as powered benchmark-wide estimates.
 
-Because the powered matrix is pilot-informed and uses different seed counts by
-tier, final reporting should pre-register equal task/cell weighting or
-tier-specific estimands. Do not report naive run-weighted averages as headline
-effects.
+Because matrix profiles can allocate different numbers of runs by tier, final
+reporting should pre-register equal task/cell weighting or tier-specific
+estimands. Do not report naive run-weighted averages as headline effects.
 
 Reasoning policy is pinned by default through `--reasoning-effort auto`: Codex
 and Claude Code run at `medium`, while Gemini CLI and `pi-ollama` are recorded
