@@ -785,9 +785,9 @@ def _scan_existing(results_root: Path) -> dict[str, set[int]]:
     """Scan results/ for completed runs. Returns {run_key: completed_trials}.
 
     A "completed" run must be publishable, pass the isolation/lint checks, and
-    have a recorded reward. Tracking exact trial ids prevents interrupted
-    resumes from duplicating already completed seed labels without letting
-    contaminated or failed runs satisfy a release-grade campaign.
+    have a recorded reward. Agent timeouts and nonzero exits are still recorded
+    benchmark attempts with reward 0; counting them prevents resume from
+    replaying fixed trial ids indefinitely.
     """
     completed: dict[str, set[int]] = defaultdict(set)
     if not results_root.exists():
@@ -838,11 +838,7 @@ def _is_publishable_completed_result(data: dict) -> bool:
         return False
     if data.get("publishable") is not True:
         return False
-    if agent_result.get("failure_reason"):
-        return False
-    if agent_result.get("returncode") != 0:
-        return False
-    if test_results.get("errors", 0) != 0:
+    if test_results.get("errors", 0) != 0 and not agent_result.get("failure_reason"):
         return False
     if not agent_db.get("path") or not agent_db.get("sha256"):
         return False

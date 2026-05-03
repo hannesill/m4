@@ -167,15 +167,15 @@ def test_failed_runs_are_excluded_from_results_discovery():
 
     assert run._should_export_run_record(
         publishable=True,
-        agent_result={"returncode": 0},
+        contamination_clean=True,
     )
     assert not run._should_export_run_record(
         publishable=True,
-        agent_result={"returncode": 0, "failure_reason": "contamination_lint"},
+        contamination_clean=False,
     )
     assert not run._should_export_run_record(
         publishable=False,
-        agent_result={"returncode": 0},
+        contamination_clean=True,
     )
 
 
