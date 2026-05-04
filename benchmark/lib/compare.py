@@ -143,9 +143,30 @@ def compare_derived_tables(
             or hallucinated output is invisible to match_rate but shows up
             here.
     """
-    tolerance = tolerance or {}
     agent_df = read_benchmark_csv(agent_output_path)
     truth_df = read_benchmark_csv(ground_truth_path)
+    return compare_derived_frames(
+        agent_df,
+        truth_df,
+        key_columns=key_columns,
+        value_columns=value_columns,
+        tolerance=tolerance,
+    )
+
+
+def compare_derived_frames(
+    agent_df: pd.DataFrame,
+    truth_df: pd.DataFrame,
+    key_columns: list[str],
+    value_columns: list[str],
+    tolerance: dict[str, float] | None = None,
+) -> dict:
+    """Compare already-loaded agent and ground-truth tables.
+
+    This is the same scoring implementation as compare_derived_tables(), but
+    lets the benchmark harness avoid rereading large CSVs for each diagnostic.
+    """
+    tolerance = tolerance or {}
 
     required_columns = set(key_columns) | set(value_columns)
     missing_agent_columns = [col for col in required_columns if col not in agent_df]
@@ -174,15 +195,6 @@ def compare_derived_tables(
     agent_rows_raw = len(agent_df)
     agent_dupes = int(agent_df.duplicated(subset=key_columns).sum())
     agent_df = agent_df.drop_duplicates(subset=key_columns, keep="first")
-    truth_keys = truth_df[key_columns].drop_duplicates()
-    agent_keys = agent_df[key_columns].drop_duplicates()
-    extra_keys = agent_keys.merge(
-        truth_keys, on=key_columns, how="left", indicator=True
-    )
-    extra_keys = extra_keys[extra_keys["_merge"] == "left_only"].drop(
-        columns=["_merge"]
-    )
-    extra_rows = len(extra_keys)
 
     # --- Key-level cohort diagnostics (precision complement to match_rate) ---
     truth_keys = set(
@@ -194,6 +206,7 @@ def compare_derived_tables(
     agent_unique_keys = len(agent_keys)
     agent_keys_in_truth = len(agent_keys & truth_keys)
     extra_keys = agent_unique_keys - agent_keys_in_truth
+    extra_rows = extra_keys
     key_precision = (
         agent_keys_in_truth / agent_unique_keys if agent_unique_keys > 0 else 0.0
     )

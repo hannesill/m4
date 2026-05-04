@@ -2574,7 +2574,7 @@ def run_single_task(
         print(f"Results: {test_results['passed']}/{test_results['total']} tests passed")
         print(f"Reward: {test_results['reward']}")
         print(f"{'=' * 60}")
-        print(f"\nPytest output:\n{test_results.get('pytest_output', '')}")
+        print(f"\nDiagnostic output:\n{test_results.get('pytest_output', '')}")
 
         # Decouple artifact retention from task success. A timeout or nonzero
         # agent exit is still a benchmark attempt and must keep its trace when

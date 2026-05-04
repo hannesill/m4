@@ -1,14 +1,43 @@
-"""Run pytest evaluation and parse results."""
+"""Run benchmark diagnostics without invoking pytest in the hot path."""
 
 from __future__ import annotations
 
-import os
-import re
-import subprocess
-import sys
 from pathlib import Path
 
-TEST_FILE = Path(__file__).parent / "test_task.py"
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
+
+try:
+    from .compare import (
+        compare_derived_frames,
+        read_benchmark_csv,
+        scored_value_columns,
+    )
+except ImportError:  # pragma: no cover - supports direct script-style imports.
+    from compare import (
+        compare_derived_frames,
+        read_benchmark_csv,
+        scored_value_columns,
+    )
+
+
+def _format_status(name: str, passed: bool, detail: str = "") -> str:
+    status = "PASSED" if passed else "FAILED"
+    return f"{name:<52s} {status}{(': ' + detail) if detail else ''}"
+
+
+def _empty_result(error: str) -> dict:
+    return {
+        "passed": 0,
+        "failed": 0,
+        "errors": 1,
+        "total": 1,
+        "reward": 0.0,
+        "pytest_output": f"Benchmark diagnostics errored: {error}",
+        "pytest_stderr": "",
+    }
 
 
 def run_tests(
@@ -16,69 +45,151 @@ def run_tests(
     output_path: str | Path,
     ground_truth_path: str | Path,
 ) -> dict:
-    """Run pytest on test_task.py and return parsed results.
+    """Run task diagnostics and return pytest-compatible result fields.
 
-    Args:
-        task_dir: Path to the task directory (contains task.toml).
-        output_path: Path to agent's output CSV.
-        ground_truth_path: Path to ground truth CSV.
-
-    Returns:
-        Dict with passed, failed, errors, total, reward, pytest_output, pytest_stderr.
+    The benchmark used to shell out to pytest for these checks. This in-process
+    runner preserves the same pass/fail semantics while reading and comparing
+    large output tables once per evaluation.
     """
-    env = {
-        **os.environ,
-        "TASK_DIR": str(task_dir),
-        "AGENT_OUTPUT_PATH": str(output_path),
-        "GROUND_TRUTH_PATH": str(ground_truth_path),
-    }
+    task_dir = Path(task_dir)
+    output_path = Path(output_path)
+    ground_truth_path = Path(ground_truth_path)
 
-    # Prefer the venv Python so pytest/pandas are available even when
-    # the harness is invoked via a bare `python` outside the venv.
-    venv_python = Path(__file__).resolve().parents[2] / ".venv" / "bin" / "python"
-    python = str(venv_python) if venv_python.exists() else sys.executable
+    try:
+        with open(task_dir / "task.toml", "rb") as f:
+            config = tomllib.load(f)
+        eval_config = config["evaluation"]
+        key_columns = eval_config["key_columns"]
+        value_columns = eval_config["value_columns"]
+        score_columns = scored_value_columns(eval_config)
+        required_columns = eval_config.get(
+            "required_columns", key_columns + value_columns
+        )
+        row_coverage_threshold = eval_config.get("row_coverage_threshold", 0.95)
+        accuracy_threshold = eval_config.get("accuracy_threshold", 0.90)
+        tolerance = eval_config.get("tolerance", {})
+    except Exception as exc:
+        return _empty_result(str(exc))
 
-    result = subprocess.run(
-        [
-            python,
-            "-m",
-            "pytest",
-            str(TEST_FILE),
-            "-v",
-            "--tb=short",
-            "--no-header",
-        ],
-        capture_output=True,
-        text=True,
-        env=env,
+    checks: list[tuple[str, bool, str]] = []
+    comparison: dict | None = None
+
+    exists = output_path.exists()
+    checks.append(
+        (
+            "test_output_exists",
+            exists,
+            "" if exists else f"Output file not found: {output_path}",
+        )
+    )
+    if not exists:
+        output = "\n".join(_format_status(*check) for check in checks)
+        failed = sum(not passed for _, passed, _ in checks)
+        return {
+            "passed": 0,
+            "failed": failed,
+            "errors": 0,
+            "total": len(checks),
+            "reward": 0.0,
+            "pytest_output": output,
+            "pytest_stderr": "",
+        }
+
+    try:
+        agent_df = read_benchmark_csv(str(output_path))
+        truth_df = read_benchmark_csv(str(ground_truth_path))
+    except Exception as exc:
+        return _empty_result(f"CSV read failed: {exc}")
+
+    nonempty = len(agent_df) > 0
+    checks.append(
+        (
+            "test_output_is_valid_csv",
+            nonempty,
+            "" if nonempty else "Output CSV is empty",
+        )
     )
 
-    # Detect pytest infrastructure failures (e.g. missing pytest module)
-    if result.returncode != 0 and not result.stdout.strip():
-        detail = result.stderr.strip() or f"pytest exited with code {result.returncode}"
-        raise RuntimeError(f"Pytest failed to run: {detail}")
+    missing_required = [col for col in required_columns if col not in agent_df.columns]
+    checks.append(
+        (
+            "test_has_required_columns",
+            not missing_required,
+            ""
+            if not missing_required
+            else f"Missing columns: {missing_required}. Got: {list(agent_df.columns)}",
+        )
+    )
 
-    passed = failed = errors = 0
-    for line in result.stdout.strip().split("\n"):
-        m = re.search(r"(\d+) passed", line)
-        if m:
-            passed = int(m.group(1))
-        m = re.search(r"(\d+) failed", line)
-        if m:
-            failed = int(m.group(1))
-        m = re.search(r"(\d+) error", line)
-        if m:
-            errors = int(m.group(1))
+    try:
+        comparison = compare_derived_frames(
+            agent_df,
+            truth_df,
+            key_columns=key_columns,
+            value_columns=score_columns,
+            tolerance=tolerance,
+        )
+    except Exception as exc:
+        return _empty_result(f"Comparison failed: {exc}")
 
-    total = passed + failed + errors
-    reward = passed / total if total > 0 else 0.0
+    meta = comparison.get("__meta__", {})
+    truth_rows = int(meta.get("truth_rows", 0))
+    matched_keys = int(meta.get("agent_keys_in_truth", 0))
+    coverage = matched_keys / truth_rows if truth_rows else 0.0
+    checks.append(
+        (
+            "test_row_coverage",
+            coverage >= row_coverage_threshold,
+            ""
+            if coverage >= row_coverage_threshold
+            else (
+                f"Only {coverage:.1%} of ground truth keys matched "
+                f"({matched_keys}/{truth_rows}). "
+                f"Need >= {row_coverage_threshold:.0%}."
+            ),
+        )
+    )
+
+    if comparison is None:
+        return _empty_result("Comparison did not produce results")
+
+    for column in score_columns:
+        result = comparison[column]
+        rate = result["match_rate"]
+        passed = rate >= accuracy_threshold
+        detail = ""
+        if not passed:
+            detail = (
+                f"{column}: {rate:.1%} match rate "
+                f"({result['matched']}/{result['total']}). "
+                f"Need >= {accuracy_threshold:.0%}. "
+                f"Examples: {result['mismatched_examples']}"
+            )
+            if "error" in result:
+                detail = f"{detail} Error: {result['error']}"
+        checks.append((f"test_score_accuracy[{column}]", passed, detail))
+
+    passed_count = sum(1 for _, passed, _ in checks if passed)
+    failed_count = len(checks) - passed_count
+    reward = passed_count / len(checks) if checks else 0.0
+    output_lines = [
+        "Benchmark diagnostics",
+        f"task_dir={task_dir}",
+        f"output={output_path}",
+        f"ground_truth={ground_truth_path}",
+        "",
+        *(_format_status(*check) for check in checks),
+        "",
+        f"{passed_count} passed, {failed_count} failed, 0 errors",
+    ]
 
     return {
-        "passed": passed,
-        "failed": failed,
-        "errors": errors,
-        "total": total,
+        "passed": passed_count,
+        "failed": failed_count,
+        "errors": 0,
+        "total": len(checks),
         "reward": round(reward, 4),
-        "pytest_output": result.stdout,
-        "pytest_stderr": result.stderr,
+        "pytest_output": "\n".join(output_lines),
+        "pytest_stderr": "",
+        "_comparison": comparison,
     }
