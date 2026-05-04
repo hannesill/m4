@@ -74,6 +74,29 @@ CONTAMINATION_TASKS: list[str] = []  # raw tasks with validated obfuscated DBs
 
 AGENT_DB_DIR = BENCHMARK_ROOT / "agent_db"
 
+# Coarse duration priors from completed benchmark campaigns. They affect only
+# scheduling order, never task selection, prompts, scoring, or analysis.
+TASK_DURATION_PRIOR_SECONDS = {
+    "mimic-sepsis3-raw": 11 * 60,
+    "mimic-urine-output-rate-raw": 10 * 60,
+    "mimic-suspicion-infection-raw": 8 * 60,
+    "mimic-sofa-24h-raw": 8 * 60,
+    "mimic-apsiii-24h-raw": 7 * 60,
+    "mimic-sapsii-24h-raw": 7 * 60,
+    "mimic-urine-output-rate": 6 * 60,
+    "mimic-ventilation-raw": 5 * 60,
+    "mimic-kdigo-48h-raw": 5 * 60,
+}
+
+CONDITION_DURATION_MULTIPLIER = {
+    "no-skill": 1.15,
+    "with-skill-all": 1.10,
+    "with-skill": 1.0,
+    "with-skill-nosql": 1.0,
+    "with-skill-decoy": 0.95,
+    "with-skill-rawsql": 0.85,
+}
+
 
 def _classify_tasks() -> None:
     """Populate task lists from task.toml metadata."""
@@ -246,6 +269,7 @@ def _run_via_bench(
     retry_delay_seconds: int = 15,
     wait_on_claude_rate_limit: bool = False,
     reasoning_effort: str = BENCHMARK_REASONING_EFFORT,
+    skip_preflight: bool = False,
 ) -> dict:
     """Execute one publishable run by invoking bench.sh on the host."""
     bench_script = BENCHMARK_ROOT / "bench.sh"
@@ -283,6 +307,8 @@ def _run_via_bench(
         **os.environ,
         "M4BENCH_CONTAINER_NAME": container_name,
     }
+    if skip_preflight:
+        env["M4BENCH_SKIP_PREFLIGHT"] = "1"
 
     started_after = time.time()
     proc = subprocess.run(cmd, cwd=str(BENCHMARK_ROOT.parent), env=env)
@@ -312,6 +338,22 @@ def _run_via_bench(
         f"(exit code {proc.returncode}) for {run['task']} "
         f"trial={run['trial']} condition={condition} model={model} schema={schema}"
     )
+
+
+def _run_campaign_preflight(results_root: Path) -> None:
+    """Run release preflight once before a Docker-backed matrix campaign."""
+    from preflight import print_results, run_checks
+
+    print("\nRunning campaign preflight checks once for this matrix...")
+    results = run_checks(
+        results_root=str(results_root),
+        check_dbs=True,
+        self_check_ground_truth=False,
+        allow_existing_results_root=True,
+    )
+    print_results(results)
+    if not all(result.ok for result in results):
+        raise RuntimeError("Campaign preflight failed")
 
 
 DEFAULT_PROFILE = "rerun-v1.1"
@@ -891,6 +933,7 @@ def _run_tier(
     retry_delay_seconds: int = 15,
     wait_on_claude_rate_limit: bool = False,
     docker_execution: bool = True,
+    skip_per_run_preflight: bool = False,
 ) -> None:
     """Execute a single tier."""
     runs = tier.runs
@@ -908,73 +951,87 @@ def _run_tier(
         print("  Nothing to run — all cells satisfied.\n")
         return
 
-    # Group by (condition, model, schema) since run.py operates on one
-    # condition+model+schema at a time.
+    if dry_run:
+        _print_dry_run_groups(runs)
+        return
+
+    scheduled_runs = _schedule_runs(runs)
+    print(
+        f"\n  Scheduling {len(scheduled_runs)} runs globally "
+        f"with parallel={parallel} (slow-task-first)"
+    )
+
+    if parallel > 1:
+        _run_runs_parallel(
+            scheduled_runs,
+            parallel,
+            no_isolation,
+            agent,
+            reasoning_effort,
+            results_root,
+            max_retries=max_retries,
+            retry_delay_seconds=retry_delay_seconds,
+            wait_on_claude_rate_limit=wait_on_claude_rate_limit,
+            docker_execution=docker_execution,
+            skip_per_run_preflight=skip_per_run_preflight,
+        )
+    else:
+        _run_runs_sequential(
+            scheduled_runs,
+            no_isolation,
+            agent,
+            reasoning_effort,
+            results_root,
+            delay_between_runs_seconds=delay_between_runs_seconds,
+            max_retries=max_retries,
+            retry_delay_seconds=retry_delay_seconds,
+            wait_on_claude_rate_limit=wait_on_claude_rate_limit,
+            docker_execution=docker_execution,
+            skip_per_run_preflight=skip_per_run_preflight,
+        )
+
+
+def _print_dry_run_groups(runs: list[dict]) -> None:
+    """Display planned cells grouped by condition/model/schema."""
     groups: dict[tuple, list[dict]] = defaultdict(list)
     for run in runs:
-        key = (run["condition"], run["model"], run["schema"])
-        groups[key].append(run)
+        groups[(run["condition"], run["model"], run["schema"])].append(run)
 
     for (condition, model, schema), group_runs in sorted(groups.items()):
         task_trials: dict[str, list[int]] = defaultdict(list)
-        for r in group_runs:
-            task_trials[r["task"]].append(r["trial"])
-
-        # Build unique task list preserving order
-        tasks = list(dict.fromkeys(r["task"] for r in group_runs))
-
-        label = f"condition={condition} model={model} schema={schema}"
-        print(f"\n  {label}")
+        for run in group_runs:
+            task_trials[run["task"]].append(run["trial"])
+        tasks = list(dict.fromkeys(run["task"] for run in group_runs))
+        print(f"\n  condition={condition} model={model} schema={schema}")
         print(f"  Tasks: {len(tasks)}, Runs: {len(group_runs)}")
-
-        if dry_run:
-            for task in tasks:
-                trials = sorted(task_trials[task])
-                print(f"    {task:<40s} trials {trials}")
-            continue
-
-        # Build the run.py command.  We invoke run.py per-group because it
-        # handles --seeds and --parallel internally.
-
-        if parallel > 1:
-            _run_group_parallel(
-                group_runs,
-                condition,
-                model,
-                schema,
-                parallel,
-                no_isolation,
-                agent,
-                reasoning_effort,
-                results_root,
-                max_retries=max_retries,
-                retry_delay_seconds=retry_delay_seconds,
-                wait_on_claude_rate_limit=wait_on_claude_rate_limit,
-                docker_execution=docker_execution,
-            )
-        else:
-            _run_group_sequential(
-                group_runs,
-                condition,
-                model,
-                schema,
-                no_isolation,
-                agent,
-                reasoning_effort,
-                results_root,
-                delay_between_runs_seconds=delay_between_runs_seconds,
-                max_retries=max_retries,
-                retry_delay_seconds=retry_delay_seconds,
-                wait_on_claude_rate_limit=wait_on_claude_rate_limit,
-                docker_execution=docker_execution,
-            )
+        for task in tasks:
+            trials = sorted(task_trials[task])
+            print(f"    {task:<40s} trials {trials}")
 
 
-def _run_group_sequential(
+def _estimated_run_seconds(run: dict) -> float:
+    base = TASK_DURATION_PRIOR_SECONDS.get(run["task"], 4 * 60)
+    condition_multiplier = CONDITION_DURATION_MULTIPLIER.get(run["condition"], 1.0)
+    return base * condition_multiplier
+
+
+def _schedule_runs(runs: list[dict]) -> list[dict]:
+    """Return a stable slow-task-first run order for better worker utilization."""
+    return sorted(
+        runs,
+        key=lambda run: (
+            -_estimated_run_seconds(run),
+            run["task"],
+            run["condition"],
+            run["model"],
+            run["schema"],
+            run["trial"],
+        ),
+    )
+
+
+def _run_runs_sequential(
     runs: list[dict],
-    condition: str,
-    model: str,
-    schema: str,
     no_isolation: bool,
     agent: str = "claude",
     reasoning_effort: str = BENCHMARK_REASONING_EFFORT,
@@ -984,38 +1041,43 @@ def _run_group_sequential(
     retry_delay_seconds: int = 15,
     wait_on_claude_rate_limit: bool = False,
     docker_execution: bool = True,
+    skip_per_run_preflight: bool = False,
 ) -> None:
-    """Run a group of runs sequentially."""
+    """Run scheduled runs sequentially."""
     from run import run_single_task
 
     isolated = not no_isolation
     results_root = results_root or RESULTS_DIR
     for i, run in enumerate(runs, 1):
-        print(f"\n  [{i}/{len(runs)}] {run['task']} trial={run['trial']}")
+        print(
+            f"\n  [{i}/{len(runs)}] {run['task']} {run['condition']} "
+            f"{run['model']} trial={run['trial']}"
+        )
         try:
             if docker_execution:
                 result = _run_via_bench(
                     run,
-                    condition,
-                    model,
-                    schema,
+                    run["condition"],
+                    run["model"],
+                    run["schema"],
                     agent,
                     results_root,
                     reasoning_effort=reasoning_effort,
                     max_retries=max_retries,
                     retry_delay_seconds=retry_delay_seconds,
                     wait_on_claude_rate_limit=wait_on_claude_rate_limit,
+                    skip_preflight=skip_per_run_preflight,
                 )
             else:
                 result = run_single_task(
                     run["task"],
-                    condition,
+                    run["condition"],
                     agent,
-                    model,
+                    run["model"],
                     run["trial"],
                     verbose=False,
                     isolated=isolated,
-                    schema=schema,
+                    schema=run["schema"],
                     results_root=results_root,
                     max_retries=max_retries,
                     retry_delay_seconds=retry_delay_seconds,
@@ -1038,11 +1100,8 @@ def _run_group_sequential(
             print(f"    -> ERROR: {e}")
 
 
-def _run_group_parallel(
+def _run_runs_parallel(
     runs: list[dict],
-    condition: str,
-    model: str,
-    schema: str,
     max_workers: int,
     no_isolation: bool,
     agent: str = "claude",
@@ -1052,8 +1111,9 @@ def _run_group_parallel(
     retry_delay_seconds: int = 15,
     wait_on_claude_rate_limit: bool = False,
     docker_execution: bool = True,
+    skip_per_run_preflight: bool = False,
 ) -> None:
-    """Run a group of runs in parallel."""
+    """Run scheduled runs in a global parallel queue."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     from run import run_single_task
@@ -1068,25 +1128,26 @@ def _run_group_parallel(
             if docker_execution:
                 return _run_via_bench(
                     run,
-                    condition,
-                    model,
-                    schema,
+                    run["condition"],
+                    run["model"],
+                    run["schema"],
                     agent,
                     results_root,
                     reasoning_effort=reasoning_effort,
                     max_retries=max_retries,
                     retry_delay_seconds=retry_delay_seconds,
                     wait_on_claude_rate_limit=wait_on_claude_rate_limit,
+                    skip_preflight=skip_per_run_preflight,
                 )
             return run_single_task(
                 run["task"],
-                condition,
+                run["condition"],
                 agent,
-                model,
+                run["model"],
                 run["trial"],
                 verbose=False,
                 isolated=isolated,
-                schema=schema,
+                schema=run["schema"],
                 results_root=results_root,
                 max_retries=max_retries,
                 retry_delay_seconds=retry_delay_seconds,
@@ -1114,11 +1175,12 @@ def _run_group_parallel(
                 if error:
                     print(
                         f"  [{done}/{total}] {run['task']} t{run['trial']} -> "
-                        f"ERROR: {error}"
+                        f"{run['condition']} {run['model']} ERROR: {error}"
                     )
                 else:
                     print(
                         f"  [{done}/{total}] {run['task']} t{run['trial']} -> "
+                        f"{run['condition']} {run['model']} "
                         f"reward={reward:.4f} ({elapsed:.0f}s)"
                     )
             except Exception as e:
@@ -1368,8 +1430,14 @@ def main():
                 retry_delay_seconds=args.retry_delay_seconds,
                 wait_on_claude_rate_limit=args.wait_on_claude_rate_limit,
                 docker_execution=docker_execution,
+                skip_per_run_preflight=False,
             )
         return
+
+    skip_per_run_preflight = False
+    if docker_execution:
+        _run_campaign_preflight(results_root)
+        skip_per_run_preflight = True
 
     # Execute
     for tier in selected:
@@ -1392,6 +1460,7 @@ def main():
             retry_delay_seconds=args.retry_delay_seconds,
             wait_on_claude_rate_limit=args.wait_on_claude_rate_limit,
             docker_execution=docker_execution,
+            skip_per_run_preflight=skip_per_run_preflight,
         )
 
     print("\nDone.")

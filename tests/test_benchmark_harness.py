@@ -1128,6 +1128,14 @@ def test_bench_sh_stages_minimal_auth_instead_of_full_provider_dirs():
     assert "$HOME/.pi:$AUTH_ROOT/.pi:ro" not in bench
 
 
+def test_bench_sh_can_skip_per_run_preflight_after_campaign_preflight():
+    bench = (ROOT / "benchmark" / "bench.sh").read_text()
+
+    assert "M4BENCH_SKIP_PREFLIGHT" in bench
+    assert "Skipping per-run preflight checks" in bench
+    assert "campaign preflight already passed" in bench
+
+
 def test_bench_sh_supports_claude_login_volume():
     bench = (ROOT / "benchmark" / "bench.sh").read_text()
 

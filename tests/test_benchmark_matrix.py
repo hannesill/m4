@@ -324,6 +324,37 @@ def test_run_via_bench_builds_publishable_command(monkeypatch):
     assert seen["env"]["M4BENCH_CONTAINER_NAME"].startswith("m4bench-codex-")
 
 
+def test_run_via_bench_can_skip_per_run_preflight(monkeypatch):
+    matrix = _load_module("benchmark_matrix_run_via_bench_skip", "benchmark/matrix.py")
+
+    results_root = (ROOT / "benchmark" / "results" / "paper-smoke").resolve()
+    run = {"task": "mimic-kdigo-48h", "trial": 2}
+    seen = {}
+
+    def fake_subprocess_run(cmd, cwd=None, env=None):
+        seen["env"] = env
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(matrix.subprocess, "run", fake_subprocess_run)
+    monkeypatch.setattr(
+        matrix,
+        "_find_latest_result",
+        lambda *args, **kwargs: {"test_results": {"reward": 1.0}},
+    )
+
+    matrix._run_via_bench(
+        run,
+        condition="with-skill",
+        model="gpt-5-codex",
+        schema="native",
+        agent="codex",
+        results_root=results_root,
+        skip_preflight=True,
+    )
+
+    assert seen["env"]["M4BENCH_SKIP_PREFLIGHT"] == "1"
+
+
 def test_run_via_bench_fails_when_no_result_file(monkeypatch):
     matrix = _load_module(
         "benchmark_matrix_run_via_bench_no_result", "benchmark/matrix.py"
@@ -356,3 +387,79 @@ def test_run_via_bench_fails_when_no_result_file(monkeypatch):
         assert "exit code 2" in str(exc)
     else:
         raise AssertionError("expected missing result.json to fail")
+
+
+def test_schedule_runs_prioritizes_slow_tasks():
+    matrix = _load_module("benchmark_matrix_schedule", "benchmark/matrix.py")
+    runs = [
+        {
+            "task": "mimic-oasis-24h",
+            "condition": "with-skill",
+            "model": "gpt-5.5",
+            "schema": "native",
+            "trial": 1,
+        },
+        {
+            "task": "mimic-sepsis3-raw",
+            "condition": "no-skill",
+            "model": "gpt-5.5",
+            "schema": "native",
+            "trial": 1,
+        },
+        {
+            "task": "mimic-urine-output-rate-raw",
+            "condition": "with-skill",
+            "model": "gpt-5.5",
+            "schema": "native",
+            "trial": 1,
+        },
+    ]
+
+    scheduled = matrix._schedule_runs(runs)
+
+    assert [run["task"] for run in scheduled] == [
+        "mimic-sepsis3-raw",
+        "mimic-urine-output-rate-raw",
+        "mimic-oasis-24h",
+    ]
+
+
+def test_run_tier_parallel_uses_global_scheduled_queue(monkeypatch, tmp_path):
+    matrix = _load_module("benchmark_matrix_global_queue", "benchmark/matrix.py")
+    tier = matrix.Tier(1, "test", "question")
+    tier.runs = [
+        {
+            "task": "mimic-oasis-24h",
+            "condition": "with-skill",
+            "model": "gpt-5.5",
+            "schema": "native",
+            "trial": 1,
+        },
+        {
+            "task": "mimic-sepsis3-raw",
+            "condition": "no-skill",
+            "model": "gpt-5.4-mini",
+            "schema": "native",
+            "trial": 1,
+        },
+    ]
+    seen = {}
+
+    def fake_run_runs_parallel(runs, *args, **kwargs):
+        seen["runs"] = runs
+
+    monkeypatch.setattr(matrix, "_run_runs_parallel", fake_run_runs_parallel)
+
+    matrix._run_tier(
+        tier,
+        parallel=2,
+        skip_existing=False,
+        dry_run=False,
+        no_isolation=False,
+        results_root=tmp_path,
+    )
+
+    assert [run["task"] for run in seen["runs"]] == [
+        "mimic-sepsis3-raw",
+        "mimic-oasis-24h",
+    ]
