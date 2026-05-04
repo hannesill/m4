@@ -128,8 +128,8 @@ first 24 h.
 
 | Status | Score |
 |---|---|
-| Elective admission AND surgical service | 0 |
-| All other admissions | 6 |
+| eICU/APACHE elective-surgery signal present and not admitted from ED | 0 |
+| Non-elective, ED-source, missing elective-surgery signal, or otherwise non-elective | 6 |
 
 The OASIS total is the sum of the 10 component scores. Report the component
 scores alongside the total so implementation differences are auditable.
@@ -162,10 +162,10 @@ distinction.
 2. **Mechanical Ventilation**: Any invasive ventilation during the first
    24 hours scores 9 points; otherwise 0.
 
-3. **Elective Surgery**: Requires BOTH an elective admission type AND a
-   surgical service assignment (identified from the first service
-   transfer). Scoring direction matters: elective surgical admissions
-   score **0** points; all other stays score **6** points.
+3. **Elective Surgery**: Follows the eICU/APACHE fields used by the
+   M4Bench/eICU labels. Stays with an elective-surgery signal and no ED-source
+   admission score **0** points; ED-source, non-elective, missing, or otherwise
+   non-elective stays score **6** points.
 
 4. **Missing Data Handling**: Per task instruction, treat missing data
    as normal (score 0). When a component cannot be computed because the
