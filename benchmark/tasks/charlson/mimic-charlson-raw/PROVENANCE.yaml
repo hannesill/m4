@@ -1,0 +1,55 @@
+sources:
+  - "Adapted from MIT-LCP mimic-code charlson.sql; ICD mappings via Quan 2005."
+
+created:
+  by: m4bench-task-authoring
+  role: authoring
+  date: 2026-03-30
+
+reviews:
+  - by: Ahram Han, MD
+    date: 2026-05-03
+    scope: clinical-accuracy
+    notes: |
+      Cross-checked against Quan 2005 ICD-9-CM/ICD-10 coding algorithms
+      and the Charlson 1987 weighting / Charlson 1994 age-score scheme.
+
+      ## instruction.md
+      - Citations (Charlson 1987, Quan 2005) and output schema match the
+        Charlson Combined Comorbidity Index: 17 condition flags +
+        age_score + total CCI.
+      - "Admissions with no diagnosis codes -> all flags = 0, CCI =
+        age_score only" is internally consistent with the LEFT JOIN
+        behaviour in ground-truth SQL and matches the standard
+        administrative-data convention.
+
+      ## skills/comorbidity-score/SKILL.md
+      - Clinical content identical to the production skill at
+        src/m4/skills/clinical/comorbidity-score
+
+      ## ground-truth SQL (also served verbatim as skills-rawsql)
+      Spot-checked 11 of 17 condition ICD lists against Quan 2005 (MI,
+      CHF, PVD, cerebrovascular, dementia, chronic pulmonary, rheumatic,
+      PUD, mild liver, severe liver, AIDS) — all match. Hierarchy logic
+      applied at scoring level via GREATEST() (severe overrides mild,
+      with_cc overrides without_cc, metastatic overrides solid tumor) —
+      correct per Quan/Charlson. Age-score cutoffs (<=50, 51-60, 61-70,
+      71-80, >80 mapping to 0/1/2/3/4) match Charlson 1994.
+
+      No clinical-accuracy issues identified. 
+
+      Acceptable benchmark adaptation:
+        - Drops `mimiciv_derived.charlson` and `mimiciv_derived.age` in
+          raw mode; agent must derive age from
+          `patients.anchor_age + (admittime - anchor_year)` and compute
+          all 17 condition flags from `diagnoses_icd`.
+
+references:
+  - "Charlson ME, et al. A new method of classifying prognostic comorbidity in longitudinal studies: development and validation. J Chronic Dis. 1987;40(5):373-83."
+  - "Charlson M, et al. Validation of a combined comorbidity index. J Clin Epidemiol. 1994;47(11):1245-51."
+  - "Quan H, et al. Coding algorithms for defining comorbidities in ICD-9-CM and ICD-10 administrative data. Med Care. 2005;43(11):1130-9."
+
+changelog:
+  - version: "1.0"
+    date: 2026-05-03
+    summary: Initial clinical-accuracy review of Charlson benchmark task.

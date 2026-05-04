@@ -1,0 +1,114 @@
+sources:
+  - "MIMIC variant: adapted from MIT-LCP mimic-code first_day_gcs.sql / gcs.sql; intubated-patient handling per SAPS-II convention (Le Gall 1993)."
+  - "eICU variant: adapted from MIT-LCP eicu-code pivoted-gcs.sql."
+
+created:
+  by: m4bench-task-authoring
+  role: authoring
+  date: 2026-03-28
+
+reviews:
+  - by: Ahram Han, MD
+    date: 2026-05-03
+    scope: clinical-accuracy
+    notes: |
+      Family-level review covering both task variants (mimic-gcs-24h-raw
+      and eicu-gcs). The two variants implement the same clinical concept
+      against different EHR schemas; they are not directly comparable
+      across databases (forced asymmetries from data-model differences)
+      and are intended as separate test buckets, not a paired
+      MIMIC-vs-eICU comparison.
+
+      ## Common to both variants
+      - **Citation**: Teasdale & Jennett 1974 (the GCS scale itself).
+      - **Window**: first 24 hours (-6h to +24h from ICU admission).
+      - **Output**: minimum total GCS and the component values at the
+        time of the minimum.
+      - **No-data fallback**: default to normal (gcs_min=15, motor=6,
+        verbal=5, eyes=4).
+
+      ## mimic-gcs-24h-raw
+      Reviewed against the GCS scale and SAPS-II handling rule.
+
+      Acceptable conventions (mimic-code-aligned):
+        - **SAPS-II "= 15 for intubated" rule**: when verbal is documented
+          as "No Response-ETT", total GCS is set to 15 (assumed
+          pre-intubation baseline). This is per Le Gall 1993 (SAPS-II),
+          not Teasdale 1974. Clinically debatable for brain-injured
+          populations where pre-intubation GCS may have been < 15, but
+          consistent across instruction.md / SKILL.md / ground-truth
+          SQL; defensible as a data-collection convention.
+        - **Verbal = 0 sentinel** for intubated patients: mimic-code
+          convention (most clinical practice uses "1-T" or similar).
+        - **6-hour carry-forward** for missing components: mimic-code
+          convention; reasonable for nurse-charting cadence.
+
+      **Instruction clarification applied in this review:**
+        Added a sentence specifying "Report `gcs_verbal = 0` in the
+        output for intubated patients (sentinel value indicating
+        'untestable'); do not substitute a numeric verbal score." This
+        disambiguates a real gap — agents in the decoy / no-skill
+        conditions could not infer the 0-sentinel convention from
+        clinical knowledge alone, and would have written verbal = 1, 5,
+        or NULL instead, mismatching ground truth. The clarification
+        targets benchmark fairness across conditions, not clinical
+        accuracy.
+
+      Internal alignment (instruction / SKILL / SQL): verified after
+      the clarification.
+
+      ## eicu-gcs
+      Reviewed against the GCS scale and eICU schema realities.
+
+      Acceptable conventions (eicu-code-aligned):
+        - **No intubation rule**: forced by eICU schema (no ETT sentinel
+          in nursecharting). Intubated patients are scored from whatever
+          verbal score is documented. Cross-database asymmetry vs MIMIC
+          is real but not "fixable" without schema augmentation.
+        - **"Assume normal" for missing components** (rather than
+          carry-forward): differs from MIMIC; defensible given eICU's
+          text-based nursecharting cadence. Can produce falsely-high
+          scores when components are charted at different times — a
+          known limitation.
+        - **Range validation 3-15**: defensible (text-based logging is
+          error-prone).
+        - **Charted total preferred over computed sum**: trusts the
+          bedside record over re-derivation; reasonable.
+
+      **Instruction clarifications applied in this review:**
+        Added one paragraph: "When a charted total GCS value is
+        available and within the valid range (3-15), use it as the
+        total; otherwise compute total from motor + verbal + eyes. If
+        multiple timepoints share the same minimum total GCS, select
+        the earliest chart offset." This closes three implementation
+        details (charted-total preference, range validation, tie-break)
+        that an agent in decoy / no-skill conditions could not reliably
+        infer from clinical knowledge. Targets benchmark fairness, not
+        clinical accuracy.
+
+      Internal alignment (instruction / SKILL / SQL): verified after
+      the clarifications.
+
+      ## Citation lineage
+      - Teasdale 1974 — GCS scale (cited in both variants).
+      - Le Gall 1993 (SAPS-II) — origin of the "= 15 for intubated"
+        rule in MIMIC variant; not currently cited in instruction.md
+        but cited in production skill discussion.
+      - Mimic-code / eicu-code conventions — implementation lineage.
+
+      ## Notes for benchmark coordination
+      Two instruction.md files were modified in this review pass.
+      Benchmark runs against pre-edit instruction.md are not directly
+      comparable to runs against post-edit instruction.md, particularly
+      in skills-decoy and no-skill conditions. Worth flagging to
+      project leadership before scheduling re-run.
+
+references:
+  - "Teasdale G, Jennett B. Assessment of coma and impaired consciousness: A practical scale. Lancet. 1974;2(7872):81-84."
+  - "Teasdale G, et al. The Glasgow Coma Scale at 40 years: standing the test of time. Lancet Neurology. 2014;13(8):844-854."
+  - "Le Gall JR, Lemeshow S, Saulnier F. A new Simplified Acute Physiology Score (SAPS II) based on a European/North American multicenter study. JAMA. 1993;270(24):2957-2963. (Source of the '= 15 for intubated' rule used in mimic-gcs-24h-raw)"
+
+changelog:
+  - version: "1.0"
+    date: 2026-05-03
+    summary: Initial clinical-accuracy review covering both task variants. Added instruction.md clarifications for benchmark fairness in skills-decoy and no-skill conditions (MIMIC: gcs_verbal=0 sentinel for intubated; eICU: charted-total preference, range validation 3-15, tie-break by earliest offset). No SQL changes; both variants verified internally consistent across instruction.md / SKILL.md / ground-truth SQL.

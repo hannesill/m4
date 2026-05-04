@@ -8,6 +8,11 @@ When a component is missing at a given timepoint, assume normal for
 that component. If no GCS data exists at all for a stay, default to
 normal (gcs_min=15, eyes=4, verbal=5, motor=6).
 
+When a charted total GCS value is available and within the valid range
+(3-15), use it as the total; otherwise compute total from
+motor + verbal + eyes. If multiple timepoints share the same minimum
+total GCS, use the row with the earliest chart offset.
+
 Report the minimum total GCS and the component values at the time of
 the minimum total score.
 

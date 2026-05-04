@@ -1,0 +1,88 @@
+sources:
+  - "Adapted from MIT-LCP mimic-code creatinine_baseline.sql; MDRD-imputation method per ADQI 2004 / KDIGO 2012."
+
+created:
+  by: m4bench-task-authoring
+  role: authoring
+  date: 2026-03-30
+
+reviews:
+  - by: Ahram Han, MD
+    date: 2026-05-03
+    scope: clinical-accuracy
+    notes: |
+      Reviewed instruction.md, skills/baseline-creatinine/SKILL.md, and
+      ground-truth SQL against the AKI baseline-creatinine literature.
+
+      ## instruction.md
+      Two changes applied in this review (both task variants):
+      - **Citation corrected** from "Siew et al. (CJASN, 2012)" to
+        "KDIGO AKI Clinical Practice Guideline (2012)". Siew 2012
+        evaluated four methods using preadmission OUTPATIENT
+        creatinine — none of which is implemented here, since MIMIC
+        has no outpatient Cr. The implemented MDRD-imputation-at-
+        eGFR-75 approach matches KDIGO 2012's fallback rule, which
+        traces to the ADQI/RIFLE consensus (Bellomo et al. 2004).
+      - **Race-free MDRD directive added**: appended "Use the MDRD
+        equation without the race coefficient, consistent with
+        current race-free eGFR practice." This disambiguates a real
+        gap between the cited reference (KDIGO 2012 specifies MDRD
+        with race coefficient) and the ground-truth SQL (uses MDRD
+        without race coefficient). Without this clarification, agents
+        following the citation literally would systematically mismatch
+        ground truth on Black patients (~30% of MIMIC-IV). The
+        directive is also ethically aligned with 2021 NKF/ASN
+        race-free guidance.
+      - Output schema and "adults only (age >= 18)" appropriate.
+
+      ## skills/baseline-creatinine/SKILL.md
+      - Clinical content matches the sql logic of mimic-code repository.
+      - Hierarchical decision rule (use lowest if <=1.1, use lowest if
+        CKD, else MDRD imputation) is a mimic-code-specific hybrid;
+        only step 4 (MDRD imputation at eGFR=75) is canonically
+        supported by KDIGO 2012.
+      - MDRD formula correctly back-solves for Cr at assumed eGFR=75 as
+        supported by KDIGO 2012.
+      - ** However, the SQL implements MDRD-IV with the Black race coefficient
+        (1.21) dropped — i.e., it is not canonical MDRD-IV recommended by the 
+        by KDIGO 2012.** This is consistent with 2021 NKF/ASN race-free guidance for routine eGFR but matches no specific published equation: it differs from canonical MDRD-IV (which retains the race coefficient,
+        as used in ADQI 2004 / KDIGO 2012) and from CKD-EPI 2021 (the properly recalibrated race-free equation). Net: a hybrid that aligns with neither the original ADQI/KDIGO methodology nor the post-2021 race-free standard. Affects Black/African-American patients (~30% of MIMIC-IV). The proper modernization is forward to CKD-EPI 2021 race-free, not back to MDRD-with-race. The current dropped-race state is an imperfect-but-ethically-correct intermediate; recommend transition to CKD-EPI 2021 once KDIGO 2026 finalizes.
+
+      ## ground-truth SQL
+      Applies to both task variants (mimic-creatinine-baseline and
+      mimic-creatinine-baseline-raw); they share the same ground-truth
+      SQL and differ only in which derived tables are dropped.
+      - Same MDRD formula, hierarchy logic, and final CASE as the
+        production scripts/creatinine_baseline.sql; differences vs
+        production are formatting and comment header only.
+      - Acceptable benchmark adaptation: standard variant drops only
+        `mimiciv_derived.creatinine_baseline`. Raw variant additionally
+        drops 10 more derived tables (age, chemistry, kdigo_creatinine,
+        kdigo_stages, meld, oasis, sofa, apsiii, first_day_lab) —
+        agent must derive age from `patients.anchor_age + (admittime -
+        anchor_year)` and aggregate creatinine from
+        `mimiciv_hosp.labevents` directly.
+      - **Equation note**: SQL implements MDRD-IV with the Black race
+        coefficient dropped (see SKILL.md section above). Restoring
+        the race coefficient to "match KDIGO 2012 literal" would be
+        inappropriate — it would systematically delay AKI detection
+        for Black patients (~30% of MIMIC-IV) by inflating their
+        imputed baseline Cr at the 1.5x AKI threshold, the same
+        disparity pattern the 2021 NKF/ASN task force rejected.
+        Modernization should go forward to CKD-EPI 2021 race-free,
+        not back to MDRD-with-race.
+
+      No computational bugs in the SQL — items above are method-choice
+      and citation-accuracy notes, not errors.
+
+references:
+  - "KDIGO Clinical Practice Guideline for Acute Kidney Injury. Kidney International Supplements. 2012;2(1):1-138."
+  - "Bellomo R, Ronco C, Kellum JA, et al. (ADQI workgroup). Acute renal failure - definition, outcome measures, animal models, fluid therapy and information technology needs: Second International Consensus Conference of the ADQI Group. Crit Care. 2004;8(4):R204-R212."
+  - "Bagshaw SM, et al. A comparison of observed versus estimated baseline creatinine for determination of RIFLE class in patients with acute kidney injury. Nephrol Dial Transplant. 2009;24(9):2739-2744."
+  - "Siew ED, et al. Estimating baseline kidney function in hospitalized patients with impaired kidney function. Clin J Am Soc Nephrol. 2012;7(5):712-719. (Background; not the implemented method)"
+  - "KDIGO 2026 AKI Clinical Practice Guideline (public review draft, March 2026)."
+
+changelog:
+  - version: "1.0"
+    date: 2026-05-03
+    summary: Initial clinical-accuracy review. Two instruction.md changes applied (both task variants): (1) citation corrected from Siew 2012 to KDIGO 2012 AKI Guideline; (2) race-free MDRD directive added to disambiguate the citation-vs-ground-truth gap on the race coefficient. Race-coefficient ethics and forward-looking KDIGO 2026 draft discrepancies documented.

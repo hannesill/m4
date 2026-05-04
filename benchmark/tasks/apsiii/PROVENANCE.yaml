@@ -1,0 +1,68 @@
+sources:
+  - "Adapted from MIT-LCP mimic-code apsiii.sql; deviations documented in ground-truth SQL header."
+
+created:
+  by: m4bench-task-authoring
+  role: authoring
+  date: 2026-03-28
+
+reviews:
+  - by: Ahram Han, MD
+    date: 2026-05-03
+    scope: clinical-accuracy
+    notes: |
+      Cross-checked against the APS-III scoring table in van Valburg 2024
+      (Suppl.); discrepancies traced back to Knaus 1991.
+
+      ## instruction.md
+      - time window and 16 component wchema matches orinigal paper.
+      - "Treat missing data as normal (score 0)" is a documented benchmark
+        simplification, internally consistent with ground-truth SQL.
+
+      ## skills/apsiii-score/SKILL.md
+      - Score components, normal reference values, and procedural notes
+        match published APS-III.
+      - Benchmark-safe subset of the production skill at
+        src/m4/skills/clinical/apsiii-score (precomputed-table examples
+        removed, "M4Bench Use" note added).
+      - Axillary-temperature correction not implemented (acknowledged in
+        SKILL.md note 6).
+
+      ## ground-truth SQL (also served verbatim as the skills-rawsql variant)
+      Deviations from mimic-code, already documented in SQL header that seems accceptable: 
+        - Final-SELECT COALESCE component scores to 0 (matches the
+          "missing as normal" instruction).
+        - Blood-gas charttime capped at first 24h via
+          LEAST(outtime, intime + 1 day), matching APS-III's Day-1 scope.
+        - "Worst from normal" tiebreaker fix for 6 variables (resp_rate,
+          hematocrit, wbc, sodium, albumin, glucose) corrects mimic-code
+          self-comparison bug.
+
+      Adaptation that seem acceptable: 
+        - ARF chronic-renal exclusion via ICD-9 585.4-585.6 / ICD-10
+          N18.4-N18.6 (CKD stage 4 through ESRD); stricter than Knaus's
+          "chronic dialysis" criterion but clinically defensible.
+
+      Discrepancies vs. Knaus 1991, likely inherited from mimic-code; for
+      project leadership to evaluate against the existing "correct
+      mimic-code" policy:
+        1. Respiratory rate in ventilated patients: SQL applies
+           `vent = 1 AND resp_rate < 14 -> 0` as a blanket override, but
+           per Knaus 1991 Fig. 1 the exception applies only to RR 6-12.
+           Vented patients with RR <=5 score 0 (literal Knaus: 17 -
+           apnea/oversedation) and RR=13 scores 0 (literal Knaus: 7).
+        2. PaO2 vs A-aDO2 selection: (vented + FiO2 <50%) and
+           (non-vented + FiO2 >=50%) fall into neither pathway,
+           producing NULL -> COALESCE'd to 0. Per Knaus, both groups
+           should use PaO2. Systematically under-scores oxygenation
+           in those subgroups.
+
+
+references:
+  - "Knaus WA, Wagner DP, Draper EA, et al. The APACHE III prognostic system: risk prediction of hospital mortality for critically ill hospitalized adults. Chest. 1991;100(6):1619-1636."
+  - "van Valburg MK, et al. Predicting 30-day mortality in intensive care unit patients with ischaemic stroke and intracerebral haemorrhage. Eur J Anaesthesiol. 2024;41(2):105-113."
+
+changelog:
+  - version: "1.0"
+    date: 2026-05-03
+    summary: Initial clinical-accuracy review of APS-III benchmark task.
