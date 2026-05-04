@@ -15,17 +15,20 @@ sources:
 created:
   by: m4bench task authoring
   role: benchmark-task-construction
-  date: 2026-05-03
+  date: unknown
 
 reviews:
   - by: Ryohei Kobayashi-Yamamoto, MD
     date: 2026-05-03
     scope: clinical-accuracy, task-instruction-consistency
-    notes: Reviewed instruction.md and bundled skill files for clinical accuracy, task alignment, and consistency between task requirements and skill guidance.
+    notes: Reviewed instruction.md and bundled skill files, including SOFA, suspicion-of-infection, Sepsis-3 cohort, and decoy KDIGO skill, for clinical accuracy, task alignment, and benchmark suitability. The task is clinically coherent and aligned with the Sepsis-3 operational definition; no major clinical concerns identified. Minor note: ICU-only framing reflects the M4Bench/MIMIC implementation rather than the conceptual Sepsis-3 definition itself.
 
-references: []
+references:
+  - "Singer M et al. The Third International Consensus Definitions for Sepsis and Septic Shock (Sepsis-3). JAMA. 2016;315(8):801-810."
+  - "Seymour CW et al. Assessment of Clinical Criteria for Sepsis. JAMA. 2016;315(8):762-774."
+  - "Shankar-Hari M et al. Developing a New Definition and Assessing New Clinical Criteria for Septic Shock. JAMA. 2016;315(8):775-787."
 
 changelog:
   - version: "1.0"
     date: 2026-05-03
-    summary: Added provenance record for clinician review of M4Bench task materials.
+    summary: Added provenance record for clinician review of M4Bench Sepsis-3 task materials; original task creation date not verified.
