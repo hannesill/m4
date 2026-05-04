@@ -1,0 +1,29 @@
+sources:
+  - description: M4Bench MELD task instruction and bundled task skills
+    files:
+      - task.toml
+      - instruction.md
+      - skills/meld-score/SKILL.md
+      - skills-nosql/meld-score/SKILL.md
+      - skills-rawsql/mimic-meld-24h/SKILL.md
+      - skills-decoy/kdigo-aki-staging/SKILL.md
+
+created:
+  by: m4bench task authoring
+  role: benchmark-task-construction
+  date: 2026-05-03
+
+reviews:
+  - by: Ryohei Kobayashi-Yamamoto, MD
+    date: 2026-05-03
+    scope: clinical-accuracy, task-instruction-consistency
+    notes: Reviewed instruction.md and bundled skill files for clinical accuracy, task alignment, and consistency between task requirements and skill guidance.
+
+references:
+  - "Kamath PS, Wiesner RH, Malinchoc M, Kremers W, Therneau TM, Kosberg CL, D'Amico G, Dickson ER, Kim WR. A model to predict survival in patients with end-stage liver disease. Hepatology. 2001 Feb;33(2):464-70. doi: 10.1053/jhep.2001.22172. PMID: 11172350."
+  - "Kim WR, Biggins SW, Kremers WK, Wiesner RH, Kamath PS, Benson JT, Edwards E, Therneau TM. Hyponatremia and mortality among patients on the liver-transplant waiting list. N Engl J Med. 2008 Sep 4;359(10):1018-26. doi: 10.1056/NEJMoa0801209. PMID: 18768945; PMCID: PMC4374557."
+
+changelog:
+  - version: "1.0"
+    date: 2026-05-03
+    summary: Added provenance record for clinician review of M4Bench task materials.

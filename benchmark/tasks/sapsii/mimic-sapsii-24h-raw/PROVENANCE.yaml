@@ -1,0 +1,27 @@
+sources:
+  - description: M4Bench SAPS II raw-table task instruction and bundled task skills
+    files:
+      - task.toml
+      - instruction.md
+      - skills/sapsii-score/SKILL.md
+      - skills-nosql/sapsii-score/SKILL.md
+      - skills-rawsql/mimic-sapsii-24h-raw/SKILL.md
+      - skills-decoy/oasis-score/SKILL.md
+
+created:
+  by: m4bench task authoring
+  role: benchmark-task-construction
+  date: 2026-05-03
+
+reviews:
+  - by: Ryohei Kobayashi-Yamamoto, MD
+    date: 2026-05-03
+    scope: clinical-accuracy, task-instruction-consistency
+    notes: Reviewed instruction.md and bundled skill files for clinical accuracy, task alignment, and consistency between task requirements and skill guidance.
+
+references: []
+
+changelog:
+  - version: "1.0"
+    date: 2026-05-03
+    summary: Added provenance record for clinician review of M4Bench task materials.
