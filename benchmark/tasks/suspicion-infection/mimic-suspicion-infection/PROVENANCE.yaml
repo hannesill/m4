@@ -1,0 +1,64 @@
+sources:
+  - url: https://github.com/MIT-LCP/mimic-code/blob/main/mimic-iv/concepts/sepsis/suspicion_of_infection.sql
+    description: MIT-LCP mimic-code MIMIC-IV suspicion of infection concept
+    license: MIT
+
+created:
+  by: M4 Clinical Skills Team
+  role: clinical-extraction
+  date: 2026-04-08
+
+reviews:
+  - by: Marlene Louisa Moerig, MD
+    date: 2026-05-04
+    scope: clinical-accuracy
+    notes: |
+      Reviewed suspicion-of-infection skill for M4 Bench task.
+      
+      Definition logic verified against Seymour et al. 2016 (JAMA, Sepsis-3 derivation paper):
+      - Time windows correct: culture within 72h before antibiotic OR within 24h after antibiotic
+      - suspected_infection_time defined as the earlier of culture time and antibiotic time
+      - Single-row-per-antibiotic structure with ab_id matches the operationalization
+      
+      Verified against MIMIC-IV v3.1 hosp and derived tables:
+      
+      Negative culture handling: SKILL.md states positive culture is identified by non-null org_name excluding "itemid 90856 (NEGATIVE)". Verified that 90856 is in fact org_itemid (not spec_itemid, test_itemid, or ab_itemid), and all 353 events with org_itemid 90856 have org_name = "NEGATIVE". The exclusion logic is correct, but the SKILL.md does not specify which of the four itemid columns in microbiologyevents to filter on. An agent reading the skill could apply the filter to the wrong column. Recommend specifying org_itemid explicitly
+      
+      Topical antibiotic exclusion (relevant for raw mode): SKILL.md lists Latin route abbreviations to exclude: OU, OS, OD, AU, AS, AD, TP. Verified against prescriptions table: MIMIC-IV uses both Latin and English route notation. Counts of topical routes in English notation that are not in the skill's exclusion list:
+      - BOTH EYES: 60,971
+      - RIGHT EYE: 8,331
+      - LEFT EYE: 8,103
+      - BOTH EARS: 703
+      - LEFT EAR: 518
+      - RIGHT EAR: 509
+      Total approximately 78,135 topical route entries in English notation. Among these, ophthalmic and otic antibiotic preparations include Erythromycin Ophth Oint, Ciprofloxacin Ophth Soln, Tobramycin-Dexamethasone preparations, Bacitracin/Polymyxin Ophth, Neomycin-Polymyxin-HC Otic Susp, and others. If an agent constructs the antibiotic filter from raw prescriptions using only the Latin codes, these would not be excluded
+      
+      However, when using the curated mimiciv_derived.antibiotic table (which the skill recommends), topical routes appear to be filtered correctly. The derived table contains only systemic routes (IV, PO, IM, etc.) plus some clinically borderline local routes (INTRAVITREAL: 41, IRR: 165, IVT: 25). These borderline routes represent local administration but are quantitatively negligible compared to 681,720 IV entries
+      
+      Surveillance and non-infection cultures: SKILL.md states "All Culture Types Included: Blood, urine, sputum, wound, CSF, etc." Verified against microbiologyevents: 374,549 events (9.4% of total) are not infection-related cultures but rather surveillance, antibody tests, or non-microbiology samples. This includes:
+      - MRSA SCREEN: 77,647 (routine screening, not infection workup)
+      - Staph aureus swab: 32,447
+      - THROAT FOR STREP: 12,483
+      - SEROLOGY/BLOOD: 140,504 (antibody tests)
+      - Blood (EBV): 22,358
+      - Blood (CMV AB): 17,000
+      - IMMUNOLOGY and Immunology (CMV): 59,467
+      - BONE MARROW - CYTOGENETICS: 12,643 (not microbiology)
+      
+      These surveillance and antibody tests are routinely obtained on ICU admission or weekly regardless of infection suspicion. When paired with prophylactic or unrelated antibiotic administration (e.g., a patient receiving topical eye antibiotics post-cataract surgery while having routine MRSA screening on admission), the algorithm will flag suspected infection that does not reflect clinical reality. The SKILL.md acknowledges this in General Limitations but does not implement filtering. Conservative estimate: tens of thousands of false-positive infection flags, particularly in non-ICU patients or patients receiving routine surveillance plus minor topical antibiotics
+      
+      Microbiology spec_type_desc filtering would substantially reduce this bias. Recommend documenting which spec_type_desc values are considered valid infection-workup cultures versus surveillance for future skill versions
+      
+      No errors in the core matching logic or time windows. Documented limitations affect specificity (overcalling suspected infection) more than sensitivity. For Sepsis-3 cohort identification with concurrent SOFA criteria, downstream filters partially mitigate the impact
+
+references:
+  - Singer M, Deutschman CS, Seymour CW, et al. The Third International Consensus Definitions for Sepsis and Septic Shock (Sepsis-3). JAMA. 2016;315(8):801-810
+  - Seymour CW, Liu VX, Iwashyna TJ, et al. Assessment of Clinical Criteria for Sepsis: For the Third International Consensus Definitions for Sepsis and Septic Shock (Sepsis-3). JAMA. 2016;315(8):762-774
+
+changelog:
+  - version: "1.0"
+    date: 2026-04-08
+    summary: Initial task creation for M4 Bench
+  - version: "1.1"
+    date: 2026-05-04
+    summary: Clinical review by Marlene Louisa Moerig, MD - core logic correct, surveillance culture and incomplete route filtering limitations documented
