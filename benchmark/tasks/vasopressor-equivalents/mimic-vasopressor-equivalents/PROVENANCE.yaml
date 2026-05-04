@@ -1,0 +1,50 @@
+sources:
+  - url: https://github.com/MIT-LCP/mimic-code/blob/main/mimic-iv/concepts/medication/vasopressin.sql
+    description: MIT-LCP mimic-code MIMIC-IV vasopressin medication concept
+    license: MIT
+
+created:
+  by: M4 Clinical Skills Team
+  role: clinical-extraction
+  date: 2026-04-08
+
+reviews:
+  - by: Marlene Louisa Moerig, MD
+    date: 2026-05-04
+    scope: clinical-accuracy
+    notes: |
+      Reviewed vasopressor-equivalents skill for M4 Bench task.
+      
+      Formula and equivalence factors verified against Goradia et al. 2020 (Journal of Critical Care):
+      - Norepinephrine 1:1, Epinephrine 1:1, Phenylephrine/10, Dopamine/100 match source exactly
+      - Vasopressin x 2.5 (units/min) matches source
+      - Inotropes (dobutamine, milrinone) correctly excluded as non-vasopressors
+      
+      Verified against MIMIC-IV v3.1 derived and inputevents tables:
+      
+      Vasopressin unit handling: SKILL.md assumes vasopressin is charted in units/hour and divides by 60 to convert to units/min before applying x 2.5 factor. Verified in inputevents (itemid 222315): 37,160 of 37,163 rows (99.99%) are recorded in units/hour. Three rows (0.008%) are recorded in units/min and would be incorrectly divided by 60 again under the current formula. Quantitatively negligible
+      
+      Vasopressin outlier values: The mimiciv_derived.vasopressin table contains 15 rows with values exceeding 100 units/hour (maximum 2400 units/hour). Typical clinical vasopressin dosing is 0.01 to 0.04 units/min, equivalent to 0.6 to 2.4 units/hour. Values above ~5 units/hour are clinically implausible. The skill does not document outlier handling, so an agent processing these values directly would compute NED values of 100 or higher, which are not physiologically possible. This is a data quality issue inherited from MIMIC-IV
+      
+      Metaraminol exclusion: SKILL.md states "Not used at BIDMC". Verified: zero metaraminol administrations exist in inputevents. Statement is correct
+      
+      Angiotensin II exclusion (clinically relevant finding, recommended for fix): SKILL.md describes angiotensin II as "rarely used" and excludes it from the NED formula, with a parenthetical note that it could be added with x 10 factor. Verified against inputevents (itemids 229709 and 229764, both labeled "Angiotensin II (Giapreza)"): 399 administrations exist in MIMIC-IV v3.1. Angiotensin II is a modern vasopressor used in refractory septic shock and the FDA-approved indication has expanded since the original BIDMC dataset cutoff. Excluding it from the NED calculation will systematically underestimate vasopressor load for the subset of patients who received it. Per Goradia 2020 the conversion factor is angiotensin II x 10 (mcg/kg/min)
+      
+      Recommendation flagged for team discussion: Update the SKILL.md formula across all variants (skills, skills-rawsql, skills-nosql, plus the original M4 skill in src/m4/skills/clinical/vasopressor-equivalents) to include angiotensin II. The current omission was inherited from automated extraction of an older MIMIC-Code SQL pre-dating widespread Angiotensin II use, not from a deliberate clinical decision. For the current benchmark run the limitation is documented here; correction proposed for the next benchmark version
+      
+      No errors in the core formula or equivalence factors. The angiotensin II omission affects approximately 399 administration intervals and may bias shock severity estimates downward for affected patients
+      
+      Note: Review applies to clinical content of the vasopressor-equivalents skill, which is shared across the skills, skills-rawsql, and skills-nosql variants in this task
+
+references:
+  - Goradia S, Sardaneh AA, Narayan SW, Penm J, Patanwala AE. Vasopressor dose equivalence A scoping review and suggested formula. Journal of Critical Care. 2021;61:233-240
+  - Brown SM, Lanspa MJ, Jones JP, et al. Survival after shock requiring high-dose vasopressor therapy. Chest. 2013;143(3):664-671
+  - Khanna A, English SW, Wang XS, et al. Angiotensin II for the Treatment of Vasodilatory Shock. NEJM. 2017;377:419-430
+
+changelog:
+  - version: "1.0"
+    date: 2026-04-08
+    summary: Initial task creation for M4 Bench
+  - version: "1.1"
+    date: 2026-05-04
+    summary: Clinical review by Marlene Louisa Moerig, MD - core formula correct, angiotensin II omission flagged for correction in next benchmark version
