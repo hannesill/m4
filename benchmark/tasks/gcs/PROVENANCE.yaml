@@ -111,4 +111,10 @@ references:
 changelog:
   - version: "1.0"
     date: 2026-05-03
-    summary: Initial clinical-accuracy review covering both task variants. Added instruction.md clarifications for benchmark fairness in skills-decoy and no-skill conditions (MIMIC: gcs_verbal=0 sentinel for intubated; eICU: charted-total preference, range validation 3-15, tie-break by earliest offset). No SQL changes; both variants verified internally consistent across instruction.md / SKILL.md / ground-truth SQL.
+    summary: >-
+      Initial clinical-accuracy review covering both task variants. Added
+      instruction.md clarifications for benchmark fairness in skills-decoy and
+      no-skill conditions (MIMIC: gcs_verbal=0 sentinel for intubated; eICU:
+      charted-total preference, range validation 3-15, tie-break by earliest
+      offset). No SQL changes; both variants verified internally consistent
+      across instruction.md / SKILL.md / ground-truth SQL.

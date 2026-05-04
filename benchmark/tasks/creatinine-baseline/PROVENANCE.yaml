@@ -36,17 +36,26 @@ reviews:
       - Output schema and "adults only (age >= 18)" appropriate.
 
       ## skills/baseline-creatinine/SKILL.md
-      - Clinical content matches the sql logic of mimic-code repository.
+      - Clinical content matches the SQL logic of the mimic-code repository.
       - Hierarchical decision rule (use lowest if <=1.1, use lowest if
         CKD, else MDRD imputation) is a mimic-code-specific hybrid;
         only step 4 (MDRD imputation at eGFR=75) is canonically
         supported by KDIGO 2012.
       - MDRD formula correctly back-solves for Cr at assumed eGFR=75 as
         supported by KDIGO 2012.
-      - ** However, the SQL implements MDRD-IV with the Black race coefficient
-        (1.21) dropped — i.e., it is not canonical MDRD-IV recommended by the 
-        by KDIGO 2012.** This is consistent with 2021 NKF/ASN race-free guidance for routine eGFR but matches no specific published equation: it differs from canonical MDRD-IV (which retains the race coefficient,
-        as used in ADQI 2004 / KDIGO 2012) and from CKD-EPI 2021 (the properly recalibrated race-free equation). Net: a hybrid that aligns with neither the original ADQI/KDIGO methodology nor the post-2021 race-free standard. Affects Black/African-American patients (~30% of MIMIC-IV). The proper modernization is forward to CKD-EPI 2021 race-free, not back to MDRD-with-race. The current dropped-race state is an imperfect-but-ethically-correct intermediate; recommend transition to CKD-EPI 2021 once KDIGO 2026 finalizes.
+      - **However, the SQL implements MDRD-IV with the Black race coefficient
+        (1.21) dropped — i.e., it is not canonical MDRD-IV recommended by
+        KDIGO 2012.** This is consistent with 2021 NKF/ASN race-free guidance
+        for routine eGFR but matches no specific published equation: it differs
+        from canonical MDRD-IV (which retains the race coefficient, as used in
+        ADQI 2004 / KDIGO 2012) and from CKD-EPI 2021 (the properly
+        recalibrated race-free equation). Net: a hybrid that aligns with
+        neither the original ADQI/KDIGO methodology nor the post-2021 race-free
+        standard. Affects Black/African-American patients (~30% of MIMIC-IV).
+        The proper modernization is forward to CKD-EPI 2021 race-free, not back
+        to MDRD-with-race. The current dropped-race state is an
+        imperfect-but-ethically-correct intermediate; recommend transition to
+        CKD-EPI 2021 once KDIGO 2026 finalizes.
 
       ## ground-truth SQL
       Applies to both task variants (mimic-creatinine-baseline and
@@ -85,4 +94,9 @@ references:
 changelog:
   - version: "1.0"
     date: 2026-05-03
-    summary: Initial clinical-accuracy review. Two instruction.md changes applied (both task variants): (1) citation corrected from Siew 2012 to KDIGO 2012 AKI Guideline; (2) race-free MDRD directive added to disambiguate the citation-vs-ground-truth gap on the race coefficient. Race-coefficient ethics and forward-looking KDIGO 2026 draft discrepancies documented.
+    summary: >-
+      Initial clinical-accuracy review. Two instruction.md changes applied
+      (both task variants): (1) citation corrected from Siew 2012 to KDIGO 2012
+      AKI Guideline; (2) race-free MDRD directive added to disambiguate the
+      citation-vs-ground-truth gap on the race coefficient. Race-coefficient
+      ethics and forward-looking KDIGO 2026 draft discrepancies documented.
