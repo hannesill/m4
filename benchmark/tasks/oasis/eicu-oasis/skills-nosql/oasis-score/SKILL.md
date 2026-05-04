@@ -23,10 +23,12 @@ In M4Bench, target concept tables listed in the task configuration are removed o
 
 ## Score Components (First 24 Hours)
 
-OASIS sums 10 component scores. The cutoffs below are the authoritative
-specification (Johnson AEW et al., *Crit Care Med* 2013, Table 2). For
-continuous variables, evaluate using the worst-direction observation in
-the first 24 h (see "Direction-aware Scoring" below).
+OASIS sums 10 component scores. The cutoffs below are aligned with the
+M4Bench/eICU labels, which follow the eICU implementation adapted from Johnson
+AEW et al. (*Crit Care Med* 2013, Table 2). For min/max-bound continuous
+variables, use the eICU evaluation order shown below because first-match
+ordering affects component labels when both low and high extremes occur in the
+first 24 h.
 
 ### Pre-ICU Length of Stay
 
@@ -57,57 +59,63 @@ the first 24 h (see "Direction-aware Scoring" below).
 | 14 | 3 |
 | 15 | 0 |
 
-### Heart Rate (min⁻¹)
+### Heart Rate (min^-1)
 
-| Bin | Score |
-|---|---|
-| min < 33 | 4 |
-| 33 – 88 | 0 |
-| max 89 – 106 | 1 |
-| max 107 – 125 | 3 |
-| max > 125 | 6 |
+| Evaluation order | Bin | Score |
+|---|---|---|
+| 1 | min < 33 | 4 |
+| 2 | max 33-88 | 0 |
+| 3 | max 89-106 | 1 |
+| 4 | max 107-125 | 3 |
+| 5 | max > 125 | 6 |
 
 ### Mean Arterial Pressure (mmHg)
 
-| Bin | Score |
-|---|---|
-| min < 20.65 | 4 |
-| min 20.65 – 50.99 | 3 |
-| min 51 – 61.32 | 2 |
-| 61.33 – 143.44 | 0 |
-| max > 143.44 | 3 |
+| Evaluation order | Bin | Score |
+|---|---|---|
+| 1 | invasive min < 20.65 | 4 |
+| 2 | invasive min 20.65-50.99 | 3 |
+| 3 | invasive min 51-61.32 | 2 |
+| 4 | invasive min 61.33-143.44 | 0 |
+| 5 | invasive max > 143.44 | 3 |
+| 6 | noninvasive min < 20.65 | 4 |
+| 7 | noninvasive min 20.65-50.99 | 3 |
+| 8 | noninvasive min 51-61.32 | 2 |
+| 9 | noninvasive min 61.33-143.44 | 0 |
+| 10 | noninvasive max > 143.44 | 3 |
 
-### Respiratory Rate (min⁻¹)
+### Respiratory Rate (min^-1)
 
-| Bin | Score |
-|---|---|
-| min < 6 | 10 |
-| min 6 – 12 | 1 |
-| 13 – 22 | 0 |
-| max 23 – 30 | 1 |
-| max 31 – 44 | 6 |
-| max > 44 | 9 |
+| Evaluation order | Bin | Score |
+|---|---|---|
+| 1 | min < 6 | 10 |
+| 2 | min 6-12 | 1 |
+| 3 | min 13-22 | 0 |
+| 4 | max 23-30 | 1 |
+| 5 | max 31-44 | 6 |
+| 6 | max > 44 | 9 |
 
-### Temperature (°C)
+### Temperature (deg C)
 
-| Bin | Score |
-|---|---|
-| min < 33.22 | 3 |
-| min or max 33.22 – 35.93 | 4 |
-| min 35.94 – 36.39 | 2 |
-| max 36.40 – 36.88 | 0 |
-| max 36.89 – 39.88 | 2 |
-| max > 39.88 | 6 |
+| Evaluation order | Bin | Score |
+|---|---|---|
+| 1 | min < 33.22 | 3 |
+| 2 | min 33.22-35.93 | 4 |
+| 3 | max 33.22-35.93 | 4 |
+| 4 | min 35.94-36.39 | 2 |
+| 5 | max 36.40-36.88 | 0 |
+| 6 | max 36.89-39.88 | 2 |
+| 7 | max > 39.88 | 6 |
 
 ### Urine Output (mL/day)
 
-| Range | Score |
-|---|---|
-| < 671 | 10 |
-| 671 – 1426.99 | 5 |
-| 1427 – 2543.99 | 1 |
-| 2544 – 6896 | 0 |
-| > 6896 | 8 |
+| Evaluation order | Range | Score |
+|---|---|---|
+| 1 | < 671 | 10 |
+| 2 | 671-1426.99 | 5 |
+| 3 | 1427-2543.99 | 1 |
+| 4 | 2544-6896 | 0 |
+| 5 | > 6896 | 8 |
 
 ### Mechanical Ventilation
 
@@ -126,16 +134,21 @@ the first 24 h (see "Direction-aware Scoring" below).
 The OASIS total is the sum of the 10 component scores. Report the component
 scores alongside the total so implementation differences are auditable.
 
-## Direction-aware Scoring (min vs max)
+## Direction-aware Scoring (eICU labels)
 
-For Heart Rate, MAP, Respiratory Rate, and Temperature, OASIS uses the
-worst-direction observation in the first 24 h:
+For the eICU OASIS task, follow the eICU-code evaluation order in the tables
+above. This ordering is intentionally dataset-specific and differs from the
+MIMIC OASIS task labels: if both a low and high extreme occur in the same
+first-24h window, the first matching row in the component table wins.
 
-- Test the **min** observation against the low-extreme bin first.
-- Test the **max** observation against the high-extreme bins next.
-- The first matching bin wins; do not sum or average across bins.
-- Temperature uniquely allows either min or max to satisfy the
-  33.22 – 35.93 °C bin (4 points); test both.
+Key conflict rules for eICU labels:
+
+- Heart rate checks the low extreme first, then high-heart-rate bins.
+- MAP checks invasive BP mean first; noninvasive BP mean is used only if no
+  invasive BP bin matches.
+- Respiratory rate checks low/normal bins before high respiratory-rate bins.
+- Temperature checks low-temperature bins before fever.
+- Urine output uses the eICU boundaries shown above.
 
 GCS uses the worst (minimum) value only. Pre-ICU LOS, Age, Urine Output,
 Mechanical Ventilation, and Elective Surgery are scalar — no min/max
