@@ -23,10 +23,12 @@ In M4Bench, target concept tables listed in the task configuration are removed o
 
 ## Score Components (First 24 Hours)
 
-OASIS sums 10 component scores. The cutoffs below are the authoritative
-specification (Johnson AEW et al., *Crit Care Med* 2013, Table 2). For
-continuous variables, evaluate using the worst-direction observation in
-the first 24 h (see "Direction-aware Scoring" below).
+OASIS sums 10 component scores. The cutoffs below are aligned with the
+M4Bench/MIMIC labels, which follow the public MIMIC implementation adapted
+from Johnson AEW et al. (*Crit Care Med* 2013, Table 2). For min/max-bound
+continuous variables, use the MIMIC evaluation order shown below because
+first-match ordering affects component labels when both low and high extremes
+occur in the first 24 h.
 
 ### Pre-ICU Length of Stay
 
@@ -57,57 +59,57 @@ the first 24 h (see "Direction-aware Scoring" below).
 | 14 | 3 |
 | 15 | 0 |
 
-### Heart Rate (min⁻¹)
+### Heart Rate (min^-1)
 
-| Bin | Score |
-|---|---|
-| min < 33 | 4 |
-| 33 – 88 | 0 |
-| max 89 – 106 | 1 |
-| max 107 – 125 | 3 |
-| max > 125 | 6 |
+| Evaluation order | Bin | Score |
+|---|---|---|
+| 1 | max > 125 | 6 |
+| 2 | min < 33 | 4 |
+| 3 | max 107-125 | 3 |
+| 4 | max 89-106 | 1 |
+| 5 | otherwise | 0 |
 
 ### Mean Arterial Pressure (mmHg)
 
-| Bin | Score |
-|---|---|
-| min < 20.65 | 4 |
-| min 20.65 – 50.99 | 3 |
-| min 51 – 61.32 | 2 |
-| 61.33 – 143.44 | 0 |
-| max > 143.44 | 3 |
+| Evaluation order | Bin | Score |
+|---|---|---|
+| 1 | min < 20.65 | 4 |
+| 2 | min 20.65-50.99 | 3 |
+| 3 | max > 143.44 | 3 |
+| 4 | min 51-61.32 | 2 |
+| 5 | otherwise | 0 |
 
-### Respiratory Rate (min⁻¹)
+### Respiratory Rate (min^-1)
 
-| Bin | Score |
-|---|---|
-| min < 6 | 10 |
-| min 6 – 12 | 1 |
-| 13 – 22 | 0 |
-| max 23 – 30 | 1 |
-| max 31 – 44 | 6 |
-| max > 44 | 9 |
+| Evaluation order | Bin | Score |
+|---|---|---|
+| 1 | min < 6 | 10 |
+| 2 | max > 44 | 9 |
+| 3 | max 31-44 | 6 |
+| 4 | max 23-30 | 1 |
+| 5 | min < 13 | 1 |
+| 6 | otherwise | 0 |
 
-### Temperature (°C)
+### Temperature (deg C)
 
-| Bin | Score |
-|---|---|
-| min < 33.22 | 3 |
-| min or max 33.22 – 35.93 | 4 |
-| min 35.94 – 36.39 | 2 |
-| max 36.40 – 36.88 | 0 |
-| max 36.89 – 39.88 | 2 |
-| max > 39.88 | 6 |
+| Evaluation order | Bin | Score |
+|---|---|---|
+| 1 | max > 39.88 | 6 |
+| 2 | min or max 33.22-35.93 | 4 |
+| 3 | min < 33.22 | 3 |
+| 4 | min 35.94-36.39 | 2 |
+| 5 | max 36.89-39.88 | 2 |
+| 6 | otherwise | 0 |
 
 ### Urine Output (mL/day)
 
-| Range | Score |
-|---|---|
-| < 671 | 10 |
-| 671 – 1426.99 | 5 |
-| 1427 – 2543.99 | 1 |
-| 2544 – 6896 | 0 |
-| > 6896 | 8 |
+| Evaluation order | Range | Score |
+|---|---|---|
+| 1 | < 671.09 | 10 |
+| 2 | > 6896.80 | 8 |
+| 3 | 671.09-1426.99 | 5 |
+| 4 | 1427.00-2544.14 | 1 |
+| 5 | otherwise | 0 |
 
 ### Mechanical Ventilation
 
@@ -126,16 +128,24 @@ the first 24 h (see "Direction-aware Scoring" below).
 The OASIS total is the sum of the 10 component scores. Report the component
 scores alongside the total so implementation differences are auditable.
 
-## Direction-aware Scoring (min vs max)
+## Direction-aware Scoring (MIMIC labels)
 
-For Heart Rate, MAP, Respiratory Rate, and Temperature, OASIS uses the
-worst-direction observation in the first 24 h:
+For MIMIC OASIS tasks, follow the M4Bench/MIMIC SQL evaluation order in the
+tables above. This ordering is intentionally dataset-specific: if both a low
+and high extreme occur in the same first-24h window, the first matching row in
+the component table wins.
 
-- Test the **min** observation against the low-extreme bin first.
-- Test the **max** observation against the high-extreme bins next.
-- The first matching bin wins; do not sum or average across bins.
-- Temperature uniquely allows either min or max to satisfy the
-  33.22 – 35.93 °C bin (4 points); test both.
+Key conflict rules for MIMIC labels:
+
+- Heart rate prioritizes severe tachycardia (`max > 125`, 6 points) before
+  severe bradycardia (`min < 33`, 4 points).
+- MAP checks low MAP bins first, then high MAP (`max > 143.44`), then assigns
+  low-normal/normal scores.
+- Respiratory rate checks severe low RR first, then high RR bins, then mild low
+  RR.
+- Temperature prioritizes fever (`max > 39.88`, 6 points) before low-temperature
+  bins.
+- Urine output uses the exact MIMIC boundaries shown above.
 
 GCS uses the worst (minimum) value only. Pre-ICU LOS, Age, Urine Output,
 Mechanical Ventilation, and Elective Surgery are scalar — no min/max
