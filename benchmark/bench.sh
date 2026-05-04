@@ -238,15 +238,19 @@ if [[ "${M4BENCH_BENCH_SH_NO_RUN:-0}" == "1" ]]; then
     exit 0
 fi
 
-echo "Running preflight checks..."
-PREFLIGHT_CMD=("$SCRIPT_DIR/preflight.py")
-if [[ -n "$PREFLIGHT_RESULTS_ROOT" ]]; then
-    PREFLIGHT_CMD+=(--results-root "$PREFLIGHT_RESULTS_ROOT" --allow-existing-results-root)
-fi
-if command -v uv >/dev/null 2>&1; then
-    (cd "$REPO_ROOT" && uv run python "${PREFLIGHT_CMD[@]}")
+if [[ "${M4BENCH_SKIP_PREFLIGHT:-0}" == "1" ]]; then
+    echo "Skipping per-run preflight checks (campaign preflight already passed)."
 else
-    (cd "$REPO_ROOT" && python3 "${PREFLIGHT_CMD[@]}")
+    echo "Running preflight checks..."
+    PREFLIGHT_CMD=("$SCRIPT_DIR/preflight.py")
+    if [[ -n "$PREFLIGHT_RESULTS_ROOT" ]]; then
+        PREFLIGHT_CMD+=(--results-root "$PREFLIGHT_RESULTS_ROOT" --allow-existing-results-root)
+    fi
+    if command -v uv >/dev/null 2>&1; then
+        (cd "$REPO_ROOT" && uv run python "${PREFLIGHT_CMD[@]}")
+    else
+        (cd "$REPO_ROOT" && python3 "${PREFLIGHT_CMD[@]}")
+    fi
 fi
 
 if command -v uv >/dev/null 2>&1; then
