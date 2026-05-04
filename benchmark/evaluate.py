@@ -45,11 +45,11 @@ def resolve_ground_truth(task_name: str) -> Path:
 
 
 def evaluate(task_name: str, output_path: str) -> dict:
-    """Run evaluation tests and return results.
+    """Run evaluation diagnostics and return results.
 
     Reward is the mean per-column match rate (continuous, 0.0-1.0),
     computed directly from comparing agent output to ground truth.
-    Pytest tests are kept for pass/fail diagnostics.
+    Strict pass/fail diagnostics are kept alongside the continuous reward.
     """
     try:
         from lib.compare import compare_derived_tables, scored_value_columns
@@ -65,13 +65,25 @@ def evaluate(task_name: str, output_path: str) -> dict:
         config = load_task_config(task_dir)
         eval_config = config["evaluation"]
         score_columns = scored_value_columns(eval_config)
-        comparison = compare_derived_tables(
-            output_path,
-            str(gt_path),
-            key_columns=eval_config["key_columns"],
-            value_columns=score_columns,
-            tolerance=eval_config.get("tolerance", {}),
-        )
+        comparison = test_results.pop("_comparison", None)
+        if comparison is None and test_results.get("errors", 0):
+            match_rates = {col: 0.0 for col in score_columns}
+            test_results["match_rates"] = match_rates
+            test_results["reward_uncapped"] = 0.0
+            test_results["reward"] = 0.0
+            test_results["diagnostics_failed"] = True
+            test_results["key_precision"] = 0.0
+            test_results["extra_keys"] = 0
+            test_results["agent_unique_keys"] = 0
+            return test_results
+        if comparison is None:
+            comparison = compare_derived_tables(
+                output_path,
+                str(gt_path),
+                key_columns=eval_config["key_columns"],
+                value_columns=score_columns,
+                tolerance=eval_config.get("tolerance", {}),
+            )
         match_rates = {
             col: _round_metric(comparison[col]["match_rate"]) for col in score_columns
         }
