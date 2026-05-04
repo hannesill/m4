@@ -1,0 +1,121 @@
+sources:
+  - "Adapted from MIT-LCP mimic-code kdigo_stages.sql / kdigo_creatinine.sql / kdigo_uo.sql; staging criteria per KDIGO 2012 AKI Clinical Practice Guideline."
+
+created:
+  by: m4bench-task-authoring
+  role: authoring
+  date: 2026-03-28
+
+reviews:
+  - by: Ahram Han, MD
+    date: 2026-05-04
+    scope: clinical-accuracy
+    notes: |
+      Family-level review covering both task variants
+      (mimic-kdigo-48h and mimic-kdigo-48h-raw). The two variants
+      share the same instruction.md content (raw variant adds the
+      standard 4-line raw-mode boilerplate) and the same
+      ground-truth SQL.
+
+      ## instruction.md
+      - Citation (KDIGO 2012 Clinical Practice Guideline) and 48h
+        window match the staging definition.
+      - "Treat missing data as no AKI (stage 0)" is internally
+        consistent with the SQL's COALESCE-to-0 at output.
+      - "Final AKI stage = max across creatinine, UO, CRRT" matches
+        the SQL's MAX-across-three-stage-columns logic.
+      - Output schema matches SQL.
+
+      ## skills/kdigo-aki-staging/SKILL.md
+      - KDIGO 2012 staging criteria correctly stated for both
+        creatinine-based and urine-output-based criteria, including
+        the Stage 3 "Cr >= 4.0 mg/dL with acute increase" qualifier
+        per the original KDIGO footnote.
+      - Implementation notes appropriately document the 48h vs 7-day
+        window distinction, UO weight estimation uncertainty, and
+        the 6h ICU-stay prerequisite for UO staging.
+      - SKILL.md note 7 references `aki_stage_smoothed` (a column in
+        the upstream `mimiciv_derived.kdigo_stages` table) which is
+        not part of the benchmark output schema. Informational only,
+        not material to scoring.
+
+      ## ground-truth SQL
+      - Thin wrapper aggregating the upstream
+        `mimiciv_derived.kdigo_stages` time-series table; the actual
+        KDIGO computational logic (creatinine baseline, UO rate
+        windows, CRRT detection) lives in mimic-code's component
+        scripts (kdigo_creatinine.sql, kdigo_uo.sql, kdigo_stages.sql).
+        The benchmark is therefore testing whether the agent can
+        reproduce the upstream mimic-code logic, not whether the
+        agent can independently derive the staging math.
+      - Standard variant drops only `mimiciv_derived.kdigo_stages`.
+        Raw variant drops 12 derived tables (kdigo_stages,
+        kdigo_creatinine, kdigo_uo, crrt, chemistry, first_day_lab,
+        first_day_rrt, first_day_sofa, first_day_urine_output,
+        first_day_weight, icustay_detail, icustay_hourly,
+        icustay_times). Raw-variant agent must derive the entire
+        KDIGO pipeline from `chartevents`, `inputevents`,
+        `outputevents`, `labevents`, and `procedureevents` directly.
+      - 48h window enforced via charttime filter against icustay intime.
+
+      Defensible benchmark conventions / mimic-code-aligned choices:
+        - **Baseline creatinine = lowest Cr in past 7 days**: a
+          mimic-code-specific operationalization. KDIGO 2012 itself
+          defines baseline as "known or presumed within 3 months,"
+          which is intentionally open-ended; "lowest in past 7 days"
+          is one widely-used choice but not the only valid one. See
+          benchmark/tasks/creatinine-baseline/PROVENANCE.yaml for
+          the parallel discussion of baseline-Cr methodology.
+        - **CRRT inclusion (any CRRT row -> Stage 3)**: KDIGO 2012
+          specifies "initiation of RRT" as a Stage 3 criterion;
+          implementation flags any CRRT row as Stage 3 regardless of
+          initiation context. Edge case: chronic dialysis patients
+          on CRRT for ESRD would be flagged as Stage 3 AKI even
+          though they have no acute injury. Defensible
+          operationalization (matches mimic-code), but worth
+          documenting.
+        - **UO weight uncertainty**: weight in MIMIC is recorded from
+          multiple sources at varying times; UO rate calculation
+          inherits that uncertainty. Standard known limitation;
+          documented in SKILL.md note 5.
+
+      No clinical-accuracy bugs identified. Items above are
+      method-choice / operationalization notes, not errors. No
+      instruction.md changes applied (KDIGO criteria are well-
+      specified in the cited reference, and both not-specified
+      choices — baseline approach and CRRT inclusion — are
+      clinically inferable interpretations rather than arbitrary
+      conventions).
+
+      ## Raw-variant operationalization variance
+      The raw variant requires the agent to derive kdigo_creatinine,
+      kdigo_uo, and crrt from raw tables — each with multiple
+      clinically defensible operationalizations (baseline definition,
+      weight source, hourly UO aggregation, CRRT source events,
+      anuria threshold). SKILL.md anchors some choices (baseline =
+      lowest-in-7-days; +0.3 reference = lowest-in-48h; CRRT = any
+      row) but not others (weight source, hourly aggregation, CRRT
+      source events). The raw variant therefore tests reproduction
+      of mimic-code-specific operationalizations more than
+      independent KDIGO derivation; agents making clinically
+      defensible but different choices may score lower despite
+      correct reasoning. Worth disclosing in any paper using
+      raw-variant scores.
+
+      ## Forward-looking
+      KDIGO 2026 AKI Clinical Practice Guideline (public review
+      draft, March 2026) does not substantially change the staging
+      criteria themselves; the 2012 criteria remain authoritative.
+      Updates in the 2026 draft primarily concern baseline-Cr
+      methodology (covered in the creatinine-baseline review). No
+      KDIGO-staging-specific changes anticipated for this task.
+
+references:
+  - "KDIGO Clinical Practice Guideline for Acute Kidney Injury. Kidney International Supplements. 2012;2(1):1-138."
+  - "Kellum JA, Lameire N. Diagnosis, evaluation, and management of acute kidney injury: a KDIGO summary. Critical Care. 2013;17(1):204."
+  - "KDIGO 2026 AKI Clinical Practice Guideline (public review draft, March 2026)."
+
+changelog:
+  - version: "1.0"
+    date: 2026-05-04
+    summary: Initial clinical-accuracy review of KDIGO benchmark task family. Verified KDIGO 2012 staging criteria correctly implemented; documented baseline-Cr operationalization (lowest in 7 days), CRRT inclusion convention (any vs initiation), and UO weight uncertainty. No instruction.md or SQL changes.

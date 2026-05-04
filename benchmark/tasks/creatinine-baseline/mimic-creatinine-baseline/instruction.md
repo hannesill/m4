@@ -1,8 +1,9 @@
 # Task: Estimate Baseline Creatinine
 
 Estimate the baseline (pre-illness) serum creatinine for each hospital
-admission, following the approach in Siew et al. (CJASN, 2012).
-Adults only (age >= 18).
+admission, following the KDIGO AKI Clinical Practice Guideline (2012).
+Use the MDRD equation without the race coefficient, consistent with
+current race-free eGFR practice. Adults only (age >= 18).
 
 Output a CSV file to `{output_path}` with these exact columns:
 hadm_id, gender, age, scr_min, ckd, mdrd_est, scr_baseline
