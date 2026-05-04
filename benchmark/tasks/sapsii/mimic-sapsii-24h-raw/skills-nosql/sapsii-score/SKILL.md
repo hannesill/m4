@@ -23,23 +23,67 @@ In M4Bench, target concept tables listed in the task configuration are removed o
 
 ## Score Components (First 24 Hours)
 
-| Variable | Scoring Range | Points |
-|----------|---------------|--------|
-| Age | <40 to >=80 | 0-18 |
-| Heart Rate | <40 to >=160 | 0-11 |
-| Systolic BP | <70 to >=200 | 0-13 |
-| Temperature | <39 or >=39C | 0-3 |
-| PaO2/FiO2 (if ventilated) | <100 to >=200 | 6-11 |
-| Urine Output | <500 to >=1000 mL/day | 0-11 |
-| BUN | <28 to >=84 mg/dL | 0-10 |
-| WBC | <1 to >=20 x10^9/L | 0-12 |
-| Potassium | <3 or >=5 mEq/L | 0-3 |
-| Sodium | <125 or >=145 mEq/L | 0-5 |
-| Bicarbonate | <15 to >=20 mEq/L | 0-6 |
-| Bilirubin | <4 to >=6 mg/dL | 0-9 |
-| GCS | <6 to >=14 | 0-26 |
-| Chronic Disease | AIDS/Hematologic Malignancy/Metastatic Cancer | 9-17 |
-| Admission Type | Scheduled Surgical/Medical/Unscheduled Surgical | 0-8 |
+Use the worst value in the first 24 hours of ICU admission. When both low and
+high extremes can score, assign the score for the qualifying extreme with the
+highest SAPS-II point value. Missing components are scored as 0 in M4Bench.
+
+| Component | Value | Points |
+|-----------|-------|--------|
+| Age, years | < 40 | 0 |
+| Age, years | 40-59 | 7 |
+| Age, years | 60-69 | 12 |
+| Age, years | 70-74 | 15 |
+| Age, years | 75-79 | 16 |
+| Age, years | >= 80 | 18 |
+| Heart rate, bpm | < 40 | 11 |
+| Heart rate, bpm | 40-69 | 2 |
+| Heart rate, bpm | 70-119 | 0 |
+| Heart rate, bpm | 120-159 | 4 |
+| Heart rate, bpm | >= 160 | 7 |
+| Systolic BP, mmHg | < 70 | 13 |
+| Systolic BP, mmHg | 70-99 | 5 |
+| Systolic BP, mmHg | 100-199 | 0 |
+| Systolic BP, mmHg | >= 200 | 2 |
+| Temperature, deg C | < 39.0 | 0 |
+| Temperature, deg C | >= 39.0 | 3 |
+| PaO2/FiO2, if ventilated or CPAP/BiPAP | < 100 | 11 |
+| PaO2/FiO2, if ventilated or CPAP/BiPAP | 100-199 | 9 |
+| PaO2/FiO2, if ventilated or CPAP/BiPAP | >= 200 | 6 |
+| PaO2/FiO2, not ventilated/CPAP/BiPAP | Any value or missing | 0 |
+| Urine output, mL/day | < 500 | 11 |
+| Urine output, mL/day | 500-999 | 4 |
+| Urine output, mL/day | >= 1000 | 0 |
+| BUN, mg/dL | < 28 | 0 |
+| BUN, mg/dL | 28-83 | 6 |
+| BUN, mg/dL | >= 84 | 10 |
+| WBC, x10^9/L | < 1.0 | 12 |
+| WBC, x10^9/L | 1.0-19.9 | 0 |
+| WBC, x10^9/L | >= 20.0 | 3 |
+| Potassium, mEq/L | < 3.0 | 3 |
+| Potassium, mEq/L | 3.0-4.9 | 0 |
+| Potassium, mEq/L | >= 5.0 | 3 |
+| Sodium, mEq/L | < 125 | 5 |
+| Sodium, mEq/L | 125-144 | 0 |
+| Sodium, mEq/L | >= 145 | 1 |
+| Bicarbonate, mEq/L | < 15 | 6 |
+| Bicarbonate, mEq/L | 15-19 | 3 |
+| Bicarbonate, mEq/L | >= 20 | 0 |
+| Bilirubin, mg/dL | < 4.0 | 0 |
+| Bilirubin, mg/dL | 4.0-5.9 | 4 |
+| Bilirubin, mg/dL | >= 6.0 | 9 |
+| GCS | < 3 | Treat as missing |
+| GCS | 3-5 | 26 |
+| GCS | 6-8 | 13 |
+| GCS | 9-10 | 7 |
+| GCS | 11-13 | 5 |
+| GCS | 14-15 | 0 |
+| Chronic disease | AIDS | 17 |
+| Chronic disease | Hematologic malignancy | 10 |
+| Chronic disease | Metastatic cancer | 9 |
+| Chronic disease | None of the above | 0 |
+| Admission type | Scheduled surgical | 0 |
+| Admission type | Medical | 6 |
+| Admission type | Unscheduled surgical | 8 |
 
 ## Critical Implementation Notes
 
