@@ -11,17 +11,17 @@ sources:
 created:
   by: m4bench task authoring
   role: benchmark-task-construction
-  date: 2026-05-03
+  date: unknown
 
 reviews:
   - by: Ryohei Kobayashi-Yamamoto, MD
     date: 2026-05-03
     scope: clinical-accuracy, task-instruction-consistency
-    notes: Reviewed instruction.md and bundled skill files for clinical accuracy, task alignment, and consistency between task requirements and skill guidance.
+    notes: Reviewed instruction.md and bundled skill files, including SIRS criteria and decoy MELD skill, for clinical accuracy, task alignment, and benchmark suitability. No major clinical concerns identified.
 
 references: []
 
 changelog:
   - version: "1.0"
     date: 2026-05-03
-    summary: Added provenance record for clinician review of M4Bench task materials.
+    summary: Added draft provenance record for M4Bench task review; original task creation date not verified.
