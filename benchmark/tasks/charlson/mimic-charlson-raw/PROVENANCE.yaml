@@ -36,7 +36,7 @@ reviews:
       correct per Quan/Charlson. Age-score cutoffs (<=50, 51-60, 61-70,
       71-80, >80 mapping to 0/1/2/3/4) match Charlson 1994.
 
-      No clinical-accuracy issues identified. 
+      No clinical-accuracy issues identified.
 
       Acceptable benchmark adaptation:
         - Drops `mimiciv_derived.charlson` and `mimiciv_derived.age` in
