@@ -2,6 +2,10 @@ sources:
   - "MIMIC variant: adapted from MIT-LCP mimic-code first_day_gcs.sql / gcs.sql; intubated-patient handling per SAPS-II convention (Le Gall 1993)."
   - "eICU variant: adapted from MIT-LCP eicu-code pivoted-gcs.sql."
 
+applies_to:
+  - eicu-gcs
+  - mimic-gcs-24h-raw
+
 created:
   by: m4bench-task-authoring
   role: authoring
@@ -102,6 +106,11 @@ reviews:
       comparable to runs against post-edit instruction.md, particularly
       in skills-decoy and no-skill conditions. Worth flagging to
       project leadership before scheduling re-run.
+
+  - by: Dukyong Yoon, MD
+    date: 2026-05-05
+    scope: clinical-accuracy, second-review
+    notes: Second clinical review for the family-level provenance record; reviewed task definition, bundled skills, source alignment, and benchmark suitability.
 
 references:
   - "Teasdale G, Jennett B. Assessment of coma and impaired consciousness: A practical scale. Lancet. 1974;2(7872):81-84."

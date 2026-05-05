@@ -1,16 +1,19 @@
 sources:
   - description: M4Bench Sepsis-3 raw-table task instruction and bundled task skills
     files:
-      - task.toml
-      - instruction.md
-      - skills/sepsis-3-cohort/SKILL.md
-      - skills/sofa-score/SKILL.md
-      - skills/suspicion-of-infection/SKILL.md
-      - skills-nosql/sepsis-3-cohort/SKILL.md
-      - skills-nosql/sofa-score/SKILL.md
-      - skills-nosql/suspicion-of-infection/SKILL.md
-      - skills-rawsql/mimic-sepsis3-raw/SKILL.md
-      - skills-decoy/kdigo-aki-staging/SKILL.md
+      - mimic-sepsis3-raw/task.toml
+      - mimic-sepsis3-raw/instruction.md
+      - mimic-sepsis3-raw/skills/sepsis-3-cohort/SKILL.md
+      - mimic-sepsis3-raw/skills/sofa-score/SKILL.md
+      - mimic-sepsis3-raw/skills/suspicion-of-infection/SKILL.md
+      - mimic-sepsis3-raw/skills-nosql/sepsis-3-cohort/SKILL.md
+      - mimic-sepsis3-raw/skills-nosql/sofa-score/SKILL.md
+      - mimic-sepsis3-raw/skills-nosql/suspicion-of-infection/SKILL.md
+      - mimic-sepsis3-raw/skills-rawsql/mimic-sepsis3-raw/SKILL.md
+      - mimic-sepsis3-raw/skills-decoy/kdigo-aki-staging/SKILL.md
+
+applies_to:
+  - mimic-sepsis3-raw
 
 created:
   by: m4bench task authoring
@@ -29,6 +32,11 @@ reviews:
       no major clinical concerns identified. Minor note: ICU-only framing
       reflects the M4Bench/MIMIC implementation rather than the conceptual
       Sepsis-3 definition itself.
+
+  - by: Dukyong Yoon, MD
+    date: 2026-05-05
+    scope: clinical-accuracy, second-review
+    notes: Second clinical review for the family-level provenance record; reviewed task definition, bundled skills, source alignment, and benchmark suitability.
 
 references:
   - "Singer M et al. The Third International Consensus Definitions for Sepsis and Septic Shock (Sepsis-3). JAMA. 2016;315(8):801-810."

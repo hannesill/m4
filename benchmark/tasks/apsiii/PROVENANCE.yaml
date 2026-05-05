@@ -1,6 +1,10 @@
 sources:
   - "Adapted from MIT-LCP mimic-code apsiii.sql; deviations documented in ground-truth SQL header."
 
+applies_to:
+  - mimic-apsiii-24h
+  - mimic-apsiii-24h-raw
+
 created:
   by: m4bench-task-authoring
   role: authoring
@@ -56,6 +60,11 @@ reviews:
            producing NULL -> COALESCE'd to 0. Per Knaus, both groups
            should use PaO2. Systematically under-scores oxygenation
            in those subgroups.
+  - by: Dukyong Yoon, MD
+    date: 2026-05-05
+    scope: clinical-accuracy, second-review
+    notes: Second clinical review for the family-level provenance record; reviewed task definition, bundled skills, source alignment, and benchmark suitability.
+
 references:
   - "Knaus WA, Wagner DP, Draper EA, et al. The APACHE III prognostic system: risk prediction of hospital mortality for critically ill hospitalized adults. Chest. 1991;100(6):1619-1636."
   - "van Valburg MK, et al. Predicting 30-day mortality in intensive care unit patients with ischaemic stroke and intracerebral haemorrhage. Eur J Anaesthesiol. 2024;41(2):105-113."
