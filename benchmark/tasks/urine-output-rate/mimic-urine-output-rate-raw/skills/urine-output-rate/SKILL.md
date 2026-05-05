@@ -36,15 +36,10 @@ Aggregate raw output events per (stay_id, charttime) from `mimiciv_icu.outputeve
 
 ICU stay boundaries are derived from heart rate charting (itemid 220045) rather than `icustays.intime/outtime`:
 
-```sql
-SELECT stay_id, MIN(charttime) AS intime_hr, MAX(charttime) AS outtime_hr
-FROM mimiciv_icu.icustays ie
-INNER JOIN mimiciv_icu.chartevents ce
-  ON ie.stay_id = ce.stay_id AND ce.itemid = 220045
-  AND ce.charttime > ie.intime - INTERVAL '1' MONTH
-  AND ce.charttime < ie.outtime + INTERVAL '1' MONTH
-GROUP BY ie.stay_id
-```
+For each ICU stay, use the earliest and latest linked heart-rate charting
+times as the observation boundary. Include heart-rate charting events linked to
+the stay and occurring within one month before the recorded ICU `intime` and
+one month after the recorded ICU `outtime`.
 
 ### 3. Time Delta Computation
 
@@ -69,13 +64,9 @@ Both `urineoutput` (mL) and `tm_since_last_uo` (minutes → hours) are summed wi
 ### 5. Weight Normalization
 
 Patient weight comes from charted weight intervals, joined with temporal overlap:
-```sql
-LEFT JOIN weight_durations wd
-  ON ur.stay_id = wd.stay_id
-  AND ur.charttime > wd.starttime
-  AND ur.charttime <= wd.endtime
-  AND wd.weight > 0
-```
+Use the charted weight interval that covers the urine-output measurement time.
+The measurement time must be after the weight interval start and at or before
+the weight interval end, and the selected weight must be positive.
 
 ### 6. Minimum Coverage Rules
 

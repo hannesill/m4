@@ -4,7 +4,6 @@ sources:
       - mimic-sapsii-24h/task.toml
       - mimic-sapsii-24h/instruction.md
       - mimic-sapsii-24h/skills/sapsii-score/SKILL.md
-      - mimic-sapsii-24h/skills-nosql/sapsii-score/SKILL.md
       - mimic-sapsii-24h/skills-rawsql/mimic-sapsii-24h/SKILL.md
       - mimic-sapsii-24h/skills-decoy/oasis-score/SKILL.md
   - description: M4Bench SAPS II raw-table task instruction and bundled task skills
@@ -12,7 +11,6 @@ sources:
       - mimic-sapsii-24h-raw/task.toml
       - mimic-sapsii-24h-raw/instruction.md
       - mimic-sapsii-24h-raw/skills/sapsii-score/SKILL.md
-      - mimic-sapsii-24h-raw/skills-nosql/sapsii-score/SKILL.md
       - mimic-sapsii-24h-raw/skills-rawsql/mimic-sapsii-24h-raw/SKILL.md
       - mimic-sapsii-24h-raw/skills-decoy/oasis-score/SKILL.md
 

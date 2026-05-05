@@ -92,7 +92,6 @@ CONDITION_DURATION_MULTIPLIER = {
     "no-skill": 1.15,
     "with-skill-all": 1.10,
     "with-skill": 1.0,
-    "with-skill-nosql": 1.0,
     "with-skill-decoy": 0.95,
     "with-skill-rawsql": 0.85,
 }
@@ -376,9 +375,10 @@ def _build_rerun_v1_1_tiers(seeds: int = 5, agent: str = "codex") -> list[Tier]:
     """Build the v1.1 audited rerun campaign.
 
     Closes audit-risk vectors: artifact retention (every cell), instruction
-    disambiguation (convention paragraph already added in run.py), SQL-leakage
-    ablation (with-skill-nosql on the two SQL-bearing skills), and matched-content
-    decoy ablation (with-skill-decoy on selected high-delta tasks).
+    disambiguation (convention paragraph already added in run.py), raw-SQL
+    matched-content controls, and decoy ablation on selected high-delta tasks.
+    Canonical with-skill artifacts are SQL-free; raw SQL appears only in the
+    with-skill-rawsql control condition.
     """
     tiers: list[Tier] = []
     model_plan = _model_plan_for_agent(agent)
@@ -407,39 +407,7 @@ def _build_rerun_v1_1_tiers(seeds: int = 5, agent: str = "codex") -> list[Tier]:
                     )
     tiers.append(t1)
 
-    # ── Tier 2: SQL-strip ablation on the two SQL-bearing skill families ─
-    # An audit of `^```sql` fences across all 28 task-skill pairs identified
-    # exactly two skill families with embedded SQL code blocks: urine-output
-    # rate (2 fences in the SKILL.md, applied to standard and raw variants)
-    # and vasopressor-equivalents (1 fence, applied to standard and raw
-    # variants). gcs-calculation, despite earlier informal triage, has no
-    # ```sql fences. Strip them, rerun, compare against tier-1 with-skill.
-    SQL_BEARING = [
-        "mimic-urine-output-rate",
-        "mimic-urine-output-rate-raw",
-        "mimic-vasopressor-equivalents",
-        "mimic-vasopressor-equivalents-raw",
-    ]
-    t2 = Tier(
-        2,
-        "SQL-strip ablation",
-        "Does delta survive removing fenced SQL fragments from the skill?",
-    )
-    for task in SQL_BEARING:
-        for model in primary_models:
-            for seed in range(1, seeds + 1):
-                t2.runs.append(
-                    dict(
-                        task=task,
-                        condition="with-skill-nosql",
-                        model=model,
-                        schema="native",
-                        trial=seed,
-                    )
-                )
-    tiers.append(t2)
-
-    # ── Tier 4: Raw-SQL matched-content control ──────────────────────────
+    # ── Tier 2: Raw-SQL matched-content control ──────────────────────────
     # Inject the public reference SQL as the agent's skill content. This is
     # the strongest matched-content control: same task-relevant material as
     # WITH-SKILL but stripped of the procedural prose packaging. If raw SQL
@@ -458,15 +426,15 @@ def _build_rerun_v1_1_tiers(seeds: int = 5, agent: str = "codex") -> list[Tier]:
         "mimic-ventilation",
         "eicu-oasis",
     ]
-    t4 = Tier(
-        4,
+    t2 = Tier(
+        2,
         "Raw-SQL matched-content control",
         "Does the public reference SQL alone match the procedural skill?",
     )
     for task in RAWSQL_TASKS:
         for model in primary_models:
             for seed in range(1, seeds + 1):
-                t4.runs.append(
+                t2.runs.append(
                     dict(
                         task=task,
                         condition="with-skill-rawsql",
@@ -475,7 +443,7 @@ def _build_rerun_v1_1_tiers(seeds: int = 5, agent: str = "codex") -> list[Tier]:
                         trial=seed,
                     )
                 )
-    tiers.append(t4)
+    tiers.append(t2)
 
     # ── Tier 3: decoy-skill matched-context ablation ─────────────────────
     # Inject a clinically-related but task-mismatched skill on selected
@@ -1294,7 +1262,7 @@ def main():
         default=DEFAULT_PROFILE,
         help=(
             "Matrix profile: rerun-v1.1 is the default audited submission "
-            "profile with NS+WS, NO-SQL, raw-SQL, and decoy ablations; "
+            "profile with NS+WS, raw-SQL, and decoy controls; "
             "powered is exploratory/pilot-informed; "
             "provider-comparison is a sparse external-provider sentinel set; "
             "rerun-v1.1 is retained as an explicit stable alias for provenance"
