@@ -1,6 +1,9 @@
 sources:
   - "Adapted from MIT-LCP mimic-code charlson.sql; ICD mappings via Quan 2005."
 
+applies_to:
+  - mimic-charlson-raw
+
 created:
   by: m4bench-task-authoring
   role: authoring
@@ -43,6 +46,11 @@ reviews:
           raw mode; agent must derive age from
           `patients.anchor_age + (admittime - anchor_year)` and compute
           all 17 condition flags from `diagnoses_icd`.
+
+  - by: Dukyong Yoon, MD
+    date: 2026-05-05
+    scope: clinical-accuracy, second-review
+    notes: Second clinical review for the family-level provenance record; reviewed task definition, bundled skills, source alignment, and benchmark suitability.
 
 references:
   - "Charlson ME, et al. A new method of classifying prognostic comorbidity in longitudinal studies: development and validation. J Chronic Dis. 1987;40(5):373-83."

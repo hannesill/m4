@@ -1,6 +1,10 @@
 sources:
   - "Adapted from MIT-LCP mimic-code creatinine_baseline.sql; MDRD-imputation method per ADQI 2004 / KDIGO 2012."
 
+applies_to:
+  - mimic-creatinine-baseline
+  - mimic-creatinine-baseline-raw
+
 created:
   by: m4bench-task-authoring
   role: authoring
@@ -83,6 +87,11 @@ reviews:
 
       No computational bugs in the SQL — items above are method-choice
       and citation-accuracy notes, not errors.
+
+  - by: Dukyong Yoon, MD
+    date: 2026-05-05
+    scope: clinical-accuracy, second-review
+    notes: Second clinical review for the family-level provenance record; reviewed task definition, bundled skills, source alignment, and benchmark suitability.
 
 references:
   - "KDIGO Clinical Practice Guideline for Acute Kidney Injury. Kidney International Supplements. 2012;2(1):1-138."

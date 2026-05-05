@@ -1,6 +1,10 @@
 sources:
   - "Adapted from MIT-LCP mimic-code kdigo_stages.sql / kdigo_creatinine.sql / kdigo_uo.sql; staging criteria per KDIGO 2012 AKI Clinical Practice Guideline."
 
+applies_to:
+  - mimic-kdigo-48h
+  - mimic-kdigo-48h-raw
+
 created:
   by: m4bench-task-authoring
   role: authoring
@@ -109,6 +113,11 @@ reviews:
       Updates in the 2026 draft primarily concern baseline-Cr
       methodology (covered in the creatinine-baseline review). No
       KDIGO-staging-specific changes anticipated for this task.
+
+  - by: Dukyong Yoon, MD
+    date: 2026-05-05
+    scope: clinical-accuracy, second-review
+    notes: Second clinical review for the family-level provenance record; reviewed task definition, bundled skills, source alignment, and benchmark suitability.
 
 references:
   - "KDIGO Clinical Practice Guideline for Acute Kidney Injury. Kidney International Supplements. 2012;2(1):1-138."

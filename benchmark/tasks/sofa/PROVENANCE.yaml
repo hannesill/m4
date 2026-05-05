@@ -6,6 +6,10 @@ sources:
     description: MIT-LCP mimic-code MIMIC-IV first-day SOFA implementation (used for task ground truth)
     license: MIT
 
+applies_to:
+  - mimic-sofa-24h
+  - mimic-sofa-24h-raw
+
 created:
   by: M4 Clinical Skills Team
   role: clinical-extraction
@@ -72,6 +76,11 @@ reviews:
       - Distribution is consistent with published MIMIC-IV SOFA characteristics
 
       No errors in the underlying benchmark scoring logic or SQL implementation. Core SOFA scoring is consistent with the M4 Bench ground-truth convention, with important documented deviations from source mimic-code and standard SOFA tables: arterial-only PaO2/FiO2 filtering, missing-as-normal component imputation, invasive-ventilation-only respiratory support, and >= boundary handling for bilirubin/creatinine. These conventions are appropriate for the benchmark but should not be described as universal clinical ground truth. All identified issues are either documented limitations of mimic-code conventions, source data quality issues, imprecise wording in skill text, or known limitations of Vincent 1996 itself (e.g., 1-hour vasopressor minimum not enforced, GCS sedation/intubation handling)
+
+  - by: Ryohei Kobayashi-Yamamoto, MD
+    date: 2026-05-05
+    scope: clinical-accuracy, second-review
+    notes: Second clinical review for the family-level provenance record; reviewed task definition, bundled skills, documented limitations, and benchmark suitability.
 
 references:
   - Vincent JL, Moreno R, Takala J, Willatts S, De Mendonca A, Bruining H, Reinhart CK, Suter PM, Thijs LG. The SOFA (Sepsis-related Organ Failure Assessment) score to describe organ dysfunction/failure. Intensive Care Med. 1996;22(7):707-710

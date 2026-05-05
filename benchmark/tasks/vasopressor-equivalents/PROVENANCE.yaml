@@ -3,6 +3,10 @@ sources:
     description: MIT-LCP mimic-code MIMIC-IV vasopressin medication concept
     license: MIT
 
+applies_to:
+  - mimic-vasopressor-equivalents
+  - mimic-vasopressor-equivalents-raw
+
 created:
   by: M4 Clinical Skills Team
   role: clinical-extraction
@@ -35,6 +39,11 @@ reviews:
       No errors in the core formula or equivalence factors. The angiotensin II omission affects approximately 399 administration intervals and may bias shock severity estimates downward for affected patients
 
       Note: Review applies to clinical content of the vasopressor-equivalents skill, which is shared across the skills, skills-rawsql, and skills-nosql variants in this task
+
+  - by: Ryohei Kobayashi-Yamamoto, MD
+    date: 2026-05-05
+    scope: clinical-accuracy, second-review
+    notes: Second clinical review for the family-level provenance record; reviewed task definition, bundled skills, documented limitations, and benchmark suitability.
 
 references:
   - Goradia S, Sardaneh AA, Narayan SW, Penm J, Patanwala AE. Vasopressor dose equivalence A scoping review and suggested formula. Journal of Critical Care. 2021;61:233-240

@@ -1,0 +1,44 @@
+sources:
+  - description: M4Bench SAPS II standard task instruction and bundled task skills
+    files:
+      - mimic-sapsii-24h/task.toml
+      - mimic-sapsii-24h/instruction.md
+      - mimic-sapsii-24h/skills/sapsii-score/SKILL.md
+      - mimic-sapsii-24h/skills-nosql/sapsii-score/SKILL.md
+      - mimic-sapsii-24h/skills-rawsql/mimic-sapsii-24h/SKILL.md
+      - mimic-sapsii-24h/skills-decoy/oasis-score/SKILL.md
+  - description: M4Bench SAPS II raw-table task instruction and bundled task skills
+    files:
+      - mimic-sapsii-24h-raw/task.toml
+      - mimic-sapsii-24h-raw/instruction.md
+      - mimic-sapsii-24h-raw/skills/sapsii-score/SKILL.md
+      - mimic-sapsii-24h-raw/skills-nosql/sapsii-score/SKILL.md
+      - mimic-sapsii-24h-raw/skills-rawsql/mimic-sapsii-24h-raw/SKILL.md
+      - mimic-sapsii-24h-raw/skills-decoy/oasis-score/SKILL.md
+
+applies_to:
+  - mimic-sapsii-24h
+  - mimic-sapsii-24h-raw
+
+created:
+  by: m4bench task authoring
+  role: benchmark-task-construction
+  date: unknown
+
+reviews:
+  - by: Ryohei Kobayashi-Yamamoto, MD
+    date: 2026-05-03
+    scope: clinical-accuracy, task-instruction-consistency
+    notes: Reviewed standard and raw task instructions and bundled skill files, including SAPS II score and decoy OASIS skill, for clinical accuracy, task alignment, and benchmark suitability. No major clinical concerns identified.
+
+  - by: Dukyong Yoon, MD
+    date: 2026-05-05
+    scope: clinical-accuracy, second-review
+    notes: Second clinical review for the family-level provenance record; reviewed task definition, bundled skills, source alignment, and benchmark suitability.
+
+references: []
+
+changelog:
+  - version: "1.0"
+    date: 2026-05-03
+    summary: Added draft provenance record for M4Bench task review; original task creation date not verified.
