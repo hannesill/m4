@@ -132,7 +132,6 @@ For eICU, SAPS-II must be calculated from raw tables. 13 of 15 components are st
 - **Admission type**: No direct elective/surgical classification as in MIMIC. Must approximate from `patient.unitadmitsource` and service fields.
 - **Ventilation detection**: Different logic than MIMIC — uses `respiratorycare` and `respiratorycharting` tables rather than procedural events.
 
-
 ## References
 
 - Le Gall JR, Lemeshow S, Saulnier F. "A new Simplified Acute Physiology Score (SAPS II) based on a European/North American multicenter study." JAMA. 1993;270(24):2957-2963.

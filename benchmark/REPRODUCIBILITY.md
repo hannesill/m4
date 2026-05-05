@@ -176,12 +176,14 @@ Use it only to verify local execution, result JSON writing, and analysis export.
 
 ## 7. Full v1.1 Campaign
 
-The full audited submission campaign schedules 800 Codex runs:
+The full audited submission campaign schedules 760 Codex runs:
 
 - Tier 1: 28 native tasks, no-skill and with-skill, 2 models, 5 trials
-- Tier 2: SQL-stripped skill ablation on 4 tasks
+- Tier 2: raw-SQL matched-content control on 10 tasks
 - Tier 3: decoy-skill matched-context control on 10 tasks
-- Tier 4: raw-SQL matched-content control on 10 tasks
+
+Canonical with-skill artifacts are SQL-free. Raw SQL is used only in the
+explicit matched-content control.
 
 Run through the wrapper script:
 

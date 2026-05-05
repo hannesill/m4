@@ -4,7 +4,6 @@ sources:
       - mimic-sirs-24h-raw/task.toml
       - mimic-sirs-24h-raw/instruction.md
       - mimic-sirs-24h-raw/skills/sirs-criteria/SKILL.md
-      - mimic-sirs-24h-raw/skills-nosql/sirs-criteria/SKILL.md
       - mimic-sirs-24h-raw/skills-rawsql/mimic-sirs-24h-raw/SKILL.md
       - mimic-sirs-24h-raw/skills-decoy/meld-score/SKILL.md
 

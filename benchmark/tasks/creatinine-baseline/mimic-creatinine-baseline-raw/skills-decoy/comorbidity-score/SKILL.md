@@ -98,7 +98,6 @@ In M4Bench, target concept tables listed in the task configuration are removed o
 - **Primary Diagnosis Handling**: Charlson includes all diagnoses. Elixhauser excludes `seq_num = 1` per the original methodology. However, MIMIC's `seq_num` does not reliably indicate the clinically principal diagnosis — it reflects billing order, not clinical primacy. This is a known limitation; alternative approaches include filtering by DRG or accepting the imprecision.
 - **ICD Version Transition**: MIMIC-IV spans ICD-9 (pre-Oct 2015) and ICD-10 (post-Oct 2015). Both versions mapped.
 
-
 ### eICU
 
 For eICU, three data sources are available, each with trade-offs:

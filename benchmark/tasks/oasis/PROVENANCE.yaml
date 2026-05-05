@@ -4,7 +4,6 @@ sources:
       - mimic-oasis-24h/task.toml
       - mimic-oasis-24h/instruction.md
       - mimic-oasis-24h/skills/oasis-score/SKILL.md
-      - mimic-oasis-24h/skills-nosql/oasis-score/SKILL.md
       - mimic-oasis-24h/skills-rawsql/mimic-oasis-24h/SKILL.md
       - mimic-oasis-24h/skills-decoy/apsiii-score/SKILL.md
   - description: M4Bench MIMIC-IV OASIS raw-table task instruction and bundled task skills
@@ -12,7 +11,6 @@ sources:
       - mimic-oasis-24h-raw/task.toml
       - mimic-oasis-24h-raw/instruction.md
       - mimic-oasis-24h-raw/skills/oasis-score/SKILL.md
-      - mimic-oasis-24h-raw/skills-nosql/oasis-score/SKILL.md
       - mimic-oasis-24h-raw/skills-rawsql/mimic-oasis-24h-raw/SKILL.md
       - mimic-oasis-24h-raw/skills-decoy/apsiii-score/SKILL.md
   - description: M4Bench eICU OASIS task instruction and bundled task skills
@@ -20,7 +18,6 @@ sources:
       - eicu-oasis/task.toml
       - eicu-oasis/instruction.md
       - eicu-oasis/skills/oasis-score/SKILL.md
-      - eicu-oasis/skills-nosql/oasis-score/SKILL.md
       - eicu-oasis/skills-rawsql/eicu-oasis/SKILL.md
       - eicu-oasis/skills-decoy/apsiii-score/SKILL.md
 

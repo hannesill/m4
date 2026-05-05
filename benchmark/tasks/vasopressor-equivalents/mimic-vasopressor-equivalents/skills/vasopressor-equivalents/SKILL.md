@@ -35,16 +35,12 @@ In M4Bench, target concept tables listed in the task configuration are removed o
 
 ## Calculation Formula
 
-```sql
-norepinephrine_equivalent_dose = ROUND(
-    COALESCE(norepinephrine, 0)
-    + COALESCE(epinephrine, 0)
-    + COALESCE(phenylephrine / 10, 0)
-    + COALESCE(dopamine / 100, 0)
-    + COALESCE(vasopressin * 2.5 / 60, 0),
-    4
-)
-```
+Treat missing agent-specific dose rates as zero. Compute the norepinephrine
+equivalent dose as:
+
+`norepinephrine + epinephrine + phenylephrine / 10 + dopamine / 100 + vasopressin * 2.5 / 60`
+
+Round the final value to 4 decimal places.
 
 ## Source Tables
 

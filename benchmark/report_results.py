@@ -249,7 +249,7 @@ def contamination_rows(cells: list[dict]) -> list[dict]:
 def control_rows(cells: list[dict]) -> list[dict]:
     index = {(c["task"], c["schema"], c["model"], c["condition"]): c for c in cells}
     out: list[dict] = []
-    for condition in ("with-skill-nosql", "with-skill-rawsql", "with-skill-decoy"):
+    for condition in ("with-skill-rawsql", "with-skill-decoy"):
         for (task, schema, model, cell_condition), control in sorted(index.items()):
             if schema != "native" or cell_condition != condition:
                 continue

@@ -35,7 +35,7 @@
       "skipped": false,
       "decoy": "sofa-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "apsiii-score"
       ]
     },
@@ -44,7 +44,7 @@
       "skipped": false,
       "decoy": "sofa-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "apsiii-score"
       ]
     },
@@ -53,7 +53,7 @@
       "skipped": false,
       "decoy": "sofa-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "comorbidity-score"
       ]
     },
@@ -62,7 +62,7 @@
       "skipped": false,
       "decoy": "comorbidity-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "baseline-creatinine"
       ]
     },
@@ -71,7 +71,7 @@
       "skipped": false,
       "decoy": "comorbidity-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "baseline-creatinine"
       ]
     },
@@ -80,7 +80,7 @@
       "skipped": false,
       "decoy": "meld-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "gcs-calculation"
       ]
     },
@@ -89,7 +89,7 @@
       "skipped": false,
       "decoy": "meld-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "gcs-calculation"
       ]
     },
@@ -98,7 +98,7 @@
       "skipped": false,
       "decoy": "meld-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "kdigo-aki-staging"
       ]
     },
@@ -107,7 +107,7 @@
       "skipped": false,
       "decoy": "meld-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "kdigo-aki-staging"
       ]
     },
@@ -116,7 +116,7 @@
       "skipped": false,
       "decoy": "kdigo-aki-staging",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "meld-score"
       ]
     },
@@ -125,7 +125,7 @@
       "skipped": false,
       "decoy": "kdigo-aki-staging",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "meld-score"
       ]
     },
@@ -134,7 +134,7 @@
       "skipped": false,
       "decoy": "apsiii-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "oasis-score"
       ]
     },
@@ -143,7 +143,7 @@
       "skipped": false,
       "decoy": "apsiii-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "oasis-score"
       ]
     },
@@ -152,7 +152,7 @@
       "skipped": false,
       "decoy": "apsiii-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "oasis-score"
       ]
     },
@@ -161,7 +161,7 @@
       "skipped": false,
       "decoy": "oasis-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "sapsii-score"
       ]
     },
@@ -170,7 +170,7 @@
       "skipped": false,
       "decoy": "oasis-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "sapsii-score"
       ]
     },
@@ -179,7 +179,7 @@
       "skipped": false,
       "decoy": "kdigo-aki-staging",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "sepsis-3-cohort",
         "sofa-score",
         "suspicion-of-infection"
@@ -190,7 +190,7 @@
       "skipped": false,
       "decoy": "meld-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "sirs-criteria"
       ]
     },
@@ -199,7 +199,7 @@
       "skipped": false,
       "decoy": "sapsii-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "sofa-score"
       ]
     },
@@ -208,7 +208,7 @@
       "skipped": false,
       "decoy": "sapsii-score",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "sofa-score"
       ]
     },
@@ -217,7 +217,7 @@
       "skipped": false,
       "decoy": "ventilation-classification",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "suspicion-of-infection"
       ]
     },
@@ -226,7 +226,7 @@
       "skipped": false,
       "decoy": "ventilation-classification",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "suspicion-of-infection"
       ]
     },
@@ -235,7 +235,7 @@
       "skipped": false,
       "decoy": "ventilation-classification",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "urine-output-rate"
       ]
     },
@@ -244,7 +244,7 @@
       "skipped": false,
       "decoy": "ventilation-classification",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "urine-output-rate"
       ]
     },
@@ -253,7 +253,7 @@
       "skipped": false,
       "decoy": "kdigo-aki-staging",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "vasopressor-equivalents"
       ]
     },
@@ -262,7 +262,7 @@
       "skipped": false,
       "decoy": "kdigo-aki-staging",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "vasopressor-equivalents"
       ]
     },
@@ -271,7 +271,7 @@
       "skipped": false,
       "decoy": "suspicion-of-infection",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "ventilation-classification"
       ]
     },
@@ -280,7 +280,7 @@
       "skipped": false,
       "decoy": "suspicion-of-infection",
       "rawsql_built": true,
-      "nosql_skills": [
+      "canonical_skills": [
         "ventilation-classification"
       ]
     }
