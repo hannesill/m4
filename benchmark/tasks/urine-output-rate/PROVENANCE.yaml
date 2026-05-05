@@ -3,6 +3,10 @@ sources:
     description: MIT-LCP mimic-code MIMIC-IV urine output rate concept
     license: MIT
 
+applies_to:
+  - mimic-urine-output-rate
+  - mimic-urine-output-rate-raw
+
 created:
   by: M4 Clinical Skills Team
   role: clinical-extraction
@@ -33,6 +37,11 @@ reviews:
       Off-by-one hour cutoffs: The 6-hour window uses DATE_DIFF(hours) <= 5 because the current measurement's own time delta is included in the sum. This is the standard mimic-code convention and the skill explicitly documents this in Implementation Notes
 
       No clinical errors that affect calculation correctness. The "GU irrigant return" wording for itemid 227488 is technically inaccurate (should be "GU irrigant input" or "irrigant infused") but the implementation produces correct urine volumes. Skill is appropriate for the benchmark task
+
+  - by: Ryohei Kobayashi-Yamamoto, MD
+    date: 2026-05-05
+    scope: clinical-accuracy, second-review
+    notes: Second clinical review for the family-level provenance record; reviewed task definition, bundled skills, documented limitations, and benchmark suitability.
 
 references:
   - KDIGO Clinical Practice Guideline for Acute Kidney Injury. Kidney International Supplements. 2012;2(1):1-138

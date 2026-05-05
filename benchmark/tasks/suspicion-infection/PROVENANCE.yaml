@@ -3,6 +3,10 @@ sources:
     description: MIT-LCP mimic-code MIMIC-IV suspicion of infection concept
     license: MIT
 
+applies_to:
+  - mimic-suspicion-infection
+  - mimic-suspicion-infection-raw
+
 created:
   by: M4 Clinical Skills Team
   role: clinical-extraction
@@ -50,6 +54,11 @@ reviews:
       Microbiology spec_type_desc filtering would substantially reduce this bias. Recommend documenting which spec_type_desc values are considered valid infection-workup cultures versus surveillance for future skill versions
 
       No errors in the core matching logic or time windows. Documented limitations affect specificity (overcalling suspected infection) more than sensitivity. For Sepsis-3 cohort identification with concurrent SOFA criteria, downstream filters partially mitigate the impact
+
+  - by: Ryohei Kobayashi-Yamamoto, MD
+    date: 2026-05-05
+    scope: clinical-accuracy, second-review
+    notes: Second clinical review for the family-level provenance record; reviewed task definition, bundled skills, documented limitations, and benchmark suitability.
 
 references:
   - Singer M, Deutschman CS, Seymour CW, et al. The Third International Consensus Definitions for Sepsis and Septic Shock (Sepsis-3). JAMA. 2016;315(8):801-810

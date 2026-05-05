@@ -3,6 +3,10 @@ sources:
     description: MIT-LCP mimic-code MIMIC-IV ventilation classification implementation
     license: MIT
 
+applies_to:
+  - mimic-ventilation
+  - mimic-ventilation-raw
+
 created:
   by: M4 Clinical Skills Team
   role: clinical-extraction
@@ -38,6 +42,11 @@ reviews:
       14-hour gap rule for episode boundary detection and LAG partitioning by (stay_id, ventilation_status) are pragmatic conventions inherited from mimic-code and not independently validated in this review
 
       No clinical errors identified that affect classification. Skill is appropriate for the benchmark task
+
+  - by: Ryohei Kobayashi-Yamamoto, MD
+    date: 2026-05-05
+    scope: clinical-accuracy, second-review
+    notes: Second clinical review for the family-level provenance record; reviewed task definition, bundled skills, documented limitations, and benchmark suitability.
 
 references:
   - MIT-LCP mimic-code repository. MIMIC-IV ventilation concept. https://github.com/MIT-LCP/mimic-code/blob/main/mimic-iv/concepts/treatment/ventilation.sql
