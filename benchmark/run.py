@@ -1522,7 +1522,7 @@ def inject_skill_variant(
 ) -> list[Path]:
     """Inject a non-canonical skill variant from `skills-<variant>/` if present.
 
-    Used by the with-skill-nosql and with-skill-decoy conditions. Falls back to
+    Used by the decoy and raw-SQL control conditions. Falls back to
     the canonical skills/ directory only if the variant directory is missing
     AND the caller passes variant="" (defensive default for legacy callers).
     """
@@ -2300,9 +2300,6 @@ def run_single_task(
         elif condition == "with-skill-all":
             print("Injecting all benchmark skills into workdir...")
             inject_all_skills(workdir, agent_name)
-        elif condition == "with-skill-nosql":
-            print("Injecting NO-SQL skill variant into workdir...")
-            inject_skill_variant(task_name, workdir, agent_name, variant="nosql")
         elif condition == "with-skill-decoy":
             print("Injecting DECOY skill variant into workdir...")
             inject_skill_variant(task_name, workdir, agent_name, variant="decoy")
@@ -3061,7 +3058,6 @@ def main():
             "no-skill",
             "with-skill",
             "with-skill-all",
-            "with-skill-nosql",
             "with-skill-decoy",
             "with-skill-rawsql",
         ],

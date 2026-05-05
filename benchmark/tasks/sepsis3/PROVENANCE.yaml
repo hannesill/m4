@@ -6,9 +6,6 @@ sources:
       - mimic-sepsis3-raw/skills/sepsis-3-cohort/SKILL.md
       - mimic-sepsis3-raw/skills/sofa-score/SKILL.md
       - mimic-sepsis3-raw/skills/suspicion-of-infection/SKILL.md
-      - mimic-sepsis3-raw/skills-nosql/sepsis-3-cohort/SKILL.md
-      - mimic-sepsis3-raw/skills-nosql/sofa-score/SKILL.md
-      - mimic-sepsis3-raw/skills-nosql/suspicion-of-infection/SKILL.md
       - mimic-sepsis3-raw/skills-rawsql/mimic-sepsis3-raw/SKILL.md
       - mimic-sepsis3-raw/skills-decoy/kdigo-aki-staging/SKILL.md
 

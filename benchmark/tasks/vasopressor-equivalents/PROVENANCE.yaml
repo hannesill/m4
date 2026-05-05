@@ -34,11 +34,11 @@ reviews:
 
       Angiotensin II exclusion (clinically relevant finding, recommended for fix): SKILL.md describes angiotensin II as "rarely used" and excludes it from the NED formula, with a parenthetical note that it could be added with x 10 factor. Verified against inputevents (itemids 229709 and 229764, both labeled "Angiotensin II (Giapreza)"): 399 administrations exist in MIMIC-IV v3.1. Angiotensin II is a modern vasopressor used in refractory septic shock and the FDA-approved indication has expanded since the original BIDMC dataset cutoff. Excluding it from the NED calculation will systematically underestimate vasopressor load for the subset of patients who received it. Per Goradia 2020 the conversion factor is angiotensin II x 10 (mcg/kg/min)
 
-      Recommendation flagged for team discussion: Update the SKILL.md formula across all variants (skills, skills-rawsql, skills-nosql, plus the original M4 skill in src/m4/skills/clinical/vasopressor-equivalents) to include angiotensin II. The current omission was inherited from automated extraction of an older MIMIC-Code SQL pre-dating widespread Angiotensin II use, not from a deliberate clinical decision. For the current benchmark run the limitation is documented here; correction proposed for the next benchmark version
+      Recommendation flagged for team discussion: Update the SKILL.md formula across all variants (skills and skills-rawsql, plus the original M4 skill in src/m4/skills/clinical/vasopressor-equivalents) to include angiotensin II. The current omission was inherited from automated extraction of an older MIMIC-Code SQL pre-dating widespread Angiotensin II use, not from a deliberate clinical decision. For the current benchmark run the limitation is documented here; correction proposed for the next benchmark version
 
       No errors in the core formula or equivalence factors. The angiotensin II omission affects approximately 399 administration intervals and may bias shock severity estimates downward for affected patients
 
-      Note: Review applies to clinical content of the vasopressor-equivalents skill, which is shared across the skills, skills-rawsql, and skills-nosql variants in this task
+      Note: Review applies to clinical content of the vasopressor-equivalents skill, which is shared across the skills and skills-rawsql variants in this task
 
   - by: Ryohei Kobayashi-Yamamoto, MD
     date: 2026-05-05

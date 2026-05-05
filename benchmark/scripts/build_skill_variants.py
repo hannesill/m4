@@ -3,10 +3,6 @@
 
 For each task that has a `skills/<name>/` directory we materialize:
 
-  skills-nosql/<name>/SKILL.md
-      The same SKILL.md with all fenced ```sql ... ``` blocks removed.
-      Other content (prose, item-id tables, formula descriptions) is preserved.
-
   skills-decoy/<assigned-skill>/SKILL.md
       A clinically-related but task-mismatched skill, taken from
       `decoy_mapping.json` (see _DECOY_MAPPING below). Used by the
@@ -21,6 +17,9 @@ For each task that has a `skills/<name>/` directory we materialize:
 
 The decoy assignment is deterministic and recorded in
 `benchmark/scripts/decoy_mapping.json` for release auditability.
+
+Canonical `skills/` are expected to be SQL-free. Raw SQL belongs only in
+`skills-rawsql/`, where it is an explicit matched-content control.
 """
 
 from __future__ import annotations
@@ -48,7 +47,6 @@ WITH-SKILL gain.
 """
 
 SQL_FENCE_RE = re.compile(r"```sql\b.*?```", re.DOTALL | re.IGNORECASE)
-EMPTY_SECTION_RE = re.compile(r"\n\n\n+")
 
 # Decoy assignment is by clinical-family proximity but with a mismatched target.
 # Each task is paired with a skill from a different organ system or scoring
@@ -96,10 +94,13 @@ _DECOY_MAPPING: dict[str, str] = {
 }
 
 
-def strip_sql_fences(text: str) -> str:
-    cleaned = SQL_FENCE_RE.sub("[SQL fragment removed by NO-SQL ablation]", text)
-    cleaned = EMPTY_SECTION_RE.sub("\n\n", cleaned)
-    return cleaned
+def assert_sql_free_skill(path: Path) -> None:
+    """Fail if a canonical skill contains fenced SQL."""
+    text = path.read_text()
+    if SQL_FENCE_RE.search(text):
+        raise RuntimeError(
+            f"Canonical skill contains fenced SQL; move SQL to skills-rawsql: {path}"
+        )
 
 
 def _find_canonical_skill(skill_name: str) -> Path | None:
@@ -144,26 +145,20 @@ def build_for_task(task_dir: Path) -> dict:
     if not skills_root.exists():
         return {"task": task_name, "skipped": True, "reason": "no skills dir"}
 
-    nosql_dir = task_dir / "skills-nosql"
     decoy_dir = task_dir / "skills-decoy"
     rawsql_dir = task_dir / "skills-rawsql"
 
     # Reset to keep this script idempotent.
-    for target in (nosql_dir, decoy_dir, rawsql_dir):
+    for target in (decoy_dir, rawsql_dir):
         if target.exists():
             shutil.rmtree(target)
 
-    # NO-SQL: copy each skill, strip SQL fences from SKILL.md.
-    nosql_dir.mkdir(parents=True)
     for skill_dir in skills_root.iterdir():
         if not skill_dir.is_dir():
             continue
-        target = nosql_dir / skill_dir.name
-        shutil.copytree(skill_dir, target)
-        skill_md = target / "SKILL.md"
+        skill_md = skill_dir / "SKILL.md"
         if skill_md.exists():
-            original = skill_md.read_text()
-            skill_md.write_text(strip_sql_fences(original))
+            assert_sql_free_skill(skill_md)
 
     # DECOY: copy the assigned mismatched skill into skills-decoy/<decoy_name>/.
     decoy_name = _DECOY_MAPPING.get(task_name)
@@ -204,7 +199,7 @@ def build_for_task(task_dir: Path) -> dict:
         "skipped": False,
         "decoy": decoy_name,
         "rawsql_built": rawsql_built,
-        "nosql_skills": [p.name for p in (nosql_dir).iterdir() if p.is_dir()],
+        "canonical_skills": [p.name for p in skills_root.iterdir() if p.is_dir()],
     }
 
 
