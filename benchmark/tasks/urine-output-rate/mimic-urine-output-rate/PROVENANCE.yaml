@@ -14,24 +14,24 @@ reviews:
     scope: clinical-accuracy
     notes: |
       Reviewed urine-output-rate skill for M4 Bench task.
-      
+
       Methodology verified against MIT-LCP mimic-code urine_output_rate.sql source:
       - Twelve urine output itemids (226557, 226558, 226559, 226560, 226561, 226563, 226564, 226565, 226567, 226584, 227488, 227489) match source
       - Self-join approach for rolling 6/12/24-hour windows is the standard mimic-code implementation, appropriate for irregularly spaced UO observations
       - ICU time boundaries derived from heart rate charting (itemid 220045) instead of icustays.intime/outtime is the documented mimic-code convention
       - Weight normalization via weight_durations table with temporal overlap is the standard approach
       - Minimum coverage rules (uo_tm_6hr >= 6h required for rate computation) are clinically sensible to avoid spuriously low rates from short observation windows
-      
+
       Verified against MIMIC-IV v3.1 outputevents and chartevents tables:
-      
+
       Urine output itemids: All 12 itemids listed in skill exist with substantial counts. Foley (226559) is dominant at 3,599,702 events, followed by Void (226560) at 386,902. Specialty drainage routes (ureteral stents, nephrostomies, ileoconduits, suprapubic catheters) are also covered. Coverage of urine sources appears comprehensive
-      
+
       GU irrigant handling: SKILL.md describes itemid 227488 as "GU irrigant return" with sign inversion (multiply by -1). The d_items label for 227488 is actually "GU Irrigant Volume In" (irrigant input, not return), and itemid 227489 is "GU Irrigant/Urine Volume Out". The skill description is misleading in wording but the underlying logic is mathematically correct: 227488 represents irrigant infused into the bladder which must be subtracted from 227489 (irrigant + urine combined output) to obtain true urine volume. Verified that both itemids store only positive values in MIMIC-IV (227488: 7089 positive, 0 negative; 227489: 7087 positive, 0 negative), confirming that the sign inversion is necessary to make the subtraction work. Mean values are similar (227488: 1836 mL, 227489: 1979 mL), consistent with bladder irrigation where most infused fluid returns. This wording ambiguity exists in the original mimic-code repository (Issue #204 from 2017) and is inherited rather than introduced by the skill
-      
+
       Heart rate boundary coverage: ICU time boundaries are derived from itemid 220045 (heart rate). Verified: 94,437 of 94,458 ICU stays in MIMIC-IV v3.1 have heart rate observations (99.98% coverage). The 21 stays without HR data would be excluded from analysis. Quantitatively negligible
-      
+
       Off-by-one hour cutoffs: The 6-hour window uses DATE_DIFF(hours) <= 5 because the current measurement's own time delta is included in the sum. This is the standard mimic-code convention and the skill explicitly documents this in Implementation Notes
-      
+
       No clinical errors that affect calculation correctness. The "GU irrigant return" wording for itemid 227488 is technically inaccurate (should be "GU irrigant input" or "irrigant infused") but the implementation produces correct urine volumes. Skill is appropriate for the benchmark task
 
 references:

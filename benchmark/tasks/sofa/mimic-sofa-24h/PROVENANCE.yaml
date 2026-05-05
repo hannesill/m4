@@ -17,7 +17,7 @@ reviews:
     scope: clinical-accuracy
     notes: |
       Reviewed sofa-24h skill for M4 Bench task.
-      
+
       Scoring tables verified against Vincent et al. 1996 (Intensive Care Med 22(7):707-710) Table 3 directly, and against the mimic-code SQL implementation:
       - Respiration (PaO2/FiO2 mmHg): Score 1 <400, Score 2 <300, Score 3 <200 with respiratory support, Score 4 <100 with respiratory support - matches SKILL.md
       - Coagulation (platelets x10^3/mm^3): Score 1 <150, Score 2 <100, Score 3 <50, Score 4 <20 - matches SKILL.md
@@ -25,33 +25,33 @@ reviews:
       - Cardiovascular: Score 1 MAP <70, Score 2 "Dopamine <=5 or dobutamine (any dose)", Score 3 "Dopamine >5 or epinephrine <=0.1 or norepinephrine <=0.1", Score 4 "Dopamine >15 or epinephrine >0.1 or norepinephrine >0.1" - matches SKILL.md exactly. mimic-code SQL implements these thresholds correctly with <= for boundary values
       - CNS (GCS): Score 1 13-14, Score 2 10-12, Score 3 6-9, Score 4 <6 - matches SKILL.md
       - Renal: creatinine Score 1 1.2-1.9, Score 2 2.0-3.4, Score 3 3.5-4.9 or urine output <500 ml/day, Score 4 >5.0 or urine output <200 ml/day - matches SKILL.md
-      
+
       Vincent 1996 footnote specifies: "Adrenergic agents administered for at least 1 h (doses given are in micrograms/kg/min)". This 1-hour minimum duration requirement for vasopressor scoring is not explicitly enforced in the SKILL.md or in the mimic-code SQL implementation, which use peak/max rate from the time window without a duration filter. May lead to overscoring for very brief vasopressor exposures (e.g., bolus or short titration)
-      
+
       Vincent 1996 explicitly acknowledges sedation as a confounder for the GCS-based CNS score: "The neurological evaluation is complicated by the frequent use of sedative agents in critically ill patients. Although the Glasgow Coma Score is considered to be most useful in this assessment, it is not clear whether the actual or the assumed (in the absence of sedative/relaxant drugs) should be used, so that it was decided to include both, at least initially." The mimic-code convention of imputing GCS=15 when gcs_unable=1 is one interpretation of this guidance (assumed pre-sedation GCS) but represents a strong assumption
-      
+
       Time window verified: instruction.md specifies "from 6 hours before ICU admission to 24 hours after admission". This matches mimic-code first_day_sofa.sql which uses DATETIME_SUB(intime, INTERVAL '6' HOUR) to DATETIME_ADD(intime, INTERVAL '1' DAY). However SKILL.md text says "data from hours 0-24" which is imprecise and could mislead an agent that does not consult the underlying SQL
-      
+
       Respiratory score limitation acknowledged in SKILL.md: defines respiratory support as InvasiveVent only, excluding NonInvasiveVent and HFNC. mimic-code Issue #1806 documents this as deliberate convention. Vincent 1996 itself uses the term "with respiratory support" without specifying invasive vs non-invasive. Clinically debatable: a patient with PaO2/FiO2 < 100 on HFNC would receive Score 2 instead of Score 4. The skill correctly offers the modification for users who wish to include non-invasive ventilation
-      
+
       Arterial blood gas filter: SKILL.md correctly emphasizes specimen = 'ART.' filter. mimic-code Issue #1806 confirms first_day_sofa.sql is missing this filter while sofa.sql includes it. Skill text is correct
-      
+
       Required derived tables verified: all 11 dependencies (bg, chemistry, complete_blood_count, dobutamine, dopamine, enzyme, epinephrine, gcs, norepinephrine, urine_output_rate, ventilation) exist in mimiciv_3_1_derived
-      
+
       Vasopressor unit verification (mcg/kg/min as required by skill, matches Vincent 1996 footnote):
       - Norepinephrine (n=459,800): median 0.10, p95 0.41 - typical clinical range, matches SOFA Score 3 threshold
       - Dopamine (n=18,085): median 5.02, p95 19.97 - matches SOFA Score 2/3 threshold
       - Outliers exist (norepi max 359 mcg/kg/min, dopamine max 4000 mcg/kg/min) but are clinically implausible data entry errors. For SOFA scoring these have no practical impact (capped at Score 4) but documented for transparency
-      
+
       Bilirubin and creatinine units verified as mg/dL (Vincent 1996 spec):
       - Bilirubin (n=1,575,798): median 0.5, p95 5.9 mg/dL - matches Score 2/3 boundary
       - Creatinine (n=4,317,389): median 0.9, p95 3.7 mg/dL - matches Score 2 range
-      
+
       GCS sedated/intubated patient handling - clinically significant pattern:
       The mimic-code gcs derivation imputes gcs=15 when gcs_unable=1 (patient not assessable due to sedation). 39.7% of ICU stays (37,233 of 93,885) have at least one entry with gcs_unable=1. Examples in the data show rows with motor=1, verbal=0, eyes=1 returning gcs=15. SKILL.md acknowledges this with "use pre-sedation GCS or assume normal (GCS=15)". This aligns with one of two options Vincent 1996 left open. Clinical implication: deeply sedated patients with no other GCS measurement window in 24h will receive CNS Score=0 despite genuine neurological dysfunction. SOFA score is systematically underestimated in this subpopulation
-      
+
       Urine output time-window check: urine_output_rate table includes uo_tm_24hr field. Of 4,126,485 total rows, 64.9% have a full 24h of data; 35.1% have less. SKILL.md correctly notes "Uses uo_tm_24hr to verify 24 hours of data available before calculating rate". Some uo_tm_24hr values are negative (min -8,775h) or extremely large (max 8,801h) suggesting data quality issues at the source level
-      
+
       Critical missing-data pattern affecting SOFA distribution in MIMIC-IV v3.1 (n=94,458):
       - Respiration component missing: 57,548 stays (60.9%)
       - Liver component missing: 44,542 stays (47.2%)
@@ -60,17 +60,17 @@ reviews:
       - Renal component missing: 230 stays (0.2%)
       - Cardiovascular component missing: 210 stays (0.2%)
       - Only 19,223 stays (20.4%) have all 6 components complete
-      
+
       The high respiration missingness reflects that arterial blood gases are typically obtained only in intubated or critically ill patients. The high liver missingness reflects that bilirubin is not routinely measured in all ICU patients. Both lead to systematic underestimation of SOFA via the Missing->Score 0 imputation specified in the task instruction
-      
+
       Practical impact for Sepsis-3 cohort identification (SOFA >= 2): patients near the threshold may be misclassified as non-septic due to missing-as-normal imputation. SKILL.md acknowledges this transparently and advises that proper imputation is statistically preferable to Missing->0
-      
+
       Resulting SOFA distribution in mimiciv_derived.first_day_sofa (n=94,458):
       - Mean: 4.41, Median: 4, p75: 6, p95: 11
       - SOFA=0: 5,128 stays (5.4%)
       - Range 0 to 23 (max possible 24)
       - Distribution is consistent with published MIMIC-IV SOFA characteristics
-      
+
       No errors in the underlying scoring logic or SQL implementation. All identified issues are either documented limitations of mimic-code conventions, source data quality issues, imprecise wording in skill text, or known limitations of Vincent 1996 itself (e.g., 1-hour vasopressor minimum not enforced, sedation handling). Core calculation produces correct ground truth values for the M4 Bench task
 
 references:

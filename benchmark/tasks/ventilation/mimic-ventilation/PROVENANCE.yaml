@@ -14,29 +14,29 @@ reviews:
     scope: clinical-accuracy
     notes: |
       Reviewed ventilation-classification skill for M4 Bench task.
-      
+
       Classification logic verified against MIT-LCP mimic-code ventilation.sql source:
       - Six-category schema (Tracheostomy > InvasiveVent > NonInvasiveVent > HFNC > SupplementalOxygen > None) matches source
       - Priority ordering correct
       - All o2_delivery_device_1, ventilator_mode, and ventilator_mode_hamilton values listed in skill match source exactly, including trailing spaces
       - CPAP/PSV-as-InvasiveVent edge case correctly documented (these modes are recorded on patients with endotracheal tubes, not as non-invasive masks)
-      
+
       Verified against MIMIC-IV v3.1 chartevents:
-      
+
       itemid 226732 (O2 Delivery Device): All 16 device values listed in skill exist in the database. Two values present in MIMIC-IV are not classified by the skill: 'T-piece' (10,432 observations) and 'Other' (5,376 observations). T-piece is explicitly omitted in source SQL as ambiguous between InvasiveVent and Tracheostomy. Both fall through to NULL classification per source behavior
-      
+
       itemid 223849 (Ventilator Mode): All modes listed in skill match the source. Three modes present in MIMIC-IV are not classified: 'SPONT' (633 observations, spontaneous breathing), 'Standby' (11,997 observations, ventilator inactive) and 'CPAP' (1,380 observations, mode without mask context). All fall through to NULL per source behavior
-      
+
       itemid 229314 (Ventilator Mode Hamilton): The Hamilton mode 'SPONT' has 167,105 observations in MIMIC-IV v3.1 and is not classified by the skill, falling through to NULL. This represents a substantial volume of spontaneous breathing observations that would be excluded from ventilation episodes. Clinically, SPONT on an intubated patient typically reflects weaning phases of invasive ventilation
-      
+
       itemid labels verified against d_items table in MIMIC-IV v3.1. Two minor labeling discrepancies identified, neither affects classification logic:
       - itemid 227582 is labeled in skill as 'O2 Flow' but actually represents 'BiPap O2 Flow' specifically. This is an oversimplification in the skill documentation
       - itemids 220339 and 224700 are both labeled as 'PEEP' in skill but represent different concepts in MIMIC-IV v3.1 (PEEP set vs Total PEEP Level). These can differ in patients with auto-PEEP (e.g., COPD, asthma)
-      
+
       The skill correctly reproduces source behavior. The unclassified SPONT, Standby, CPAP, T-piece, and Other values fall through to NULL and are excluded from episode detection, consistent with mimic-code. This is a known limitation inherited from the source rather than a flaw in the skill. For research workflows requiring complete ventilation capture (e.g., weaning analyses), users should be aware that ~180,000 SPONT observations are not represented in the resulting episodes
-      
+
       14-hour gap rule for episode boundary detection and LAG partitioning by (stay_id, ventilation_status) are pragmatic conventions inherited from mimic-code and not independently validated in this review
-      
+
       No clinical errors identified that affect classification. Skill is appropriate for the benchmark task
 
 references:
