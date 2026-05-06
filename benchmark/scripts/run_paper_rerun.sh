@@ -16,10 +16,8 @@
 #   2. Ensure Docker image is current (bench.sh handles container).
 #   3. Set OPENAI_API_KEY (or whichever the codex CLI expects).
 #
-# After completion:
-#   uv run python benchmark/paper/scripts/make_codex_tables.py
-#   uv run python benchmark/paper/scripts/make_supplementary.py
-#   latexmk -pdf -interaction=nonstopmode benchmark/paper/main.tex
+# After completion, set M4BENCH_PAPER_DIR if the paper is not a sibling
+# checkout at ../m4bench-paper, then run the paper scripts below.
 
 set -euo pipefail
 
@@ -58,11 +56,17 @@ uv run python benchmark/report_results.py \
     --seeds 5
 
 echo "==> Done. Regenerating tables and figures."
+PAPER_DIR="${M4BENCH_PAPER_DIR:-../m4bench-paper}"
+if [[ ! -f "${PAPER_DIR}/main.tex" ]]; then
+    echo "Paper source not found at ${PAPER_DIR}. Set M4BENCH_PAPER_DIR to regenerate manuscript tables/PDF."
+    exit 0
+fi
+export M4BENCH_PAPER_DIR="$(cd "${PAPER_DIR}" && pwd)"
+export M4BENCH_M4_DIR="$(pwd)"
 export M4BENCH_PAPER_ROOT="${RESULTS_ROOT}"
-uv run python benchmark/paper/scripts/make_codex_tables.py
-uv run python benchmark/paper/scripts/make_supplementary.py
+uv run python "${M4BENCH_PAPER_DIR}/scripts/make_codex_tables.py"
 
 echo "==> Build paper PDF"
-( cd benchmark/paper && latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex )
+( cd "${M4BENCH_PAPER_DIR}" && latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex )
 
-echo "==> Done. Inspect benchmark/paper/main.pdf"
+echo "==> Done. Inspect ${M4BENCH_PAPER_DIR}/main.pdf"

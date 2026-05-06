@@ -946,10 +946,6 @@ def _scan_existing(results_root: Path) -> dict[str, set[int]]:
 
         if not _is_publishable_completed_result(data):
             continue
-        if not (result_file.parent / "output.csv").is_file():
-            continue
-        if not (result_file.parent / "trace.jsonl").is_file():
-            continue
         try:
             trial = int(data.get("trial"))
         except (TypeError, ValueError):
@@ -971,6 +967,15 @@ def _is_publishable_completed_result(data: dict) -> bool:
     if data.get("publishable") is not True:
         return False
     if test_results.get("errors", 0) != 0 and not agent_result.get("failure_reason"):
+        return False
+    if (
+        agent_result.get("failure_reason")
+        and float(test_results.get("reward") or 0.0) != 0.0
+    ):
+        return False
+    if agent_result.get("returncode") not in (0, None) and not agent_result.get(
+        "failure_reason"
+    ):
         return False
     if not agent_db.get("path") or not agent_db.get("sha256"):
         return False

@@ -218,6 +218,47 @@ def test_scan_existing_ignores_non_publishable_or_failed_runs(tmp_path):
     assert matrix._scan_existing(tmp_path) == {}
 
 
+def test_scan_existing_counts_publishable_recorded_agent_failures(tmp_path):
+    matrix = _load_module(
+        "benchmark_matrix_scan_existing_agent_failure", "benchmark/matrix.py"
+    )
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    (run_dir / "result.json").write_text(
+        json.dumps(
+            {
+                "task": "mimic-sofa-24h",
+                "condition": "no-skill",
+                "model": "gpt-5.5",
+                "schema": "native",
+                "resolved_reasoning_effort": "medium",
+                "trial": 3,
+                "publishable": True,
+                "test_results": {"reward": 0.0, "errors": 1},
+                "filesystem_canary": {"passed": True},
+                "contamination_lint": {"passed": True},
+                "agent_result": {"failure_reason": "timeout", "returncode": -1},
+                "agent_db": {
+                    "path": "/benchmark/agent_db/example.duckdb",
+                    "sha256": "abc",
+                },
+            }
+        )
+    )
+
+    existing = matrix._scan_existing(tmp_path)
+
+    assert existing[
+        matrix._cell_key(
+            "mimic-sofa-24h",
+            "no-skill",
+            "gpt-5.5",
+            "native",
+            "medium",
+        )
+    ] == {3}
+
+
 def test_filter_existing_keeps_legacy_runs_separate_from_pinned_reasoning():
     matrix = _load_module("benchmark_matrix_filter_reasoning", "benchmark/matrix.py")
     runs = [
