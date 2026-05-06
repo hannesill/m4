@@ -145,6 +145,9 @@ python benchmark/run.py --all --mode raw --condition no-skill --agent claude
 # Run on obfuscated schema (contamination analysis)
 python benchmark/run.py --task mimic-sirs-24h-raw --condition no-skill --schema obfuscated
 
+# Run an operational-spec baseline when the task has operational-spec.md
+python benchmark/run.py --task mimic-oasis-24h --condition operational-spec --agent codex
+
 # Parallel execution
 python benchmark/run.py --all --condition no-skill --agent claude --parallel 4
 
@@ -159,6 +162,9 @@ python benchmark/matrix.py --profile rerun-v1.1 --tier all --agent codex --resul
 
 # Sparse external-provider comparison
 python benchmark/matrix.py --profile provider-comparison --agent claude --results-root benchmark/results/release-20260406-claude-sentinel
+
+# Targeted validity follow-ups: operational-spec sentinel + transformed-schema with-skill
+python benchmark/matrix.py --profile validity-followup --agent codex --results-root benchmark/results/codex-validity-followup
 ```
 
 ## Evaluation
@@ -211,6 +217,14 @@ run it with `--agent codex`, then use `--profile provider-comparison` for sparse
 Claude or Gemini sentinel runs. `pi-ollama` is the OSS local-model baseline for
 zero-API-cost reproducibility. Provider-comparison runs are supplementary and
 should not be described as powered benchmark-wide estimates.
+
+Targeted validity follow-up profiles are also available. `--profile
+operational-spec` schedules the eight native-schema sentinel tasks under the
+`operational-spec` condition. `--profile schema-skill` schedules targeted
+`with-skill` runs on the obfuscated and restructured MIMIC schemas. `--profile
+validity-followup` combines both tiers. The operational-spec condition expects
+each scheduled task directory to contain `operational-spec.md`; the runner fails
+closed if the file is missing or empty.
 
 Because matrix profiles can allocate different numbers of runs by tier, final
 reporting should pre-register equal task/cell weighting or tier-specific

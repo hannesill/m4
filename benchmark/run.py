@@ -17,6 +17,9 @@ Usage:
     # Run all tasks
     python benchmark/run.py --task all --condition with-skill --agent claude --model opus
 
+    # Run an operational-spec baseline when the task has operational-spec.md
+    python benchmark/run.py --task mimic-oasis-24h --condition operational-spec --agent codex
+
     # List available tasks
     python benchmark/run.py --list
 
@@ -169,6 +172,15 @@ REQUIRED_RESULT_ARTIFACTS = {
     "result.json",
     "trace.jsonl",
 }
+CONDITIONS = (
+    "no-skill",
+    "with-skill",
+    "with-skill-all",
+    "with-skill-decoy",
+    "with-skill-rawsql",
+    "operational-spec",
+)
+OPERATIONAL_SPEC_FILENAME = "operational-spec.md"
 TEXT_LINT_SUFFIXES = {
     ".csv",
     ".json",
@@ -1465,6 +1477,9 @@ def prepare_instruction(
     instruction = instruction.replace("{output_path}", output_path)
     instruction = isolation_note + convention_note + instruction
 
+    if condition == "operational-spec":
+        instruction = _append_operational_spec(task_name, instruction)
+
     if schema in ("obfuscated", "restructured"):
         from lib.transform import generate_obfuscated_instruction, load_dictionary
 
@@ -1476,6 +1491,34 @@ def prepare_instruction(
         )
 
     return instruction
+
+
+def _append_operational_spec(task_name: str, instruction: str) -> str:
+    """Append the task-local operational specification for the baseline condition."""
+    task_dir = resolve_task_dir(task_name)
+    spec_path = task_dir / OPERATIONAL_SPEC_FILENAME
+    if not spec_path.exists():
+        raise FileNotFoundError(
+            f"Operational-spec baseline requested for {task_name}, but "
+            f"{spec_path} does not exist. Add a task-local "
+            f"{OPERATIONAL_SPEC_FILENAME} containing formulas, output grain, "
+            "time-window rules, missingness conventions, precedence rules, "
+            "tie-breakers, scoring bins, and tolerances, while excluding "
+            "dataset-specific item IDs, SQL snippets, and reference-code recipes."
+        )
+    spec = spec_path.read_text().strip()
+    if not spec:
+        raise ValueError(f"Operational specification is empty: {spec_path}")
+    return (
+        instruction.rstrip()
+        + "\n\n---\n\n"
+        + "## Operational Specification\n\n"
+        + "Use the following operational definition as the complete task "
+        + "specification. It intentionally does not provide task-specific SQL, "
+        + "dataset item identifiers, or reference-code implementation recipes.\n\n"
+        + spec
+        + "\n"
+    )
 
 
 def _skill_target_base(agent_name: str, workdir: Path) -> Path:
@@ -3054,13 +3097,7 @@ def main():
     )
     parser.add_argument(
         "--condition",
-        choices=[
-            "no-skill",
-            "with-skill",
-            "with-skill-all",
-            "with-skill-decoy",
-            "with-skill-rawsql",
-        ],
+        choices=CONDITIONS,
         help="Evaluation condition",
     )
     parser.add_argument("--agent", choices=list(AGENT_COMMANDS), help="Agent to use")

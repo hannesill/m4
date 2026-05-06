@@ -15,6 +15,9 @@ Usage:
     # Run a sparse external-provider comparison
     python benchmark/matrix.py --profile provider-comparison --agent claude --dry-run
 
+    # Run validity follow-ups (operational-spec + schema-skill)
+    python benchmark/matrix.py --profile validity-followup --agent codex --dry-run
+
     # Run tiers 1-3
     python benchmark/matrix.py --tier 1 2 3
 
@@ -42,7 +45,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from lib.db import list_task_dirs, load_task_config
+from lib.db import (
+    _db_prefix,
+    _task_key,
+    list_task_dirs,
+    load_task_config,
+    resolve_task_dir,
+)
 from run import (
     BENCHMARK_REASONING_EFFORT,
     PROVIDER_DEFAULT_REASONING,
@@ -94,7 +103,19 @@ CONDITION_DURATION_MULTIPLIER = {
     "with-skill": 1.0,
     "with-skill-decoy": 0.95,
     "with-skill-rawsql": 0.85,
+    "operational-spec": 1.05,
 }
+
+SENTINEL_TASKS = [
+    "mimic-urine-output-rate-raw",
+    "mimic-ventilation",
+    "mimic-creatinine-baseline-raw",
+    "mimic-suspicion-infection",
+    "mimic-vasopressor-equivalents-raw",
+    "mimic-oasis-24h",
+    "mimic-sepsis3-raw",
+    "mimic-sofa-24h-raw",
+]
 
 
 def _classify_tasks() -> None:
@@ -368,7 +389,105 @@ def build_tiers(
         return _build_provider_comparison_tiers(seeds=seeds, agent=agent)
     if profile == "rerun-v1.1":
         return _build_rerun_v1_1_tiers(seeds=seeds, agent=agent)
+    if profile == "operational-spec":
+        return _build_validity_followup_tiers(
+            seeds=seeds,
+            agent=agent,
+            include_operational_spec=True,
+            include_schema_skill=False,
+        )
+    if profile == "schema-skill":
+        return _build_validity_followup_tiers(
+            seeds=seeds,
+            agent=agent,
+            include_operational_spec=False,
+            include_schema_skill=True,
+        )
+    if profile == "validity-followup":
+        return _build_validity_followup_tiers(
+            seeds=seeds,
+            agent=agent,
+            include_operational_spec=True,
+            include_schema_skill=True,
+        )
     raise ValueError(f"Unsupported profile: {profile}")
+
+
+def _operational_spec_models(agent: str, model_plan: AgentModelPlan) -> tuple[str, ...]:
+    """Return models for the operational-spec baseline follow-up."""
+    if agent == "claude":
+        return ("sonnet",)
+    return model_plan.primary_models
+
+
+def _schema_skill_models(agent: str, model_plan: AgentModelPlan) -> tuple[str, ...]:
+    """Return models for transformed-schema with-skill follow-up runs."""
+    if agent == "codex":
+        return ("gpt-5.4-mini",)
+    return model_plan.contamination_models
+
+
+def _build_validity_followup_tiers(
+    *,
+    seeds: int = 5,
+    agent: str = "codex",
+    include_operational_spec: bool,
+    include_schema_skill: bool,
+) -> list[Tier]:
+    """Build validity follow-up experiments.
+
+    Tier 1 addresses no-skill underspecification with an `operational-spec`
+    condition on the eight sentinel tasks. Tier 2 runs targeted skills on
+    transformed MIMIC schemas to test whether skills remain useful when schema
+    names and table organization change. The profile intentionally schedules
+    only new follow-up cells; native no-skill/with-skill baselines are
+    expected to come from the audited v1.1 campaign.
+    """
+    tiers: list[Tier] = []
+    model_plan = _model_plan_for_agent(agent)
+
+    if include_operational_spec:
+        t1 = Tier(
+            1,
+            "Operational-spec sentinel baseline",
+            "Does a complete operational definition close the no-skill gap?",
+        )
+        for task in SENTINEL_TASKS:
+            for model in _operational_spec_models(agent, model_plan):
+                for seed in range(1, seeds + 1):
+                    t1.runs.append(
+                        dict(
+                            task=task,
+                            condition="operational-spec",
+                            model=model,
+                            schema="native",
+                            trial=seed,
+                        )
+                    )
+        tiers.append(t1)
+
+    if include_schema_skill:
+        t2 = Tier(
+            2 if include_operational_spec else 1,
+            "Transformed-schema targeted skills",
+            "Do targeted skills transfer across obfuscated and restructured schemas?",
+        )
+        for task in CONTAMINATION_TASKS:
+            for schema in ("obfuscated", "restructured"):
+                for model in _schema_skill_models(agent, model_plan):
+                    for seed in range(1, seeds + 1):
+                        t2.runs.append(
+                            dict(
+                                task=task,
+                                condition="with-skill",
+                                model=model,
+                                schema=schema,
+                                trial=seed,
+                            )
+                        )
+        tiers.append(t2)
+
+    return tiers
 
 
 def _build_rerun_v1_1_tiers(seeds: int = 5, agent: str = "codex") -> list[Tier]:
@@ -923,6 +1042,8 @@ def _run_tier(
         _print_dry_run_groups(runs)
         return
 
+    _validate_run_prerequisites(runs)
+
     scheduled_runs = _schedule_runs(runs)
     print(
         f"\n  Scheduling {len(scheduled_runs)} runs globally "
@@ -957,6 +1078,41 @@ def _run_tier(
             docker_execution=docker_execution,
             skip_per_run_preflight=skip_per_run_preflight,
         )
+
+
+def _validate_run_prerequisites(runs: list[dict]) -> None:
+    """Fail early for matrix cells that cannot run with local artifacts."""
+    problems: set[str] = set()
+    for run in runs:
+        task = run["task"]
+        condition = run["condition"]
+        schema = run["schema"]
+        if condition == "operational-spec":
+            spec_path = resolve_task_dir(task) / "operational-spec.md"
+            if not spec_path.exists():
+                problems.add(f"{task}: missing {spec_path}")
+            elif not spec_path.read_text().strip():
+                problems.add(f"{task}: empty {spec_path}")
+        if schema != "native":
+            task_key = _task_key(task)
+            if task.startswith("eicu-"):
+                problems.add(f"{task}: transformed schema requested for eICU task")
+                continue
+            db_path = AGENT_DB_DIR / f"{schema}_{task_key}.duckdb"
+            if not db_path.exists():
+                problems.add(f"{task}/{schema}: missing transformed DB {db_path}")
+        else:
+            task_key = _task_key(task)
+            db_prefix = _db_prefix(task)
+            db_path = AGENT_DB_DIR / f"{db_prefix}_{task_key}.duckdb"
+            if not db_path.exists():
+                problems.add(f"{task}/native: missing agent DB {db_path}")
+
+    if problems:
+        sorted_problems = sorted(problems)
+        preview = "\n  - ".join(sorted_problems[:20])
+        extra = f"\n  - ... and {len(problems) - 20} more" if len(problems) > 20 else ""
+        raise RuntimeError(f"Matrix prerequisites are missing:\n  - {preview}{extra}")
 
 
 def _print_dry_run_groups(runs: list[dict]) -> None:
@@ -1258,11 +1414,20 @@ def main():
     )
     parser.add_argument(
         "--profile",
-        choices=["powered", "provider-comparison", "rerun-v1.1"],
+        choices=[
+            "powered",
+            "provider-comparison",
+            "rerun-v1.1",
+            "operational-spec",
+            "schema-skill",
+            "validity-followup",
+        ],
         default=DEFAULT_PROFILE,
         help=(
             "Matrix profile: rerun-v1.1 is the default audited submission "
             "profile with NS+WS, raw-SQL, and decoy controls; "
+            "operational-spec and schema-skill run targeted validity "
+            "follow-ups; validity-followup combines those two; "
             "powered is exploratory/pilot-informed; "
             "provider-comparison is a sparse external-provider sentinel set; "
             "rerun-v1.1 is retained as an explicit stable alias for provenance"

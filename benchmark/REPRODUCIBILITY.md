@@ -222,6 +222,42 @@ uv run python benchmark/matrix.py \
 Resume interrupted runs with the same command and `--skip-existing`. Skip logic
 matches task, condition, model, schema, reasoning-effort policy, and trial id.
 
+## 7a. Validity Follow-Ups
+
+Two targeted follow-up profiles address the main construct-validity
+questions without rerunning the full v1.1 matrix:
+
+```bash
+uv run python benchmark/matrix.py \
+  --profile operational-spec \
+  --agent codex \
+  --tier all \
+  --parallel 4 \
+  --skip-existing \
+  --results-root benchmark/results/codex-operational-spec-YYYYMMDD
+```
+
+The `operational-spec` profile schedules the eight native-schema sentinel tasks
+under the `operational-spec` condition. Each scheduled task must include a
+task-local `operational-spec.md` file; this file should provide formulas, output
+grain, time-window rules, missingness conventions, precedence rules,
+tie-breakers, scoring bins, and tolerances while excluding task-specific SQL,
+dataset item IDs, and reference-code recipes.
+
+```bash
+uv run python benchmark/matrix.py \
+  --profile schema-skill \
+  --agent codex \
+  --tier all \
+  --parallel 4 \
+  --skip-existing \
+  --results-root benchmark/results/codex-schema-skill-YYYYMMDD
+```
+
+The `schema-skill` profile schedules transformed-schema `with-skill` runs over
+MIMIC tasks with both obfuscated and restructured task databases. Use `--profile
+validity-followup` to run both follow-up tiers into one result root.
+
 ## 8. Regenerate Analysis Outputs
 
 If the wrapper script completed, it already runs the analysis export. To rerun
