@@ -249,7 +249,7 @@ def contamination_rows(cells: list[dict]) -> list[dict]:
 def control_rows(cells: list[dict]) -> list[dict]:
     index = {(c["task"], c["schema"], c["model"], c["condition"]): c for c in cells}
     out: list[dict] = []
-    for condition in ("with-skill-rawsql", "with-skill-decoy"):
+    for condition in ("with-skill-rawsql", "with-skill-decoy", "operational-spec"):
         for (task, schema, model, cell_condition), control in sorted(index.items()):
             if schema != "native" or cell_condition != condition:
                 continue
@@ -811,7 +811,14 @@ def main() -> None:
     parser.add_argument(
         "--profile",
         default=DEFAULT_PROFILE,
-        choices=["powered", "provider-comparison", "rerun-v1.1"],
+        choices=[
+            "powered",
+            "provider-comparison",
+            "rerun-v1.1",
+            "operational-spec",
+            "schema-skill",
+            "validity-followup",
+        ],
         help=(
             "Matrix profile used to check completeness and assign tiers. "
             "Defaults to the audited v1.1 submission profile."

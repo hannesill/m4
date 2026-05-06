@@ -340,6 +340,48 @@ def check_skill_snapshots() -> CheckResult:
     )
 
 
+def check_operational_specs() -> CheckResult:
+    """Operational-spec baselines should avoid dataset-navigation leakage."""
+    problems: list[str] = []
+    checked = 0
+    forbidden_patterns = [
+        (re.compile(r"```sql", re.IGNORECASE), "SQL code fence"),
+        (re.compile(r"\bSELECT\b.+\bFROM\b", re.IGNORECASE | re.DOTALL), "SQL query"),
+        (
+            re.compile(r"\b(FROM|JOIN)\s+[A-Za-z0-9_]+\.", re.IGNORECASE),
+            "SQL table reference",
+        ),
+        (re.compile(r"\bmimiciv_", re.IGNORECASE), "native MIMIC schema/table prefix"),
+        (
+            re.compile(r"\bMIT-LCP\b|\bmimic-code\b", re.IGNORECASE),
+            "reference-code recipe",
+        ),
+        (re.compile(r"\bitemid\b", re.IGNORECASE), "dataset item-id column"),
+        (re.compile(r"\b[0-9]{5,}\b"), "long numeric identifier"),
+    ]
+
+    for task_dir in list_task_dirs():
+        spec_path = task_dir / "operational-spec.md"
+        if not spec_path.exists():
+            continue
+        checked += 1
+        text = spec_path.read_text()
+        rel = spec_path.relative_to(BENCHMARK_ROOT)
+        if not text.strip():
+            problems.append(f"{rel}: empty operational specification")
+            continue
+        for pattern, label in forbidden_patterns:
+            if pattern.search(text):
+                problems.append(f"{rel}: contains {label}")
+
+    if problems:
+        return _fail("operational specs", problems)
+    return _ok(
+        "operational specs",
+        f"{checked} task-local operational specs avoid obvious dataset-navigation leakage",
+    )
+
+
 def check_canonical_schema_references() -> CheckResult:
     """Benchmark SQL and task-local skills should use canonical schemas."""
     problems: list[str] = []
@@ -919,6 +961,7 @@ def run_checks(
         check_taskcards_not_agent_adjacent(),
         check_raw_mode_contract(),
         check_skill_snapshots(),
+        check_operational_specs(),
         check_canonical_schema_references(),
         check_isolation_guardrails(),
         check_results_root(results_root, allow_existing=allow_existing_results_root),
