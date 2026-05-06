@@ -577,8 +577,8 @@ def make_report(
         f"- Campaign completeness: `{len(rows)}` runs found; expected `{profile}` Codex matrix is `{expected_count}`, so completeness is `{expected_complete}`.",
         f"- Publishability audit: `{all_ok}`. All runs are marked publishable, isolated, containerized, canary-passed, and contamination-lint-passed; nonzero agent exits: `0`; incomplete statuses: `{len(bad_status)}`.",
         f"- Diagnostic accuracy: `{full_pass}/{len(rows)}` runs pass every benchmark diagnostic. The remaining runs are still valid publishable attempts, but they contain semantic mismatches against ground truth.",
-        f"- Native single-skill effect: task-balanced mean delta is `{fmt(mean(task_vals))}` reward points across 28 tasks, with approximate 95% CI `{fmt(ci_low)}` to `{fmt(ci_high)}` across task-level deltas.",
-        f"- Directionality: `{sum(x['delta'] > 0 for x in task_delta)}/28` tasks improve after averaging the two Codex models; `{sum(d['delta'] > 0 for d in deltas)}/56` task-model pairs improve.",
+        f"- Native single-skill effect: task-balanced mean delta is `{fmt(mean(task_vals))}` reward points across `{len(task_delta)}` observed paired tasks, with approximate 95% CI `{fmt(ci_low)}` to `{fmt(ci_high)}` across task-level deltas.",
+        f"- Directionality: `{sum(x['delta'] > 0 for x in task_delta)}/{len(task_delta)}` observed paired tasks improve after averaging models; `{sum(d['delta'] > 0 for d in deltas)}/{len(deltas)}` observed task-model pairs improve.",
     ]
     if contamination:
         lines.append(

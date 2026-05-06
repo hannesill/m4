@@ -281,9 +281,28 @@ benchmark/results/codex-rerun-v1.1/analysis/control_condition_summary.csv
 benchmark/results/codex-rerun-v1.1/analysis/CODEX_FULL_REPORT.md
 ```
 
-Paper sources are intentionally local-only in this repository. If you have the
-private `benchmark/paper/` tree locally, use its scripts against the exported
-analysis directory to regenerate manuscript tables and figures.
+The manuscript source lives in the sibling `m4bench-paper` checkout used for
+submission. If your checkout uses a different layout, set `M4BENCH_PAPER_DIR`
+and `M4BENCH_M4_DIR` explicitly:
+
+```bash
+export M4BENCH_PAPER_DIR=/path/to/m4bench-paper
+export M4BENCH_M4_DIR=/path/to/m4
+export M4BENCH_PAPER_ROOT=benchmark/results/codex-rerun-v1.1
+uv run python "$M4BENCH_PAPER_DIR/scripts/make_codex_tables.py"
+```
+
+To regenerate the final submitted tables from the frozen release and rerun
+roots, use:
+
+```bash
+export M4BENCH_PAPER_DIR=/path/to/m4bench-paper
+export M4BENCH_M4_DIR=/path/to/m4
+uv run python "$M4BENCH_PAPER_DIR/scripts/make_release_metadata.py"
+uv run python "$M4BENCH_PAPER_DIR/scripts/make_final_results.py"
+uv run python "$M4BENCH_PAPER_DIR/scripts/make_followup_manifest.py"
+uv run python "$M4BENCH_PAPER_DIR/scripts/make_followup_tables.py"
+```
 
 ## 9. Supplementary Provider Runs
 
