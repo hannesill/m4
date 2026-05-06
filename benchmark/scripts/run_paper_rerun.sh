@@ -17,7 +17,7 @@
 #   3. Set OPENAI_API_KEY (or whichever the codex CLI expects).
 #
 # After completion, set M4BENCH_PAPER_DIR if the paper is not a sibling
-# checkout at ../m4bench-paper, then run the paper scripts below.
+# checkout at ../m4bench-paper, then run the release scripts below.
 
 set -euo pipefail
 
@@ -64,7 +64,7 @@ fi
 export M4BENCH_PAPER_DIR="$(cd "${PAPER_DIR}" && pwd)"
 export M4BENCH_M4_DIR="$(pwd)"
 export M4BENCH_PAPER_ROOT="${RESULTS_ROOT}"
-uv run python "${M4BENCH_PAPER_DIR}/scripts/make_codex_tables.py"
+uv run python benchmark/release/v1/scripts/make_codex_tables.py
 
 echo "==> Build paper PDF"
 ( cd "${M4BENCH_PAPER_DIR}" && latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex )
