@@ -117,6 +117,12 @@ for MIMIC-IV and eICU, benchmark artifact generation, canary checks, full
 campaign execution, and analysis export, see
 [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md).
 
+Paper-facing paper review table, figure, metadata, and review-artifact
+packaging scripts live under
+[`release/v1/`](release/v1/). These scripts target the
+sibling `m4bench-paper` checkout by default, but can be pointed at another
+paper workspace with `M4BENCH_PAPER_DIR`.
+
 ## Usage
 
 ```bash
