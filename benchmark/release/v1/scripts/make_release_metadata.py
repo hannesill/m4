@@ -222,7 +222,7 @@ def task_details() -> list[dict]:
 def write_task_tables(rows: list[dict]) -> None:
     write_table(
         TABLE_DIR / "task_details.tex",
-        ["Task", "Mode", "Database", "Key grain", "Scored columns", "Truth rows"],
+        ["Task", "Mode", "Database", "Key grain", "Scored columns", "Reference rows"],
         [
             [
                 row["task"],
