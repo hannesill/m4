@@ -20,4 +20,5 @@ __pycache__/
 /*.md
 !README.md
 !REPRODUCIBILITY.md
+!THIRD_PARTY_NOTICES.md
 reports/

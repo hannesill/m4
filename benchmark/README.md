@@ -1,5 +1,23 @@
 # M4Bench
 
+## Review Artifact
+
+Paper-facing benchmark run artifacts are available at:
+
+https://mega.nz/file/ZvMVmIJa#BKeEMt7IW2Nq6XImBHqwdswSEJ6a8nq0JUZmcA7Az8o
+
+Filename: `m4bench-paper-results-artifact.tar.zst`
+
+Size: `17,061,661,295` bytes
+
+SHA-256:
+`99f78557878d642dd9d78544e44bb3697ca7b6a7dd9ff6c4e9fe5be0e06c2b3d`
+
+The review archive is produced by
+`benchmark/release/v1/scripts/package_review_artifact.py` and excludes
+MIMIC-IV, eICU, and generated DuckDB task databases; full reconstruction still
+requires independent PhysioNet credentialed access.
+
 Benchmark for evaluating AI agents' ability to derive validated clinical concepts
 from real EHR databases. 15 task families (28 tasks) covering severity scores,
 organ failure staging, comorbidity indices, infection detection, medication data,
@@ -44,6 +62,9 @@ Benchmark skill snapshots are intentionally benchmark-safe: they should not
 include runnable examples that query dropped target concept tables, and they do
 not ship the production SQL scripts. Run `python benchmark/preflight.py` before
 launching a release-grade campaign to check that this separation still holds.
+Release-facing clinical design notes live in `benchmark/task_design_notes/`.
+They document task construction and known conventions for reviewers, but they
+are never mounted into agent runtimes and are kept outside `benchmark/tasks/`.
 
 A contamination analysis dimension (`--schema`) probes schema memorization by
 running tasks on obfuscated (renamed) and restructured (merged/denormalized)
@@ -119,9 +140,70 @@ campaign execution, and analysis export, see
 
 Paper-facing paper review table, figure, metadata, and review-artifact
 packaging scripts live under
-[`release/v1/`](release/v1/). These scripts target the
-sibling `m4bench-paper` checkout by default, but can be pointed at another
-paper workspace with `M4BENCH_PAPER_DIR`.
+[`release/v1/`](release/v1/). That tree includes the frozen
+planning manifests and generated tables needed to inspect the submitted
+analysis without a private manuscript checkout. Set `M4BENCH_PAPER_DIR` only
+when intentionally regenerating tables or figures into a separate paper
+workspace.
+
+Common release path overrides:
+
+```bash
+export M4BENCH_M4_DIR=/path/to/m4
+export M4BENCH_RESULTS_DIR=/path/to/m4/benchmark/results
+export M4BENCH_PAPER_DIR=/path/to/output/workspace
+```
+
+## Reviewer Quickstart
+
+1. Verify the linked review artifact before unpacking:
+
+```bash
+shasum -a 256 -c m4bench-paper-results-artifact.tar.zst.sha256
+python -m json.tool m4bench-paper-results-artifact.tar.zst.manifest.json >/dev/null
+```
+
+2. Inspect the packaged run selection and hashes:
+
+```bash
+tar --list -f m4bench-paper-results-artifact.tar.zst | head
+tar --extract -f m4bench-paper-results-artifact.tar.zst \
+  m4bench-review-artifact/metadata/planning/packaged_artifact_manifest.json
+```
+
+3. Run source and generated-artifact checks from this checkout:
+
+```bash
+uv run python benchmark/preflight.py --skip-db-check
+uv run python benchmark/preflight.py
+```
+
+4. Regenerate submitted analysis metadata and tables from local release files:
+
+```bash
+uv run python benchmark/release/v1/scripts/make_release_metadata.py
+uv run python benchmark/release/v1/scripts/make_final_results.py
+uv run python benchmark/release/v1/scripts/make_followup_manifest.py
+uv run python benchmark/release/v1/scripts/make_followup_tables.py
+```
+
+The full rerun path, including PhysioNet downloads and Docker-backed campaign
+execution, is documented in [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md). The
+canonical wrapper is `benchmark/scripts/run_paper_rerun.sh`.
+
+## Licenses & Attribution
+
+- M4Bench code, task definitions, harness, release scripts, and skill snapshots:
+  MIT license under the repository license.
+- Ground-truth SQL and several clinical concept conventions: adapted from
+  MIT-LCP MIMIC-Code / eICU-Code concepts, which are MIT-licensed; task-specific
+  lineage is recorded in `benchmark/tasks/*/PROVENANCE.yaml` and SQL headers.
+- MIMIC-IV v3.1 and eICU-CRD v2.0: credentialed PhysioNet datasets governed by
+  their respective data-use agreements. Source databases and generated task
+  DuckDB files are not redistributed by the review artifact.
+
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for the concise
+release-facing notice.
 
 ## Usage
 

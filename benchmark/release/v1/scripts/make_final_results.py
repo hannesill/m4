@@ -19,7 +19,7 @@ M4_DIR = Path(
     os.environ.get("M4BENCH_M4_DIR", Path(__file__).resolve().parents[4])
 ).resolve()
 PAPER_DIR = Path(
-    os.environ.get("M4BENCH_PAPER_DIR", M4_DIR.parent / "m4bench-paper")
+    os.environ.get("M4BENCH_PAPER_DIR", Path(__file__).resolve().parents[1])
 ).resolve()
 BENCHMARK_DIR = M4_DIR / "benchmark"
 RESULTS_DIR = Path(
@@ -1096,7 +1096,15 @@ def write_csv_rows(path: Path, rows: list[dict]) -> None:
     with path.open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=keys, extrasaction="ignore")
         writer.writeheader()
-        writer.writerows(rows)
+        for row in rows:
+            copied = dict(row)
+            if copied.get("path"):
+                try:
+                    rel = Path(copied["path"]).resolve().relative_to(RESULTS_DIR)
+                    copied["path"] = str(Path("benchmark/results") / rel)
+                except ValueError:
+                    copied["path"] = Path(copied["path"]).name
+            writer.writerow(copied)
 
 
 def main() -> None:

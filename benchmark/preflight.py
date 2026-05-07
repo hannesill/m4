@@ -215,19 +215,23 @@ def check_instruction_sparsity() -> CheckResult:
 
 
 def check_taskcards_not_agent_adjacent() -> CheckResult:
-    """Solution-level taskcards must not live under benchmark/tasks."""
+    """Release design notes must not live under benchmark/tasks."""
+    problems: list[str] = []
     taskcards = sorted(BENCHMARK_ROOT.glob("tasks/*/TASKCARD.md"))
     if taskcards:
-        return _fail(
-            "taskcard release safety",
-            [
-                f"{path.relative_to(BENCHMARK_ROOT)} should live under internal_taskcards/"
-                for path in taskcards
-            ],
+        problems.extend(
+            f"{path.relative_to(BENCHMARK_ROOT)} should live under task_design_notes/"
+            for path in taskcards
         )
+    if (BENCHMARK_ROOT / "internal_taskcards").exists():
+        problems.append(
+            "internal_taskcards/ should be renamed to release-facing task_design_notes/"
+        )
+    if problems:
+        return _fail("design-note release safety", problems)
     return _ok(
-        "taskcard release safety",
-        "solution-level taskcards are outside the task tree scanned/mounted for runs",
+        "design-note release safety",
+        "release design notes are outside the task tree scanned/mounted for runs",
     )
 
 
