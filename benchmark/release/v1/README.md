@@ -67,11 +67,14 @@ python benchmark/release/v1/figures/make_figures.py
 To build the review/audit archive:
 
 ```bash
-python benchmark/release/v1/scripts/package_review_artifact.py --dry-run
+python benchmark/release/v1/scripts/package_review_artifact.py \
+  --dry-run \
+  --sanitize off
 M4BENCH_REDACTION_TERMS_FILE=/path/to/double_blind_terms.txt \
 python benchmark/release/v1/scripts/package_review_artifact.py \
   --include-claude \
   --include-oss \
+  --sanitize off \
   --output "benchmark/release/v1/dist/m4bench-paper-results-artifact.tar.zst"
 ```
 
@@ -82,6 +85,45 @@ archive includes Codex primary and Codex follow-up runs. Use `--include-claude`
 for the supplementary Claude sentinel artifacts and `--include-oss` for the
 exploratory local OSS artifacts, which are labeled as non-paper-facing evidence
 inside the archive README.
+
+## Sanitized Artifacts
+
+If row-level `output.csv` files or traces must be shared for review outside the
+source repository, build the artifact with public sanitization enabled:
+
+```bash
+printf '%s\n' 'replace-with-long-private-random-salt' \
+  > benchmark/release/v1/.private_sanitize_salt
+cat > benchmark/release/v1/.private_redactions <<'EOF'
+# One literal or pattern per line. This file is gitignored.
+literal: Author Or Institution Name
+regex: \bprivate-host-[0-9]+\b
+EOF
+
+python benchmark/release/v1/scripts/package_review_artifact.py \
+  --include-claude \
+  --include-oss \
+  --sanitize public \
+  --output "../m4paper/dist/m4bench-paper-results-artifact-sanitized.tar.zst"
+```
+
+Public sanitization keeps row count/order, score/result columns, code, commands,
+run metadata, and aggregate test information where possible. By default it
+rewrites run `output.csv` files to `row_id` plus score/result columns only,
+dropping source-like identifiers, timestamps, demographics, raw measurements,
+antibiotics, and culture descriptors. Use `--include-row-key-hash` only when
+reviewers need a private-salt row audit handle, and use
+`--csv-mode pseudonymized-full` only for a private or more permissive artifact
+because it keeps all CSV columns with identifiers and timestamps transformed.
+Text sanitization redacts emails/local paths/private terms and replaces bulk
+tabular data previews in traces with structured placeholders. The archive
+includes `metadata/planning/SANITIZATION_REPORT.json` with counts, hashes, and
+transformed/dropped columns. Keep the private salt and redaction files outside
+any submitted or published artifact.
+
+The standalone `sanitize_artifacts.py` script is retained for already-extracted
+artifact directories, but the packager path above is preferred because it uses
+the same canonical run selection as the manuscript.
 
 The submitted review artifact is available at:
 

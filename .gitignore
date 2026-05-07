@@ -69,6 +69,12 @@ mimic*.duckdb
 config.json
 *config*.json
 
+# Private release sanitization inputs
+.private_redactions*
+.private_sanitize_salt*
+benchmark/release/v1/.private_redactions*
+benchmark/release/v1/.private_sanitize_salt*
+
 # Operating System specific files
 .DS_Store
 Thumbs.db
