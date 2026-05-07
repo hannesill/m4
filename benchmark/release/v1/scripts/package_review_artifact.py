@@ -64,6 +64,50 @@ from make_final_results import (  # noqa: E402
     filter_claude_paper_rows,
     load_rows_for_cells,
 )
+from sanitize_artifacts import (  # noqa: E402
+    SanitizationReport,
+    SanitizerConfig,
+    load_private_patterns,
+    sanitized_payload_for,
+)
+
+SANITIZED_OUTPUT_NAMES = {"output.csv", "trace.jsonl", "result.json"}
+SANITIZED_METADATA_SUFFIXES = {".csv", ".json", ".jsonl", ".md", ".tex"}
+
+
+def configured_sanitize_salt(args: argparse.Namespace) -> bytes:
+    if args.sanitize == "off":
+        return b""
+    if args.sanitize_salt:
+        return args.sanitize_salt.encode("utf-8")
+    salt_file = args.sanitize_salt_file
+    if salt_file is None:
+        env_salt_file = os.environ.get("M4BENCH_SANITIZE_SALT_FILE")
+        salt_file = Path(env_salt_file).expanduser() if env_salt_file else None
+    if salt_file and salt_file.is_file():
+        salt = salt_file.read_bytes().strip()
+        if salt:
+            return salt
+    env_salt = os.environ.get("M4BENCH_SANITIZE_SALT")
+    if env_salt:
+        return env_salt.encode("utf-8")
+    raise SystemExit(
+        "--sanitize public requires a private HMAC salt. Set "
+        "M4BENCH_SANITIZE_SALT, M4BENCH_SANITIZE_SALT_FILE, --sanitize-salt, "
+        "or --sanitize-salt-file."
+    )
+
+
+def build_sanitizer_config(args: argparse.Namespace) -> SanitizerConfig | None:
+    if args.sanitize == "off":
+        return None
+    return SanitizerConfig(
+        salt=configured_sanitize_salt(args),
+        private_patterns=load_private_patterns(args.private_patterns),
+        csv_mode=args.csv_mode,
+        include_row_key_hash=args.include_row_key_hash,
+        collect_input_hashes=False,
+    )
 
 
 def artifact_paths_for_row(row: dict[str, Any]) -> list[Path]:
@@ -136,7 +180,34 @@ def should_redact(source: Path) -> bool:
     return source.suffix in REDACTED_TEXT_SUFFIXES
 
 
-def packaged_payload(source: Path) -> tuple[bytes, bool]:
+def should_sanitize(source: Path, *, sanitizer_config: SanitizerConfig | None) -> bool:
+    if sanitizer_config is None:
+        return False
+    if source.name in SANITIZED_OUTPUT_NAMES:
+        return True
+    return source.suffix in SANITIZED_METADATA_SUFFIXES
+
+
+def packaged_payload(
+    source: Path,
+    *,
+    rel_path: Path,
+    sanitizer_config: SanitizerConfig | None,
+    sanitization_report: SanitizationReport | None,
+) -> tuple[bytes, bool]:
+    if should_sanitize(source, sanitizer_config=sanitizer_config):
+        assert sanitizer_config is not None
+        payload, file_report = sanitized_payload_for(
+            source,
+            rel_path=rel_path,
+            config=sanitizer_config,
+        )
+        if sanitization_report is not None:
+            sanitization_report.files.append(file_report)
+            if file_report.action == "skipped":
+                sanitization_report.skipped_files += 1
+        return payload, True
+
     raw = source.read_bytes()
     if not should_redact(source):
         return raw, False
@@ -191,11 +262,26 @@ def add_file(
     source: Path,
     arcname: Path,
     *,
+    rel_path: Path | None = None,
+    sanitizer_config: SanitizerConfig | None = None,
+    sanitization_report: SanitizationReport | None = None,
     dry_run: bool,
 ) -> tuple[int, str, bool]:
     if not source.exists():
         return 0, "", False
-    payload, redacted = packaged_payload(source)
+    if dry_run:
+        return (
+            source.stat().st_size,
+            "",
+            should_sanitize(source, sanitizer_config=sanitizer_config)
+            or should_redact(source),
+        )
+    payload, redacted = packaged_payload(
+        source,
+        rel_path=rel_path or Path(source.name),
+        sanitizer_config=sanitizer_config,
+        sanitization_report=sanitization_report,
+    )
     size = len(payload)
     if not dry_run:
         assert tar is not None
@@ -233,6 +319,8 @@ def add_rows(
     generated_manifest: list[dict[str, Any]] | None = None,
     packaged_manifest: list[dict[str, Any]] | None = None,
     allow_unmanifested: bool = False,
+    sanitizer_config: SanitizerConfig | None = None,
+    sanitization_report: SanitizationReport | None = None,
     dry_run: bool,
 ) -> tuple[int, int]:
     file_count = 0
@@ -244,7 +332,16 @@ def add_rows(
         for artifact in artifact_paths_for_row(row):
             relative = str(artifact.relative_to(RESULTS_DIR))
             if relative in expected:
-                verify_artifact(artifact, expected)
+                if dry_run:
+                    expected_size = int(expected[relative]["size_bytes"])
+                    actual_size = artifact.stat().st_size
+                    if actual_size != expected_size:
+                        raise ValueError(
+                            f"Size mismatch for {relative}: "
+                            f"expected {expected_size}, got {actual_size}"
+                        )
+                else:
+                    verify_artifact(artifact, expected)
             elif allow_unmanifested and generated_manifest is not None:
                 generated_manifest.append(
                     {
@@ -253,7 +350,7 @@ def add_rows(
                         "artifact": artifact.name,
                         "relative_path": relative,
                         "size_bytes": artifact.stat().st_size,
-                        "sha256": sha256_file(artifact),
+                        "sha256": "" if dry_run else sha256_file(artifact),
                     }
                 )
             else:
@@ -266,7 +363,13 @@ def add_rows(
                 / artifact.name
             )
             packaged_size, packaged_sha, redacted = add_file(
-                tar, artifact, arcname, dry_run=dry_run
+                tar,
+                artifact,
+                arcname,
+                rel_path=Path(relative),
+                sanitizer_config=sanitizer_config,
+                sanitization_report=sanitization_report,
+                dry_run=dry_run,
             )
             if packaged_manifest is not None:
                 packaged_manifest.append(
@@ -305,6 +408,8 @@ def add_metadata(
     tar: tarfile.TarFile | None,
     *,
     packaged_manifest: list[dict[str, Any]] | None = None,
+    sanitizer_config: SanitizerConfig | None = None,
+    sanitization_report: SanitizationReport | None = None,
     dry_run: bool,
 ) -> tuple[int, int]:
     metadata_files = [
@@ -334,7 +439,13 @@ def add_metadata(
             Path("m4bench-review-artifact") / "metadata" / source.relative_to(PAPER_DIR)
         )
         packaged_size, packaged_sha, redacted = add_file(
-            tar, source, arcname, dry_run=dry_run
+            tar,
+            source,
+            arcname,
+            rel_path=Path("metadata") / source.relative_to(PAPER_DIR),
+            sanitizer_config=sanitizer_config,
+            sanitization_report=sanitization_report,
+            dry_run=dry_run,
         )
         if packaged_manifest is not None:
             packaged_manifest.append(
@@ -416,6 +527,7 @@ def review_readme(
     run_counts: dict[str, int],
     include_claude: bool,
     compression: str,
+    sanitize: str,
 ) -> str:
     lines = [
         "# M4Bench Review Artifact",
@@ -425,6 +537,7 @@ def review_readme(
         "",
         "This archive contains paper-facing per-run artifacts selected by the manuscript scripts.",
         "It is an audit/reproducibility artifact, not a new dataset release.",
+        f"Sanitization mode: `{sanitize}`",
         "",
         "## Canonical vs Provenance Runs",
         "",
@@ -480,6 +593,7 @@ def review_readme(
             "Source run artifacts were verified against the SHA-256 and byte-size metadata in the included source manifests before packaging.",
             "Text artifacts are redacted during packaging to remove local absolute paths and user-identifying path components for double-blind review.",
             "`metadata/planning/packaged_artifact_manifest.json` records SHA-256 hashes and byte sizes for the packaged, redacted archive entries.",
+            "`metadata/planning/SANITIZATION_REPORT.json`, when present, documents public sanitization actions.",
             "",
             "## Counts",
             "",
@@ -529,6 +643,44 @@ def main() -> None:
         action="store_true",
         help="Also include exploratory local OSS run artifacts under runs/oss_exploratory/.",
     )
+    parser.add_argument(
+        "--sanitize",
+        choices=["public", "off"],
+        default="public",
+        help=(
+            "Sanitize packaged artifacts. public projects output.csv to row_id plus "
+            "score/result columns and redacts trace data previews. off preserves the "
+            "legacy raw/output behavior for private internal archives."
+        ),
+    )
+    parser.add_argument(
+        "--private-patterns",
+        type=Path,
+        help=(
+            "Gitignored literal/regex redaction file. Defaults to "
+            "M4BENCH_PRIVATE_REDACTIONS or benchmark/release/v1/.private_redactions."
+        ),
+    )
+    parser.add_argument(
+        "--sanitize-salt-file",
+        type=Path,
+        help="Gitignored HMAC salt file for public sanitization.",
+    )
+    parser.add_argument(
+        "--sanitize-salt",
+        help="Private HMAC salt value. Prefer --sanitize-salt-file or M4BENCH_SANITIZE_SALT.",
+    )
+    parser.add_argument(
+        "--csv-mode",
+        choices=["scores-only", "pseudonymized-full"],
+        default="scores-only",
+        help="CSV sanitization mode used when --sanitize public is enabled.",
+    )
+    parser.add_argument(
+        "--include-row-key-hash",
+        action="store_true",
+        help="Include private-salt HMAC row keys in scores-only output.csv files.",
+    )
     args = parser.parse_args()
 
     if not FOLLOWUP_MANIFEST.exists():
@@ -537,6 +689,23 @@ def main() -> None:
         )
 
     compression = infer_compression(args.output, args.compression)
+    sanitizer_config = build_sanitizer_config(args)
+    sanitization_report = (
+        SanitizationReport(source=str(RESULTS_DIR), output=str(args.output))
+        if sanitizer_config is not None
+        else None
+    )
+    if sanitizer_config is not None and sanitization_report is not None:
+        sanitization_report.private_patterns_loaded = bool(
+            sanitizer_config.private_patterns.literals
+            or sanitizer_config.private_patterns.regexes
+        )
+        sanitization_report.private_literal_patterns = len(
+            sanitizer_config.private_patterns.literals
+        )
+        sanitization_report.private_regex_patterns = len(
+            sanitizer_config.private_patterns.regexes
+        )
     expected = load_expected_artifacts()
     codex_rows, _ = combine_rows(CODEX_RELEASE, CODEX_RERUN)
     claude_rows = []
@@ -567,6 +736,8 @@ def main() -> None:
             campaign_dir="codex_primary",
             expected=expected,
             packaged_manifest=packaged_manifest,
+            sanitizer_config=sanitizer_config,
+            sanitization_report=sanitization_report,
             dry_run=args.dry_run,
         )
         if args.include_claude:
@@ -576,6 +747,8 @@ def main() -> None:
                 campaign_dir="claude_sentinel",
                 expected=expected,
                 packaged_manifest=packaged_manifest,
+                sanitizer_config=sanitizer_config,
+                sanitization_report=sanitization_report,
                 dry_run=args.dry_run,
             )
         if args.include_oss:
@@ -587,6 +760,8 @@ def main() -> None:
                 generated_manifest=oss_manifest,
                 packaged_manifest=packaged_manifest,
                 allow_unmanifested=True,
+                sanitizer_config=sanitizer_config,
+                sanitization_report=sanitization_report,
                 dry_run=args.dry_run,
             )
         counts["codex_followup"] = add_rows(
@@ -595,11 +770,15 @@ def main() -> None:
             campaign_dir="codex_followup",
             expected=expected,
             packaged_manifest=packaged_manifest,
+            sanitizer_config=sanitizer_config,
+            sanitization_report=sanitization_report,
             dry_run=args.dry_run,
         )
         counts["metadata"] = add_metadata(
             tar,
             packaged_manifest=packaged_manifest,
+            sanitizer_config=sanitizer_config,
+            sanitization_report=sanitization_report,
             dry_run=args.dry_run,
         )
         if args.include_oss:
@@ -641,6 +820,20 @@ def main() -> None:
             counts["metadata"][0] + packaged_manifest_count[0],
             counts["metadata"][1] + packaged_manifest_count[1],
         )
+        if sanitization_report is not None:
+            sanitization_report_count = add_json_file(
+                tar,
+                arcname=Path("m4bench-review-artifact")
+                / "metadata"
+                / "planning"
+                / "SANITIZATION_REPORT.json",
+                data=sanitization_report.to_json(),
+                dry_run=args.dry_run,
+            )
+            counts["metadata"] = (
+                counts["metadata"][0] + sanitization_report_count[0],
+                counts["metadata"][1] + sanitization_report_count[1],
+            )
         counts["readme"] = add_text_file(
             tar,
             arcname=Path("m4bench-review-artifact") / "README.md",
@@ -649,6 +842,7 @@ def main() -> None:
                 run_counts=run_counts,
                 include_claude=args.include_claude,
                 compression=compression,
+                sanitize=args.sanitize,
             ),
             dry_run=args.dry_run,
         )
@@ -685,6 +879,8 @@ def main() -> None:
                 "include_claude": args.include_claude,
                 "include_oss": args.include_oss,
                 "run_counts": run_counts,
+                "sanitize": args.sanitize,
+                "csv_mode": args.csv_mode if args.sanitize != "off" else "raw",
             },
             "contents": {
                 "total_files": total_files,
