@@ -154,7 +154,7 @@ def generate_task_details() -> None:
 
     write_table(
         TABLE_DIR / "task_details.tex",
-        ["Task", "Mode", "Database", "Key grain", "Scored columns", "Truth rows"],
+        ["Task", "Mode", "Database", "Key grain", "Scored columns", "Reference rows"],
         rows,
         align="llllrr",
     )
