@@ -4,14 +4,14 @@
 
 Paper-facing benchmark run artifacts are available at:
 
-https://mega.nz/file/ZvMVmIJa#BKeEMt7IW2Nq6XImBHqwdswSEJ6a8nq0JUZmcA7Az8o
+https://mega.nz/file/tyNVyRaS#Fw5ta4akUKusFnKy8ZjpDkVkXGS8EsKlwyh_nQTVhbQ
 
-Filename: `m4bench-paper-results-artifact.tar.zst`
+Filename: `m4bench-paper-results-artifact-sanitized.tar.zst`
 
-Size: `17,061,661,295` bytes
+Size: `8,176,110,255` bytes
 
 SHA-256:
-`99f78557878d642dd9d78544e44bb3697ca7b6a7dd9ff6c4e9fe5be0e06c2b3d`
+`2ab74851089476f7991118a4194e9a08771c9a78f72cf4dc1b578b4d0b7bb38c`
 
 The review archive is produced by
 `benchmark/release/v1/scripts/package_review_artifact.py` and excludes

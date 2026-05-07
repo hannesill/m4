@@ -128,13 +128,13 @@ the same canonical run selection as the manuscript.
 The submitted review artifact is available at:
 
 ```text
-https://mega.nz/file/ZvMVmIJa#BKeEMt7IW2Nq6XImBHqwdswSEJ6a8nq0JUZmcA7Az8o
+https://mega.nz/file/tyNVyRaS#Fw5ta4akUKusFnKy8ZjpDkVkXGS8EsKlwyh_nQTVhbQ
 ```
 
 ```text
-Filename: m4bench-paper-results-artifact.tar.zst
-Size: 17,061,661,295 bytes
-SHA-256: 99f78557878d642dd9d78544e44bb3697ca7b6a7dd9ff6c4e9fe5be0e06c2b3d
+Filename: m4bench-paper-results-artifact-sanitized.tar.zst
+Size: 8,176,110,255 bytes
+SHA-256: 2ab74851089476f7991118a4194e9a08771c9a78f72cf4dc1b578b4d0b7bb38c
 ```
 
 To build an anonymous source archive for double-blind review, use the
