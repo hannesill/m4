@@ -270,6 +270,11 @@ def sign_flip_p(values: list[float], reps: int = 200000, seed: int = 20260504) -
     return (hits + 1) / (reps + 1)
 
 
+def fmt_with_bootstrap_ci(values: list[float]) -> str:
+    ci_low, ci_high = bootstrap_ci(values)
+    return f"{fmt(mean(values))} [{fmt(ci_low)}, {fmt(ci_high)}]"
+
+
 def task_mode(task: str) -> str:
     for task_file in (BENCHMARK_DIR / "tasks").glob(f"*/{task}/task.toml"):
         with task_file.open("rb") as handle:
@@ -610,7 +615,7 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
                 f"Reward / {model}",
                 fmt(mean(groups[(model, "no-skill")])),
                 fmt(mean(groups[(model, "with-skill")])),
-                fmt(mean(model_deltas)),
+                fmt_with_bootstrap_ci(model_deltas),
                 f"{sum(value > 0 for value in model_deltas)}/{len(model_deltas)}",
             ]
         )
@@ -619,7 +624,7 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
             "Reward / task-balanced",
             fmt(mean(reward_no.values())),
             fmt(mean(reward_with.values())),
-            f"{fmt(mean(task_values))} [{fmt(ci_low)}, {fmt(ci_high)}]",
+            fmt_with_bootstrap_ci(task_values),
             f"{sum(value > 0 for value in task_values)}/{len(task_values)}",
         ]
     )
@@ -629,7 +634,7 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
             "Key F1 / task-balanced",
             fmt(mean(key_f1_no.values())),
             fmt(mean(key_f1_with.values())),
-            fmt(mean(key_f1_values)),
+            fmt_with_bootstrap_ci(key_f1_values),
             f"{sum(value > 0 for value in key_f1_values)}/{len(key_f1_values)}",
         ]
     )
@@ -639,7 +644,7 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
             "Ordered nMAE / task-balanced",
             fmt(mean(nmae_no.values())),
             fmt(mean(nmae_with.values())),
-            fmt(mean(nmae_values)),
+            fmt_with_bootstrap_ci(nmae_values),
             f"{sum(value < 0 for value in nmae_values)}/{len(nmae_values)}",
         ]
     )
