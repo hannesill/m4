@@ -1,0 +1,2242 @@
+{
+  "eicu-gcs_no-skill_codex_gpt-5.4-mini_t1_20260504_053051": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.12578859216331395
+  },
+  "eicu-gcs_no-skill_codex_gpt-5.4-mini_t2_20260504_053051": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.04063930833735609
+  },
+  "eicu-gcs_no-skill_codex_gpt-5.4-mini_t3_20260504_053051": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.03653713550301339
+  },
+  "eicu-gcs_no-skill_codex_gpt-5.4-mini_t4_20260504_053051": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.04056131000685229
+  },
+  "eicu-gcs_no-skill_codex_gpt-5.4-mini_t5_20260504_053051": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.03650114425210273
+  },
+  "eicu-gcs_no-skill_codex_gpt-5.5_t1_20260504_053417": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0
+  },
+  "eicu-gcs_no-skill_codex_gpt-5.5_t2_20260504_053424": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 1.659538946889775e-06
+  },
+  "eicu-gcs_no-skill_codex_gpt-5.5_t3_20260504_053443": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0024506204186352672
+  },
+  "eicu-gcs_no-skill_codex_gpt-5.5_t4_20260504_053504": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0024506204186352672
+  },
+  "eicu-gcs_no-skill_codex_gpt-5.5_t5_20260504_053510": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0024506204186352672
+  },
+  "eicu-gcs_with-skill_codex_gpt-5.4-mini_t1_20260504_053713": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 1.659538946889775e-06
+  },
+  "eicu-gcs_with-skill_codex_gpt-5.4-mini_t2_20260504_053722": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 1.659538946889775e-06
+  },
+  "eicu-gcs_with-skill_codex_gpt-5.4-mini_t3_20260504_053724": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 1.659538946889775e-06
+  },
+  "eicu-gcs_with-skill_codex_gpt-5.4-mini_t4_20260504_053732": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 1.659538946889775e-06
+  },
+  "eicu-gcs_with-skill_codex_gpt-5.4-mini_t5_20260504_053737": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 1.659538946889775e-06
+  },
+  "eicu-gcs_with-skill_codex_gpt-5.5_t1_20260504_053900": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 1.659538946889775e-06
+  },
+  "eicu-gcs_with-skill_codex_gpt-5.5_t2_20260504_053910": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 1.659538946889775e-06
+  },
+  "eicu-gcs_with-skill_codex_gpt-5.5_t3_20260504_053954": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 1.659538946889775e-06
+  },
+  "eicu-gcs_with-skill_codex_gpt-5.5_t4_20260504_054012": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 1.659538946889775e-06
+  },
+  "eicu-gcs_with-skill_codex_gpt-5.5_t5_20260504_054013": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 1.659538946889775e-06
+  },
+  "eicu-oasis_no-skill_codex_gpt-5.4-mini_t1_20260502_191013": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.3451847637953199
+  },
+  "eicu-oasis_no-skill_codex_gpt-5.4-mini_t2_20260502_191533": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.34014233159881785
+  },
+  "eicu-oasis_no-skill_codex_gpt-5.4-mini_t3_20260502_192253": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.2923165436999451
+  },
+  "eicu-oasis_no-skill_codex_gpt-5.4-mini_t4_20260502_192659": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.37765431878690253
+  },
+  "eicu-oasis_no-skill_codex_gpt-5.4-mini_t5_20260502_193051": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.39304764603971304
+  },
+  "eicu-oasis_no-skill_codex_gpt-5.5_t1_20260503_034143": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.2669310348709482
+  },
+  "eicu-oasis_no-skill_codex_gpt-5.5_t2_20260503_034159": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.27539510325148736
+  },
+  "eicu-oasis_no-skill_codex_gpt-5.5_t3_20260503_034231": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.23806039862311412
+  },
+  "eicu-oasis_no-skill_codex_gpt-5.5_t4_20260503_034243": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.2680655514185395
+  },
+  "eicu-oasis_no-skill_codex_gpt-5.5_t5_20260503_034302": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.17508848639767208
+  },
+  "eicu-oasis_with-skill_codex_gpt-5.4-mini_t1_20260504_054113": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.12213774341648215
+  },
+  "eicu-oasis_with-skill_codex_gpt-5.4-mini_t2_20260504_054144": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.023726972662191866
+  },
+  "eicu-oasis_with-skill_codex_gpt-5.4-mini_t3_20260504_054154": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.1282719383493443
+  },
+  "eicu-oasis_with-skill_codex_gpt-5.4-mini_t4_20260504_054234": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.1662610407946024
+  },
+  "eicu-oasis_with-skill_codex_gpt-5.4-mini_t5_20260504_054234": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.0777332992140012
+  },
+  "eicu-oasis_with-skill_codex_gpt-5.5_t1_20260504_054642": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.12505014399130346
+  },
+  "eicu-oasis_with-skill_codex_gpt-5.5_t2_20260504_054714": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.12529851273143444
+  },
+  "eicu-oasis_with-skill_codex_gpt-5.5_t3_20260504_054755": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.02638349252813628
+  },
+  "eicu-oasis_with-skill_codex_gpt-5.5_t4_20260504_054943": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.1378280867739715
+  },
+  "eicu-oasis_with-skill_codex_gpt-5.5_t5_20260504_055009": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.15165882597782618
+  },
+  "mimic-apsiii-24h-raw_no-skill_codex_gpt-5.4-mini_t1_20260502_155135": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.25342232279884297
+  },
+  "mimic-apsiii-24h-raw_no-skill_codex_gpt-5.4-mini_t2_20260502_155847": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.2509271623898758
+  },
+  "mimic-apsiii-24h-raw_no-skill_codex_gpt-5.4-mini_t3_20260502_160808": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.34967240813135847
+  },
+  "mimic-apsiii-24h-raw_no-skill_codex_gpt-5.4-mini_t4_20260502_161529": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.24718405107126393
+  },
+  "mimic-apsiii-24h-raw_no-skill_codex_gpt-5.4-mini_t5_20260502_162112": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.25919112043694714
+  },
+  "mimic-apsiii-24h-raw_no-skill_codex_gpt-5.5_t1_20260503_031851": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.08846564936404605
+  },
+  "mimic-apsiii-24h-raw_no-skill_codex_gpt-5.5_t2_20260503_032259": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.07273315694023422
+  },
+  "mimic-apsiii-24h-raw_no-skill_codex_gpt-5.5_t3_20260503_032924": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.09112863904762257
+  },
+  "mimic-apsiii-24h-raw_no-skill_codex_gpt-5.5_t4_20260503_032924": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.13419150546138567
+  },
+  "mimic-apsiii-24h-raw_no-skill_codex_gpt-5.5_t5_20260503_032922": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.09660144942786297
+  },
+  "mimic-apsiii-24h-raw_with-skill_codex_gpt-5.4-mini_t1_20260503_072150": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.23825235321085458
+  },
+  "mimic-apsiii-24h-raw_with-skill_codex_gpt-5.4-mini_t2_20260503_134654": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.2663254221927494
+  },
+  "mimic-apsiii-24h-raw_with-skill_codex_gpt-5.4-mini_t3_20260503_134657": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.2323585642506652
+  },
+  "mimic-apsiii-24h-raw_with-skill_codex_gpt-5.4-mini_t4_20260503_072610": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.2532765490370878
+  },
+  "mimic-apsiii-24h-raw_with-skill_codex_gpt-5.4-mini_t5_20260503_072950": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.15700024791331657
+  },
+  "mimic-apsiii-24h-raw_with-skill_codex_gpt-5.5_t1_20260503_103745": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.0655426199062513
+  },
+  "mimic-apsiii-24h-raw_with-skill_codex_gpt-5.5_t2_20260503_103841": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.06224104532237275
+  },
+  "mimic-apsiii-24h-raw_with-skill_codex_gpt-5.5_t3_20260503_103906": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.08296904494437679
+  },
+  "mimic-apsiii-24h-raw_with-skill_codex_gpt-5.5_t4_20260503_104238": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.06383328014885384
+  },
+  "mimic-apsiii-24h-raw_with-skill_codex_gpt-5.5_t5_20260503_104322": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.0581549778661165
+  },
+  "mimic-apsiii-24h_no-skill_codex_gpt-5.4-mini_t1_20260502_152900": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.24742374057016706
+  },
+  "mimic-apsiii-24h_no-skill_codex_gpt-5.4-mini_t2_20260502_153240": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.25137306651972813
+  },
+  "mimic-apsiii-24h_no-skill_codex_gpt-5.4-mini_t3_20260502_153801": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.22289260767845592
+  },
+  "mimic-apsiii-24h_no-skill_codex_gpt-5.4-mini_t4_20260503_025423": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.2409822199216045
+  },
+  "mimic-apsiii-24h_no-skill_codex_gpt-5.4-mini_t5_20260502_154711": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.24367106521302595
+  },
+  "mimic-apsiii-24h_no-skill_codex_gpt-5.5_t1_20260503_031853": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.0321011557730749
+  },
+  "mimic-apsiii-24h_no-skill_codex_gpt-5.5_t2_20260503_031853": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.038685540305010584
+  },
+  "mimic-apsiii-24h_no-skill_codex_gpt-5.5_t3_20260503_031853": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.07797169246040347
+  },
+  "mimic-apsiii-24h_no-skill_codex_gpt-5.5_t4_20260503_031853": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.07160537870504194
+  },
+  "mimic-apsiii-24h_no-skill_codex_gpt-5.5_t5_20260503_031853": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.0852335067941338
+  },
+  "mimic-apsiii-24h_with-skill_codex_gpt-5.4-mini_t1_20260503_071643": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.20546421206459264
+  },
+  "mimic-apsiii-24h_with-skill_codex_gpt-5.4-mini_t2_20260503_071643": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.22916073949928273
+  },
+  "mimic-apsiii-24h_with-skill_codex_gpt-5.4-mini_t3_20260503_134658": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.22974199052732996
+  },
+  "mimic-apsiii-24h_with-skill_codex_gpt-5.4-mini_t4_20260503_071644": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.23747852431238586
+  },
+  "mimic-apsiii-24h_with-skill_codex_gpt-5.4-mini_t5_20260503_072140": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.2176070219756778
+  },
+  "mimic-apsiii-24h_with-skill_codex_gpt-5.5_t1_20260503_103358": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.0791923143796908
+  },
+  "mimic-apsiii-24h_with-skill_codex_gpt-5.5_t2_20260503_103358": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.035869224064567405
+  },
+  "mimic-apsiii-24h_with-skill_codex_gpt-5.5_t3_20260503_103358": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.050046832172432665
+  },
+  "mimic-apsiii-24h_with-skill_codex_gpt-5.5_t4_20260503_103358": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.0568405747546873
+  },
+  "mimic-apsiii-24h_with-skill_codex_gpt-5.5_t5_20260503_103735": {
+    "ordered_value_columns": 17,
+    "ordered_value_nmae": 0.03608978620375577
+  },
+  "mimic-charlson-raw_no-skill_codex_gpt-5.4-mini_t1_20260502_162759": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.0054223142038813945
+  },
+  "mimic-charlson-raw_no-skill_codex_gpt-5.4-mini_t2_20260502_163244": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.009478079482417755
+  },
+  "mimic-charlson-raw_no-skill_codex_gpt-5.4-mini_t3_20260502_163715": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.06246520860465467
+  },
+  "mimic-charlson-raw_no-skill_codex_gpt-5.4-mini_t4_20260502_164342": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.008511963613287677
+  },
+  "mimic-charlson-raw_no-skill_codex_gpt-5.4-mini_t5_20260502_165037": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.0072153053908038025
+  },
+  "mimic-charlson-raw_no-skill_codex_gpt-5.5_t1_20260503_032924": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.005818648012266936
+  },
+  "mimic-charlson-raw_no-skill_codex_gpt-5.5_t2_20260503_032923": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.003322117727013235
+  },
+  "mimic-charlson-raw_no-skill_codex_gpt-5.5_t3_20260503_032924": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.0033782594830407365
+  },
+  "mimic-charlson-raw_no-skill_codex_gpt-5.5_t4_20260503_032924": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.0029681633403371857
+  },
+  "mimic-charlson-raw_no-skill_codex_gpt-5.5_t5_20260503_032923": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.001630443024642785
+  },
+  "mimic-charlson-raw_with-skill_codex_gpt-5.4-mini_t1_20260503_073150": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.013552287359939463
+  },
+  "mimic-charlson-raw_with-skill_codex_gpt-5.4-mini_t2_20260503_073250": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.025403874175293557
+  },
+  "mimic-charlson-raw_with-skill_codex_gpt-5.4-mini_t3_20260503_073458": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.011580696416527885
+  },
+  "mimic-charlson-raw_with-skill_codex_gpt-5.4-mini_t4_20260503_073712": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.007850461217056381
+  },
+  "mimic-charlson-raw_with-skill_codex_gpt-5.4-mini_t5_20260503_073816": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.00952147635296802
+  },
+  "mimic-charlson-raw_with-skill_codex_gpt-5.5_t1_20260503_104322": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.005732196990776152
+  },
+  "mimic-charlson-raw_with-skill_codex_gpt-5.5_t2_20260503_104444": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.0057321969907761505
+  },
+  "mimic-charlson-raw_with-skill_codex_gpt-5.5_t3_20260503_104734": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.005818648012266934
+  },
+  "mimic-charlson-raw_with-skill_codex_gpt-5.5_t4_20260503_104820": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.006191312747622915
+  },
+  "mimic-charlson-raw_with-skill_codex_gpt-5.5_t5_20260503_104848": {
+    "ordered_value_columns": 19,
+    "ordered_value_nmae": 0.005818648012266935
+  },
+  "mimic-creatinine-baseline-raw_no-skill_codex_gpt-5.4-mini_t1_20260504_061111": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07296286995475236
+  },
+  "mimic-creatinine-baseline-raw_no-skill_codex_gpt-5.4-mini_t2_20260504_061201": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.04858707863017675
+  },
+  "mimic-creatinine-baseline-raw_no-skill_codex_gpt-5.4-mini_t3_20260504_061205": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.09065280385829477
+  },
+  "mimic-creatinine-baseline-raw_no-skill_codex_gpt-5.4-mini_t4_20260504_061305": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.04338090866735524
+  },
+  "mimic-creatinine-baseline-raw_no-skill_codex_gpt-5.4-mini_t5_20260504_061340": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.0487755068395094
+  },
+  "mimic-creatinine-baseline-raw_no-skill_codex_gpt-5.5_t1_20260504_061416": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.0453731033433697
+  },
+  "mimic-creatinine-baseline-raw_no-skill_codex_gpt-5.5_t2_20260504_061511": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.003564176741580513
+  },
+  "mimic-creatinine-baseline-raw_no-skill_codex_gpt-5.5_t3_20260504_061517": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.04692094654354748
+  },
+  "mimic-creatinine-baseline-raw_no-skill_codex_gpt-5.5_t4_20260504_061523": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.04538633311530279
+  },
+  "mimic-creatinine-baseline-raw_no-skill_codex_gpt-5.5_t5_20260504_061629": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.006071984643983469
+  },
+  "mimic-creatinine-baseline-raw_with-skill_codex_gpt-5.4-mini_t1_20260504_061733": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07837616936671063
+  },
+  "mimic-creatinine-baseline-raw_with-skill_codex_gpt-5.4-mini_t2_20260504_061801": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.0015145533515043008
+  },
+  "mimic-creatinine-baseline-raw_with-skill_codex_gpt-5.4-mini_t3_20260504_061819": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07835325767509367
+  },
+  "mimic-creatinine-baseline-raw_with-skill_codex_gpt-5.4-mini_t4_20260504_061845": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07838769463141326
+  },
+  "mimic-creatinine-baseline-raw_with-skill_codex_gpt-5.4-mini_t5_20260504_061944": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07835325767509373
+  },
+  "mimic-creatinine-baseline-raw_with-skill_codex_gpt-5.5_t1_20260504_061956": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07837616936671063
+  },
+  "mimic-creatinine-baseline-raw_with-skill_codex_gpt-5.5_t2_20260504_062001": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07837616936671063
+  },
+  "mimic-creatinine-baseline-raw_with-skill_codex_gpt-5.5_t3_20260504_062008": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07838769463141326
+  },
+  "mimic-creatinine-baseline-raw_with-skill_codex_gpt-5.5_t4_20260504_062055": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07837616936671064
+  },
+  "mimic-creatinine-baseline-raw_with-skill_codex_gpt-5.5_t5_20260504_062129": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07837616936671063
+  },
+  "mimic-creatinine-baseline_no-skill_codex_gpt-5.4-mini_t1_20260504_055129": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.05023789561427835
+  },
+  "mimic-creatinine-baseline_no-skill_codex_gpt-5.4-mini_t2_20260504_055135": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.049762900777347435
+  },
+  "mimic-creatinine-baseline_no-skill_codex_gpt-5.4-mini_t3_20260504_055235": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.049762900777347435
+  },
+  "mimic-creatinine-baseline_no-skill_codex_gpt-5.4-mini_t4_20260504_055253": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.09196208527261397
+  },
+  "mimic-creatinine-baseline_no-skill_codex_gpt-5.4-mini_t5_20260504_055414": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.04976290077734744
+  },
+  "mimic-creatinine-baseline_no-skill_codex_gpt-5.5_t1_20260504_055442": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.04706358495504637
+  },
+  "mimic-creatinine-baseline_no-skill_codex_gpt-5.5_t2_20260504_055446": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.04683904623339561
+  },
+  "mimic-creatinine-baseline_no-skill_codex_gpt-5.5_t3_20260504_055550": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07129981462230771
+  },
+  "mimic-creatinine-baseline_no-skill_codex_gpt-5.5_t4_20260504_055618": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.04925919462780212
+  },
+  "mimic-creatinine-baseline_no-skill_codex_gpt-5.5_t5_20260504_055621": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.0468390462333956
+  },
+  "mimic-creatinine-baseline_with-skill_codex_gpt-5.4-mini_t1_20260504_055811": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07697407458958148
+  },
+  "mimic-creatinine-baseline_with-skill_codex_gpt-5.4-mini_t2_20260504_055828": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07697407458958148
+  },
+  "mimic-creatinine-baseline_with-skill_codex_gpt-5.4-mini_t3_20260504_055832": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07697407458958148
+  },
+  "mimic-creatinine-baseline_with-skill_codex_gpt-5.4-mini_t4_20260504_055908": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.0053911258125448926
+  },
+  "mimic-creatinine-baseline_with-skill_codex_gpt-5.4-mini_t5_20260504_060012": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07697407458958148
+  },
+  "mimic-creatinine-baseline_with-skill_codex_gpt-5.5_t1_20260504_060012": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07697407458958148
+  },
+  "mimic-creatinine-baseline_with-skill_codex_gpt-5.5_t2_20260504_060015": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07697407458958154
+  },
+  "mimic-creatinine-baseline_with-skill_codex_gpt-5.5_t3_20260504_060056": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07697407458958148
+  },
+  "mimic-creatinine-baseline_with-skill_codex_gpt-5.5_t4_20260504_060101": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07697407458958148
+  },
+  "mimic-creatinine-baseline_with-skill_codex_gpt-5.5_t5_20260504_060122": {
+    "ordered_value_columns": 3,
+    "ordered_value_nmae": 0.07697407458958148
+  },
+  "mimic-gcs-24h-raw_no-skill_codex_gpt-5.4-mini_t1_20260504_063322": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.11216208526540933
+  },
+  "mimic-gcs-24h-raw_no-skill_codex_gpt-5.4-mini_t2_20260504_063359": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0003877605214310417
+  },
+  "mimic-gcs-24h-raw_no-skill_codex_gpt-5.4-mini_t3_20260504_072530": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0003877605214310417
+  },
+  "mimic-gcs-24h-raw_no-skill_codex_gpt-5.4-mini_t4_20260504_063513": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.11216208526540933
+  },
+  "mimic-gcs-24h-raw_no-skill_codex_gpt-5.4-mini_t5_20260504_063541": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.11216208526540933
+  },
+  "mimic-gcs-24h-raw_no-skill_codex_gpt-5.5_t1_20260504_063550": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.00254167196002456
+  },
+  "mimic-gcs-24h-raw_no-skill_codex_gpt-5.5_t2_20260504_063703": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.021024710276878026
+  },
+  "mimic-gcs-24h-raw_no-skill_codex_gpt-5.5_t3_20260504_063916": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0003877605214310417
+  },
+  "mimic-gcs-24h-raw_no-skill_codex_gpt-5.5_t4_20260504_063934": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.00254167196002456
+  },
+  "mimic-gcs-24h-raw_no-skill_codex_gpt-5.5_t5_20260504_063946": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.015430469097376633
+  },
+  "mimic-gcs-24h-raw_with-skill_codex_gpt-5.4-mini_t1_20260504_063948": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.00254167196002456
+  },
+  "mimic-gcs-24h-raw_with-skill_codex_gpt-5.4-mini_t2_20260504_064037": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0003877605214310417
+  },
+  "mimic-gcs-24h-raw_with-skill_codex_gpt-5.4-mini_t3_20260504_064248": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0638906974528362
+  },
+  "mimic-gcs-24h-raw_with-skill_codex_gpt-5.4-mini_t4_20260504_064315": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.1476635779923367
+  },
+  "mimic-gcs-24h-raw_with-skill_codex_gpt-5.4-mini_t5_20260504_064347": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.00300488488711032
+  },
+  "mimic-gcs-24h-raw_with-skill_codex_gpt-5.5_t1_20260504_064409": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.00254167196002456
+  },
+  "mimic-gcs-24h-raw_with-skill_codex_gpt-5.5_t2_20260504_064410": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.002508676695815423
+  },
+  "mimic-gcs-24h-raw_with-skill_codex_gpt-5.5_t3_20260504_064610": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.002508676695815423
+  },
+  "mimic-gcs-24h-raw_with-skill_codex_gpt-5.5_t4_20260504_064704": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.002434834353186953
+  },
+  "mimic-gcs-24h-raw_with-skill_codex_gpt-5.5_t5_20260504_064722": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.00246782961739609
+  },
+  "mimic-kdigo-48h-raw_no-skill_codex_gpt-5.4-mini_t1_20260502_182111": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.2234732191379572
+  },
+  "mimic-kdigo-48h-raw_no-skill_codex_gpt-5.4-mini_t2_20260502_182546": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.21110175951215673
+  },
+  "mimic-kdigo-48h-raw_no-skill_codex_gpt-5.4-mini_t3_20260502_183048": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0943254321144547
+  },
+  "mimic-kdigo-48h-raw_no-skill_codex_gpt-5.4-mini_t4_20260502_183455": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.176022235632077
+  },
+  "mimic-kdigo-48h-raw_no-skill_codex_gpt-5.4-mini_t5_20260502_183940": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.19103508084722393
+  },
+  "mimic-kdigo-48h-raw_no-skill_codex_gpt-5.5_t1_20260503_033707": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0768608799678217
+  },
+  "mimic-kdigo-48h-raw_no-skill_codex_gpt-5.5_t2_20260503_033708": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.05334469640827505
+  },
+  "mimic-kdigo-48h-raw_no-skill_codex_gpt-5.5_t3_20260503_033757": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.056054013423951866
+  },
+  "mimic-kdigo-48h-raw_no-skill_codex_gpt-5.5_t4_20260503_033825": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.050210587421566706
+  },
+  "mimic-kdigo-48h-raw_no-skill_codex_gpt-5.5_t5_20260503_033828": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.05844661119227184
+  },
+  "mimic-kdigo-48h-raw_with-skill_codex_gpt-5.4-mini_t1_20260503_075929": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.13593872408899613
+  },
+  "mimic-kdigo-48h-raw_with-skill_codex_gpt-5.4-mini_t2_20260503_080117": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.2522527648972873
+  },
+  "mimic-kdigo-48h-raw_with-skill_codex_gpt-5.4-mini_t3_20260503_080203": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.2560481025076543
+  },
+  "mimic-kdigo-48h-raw_with-skill_codex_gpt-5.4-mini_t4_20260503_080244": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.24041328773988374
+  },
+  "mimic-kdigo-48h-raw_with-skill_codex_gpt-5.4-mini_t5_20260503_080425": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.2448998496686475
+  },
+  "mimic-kdigo-48h-raw_with-skill_codex_gpt-5.5_t1_20260503_110621": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0721237657653888
+  },
+  "mimic-kdigo-48h-raw_with-skill_codex_gpt-5.5_t2_20260503_110637": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.0836826949543775
+  },
+  "mimic-kdigo-48h-raw_with-skill_codex_gpt-5.5_t3_20260503_110803": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.06209505812106874
+  },
+  "mimic-kdigo-48h-raw_with-skill_codex_gpt-5.5_t4_20260503_110944": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.10043440823788904
+  },
+  "mimic-kdigo-48h-raw_with-skill_codex_gpt-5.5_t5_20260503_111200": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.055041658726624865
+  },
+  "mimic-kdigo-48h_no-skill_codex_gpt-5.4-mini_t1_20260502_180418": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.032017316338125414
+  },
+  "mimic-kdigo-48h_no-skill_codex_gpt-5.4-mini_t2_20260502_180731": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.07900954215983083
+  },
+  "mimic-kdigo-48h_no-skill_codex_gpt-5.4-mini_t3_20260502_181202": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.07866679723616163
+  },
+  "mimic-kdigo-48h_no-skill_codex_gpt-5.4-mini_t4_20260502_181448": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.02860751162774271
+  },
+  "mimic-kdigo-48h_no-skill_codex_gpt-5.4-mini_t5_20260502_181812": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.02869044090142343
+  },
+  "mimic-kdigo-48h_no-skill_codex_gpt-5.5_t1_20260503_033614": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.013845218686259177
+  },
+  "mimic-kdigo-48h_no-skill_codex_gpt-5.5_t2_20260503_033630": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.011614509446879433
+  },
+  "mimic-kdigo-48h_no-skill_codex_gpt-5.5_t3_20260503_033633": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.012885797567878549
+  },
+  "mimic-kdigo-48h_no-skill_codex_gpt-5.5_t4_20260503_033655": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.012885797567878549
+  },
+  "mimic-kdigo-48h_no-skill_codex_gpt-5.5_t5_20260503_033659": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.013645394425741248
+  },
+  "mimic-kdigo-48h_with-skill_codex_gpt-5.4-mini_t1_20260503_075547": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.07626317163889343
+  },
+  "mimic-kdigo-48h_with-skill_codex_gpt-5.4-mini_t2_20260503_075622": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.022132852696436445
+  },
+  "mimic-kdigo-48h_with-skill_codex_gpt-5.4-mini_t3_20260503_134658": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.07660018209151082
+  },
+  "mimic-kdigo-48h_with-skill_codex_gpt-5.4-mini_t4_20260503_075832": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.031111269911847917
+  },
+  "mimic-kdigo-48h_with-skill_codex_gpt-5.4-mini_t5_20260503_075848": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.024267840380557074
+  },
+  "mimic-kdigo-48h_with-skill_codex_gpt-5.5_t1_20260503_110253": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.020795838714913764
+  },
+  "mimic-kdigo-48h_with-skill_codex_gpt-5.5_t2_20260503_110342": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.012705823399465067
+  },
+  "mimic-kdigo-48h_with-skill_codex_gpt-5.5_t3_20260503_110353": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.022059186799071095
+  },
+  "mimic-kdigo-48h_with-skill_codex_gpt-5.5_t4_20260503_110512": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.012922851073140148
+  },
+  "mimic-kdigo-48h_with-skill_codex_gpt-5.5_t5_20260503_110529": {
+    "ordered_value_columns": 4,
+    "ordered_value_nmae": 0.012885797567878549
+  },
+  "mimic-meld-24h-raw_no-skill_codex_gpt-5.4-mini_t1_20260503_025422": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.06555570514581516
+  },
+  "mimic-meld-24h-raw_no-skill_codex_gpt-5.4-mini_t2_20260502_185718": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.06408263586134531
+  },
+  "mimic-meld-24h-raw_no-skill_codex_gpt-5.4-mini_t3_20260502_190125": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.6252254175550538
+  },
+  "mimic-meld-24h-raw_no-skill_codex_gpt-5.4-mini_t4_20260502_190459": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.07042021359313375
+  },
+  "mimic-meld-24h-raw_no-skill_codex_gpt-5.4-mini_t5_20260502_190820": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.061028057924538
+  },
+  "mimic-meld-24h-raw_no-skill_codex_gpt-5.5_t1_20260503_033946": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.5993931391611879
+  },
+  "mimic-meld-24h-raw_no-skill_codex_gpt-5.5_t2_20260503_033954": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.053601941796598794
+  },
+  "mimic-meld-24h-raw_no-skill_codex_gpt-5.5_t3_20260503_034001": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.058171601418411406
+  },
+  "mimic-meld-24h-raw_no-skill_codex_gpt-5.5_t4_20260503_034014": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.599176052605072
+  },
+  "mimic-meld-24h-raw_no-skill_codex_gpt-5.5_t5_20260503_034127": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.5990002989219156
+  },
+  "mimic-meld-24h-raw_with-skill_codex_gpt-5.4-mini_t1_20260503_080914": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.040335053777680895
+  },
+  "mimic-meld-24h-raw_with-skill_codex_gpt-5.4-mini_t2_20260503_080933": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.040532274871640635
+  },
+  "mimic-meld-24h-raw_with-skill_codex_gpt-5.4-mini_t3_20260503_081009": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.0373026104416456
+  },
+  "mimic-meld-24h-raw_with-skill_codex_gpt-5.4-mini_t4_20260503_081054": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.040974006150785273
+  },
+  "mimic-meld-24h-raw_with-skill_codex_gpt-5.4-mini_t5_20260503_081214": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.04059691436563505
+  },
+  "mimic-meld-24h-raw_with-skill_codex_gpt-5.5_t1_20260503_111547": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.02665345892042071
+  },
+  "mimic-meld-24h-raw_with-skill_codex_gpt-5.5_t2_20260503_111558": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.03633436540043107
+  },
+  "mimic-meld-24h-raw_with-skill_codex_gpt-5.5_t3_20260503_140513": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.0369667662365103
+  },
+  "mimic-meld-24h-raw_with-skill_codex_gpt-5.5_t4_20260503_111715": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.026658473019698994
+  },
+  "mimic-meld-24h-raw_with-skill_codex_gpt-5.5_t5_20260503_111915": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.026105505023969664
+  },
+  "mimic-meld-24h_no-skill_codex_gpt-5.4-mini_t1_20260502_184422": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.5261533950624445
+  },
+  "mimic-meld-24h_no-skill_codex_gpt-5.4-mini_t2_20260502_184645": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.5209658757505184
+  },
+  "mimic-meld-24h_no-skill_codex_gpt-5.4-mini_t3_20260502_184833": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.9100794836870872
+  },
+  "mimic-meld-24h_no-skill_codex_gpt-5.4-mini_t4_20260502_185040": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.05546394126674503
+  },
+  "mimic-meld-24h_no-skill_codex_gpt-5.4-mini_t5_20260502_185244": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.061028057924538
+  },
+  "mimic-meld-24h_no-skill_codex_gpt-5.5_t1_20260503_033852": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.006112374058564768
+  },
+  "mimic-meld-24h_no-skill_codex_gpt-5.5_t2_20260503_033909": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.04088232403172544
+  },
+  "mimic-meld-24h_no-skill_codex_gpt-5.5_t3_20260503_033919": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.04133655968800906
+  },
+  "mimic-meld-24h_no-skill_codex_gpt-5.5_t4_20260503_033927": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.015071624731523231
+  },
+  "mimic-meld-24h_no-skill_codex_gpt-5.5_t5_20260503_033940": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.07050553164646074
+  },
+  "mimic-meld-24h_with-skill_codex_gpt-5.4-mini_t1_20260503_080727": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.006112374058564768
+  },
+  "mimic-meld-24h_with-skill_codex_gpt-5.4-mini_t2_20260503_080736": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.006112374058564768
+  },
+  "mimic-meld-24h_with-skill_codex_gpt-5.4-mini_t3_20260503_080831": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.006112374058564768
+  },
+  "mimic-meld-24h_with-skill_codex_gpt-5.4-mini_t4_20260503_080849": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.006112374058564768
+  },
+  "mimic-meld-24h_with-skill_codex_gpt-5.4-mini_t5_20260503_080915": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.006112374058564768
+  },
+  "mimic-meld-24h_with-skill_codex_gpt-5.5_t1_20260503_111206": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.006112374058564768
+  },
+  "mimic-meld-24h_with-skill_codex_gpt-5.5_t2_20260503_111226": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.003776637241138907
+  },
+  "mimic-meld-24h_with-skill_codex_gpt-5.5_t3_20260503_111341": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.007894199029433582
+  },
+  "mimic-meld-24h_with-skill_codex_gpt-5.5_t4_20260503_111359": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.006112374058564768
+  },
+  "mimic-meld-24h_with-skill_codex_gpt-5.5_t5_20260503_111522": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.004003813043040014
+  },
+  "mimic-oasis-24h-raw_no-skill_codex_gpt-5.4-mini_t1_20260502_195411": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.20461218064436218
+  },
+  "mimic-oasis-24h-raw_no-skill_codex_gpt-5.4-mini_t2_20260502_195930": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.2087287815404583
+  },
+  "mimic-oasis-24h-raw_no-skill_codex_gpt-5.4-mini_t3_20260502_200450": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.21217629741572777
+  },
+  "mimic-oasis-24h-raw_no-skill_codex_gpt-5.4-mini_t4_20260502_200956": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.23843667571990437
+  },
+  "mimic-oasis-24h-raw_no-skill_codex_gpt-5.4-mini_t5_20260502_201617": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.3660550019756757
+  },
+  "mimic-oasis-24h-raw_no-skill_codex_gpt-5.5_t1_20260503_034336": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.04670799656348726
+  },
+  "mimic-oasis-24h-raw_no-skill_codex_gpt-5.5_t2_20260503_034415": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.08196704433285892
+  },
+  "mimic-oasis-24h-raw_no-skill_codex_gpt-5.5_t3_20260503_034424": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.07708459308377497
+  },
+  "mimic-oasis-24h-raw_no-skill_codex_gpt-5.5_t4_20260503_034528": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.06415923511299282
+  },
+  "mimic-oasis-24h-raw_no-skill_codex_gpt-5.5_t5_20260503_034528": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.10667435601375962
+  },
+  "mimic-oasis-24h-raw_with-skill_codex_gpt-5.4-mini_t1_20260504_072530": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.06298197398528095
+  },
+  "mimic-oasis-24h-raw_with-skill_codex_gpt-5.4-mini_t2_20260504_065341": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.08438902596623948
+  },
+  "mimic-oasis-24h-raw_with-skill_codex_gpt-5.4-mini_t3_20260504_065503": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.0896044225524036
+  },
+  "mimic-oasis-24h-raw_with-skill_codex_gpt-5.4-mini_t4_20260504_065555": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.055142169510462864
+  },
+  "mimic-oasis-24h-raw_with-skill_codex_gpt-5.4-mini_t5_20260504_065647": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.08509298298728983
+  },
+  "mimic-oasis-24h-raw_with-skill_codex_gpt-5.5_t1_20260504_065935": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.043581294840585476
+  },
+  "mimic-oasis-24h-raw_with-skill_codex_gpt-5.5_t2_20260504_065943": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.04371728372554473
+  },
+  "mimic-oasis-24h-raw_with-skill_codex_gpt-5.5_t3_20260504_070022": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.044753929436013896
+  },
+  "mimic-oasis-24h-raw_with-skill_codex_gpt-5.5_t4_20260504_070035": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.048143690422801796
+  },
+  "mimic-oasis-24h-raw_with-skill_codex_gpt-5.5_t5_20260504_070205": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.029349600303356562
+  },
+  "mimic-oasis-24h_no-skill_codex_gpt-5.4-mini_t1_20260502_193443": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.2153736780697679
+  },
+  "mimic-oasis-24h_no-skill_codex_gpt-5.4-mini_t2_20260502_193839": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.16072357773432808
+  },
+  "mimic-oasis-24h_no-skill_codex_gpt-5.4-mini_t3_20260502_194225": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.1565814128984699
+  },
+  "mimic-oasis-24h_no-skill_codex_gpt-5.4-mini_t4_20260502_194628": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.21632382435438055
+  },
+  "mimic-oasis-24h_no-skill_codex_gpt-5.4-mini_t5_20260503_025423": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.21409014418922323
+  },
+  "mimic-oasis-24h_no-skill_codex_gpt-5.5_t1_20260503_034314": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.041314848560923274
+  },
+  "mimic-oasis-24h_no-skill_codex_gpt-5.5_t2_20260503_034316": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.01285513963052909
+  },
+  "mimic-oasis-24h_no-skill_codex_gpt-5.5_t3_20260503_034319": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.07216302369070682
+  },
+  "mimic-oasis-24h_no-skill_codex_gpt-5.5_t4_20260503_034322": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.0589972487371579
+  },
+  "mimic-oasis-24h_no-skill_codex_gpt-5.5_t5_20260503_034329": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.03219679210595508
+  },
+  "mimic-oasis-24h_with-skill_codex_gpt-5.4-mini_t1_20260504_064730": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.005184507207628582
+  },
+  "mimic-oasis-24h_with-skill_codex_gpt-5.4-mini_t2_20260504_064733": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.003380833314772201
+  },
+  "mimic-oasis-24h_with-skill_codex_gpt-5.4-mini_t3_20260504_065002": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.004153498579592725
+  },
+  "mimic-oasis-24h_with-skill_codex_gpt-5.4-mini_t4_20260504_065012": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.0033948985228919094
+  },
+  "mimic-oasis-24h_with-skill_codex_gpt-5.4-mini_t5_20260504_065034": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.0020857342492354857
+  },
+  "mimic-oasis-24h_with-skill_codex_gpt-5.5_t1_20260504_065050": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.00016029250133296378
+  },
+  "mimic-oasis-24h_with-skill_codex_gpt-5.5_t2_20260504_065126": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.00017299656027979732
+  },
+  "mimic-oasis-24h_with-skill_codex_gpt-5.5_t3_20260504_065247": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.00016029250133296378
+  },
+  "mimic-oasis-24h_with-skill_codex_gpt-5.5_t4_20260504_065254": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.0033789565787914174
+  },
+  "mimic-oasis-24h_with-skill_codex_gpt-5.5_t5_20260504_065312": {
+    "ordered_value_columns": 11,
+    "ordered_value_nmae": 0.0001548479046414637
+  },
+  "mimic-sapsii-24h-raw_no-skill_codex_gpt-5.4-mini_t1_20260502_204017": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.07277333811658877
+  },
+  "mimic-sapsii-24h-raw_no-skill_codex_gpt-5.4-mini_t2_20260502_204644": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.09100997655714985
+  },
+  "mimic-sapsii-24h-raw_no-skill_codex_gpt-5.4-mini_t3_20260502_205519": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.15970462875766156
+  },
+  "mimic-sapsii-24h-raw_no-skill_codex_gpt-5.4-mini_t4_20260502_210333": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.07054445468489394
+  },
+  "mimic-sapsii-24h-raw_no-skill_codex_gpt-5.4-mini_t5_20260502_211002": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.09248557532562189
+  },
+  "mimic-sapsii-24h-raw_no-skill_codex_gpt-5.5_t1_20260503_034710": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.052442991467013304
+  },
+  "mimic-sapsii-24h-raw_no-skill_codex_gpt-5.5_t2_20260503_034717": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.046370222988170506
+  },
+  "mimic-sapsii-24h-raw_no-skill_codex_gpt-5.5_t3_20260503_034721": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.047103717084850345
+  },
+  "mimic-sapsii-24h-raw_no-skill_codex_gpt-5.5_t4_20260503_034808": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.05571526132038282
+  },
+  "mimic-sapsii-24h-raw_no-skill_codex_gpt-5.5_t5_20260503_034827": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.04942517406227638
+  },
+  "mimic-sapsii-24h-raw_with-skill_codex_gpt-5.4-mini_t1_20260504_071030": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.059945836144904265
+  },
+  "mimic-sapsii-24h-raw_with-skill_codex_gpt-5.4-mini_t2_20260504_071112": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.055331531661586046
+  },
+  "mimic-sapsii-24h-raw_with-skill_codex_gpt-5.4-mini_t3_20260504_071121": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.040648029046611925
+  },
+  "mimic-sapsii-24h-raw_with-skill_codex_gpt-5.4-mini_t4_20260504_071316": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.07327940218703254
+  },
+  "mimic-sapsii-24h-raw_with-skill_codex_gpt-5.4-mini_t5_20260504_071348": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.04683925535687041
+  },
+  "mimic-sapsii-24h-raw_with-skill_codex_gpt-5.5_t1_20260504_071708": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.05173022497965337
+  },
+  "mimic-sapsii-24h-raw_with-skill_codex_gpt-5.5_t2_20260504_071710": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.03737628856786177
+  },
+  "mimic-sapsii-24h-raw_with-skill_codex_gpt-5.5_t3_20260504_071747": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.05202021990822275
+  },
+  "mimic-sapsii-24h-raw_with-skill_codex_gpt-5.5_t4_20260504_071924": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.0484150265496647
+  },
+  "mimic-sapsii-24h-raw_with-skill_codex_gpt-5.5_t5_20260504_072108": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.05097901981667636
+  },
+  "mimic-sapsii-24h_no-skill_codex_gpt-5.4-mini_t1_20260502_202119": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.057319512848139326
+  },
+  "mimic-sapsii-24h_no-skill_codex_gpt-5.4-mini_t2_20260502_202500": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.17991209808162065
+  },
+  "mimic-sapsii-24h_no-skill_codex_gpt-5.4-mini_t3_20260502_202855": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.11511132097712566
+  },
+  "mimic-sapsii-24h_no-skill_codex_gpt-5.4-mini_t4_20260502_203319": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.056222587547532246
+  },
+  "mimic-sapsii-24h_no-skill_codex_gpt-5.4-mini_t5_20260502_203627": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.06795615570385982
+  },
+  "mimic-sapsii-24h_no-skill_codex_gpt-5.5_t1_20260503_034541": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.05991635683784529
+  },
+  "mimic-sapsii-24h_no-skill_codex_gpt-5.5_t2_20260503_034614": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.01745392883275956
+  },
+  "mimic-sapsii-24h_no-skill_codex_gpt-5.5_t3_20260503_034617": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.01761474273496434
+  },
+  "mimic-sapsii-24h_no-skill_codex_gpt-5.5_t4_20260503_034620": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.018781435417922054
+  },
+  "mimic-sapsii-24h_no-skill_codex_gpt-5.5_t5_20260503_034708": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.014883102577884546
+  },
+  "mimic-sapsii-24h_with-skill_codex_gpt-5.4-mini_t1_20260504_070233": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.022323832173791885
+  },
+  "mimic-sapsii-24h_with-skill_codex_gpt-5.4-mini_t2_20260504_070315": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.016442531444840144
+  },
+  "mimic-sapsii-24h_with-skill_codex_gpt-5.4-mini_t3_20260504_072640": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.017907527261787883
+  },
+  "mimic-sapsii-24h_with-skill_codex_gpt-5.4-mini_t4_20260504_070538": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.060293890260204694
+  },
+  "mimic-sapsii-24h_with-skill_codex_gpt-5.4-mini_t5_20260504_070545": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.022323832173791885
+  },
+  "mimic-sapsii-24h_with-skill_codex_gpt-5.5_t1_20260504_070637": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.023966082382485605
+  },
+  "mimic-sapsii-24h_with-skill_codex_gpt-5.5_t2_20260504_070722": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.023966082382485605
+  },
+  "mimic-sapsii-24h_with-skill_codex_gpt-5.5_t3_20260504_070853": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.02390188633993512
+  },
+  "mimic-sapsii-24h_with-skill_codex_gpt-5.5_t4_20260504_070913": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.025906371791259743
+  },
+  "mimic-sapsii-24h_with-skill_codex_gpt-5.5_t5_20260504_070941": {
+    "ordered_value_columns": 16,
+    "ordered_value_nmae": 0.02390188633993512
+  },
+  "mimic-sepsis3-raw_no-skill_codex_gpt-5.4-mini_t1_20260502_211549": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.19300091197847352
+  },
+  "mimic-sepsis3-raw_no-skill_codex_gpt-5.4-mini_t2_20260502_212438": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.17828767157524278
+  },
+  "mimic-sepsis3-raw_no-skill_codex_gpt-5.4-mini_t3_20260503_025421": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.400621555372857
+  },
+  "mimic-sepsis3-raw_no-skill_codex_gpt-5.4-mini_t4_20260502_214155": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.16776761517615243
+  },
+  "mimic-sepsis3-raw_no-skill_codex_gpt-5.4-mini_t5_20260502_214719": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.7974257090200225
+  },
+  "mimic-sepsis3-raw_no-skill_codex_gpt-5.5_t1_20260503_034858": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.14349233807469802
+  },
+  "mimic-sepsis3-raw_no-skill_codex_gpt-5.5_t2_20260503_034900": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.1664242315305478
+  },
+  "mimic-sepsis3-raw_no-skill_codex_gpt-5.5_t3_20260503_034902": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.16693244614255504
+  },
+  "mimic-sepsis3-raw_no-skill_codex_gpt-5.5_t4_20260503_034941": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.15727398594943848
+  },
+  "mimic-sepsis3-raw_no-skill_codex_gpt-5.5_t5_20260503_035000": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.22400745333746008
+  },
+  "mimic-sepsis3-raw_with-skill_codex_gpt-5.4-mini_t1_20260503_084437": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.16667640119525562
+  },
+  "mimic-sepsis3-raw_with-skill_codex_gpt-5.4-mini_t2_20260503_084616": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.2689497773790523
+  },
+  "mimic-sepsis3-raw_with-skill_codex_gpt-5.4-mini_t3_20260503_084650": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.11811294765840223
+  },
+  "mimic-sepsis3-raw_with-skill_codex_gpt-5.4-mini_t4_20260503_085507": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.20993030288130562
+  },
+  "mimic-sepsis3-raw_with-skill_codex_gpt-5.4-mini_t5_20260503_085521": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.16700102508441966
+  },
+  "mimic-sepsis3-raw_with-skill_codex_gpt-5.5_t1_20260503_114259": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-sepsis3-raw_with-skill_codex_gpt-5.5_t2_20260503_140513": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.09595677694080013
+  },
+  "mimic-sepsis3-raw_with-skill_codex_gpt-5.5_t3_20260503_114453": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.16422316109815957
+  },
+  "mimic-sepsis3-raw_with-skill_codex_gpt-5.5_t4_20260503_114608": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.10188372414031209
+  },
+  "mimic-sepsis3-raw_with-skill_codex_gpt-5.5_t5_20260503_140513": {
+    "ordered_value_columns": 8,
+    "ordered_value_nmae": 0.15305791288847462
+  },
+  "mimic-sirs-24h-raw_no-skill_codex_gpt-5.4-mini_t1_20260502_215852": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.02079230980965082
+  },
+  "mimic-sirs-24h-raw_no-skill_codex_gpt-5.4-mini_t2_20260502_220359": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.02041259960335095
+  },
+  "mimic-sirs-24h-raw_no-skill_codex_gpt-5.4-mini_t3_20260502_220639": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.015572353144607193
+  },
+  "mimic-sirs-24h-raw_no-skill_codex_gpt-5.4-mini_t4_20260502_221003": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.0129030892036671
+  },
+  "mimic-sirs-24h-raw_no-skill_codex_gpt-5.4-mini_t5_20260502_221511": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.014567320925702199
+  },
+  "mimic-sirs-24h-raw_no-skill_codex_gpt-5.5_t1_20260503_035005": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.014301947249923916
+  },
+  "mimic-sirs-24h-raw_no-skill_codex_gpt-5.5_t2_20260503_035042": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.012994840740505336
+  },
+  "mimic-sirs-24h-raw_no-skill_codex_gpt-5.5_t3_20260503_035045": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.0029275798061925186
+  },
+  "mimic-sirs-24h-raw_no-skill_codex_gpt-5.5_t4_20260503_035113": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.014293477877292692
+  },
+  "mimic-sirs-24h-raw_no-skill_codex_gpt-5.5_t5_20260503_035142": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.013806488950997434
+  },
+  "mimic-sirs-24h-raw_with-skill_codex_gpt-5.4-mini_t1_20260503_085814": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.0013635689936267975
+  },
+  "mimic-sirs-24h-raw_with-skill_codex_gpt-5.4-mini_t2_20260503_090018": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.0013635689936267975
+  },
+  "mimic-sirs-24h-raw_with-skill_codex_gpt-5.4-mini_t3_20260503_090204": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.012505028689999673
+  },
+  "mimic-sirs-24h-raw_with-skill_codex_gpt-5.4-mini_t4_20260503_090238": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.012499382441578857
+  },
+  "mimic-sirs-24h-raw_with-skill_codex_gpt-5.4-mini_t5_20260503_090425": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.0007453047915475658
+  },
+  "mimic-sirs-24h-raw_with-skill_codex_gpt-5.5_t1_20260503_140513": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.0007283660462851212
+  },
+  "mimic-sirs-24h-raw_with-skill_codex_gpt-5.5_t2_20260503_140513": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.0007283660462851212
+  },
+  "mimic-sirs-24h-raw_with-skill_codex_gpt-5.5_t3_20260503_140513": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.0007283660462851212
+  },
+  "mimic-sirs-24h-raw_with-skill_codex_gpt-5.5_t4_20260503_140513": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.0007283660462851212
+  },
+  "mimic-sirs-24h-raw_with-skill_codex_gpt-5.5_t5_20260503_140513": {
+    "ordered_value_columns": 5,
+    "ordered_value_nmae": 0.0007283660462851212
+  },
+  "mimic-sofa-24h-raw_no-skill_codex_gpt-5.4-mini_t1_20260502_224311": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.20978083756779967
+  },
+  "mimic-sofa-24h-raw_no-skill_codex_gpt-5.4-mini_t2_20260502_224928": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.0860482416015045
+  },
+  "mimic-sofa-24h-raw_no-skill_codex_gpt-5.4-mini_t3_20260502_225555": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.1006271689591302
+  },
+  "mimic-sofa-24h-raw_no-skill_codex_gpt-5.4-mini_t4_20260502_230311": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.21996098451508034
+  },
+  "mimic-sofa-24h-raw_no-skill_codex_gpt-5.4-mini_t5_20260502_231848": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.09840851872231128
+  },
+  "mimic-sofa-24h-raw_no-skill_codex_gpt-5.5_t1_20260503_035506": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.07746888857540692
+  },
+  "mimic-sofa-24h-raw_no-skill_codex_gpt-5.5_t2_20260503_035516": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.08553419009653543
+  },
+  "mimic-sofa-24h-raw_no-skill_codex_gpt-5.5_t3_20260503_035536": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.07831240005062849
+  },
+  "mimic-sofa-24h-raw_no-skill_codex_gpt-5.5_t4_20260503_035605": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.07053989454897432
+  },
+  "mimic-sofa-24h-raw_no-skill_codex_gpt-5.5_t5_20260503_035616": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.09126694252623233
+  },
+  "mimic-sofa-24h-raw_with-skill_codex_gpt-5.4-mini_t1_20260503_135025": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.08078682717411145
+  },
+  "mimic-sofa-24h-raw_with-skill_codex_gpt-5.4-mini_t2_20260503_091032": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.09236010113384031
+  },
+  "mimic-sofa-24h-raw_with-skill_codex_gpt-5.4-mini_t3_20260503_091146": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.09775400991338483
+  },
+  "mimic-sofa-24h-raw_with-skill_codex_gpt-5.4-mini_t4_20260503_091151": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.09704302716276536
+  },
+  "mimic-sofa-24h-raw_with-skill_codex_gpt-5.4-mini_t5_20260503_091623": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.08133364708509129
+  },
+  "mimic-sofa-24h-raw_with-skill_codex_gpt-5.5_t1_20260503_140731": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.07554883184528059
+  },
+  "mimic-sofa-24h-raw_with-skill_codex_gpt-5.5_t2_20260503_140737": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.0804592004013976
+  },
+  "mimic-sofa-24h-raw_with-skill_codex_gpt-5.5_t3_20260503_140802": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.08261122536514162
+  },
+  "mimic-sofa-24h-raw_with-skill_codex_gpt-5.5_t4_20260503_140809": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.07784692828044903
+  },
+  "mimic-sofa-24h-raw_with-skill_codex_gpt-5.5_t5_20260503_140817": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.07278055461374924
+  },
+  "mimic-sofa-24h_no-skill_codex_gpt-5.4-mini_t1_20260502_221815": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.012947690899796459
+  },
+  "mimic-sofa-24h_no-skill_codex_gpt-5.4-mini_t2_20260502_222204": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.010737370254298375
+  },
+  "mimic-sofa-24h_no-skill_codex_gpt-5.4-mini_t3_20260502_222517": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.09166644209997124
+  },
+  "mimic-sofa-24h_no-skill_codex_gpt-5.4-mini_t4_20260502_223502": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.022903672160484088
+  },
+  "mimic-sofa-24h_no-skill_codex_gpt-5.4-mini_t5_20260502_223926": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.01126094292898582
+  },
+  "mimic-sofa-24h_no-skill_codex_gpt-5.5_t1_20260503_035324": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.009590246894127921
+  },
+  "mimic-sofa-24h_no-skill_codex_gpt-5.5_t2_20260503_035336": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.010049646197457896
+  },
+  "mimic-sofa-24h_no-skill_codex_gpt-5.5_t3_20260503_035354": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.014034204166326182
+  },
+  "mimic-sofa-24h_no-skill_codex_gpt-5.5_t4_20260503_035357": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.010561566610286639
+  },
+  "mimic-sofa-24h_no-skill_codex_gpt-5.5_t5_20260503_035443": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.010561566610286639
+  },
+  "mimic-sofa-24h_with-skill_codex_gpt-5.4-mini_t1_20260503_090501": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.01403741226201983
+  },
+  "mimic-sofa-24h_with-skill_codex_gpt-5.4-mini_t2_20260503_090509": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.023476282869345493
+  },
+  "mimic-sofa-24h_with-skill_codex_gpt-5.4-mini_t3_20260503_090711": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.010052854293151543
+  },
+  "mimic-sofa-24h_with-skill_codex_gpt-5.4-mini_t4_20260503_134953": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.012116289985819236
+  },
+  "mimic-sofa-24h_with-skill_codex_gpt-5.4-mini_t5_20260503_090824": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.01735038976987719
+  },
+  "mimic-sofa-24h_with-skill_codex_gpt-5.5_t1_20260503_140514": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.010049646197457896
+  },
+  "mimic-sofa-24h_with-skill_codex_gpt-5.5_t2_20260503_140514": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.009248172233308382
+  },
+  "mimic-sofa-24h_with-skill_codex_gpt-5.5_t3_20260503_140727": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.01004913061064999
+  },
+  "mimic-sofa-24h_with-skill_codex_gpt-5.5_t4_20260503_140730": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.014539800047644618
+  },
+  "mimic-sofa-24h_with-skill_codex_gpt-5.5_t5_20260503_140730": {
+    "ordered_value_columns": 7,
+    "ordered_value_nmae": 0.010049646197457896
+  },
+  "mimic-suspicion-infection-raw_no-skill_codex_gpt-5.4-mini_t1_20260502_235640": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.30627897420092204
+  },
+  "mimic-suspicion-infection-raw_no-skill_codex_gpt-5.4-mini_t2_20260503_000217": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.31984284176533906
+  },
+  "mimic-suspicion-infection-raw_no-skill_codex_gpt-5.4-mini_t3_20260503_001040": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.33814661634196264
+  },
+  "mimic-suspicion-infection-raw_no-skill_codex_gpt-5.4-mini_t4_20260503_001914": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.31149445331403924
+  },
+  "mimic-suspicion-infection-raw_no-skill_codex_gpt-5.4-mini_t5_20260503_025422": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.3223399964506397
+  },
+  "mimic-suspicion-infection-raw_no-skill_codex_gpt-5.5_t1_20260503_040218": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.21102868532304017
+  },
+  "mimic-suspicion-infection-raw_no-skill_codex_gpt-5.5_t2_20260503_040226": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.15536789428415043
+  },
+  "mimic-suspicion-infection-raw_no-skill_codex_gpt-5.5_t3_20260503_040345": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.20043464248944054
+  },
+  "mimic-suspicion-infection-raw_no-skill_codex_gpt-5.5_t4_20260503_040350": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.19323335457932928
+  },
+  "mimic-suspicion-infection-raw_no-skill_codex_gpt-5.5_t5_20260503_040406": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.2289640478407219
+  },
+  "mimic-suspicion-infection-raw_with-skill_codex_gpt-5.4-mini_t1_20260503_092509": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.23232728543385547
+  },
+  "mimic-suspicion-infection-raw_with-skill_codex_gpt-5.4-mini_t2_20260503_092510": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.23215488882723634
+  },
+  "mimic-suspicion-infection-raw_with-skill_codex_gpt-5.4-mini_t3_20260503_092533": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.22560914946399555
+  },
+  "mimic-suspicion-infection-raw_with-skill_codex_gpt-5.4-mini_t4_20260503_092556": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.20798730662265036
+  },
+  "mimic-suspicion-infection-raw_with-skill_codex_gpt-5.4-mini_t5_20260503_093309": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.21062779428693812
+  },
+  "mimic-suspicion-infection-raw_with-skill_codex_gpt-5.5_t1_20260503_141341": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.04829659209610028
+  },
+  "mimic-suspicion-infection-raw_with-skill_codex_gpt-5.5_t2_20260503_141349": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.16454138226956197
+  },
+  "mimic-suspicion-infection-raw_with-skill_codex_gpt-5.5_t3_20260503_141402": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.07232431517476796
+  },
+  "mimic-suspicion-infection-raw_with-skill_codex_gpt-5.5_t4_20260503_141410": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.2030520275505443
+  },
+  "mimic-suspicion-infection-raw_with-skill_codex_gpt-5.5_t5_20260503_141433": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.07039939830848835
+  },
+  "mimic-suspicion-infection_no-skill_codex_gpt-5.4-mini_t1_20260502_232753": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.2809761227748997
+  },
+  "mimic-suspicion-infection_no-skill_codex_gpt-5.4-mini_t2_20260502_233457": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.2030416853966887
+  },
+  "mimic-suspicion-infection_no-skill_codex_gpt-5.4-mini_t3_20260502_234033": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.2510108948195654
+  },
+  "mimic-suspicion-infection_no-skill_codex_gpt-5.4-mini_t4_20260502_234438": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.3640174081298998
+  },
+  "mimic-suspicion-infection_no-skill_codex_gpt-5.4-mini_t5_20260502_235145": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.27952597165388815
+  },
+  "mimic-suspicion-infection_no-skill_codex_gpt-5.5_t1_20260503_035634": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.09572681784733357
+  },
+  "mimic-suspicion-infection_no-skill_codex_gpt-5.5_t2_20260503_035657": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.018474030451594427
+  },
+  "mimic-suspicion-infection_no-skill_codex_gpt-5.5_t3_20260503_035710": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.09572681784733357
+  },
+  "mimic-suspicion-infection_no-skill_codex_gpt-5.5_t4_20260503_035722": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.1825421807114636
+  },
+  "mimic-suspicion-infection_no-skill_codex_gpt-5.5_t5_20260503_035751": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.1825421807114636
+  },
+  "mimic-suspicion-infection_with-skill_codex_gpt-5.4-mini_t1_20260503_091738": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.2153124378224678
+  },
+  "mimic-suspicion-infection_with-skill_codex_gpt-5.4-mini_t2_20260503_091847": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.18245375044346726
+  },
+  "mimic-suspicion-infection_with-skill_codex_gpt-5.4-mini_t3_20260503_092032": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.1802440464848442
+  },
+  "mimic-suspicion-infection_with-skill_codex_gpt-5.4-mini_t4_20260503_092116": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.22550103145675898
+  },
+  "mimic-suspicion-infection_with-skill_codex_gpt-5.4-mini_t5_20260503_092228": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.2153124378224678
+  },
+  "mimic-suspicion-infection_with-skill_codex_gpt-5.5_t1_20260503_141006": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.014586783254254918
+  },
+  "mimic-suspicion-infection_with-skill_codex_gpt-5.5_t2_20260503_141038": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.015655842029853637
+  },
+  "mimic-suspicion-infection_with-skill_codex_gpt-5.5_t3_20260503_141054": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.011447508740384525
+  },
+  "mimic-suspicion-infection_with-skill_codex_gpt-5.5_t4_20260503_141217": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.2526889644289247
+  },
+  "mimic-suspicion-infection_with-skill_codex_gpt-5.5_t5_20260503_141306": {
+    "ordered_value_columns": 2,
+    "ordered_value_nmae": 0.1825437598233921
+  },
+  "mimic-urine-output-rate-raw_no-skill_codex_gpt-5.4-mini_t1_20260503_013348": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.10196771051801619
+  },
+  "mimic-urine-output-rate-raw_no-skill_codex_gpt-5.4-mini_t2_20260503_025711": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.6751594882236022
+  },
+  "mimic-urine-output-rate-raw_no-skill_codex_gpt-5.4-mini_t3_20260503_014752": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.17987421148311966
+  },
+  "mimic-urine-output-rate-raw_no-skill_codex_gpt-5.4-mini_t4_20260503_015708": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.18060237111455937
+  },
+  "mimic-urine-output-rate-raw_no-skill_codex_gpt-5.4-mini_t5_20260503_020830": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.10208358618909623
+  },
+  "mimic-urine-output-rate-raw_no-skill_codex_gpt-5.5_t1_20260503_062910": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.08922803567443993
+  },
+  "mimic-urine-output-rate-raw_no-skill_codex_gpt-5.5_t2_20260503_062938": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.13514624390502136
+  },
+  "mimic-urine-output-rate-raw_no-skill_codex_gpt-5.5_t3_20260503_063236": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.12253492632608026
+  },
+  "mimic-urine-output-rate-raw_no-skill_codex_gpt-5.5_t4_20260503_070035": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.08591440976796771
+  },
+  "mimic-urine-output-rate-raw_no-skill_codex_gpt-5.5_t5_20260503_070140": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.12369757837970273
+  },
+  "mimic-urine-output-rate-raw_with-skill-nosql_codex_gpt-5.4-mini_t1_20260503_234329": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.05465706820420505
+  },
+  "mimic-urine-output-rate-raw_with-skill-nosql_codex_gpt-5.4-mini_t2_20260503_234328": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.0077580061206357276
+  },
+  "mimic-urine-output-rate-raw_with-skill-nosql_codex_gpt-5.4-mini_t3_20260503_234330": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.023214916517877115
+  },
+  "mimic-urine-output-rate-raw_with-skill-nosql_codex_gpt-5.4-mini_t4_20260503_234330": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-urine-output-rate-raw_with-skill-nosql_codex_gpt-5.4-mini_t5_20260504_034748": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.05286631604867537
+  },
+  "mimic-urine-output-rate-raw_with-skill-nosql_codex_gpt-5.5_t1_20260504_003846": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.06398836414104146
+  },
+  "mimic-urine-output-rate-raw_with-skill-nosql_codex_gpt-5.5_t2_20260504_003903": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.030293197774614904
+  },
+  "mimic-urine-output-rate-raw_with-skill-nosql_codex_gpt-5.5_t3_20260504_003920": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.0630909809315322
+  },
+  "mimic-urine-output-rate-raw_with-skill-nosql_codex_gpt-5.5_t4_20260504_003926": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.019884455539139194
+  },
+  "mimic-urine-output-rate-raw_with-skill-nosql_codex_gpt-5.5_t5_20260504_003943": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.020946293174796765
+  },
+  "mimic-urine-output-rate_no-skill_codex_gpt-5.4-mini_t1_20260503_004845": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.15070179532513522
+  },
+  "mimic-urine-output-rate_no-skill_codex_gpt-5.4-mini_t2_20260503_005742": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.08307412493740075
+  },
+  "mimic-urine-output-rate_no-skill_codex_gpt-5.4-mini_t3_20260503_010608": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.17061086545913207
+  },
+  "mimic-urine-output-rate_no-skill_codex_gpt-5.4-mini_t4_20260503_011444": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.08756810788519225
+  },
+  "mimic-urine-output-rate_no-skill_codex_gpt-5.4-mini_t5_20260503_012439": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.16611688251134124
+  },
+  "mimic-urine-output-rate_no-skill_codex_gpt-5.5_t1_20260503_061508": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.041467911588751134
+  },
+  "mimic-urine-output-rate_no-skill_codex_gpt-5.5_t2_20260503_061508": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.04140007839097041
+  },
+  "mimic-urine-output-rate_no-skill_codex_gpt-5.5_t3_20260503_061508": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.04061311638759724
+  },
+  "mimic-urine-output-rate_no-skill_codex_gpt-5.5_t4_20260503_061508": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.04146791158875104
+  },
+  "mimic-urine-output-rate_no-skill_codex_gpt-5.5_t5_20260503_062907": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.041396363414111244
+  },
+  "mimic-urine-output-rate_with-skill-nosql_codex_gpt-5.4-mini_t1_20260503_161448": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.0012054159542356211
+  },
+  "mimic-urine-output-rate_with-skill-nosql_codex_gpt-5.4-mini_t2_20260503_161448": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.014139459191279347
+  },
+  "mimic-urine-output-rate_with-skill-nosql_codex_gpt-5.4-mini_t3_20260503_161448": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.01414169096686726
+  },
+  "mimic-urine-output-rate_with-skill-nosql_codex_gpt-5.4-mini_t4_20260503_161448": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.04321710575429721
+  },
+  "mimic-urine-output-rate_with-skill-nosql_codex_gpt-5.4-mini_t5_20260503_161448": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.0039534444472107255
+  },
+  "mimic-urine-output-rate_with-skill-nosql_codex_gpt-5.5_t1_20260504_002250": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.014136066497782688
+  },
+  "mimic-urine-output-rate_with-skill-nosql_codex_gpt-5.5_t2_20260504_002250": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.014138338876525087
+  },
+  "mimic-urine-output-rate_with-skill-nosql_codex_gpt-5.5_t3_20260504_002250": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.014134078167110514
+  },
+  "mimic-urine-output-rate_with-skill-nosql_codex_gpt-5.5_t4_20260504_002250": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.014142502517878727
+  },
+  "mimic-urine-output-rate_with-skill-nosql_codex_gpt-5.5_t5_20260504_002250": {
+    "ordered_value_columns": 6,
+    "ordered_value_nmae": 0.014138582345010003
+  },
+  "mimic-vasopressor-equivalents-raw_no-skill_codex_gpt-5.4-mini_t1_20260503_023047": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 2.6580537954362574e-05
+  },
+  "mimic-vasopressor-equivalents-raw_no-skill_codex_gpt-5.4-mini_t2_20260503_025839": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.00018896637231399674
+  },
+  "mimic-vasopressor-equivalents-raw_no-skill_codex_gpt-5.4-mini_t3_20260503_023733": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.0023024270680942756
+  },
+  "mimic-vasopressor-equivalents-raw_no-skill_codex_gpt-5.4-mini_t4_20260503_024130": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 2.622571466800601e-05
+  },
+  "mimic-vasopressor-equivalents-raw_no-skill_codex_gpt-5.4-mini_t5_20260503_024452": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.0002858084011719316
+  },
+  "mimic-vasopressor-equivalents-raw_no-skill_codex_gpt-5.5_t1_20260503_041735": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 2.1694335386860214e-05
+  },
+  "mimic-vasopressor-equivalents-raw_no-skill_codex_gpt-5.5_t2_20260503_041752": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.00018858372149183704
+  },
+  "mimic-vasopressor-equivalents-raw_no-skill_codex_gpt-5.5_t3_20260503_041752": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.00018858427953359787
+  },
+  "mimic-vasopressor-equivalents-raw_no-skill_codex_gpt-5.5_t4_20260503_041859": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.00018850866803346605
+  },
+  "mimic-vasopressor-equivalents-raw_no-skill_codex_gpt-5.5_t5_20260503_042303": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.00018921709812653052
+  },
+  "mimic-vasopressor-equivalents-raw_with-skill-nosql_codex_gpt-5.4-mini_t1_20260504_001020": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 2.3872488970683077e-05
+  },
+  "mimic-vasopressor-equivalents-raw_with-skill-nosql_codex_gpt-5.4-mini_t2_20260504_001410": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 2.387267781207279e-05
+  },
+  "mimic-vasopressor-equivalents-raw_with-skill-nosql_codex_gpt-5.4-mini_t3_20260504_001828": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 2.3770980193493373e-05
+  },
+  "mimic-vasopressor-equivalents-raw_with-skill-nosql_codex_gpt-5.4-mini_t4_20260504_001844": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 2.377098019349233e-05
+  },
+  "mimic-vasopressor-equivalents-raw_with-skill-nosql_codex_gpt-5.4-mini_t5_20260504_001858": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 2.3867504939079342e-05
+  },
+  "mimic-vasopressor-equivalents-raw_with-skill-nosql_codex_gpt-5.5_t1_20260504_011303": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 2.1773369382957523e-05
+  },
+  "mimic-vasopressor-equivalents-raw_with-skill-nosql_codex_gpt-5.5_t2_20260504_011305": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 2.387248897068528e-05
+  },
+  "mimic-vasopressor-equivalents-raw_with-skill-nosql_codex_gpt-5.5_t3_20260504_011326": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 2.387186262132449e-05
+  },
+  "mimic-vasopressor-equivalents-raw_with-skill-nosql_codex_gpt-5.5_t4_20260504_011343": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 2.3872488970685408e-05
+  },
+  "mimic-vasopressor-equivalents-raw_with-skill-nosql_codex_gpt-5.5_t5_20260504_011452": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 0.00018921534543125753
+  },
+  "mimic-vasopressor-equivalents_no-skill_codex_gpt-5.4-mini_t1_20260503_021752": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.4004787916799436e-06
+  },
+  "mimic-vasopressor-equivalents_no-skill_codex_gpt-5.4-mini_t2_20260503_022039": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 9.097351088255695e-06
+  },
+  "mimic-vasopressor-equivalents_no-skill_codex_gpt-5.4-mini_t3_20260503_022242": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 5.881639007607658e-06
+  },
+  "mimic-vasopressor-equivalents_no-skill_codex_gpt-5.4-mini_t4_20260503_022657": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 9.096175171004201e-06
+  },
+  "mimic-vasopressor-equivalents_no-skill_codex_gpt-5.4-mini_t5_20260503_022831": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 6.1811782947473495e-06
+  },
+  "mimic-vasopressor-equivalents_no-skill_codex_gpt-5.5_t1_20260503_040939": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.2658043715878807e-06
+  },
+  "mimic-vasopressor-equivalents_no-skill_codex_gpt-5.5_t2_20260503_041205": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.263533205932499e-06
+  },
+  "mimic-vasopressor-equivalents_no-skill_codex_gpt-5.5_t3_20260503_041309": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.26353320593106e-06
+  },
+  "mimic-vasopressor-equivalents_no-skill_codex_gpt-5.5_t4_20260503_041338": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.3332026605659574e-06
+  },
+  "mimic-vasopressor-equivalents_no-skill_codex_gpt-5.5_t5_20260503_041544": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.2635332059316298e-06
+  },
+  "mimic-vasopressor-equivalents_with-skill-nosql_codex_gpt-5.4-mini_t1_20260504_034749": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.2628651115125654e-06
+  },
+  "mimic-vasopressor-equivalents_with-skill-nosql_codex_gpt-5.4-mini_t2_20260503_235506": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.265444654100408e-06
+  },
+  "mimic-vasopressor-equivalents_with-skill-nosql_codex_gpt-5.4-mini_t3_20260503_235725": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.2641269427808703e-06
+  },
+  "mimic-vasopressor-equivalents_with-skill-nosql_codex_gpt-5.4-mini_t4_20260503_235954": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 4.413807359242375e-06
+  },
+  "mimic-vasopressor-equivalents_with-skill-nosql_codex_gpt-5.4-mini_t5_20260504_000607": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.2653941915840143e-06
+  },
+  "mimic-vasopressor-equivalents_with-skill-nosql_codex_gpt-5.5_t1_20260504_011018": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.2629400944504357e-06
+  },
+  "mimic-vasopressor-equivalents_with-skill-nosql_codex_gpt-5.5_t2_20260504_011053": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 4.413807359241555e-06
+  },
+  "mimic-vasopressor-equivalents_with-skill-nosql_codex_gpt-5.5_t3_20260504_011101": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.2628054094584985e-06
+  },
+  "mimic-vasopressor-equivalents_with-skill-nosql_codex_gpt-5.5_t4_20260504_011124": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.017318734892483e-06
+  },
+  "mimic-vasopressor-equivalents_with-skill-nosql_codex_gpt-5.5_t5_20260504_011240": {
+    "ordered_value_columns": 1,
+    "ordered_value_nmae": 3.2641323586930094e-06
+  },
+  "mimic-ventilation-raw_no-skill_codex_gpt-5.4-mini_t1_20260503_030510": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_no-skill_codex_gpt-5.4-mini_t2_20260503_030832": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_no-skill_codex_gpt-5.4-mini_t3_20260503_030956": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_no-skill_codex_gpt-5.4-mini_t4_20260503_031043": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_no-skill_codex_gpt-5.4-mini_t5_20260503_031221": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_no-skill_codex_gpt-5.5_t1_20260503_042844": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_no-skill_codex_gpt-5.5_t2_20260503_042946": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_no-skill_codex_gpt-5.5_t3_20260503_043224": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_no-skill_codex_gpt-5.5_t4_20260503_043321": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_no-skill_codex_gpt-5.5_t5_20260503_043354": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_with-skill_codex_gpt-5.4-mini_t1_20260503_102420": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_with-skill_codex_gpt-5.4-mini_t2_20260503_102530": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_with-skill_codex_gpt-5.4-mini_t3_20260503_102641": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_with-skill_codex_gpt-5.4-mini_t4_20260503_102925": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_with-skill_codex_gpt-5.4-mini_t5_20260503_102929": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_with-skill_codex_gpt-5.5_t1_20260503_160849": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_with-skill_codex_gpt-5.5_t2_20260503_160943": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_with-skill_codex_gpt-5.5_t3_20260503_161023": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_with-skill_codex_gpt-5.5_t4_20260503_161049": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation-raw_with-skill_codex_gpt-5.5_t5_20260503_161145": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_no-skill_codex_gpt-5.4-mini_t1_20260503_025855": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_no-skill_codex_gpt-5.4-mini_t2_20260503_025920": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_no-skill_codex_gpt-5.4-mini_t3_20260503_030328": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_no-skill_codex_gpt-5.4-mini_t4_20260503_030402": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_no-skill_codex_gpt-5.4-mini_t5_20260503_030447": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_no-skill_codex_gpt-5.5_t1_20260503_042304": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_no-skill_codex_gpt-5.5_t2_20260503_042341": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_no-skill_codex_gpt-5.5_t3_20260503_042341": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_no-skill_codex_gpt-5.5_t4_20260503_042743": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_no-skill_codex_gpt-5.5_t5_20260503_042812": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_with-skill_codex_gpt-5.4-mini_t1_20260503_101839": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_with-skill_codex_gpt-5.4-mini_t2_20260503_102041": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_with-skill_codex_gpt-5.4-mini_t3_20260503_102111": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_with-skill_codex_gpt-5.4-mini_t4_20260503_102129": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_with-skill_codex_gpt-5.4-mini_t5_20260503_102405": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_with-skill_codex_gpt-5.5_t1_20260503_160600": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_with-skill_codex_gpt-5.5_t2_20260503_160625": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_with-skill_codex_gpt-5.5_t3_20260503_160736": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_with-skill_codex_gpt-5.5_t4_20260503_160800": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  },
+  "mimic-ventilation_with-skill_codex_gpt-5.5_t5_20260503_160804": {
+    "ordered_value_columns": 0,
+    "ordered_value_nmae": null
+  }
+}

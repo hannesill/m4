@@ -1,0 +1,11 @@
+\begin{tabular}{p{0.20\textwidth}p{0.34\textwidth}p{0.38\textwidth}}
+\toprule
+Family & Reference convention retained & Validity caveat \\
+\midrule
+Suspected infection / Sepsis-3 & Antibiotic--microbiology timing rule from public concept code & Broad culture inclusion can overcall suspected infection; downstream Sepsis-3 inherits this target. \\
+SOFA / Sepsis-3 & Missing organ components default to zero & Agreement may reflect the public-code missingness convention rather than adjudicated organ failure. \\
+APS III & MIMIC-Code component implementation & Known respiratory and oxygenation pathway discrepancies are retained for reproducibility. \\
+Vasopressor equivalents & Five-agent norepinephrine-equivalent mapping & Angiotensin II administrations are not scored in the current reference. \\
+eICU OASIS & eICU APACHE abstraction tables where source charting is not equivalent & eICU raw tasks are not schema-symmetric with MIMIC raw reconstruction. \\
+\bottomrule
+\end{tabular}

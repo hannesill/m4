@@ -18,6 +18,10 @@ uv sync
 uv run pytest
 ```
 
+Benchmark-specific coverage lives in `tests/test_benchmark_*.py`; the full
+pytest command above also exercises the surrounding M4 data and CLI plumbing
+used by the benchmark.
+
 Install Docker and confirm the daemon is running:
 
 ```bash
@@ -281,9 +285,11 @@ benchmark/results/codex-rerun-v1.1/analysis/control_condition_summary.csv
 benchmark/results/codex-rerun-v1.1/analysis/CODEX_FULL_REPORT.md
 ```
 
-The manuscript source lives in the sibling `m4bench-paper` checkout used for
-submission. If your checkout uses a different layout, set `M4BENCH_PAPER_DIR`
-and `M4BENCH_M4_DIR` explicitly:
+The benchmark release tree includes frozen planning metadata and generated
+tables under `benchmark/release/v1/`, so reviewers can inspect the
+submitted analysis without the private manuscript checkout. If you intentionally
+want to regenerate tables into a separate manuscript workspace, set
+`M4BENCH_PAPER_DIR` and `M4BENCH_M4_DIR` explicitly:
 
 ```bash
 export M4BENCH_PAPER_DIR=/path/to/m4bench-paper

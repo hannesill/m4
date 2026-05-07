@@ -489,6 +489,7 @@ def test_run_tier_parallel_uses_global_scheduled_queue(monkeypatch, tmp_path):
     def fake_run_runs_parallel(runs, *args, **kwargs):
         seen["runs"] = runs
 
+    monkeypatch.setattr(matrix, "_validate_run_prerequisites", lambda runs: None)
     monkeypatch.setattr(matrix, "_run_runs_parallel", fake_run_runs_parallel)
 
     matrix._run_tier(
