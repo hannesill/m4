@@ -1,0 +1,1272 @@
+{
+  "generated_by": "benchmark/release/v1/scripts/make_followup_manifest.py",
+  "selection_rule": "For each task/condition/schema/model/trial key, select the run with the latest timestamp suffix in run_id; retain older same-key runs as superseded retries.",
+  "source_root": "codex-validity-followup-20260506",
+  "superseded_run_count": 23,
+  "superseded_runs": [
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_082050/result.json",
+          "sha256": "a2dc5fe7343179658ce1f17a79b0c01ff1e4744a82d8b55b52747ccae11a6eb7",
+          "size_bytes": 13681
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_082050/output.csv",
+          "sha256": "082b5619d634b831385603a40cb9c8bf8ec09f56e4bed0d1b9fa892462740ffa",
+          "size_bytes": 30274007
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_082050/instruction.md",
+          "sha256": "699d72a3a95507eae34172aa52f2cd0809b84b5f30f8be950bbb9f3219d6bedc",
+          "size_bytes": 4751
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_082050/trace.jsonl",
+          "sha256": "594030e9cf570fbab9a43960b22ed4d27b9dd776761f223e713cb4f7706474f7",
+          "size_bytes": 340402
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_082050/egress.jsonl",
+          "sha256": "d61237eab720c38ae7125cd53a8755fc9188d98990e41c050d4c36322156d7b5",
+          "size_bytes": 2257
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_082050",
+      "reward": 0.0,
+      "run_id": "mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_082050",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-apsiii-24h",
+        "trial": 4
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_082050"
+    },
+    {
+      "agent_returncode": 125,
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_141221/result.json",
+          "sha256": "6726d267039c5632fa6c95771e85211df2812a82a4d37c661be6f6bcc9db60ea",
+          "size_bytes": 13189
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_141221/instruction.md",
+          "sha256": "699d72a3a95507eae34172aa52f2cd0809b84b5f30f8be950bbb9f3219d6bedc",
+          "size_bytes": 4751
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_141221/trace.jsonl",
+          "sha256": "1413c9bfe2654546d453b6b6b39f11732761ec78bacd114e8f1365c9c4df7abe",
+          "size_bytes": 234176
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_141221/egress.jsonl",
+          "sha256": "35bad1326a598e0c817476e0399fd0296bb04cbc91384717c4a25b07041275a5",
+          "size_bytes": 1535
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": false,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_141221",
+      "reward": 0.0,
+      "run_id": "mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_141221",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-apsiii-24h",
+        "trial": 4
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_141221"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_142214/result.json",
+          "sha256": "21090c73e71ee29a5fdb571eded15b040e6a1cd10bf34599e6edd04a515b6dc9",
+          "size_bytes": 13634
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_142214/output.csv",
+          "sha256": "fbc063e745ae21d3011c60ee97822b27dba1c47aff7393cb2cb0265d0e306428",
+          "size_bytes": 30272612
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_142214/instruction.md",
+          "sha256": "699d72a3a95507eae34172aa52f2cd0809b84b5f30f8be950bbb9f3219d6bedc",
+          "size_bytes": 4751
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_142214/trace.jsonl",
+          "sha256": "b6644e05bdcfa2c7de01eeecdb5de843587f6f267e1d168d70107c4501100025",
+          "size_bytes": 320058
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_142214/egress.jsonl",
+          "sha256": "018bc1741f3182693ce842c0ac326ac161d6512f4b893c9f7d725ffd7b8a3208",
+          "size_bytes": 1944
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_142214",
+      "reward": 0.0,
+      "run_id": "mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_142214",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-apsiii-24h",
+        "trial": 4
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_142214"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_145703/result.json",
+          "sha256": "d271f15ef8a1c53642beb8a37bb5827eca6755b1a6f2bdde7b5e1fd93a007ef9",
+          "size_bytes": 14045
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_145703/output.csv",
+          "sha256": "c0eef1948c386dbcad12df3a9afd705524cd90a57f2a40c4807df9390a9db7b2",
+          "size_bytes": 31296539
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_145703/instruction.md",
+          "sha256": "699d72a3a95507eae34172aa52f2cd0809b84b5f30f8be950bbb9f3219d6bedc",
+          "size_bytes": 4751
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_145703/trace.jsonl",
+          "sha256": "86aa32f4c423c412ac876a3382de6699667f9e6c63755fd504f164bf6699da6f",
+          "size_bytes": 310897
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_145703/egress.jsonl",
+          "sha256": "ffc3518c4619bedfbccd0f085d3dfb0b1ceeb0019dfd389861aa05f3dbde4811",
+          "size_bytes": 2155
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_145703",
+      "reward": 0.0,
+      "run_id": "mimic-apsiii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_145703",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-apsiii-24h",
+        "trial": 4
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_145703"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_064259/result.json",
+          "sha256": "28d188f71c76b2ddd56caef5a1c238e76de622e0ef8d8e307394009e167f069e",
+          "size_bytes": 13635
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_064259/output.csv",
+          "sha256": "0537c4447eb36a3ad188d9939a863c24a946da39bf9e8ffedae4498e71a03bbf",
+          "size_bytes": 30264837
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_064259/instruction.md",
+          "sha256": "fc46b6da1a4d4c4530c3437ed41842a2e8dca04d365e83f376c1c45fd1aeda28",
+          "size_bytes": 4902
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_064259/trace.jsonl",
+          "sha256": "ecd79d18ed25f686bf7aa66a6b93a02fb3b942cec8a6b6e2a49e699d075ee392",
+          "size_bytes": 405808
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-apsiii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_064259/egress.jsonl",
+          "sha256": "6c2241ec534110997252eba45b1d736c546d37e37ed2dc7684893169b653513b",
+          "size_bytes": 1636
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-apsiii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_064259",
+      "reward": 0.0,
+      "run_id": "mimic-apsiii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_064259",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-apsiii-24h-raw",
+        "trial": 5
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_064259"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_085951/result.json",
+          "sha256": "03f95fde03ccf61b79fcf71ac44dcaa9e321891680ce881e8cc79629b03bf4f0",
+          "size_bytes": 13536
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_085951/output.csv",
+          "sha256": "1b6591834ba73aaa6be589d345c812e16dba63af2ad9afb3ad067a354eec1398",
+          "size_bytes": 16294561
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_085951/instruction.md",
+          "sha256": "bd635ccfc58f9b597b44727f153734e7ed1e37b94fd41f9ef6ad163e7b53a327",
+          "size_bytes": 5229
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_085951/trace.jsonl",
+          "sha256": "e52d152998c6257733f91bf8f85b4fdfdead5628d3fb3fc01a30f01072cf11b8",
+          "size_bytes": 100102
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_085951/egress.jsonl",
+          "sha256": "00d0f0aadb73fb97af8fce469cc65b7a62b42cbaf38651ac373037ea54a613dd",
+          "size_bytes": 1424
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_085951",
+      "reward": 0.0,
+      "run_id": "mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_085951",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-gcs-24h-raw",
+        "trial": 1
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_085951"
+    },
+    {
+      "agent_returncode": 125,
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_141945/result.json",
+          "sha256": "a620937b22ce2ba05dc309ea2336653733e3a62dd17ee30fe26f5f428c5e0ef4",
+          "size_bytes": 13554
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_141945/instruction.md",
+          "sha256": "bd635ccfc58f9b597b44727f153734e7ed1e37b94fd41f9ef6ad163e7b53a327",
+          "size_bytes": 5229
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_141945/trace.jsonl",
+          "sha256": "9df923cf662c9bfd941abcf9792680e1c69fbb81bc5ad4e4d621da52037a582a",
+          "size_bytes": 13378
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_141945/egress.jsonl",
+          "sha256": "a2019b8a247cc94fcd1004cc85b4ceb013bd9bc4d157b9b0165fe9e443f6832b",
+          "size_bytes": 810
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": false,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_141945",
+      "reward": 0.0,
+      "run_id": "mimic-gcs-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_141945",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-gcs-24h-raw",
+        "trial": 1
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_141945"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_091659/result.json",
+          "sha256": "087704cd82d11327dba5d60db942e375d2fe1e892e0036f01cfca67752e874b4",
+          "size_bytes": 13432
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_091659/output.csv",
+          "sha256": "942910c5cf5ee9448c8d2cb42d66f73a319c68543dcfaff785a76fbf75e20ca4",
+          "size_bytes": 15747333
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_091659/instruction.md",
+          "sha256": "f18096030ceff0e6db58e8dc1a487883623886a6b0699dddc68fca410afc12f3",
+          "size_bytes": 4665
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_091659/trace.jsonl",
+          "sha256": "40e00fd68673cb7bc501bcbe5c535cf3e8a370b8ed1eb74165bc0ebd4d41cf68",
+          "size_bytes": 150589
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_091659/egress.jsonl",
+          "sha256": "d92134d67fd5a46d73989a74d11a110b0988cc461a7a7ba377ce52fd55cf4d9d",
+          "size_bytes": 1431
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_091659",
+      "reward": 0.0,
+      "run_id": "mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_091659",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-kdigo-48h",
+        "trial": 3
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_091659"
+    },
+    {
+      "agent_returncode": 125,
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_141946/result.json",
+          "sha256": "63383ba114cb731e00b3df198ea9cfdc92fce689376355967953a6f9ebe3654b",
+          "size_bytes": 12706
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_141946/instruction.md",
+          "sha256": "f18096030ceff0e6db58e8dc1a487883623886a6b0699dddc68fca410afc12f3",
+          "size_bytes": 4665
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_141946/trace.jsonl",
+          "sha256": "e0493c2585723064f0180c8417af242702ede6bb090fdae617dfa40314bbcade",
+          "size_bytes": 85198
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_141946/egress.jsonl",
+          "sha256": "a28e775e8bb48aed7af2866c91d1a6a016770f559685bde6e7d3279ae7b59423",
+          "size_bytes": 810
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": false,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_141946",
+      "reward": 0.0,
+      "run_id": "mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_141946",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-kdigo-48h",
+        "trial": 3
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_141946"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_142214/result.json",
+          "sha256": "b1a82d534356112fc2e81ab83ac5904449eb073182629d46d85072abf5bb5f73",
+          "size_bytes": 13366
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_142214/output.csv",
+          "sha256": "f2f1673f9e28be4a496d8c5f48eea0c60019b5570cb4d07a0e572e168335e255",
+          "size_bytes": 15747333
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_142214/instruction.md",
+          "sha256": "f18096030ceff0e6db58e8dc1a487883623886a6b0699dddc68fca410afc12f3",
+          "size_bytes": 4665
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_142214/trace.jsonl",
+          "sha256": "121019646060cb197e7959f7fd4b8c621cfc1474e50b650c10a8ea145e253d7d",
+          "size_bytes": 201932
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_142214/egress.jsonl",
+          "sha256": "bfccc223e9762b5d0b40e8c4af1b3c3cd91e87f4993882bb70a6109d5130c5cf",
+          "size_bytes": 1534
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_142214",
+      "reward": 0.0,
+      "run_id": "mimic-kdigo-48h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_142214",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-kdigo-48h",
+        "trial": 3
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_142214"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-meld-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_093303/result.json",
+          "sha256": "c1d3e7930819e351825e787cd46fddabebd7093f0c188c2ad9a3e1ddff13e766",
+          "size_bytes": 13489
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-meld-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_093303/output.csv",
+          "sha256": "9b0b7b7ca669354b30dd04e2167ca897fe2b3b6e47666b9bdcb9202edb97ae24",
+          "size_bytes": 13528390
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-meld-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_093303/instruction.md",
+          "sha256": "dc60f2642041dc371d4549047080084dfe78c1554ed40a6629c21eda9adfa5a4",
+          "size_bytes": 4463
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-meld-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_093303/trace.jsonl",
+          "sha256": "8ce4f4cf7d310692180eafefc8c26249af6daee7e99bbac925af05d83e201280",
+          "size_bytes": 189458
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-meld-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_093303/egress.jsonl",
+          "sha256": "5fbe7da0092fc0c8bfaa6bf7006902a0cb752fe5bb6a308228bc5ee3a31f37b8",
+          "size_bytes": 1221
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-meld-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_093303",
+      "reward": 0.0,
+      "run_id": "mimic-meld-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_093303",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-meld-24h",
+        "trial": 5
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_093303"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_095144/result.json",
+          "sha256": "841c501d1f8ce56cf20af23e022fa19577c58af4d4061da33f30b55dc068f938",
+          "size_bytes": 13560
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_095144/output.csv",
+          "sha256": "e7210efd93caf1e8b721d3eed845d0cc8fa2e64709d3a3da2cef85d529a6c240",
+          "size_bytes": 23901970
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_095144/instruction.md",
+          "sha256": "e3a8a2dccdde6708dbece1a2a27a6340ff7299fe8ee712455528287ec17e68ab",
+          "size_bytes": 4682
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_095144/trace.jsonl",
+          "sha256": "edb535a4f47bbf7c3ba4d4c9f695880c1f1edd7ba6250a22ec50eb2dfc1b22df",
+          "size_bytes": 235791
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_095144/egress.jsonl",
+          "sha256": "1eed5474ae0122fbc3da58fd50a0b5305dee5d251ade4f4c7bcca2414504c2ac",
+          "size_bytes": 1530
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_095144",
+      "reward": 0.0,
+      "run_id": "mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_095144",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-oasis-24h",
+        "trial": 1
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_095144"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_095200/result.json",
+          "sha256": "122b419844a465aa1a4654b1cdc505f0d36410931e2cdcd9586a404561210288",
+          "size_bytes": 13501
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_095200/output.csv",
+          "sha256": "6b79d006377b635ca56d6bf578275b41fe3cbc0895c74438bc8098c8f11e62e2",
+          "size_bytes": 23920348
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_095200/instruction.md",
+          "sha256": "e3a8a2dccdde6708dbece1a2a27a6340ff7299fe8ee712455528287ec17e68ab",
+          "size_bytes": 4682
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_095200/trace.jsonl",
+          "sha256": "77f31cae2206f1aff7ed5faf49222b07877c250d89d9e86c394e90618078bc51",
+          "size_bytes": 390133
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_095200/egress.jsonl",
+          "sha256": "9d4c2fa549865970a771568385f969461955849a4c0c19d32c4fa5e833ec4658",
+          "size_bytes": 1637
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_095200",
+      "reward": 0.0,
+      "run_id": "mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_095200",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-oasis-24h",
+        "trial": 2
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_095200"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_095440/result.json",
+          "sha256": "9895e012032c870debff1c7b49a7fc02d8c4f55657bf3de385b39639317e7a51",
+          "size_bytes": 13887
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_095440/output.csv",
+          "sha256": "af9e05cf633f87c495ce073c8bffccd7822727a940f508db9b1171c1df3be2ab",
+          "size_bytes": 24081390
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_095440/instruction.md",
+          "sha256": "e3a8a2dccdde6708dbece1a2a27a6340ff7299fe8ee712455528287ec17e68ab",
+          "size_bytes": 4682
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_095440/trace.jsonl",
+          "sha256": "33499e913e9795ea92680d14c3c8e3a5dc82d4793f865f5ad00ebde87326332b",
+          "size_bytes": 276477
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_095440/egress.jsonl",
+          "sha256": "8345fd264a0b2913cefe8f31d6124951d05603f317bd68c1970107766e240594",
+          "size_bytes": 1429
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_095440",
+      "reward": 0.0,
+      "run_id": "mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_095440",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-oasis-24h",
+        "trial": 3
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_095440"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_143333/result.json",
+          "sha256": "e8c6da187522d65f515bf9f14016afa95494ddbabfa06d9c58c8af50a19b45c9",
+          "size_bytes": 13457
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_143333/output.csv",
+          "sha256": "7dbbb2bdde9234ca91dac5ea3998921849b2e446276c5ecb1ccb1ccb0f2b2900",
+          "size_bytes": 24082978
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_143333/instruction.md",
+          "sha256": "e3a8a2dccdde6708dbece1a2a27a6340ff7299fe8ee712455528287ec17e68ab",
+          "size_bytes": 4682
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_143333/trace.jsonl",
+          "sha256": "94a355d28ab0a06a4455f14ca3e38e3968ad1b2896ef54273cd317955adf416f",
+          "size_bytes": 282193
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_143333/egress.jsonl",
+          "sha256": "5e7c19c517c28509d650869ab0d11d10aa5b0e546302b6f47bb2882863635cbc",
+          "size_bytes": 1220
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_143333",
+      "reward": 0.0,
+      "run_id": "mimic-oasis-24h_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_143333",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-oasis-24h",
+        "trial": 3
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_143333"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_101143/result.json",
+          "sha256": "f764539a823cb37d37f687bc4e138cd465a54335ebedb7dadf04e732b6459be6",
+          "size_bytes": 13480
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_101143/output.csv",
+          "sha256": "68f39df6539f9baa875f35c958d9bbc93a3921e7f0990439581a65ea1a58e7ac",
+          "size_bytes": 24064879
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_101143/instruction.md",
+          "sha256": "9fa5288f90285b5cb29a29dab33a636ff5e9ad8bcbecdbf73605f309b487ee5a",
+          "size_bytes": 4833
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_101143/trace.jsonl",
+          "sha256": "82a0acb24150258031617efeab4c8d3543aefcb60063d514786fdf999c2357e5",
+          "size_bytes": 259478
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-oasis-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_101143/egress.jsonl",
+          "sha256": "94fd7681a453a9f3d5d47537109d9b28dabf6207857b74c5e8d8f867a2491caa",
+          "size_bytes": 1532
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-oasis-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_101143",
+      "reward": 0.0,
+      "run_id": "mimic-oasis-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t3_20260506_101143",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-oasis-24h-raw",
+        "trial": 3
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_101143"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_103101/result.json",
+          "sha256": "e2b8a9c74810e87d1af6e4b8afce2dbfc517dbd21449e3eda7a08bc697ba9164",
+          "size_bytes": 13883
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_103101/output.csv",
+          "sha256": "5b50bf4c7f6e87bd8d0b29db4d99e740bc35d44f1b0e3a9c2fecef4ac87522d6",
+          "size_bytes": 29413916
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_103101/instruction.md",
+          "sha256": "905ab111732c7886a4a7078fd36af2a96c7c6879652f5492fd6147f74f23be25",
+          "size_bytes": 4737
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_103101/trace.jsonl",
+          "sha256": "2599d516a2e396f700aff18dda78a6d8d29303d77b31fe7e021568ba05cad9ae",
+          "size_bytes": 197981
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_103101/egress.jsonl",
+          "sha256": "b0a6fb28833fe0fb7daeef5c2cfc6851e47c15c9330006aef12f82f1604d152e",
+          "size_bytes": 1529
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_103101",
+      "reward": 0.0,
+      "run_id": "mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t4_20260506_103101",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-sapsii-24h",
+        "trial": 4
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_103101"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_103429/result.json",
+          "sha256": "138cdf0ffbafa74253de50e8ae50202e1471aa91da91f9c9b95dfa175162d62c",
+          "size_bytes": 13659
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_103429/output.csv",
+          "sha256": "e11fd6463f0b6264628108ab0f1d30f3cbc7e78f90da921d60ae8a28053b06c0",
+          "size_bytes": 29743530
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_103429/instruction.md",
+          "sha256": "905ab111732c7886a4a7078fd36af2a96c7c6879652f5492fd6147f74f23be25",
+          "size_bytes": 4737
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_103429/trace.jsonl",
+          "sha256": "230694404578f609edb5b7fdb47c8c6063fd6b4e3ab199319f4c0fe738e9ebe3",
+          "size_bytes": 267538
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_103429/egress.jsonl",
+          "sha256": "d0019ec5b5e76a5efb9d6a2fbf598e984d66094164505282f967ffdb8fc6b6c2",
+          "size_bytes": 1532
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_103429",
+      "reward": 0.0,
+      "run_id": "mimic-sapsii-24h_with-skill_restructured_codex_gpt-5.4-mini_t5_20260506_103429",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-sapsii-24h",
+        "trial": 5
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_103429"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_065857/result.json",
+          "sha256": "23b974d5b82d8e1256af5d1d8c40ecba9a67ed7ac59080379fc40a7853068801",
+          "size_bytes": 14019
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_065857/output.csv",
+          "sha256": "f069b6e6de7957539a5de0a23ccd142259a4ddb6adb297cbbd93e583dfbc1f80",
+          "size_bytes": 29857925
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_065857/instruction.md",
+          "sha256": "c754cf75fe714daa0c696922a5a2741da1d0b00def69c7aa820b6627d2916ea8",
+          "size_bytes": 4888
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_065857/trace.jsonl",
+          "sha256": "216f63f912701142324622d243e5af32606b2b0fee0c565ed961ea3d15e7e0f1",
+          "size_bytes": 157303
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-sapsii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_065857/egress.jsonl",
+          "sha256": "4a634f22790b6ba5f61f77e9a789ed373ed8eeaf895e81425bd72d6fea316d5f",
+          "size_bytes": 1533
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-sapsii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_065857",
+      "reward": 0.0,
+      "run_id": "mimic-sapsii-24h-raw_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_065857",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-sapsii-24h-raw",
+        "trial": 2
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_065857"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_105412/result.json",
+          "sha256": "3ffce371d259e8c54112be1e789c4fc88567d69c7fcb4139669f5c7ecf097940",
+          "size_bytes": 13354
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_105412/output.csv",
+          "sha256": "fc262025b31dc2c97977649624d134bd7f37e67f908c970d5e7cab3e54d2e2d8",
+          "size_bytes": 19092203
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_105412/instruction.md",
+          "sha256": "7074ae33b3654aa731ab935cfb7eda844a658ce0ba1fff25a926f039c13685fc",
+          "size_bytes": 4636
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_105412/trace.jsonl",
+          "sha256": "bf589b3aecee288cfa92f5066696eb417caeb4dd1f257cd91914e7ed7ce284b8",
+          "size_bytes": 213106
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_105412/egress.jsonl",
+          "sha256": "57c6ed537982377d287ea7c807bd99254df2dd876a1799f58cb8c73987ebd362",
+          "size_bytes": 1536
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_105412",
+      "reward": 0.0,
+      "run_id": "mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_105412",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-sofa-24h",
+        "trial": 1
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_105412"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_144218/result.json",
+          "sha256": "a8046130e810a2f288d5f696a0d9c333a6cfc20711dc1135fd9cdfdb6ae7b54f",
+          "size_bytes": 13315
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_144218/output.csv",
+          "sha256": "bf50b37487b9654e7b624c5e366496e1eb801d8e5a3702d1f79d72cce167ad15",
+          "size_bytes": 19086721
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_144218/instruction.md",
+          "sha256": "7074ae33b3654aa731ab935cfb7eda844a658ce0ba1fff25a926f039c13685fc",
+          "size_bytes": 4636
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_144218/trace.jsonl",
+          "sha256": "37d80806a187613d46dafa1c9c6ce6c852084637d4ce0f41b271b0be578993b5",
+          "size_bytes": 278742
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_144218/egress.jsonl",
+          "sha256": "8add4553b60894f17cafc55737f11cbcb4948cb6bd187b5cacc029abe6991654",
+          "size_bytes": 2151
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_144218",
+      "reward": 0.0,
+      "run_id": "mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t1_20260506_144218",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-sofa-24h",
+        "trial": 1
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_144218"
+    },
+    {
+      "agent_returncode": 0,
+      "artifact_count": 5,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_105855/result.json",
+          "sha256": "79a1d5d750dfb15aa29311fcac2a01bcd7ce5b291bf21f05d5c98ac66130e13d",
+          "size_bytes": 13244
+        },
+        {
+          "artifact": "output.csv",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_105855/output.csv",
+          "sha256": "4a916b1d4bd4d20c51b17c8dd6e4f99e98598dac990800a7b180325bc77f1164",
+          "size_bytes": 19085778
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_105855/instruction.md",
+          "sha256": "7074ae33b3654aa731ab935cfb7eda844a658ce0ba1fff25a926f039c13685fc",
+          "size_bytes": 4636
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_105855/trace.jsonl",
+          "sha256": "16dd1996af3e496a0e60e788094d7bdd5741c43f6f4c74f88d678fdbd96689d2",
+          "size_bytes": 310414
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_105855/egress.jsonl",
+          "sha256": "df2b1805dc9d95312742594894ea1e7901fb9244aeecb33a8208393c9f89bb8b",
+          "size_bytes": 1846
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": true,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_105855",
+      "reward": 0.0,
+      "run_id": "mimic-sofa-24h_with-skill_restructured_codex_gpt-5.4-mini_t2_20260506_105855",
+      "run_key": {
+        "condition": "with-skill",
+        "model": "gpt-5.4-mini",
+        "schema": "restructured",
+        "task": "mimic-sofa-24h",
+        "trial": 2
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_105855"
+    },
+    {
+      "agent_returncode": -1,
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "artifact": "result.json",
+          "relative_path": "codex-validity-followup-20260506/mimic-urine-output-rate-raw_operational-spec_codex_gpt-5.4-mini_t4_20260506_031352/result.json",
+          "sha256": "d3bd5b08696ce45204ab4c181d30d111c704b0797e261392bcc1ec3807faf6ca",
+          "size_bytes": 2524
+        },
+        {
+          "artifact": "instruction.md",
+          "relative_path": "codex-validity-followup-20260506/mimic-urine-output-rate-raw_operational-spec_codex_gpt-5.4-mini_t4_20260506_031352/instruction.md",
+          "sha256": "34e13e048aefdf41f6502dc4493e4fa29a6391461b18eeb25d9698737a00f4a7",
+          "size_bytes": 4908
+        },
+        {
+          "artifact": "trace.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-urine-output-rate-raw_operational-spec_codex_gpt-5.4-mini_t4_20260506_031352/trace.jsonl",
+          "sha256": "6950b790dfa3093d5bf4b900d26fdf5401bd48636c46062b9723fc60435aa971",
+          "size_bytes": 2909
+        },
+        {
+          "artifact": "egress.jsonl",
+          "relative_path": "codex-validity-followup-20260506/mimic-urine-output-rate-raw_operational-spec_codex_gpt-5.4-mini_t4_20260506_031352/egress.jsonl",
+          "sha256": "a968c1dfa8dc7a564d546b287ddc73e665da14e7c4b8716699384a4a9af9c772",
+          "size_bytes": 710
+        }
+      ],
+      "contamination_lint": true,
+      "diagnostics_failed": false,
+      "errors": 1,
+      "failed": 0,
+      "filesystem_canary": true,
+      "isolated": true,
+      "passed": 0,
+      "publishable": true,
+      "relative_run_dir": "codex-validity-followup-20260506/mimic-urine-output-rate-raw_operational-spec_codex_gpt-5.4-mini_t4_20260506_031352",
+      "reward": 0.0,
+      "run_id": "mimic-urine-output-rate-raw_operational-spec_codex_gpt-5.4-mini_t4_20260506_031352",
+      "run_key": {
+        "condition": "operational-spec",
+        "model": "gpt-5.4-mini",
+        "schema": "native",
+        "task": "mimic-urine-output-rate-raw",
+        "trial": 4
+      },
+      "status": "superseded",
+      "timestamp_key": "20260506_031352"
+    }
+  ]
+}

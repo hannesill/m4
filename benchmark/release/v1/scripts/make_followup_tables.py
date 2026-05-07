@@ -16,7 +16,7 @@ M4_DIR = Path(
     os.environ.get("M4BENCH_M4_DIR", Path(__file__).resolve().parents[4])
 ).resolve()
 PAPER_DIR = Path(
-    os.environ.get("M4BENCH_PAPER_DIR", M4_DIR.parent / "m4bench-paper")
+    os.environ.get("M4BENCH_PAPER_DIR", Path(__file__).resolve().parents[1])
 ).resolve()
 BENCHMARK_DIR = M4_DIR / "benchmark"
 RESULTS_DIR = Path(

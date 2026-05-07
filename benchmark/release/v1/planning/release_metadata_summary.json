@@ -1,0 +1,50 @@
+[
+  {
+    "label": "Codex primary",
+    "runs": 760,
+    "canonical_runs": 760,
+    "provenance_only_dirs": 40,
+    "retained_dirs": 800,
+    "source_roots": [
+      "release-20260502-codex-v11",
+      "review-rerun-20260504-codex"
+    ],
+    "source_root_bytes": 51607773184,
+    "artifact_bytes": 51519609254,
+    "elapsed_seconds": 202881.79999999984,
+    "input_tokens": 586293569,
+    "cached_input_tokens": 552619008,
+    "output_tokens": 15732394,
+    "artifact_counts": {
+      "result.json": 800,
+      "output.csv": 800,
+      "instruction.md": 800,
+      "trace.jsonl": 800,
+      "egress.jsonl": 800
+    }
+  },
+  {
+    "label": "Claude sentinel",
+    "runs": 190,
+    "canonical_runs": 190,
+    "provenance_only_dirs": 0,
+    "retained_dirs": 190,
+    "source_roots": [
+      "release-20260502-claude-provider",
+      "review-rerun-20260504-claude"
+    ],
+    "source_root_bytes": 11646980096,
+    "artifact_bytes": 11641579220,
+    "elapsed_seconds": 62933.5,
+    "input_tokens": 16657,
+    "cached_input_tokens": 307338270,
+    "output_tokens": 3641390,
+    "artifact_counts": {
+      "result.json": 190,
+      "output.csv": 190,
+      "instruction.md": 190,
+      "trace.jsonl": 190,
+      "egress.jsonl": 190
+    }
+  }
+]

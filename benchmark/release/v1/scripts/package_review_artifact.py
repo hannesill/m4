@@ -29,7 +29,7 @@ M4_DIR = Path(
     os.environ.get("M4BENCH_M4_DIR", Path(__file__).resolve().parents[4])
 ).resolve()
 PAPER_DIR = Path(
-    os.environ.get("M4BENCH_PAPER_DIR", M4_DIR.parent / "m4bench-paper")
+    os.environ.get("M4BENCH_PAPER_DIR", Path(__file__).resolve().parents[1])
 ).resolve()
 BENCHMARK_DIR = M4_DIR / "benchmark"
 RESULTS_DIR = Path(
@@ -83,45 +83,41 @@ def sha256_bytes(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def configured_redaction_terms() -> list[str]:
+    """Return optional author/institution terms supplied outside the release tree."""
+    terms = {
+        term.strip()
+        for term in os.environ.get("M4BENCH_REDACTION_TERMS", "").split(",")
+        if term.strip()
+    }
+    terms_file = os.environ.get("M4BENCH_REDACTION_TERMS_FILE")
+    if terms_file:
+        path = Path(terms_file).expanduser()
+        if path.exists():
+            terms.update(
+                line.strip()
+                for line in path.read_text().splitlines()
+                if line.strip() and not line.lstrip().startswith("#")
+            )
+    return sorted(terms, key=len, reverse=True)
+
+
 def redact_text(text: str) -> str:
     replacements = {
         str(PAPER_DIR): "<ANON_PAPER_DIR>",
         str(M4_DIR): "<ANON_M4_DIR>",
         str(M4_DIR.parent): "<ANON_WORKSPACE>",
         str(Path.home()): "<ANON_HOME>",
-        "hannesill": "anonymous",
+        Path.home().name: "anonymous",
     }
     redacted = text
     for old, new in sorted(
         replacements.items(), key=lambda item: len(item[0]), reverse=True
     ):
-        redacted = redacted.replace(old, new)
-    author_patterns = [
-        r"\bhannes[\s._-]*ill\b",
-        r"\bhannesill\b",
-        r"\bhannes\b",
-        r"\brafi[\s._-]*attrach\b",
-        r"\brafi\b",
-        r"\brafraf\b",
-        r"\battrach\b",
-        r"\brajna[\s._-]*fani\b",
-        r"\brajna\b",
-        r"\bfani\b",
-        r"\bleoceli\b",
-        r"\bleo[\s._-]*celi\b",
-        r"\bceli\b",
-        r"\bmarlene[\s._-]*moerig\b",
-        r"\bmarlene\b",
-        r"\bmoerig\b",
-        r"\bdukyong[\s._-]*yoon\b",
-        r"\bdukyong\b",
-        r"\byoon\b",
-        r"\bryohei\b",
-        r"\bahram[\s._-]*han\b",
-        r"\bahram\b",
-    ]
-    for pattern in author_patterns:
-        redacted = re.sub(pattern, "anonymous", redacted, flags=re.IGNORECASE)
+        if old:
+            redacted = redacted.replace(old, new)
+    for term in configured_redaction_terms():
+        redacted = re.sub(re.escape(term), "anonymous", redacted, flags=re.IGNORECASE)
     redacted = re.sub(
         r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b",
         "<ANON_EMAIL>",
@@ -551,9 +547,15 @@ def main() -> None:
     followup_rows = followup_rows_from_manifest()
     oss_manifest: list[dict[str, Any]] = []
     packaged_manifest: list[dict[str, Any]] = []
+    run_counts = {
+        "codex_primary": len(codex_rows),
+        "claude_sentinel": len(claude_rows),
+        "codex_followup": len(followup_rows),
+        "oss_exploratory": len(oss_rows),
+    }
 
     tar: tarfile.TarFile | None = None
-    args.output.parent.mkdir(exist_ok=True)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
     try:
         if not args.dry_run:
             archive_context = open_archive(args.output, compression)
@@ -629,7 +631,7 @@ def main() -> None:
                 "description": "SHA-256 and byte-size manifest for archive entries after double-blind redaction.",
                 "redaction": {
                     "enabled": True,
-                    "note": "Local absolute paths and user-identifying path components are replaced with <ANON_*> placeholders in text artifacts.",
+                    "note": "Local absolute paths and configured author/institution redaction terms are replaced in text artifacts.",
                 },
                 "artifacts": packaged_manifest,
             },
@@ -644,12 +646,7 @@ def main() -> None:
             arcname=Path("m4bench-review-artifact") / "README.md",
             text=review_readme(
                 counts=counts,
-                run_counts={
-                    "codex_primary": len(codex_rows),
-                    "claude_sentinel": len(claude_rows),
-                    "codex_followup": len(followup_rows),
-                    "oss_exploratory": len(oss_rows),
-                },
+                run_counts=run_counts,
                 include_claude=args.include_claude,
                 compression=compression,
             ),
@@ -673,7 +670,44 @@ def main() -> None:
     if args.dry_run:
         print("Dry run only; no tarball written.")
     else:
+        archive_sha256 = sha256_file(args.output)
+        archive_manifest = {
+            "description": "Sidecar verification metadata for the M4Bench review artifact archive.",
+            "generated_at": datetime.now(UTC).isoformat(),
+            "archive": {
+                "path": str(args.output),
+                "filename": args.output.name,
+                "compression": compression,
+                "size_bytes": args.output.stat().st_size,
+                "sha256": archive_sha256,
+            },
+            "selection": {
+                "include_claude": args.include_claude,
+                "include_oss": args.include_oss,
+                "run_counts": run_counts,
+            },
+            "contents": {
+                "total_files": total_files,
+                "total_uncompressed_bytes": total_bytes,
+                "counts": {
+                    label: {"files": files, "uncompressed_bytes": size}
+                    for label, (files, size) in counts.items()
+                },
+            },
+            "data_access_boundary": (
+                "The archive excludes MIMIC-IV, eICU, and generated task databases. "
+                "Full reconstruction requires independent PhysioNet credentialed access."
+            ),
+        }
+        Path(str(args.output) + ".sha256").write_text(
+            f"{archive_sha256}  {args.output.name}\n"
+        )
+        Path(str(args.output) + ".manifest.json").write_text(
+            json.dumps(archive_manifest, indent=2, sort_keys=True) + "\n"
+        )
         print(f"Wrote {args.output}")
+        print(f"Wrote {args.output}.sha256")
+        print(f"Wrote {args.output}.manifest.json")
 
 
 if __name__ == "__main__":
