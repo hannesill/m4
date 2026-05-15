@@ -17,7 +17,7 @@ import re
 import subprocess
 import tarfile
 from collections.abc import Iterable
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 M4_DIR = Path(
@@ -160,7 +160,7 @@ def add_json_file(tar: tarfile.TarFile, arcname: Path, data: object) -> None:
     payload = (json.dumps(data, indent=2, sort_keys=True) + "\n").encode("utf-8")
     info = tarfile.TarInfo(str(arcname))
     info.size = len(payload)
-    info.mtime = int(datetime.now(UTC).timestamp())
+    info.mtime = int(datetime.now(timezone.utc).timestamp())
     info.mode = 0o644
     tar.addfile(info, io.BytesIO(payload))
 
@@ -234,7 +234,7 @@ def main() -> None:
             tar,
             Path("m4bench-source-review") / "SOURCE_RELEASE_MANIFEST.json",
             {
-                "generated_at": datetime.now(UTC).isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
                 "anonymous_review": anonymous_review,
                 "source": "git ls-files",
                 "redacted_files": redacted_files,

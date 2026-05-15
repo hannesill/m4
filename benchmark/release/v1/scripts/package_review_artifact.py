@@ -21,7 +21,7 @@ import subprocess
 import sys
 import tarfile
 from contextlib import contextmanager
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -305,7 +305,7 @@ def add_text_file(
         assert tar is not None
         info = tarfile.TarInfo(str(arcname))
         info.size = len(payload)
-        info.mtime = int(datetime.now(UTC).timestamp())
+        info.mtime = int(datetime.now(timezone.utc).timestamp())
         tar.addfile(info, io.BytesIO(payload))
     return 1, len(payload)
 
@@ -532,7 +532,7 @@ def review_readme(
     lines = [
         "# M4Bench Review Artifact",
         "",
-        f"Generated: `{datetime.now(UTC).isoformat()}`",
+        f"Generated: `{datetime.now(timezone.utc).isoformat()}`",
         f"Compression: `{compression}`",
         "",
         "This archive contains paper-facing per-run artifacts selected by the manuscript scripts.",
@@ -867,7 +867,7 @@ def main() -> None:
         archive_sha256 = sha256_file(args.output)
         archive_manifest = {
             "description": "Sidecar verification metadata for the M4Bench review artifact archive.",
-            "generated_at": datetime.now(UTC).isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "archive": {
                 "path": str(args.output),
                 "filename": args.output.name,

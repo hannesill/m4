@@ -112,7 +112,10 @@ def _find_canonical_skill(skill_name: str) -> Path | None:
 
 def _resolve_ground_truth_sql(task_name: str) -> Path | None:
     """Best-effort lookup for the reference SQL used to build ground truth."""
-    import tomllib
+    try:
+        import tomllib
+    except ModuleNotFoundError:
+        import tomli as tomllib
 
     toml_path = TASKS_DIR / _family_dir(task_name) / task_name / "task.toml"
     if not toml_path.exists():
