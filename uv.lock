@@ -1740,7 +1740,7 @@ requires-dist = [
     { name = "statsmodels", marker = "extra == 'research'", specifier = ">=0.14.6" },
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0" },
     { name = "typer", specifier = ">=0.9.0" },
-    { name = "vitrine", git = "https://github.com/hannesill/vitrine.git" },
+    { name = "vitrine", specifier = ">=0.1.0" },
 ]
 provides-extras = ["research"]
 
@@ -3848,7 +3848,7 @@ wheels = [
 [[package]]
 name = "vitrine"
 version = "0.1.0"
-source = { git = "https://github.com/hannesill/vitrine.git#d4d531a223f3a2ceb21b470b3f7d867952298c08" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "duckdb" },
     { name = "pandas" },
@@ -3857,6 +3857,10 @@ dependencies = [
     { name = "starlette" },
     { name = "typer" },
     { name = "uvicorn" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a2/8b/dc84bdf7dd77966ea6f310f01dc6123428e27b865d8349c2a4711e99c164/vitrine-0.1.0.tar.gz", hash = "sha256:6095ca43e89bfb1be7cf008a7b72abea7f13e00f55d10ddb37a3b8c14ad3e2aa", size = 1513189, upload-time = "2026-02-14T00:52:13.455Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/84/b7/bea8757a93aa7b518eaa5f2ceeb6c32c7a415a9eb2eee6fd9255d39b458a/vitrine-0.1.0-py3-none-any.whl", hash = "sha256:6b84402cd8f2b6425eafc2a1703ed8a85f40d39272aee5197cd5af7026f06d2b", size = 1489279, upload-time = "2026-02-14T00:52:11.401Z" },
 ]
 
 [[package]]

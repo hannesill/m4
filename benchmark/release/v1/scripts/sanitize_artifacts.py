@@ -35,9 +35,7 @@ M4_DIR = Path(
 DEFAULT_PRIVATE_PATTERNS = (
     M4_DIR / "benchmark" / "release" / "v1" / ".private_redactions"
 )
-DEFAULT_SALT_FILE = (
-    M4_DIR / "benchmark" / "release" / "v1" / ".private_sanitize_salt"
-)
+DEFAULT_SALT_FILE = M4_DIR / "benchmark" / "release" / "v1" / ".private_sanitize_salt"
 
 TEXT_SUFFIXES = {
     ".json",
