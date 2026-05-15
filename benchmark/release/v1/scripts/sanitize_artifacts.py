@@ -20,7 +20,7 @@ import shutil
 import tempfile
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -259,7 +259,9 @@ class SanitizationReport:
     output: str
     files: list[FileReport] = field(default_factory=list)
     started_at: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        default_factory=lambda: datetime.now(timezone.utc)
+        .isoformat()
+        .replace("+00:00", "Z")
     )
     private_patterns_loaded: bool = False
     private_literal_patterns: int = 0
@@ -285,7 +287,9 @@ class SanitizationReport:
         data = {
             "description": ("Sanitizer report for a reviewer-facing artifact."),
             "started_at": self.started_at,
-            "finished_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            "finished_at": datetime.now(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z"),
             "source": "<SANITIZED_SOURCE_PATH>",
             "output": "<SANITIZED_OUTPUT_PATH>",
             "private_redaction_patterns": {

@@ -13,7 +13,10 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 M4_DIR = Path(
     os.environ.get("M4BENCH_M4_DIR", Path(__file__).resolve().parents[4])
