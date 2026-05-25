@@ -143,7 +143,7 @@ For the canonical list of bundled skills, see `src/m4/skills/SKILLS_INDEX.md`.
 - **Research Methodology**: Common research pitfalls and how to avoid them
 
 **System skills:**
-- **M4 Framework**: Python API usage, research workflow, skill creation guide
+- **M4 Framework**: Python API usage, research workflow, setup repair, vitrine display, skill creation guide
 - **Data Structure**: MIMIC-IV table relationships, MIMIC-eICU mapping
 
 **Supported tools:** Claude Code, Cursor, Cline, Codex CLI, Gemini CLI, GitHub Copilot

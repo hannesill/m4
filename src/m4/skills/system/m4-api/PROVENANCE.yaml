@@ -1,5 +1,5 @@
 sources:
-  - url: https://github.com/TODO/m4/tree/main/src/m4
+  - url: https://github.com/hannesill/m4/tree/main/src/m4
     description: M4 Python API public interface (set_dataset, execute_query, get_schema, etc.)
     license: Apache 2.0
 

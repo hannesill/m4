@@ -1,0 +1,23 @@
+sources:
+  - url: https://pypi.org/project/vitrine/
+    description: Vitrine Python package used by M4 for browser display and research study cards
+    license: Package metadata
+
+created:
+  by: M4 maintainers
+  role: authoring
+  date: 2026-05-19
+
+reviews:
+  - by: M4 maintainers
+    date: 2026-05-19
+    scope: technical-accuracy
+    notes: API signatures checked against installed vitrine 0.1.0.
+
+references:
+  - Vitrine Python package API, installed as M4 dependency vitrine>=0.1.0.
+
+changelog:
+  - version: "1.0"
+    date: 2026-05-19
+    summary: Add bundled Vitrine API skill for M4 agents.

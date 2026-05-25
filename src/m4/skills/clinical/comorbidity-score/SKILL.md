@@ -141,6 +141,8 @@ ORDER BY cci;
 ## Example: Elixhauser Flags for Regression
 
 ```sql
+-- First materialize scripts/mimic-iv/elixhauser.sql as a temp table.
+-- It is not part of the default mimiciv_derived schema.
 SELECT
     e.hadm_id,
     e.congestive_heart_failure,
@@ -148,17 +150,18 @@ SELECT
     e.renal_failure,
     e.metastatic_cancer,
     CASE WHEN a.deathtime IS NOT NULL THEN 1 ELSE 0 END AS in_hospital_death
-FROM mimiciv_derived.elixhauser e
+FROM elixhauser e
 JOIN mimiciv_hosp.admissions a USING (hadm_id);
 ```
 
 ## Example: High-Risk Identification
 
 ```sql
+-- First materialize scripts/mimic-iv/elixhauser.sql as a temp table.
 SELECT c.subject_id, c.hadm_id, c.charlson_comorbidity_index,
        e.congestive_heart_failure, e.renal_failure, e.metastatic_cancer
 FROM mimiciv_derived.charlson c
-JOIN mimiciv_derived.elixhauser e USING (hadm_id)
+JOIN elixhauser e USING (hadm_id)
 WHERE c.charlson_comorbidity_index >= 5;
 ```
 

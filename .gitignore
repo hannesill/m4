@@ -114,7 +114,8 @@ benchmark/paper/
 # Agents
 .agents/
 .claude/
-.agents/
+.codex/
+.cursor/
 .research/
 
 # Node.js
