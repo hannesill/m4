@@ -424,7 +424,7 @@ WITH eliflg AS (
       ELSE 0
     END AS depress
 
-  FROM `physionet-data.mimiciv_3_1_hosp.diagnoses_icd` icd
+  FROM mimiciv_hosp.diagnoses_icd icd
   WHERE seq_num != 1  -- Exclude primary diagnosis per Elixhauser methodology
 ),
 
@@ -574,6 +574,6 @@ SELECT
     (-3) * COALESCE(depress, 0)     -- Depression
   ) AS elixhauser_vanwalraven
 
-FROM `physionet-data.mimiciv_3_1_hosp.admissions` adm
+FROM mimiciv_hosp.admissions adm
 LEFT JOIN eligrp eli ON adm.hadm_id = eli.hadm_id
 ORDER BY adm.subject_id, adm.hadm_id;

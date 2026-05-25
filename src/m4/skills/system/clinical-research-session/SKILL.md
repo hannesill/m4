@@ -7,7 +7,7 @@ category: system
 
 # M4 Clinical Research Workflow
 
-Structured clinical research from hypothesis through analysis. All work is tracked in a **vitrine study** — see CLAUDE.md for the vitrine quick reference or `/vitrine-api` for the full API.
+Structured clinical research from hypothesis through analysis. All work is tracked in a **vitrine study**. Use the `vitrine-api` skill when you need full display API signatures or advanced interaction patterns.
 
 ## When This Skill Activates
 

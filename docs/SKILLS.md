@@ -58,7 +58,9 @@ Skills are installed to `.claude/skills/` (or equivalent for other tools). AI as
 | Skill | Triggers On | Description |
 |-------|-------------|-------------|
 | **m4-api** | "M4 API", "query MIMIC with Python", "clinical data analysis" | Complete Python API usage including `set_dataset()`, DataFrame handling, error handling |
-| **m4-research** | "research workflow", "clinical study", "protocol" | Structured clinical research workflow and protocol drafting |
+| **clinical-research-session** | "research workflow", "clinical study", "protocol" | Structured clinical research workflow and protocol drafting |
+| **m4-setup** | "M4 setup", "fix M4", "dataset missing", "skills missing", "vitrine broken" | Diagnose and repair M4 environment, dataset, skill installation, backend, and vitrine issues |
+| **vitrine-api** | "vitrine", "show results", "forms", "visualization", "approval" | Display results, collect structured input, manage study cards, and export research trails |
 | **create-m4-skill** | "create skill", "new skill", "skill template" | Guide for creating new M4 skills |
 
 ### Severity Scores

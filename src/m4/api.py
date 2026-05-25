@@ -31,6 +31,7 @@ from typing import Any
 
 import pandas as pd
 
+from m4.config import _ensure_custom_datasets_loaded
 from m4.config import get_active_dataset as _get_active_dataset
 from m4.config import set_active_dataset as _set_active_dataset
 from m4.core.datasets import DatasetRegistry
@@ -87,8 +88,9 @@ def list_datasets() -> list[str]:
 
     Example:
         >>> list_datasets()
-        ['mimic-iv', 'mimic-iv-note', 'eicu']
+        ['mimic-iv-demo', 'mimic-iv', 'mimic-iv-note', 'eicu']
     """
+    _ensure_custom_datasets_loaded()
     return [ds.name for ds in DatasetRegistry.list_all()]
 
 

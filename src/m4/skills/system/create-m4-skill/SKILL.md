@@ -188,8 +188,9 @@ Before finalizing, verify with the contributor:
 
 1. **Create directory structure:**
    ```bash
-   mkdir -p src/m4/skills/[skill-name]
+   mkdir -p src/m4/skills/[clinical|system]/[skill-name]
    ```
+   Choose `clinical/` for clinical concepts and `system/` for framework, setup, data-navigation, or workflow skills.
 
 2. **Write files:**
    - Write `SKILL.md` with frontmatter and body
@@ -197,7 +198,7 @@ Before finalizing, verify with the contributor:
 
 3. **If SQL scripts exist:**
    ```bash
-   mkdir -p src/m4/skills/[skill-name]/scripts
+   mkdir -p src/m4/skills/[clinical|system]/[skill-name]/scripts
    ```
    Use separate files per dataset: `mimic-iv.sql`, `eicu.sql`.
 

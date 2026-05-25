@@ -1,0 +1,23 @@
+sources:
+  - url: https://github.com/rafiattrach/m4
+    description: M4 CLI, Python API, skill installer, dataset configuration, and vitrine dependency patterns
+    license: MIT
+
+created:
+  by: M4 maintainers
+  role: authoring
+  date: 2026-05-19
+
+reviews:
+  - by: M4 maintainers
+    date: 2026-05-19
+    scope: technical-accuracy
+    notes: Commands checked against the current repository layout and CLI.
+
+references:
+  - M4 CLI and Python API in this repository.
+
+changelog:
+  - version: "1.0"
+    date: 2026-05-19
+    summary: Add M4 setup and repair workflow skill.
