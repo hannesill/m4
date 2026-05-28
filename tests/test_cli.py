@@ -194,8 +194,8 @@ def test_config_claude_infers_db_path_full(
     assert "--db-path" not in call_args
 
 
-@patch("m4.cli.set_active_dataset")
-@patch("m4.cli.detect_available_local_datasets")
+@patch("m4.services.use.set_active_dataset")
+@patch("m4.services.use.detect_available_local_datasets")
 def test_use_full_happy_path(mock_detect, mock_set_active):
     mock_detect.return_value = {
         "mimic-iv-demo": {
@@ -219,9 +219,9 @@ def test_use_full_happy_path(mock_detect, mock_set_active):
     mock_set_active.assert_called_once_with("mimic-iv")
 
 
-@patch("m4.cli.get_active_backend", return_value="duckdb")
-@patch("m4.cli.set_active_dataset")
-@patch("m4.cli.detect_available_local_datasets")
+@patch("m4.services.use.get_active_backend", return_value="duckdb")
+@patch("m4.services.use.set_active_dataset")
+@patch("m4.services.use.detect_available_local_datasets")
 def test_use_json_success_includes_warning_codes(
     mock_detect, mock_set_active, mock_backend
 ):
@@ -249,8 +249,8 @@ def test_use_json_success_includes_warning_codes(
     mock_set_active.assert_called_once_with("mimic-iv")
 
 
-@patch("m4.cli.set_active_dataset")
-@patch("m4.cli.detect_available_local_datasets", return_value={})
+@patch("m4.services.use.set_active_dataset")
+@patch("m4.services.use.detect_available_local_datasets", return_value={})
 def test_use_json_dataset_not_found_emits_error(mock_detect, mock_set_active):
     result = runner.invoke(app, ["use", "missing-dataset", "--json"])
 
@@ -263,9 +263,9 @@ def test_use_json_dataset_not_found_emits_error(mock_detect, mock_set_active):
     mock_set_active.assert_not_called()
 
 
-@patch("m4.cli.get_active_backend", return_value="bigquery")
-@patch("m4.cli.set_active_dataset")
-@patch("m4.cli.detect_available_local_datasets")
+@patch("m4.services.use.get_active_backend", return_value="bigquery")
+@patch("m4.services.use.set_active_dataset")
+@patch("m4.services.use.detect_available_local_datasets")
 def test_use_json_backend_incompatible_emits_error(
     mock_detect, mock_set_active, mock_backend
 ):
@@ -585,7 +585,7 @@ def test_status_derived_flag_no_active_dataset(mock_active):
 # ----------------------------------------------------------------
 
 
-@patch("m4.cli.set_active_backend")
+@patch("m4.services.backend.set_active_backend")
 def test_backend_duckdb_happy_path(mock_set_backend):
     """Test setting backend to duckdb."""
     result = runner.invoke(app, ["backend", "duckdb"])
@@ -595,10 +595,10 @@ def test_backend_duckdb_happy_path(mock_set_backend):
     mock_set_backend.assert_called_once_with("duckdb")
 
 
-@patch("m4.cli.get_bigquery_project_id", return_value="my-project")
-@patch("m4.cli.set_active_backend")
-@patch("m4.cli.get_active_dataset")
-@patch("m4.cli.DatasetRegistry.get")
+@patch("m4.services.backend.get_bigquery_project_id", return_value="my-project")
+@patch("m4.services.backend.set_active_backend")
+@patch("m4.services.backend.get_active_dataset")
+@patch("m4.services.backend.DatasetRegistry.get")
 def test_backend_bigquery_happy_path(
     mock_registry, mock_get_dataset, mock_set_backend, mock_get_project
 ):
@@ -617,9 +617,9 @@ def test_backend_bigquery_happy_path(
     mock_set_backend.assert_called_once_with("bigquery")
 
 
-@patch("m4.cli.set_active_backend")
-@patch("m4.cli.get_active_dataset")
-@patch("m4.cli.DatasetRegistry.get")
+@patch("m4.services.backend.set_active_backend")
+@patch("m4.services.backend.get_active_dataset")
+@patch("m4.services.backend.DatasetRegistry.get")
 def test_backend_bigquery_blocks_unsupported_dataset(
     mock_registry, mock_get_dataset, mock_set_backend
 ):
@@ -649,9 +649,12 @@ def test_backend_invalid_choice():
     assert "duckdb" in result.stdout
 
 
-@patch("m4.cli.get_bigquery_project_id", return_value="my-project")
-@patch("m4.cli.set_active_backend")
-@patch("m4.cli.get_active_dataset", side_effect=DatasetError("No active dataset"))
+@patch("m4.services.backend.get_bigquery_project_id", return_value="my-project")
+@patch("m4.services.backend.set_active_backend")
+@patch(
+    "m4.services.backend.get_active_dataset",
+    side_effect=DatasetError("No active dataset"),
+)
 def test_backend_case_insensitive(mock_get_dataset, mock_set_backend, mock_get_project):
     """Test that backend choice is case-insensitive."""
     result = runner.invoke(app, ["backend", "BIGQUERY"])
@@ -660,7 +663,7 @@ def test_backend_case_insensitive(mock_get_dataset, mock_set_backend, mock_get_p
     mock_set_backend.assert_called_once_with("bigquery")
 
 
-@patch("m4.cli.set_active_backend")
+@patch("m4.services.backend.set_active_backend")
 def test_backend_duckdb_shows_init_hint(mock_set_backend):
     """Test that duckdb backend shows initialization hint."""
     result = runner.invoke(app, ["backend", "duckdb"])
@@ -670,9 +673,9 @@ def test_backend_duckdb_shows_init_hint(mock_set_backend):
     assert "m4 init" in result.stdout
 
 
-@patch("m4.cli.get_bigquery_project_id", return_value=None)
-@patch("m4.cli.get_active_dataset", return_value="mimic-iv")
-@patch("m4.cli.set_active_backend")
+@patch("m4.services.backend.get_bigquery_project_id", return_value=None)
+@patch("m4.services.backend.get_active_dataset", return_value="mimic-iv")
+@patch("m4.services.backend.set_active_backend")
 def test_backend_json_duckdb_success(
     mock_set_backend, mock_get_dataset, mock_get_project
 ):
@@ -693,9 +696,9 @@ def test_backend_json_duckdb_success(
     mock_set_backend.assert_called_once_with("duckdb")
 
 
-@patch("m4.cli.set_bigquery_project_id")
-@patch("m4.cli.get_active_dataset", return_value="mimic-iv")
-@patch("m4.cli.set_active_backend")
+@patch("m4.services.backend.set_bigquery_project_id")
+@patch("m4.services.backend.get_active_dataset", return_value="mimic-iv")
+@patch("m4.services.backend.set_active_backend")
 def test_backend_json_bigquery_with_project_id_success(
     mock_set_backend, mock_get_dataset, mock_set_project
 ):
@@ -715,7 +718,7 @@ def test_backend_json_bigquery_with_project_id_success(
     mock_set_project.assert_called_once_with("my-project")
 
 
-@patch("m4.cli.set_active_backend")
+@patch("m4.services.backend.set_active_backend")
 def test_backend_json_invalid_backend_emits_error(mock_set_backend):
     result = runner.invoke(app, ["backend", "mysql", "--json"])
 
@@ -726,8 +729,8 @@ def test_backend_json_invalid_backend_emits_error(mock_set_backend):
     mock_set_backend.assert_not_called()
 
 
-@patch("m4.cli.set_bigquery_project_id")
-@patch("m4.cli.set_active_backend")
+@patch("m4.services.backend.set_bigquery_project_id")
+@patch("m4.services.backend.set_active_backend")
 def test_backend_json_duckdb_rejects_project_id(mock_set_backend, mock_set_project):
     result = runner.invoke(app, ["backend", "duckdb", "--project-id", "x", "--json"])
 
@@ -739,8 +742,8 @@ def test_backend_json_duckdb_rejects_project_id(mock_set_backend, mock_set_proje
     mock_set_project.assert_not_called()
 
 
-@patch("m4.cli.set_active_backend")
-@patch("m4.cli.get_active_dataset", return_value="mimic-iv-demo")
+@patch("m4.services.backend.set_active_backend")
+@patch("m4.services.backend.get_active_dataset", return_value="mimic-iv-demo")
 def test_backend_json_bigquery_blocks_incompatible_active_dataset(
     mock_get_dataset, mock_set_backend
 ):
@@ -753,10 +756,13 @@ def test_backend_json_bigquery_blocks_incompatible_active_dataset(
     mock_set_backend.assert_not_called()
 
 
-@patch("m4.cli.get_bigquery_project_id", return_value=None)
-@patch("m4.cli.set_bigquery_project_id")
-@patch("m4.cli.set_active_backend")
-@patch("m4.cli.get_active_dataset", side_effect=DatasetError("No active dataset"))
+@patch("m4.services.backend.get_bigquery_project_id", return_value=None)
+@patch("m4.services.backend.set_bigquery_project_id")
+@patch("m4.services.backend.set_active_backend")
+@patch(
+    "m4.services.backend.get_active_dataset",
+    side_effect=DatasetError("No active dataset"),
+)
 def test_backend_json_bigquery_requires_project_id(
     mock_get_dataset, mock_set_backend, mock_set_project, mock_get_project
 ):
@@ -856,9 +862,12 @@ class TestInitDerivedTableSkipForce:
 # ----------------------------------------------------------------
 
 
-@patch("m4.cli.set_bigquery_project_id")
-@patch("m4.cli.set_active_backend")
-@patch("m4.cli.get_active_dataset", side_effect=DatasetError("No active dataset"))
+@patch("m4.services.backend.set_bigquery_project_id")
+@patch("m4.services.backend.set_active_backend")
+@patch(
+    "m4.services.backend.get_active_dataset",
+    side_effect=DatasetError("No active dataset"),
+)
 def test_backend_bigquery_with_project_id(
     mock_get_dataset, mock_set_backend, mock_set_project
 ):
@@ -873,8 +882,8 @@ def test_backend_bigquery_with_project_id(
     mock_set_project.assert_called_once_with("my-gcp-project")
 
 
-@patch("m4.cli.set_bigquery_project_id")
-@patch("m4.cli.set_active_backend")
+@patch("m4.services.backend.set_bigquery_project_id")
+@patch("m4.services.backend.set_active_backend")
 def test_backend_duckdb_rejects_project_id(mock_set_backend, mock_set_project):
     """Test backend duckdb --project-id is rejected."""
     result = runner.invoke(app, ["backend", "duckdb", "--project-id", "my-gcp-project"])
@@ -885,10 +894,13 @@ def test_backend_duckdb_rejects_project_id(mock_set_backend, mock_set_project):
     mock_set_project.assert_not_called()
 
 
-@patch("m4.cli.get_bigquery_project_id", return_value=None)
-@patch("m4.cli.set_bigquery_project_id")
-@patch("m4.cli.set_active_backend")
-@patch("m4.cli.get_active_dataset", side_effect=DatasetError("No active dataset"))
+@patch("m4.services.backend.get_bigquery_project_id", return_value=None)
+@patch("m4.services.backend.set_bigquery_project_id")
+@patch("m4.services.backend.set_active_backend")
+@patch(
+    "m4.services.backend.get_active_dataset",
+    side_effect=DatasetError("No active dataset"),
+)
 def test_backend_bigquery_without_project_id_errors(
     mock_get_dataset, mock_set_backend, mock_set_project, mock_get_project
 ):
@@ -902,10 +914,13 @@ def test_backend_bigquery_without_project_id_errors(
     mock_set_project.assert_not_called()
 
 
-@patch("m4.cli.get_bigquery_project_id", return_value="existing-project")
-@patch("m4.cli.set_bigquery_project_id")
-@patch("m4.cli.set_active_backend")
-@patch("m4.cli.get_active_dataset", side_effect=DatasetError("No active dataset"))
+@patch("m4.services.backend.get_bigquery_project_id", return_value="existing-project")
+@patch("m4.services.backend.set_bigquery_project_id")
+@patch("m4.services.backend.set_active_backend")
+@patch(
+    "m4.services.backend.get_active_dataset",
+    side_effect=DatasetError("No active dataset"),
+)
 def test_backend_bigquery_without_flag_uses_config_project_id(
     mock_get_dataset, mock_set_backend, mock_set_project, mock_get_project
 ):

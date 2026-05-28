@@ -12,6 +12,7 @@ from m4.core.derived.builtins import has_derived_support, list_builtins
 from m4.core.derived.materializer import get_derived_table_count
 from m4.core.exceptions import DatasetError
 from m4.data_io import compute_parquet_dir_size, verify_table_rowcount
+from m4.services.results import WARNING_PARQUET_PATH_MISMATCH
 
 
 def _absolute_path_or_none(path_value: str | Path | None) -> str | None:
@@ -55,7 +56,7 @@ def _collect_dataset_status(
             )
         except Exception as exc:
             if _is_path_mismatch_error(exc):
-                warnings.append("parquet_path_mismatch")
+                warnings.append(WARNING_PARQUET_PATH_MISMATCH)
 
     derived_supported = has_derived_support(name)
     derived_bigquery = (
