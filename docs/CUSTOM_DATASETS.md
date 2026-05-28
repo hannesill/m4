@@ -4,7 +4,9 @@ M4 supports any PhysioNet dataset. This guide shows how to add your own.
 
 ## Quick Start: JSON Definition
 
-Create a JSON file in `m4_data/datasets/`:
+Create a JSON file in the M4 data directory under `datasets/`. By default this
+is `m4_data/datasets/`; if `M4_DATA_DIR` is set, it must point directly at the
+M4 data directory.
 
 **Example: `m4_data/datasets/mimic-iv-ed.json`**
 ```json
@@ -106,7 +108,7 @@ When you run `m4 init <dataset>`:
 
 ## Directory Structure
 
-M4 organizes data like this:
+M4 organizes data like this by default:
 
 ```
 m4_data/
@@ -121,6 +123,9 @@ m4_data/
 └── databases/          # DuckDB databases
     └── my_dataset.duckdb
 ```
+
+When `M4_DATA_DIR` is set, the same structure lives under that exact directory
+instead of `./m4_data`.
 
 ## Using Existing CSV Files
 

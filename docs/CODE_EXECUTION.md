@@ -69,7 +69,7 @@ from m4 import execute_query, get_schema, get_table_info
 
 # Schema exploration
 schema = get_schema()
-print(schema['backend_info'])  # 'DuckDB (local): /path/to/db'
+print(schema['backend_info'])  # Backend and active dataset summary
 print(schema['tables'])        # ['mimiciv_hosp.admissions', 'mimiciv_hosp.diagnoses_icd', ...]
 
 # Table details
@@ -90,6 +90,8 @@ print(df)
 ```
 
 > **Table naming convention:** Tables use canonical `schema.table` names (e.g., `mimiciv_hosp.patients`, `mimiciv_icu.icustays`) that work on both DuckDB and BigQuery backends. Use `get_schema()` to see all available tables.
+
+> **Path disclosure:** DuckDB backend metadata hides raw local database paths by default. Set `M4_PATH_DISCLOSURE=1` only when code is allowed to receive local filesystem paths.
 
 ### Clinical Notes
 

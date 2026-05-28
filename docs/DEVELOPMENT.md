@@ -69,8 +69,6 @@ non-zero.
       "active": true,
       "parquet_present": true,
       "db_present": true,
-      "parquet_root": "/absolute/path/to/parquet",
-      "db_path": "/absolute/path/to/mimic_iv.duckdb",
       "bigquery_available": true,
       "row_count": 431231,
       "parquet_size_gb": 8.5,
@@ -85,6 +83,10 @@ non-zero.
   ]
 }
 ```
+
+Raw local paths are hidden by default in machine-facing output. Pass
+`--paths` or set `M4_PATH_DISCLOSURE=1` to include path fields such as
+`parquet_root` and `db_path`.
 
 Dataset `warnings` is a list of stable warning codes. Currently documented
 status warnings:
@@ -152,6 +154,45 @@ Init step status is one of `skipped`, `completed`, `blocked`, or `failed`.
 Credentialed/manual-download cases that the human CLI treats as informational
 return `ok: true` with blocked or skipped steps.
 
+Agent-oriented commands use a stable envelope with `version`, `ok`, `command`,
+`context`, `data`, `warnings`, and optional provenance fields:
+
+```bash
+m4 agent-env --dataset mimic-iv --backend duckdb --json
+m4 list-datasets --json --no-interactive
+m4 schema --dataset mimic-iv --backend duckdb --json --no-interactive
+m4 describe-table mimiciv_hosp.patients --dataset mimic-iv --json --no-interactive
+m4 query --dataset mimic-iv --backend duckdb --sql "SELECT 1 AS one" --json --no-interactive
+m4 provenance export --json
+```
+
+These commands accept `--dataset` and `--backend` to resolve context without
+changing saved active configuration. `agent-env --mode protected` omits
+`M4_DATA_DIR` so a caller can expose only a service, socket, MCP server, or
+gateway to agents.
+
+### Runtime Environment
+
+Durable environment controls:
+
+| Variable | Purpose |
+|----------|---------|
+| `M4_DATA_DIR` | Exact M4 data directory containing `databases/`, `parquet/`, `datasets/`, and `raw_files/`. |
+| `M4_HOME` | Runtime home for config and default telemetry when separate from the data directory. |
+| `M4_DATASET` | Active dataset override. |
+| `M4_BACKEND` | Active backend override, such as `duckdb` or `bigquery`. |
+| `M4_PROJECT_ID` | BigQuery billing/project override. |
+| `M4_TELEMETRY_DIR` | Directory for telemetry JSONL when `M4_EVENT_LOG` is not set. |
+| `M4_EVENT_LOG` | Exact telemetry/provenance JSONL file path. |
+| `M4_TELEMETRY` | Set to `off` to disable telemetry file output. |
+| `M4_LOG_SQL` | SQL logging mode: `full`, `hash`, or `off`. |
+| `M4_STUDY_ID`, `M4_SESSION_ID`, `M4_ACTOR` | Attribution fields added to telemetry/provenance records. |
+| `M4_PATH_DISCLOSURE` | Set to `1`, `true`, `yes`, `on`, or `paths` to disclose raw local paths. |
+
+`M4_DATA_DIR` now points directly at the data directory. Legacy values that
+point at a parent directory containing `m4_data/` are accepted only as a
+compatibility path and emit a deprecation warning.
+
 ### MCP Client Configuration
 
 ```bash
@@ -200,7 +241,10 @@ Point your MCP client to your local development environment:
 }
 ```
 
-The active backend is configured via `m4 backend duckdb` (or `bigquery`), not through the MCP env block.
+For normal local development, configure the active backend with
+`m4 backend duckdb` or `m4 backend bigquery`. For isolated agents or MCP
+servers, `M4_BACKEND` and `M4_DATASET` may be supplied in the environment to
+override saved configuration for that process.
 
 ## Architecture Overview
 

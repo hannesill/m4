@@ -29,6 +29,7 @@ print("active:", get_active_dataset())
 print("datasets:", list_datasets())
 PY
 uv run m4 status --all
+uv run m4 agent-env --json
 uv run m4 skills --list
 uv run vitrine status
 ```
@@ -46,14 +47,18 @@ Expected built-in datasets:
 | `mimic-iv-note` | MIMIC-IV notes |
 | `eicu` | eICU tabular data |
 
-Custom datasets live in `m4_data/datasets/*.json` and should appear in `m4 status --all`.
+Custom datasets live under the M4 data directory in `datasets/*.json` and should
+appear in `m4 status --all`. By default the data directory is `m4_data`; if
+`M4_DATA_DIR` is set, it must point directly at the data directory.
 
 Common checks:
 
 ```bash
-cat m4_data/config.json
-find m4_data/databases -maxdepth 1 -type f -name '*.duckdb' -print
-find m4_data/datasets -maxdepth 1 -type f -name '*.json' -print
+uv run m4 agent-env --json
+M4_CONFIG_DIR="${M4_HOME:-${M4_DATA_DIR:-m4_data}}"
+cat "$M4_CONFIG_DIR/config.json"
+find "${M4_DATA_DIR:-m4_data}/databases" -maxdepth 1 -type f -name '*.duckdb' -print
+find "${M4_DATA_DIR:-m4_data}/datasets" -maxdepth 1 -type f -name '*.json' -print
 ```
 
 Use `set_dataset("name")` before querying, then inspect schema with `get_schema()` and `get_table_info()`.
@@ -71,7 +76,7 @@ Filtered installs are additive; existing non-matching skills are left in place. 
 
 ## Backend Repair
 
-Check `m4_data/config.json`:
+Check `${M4_HOME:-${M4_DATA_DIR:-m4_data}}/config.json`:
 
 | Field | Meaning |
 |-------|---------|
@@ -79,7 +84,9 @@ Check `m4_data/config.json`:
 | `active_dataset` | Dataset used by API calls |
 | `bigquery_project_id` | Billing/project id for BigQuery |
 
-For local work, `backend: "duckdb"` requires the matching file in `m4_data/databases`. For BigQuery work, credentialed datasets require valid Google credentials and a configured project.
+For local work, `backend: "duckdb"` requires the matching file in the data
+directory's `databases/` folder. For BigQuery work, credentialed datasets
+require valid Google credentials and a configured project.
 
 ## Vitrine Repair
 
@@ -98,5 +105,5 @@ Use the `vitrine-api` skill for display API details.
 
 - Prefer `uv run ...` commands to avoid using the wrong environment.
 - Do not guess table names. Call `get_schema()` and `get_table_info()` after `set_dataset()`.
-- If a dataset appears in `m4 status --all` but not in `list_datasets()`, check `m4_data/datasets/*.json` and reload through the M4 API.
+- If a dataset appears in `m4 status --all` but not in `list_datasets()`, check the data directory's `datasets/*.json` files and reload through the M4 API.
 - If skills reference missing functions or outdated tables, compare the installed copy with `src/m4/skills` and reinstall from the canonical source.

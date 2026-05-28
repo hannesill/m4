@@ -67,6 +67,9 @@ df = execute_query("SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROU
 | `get_table_info(table, show_sample=True)` | `dict` | `{'schema': DataFrame, 'sample': DataFrame}` |
 | `execute_query(sql)` | `DataFrame` | Query results as pandas DataFrame |
 
+`backend_info` summarizes the backend and active dataset. Local DuckDB paths are
+hidden unless `M4_PATH_DISCLOSURE=1` is set for the process.
+
 ### Clinical Notes (requires NOTES modality)
 
 | Function | Returns | Description |
