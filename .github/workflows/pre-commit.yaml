@@ -13,7 +13,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install UV and Python
-        uses: astral-sh/setup-uv@v8
+        uses: astral-sh/setup-uv@v8.1.0
         with:
           version: "latest"
           python-version: "3.11"
