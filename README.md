@@ -218,6 +218,22 @@ m4 status --all     # List all available datasets
 m4 status --derived # Show per-table derived materialization status
 ```
 
+For automation and external agents, M4 also provides non-interactive JSON
+commands that do not mutate active configuration unless explicitly documented:
+
+```bash
+m4 agent-env --dataset mimic-iv --backend duckdb --json
+m4 list-datasets --json --no-interactive
+m4 schema --dataset mimic-iv --backend duckdb --json --no-interactive
+m4 describe-table mimiciv_hosp.patients --dataset mimic-iv --json --no-interactive
+m4 query --dataset mimic-iv --sql "SELECT COUNT(*) AS n FROM mimiciv_hosp.patients" --json --no-interactive
+m4 provenance export --json
+```
+
+Machine-facing status and backend metadata hide local filesystem paths by
+default. Use `--paths` or `M4_PATH_DISCLOSURE=1` only when the caller is allowed
+to see raw local paths.
+
 **Derived concept tables** (MIMIC-IV only):
 ```bash
 m4 init-derived mimic-iv         # Materialize ~63 derived tables (SOFA, sepsis3, KDIGO, etc.)

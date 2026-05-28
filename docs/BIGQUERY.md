@@ -73,10 +73,12 @@ The `mimiciv_derived` schema is accessible alongside the standard `mimiciv_hosp`
 
 ## Environment Variables
 
-You can also override the backend via environment variables (these take priority over `m4 backend`):
+You can also override the backend and dataset via environment variables. These
+take priority over saved CLI configuration for the current process:
 
 ```bash
 export M4_BACKEND=bigquery
+export M4_DATASET=mimic-iv
 export M4_PROJECT_ID=your-project-id
 ```
 
