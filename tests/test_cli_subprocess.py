@@ -27,6 +27,7 @@ def _assert_single_json_stdout(result: subprocess.CompletedProcess[str]) -> dict
     stdout = result.stdout.strip()
     payload = json.loads(stdout)
     assert stdout == json.dumps(payload, indent=2)
+    assert result.stderr.strip() == ""
     assert not any(fragment in stdout for fragment in RICH_FRAGMENTS)
     return payload
 

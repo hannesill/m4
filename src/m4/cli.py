@@ -190,8 +190,6 @@ def dataset_init_cmd(
     - Auto-download is based on the dataset definition URL.
     - For datasets without a download URL (e.g. mimic-iv-full), you must provide the --src path or place files in the expected location.
     """
-    logger.info(f"CLI 'init' called for dataset: '{dataset_name}'")
-
     if json_output:
         with _silence_m4_logging():
             result = initialize_dataset_service(
@@ -204,6 +202,8 @@ def dataset_init_cmd(
         if isinstance(result, CommandError):
             raise typer.Exit(code=1)
         return
+
+    logger.info(f"CLI 'init' called for dataset: '{dataset_name}'")
 
     dataset_key = dataset_name.lower()
     ds = DatasetRegistry.get(dataset_key)

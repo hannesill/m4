@@ -31,6 +31,8 @@ def _collect_dataset_status(
     ds_info: dict[str, Any],
     active_dataset: str | None,
     backend: str,
+    *,
+    include_row_count: bool,
 ) -> dict[str, Any]:
     ds_def = DatasetRegistry.get(name)
     parquet_present = bool(ds_info.get("parquet_present"))
@@ -49,7 +51,13 @@ def _collect_dataset_status(
             pass
 
     row_count = None
-    if db_present and db_path and ds_def and ds_def.primary_verification_table:
+    if (
+        include_row_count
+        and db_present
+        and db_path
+        and ds_def
+        and ds_def.primary_verification_table
+    ):
         try:
             row_count = verify_table_rowcount(
                 Path(db_path), ds_def.primary_verification_table
@@ -111,7 +119,15 @@ def collect_status_snapshot(show_all: bool) -> dict[str, Any]:
         ds_info = availability.get(name)
         if not ds_info:
             continue
-        datasets.append(_collect_dataset_status(name, ds_info, active, backend))
+        datasets.append(
+            _collect_dataset_status(
+                name,
+                ds_info,
+                active,
+                backend,
+                include_row_count=not show_all,
+            )
+        )
 
     return {
         "version": 1,

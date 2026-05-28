@@ -387,6 +387,35 @@ def test_status_all_json_includes_all_mocked_datasets(
     }
 
 
+@patch("m4.services.status.verify_table_rowcount")
+@patch("m4.services.status.get_bigquery_project_id", return_value=None)
+@patch("m4.services.status.get_active_backend", return_value="duckdb")
+@patch("m4.services.status.detect_available_local_datasets")
+@patch("m4.services.status.get_active_dataset", return_value="mimic-iv")
+def test_status_all_json_does_not_probe_row_counts(
+    mock_active,
+    mock_detect,
+    mock_backend,
+    mock_project,
+    mock_rowcount,
+):
+    mock_detect.return_value = {
+        "mimic-iv": {
+            "parquet_present": True,
+            "db_present": True,
+            "parquet_root": "/tmp/full",
+            "db_path": "/tmp/full.duckdb",
+        },
+    }
+
+    result = runner.invoke(app, ["status", "--all", "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["datasets"][0]["row_count"] is None
+    mock_rowcount.assert_not_called()
+
+
 @patch("m4.services.status.get_bigquery_project_id", return_value=None)
 @patch("m4.services.status.get_active_backend", return_value="duckdb")
 @patch("m4.services.status.detect_available_local_datasets", return_value={})
