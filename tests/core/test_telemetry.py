@@ -125,6 +125,7 @@ class TestInvokeTracked:
 
         assert record["interface"] == "mcp"
         assert record["agent_id"] == "agent-42"
+        assert record["actor"] == "agent-42"
 
     def test_params_captured(self, mock_dataset):
         params = MockInput(sql_query="SELECT * FROM patients", limit=5)
@@ -132,6 +133,32 @@ class TestInvokeTracked:
 
         assert record["params_summary"]["sql_query"] == "SELECT * FROM patients"
         assert record["params_summary"]["limit"] == 5
+        assert record["query_hash"] is not None
+
+    def test_env_attribution_fields(self, mock_dataset):
+        with patch.dict(
+            os.environ,
+            {
+                "M4_STUDY_ID": "study-1",
+                "M4_SESSION_ID": "session-1",
+                "M4_ACTOR": "actor-1",
+            },
+        ):
+            record = _capture_record(mock_dataset)
+
+        assert record["study_id"] == "study-1"
+        assert record["session_id"] == "session-1"
+        assert record["actor"] == "actor-1"
+
+    def test_log_sql_hash_mode_redacts_full_sql(self, mock_dataset):
+        with patch.dict(os.environ, {"M4_LOG_SQL": "hash"}):
+            record = _capture_record(
+                mock_dataset,
+                params=MockInput(sql_query="SELECT * FROM patients", limit=5),
+            )
+
+        assert "sql_query" not in record["params_summary"]
+        assert record["params_summary"]["sql_query_hash"] == record["query_hash"]
 
 
 class TestJSONLFile:
@@ -162,6 +189,15 @@ class TestJSONLFile:
 
         jsonl_path = tmp_path / "tool_calls.jsonl"
         assert not jsonl_path.exists()
+
+    def test_event_log_env_overrides_default_path(self, mock_dataset, tmp_path):
+        event_log = tmp_path / "events.jsonl"
+        with patch.dict(os.environ, {"M4_EVENT_LOG": str(event_log)}):
+            with patch("m4.config.get_telemetry_dir", return_value=tmp_path / "unused"):
+                invoke_tracked(MockTool(), mock_dataset, MockInput())
+
+        assert event_log.exists()
+        assert not (tmp_path / "unused" / "tool_calls.jsonl").exists()
 
 
 class TestContextVars:

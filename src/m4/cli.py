@@ -1,11 +1,14 @@
 import json
 import logging
+import os
 import subprocess
 import sys
 from contextlib import contextmanager, nullcontext
+from dataclasses import is_dataclass
 from pathlib import Path
 from typing import Annotated, Any
 
+import pandas as pd
 import typer
 
 from m4.config import (
@@ -14,7 +17,9 @@ from m4.config import (
     get_bigquery_project_id,
     get_dataset_parquet_root,
     get_default_database_path,
+    get_telemetry_dir,
     logger,
+    resolve_runtime_context,
     set_active_backend,
     set_active_dataset,
     set_bigquery_project_id,
@@ -47,7 +52,14 @@ from m4.core.derived.materializer import (
     list_materialized_tables,
     materialize_all,
 )
-from m4.core.exceptions import DatasetError
+from m4.core.exceptions import DatasetError, M4Error
+from m4.core.telemetry import invoke_tracked, set_interface
+from m4.core.tools import ToolRegistry, init_tools
+from m4.core.tools.tabular import (
+    ExecuteQueryInput,
+    GetDatabaseSchemaInput,
+    GetTableInfoInput,
+)
 from m4.data_io import (
     convert_csv_to_parquet,
     download_dataset,
@@ -66,6 +78,9 @@ app = typer.Typer(
     add_completion=False,
     rich_markup_mode="markdown",
 )
+
+provenance_app = typer.Typer(help="Inspect and export M4 provenance events.")
+app.add_typer(provenance_app, name="provenance")
 
 
 def version_callback(value: bool):
@@ -98,6 +113,174 @@ def _json_error(command: str, code: str, message: str, hint: str | None = None) 
         CommandError(command=command, code=code, message=message, hint=hint)
     )
     raise typer.Exit(code=1)
+
+
+def _agent_error_payload(
+    command: str,
+    code: str,
+    message: str,
+    *,
+    hint: str | None = None,
+    context: dict[str, Any] | None = None,
+    warnings: list[str] | None = None,
+) -> dict[str, Any]:
+    error_payload: dict[str, Any] = {"code": code, "message": message}
+    if hint:
+        error_payload["hint"] = hint
+    return {
+        "version": 1,
+        "ok": False,
+        "command": command,
+        "context": context or {},
+        "error": error_payload,
+        "warnings": warnings or [],
+    }
+
+
+def _agent_success_payload(
+    command: str,
+    data: dict[str, Any],
+    *,
+    context: dict[str, Any],
+    warnings: list[str] | None = None,
+    provenance: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    return {
+        "version": 1,
+        "ok": True,
+        "command": command,
+        "context": context,
+        "data": data,
+        "warnings": warnings or [],
+        "provenance": provenance or {},
+    }
+
+
+def _emit_agent_error(
+    command: str,
+    code: str,
+    message: str,
+    *,
+    hint: str | None = None,
+    context: dict[str, Any] | None = None,
+    warnings: list[str] | None = None,
+) -> None:
+    message = _redact_known_paths(message)
+    hint = _redact_known_paths(hint) if hint else None
+    _emit_json(
+        _agent_error_payload(
+            command,
+            code,
+            message,
+            hint=hint,
+            context=context,
+            warnings=warnings,
+        )
+    )
+    raise typer.Exit(code=1)
+
+
+def _path_disclosure_enabled() -> bool:
+    return os.getenv("M4_PATH_DISCLOSURE", "").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+        "paths",
+    }
+
+
+def _redact_known_paths(message: str) -> str:
+    if _path_disclosure_enabled():
+        return message
+
+    replacements: dict[str, str] = {}
+    for env_name, label in (
+        ("M4_DATA_DIR", "<M4_DATA_DIR>"),
+        ("M4_HOME", "<M4_HOME>"),
+        ("M4_TELEMETRY_DIR", "<M4_TELEMETRY_DIR>"),
+    ):
+        value = os.getenv(env_name)
+        if value:
+            path = str(Path(value).expanduser().resolve())
+            replacements[path] = label
+
+    for raw_path, label in sorted(
+        replacements.items(), key=lambda item: len(item[0]), reverse=True
+    ):
+        message = message.replace(raw_path, label)
+    return message
+
+
+def _dataframe_payload(df: pd.DataFrame | None) -> dict[str, Any] | None:
+    if df is None:
+        return None
+    return {
+        "columns": [str(column) for column in df.columns],
+        "rows": df.to_dict(orient="records"),
+        "row_count": len(df),
+    }
+
+
+def _jsonable(value: Any) -> Any:
+    if isinstance(value, pd.DataFrame):
+        return _dataframe_payload(value)
+    if isinstance(value, dict):
+        return {str(key): _jsonable(item) for key, item in value.items()}
+    if isinstance(value, list | tuple):
+        return [_jsonable(item) for item in value]
+    if is_dataclass(value):
+        return _jsonable(value.__dict__)
+    return value
+
+
+@contextmanager
+def _runtime_env_override(*, dataset: str | None = None, backend: str | None = None):
+    previous: dict[str, str | None] = {
+        "M4_DATASET": os.environ.get("M4_DATASET"),
+        "M4_BACKEND": os.environ.get("M4_BACKEND"),
+    }
+    try:
+        if dataset:
+            os.environ["M4_DATASET"] = dataset
+        if backend:
+            os.environ["M4_BACKEND"] = backend
+        yield
+    finally:
+        for key, value in previous.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
+def _resolve_agent_dataset(
+    command: str, dataset_name: str | None, context: dict[str, Any]
+):
+    from m4.core.datasets import DatasetRegistry
+
+    try:
+        effective = dataset_name or get_active_dataset()
+    except DatasetError:
+        _emit_agent_error(
+            command,
+            "dataset_required",
+            "No dataset was provided and no active dataset is configured.",
+            hint=f"Use: m4 {command} --dataset <dataset> --json",
+            context=context,
+        )
+
+    dataset = DatasetRegistry.get(effective)
+    if dataset is None:
+        supported = ", ".join(ds.name for ds in DatasetRegistry.list_all())
+        _emit_agent_error(
+            command,
+            "dataset_not_found",
+            f"Dataset '{effective}' is not supported or not configured.",
+            hint=f"Supported datasets: {supported}",
+            context=context,
+        )
+    return dataset
 
 
 @app.callback()
@@ -719,6 +902,34 @@ def status_cmd(
             help="Print status as JSON for scripts and automation.",
         ),
     ] = False,
+    dataset_name: Annotated[
+        str | None,
+        typer.Option(
+            "--dataset",
+            help="Dataset to inspect without changing active config.",
+        ),
+    ] = None,
+    backend_name: Annotated[
+        str | None,
+        typer.Option(
+            "--backend",
+            help="Backend to inspect without changing active config.",
+        ),
+    ] = None,
+    no_interactive: Annotated[
+        bool,
+        typer.Option(
+            "--no-interactive",
+            help="Accepted for automation; status never prompts.",
+        ),
+    ] = False,
+    include_paths: Annotated[
+        bool,
+        typer.Option(
+            "--paths",
+            help="Include raw local filesystem paths in output.",
+        ),
+    ] = False,
 ):
     """Show active dataset status. Use --all for all supported datasets."""
     if show_derived and json_output:
@@ -730,8 +941,13 @@ def status_cmd(
         )
 
     if json_output:
-        with _silence_m4_logging():
-            snapshot = collect_status_snapshot(show_all=show_all)
+        with (
+            _silence_m4_logging(),
+            _runtime_env_override(dataset=dataset_name, backend=backend_name),
+        ):
+            snapshot = collect_status_snapshot(
+                show_all=show_all, include_paths=include_paths
+            )
         _emit_json(snapshot)
         return
 
@@ -777,7 +993,10 @@ def status_cmd(
     print_logo(show_tagline=False, show_version=True)
     console.print()
 
-    snapshot = collect_status_snapshot(show_all=show_all)
+    with _runtime_env_override(dataset=dataset_name, backend=backend_name):
+        snapshot = collect_status_snapshot(
+            show_all=show_all, include_paths=include_paths
+        )
     active = snapshot["active_dataset"]
     datasets = snapshot["datasets"]
 
@@ -844,8 +1063,8 @@ def status_cmd(
         name=active,
         parquet_present=dataset["parquet_present"],
         db_present=dataset["db_present"],
-        parquet_root=dataset["parquet_root"] or "",
-        db_path=dataset["db_path"] or "",
+        parquet_root=dataset.get("parquet_root") or "",
+        db_path=dataset.get("db_path") or "",
         parquet_size_gb=dataset["parquet_size_gb"],
         bigquery_available=dataset["bigquery_available"],
         row_count=dataset["row_count"],
@@ -855,6 +1074,428 @@ def status_cmd(
         derived_has_support=dataset["derived"]["supported"],
         derived_is_bigquery=dataset["derived"]["bigquery"],
     )
+
+
+@app.command("list-datasets")
+def list_datasets_cmd(
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print result as JSON for automation."),
+    ] = False,
+    dataset_name: Annotated[
+        str | None,
+        typer.Option("--dataset", help="Dataset to mark as active in this result."),
+    ] = None,
+    backend_name: Annotated[
+        str | None,
+        typer.Option("--backend", help="Backend to use for compatibility checks."),
+    ] = None,
+    no_interactive: Annotated[
+        bool,
+        typer.Option("--no-interactive", help="Accepted for automation."),
+    ] = False,
+    include_paths: Annotated[
+        bool,
+        typer.Option("--paths", help="Include raw local filesystem paths."),
+    ] = False,
+):
+    """List available datasets without mutating active config."""
+    with _silence_m4_logging() if json_output else nullcontext():
+        with _runtime_env_override(dataset=dataset_name, backend=backend_name):
+            ctx = resolve_runtime_context(
+                dataset=dataset_name,
+                backend=backend_name,
+                path_disclosure=include_paths,
+            )
+            snapshot = collect_status_snapshot(
+                show_all=True, include_paths=include_paths
+            )
+
+    if json_output:
+        _emit_json(
+            _agent_success_payload(
+                "list-datasets",
+                {
+                    "active_dataset": snapshot["active_dataset"],
+                    "backend": snapshot["backend"],
+                    "datasets": snapshot["datasets"],
+                    "raw_paths_hidden": not include_paths,
+                },
+                context=ctx.public_context(),
+            )
+        )
+        return
+
+    datasets_info = [
+        {
+            "name": dataset["name"],
+            "parquet_present": dataset["parquet_present"],
+            "db_present": dataset["db_present"],
+            "bigquery_available": dataset["bigquery_available"],
+            "parquet_size_gb": dataset["parquet_size_gb"],
+            "derived_materialized": dataset["derived"]["materialized"],
+            "derived_total": dataset["derived"]["total"],
+        }
+        for dataset in snapshot["datasets"]
+    ]
+    print_datasets_table(datasets_info, active_dataset=snapshot["active_dataset"])
+
+
+@app.command("schema")
+def schema_cmd(
+    dataset_name: Annotated[
+        str | None,
+        typer.Option("--dataset", help="Dataset to inspect."),
+    ] = None,
+    backend_name: Annotated[
+        str | None,
+        typer.Option("--backend", help="Backend to use."),
+    ] = None,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print result as JSON for automation."),
+    ] = False,
+    no_interactive: Annotated[
+        bool,
+        typer.Option("--no-interactive", help="Accepted for automation."),
+    ] = False,
+):
+    """List tables for a dataset/backend pair without mutating active config."""
+    command = "schema"
+    init_tools()
+    set_interface("cli")
+    with _silence_m4_logging() if json_output else nullcontext():
+        with _runtime_env_override(dataset=dataset_name, backend=backend_name):
+            ctx = resolve_runtime_context(dataset=dataset_name, backend=backend_name)
+            dataset = _resolve_agent_dataset(
+                command, dataset_name, ctx.public_context()
+            )
+            try:
+                tool = ToolRegistry.get("get_database_schema")
+                result = invoke_tracked(tool, dataset, GetDatabaseSchemaInput())
+            except M4Error as exc:
+                if json_output:
+                    _emit_agent_error(
+                        command,
+                        "schema_failed",
+                        str(exc),
+                        context=ctx.public_context(),
+                    )
+                error(str(exc))
+                raise typer.Exit(code=1)
+
+    if json_output:
+        _emit_json(
+            _agent_success_payload(
+                command,
+                {"tables": result.get("tables", [])},
+                context=ctx.public_context(),
+            )
+        )
+        return
+
+    for table in result.get("tables", []):
+        typer.echo(table)
+
+
+@app.command("describe-table")
+def describe_table_cmd(
+    table_name: Annotated[
+        str,
+        typer.Argument(
+            help="Table name to inspect, for example mimiciv_hosp.admissions."
+        ),
+    ],
+    dataset_name: Annotated[
+        str | None,
+        typer.Option("--dataset", help="Dataset to inspect."),
+    ] = None,
+    backend_name: Annotated[
+        str | None,
+        typer.Option("--backend", help="Backend to use."),
+    ] = None,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print result as JSON for automation."),
+    ] = False,
+    no_interactive: Annotated[
+        bool,
+        typer.Option("--no-interactive", help="Accepted for automation."),
+    ] = False,
+    show_sample: Annotated[
+        bool,
+        typer.Option("--sample/--no-sample", help="Include up to three sample rows."),
+    ] = True,
+):
+    """Describe a single table without mutating active config."""
+    command = "describe-table"
+    init_tools()
+    set_interface("cli")
+    with _silence_m4_logging() if json_output else nullcontext():
+        with _runtime_env_override(dataset=dataset_name, backend=backend_name):
+            ctx = resolve_runtime_context(dataset=dataset_name, backend=backend_name)
+            dataset = _resolve_agent_dataset(
+                command, dataset_name, ctx.public_context()
+            )
+            try:
+                tool = ToolRegistry.get("get_table_info")
+                result = invoke_tracked(
+                    tool,
+                    dataset,
+                    GetTableInfoInput(
+                        table_name=table_name,
+                        show_sample=show_sample,
+                    ),
+                )
+            except M4Error as exc:
+                if json_output:
+                    _emit_agent_error(
+                        command,
+                        "describe_table_failed",
+                        str(exc),
+                        context=ctx.public_context(),
+                    )
+                error(str(exc))
+                raise typer.Exit(code=1)
+
+    if json_output:
+        _emit_json(
+            _agent_success_payload(
+                command,
+                {
+                    "table_name": table_name,
+                    "schema": _dataframe_payload(result.get("schema")),
+                    "sample": _dataframe_payload(result.get("sample")),
+                },
+                context=ctx.public_context(),
+            )
+        )
+        return
+
+    schema = result.get("schema")
+    if isinstance(schema, pd.DataFrame):
+        typer.echo(schema.to_string(index=False))
+    sample = result.get("sample")
+    if isinstance(sample, pd.DataFrame) and not sample.empty:
+        typer.echo("\nSample:")
+        typer.echo(sample.to_string(index=False))
+
+
+@app.command("query")
+def query_cmd(
+    sql: Annotated[
+        str,
+        typer.Option("--sql", help="SQL SELECT query to execute."),
+    ],
+    dataset_name: Annotated[
+        str | None,
+        typer.Option("--dataset", help="Dataset to query."),
+    ] = None,
+    backend_name: Annotated[
+        str | None,
+        typer.Option("--backend", help="Backend to use."),
+    ] = None,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print result as JSON for automation."),
+    ] = False,
+    no_interactive: Annotated[
+        bool,
+        typer.Option("--no-interactive", help="Accepted for automation."),
+    ] = False,
+):
+    """Execute a read-only SQL query without mutating active config."""
+    command = "query"
+    init_tools()
+    set_interface("cli")
+    with _silence_m4_logging() if json_output else nullcontext():
+        with _runtime_env_override(dataset=dataset_name, backend=backend_name):
+            ctx = resolve_runtime_context(dataset=dataset_name, backend=backend_name)
+            dataset = _resolve_agent_dataset(
+                command, dataset_name, ctx.public_context()
+            )
+            try:
+                tool = ToolRegistry.get("execute_query")
+                result = invoke_tracked(tool, dataset, ExecuteQueryInput(sql_query=sql))
+            except M4Error as exc:
+                if json_output:
+                    _emit_agent_error(
+                        command,
+                        "query_failed",
+                        str(exc),
+                        context=ctx.public_context(),
+                    )
+                error(str(exc))
+                raise typer.Exit(code=1)
+
+    if json_output:
+        _emit_json(
+            _agent_success_payload(
+                command,
+                {
+                    "result": _dataframe_payload(result),
+                },
+                context=ctx.public_context(),
+            )
+        )
+        return
+
+    typer.echo(
+        result.to_string(index=False) if not result.empty else "No results found"
+    )
+
+
+@app.command("agent-env")
+def agent_env_cmd(
+    mode: Annotated[
+        str,
+        typer.Option("--mode", help="Agent mode: local or protected."),
+    ] = "local",
+    dataset_name: Annotated[
+        str | None,
+        typer.Option("--dataset", help="Default dataset for agent sessions."),
+    ] = None,
+    backend_name: Annotated[
+        str | None,
+        typer.Option("--backend", help="Default backend for agent sessions."),
+    ] = None,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print result as JSON."),
+    ] = False,
+    include_paths: Annotated[
+        bool,
+        typer.Option("--paths", help="Disclose raw local paths in metadata."),
+    ] = False,
+):
+    """Return environment variables and command recommendations for agents."""
+    if mode not in {"local", "protected"}:
+        if json_output:
+            _emit_agent_error(
+                "agent-env",
+                "invalid_mode",
+                f"Unsupported mode '{mode}'.",
+                hint="Use --mode local or --mode protected.",
+            )
+        error("Unsupported mode. Use 'local' or 'protected'.")
+        raise typer.Exit(code=1)
+
+    ctx = resolve_runtime_context(
+        dataset=dataset_name, backend=backend_name, path_disclosure=include_paths
+    )
+    env = {
+        "M4_HOME": str(ctx.home),
+        "M4_DATASET": ctx.dataset,
+        "M4_BACKEND": ctx.backend,
+        "M4_STUDY_ID": ctx.study_id,
+        "M4_SESSION_ID": ctx.session_id,
+        "M4_ACTOR": ctx.actor,
+        "M4_TELEMETRY_DIR": str(ctx.telemetry_dir),
+    }
+    if mode == "local":
+        env["M4_DATA_DIR"] = str(ctx.data_dir)
+    else:
+        env["M4_TELEMETRY_DIR"] = str(ctx.telemetry_dir)
+
+    warnings_list: list[str] = []
+    if ctx.dataset and not DatasetRegistry.get(ctx.dataset):
+        warnings_list.append(f"Dataset '{ctx.dataset}' is not registered.")
+    if ctx.backend == "bigquery" and ctx.dataset:
+        ds = DatasetRegistry.get(ctx.dataset)
+        if ds and not ds.bigquery_dataset_ids:
+            warnings_list.append(
+                f"Dataset '{ctx.dataset}' is not available on the BigQuery backend."
+            )
+    if mode == "protected":
+        warnings_list.append(
+            "Protected mode omits M4_DATA_DIR; expose only an M4 service, socket, MCP server, or gateway to agents."
+        )
+
+    data = {
+        "mode": mode,
+        "environment": {key: value for key, value in env.items() if value is not None},
+        "path_recommendations": {
+            "python": sys.executable,
+            "cli": "m4",
+        },
+        "defaults": {
+            "dataset": ctx.dataset,
+            "backend": ctx.backend,
+        },
+        "telemetry_destination": str(ctx.telemetry_dir),
+        "raw_paths_hidden": not include_paths,
+        "recommended_commands": [
+            "m4 status --json --no-interactive",
+            "m4 list-datasets --json --no-interactive",
+            "m4 schema --dataset <dataset> --backend <backend> --json --no-interactive",
+            "m4 describe-table <table> --dataset <dataset> --backend <backend> --json --no-interactive",
+            "m4 query --dataset <dataset> --backend <backend> --sql <sql> --json --no-interactive",
+        ],
+    }
+
+    if json_output:
+        _emit_json(
+            _agent_success_payload(
+                "agent-env",
+                data,
+                context=ctx.public_context(),
+                warnings=warnings_list,
+            )
+        )
+        return
+
+    for key, value in data["environment"].items():
+        typer.echo(f"{key}={value}")
+
+
+@provenance_app.command("export")
+def provenance_export_cmd(
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print provenance as JSON."),
+    ] = False,
+):
+    """Export telemetry/provenance events from the configured event log."""
+    event_log = os.getenv("M4_EVENT_LOG")
+    path = (
+        Path(event_log).expanduser()
+        if event_log
+        else get_telemetry_dir() / "tool_calls.jsonl"
+    )
+    events: list[dict[str, Any]] = []
+    warnings_list: list[str] = []
+
+    if path.exists():
+        for line_number, line in enumerate(path.read_text().splitlines(), start=1):
+            if not line.strip():
+                continue
+            try:
+                events.append(json.loads(line))
+            except json.JSONDecodeError:
+                warnings_list.append(f"Skipped malformed JSONL line {line_number}.")
+    else:
+        warnings_list.append(f"Provenance log does not exist: {path}")
+
+    ctx = resolve_runtime_context()
+    data = {
+        "event_log": str(path),
+        "event_count": len(events),
+        "events": _jsonable(events),
+    }
+
+    if json_output:
+        _emit_json(
+            _agent_success_payload(
+                "provenance export",
+                data,
+                context=ctx.public_context(),
+                warnings=warnings_list,
+            )
+        )
+        return
+
+    for event in events:
+        typer.echo(json.dumps(event, default=str))
 
 
 def _prompt_select_tools() -> list[str]:
