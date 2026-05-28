@@ -1,3 +1,4 @@
+import json
 import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -218,9 +219,77 @@ def test_use_full_happy_path(mock_detect, mock_set_active):
     mock_set_active.assert_called_once_with("mimic-iv")
 
 
-@patch("m4.cli.compute_parquet_dir_size", return_value=123)
-@patch("m4.cli.get_active_dataset", return_value="mimic-iv")
+@patch("m4.cli.get_active_backend", return_value="duckdb")
+@patch("m4.cli.set_active_dataset")
 @patch("m4.cli.detect_available_local_datasets")
+def test_use_json_success_includes_warning_codes(
+    mock_detect, mock_set_active, mock_backend
+):
+    mock_detect.return_value = {
+        "mimic-iv": {
+            "parquet_present": True,
+            "db_present": False,
+            "parquet_root": "/tmp/full",
+            "db_path": "/tmp/full.duckdb",
+        },
+    }
+
+    result = runner.invoke(app, ["use", "mimic-iv", "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["command"] == "use"
+    assert payload["active_dataset"] == "mimic-iv"
+    assert payload["backend"] == "duckdb"
+    assert payload["dataset"]["name"] == "mimic-iv"
+    assert payload["dataset"]["db_present"] is False
+    assert payload["warnings"] == ["local_db_missing"]
+    assert "Active dataset set" not in result.stdout
+    mock_set_active.assert_called_once_with("mimic-iv")
+
+
+@patch("m4.cli.set_active_dataset")
+@patch("m4.cli.detect_available_local_datasets", return_value={})
+def test_use_json_dataset_not_found_emits_error(mock_detect, mock_set_active):
+    result = runner.invoke(app, ["use", "missing-dataset", "--json"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is False
+    assert payload["command"] == "use"
+    assert payload["error"]["code"] == "dataset_not_found"
+    assert "Dataset Not Found" not in result.stdout
+    mock_set_active.assert_not_called()
+
+
+@patch("m4.cli.get_active_backend", return_value="bigquery")
+@patch("m4.cli.set_active_dataset")
+@patch("m4.cli.detect_available_local_datasets")
+def test_use_json_backend_incompatible_emits_error(
+    mock_detect, mock_set_active, mock_backend
+):
+    mock_detect.return_value = {
+        "mimic-iv-demo": {
+            "parquet_present": True,
+            "db_present": True,
+            "parquet_root": "/tmp/demo",
+            "db_path": "/tmp/demo.duckdb",
+        },
+    }
+
+    result = runner.invoke(app, ["use", "mimic-iv-demo", "--json"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "backend_incompatible"
+    assert "Backend Incompatible" not in result.stdout
+    mock_set_active.assert_not_called()
+
+
+@patch("m4.services.status.compute_parquet_dir_size", return_value=123)
+@patch("m4.services.status.get_active_dataset", return_value="mimic-iv")
+@patch("m4.services.status.detect_available_local_datasets")
 def test_status_happy_path(mock_detect, mock_active, mock_size):
     mock_detect.return_value = {
         "mimic-iv-demo": {
@@ -245,6 +314,234 @@ def test_status_happy_path(mock_detect, mock_active, mock_size):
     assert "Parquet size:" in result.stdout
     # Derived status line should be present
     assert "Derived:" in result.stdout
+
+
+@patch("m4.services.status.get_bigquery_project_id", return_value=None)
+@patch("m4.services.status.get_active_backend", return_value="duckdb")
+@patch("m4.services.status.verify_table_rowcount", return_value=123)
+@patch("m4.services.status.compute_parquet_dir_size", return_value=1024**3)
+@patch("m4.services.status.detect_available_local_datasets")
+@patch("m4.services.status.get_active_dataset", return_value="mimic-iv")
+def test_status_json_outputs_parseable_json_without_rich_markup(
+    mock_active,
+    mock_detect,
+    mock_size,
+    mock_rowcount,
+    mock_backend,
+    mock_project,
+):
+    mock_detect.return_value = {
+        "mimic-iv": {
+            "parquet_present": True,
+            "db_present": True,
+            "parquet_root": "/tmp/full",
+            "db_path": "/tmp/full.duckdb",
+        }
+    }
+
+    result = runner.invoke(app, ["status", "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["version"] == 1
+    assert payload["active_dataset"] == "mimic-iv"
+    assert len(payload["datasets"]) == 1
+    assert payload["datasets"][0]["warnings"] == []
+
+    rich_fragments = ["[bold]", "[success]", "─", "│", "__  __", "Medical Data"]
+    assert not any(fragment in result.stdout for fragment in rich_fragments)
+
+
+@patch("m4.services.status.get_bigquery_project_id", return_value=None)
+@patch("m4.services.status.get_active_backend", return_value="duckdb")
+@patch("m4.services.status.detect_available_local_datasets")
+@patch("m4.services.status.get_active_dataset", return_value="mimic-iv")
+def test_status_all_json_includes_all_mocked_datasets(
+    mock_active,
+    mock_detect,
+    mock_backend,
+    mock_project,
+):
+    mock_detect.return_value = {
+        "mimic-iv-demo": {
+            "parquet_present": False,
+            "db_present": False,
+            "parquet_root": "/tmp/demo",
+            "db_path": "/tmp/demo.duckdb",
+        },
+        "mimic-iv": {
+            "parquet_present": False,
+            "db_present": False,
+            "parquet_root": "/tmp/full",
+            "db_path": "/tmp/full.duckdb",
+        },
+    }
+
+    result = runner.invoke(app, ["status", "--all", "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert {dataset["name"] for dataset in payload["datasets"]} == {
+        "mimic-iv-demo",
+        "mimic-iv",
+    }
+
+
+@patch("m4.services.status.get_bigquery_project_id", return_value=None)
+@patch("m4.services.status.get_active_backend", return_value="duckdb")
+@patch("m4.services.status.detect_available_local_datasets", return_value={})
+@patch(
+    "m4.services.status.get_active_dataset",
+    side_effect=DatasetError("No active dataset"),
+)
+def test_status_json_no_active_dataset_returns_empty_dataset_list(
+    mock_active,
+    mock_detect,
+    mock_backend,
+    mock_project,
+):
+    result = runner.invoke(app, ["status", "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload == {
+        "version": 1,
+        "active_dataset": None,
+        "backend": "duckdb",
+        "bigquery_project_id": None,
+        "datasets": [],
+    }
+
+
+@patch("m4.services.status.get_bigquery_project_id", return_value=None)
+@patch("m4.services.status.get_active_backend", return_value="duckdb")
+@patch("m4.services.status.compute_parquet_dir_size")
+@patch("m4.services.status.verify_table_rowcount")
+@patch("m4.services.status.detect_available_local_datasets")
+@patch("m4.services.status.get_active_dataset", return_value="mimic-iv")
+def test_status_json_missing_local_files_are_not_errors(
+    mock_active,
+    mock_detect,
+    mock_rowcount,
+    mock_size,
+    mock_backend,
+    mock_project,
+):
+    mock_detect.return_value = {
+        "mimic-iv": {
+            "parquet_present": False,
+            "db_present": False,
+            "parquet_root": "/tmp/full",
+            "db_path": "/tmp/full.duckdb",
+        }
+    }
+
+    result = runner.invoke(app, ["status", "--json"])
+
+    assert result.exit_code == 0
+    dataset = json.loads(result.stdout)["datasets"][0]
+    assert dataset["parquet_present"] is False
+    assert dataset["db_present"] is False
+    assert dataset["parquet_size_gb"] is None
+    assert dataset["row_count"] is None
+    mock_size.assert_not_called()
+    mock_rowcount.assert_not_called()
+
+
+@patch("m4.services.status.get_bigquery_project_id", return_value="allowed-project")
+@patch("m4.services.status.get_active_backend", return_value="bigquery")
+@patch("m4.services.status.detect_available_local_datasets")
+@patch("m4.services.status.get_active_dataset", return_value="mimic-iv")
+def test_status_json_excludes_secret_values_but_allows_project_id(
+    mock_active,
+    mock_detect,
+    mock_backend,
+    mock_project,
+    monkeypatch,
+):
+    monkeypatch.setenv("GOOGLE_APPLICATION_CREDENTIALS", "/tmp/secret-service.json")
+    monkeypatch.setenv("M4_PASSWORD", "super-secret-password")
+    mock_detect.return_value = {
+        "mimic-iv": {
+            "parquet_present": False,
+            "db_present": False,
+            "parquet_root": "/tmp/full",
+            "db_path": "/tmp/full.duckdb",
+        }
+    }
+
+    result = runner.invoke(app, ["status", "--json"])
+
+    assert result.exit_code == 0
+    assert "allowed-project" in result.stdout
+    assert "secret-service" not in result.stdout
+    assert "super-secret-password" not in result.stdout
+
+
+@patch("m4.services.status.get_bigquery_project_id", return_value=None)
+@patch("m4.services.status.get_active_backend", return_value="duckdb")
+@patch(
+    "m4.services.status.verify_table_rowcount",
+    side_effect=Exception("No files found that match the pattern"),
+)
+@patch("m4.services.status.detect_available_local_datasets")
+@patch("m4.services.status.get_active_dataset", return_value="mimic-iv")
+def test_status_json_path_mismatch_emits_warning(
+    mock_active, mock_detect, mock_rowcount, mock_backend, mock_project
+):
+    mock_detect.return_value = {
+        "mimic-iv": {
+            "parquet_present": False,
+            "db_present": True,
+            "parquet_root": "/tmp/full",
+            "db_path": "/tmp/full.duckdb",
+        }
+    }
+
+    result = runner.invoke(app, ["status", "--json"])
+
+    assert result.exit_code == 0
+    dataset = json.loads(result.stdout)["datasets"][0]
+    assert dataset["warnings"] == ["parquet_path_mismatch"]
+    assert "_row_count_error" not in dataset
+
+
+@patch("m4.services.status.get_bigquery_project_id", return_value=None)
+@patch("m4.services.status.get_active_backend", return_value="duckdb")
+@patch(
+    "m4.services.status.verify_table_rowcount",
+    side_effect=Exception("No files found that match the pattern"),
+)
+@patch("m4.services.status.detect_available_local_datasets")
+@patch("m4.services.status.get_active_dataset", return_value="mimic-iv")
+def test_status_human_path_mismatch_prints_warning(
+    mock_active, mock_detect, mock_rowcount, mock_backend, mock_project
+):
+    mock_detect.return_value = {
+        "mimic-iv": {
+            "parquet_present": False,
+            "db_present": True,
+            "parquet_root": "/tmp/full",
+            "db_path": "/tmp/full.duckdb",
+        }
+    }
+
+    result = runner.invoke(app, ["status"])
+
+    assert result.exit_code == 0
+    assert "Database views may point to wrong parquet location" in result.stdout
+
+
+def test_status_derived_json_is_invalid_combination():
+    result = runner.invoke(app, ["status", "--derived", "--json"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is False
+    assert payload["command"] == "status"
+    assert payload["error"]["code"] == "invalid_option"
+    assert "Active dataset" not in result.stdout
+    assert "__  __" not in result.stdout
 
 
 @patch("m4.cli.list_materialized_tables")
@@ -371,6 +668,106 @@ def test_backend_duckdb_shows_init_hint(mock_set_backend):
     assert result.exit_code == 0
     assert "DuckDB uses local database files" in result.stdout
     assert "m4 init" in result.stdout
+
+
+@patch("m4.cli.get_bigquery_project_id", return_value=None)
+@patch("m4.cli.get_active_dataset", return_value="mimic-iv")
+@patch("m4.cli.set_active_backend")
+def test_backend_json_duckdb_success(
+    mock_set_backend, mock_get_dataset, mock_get_project
+):
+    result = runner.invoke(app, ["backend", "duckdb", "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload == {
+        "version": 1,
+        "ok": True,
+        "command": "backend",
+        "backend": "duckdb",
+        "active_dataset": "mimic-iv",
+        "bigquery_project_id": None,
+        "warnings": [],
+    }
+    assert "Active backend set" not in result.stdout
+    mock_set_backend.assert_called_once_with("duckdb")
+
+
+@patch("m4.cli.set_bigquery_project_id")
+@patch("m4.cli.get_active_dataset", return_value="mimic-iv")
+@patch("m4.cli.set_active_backend")
+def test_backend_json_bigquery_with_project_id_success(
+    mock_set_backend, mock_get_dataset, mock_set_project
+):
+    result = runner.invoke(
+        app, ["backend", "bigquery", "--project-id", "my-project", "--json"]
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["command"] == "backend"
+    assert payload["backend"] == "bigquery"
+    assert payload["active_dataset"] == "mimic-iv"
+    assert payload["bigquery_project_id"] == "my-project"
+    assert payload["warnings"] == []
+    mock_set_backend.assert_called_once_with("bigquery")
+    mock_set_project.assert_called_once_with("my-project")
+
+
+@patch("m4.cli.set_active_backend")
+def test_backend_json_invalid_backend_emits_error(mock_set_backend):
+    result = runner.invoke(app, ["backend", "mysql", "--json"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "invalid_backend"
+    assert "Invalid Backend" not in result.stdout
+    mock_set_backend.assert_not_called()
+
+
+@patch("m4.cli.set_bigquery_project_id")
+@patch("m4.cli.set_active_backend")
+def test_backend_json_duckdb_rejects_project_id(mock_set_backend, mock_set_project):
+    result = runner.invoke(app, ["backend", "duckdb", "--project-id", "x", "--json"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "invalid_option"
+    assert "project-id can only be used with bigquery" in payload["error"]["message"]
+    mock_set_backend.assert_not_called()
+    mock_set_project.assert_not_called()
+
+
+@patch("m4.cli.set_active_backend")
+@patch("m4.cli.get_active_dataset", return_value="mimic-iv-demo")
+def test_backend_json_bigquery_blocks_incompatible_active_dataset(
+    mock_get_dataset, mock_set_backend
+):
+    result = runner.invoke(app, ["backend", "bigquery", "--json"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "dataset_incompatible"
+    assert "Dataset Incompatible" not in result.stdout
+    mock_set_backend.assert_not_called()
+
+
+@patch("m4.cli.get_bigquery_project_id", return_value=None)
+@patch("m4.cli.set_bigquery_project_id")
+@patch("m4.cli.set_active_backend")
+@patch("m4.cli.get_active_dataset", side_effect=DatasetError("No active dataset"))
+def test_backend_json_bigquery_requires_project_id(
+    mock_get_dataset, mock_set_backend, mock_set_project, mock_get_project
+):
+    result = runner.invoke(app, ["backend", "bigquery", "--json"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "project_id_required"
+    assert "Project ID Required" not in result.stdout
+    mock_set_backend.assert_not_called()
+    mock_set_project.assert_not_called()
 
 
 # ----------------------------------------------------------------
@@ -624,11 +1021,11 @@ def test_config_universal_bigquery_persists_to_config(
 # ----------------------------------------------------------------
 
 
-@patch("m4.cli.get_bigquery_project_id", return_value="my-gcp-project")
-@patch("m4.cli.get_active_backend", return_value="bigquery")
-@patch("m4.cli.compute_parquet_dir_size", return_value=123)
-@patch("m4.cli.get_active_dataset", return_value="mimic-iv")
-@patch("m4.cli.detect_available_local_datasets")
+@patch("m4.services.status.get_bigquery_project_id", return_value="my-gcp-project")
+@patch("m4.services.status.get_active_backend", return_value="bigquery")
+@patch("m4.services.status.compute_parquet_dir_size", return_value=123)
+@patch("m4.services.status.get_active_dataset", return_value="mimic-iv")
+@patch("m4.services.status.detect_available_local_datasets")
 def test_status_bigquery_shows_project_id(
     mock_detect, mock_active, mock_size, mock_backend, mock_get_project
 ):

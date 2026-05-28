@@ -1,8 +1,10 @@
+import json
 import logging
 import subprocess
 import sys
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 
@@ -49,12 +51,12 @@ from m4.core.derived.materializer import (
 )
 from m4.core.exceptions import DatasetError
 from m4.data_io import (
-    compute_parquet_dir_size,
     convert_csv_to_parquet,
     download_dataset,
     init_duckdb_from_parquet,
     verify_table_rowcount,
 )
+from m4.services.status import collect_status_snapshot
 
 app = typer.Typer(
     name="m4",
@@ -68,6 +70,50 @@ def version_callback(value: bool):
     if value:
         print_logo(show_tagline=True, show_version=True)
         raise typer.Exit()
+
+
+@contextmanager
+def _silence_m4_logging():
+    """Temporarily silence m4 logging so machine output stays parseable."""
+    previous_disable_level = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+    try:
+        yield
+    finally:
+        logging.disable(previous_disable_level)
+
+
+def _emit_json(payload: dict[str, Any]) -> None:
+    typer.echo(json.dumps(payload, indent=2))
+
+
+def _json_error(command: str, code: str, message: str, hint: str | None = None) -> None:
+    payload: dict[str, Any] = {
+        "version": 1,
+        "ok": False,
+        "command": command,
+        "error": {
+            "code": code,
+            "message": message,
+        },
+    }
+    if hint:
+        payload["error"]["hint"] = hint
+    _emit_json(payload)
+    raise typer.Exit(code=1)
+
+
+def _absolute_path_or_none(path_value: str | Path | None) -> str | None:
+    if not path_value:
+        return None
+    return str(Path(path_value).expanduser().resolve())
+
+
+def _get_active_dataset_or_none() -> str | None:
+    try:
+        return get_active_dataset()
+    except DatasetError:
+        return None
 
 
 @app.callback()
@@ -531,15 +577,30 @@ def use_cmd(
             help="Select active dataset: name (e.g., mimic-iv-full)", metavar="TARGET"
         ),
     ],
+    json_output: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            help="Print result as JSON for scripts and automation.",
+        ),
+    ] = False,
 ):
     """Set the active dataset selection for the project."""
     target = target.lower()
 
     # 1. Check if dataset is registered
-    availability = detect_available_local_datasets().get(target)
+    with _silence_m4_logging() if json_output else nullcontext():
+        availability = detect_available_local_datasets().get(target)
 
     if not availability:
         supported = ", ".join([ds.name for ds in DatasetRegistry.list_all()])
+        if json_output:
+            _json_error(
+                "use",
+                "dataset_not_found",
+                f"Dataset '{target}' not found or not registered.",
+                hint=f"Supported datasets: {supported}",
+            )
         print_error_panel(
             "Dataset Not Found",
             f"Dataset '{target}' not found or not registered.",
@@ -552,6 +613,13 @@ def use_cmd(
     backend_name = get_active_backend()
 
     if ds_def and not ds_def.bigquery_dataset_ids and backend_name == "bigquery":
+        if json_output:
+            _json_error(
+                "use",
+                "backend_incompatible",
+                f"Dataset '{target}' is not available on the BigQuery backend.",
+                hint="Switch to DuckDB first: m4 backend duckdb",
+            )
         print_error_panel(
             "Backend Incompatible",
             f"Dataset '{target}' is not available on the BigQuery backend.",
@@ -561,6 +629,35 @@ def use_cmd(
 
     # 3. Set it active
     set_active_dataset(target)
+    if json_output:
+        warnings = []
+        if not availability["parquet_present"]:
+            warnings.append("local_parquet_missing")
+        if backend_name == "duckdb" and not availability["db_present"]:
+            warnings.append("local_db_missing")
+
+        _emit_json(
+            {
+                "version": 1,
+                "ok": True,
+                "command": "use",
+                "active_dataset": target,
+                "backend": backend_name,
+                "dataset": {
+                    "name": target,
+                    "parquet_present": bool(availability["parquet_present"]),
+                    "db_present": bool(availability["db_present"]),
+                    "parquet_root": _absolute_path_or_none(
+                        availability.get("parquet_root")
+                    ),
+                    "db_path": _absolute_path_or_none(availability.get("db_path")),
+                    "bigquery_available": bool(ds_def and ds_def.bigquery_dataset_ids),
+                },
+                "warnings": warnings,
+            }
+        )
+        return
+
     success(f"Active dataset set to '{target}'")
 
     # 4. Warn if local files are missing (helpful info, not a blocker)
@@ -597,11 +694,25 @@ def backend_cmd(
             help="Google Cloud project ID for billing (bigquery only)",
         ),
     ] = None,
+    json_output: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            help="Print result as JSON for scripts and automation.",
+        ),
+    ] = False,
 ):
     """Set the active backend (duckdb or bigquery)."""
     target = target.lower()
 
     if target not in VALID_BACKENDS:
+        if json_output:
+            _json_error(
+                "backend",
+                "invalid_backend",
+                f"Backend '{target}' is not valid.",
+                hint=f"Valid backends: {', '.join(sorted(VALID_BACKENDS))}",
+            )
         print_error_panel(
             "Invalid Backend",
             f"Backend '{target}' is not valid.",
@@ -611,28 +722,47 @@ def backend_cmd(
 
     # Reject --project-id for duckdb
     if target == "duckdb" and project_id:
+        if json_output:
+            _json_error(
+                "backend",
+                "invalid_option",
+                "--project-id can only be used with bigquery backend.",
+            )
         error("--project-id can only be used with bigquery backend")
         raise typer.Exit(code=1)
 
     # Block if current dataset is incompatible with new backend
+    active_dataset = _get_active_dataset_or_none()
     if target == "bigquery":
-        try:
-            active = get_active_dataset()
-            ds_def = DatasetRegistry.get(active)
+        if active_dataset:
+            ds_def = DatasetRegistry.get(active_dataset)
             if ds_def and not ds_def.bigquery_dataset_ids:
+                if json_output:
+                    _json_error(
+                        "backend",
+                        "dataset_incompatible",
+                        f"Current dataset '{active_dataset}' is not available on BigQuery.",
+                        hint="Switch dataset first: m4 use <dataset>",
+                    )
                 print_error_panel(
                     "Dataset Incompatible",
-                    f"Current dataset '{active}' is not available on BigQuery.",
+                    f"Current dataset '{active_dataset}' is not available on BigQuery.",
                     hint="Switch dataset first: m4 use <dataset>",
                 )
                 raise typer.Exit(code=1)
-        except (ValueError, DatasetError):
-            pass  # No active dataset set
 
     # BigQuery requires a project ID — either provided now or already in config
+    effective_project_id = None
     if target == "bigquery":
         effective_project_id = project_id or get_bigquery_project_id()
         if not effective_project_id:
+            if json_output:
+                _json_error(
+                    "backend",
+                    "project_id_required",
+                    "BigQuery backend requires a project ID.",
+                    hint="Set it with: m4 backend bigquery --project-id <ID>",
+                )
             print_error_panel(
                 "Project ID Required",
                 "BigQuery backend requires a project ID.",
@@ -645,6 +775,22 @@ def backend_cmd(
     # Persist project ID if provided
     if project_id:
         set_bigquery_project_id(project_id)
+
+    if json_output:
+        _emit_json(
+            {
+                "version": 1,
+                "ok": True,
+                "command": "backend",
+                "backend": target,
+                "active_dataset": active_dataset,
+                "bigquery_project_id": project_id
+                or effective_project_id
+                or get_bigquery_project_id(),
+                "warnings": [],
+            }
+        )
+        return
 
     success(f"Active backend set to '{target}'")
 
@@ -680,12 +826,35 @@ def status_cmd(
             help="Show detailed derived table status grouped by category.",
         ),
     ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            help="Print status as JSON for scripts and automation.",
+        ),
+    ] = False,
 ):
     """Show active dataset status. Use --all for all supported datasets."""
+    if show_derived and json_output:
+        _json_error(
+            "status",
+            "invalid_option",
+            "--json cannot be combined with --derived.",
+            hint="Run either: m4 status --json or m4 status --derived",
+        )
+
+    if json_output:
+        with _silence_m4_logging():
+            snapshot = collect_status_snapshot(show_all=show_all)
+        _emit_json(snapshot)
+        return
 
     # --derived: detailed per-table view (early return)
     if show_derived:
-        active = get_active_dataset()
+        try:
+            active = get_active_dataset()
+        except DatasetError:
+            active = None
         if not active:
             console.print("[warning]No active dataset set.[/warning]")
             raise typer.Exit()
@@ -722,53 +891,29 @@ def status_cmd(
     print_logo(show_tagline=False, show_version=True)
     console.print()
 
-    active = get_active_dataset()
-    availability = detect_available_local_datasets()
+    snapshot = collect_status_snapshot(show_all=show_all)
+    active = snapshot["active_dataset"]
+    datasets = snapshot["datasets"]
 
     if show_all:
         # Table view of all datasets
-        if not availability:
+        if not datasets:
             console.print("[muted]No datasets detected.[/muted]")
             return
 
         # Build dataset info list for table
-        datasets_info = []
-        for label, ds_info in availability.items():
-            ds_def = DatasetRegistry.get(label)
-            bigquery_available = bool(ds_def and ds_def.bigquery_dataset_ids)
-
-            # Get size if parquet present
-            parquet_size_gb = None
-            if ds_info["parquet_present"]:
-                try:
-                    size_bytes = compute_parquet_dir_size(Path(ds_info["parquet_root"]))
-                    parquet_size_gb = float(size_bytes) / (1024**3)
-                except Exception:
-                    pass
-
-            # Get derived counts if supported and db present
-            derived_materialized = None
-            derived_total = None
-            if has_derived_support(label) and ds_info["db_present"]:
-                try:
-                    derived_total = len(list_builtins(label))
-                    derived_materialized = get_derived_table_count(
-                        Path(ds_info["db_path"])
-                    )
-                except Exception:
-                    pass
-
-            datasets_info.append(
-                {
-                    "name": label,
-                    "parquet_present": ds_info["parquet_present"],
-                    "db_present": ds_info["db_present"],
-                    "bigquery_available": bigquery_available,
-                    "parquet_size_gb": parquet_size_gb,
-                    "derived_materialized": derived_materialized,
-                    "derived_total": derived_total,
-                }
-            )
+        datasets_info = [
+            {
+                "name": dataset["name"],
+                "parquet_present": dataset["parquet_present"],
+                "db_present": dataset["db_present"],
+                "bigquery_available": dataset["bigquery_available"],
+                "parquet_size_gb": dataset["parquet_size_gb"],
+                "derived_materialized": dataset["derived"]["materialized"],
+                "derived_total": dataset["derived"]["total"],
+            }
+            for dataset in datasets
+        ]
 
         print_datasets_table(datasets_info, active_dataset=active)
         return
@@ -787,17 +932,15 @@ def status_cmd(
 
     console.print(f"[bold]Active dataset:[/bold] [success]{active}[/success]")
 
-    backend = get_active_backend()
+    backend = snapshot["backend"]
     backend_label = backend
-    if backend == "bigquery":
-        bq_project = get_bigquery_project_id()
-        if bq_project:
-            backend_label = f"{backend} ({bq_project})"
+    if backend == "bigquery" and snapshot["bigquery_project_id"]:
+        backend_label = f"{backend} ({snapshot['bigquery_project_id']})"
     console.print(f"[bold]Backend:[/bold] [success]{backend_label}[/success]")
 
     # Get info for active dataset
-    ds_info = availability.get(active)
-    if not ds_info:
+    dataset = datasets[0] if datasets else None
+    if not dataset:
         console.print()
         warning(f"Dataset '{active}' is set but not found locally.")
         console.print(
@@ -805,60 +948,26 @@ def status_cmd(
         )
         return
 
-    # Get size if parquet present
-    parquet_size_gb = None
-    if ds_info["parquet_present"]:
-        try:
-            size_bytes = compute_parquet_dir_size(Path(ds_info["parquet_root"]))
-            parquet_size_gb = float(size_bytes) / (1024**3)
-        except Exception:
-            pass
-
-    # Get dataset definition for BigQuery status and verification
-    ds_def = DatasetRegistry.get(active)
-    bigquery_available = bool(ds_def and ds_def.bigquery_dataset_ids)
-
-    # Get row count if possible
-    row_count = None
-    if ds_info["db_present"] and ds_def and ds_def.primary_verification_table:
-        try:
-            row_count = verify_table_rowcount(
-                Path(ds_info["db_path"]), ds_def.primary_verification_table
-            )
-        except Exception as e:
-            # Show hint if it looks like a path mismatch
-            if "No files found" in str(e) or "no such file" in str(e).lower():
-                warning("Database views may point to wrong parquet location")
-                console.print(
-                    f"  [muted]Try:[/muted] [command]m4 init {active} --force[/command]"
-                )
-
-    # Gather derived table info
-    derived_has_support = has_derived_support(active)
-    derived_is_bigquery = bigquery_available and backend == "bigquery"
-    derived_materialized = None
-    derived_total = None
-    if derived_has_support and not derived_is_bigquery and ds_info["db_present"]:
-        try:
-            derived_total = len(list_builtins(active))
-            derived_materialized = get_derived_table_count(Path(ds_info["db_path"]))
-        except Exception:
-            pass
+    if "parquet_path_mismatch" in dataset["warnings"]:
+        warning("Database views may point to wrong parquet location")
+        console.print(
+            f"  [muted]Try:[/muted] [command]m4 init {active} --force[/command]"
+        )
 
     print_dataset_status(
         name=active,
-        parquet_present=ds_info["parquet_present"],
-        db_present=ds_info["db_present"],
-        parquet_root=str(ds_info["parquet_root"]),
-        db_path=str(ds_info["db_path"]),
-        parquet_size_gb=parquet_size_gb,
-        bigquery_available=bigquery_available,
-        row_count=row_count,
+        parquet_present=dataset["parquet_present"],
+        db_present=dataset["db_present"],
+        parquet_root=dataset["parquet_root"] or "",
+        db_path=dataset["db_path"] or "",
+        parquet_size_gb=dataset["parquet_size_gb"],
+        bigquery_available=dataset["bigquery_available"],
+        row_count=dataset["row_count"],
         is_active=True,
-        derived_materialized=derived_materialized,
-        derived_total=derived_total,
-        derived_has_support=derived_has_support,
-        derived_is_bigquery=derived_is_bigquery,
+        derived_materialized=dataset["derived"]["materialized"],
+        derived_total=dataset["derived"]["total"],
+        derived_has_support=dataset["derived"]["supported"],
+        derived_is_bigquery=dataset["derived"]["bigquery"],
     )
 
 

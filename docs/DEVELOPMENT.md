@@ -49,6 +49,82 @@ uv run m4 status --all
 uv run m4 status --derived
 ```
 
+### CLI JSON Output
+
+Automation-friendly commands print JSON only to stdout when `--json` is used.
+Validation errors handled inside the command use a stable envelope and exit
+non-zero.
+
+`m4 status --json` prints a status snapshot:
+
+```json
+{
+  "version": 1,
+  "active_dataset": "mimic-iv",
+  "backend": "duckdb",
+  "bigquery_project_id": "my-project",
+  "datasets": [
+    {
+      "name": "mimic-iv",
+      "active": true,
+      "parquet_present": true,
+      "db_present": true,
+      "parquet_root": "/absolute/path/to/parquet",
+      "db_path": "/absolute/path/to/mimic_iv.duckdb",
+      "bigquery_available": true,
+      "row_count": 431231,
+      "parquet_size_gb": 8.5,
+      "derived": {
+        "supported": true,
+        "total": 42,
+        "materialized": 42,
+        "bigquery": false
+      },
+      "warnings": []
+    }
+  ]
+}
+```
+
+Dataset `warnings` is a list of stable warning codes. Currently documented
+status warnings:
+
+- `parquet_path_mismatch`: row-count verification could not read the Parquet
+  path referenced by the local DuckDB views.
+
+`m4 use TARGET --json` and `m4 backend BACKEND --json` wrap command results in
+an `ok` envelope:
+
+```json
+{
+  "version": 1,
+  "ok": true,
+  "command": "use",
+  "active_dataset": "mimic-iv",
+  "backend": "duckdb",
+  "warnings": ["local_db_missing"]
+}
+```
+
+Command errors use the same envelope with `ok: false`:
+
+```json
+{
+  "version": 1,
+  "ok": false,
+  "command": "backend",
+  "error": {
+    "code": "project_id_required",
+    "message": "BigQuery backend requires a project ID.",
+    "hint": "Set it with: m4 backend bigquery --project-id <ID>"
+  }
+}
+```
+
+Stable command error codes are `dataset_not_found`, `backend_incompatible`,
+`invalid_backend`, `invalid_option`, `project_id_required`, and
+`dataset_incompatible`.
+
 ### MCP Client Configuration
 
 ```bash
