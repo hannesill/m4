@@ -317,13 +317,14 @@ class DuckDBBackend:
         Returns:
             Formatted string with backend details
         """
-        try:
-            db_path = self._get_db_path(dataset)
-        except ConnectionError:
-            db_path = "unknown"
-
-        return (
+        info = (
             f"**Current Backend:** DuckDB (local database)\n"
-            f"**Active Dataset:** {dataset.name}\n"
-            f"**Database Path:** {db_path}"
+            f"**Active Dataset:** {dataset.name}"
         )
+        if os.getenv("M4_PATH_DISCLOSURE", "").lower() in {"1", "true", "yes", "on"}:
+            try:
+                db_path = self._get_db_path(dataset)
+            except ConnectionError:
+                db_path = "unknown"
+            info += f"\n**Database Path:** {db_path}"
+        return info

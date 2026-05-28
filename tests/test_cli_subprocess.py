@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import duckdb
+
 RICH_FRAGMENTS = ["[bold]", "[success]", "__  __", "Medical Data", "─", "│"]
 
 
@@ -41,6 +43,25 @@ def test_status_json_subprocess_is_parseable(tmp_path):
     assert "ok" not in payload
 
 
+def test_status_json_hides_paths_by_default(tmp_path):
+    result = _run_m4(["status", "--all", "--json"], tmp_path)
+
+    assert result.returncode == 0
+    payload = _assert_single_json_stdout(result)
+    assert "parquet_root" not in payload["datasets"][0]
+    assert "db_path" not in payload["datasets"][0]
+    assert str(tmp_path) not in result.stdout
+
+
+def test_status_json_paths_flag_discloses_paths(tmp_path):
+    result = _run_m4(["status", "--all", "--json", "--paths"], tmp_path)
+
+    assert result.returncode == 0
+    payload = _assert_single_json_stdout(result)
+    assert "parquet_root" in payload["datasets"][0]
+    assert "db_path" in payload["datasets"][0]
+
+
 def test_status_all_json_subprocess_is_parseable(tmp_path):
     result = _run_m4(["status", "--all", "--json"], tmp_path)
 
@@ -51,6 +72,117 @@ def test_status_all_json_subprocess_is_parseable(tmp_path):
         "mimic-iv-demo",
         "mimic-iv",
     }
+
+
+def test_agent_env_json_subprocess_is_parseable(tmp_path):
+    result = _run_m4(
+        [
+            "agent-env",
+            "--dataset",
+            "mimic-iv-demo",
+            "--backend",
+            "duckdb",
+            "--json",
+        ],
+        tmp_path,
+    )
+
+    assert result.returncode == 0
+    payload = _assert_single_json_stdout(result)
+    assert payload["ok"] is True
+    assert payload["command"] == "agent-env"
+    assert payload["context"]["dataset"] == "mimic-iv-demo"
+    assert payload["data"]["environment"]["M4_DATA_DIR"] == str(tmp_path / "m4_data")
+    assert payload["data"]["raw_paths_hidden"] is True
+
+
+def test_agent_env_protected_mode_omits_data_dir(tmp_path):
+    result = _run_m4(
+        ["agent-env", "--mode", "protected", "--json"],
+        tmp_path,
+    )
+
+    assert result.returncode == 0
+    payload = _assert_single_json_stdout(result)
+    assert payload["ok"] is True
+    assert "M4_DATA_DIR" not in payload["data"]["environment"]
+    assert payload["warnings"]
+
+
+def test_list_datasets_json_subprocess_is_parseable(tmp_path):
+    result = _run_m4(["list-datasets", "--json", "--no-interactive"], tmp_path)
+
+    assert result.returncode == 0
+    payload = _assert_single_json_stdout(result)
+    assert payload["ok"] is True
+    assert payload["command"] == "list-datasets"
+    assert payload["data"]["raw_paths_hidden"] is True
+    assert {dataset["name"] for dataset in payload["data"]["datasets"]} >= {
+        "mimic-iv-demo",
+        "mimic-iv",
+    }
+
+
+def test_schema_json_error_redacts_data_dir(tmp_path):
+    result = _run_m4(
+        [
+            "schema",
+            "--dataset",
+            "mimic-iv-demo",
+            "--backend",
+            "duckdb",
+            "--json",
+            "--no-interactive",
+        ],
+        tmp_path,
+    )
+
+    assert result.returncode != 0
+    payload = _assert_single_json_stdout(result)
+    assert payload["ok"] is False
+    assert payload["command"] == "schema"
+    assert "<M4_DATA_DIR>" in payload["error"]["message"]
+    assert str(tmp_path) not in result.stdout
+
+
+def test_query_json_subprocess_returns_stable_envelope(tmp_path):
+    db_path = tmp_path / "m4_data" / "databases" / "mimic_iv_demo.duckdb"
+    db_path.parent.mkdir(parents=True)
+    conn = duckdb.connect(str(db_path))
+    conn.close()
+
+    result = _run_m4(
+        [
+            "query",
+            "--dataset",
+            "mimic-iv-demo",
+            "--backend",
+            "duckdb",
+            "--sql",
+            "SELECT 1 AS one",
+            "--json",
+            "--no-interactive",
+        ],
+        tmp_path,
+    )
+
+    assert result.returncode == 0
+    payload = _assert_single_json_stdout(result)
+    assert payload["ok"] is True
+    assert payload["command"] == "query"
+    assert payload["context"]["dataset"] == "mimic-iv-demo"
+    assert payload["data"]["result"]["columns"] == ["one"]
+    assert payload["data"]["result"]["rows"] == [{"one": 1}]
+
+
+def test_provenance_export_json_subprocess_is_parseable(tmp_path):
+    result = _run_m4(["provenance", "export", "--json"], tmp_path)
+
+    assert result.returncode == 0
+    payload = _assert_single_json_stdout(result)
+    assert payload["ok"] is True
+    assert payload["command"] == "provenance export"
+    assert payload["data"]["event_count"] == 0
 
 
 def test_use_json_subprocess_is_parseable(tmp_path):

@@ -220,8 +220,21 @@ class TestDuckDBTableOperations:
 class TestDuckDBBackendInfo:
     """Test backend info generation."""
 
-    def test_backend_info(self, test_dataset, temp_db):
-        """Test getting backend info."""
+    def test_backend_info_hides_paths_by_default(self, test_dataset, temp_db):
+        """Backend info omits raw paths unless path disclosure is enabled."""
+        backend = DuckDBBackend(db_path_override=temp_db)
+
+        info = backend.get_backend_info(test_dataset)
+
+        assert "DuckDB" in info
+        assert test_dataset.name in info
+        assert str(temp_db) not in info
+
+    def test_backend_info_discloses_paths_when_enabled(
+        self, test_dataset, temp_db, monkeypatch
+    ):
+        """Backend info includes raw paths when explicitly requested."""
+        monkeypatch.setenv("M4_PATH_DISCLOSURE", "1")
         backend = DuckDBBackend(db_path_override=temp_db)
 
         info = backend.get_backend_info(test_dataset)
@@ -230,8 +243,25 @@ class TestDuckDBBackendInfo:
         assert test_dataset.name in info
         assert str(temp_db) in info
 
-    def test_backend_info_missing_db(self, test_dataset):
+    def test_backend_info_missing_db_hides_unknown_path_by_default(self, test_dataset):
         """Test backend info when database path can't be determined."""
+        backend = DuckDBBackend()
+
+        with patch(
+            "m4.core.backends.duckdb.get_default_database_path"
+        ) as mock_get_path:
+            mock_get_path.return_value = None
+
+            info = backend.get_backend_info(test_dataset)
+
+            assert "DuckDB" in info
+            assert "unknown" not in info
+
+    def test_backend_info_missing_db_discloses_unknown_when_enabled(
+        self, test_dataset, monkeypatch
+    ):
+        """Path disclosure mode shows unknown when DB path resolution fails."""
+        monkeypatch.setenv("M4_PATH_DISCLOSURE", "1")
         backend = DuckDBBackend()
 
         with patch(

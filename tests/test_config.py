@@ -78,6 +78,27 @@ def test_find_project_root_search(tmp_path, monkeypatch):
         assert _find_project_root_from_cwd() == tmp_path
 
 
+def test_m4_data_dir_means_exact_data_directory(tmp_path, monkeypatch):
+    import m4.config as cfg_mod
+
+    data_dir = tmp_path / "datasets" / "m4_data"
+    monkeypatch.setenv("M4_DATA_DIR", str(data_dir))
+
+    assert cfg_mod._get_project_data_dir() == data_dir.resolve()
+
+
+def test_legacy_m4_data_dir_parent_is_supported_with_warning(tmp_path, monkeypatch):
+    import m4.config as cfg_mod
+
+    legacy_parent = tmp_path / "project"
+    nested_data = legacy_parent / "m4_data"
+    (nested_data / "databases").mkdir(parents=True)
+    monkeypatch.setenv("M4_DATA_DIR", str(legacy_parent))
+
+    with pytest.warns(DeprecationWarning, match="M4_DATA_DIR should point directly"):
+        assert cfg_mod._get_project_data_dir() == nested_data.resolve()
+
+
 # ----------------------------------------------------------------
 # Backend configuration tests
 # ----------------------------------------------------------------

@@ -33,6 +33,7 @@ def _collect_dataset_status(
     backend: str,
     *,
     include_row_count: bool,
+    include_paths: bool,
 ) -> dict[str, Any]:
     ds_def = DatasetRegistry.get(name)
     parquet_present = bool(ds_info.get("parquet_present"))
@@ -84,13 +85,11 @@ def _collect_dataset_status(
         except Exception:
             pass
 
-    return {
+    result = {
         "name": name,
         "active": name == active_dataset,
         "parquet_present": parquet_present,
         "db_present": db_present,
-        "parquet_root": parquet_root,
-        "db_path": db_path,
         "bigquery_available": bigquery_available,
         "row_count": row_count,
         "parquet_size_gb": parquet_size_gb,
@@ -103,8 +102,16 @@ def _collect_dataset_status(
         "warnings": warnings,
     }
 
+    if include_paths:
+        result["parquet_root"] = parquet_root
+        result["db_path"] = db_path
 
-def collect_status_snapshot(show_all: bool) -> dict[str, Any]:
+    return result
+
+
+def collect_status_snapshot(
+    show_all: bool, include_paths: bool = False
+) -> dict[str, Any]:
     try:
         active = get_active_dataset()
     except DatasetError:
@@ -126,6 +133,7 @@ def collect_status_snapshot(show_all: bool) -> dict[str, Any]:
                 active,
                 backend,
                 include_row_count=not show_all,
+                include_paths=include_paths,
             )
         )
 

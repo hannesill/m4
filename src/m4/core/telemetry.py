@@ -9,6 +9,7 @@ via the standard logging module. Disable file output with M4_TELEMETRY=off.
 """
 
 import dataclasses
+import hashlib
 import json
 import logging
 import os
@@ -110,6 +111,10 @@ class ToolCallRecord:
     error_message: str | None
     params_summary: dict[str, Any]
     row_count: int | None
+    study_id: str | None = None
+    session_id: str | None = None
+    actor: str | None = None
+    query_hash: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -147,11 +152,17 @@ class TelemetryWriter:
         if os.environ.get("M4_TELEMETRY", "").lower() == "off":
             return
 
-        from m4.config import get_telemetry_dir
+        event_log = os.environ.get("M4_EVENT_LOG")
+        if event_log:
+            log_path = os.path.expanduser(event_log)
+            os.makedirs(os.path.dirname(log_path) or ".", exist_ok=True)
+        else:
+            from m4.config import get_telemetry_dir
 
-        telemetry_dir = get_telemetry_dir()
+            log_path = str(get_telemetry_dir() / TELEMETRY_FILENAME)
+
         self._handler = RotatingFileHandler(
-            telemetry_dir / TELEMETRY_FILENAME,
+            log_path,
             maxBytes=10 * 1024 * 1024,  # 10 MB
             backupCount=3,
         )
@@ -205,6 +216,17 @@ def invoke_tracked(tool: Tool, dataset: DatasetDefinition, params: ToolInput) ->
     except (TypeError, AttributeError):
         params_summary = {}
 
+    query_hash = None
+    sql_value = params_summary.get("sql_query")
+    if isinstance(sql_value, str):
+        query_hash = hashlib.sha256(sql_value.encode("utf-8")).hexdigest()
+        log_sql = os.environ.get("M4_LOG_SQL", "full").lower()
+        if log_sql == "hash":
+            params_summary["sql_query_hash"] = query_hash
+            params_summary.pop("sql_query", None)
+        elif log_sql == "off":
+            params_summary.pop("sql_query", None)
+
     start = time.monotonic()
     success = True
     error_type = None
@@ -238,6 +260,10 @@ def invoke_tracked(tool: Tool, dataset: DatasetDefinition, params: ToolInput) ->
             error_message=error_message,
             params_summary=params_summary,
             row_count=row_count,
+            study_id=os.environ.get("M4_STUDY_ID"),
+            session_id=os.environ.get("M4_SESSION_ID"),
+            actor=os.environ.get("M4_ACTOR") or agent_id,
+            query_hash=query_hash,
         )
 
         record_json = _to_json(dataclasses.asdict(record))
