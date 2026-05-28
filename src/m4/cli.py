@@ -9,8 +9,6 @@ from typing import Annotated, Any
 import typer
 
 from m4.config import (
-    VALID_BACKENDS,
-    detect_available_local_datasets,
     get_active_backend,
     get_active_dataset,
     get_bigquery_project_id,
@@ -56,7 +54,11 @@ from m4.data_io import (
     init_duckdb_from_parquet,
     verify_table_rowcount,
 )
+from m4.services.backend import set_active_backend_service
+from m4.services.init import initialize_dataset_service
+from m4.services.results import CommandError, CommandResult
 from m4.services.status import collect_status_snapshot
+from m4.services.use import set_active_dataset_service
 
 app = typer.Typer(
     name="m4",
@@ -87,33 +89,15 @@ def _emit_json(payload: dict[str, Any]) -> None:
     typer.echo(json.dumps(payload, indent=2))
 
 
+def _emit_command_json(result: CommandResult | CommandError) -> None:
+    _emit_json(result.to_json_dict())
+
+
 def _json_error(command: str, code: str, message: str, hint: str | None = None) -> None:
-    payload: dict[str, Any] = {
-        "version": 1,
-        "ok": False,
-        "command": command,
-        "error": {
-            "code": code,
-            "message": message,
-        },
-    }
-    if hint:
-        payload["error"]["hint"] = hint
-    _emit_json(payload)
+    _emit_command_json(
+        CommandError(command=command, code=code, message=message, hint=hint)
+    )
     raise typer.Exit(code=1)
-
-
-def _absolute_path_or_none(path_value: str | Path | None) -> str | None:
-    if not path_value:
-        return None
-    return str(Path(path_value).expanduser().resolve())
-
-
-def _get_active_dataset_or_none() -> str | None:
-    try:
-        return get_active_dataset()
-    except DatasetError:
-        return None
 
 
 @app.callback()
@@ -188,6 +172,13 @@ def dataset_init_cmd(
             help="Force recreation of DuckDB even if it exists.",
         ),
     ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            help="Print result as JSON for scripts and automation.",
+        ),
+    ] = False,
 ):
     """
     Initialize a local dataset in one step by detecting what's already present:
@@ -200,6 +191,19 @@ def dataset_init_cmd(
     - For datasets without a download URL (e.g. mimic-iv-full), you must provide the --src path or place files in the expected location.
     """
     logger.info(f"CLI 'init' called for dataset: '{dataset_name}'")
+
+    if json_output:
+        with _silence_m4_logging():
+            result = initialize_dataset_service(
+                dataset_name,
+                src=src,
+                db_path_str=db_path_str,
+                force=force,
+            )
+        _emit_command_json(result)
+        if isinstance(result, CommandError):
+            raise typer.Exit(code=1)
+        return
 
     dataset_key = dataset_name.lower()
     ds = DatasetRegistry.get(dataset_key)
@@ -586,83 +590,31 @@ def use_cmd(
     ] = False,
 ):
     """Set the active dataset selection for the project."""
-    target = target.lower()
-
-    # 1. Check if dataset is registered
     with _silence_m4_logging() if json_output else nullcontext():
-        availability = detect_available_local_datasets().get(target)
+        result = set_active_dataset_service(target)
 
-    if not availability:
-        supported = ", ".join([ds.name for ds in DatasetRegistry.list_all()])
+    if isinstance(result, CommandError):
         if json_output:
-            _json_error(
-                "use",
-                "dataset_not_found",
-                f"Dataset '{target}' not found or not registered.",
-                hint=f"Supported datasets: {supported}",
-            )
-        print_error_panel(
-            "Dataset Not Found",
-            f"Dataset '{target}' not found or not registered.",
-            hint=f"Supported datasets: {supported}",
-        )
+            _emit_command_json(result)
+            raise typer.Exit(code=1)
+
+        title = {
+            "dataset_not_found": "Dataset Not Found",
+            "backend_incompatible": "Backend Incompatible",
+        }.get(result.code, "Command Failed")
+        print_error_panel(title, result.message, hint=result.hint)
         raise typer.Exit(code=1)
 
-    # 2. Block if dataset is incompatible with current backend
-    ds_def = DatasetRegistry.get(target)
-    backend_name = get_active_backend()
-
-    if ds_def and not ds_def.bigquery_dataset_ids and backend_name == "bigquery":
-        if json_output:
-            _json_error(
-                "use",
-                "backend_incompatible",
-                f"Dataset '{target}' is not available on the BigQuery backend.",
-                hint="Switch to DuckDB first: m4 backend duckdb",
-            )
-        print_error_panel(
-            "Backend Incompatible",
-            f"Dataset '{target}' is not available on the BigQuery backend.",
-            hint="Switch to DuckDB first: m4 backend duckdb",
-        )
-        raise typer.Exit(code=1)
-
-    # 3. Set it active
-    set_active_dataset(target)
     if json_output:
-        warnings = []
-        if not availability["parquet_present"]:
-            warnings.append("local_parquet_missing")
-        if backend_name == "duckdb" and not availability["db_present"]:
-            warnings.append("local_db_missing")
-
-        _emit_json(
-            {
-                "version": 1,
-                "ok": True,
-                "command": "use",
-                "active_dataset": target,
-                "backend": backend_name,
-                "dataset": {
-                    "name": target,
-                    "parquet_present": bool(availability["parquet_present"]),
-                    "db_present": bool(availability["db_present"]),
-                    "parquet_root": _absolute_path_or_none(
-                        availability.get("parquet_root")
-                    ),
-                    "db_path": _absolute_path_or_none(availability.get("db_path")),
-                    "bigquery_available": bool(ds_def and ds_def.bigquery_dataset_ids),
-                },
-                "warnings": warnings,
-            }
-        )
+        _emit_command_json(result)
         return
 
+    target = result.data["active_dataset"]
+    dataset = result.data["dataset"]
     success(f"Active dataset set to '{target}'")
 
-    # 4. Warn if local files are missing (helpful info, not a blocker)
-    if not availability["parquet_present"]:
-        warning(f"Local Parquet files not found at {availability['parquet_root']}")
+    if not dataset["parquet_present"]:
+        warning(f"Local Parquet files not found at {dataset['parquet_root']}")
         console.print(
             "  [muted]This is fine if you are using the BigQuery backend.[/muted]"
         )
@@ -672,13 +624,12 @@ def use_cmd(
     else:
         info("Local: Available", prefix="status")
 
-    # 5. Show BigQuery status
-    if ds_def:
-        if ds_def.bigquery_dataset_ids:
-            info(
-                f"BigQuery: Available (Project: {ds_def.bigquery_project_id})",
-                prefix="status",
-            )
+    if dataset["bigquery_available"]:
+        ds_def = DatasetRegistry.get(target)
+        info(
+            f"BigQuery: Available (Project: {ds_def.bigquery_project_id if ds_def else None})",
+            prefix="status",
+        )
 
 
 @app.command("backend")
@@ -703,95 +654,30 @@ def backend_cmd(
     ] = False,
 ):
     """Set the active backend (duckdb or bigquery)."""
-    target = target.lower()
+    with _silence_m4_logging() if json_output else nullcontext():
+        result = set_active_backend_service(target, project_id=project_id)
 
-    if target not in VALID_BACKENDS:
+    if isinstance(result, CommandError):
         if json_output:
-            _json_error(
-                "backend",
-                "invalid_backend",
-                f"Backend '{target}' is not valid.",
-                hint=f"Valid backends: {', '.join(sorted(VALID_BACKENDS))}",
-            )
-        print_error_panel(
-            "Invalid Backend",
-            f"Backend '{target}' is not valid.",
-            hint=f"Valid backends: {', '.join(sorted(VALID_BACKENDS))}",
-        )
-        raise typer.Exit(code=1)
-
-    # Reject --project-id for duckdb
-    if target == "duckdb" and project_id:
-        if json_output:
-            _json_error(
-                "backend",
-                "invalid_option",
-                "--project-id can only be used with bigquery backend.",
-            )
-        error("--project-id can only be used with bigquery backend")
-        raise typer.Exit(code=1)
-
-    # Block if current dataset is incompatible with new backend
-    active_dataset = _get_active_dataset_or_none()
-    if target == "bigquery":
-        if active_dataset:
-            ds_def = DatasetRegistry.get(active_dataset)
-            if ds_def and not ds_def.bigquery_dataset_ids:
-                if json_output:
-                    _json_error(
-                        "backend",
-                        "dataset_incompatible",
-                        f"Current dataset '{active_dataset}' is not available on BigQuery.",
-                        hint="Switch dataset first: m4 use <dataset>",
-                    )
-                print_error_panel(
-                    "Dataset Incompatible",
-                    f"Current dataset '{active_dataset}' is not available on BigQuery.",
-                    hint="Switch dataset first: m4 use <dataset>",
-                )
-                raise typer.Exit(code=1)
-
-    # BigQuery requires a project ID — either provided now or already in config
-    effective_project_id = None
-    if target == "bigquery":
-        effective_project_id = project_id or get_bigquery_project_id()
-        if not effective_project_id:
-            if json_output:
-                _json_error(
-                    "backend",
-                    "project_id_required",
-                    "BigQuery backend requires a project ID.",
-                    hint="Set it with: m4 backend bigquery --project-id <ID>",
-                )
-            print_error_panel(
-                "Project ID Required",
-                "BigQuery backend requires a project ID.",
-                hint="Set it with: m4 backend bigquery --project-id <ID>",
-            )
+            _emit_command_json(result)
             raise typer.Exit(code=1)
 
-    set_active_backend(target)
-
-    # Persist project ID if provided
-    if project_id:
-        set_bigquery_project_id(project_id)
+        if result.code == "invalid_option":
+            error(result.message.removesuffix("."))
+        else:
+            title = {
+                "invalid_backend": "Invalid Backend",
+                "dataset_incompatible": "Dataset Incompatible",
+                "project_id_required": "Project ID Required",
+            }.get(result.code, "Command Failed")
+            print_error_panel(title, result.message, hint=result.hint)
+        raise typer.Exit(code=1)
 
     if json_output:
-        _emit_json(
-            {
-                "version": 1,
-                "ok": True,
-                "command": "backend",
-                "backend": target,
-                "active_dataset": active_dataset,
-                "bigquery_project_id": project_id
-                or effective_project_id
-                or get_bigquery_project_id(),
-                "warnings": [],
-            }
-        )
+        _emit_command_json(result)
         return
 
+    target = result.data["backend"]
     success(f"Active backend set to '{target}'")
 
     # Show helpful context

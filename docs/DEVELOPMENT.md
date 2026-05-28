@@ -125,6 +125,33 @@ Stable command error codes are `dataset_not_found`, `backend_incompatible`,
 `invalid_backend`, `invalid_option`, `project_id_required`, and
 `dataset_incompatible`.
 
+`m4 init DATASET --json` uses the same result/error envelope and runs
+non-interactively. Human prompts, progress panels, and download output are
+suppressed from stdout. Successful results include deterministic paths and step
+states:
+
+```json
+{
+  "version": 1,
+  "ok": true,
+  "command": "init",
+  "dataset": "mimic-iv",
+  "db_path": "/absolute/path/to/mimic_iv.duckdb",
+  "parquet_root": "/absolute/path/to/parquet/mimic-iv",
+  "raw_root": "/absolute/path/to/raw_files/mimic-iv",
+  "steps": [
+    {"name": "raw_files", "status": "blocked", "message": "Download manually and rerun init."},
+    {"name": "parquet", "status": "skipped"},
+    {"name": "database", "status": "skipped"}
+  ],
+  "warnings": []
+}
+```
+
+Init step status is one of `skipped`, `completed`, `blocked`, or `failed`.
+Credentialed/manual-download cases that the human CLI treats as informational
+return `ok: true` with blocked or skipped steps.
+
 ### MCP Client Configuration
 
 ```bash
