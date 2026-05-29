@@ -175,6 +175,42 @@ def test_query_json_subprocess_returns_stable_envelope(tmp_path):
     assert payload["data"]["result"]["rows"] == [{"one": 1}]
 
 
+def test_query_json_subprocess_serializes_date_timestamp_and_null(tmp_path):
+    db_path = tmp_path / "m4_data" / "databases" / "mimic_iv_demo.duckdb"
+    db_path.parent.mkdir(parents=True)
+    conn = duckdb.connect(str(db_path))
+    conn.close()
+
+    result = _run_m4(
+        [
+            "query",
+            "--dataset",
+            "mimic-iv-demo",
+            "--backend",
+            "duckdb",
+            "--sql",
+            (
+                "SELECT DATE '2026-05-29' AS event_date, "
+                "TIMESTAMP '2026-05-29 12:34:56' AS event_time, "
+                "NULL AS missing_value"
+            ),
+            "--json",
+            "--no-interactive",
+        ],
+        tmp_path,
+    )
+
+    assert result.returncode == 0
+    payload = _assert_single_json_stdout(result)
+    assert payload["ok"] is True
+    row = payload["data"]["result"]["rows"][0]
+    assert row == {
+        "event_date": "2026-05-29T00:00:00",
+        "event_time": "2026-05-29T12:34:56",
+        "missing_value": None,
+    }
+
+
 def test_provenance_export_json_subprocess_is_parseable(tmp_path):
     result = _run_m4(["provenance", "export", "--json"], tmp_path)
 
