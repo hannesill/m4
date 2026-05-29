@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 from typing import Any
 
+from m4.core.context import M4ExecutionContext
 from m4.core.datasets import DatasetDefinition
 from m4.core.tools.base import Tool, ToolInput
 
@@ -198,14 +199,19 @@ _writer = TelemetryWriter()
 # ---------------------------------------------------------------------------
 
 
-def invoke_tracked(tool: Tool, dataset: DatasetDefinition, params: ToolInput) -> Any:
+def invoke_tracked(
+    tool: Tool,
+    dataset: DatasetDefinition,
+    params: ToolInput,
+    context: M4ExecutionContext,
+) -> Any:
     """Invoke a tool with telemetry tracking.
 
     Wraps tool.invoke() to record timing, success/failure, and context.
     Records are written to JSONL and logged at INFO level.
     On failure, the original exception is re-raised.
     """
-    interface = _interface_var.get()
+    interface = context.interface
     agent_id = _agent_id_var.get()
     terminal_session = _get_terminal_session()
     dataset_name = getattr(dataset, "name", None)
@@ -234,7 +240,7 @@ def invoke_tracked(tool: Tool, dataset: DatasetDefinition, params: ToolInput) ->
     row_count = None
 
     try:
-        result = tool.invoke(dataset, params)
+        result = tool.invoke(dataset, params, context)
         import pandas as pd
 
         row_count = len(result) if isinstance(result, pd.DataFrame) else None
@@ -260,9 +266,9 @@ def invoke_tracked(tool: Tool, dataset: DatasetDefinition, params: ToolInput) ->
             error_message=error_message,
             params_summary=params_summary,
             row_count=row_count,
-            study_id=os.environ.get("M4_STUDY_ID"),
-            session_id=os.environ.get("M4_SESSION_ID"),
-            actor=os.environ.get("M4_ACTOR") or agent_id,
+            study_id=context.study_id,
+            session_id=context.session_id,
+            actor=context.actor or agent_id,
             query_hash=query_hash,
         )
 

@@ -21,6 +21,7 @@ from m4.config import (
     get_active_dataset,
     set_active_dataset,
 )
+from m4.core.context import M4ExecutionContext
 from m4.core.datasets import DatasetDefinition, DatasetRegistry, Modality
 from m4.core.derived.builtins import has_derived_support, list_builtins
 from m4.core.derived.materializer import get_derived_table_count
@@ -61,7 +62,10 @@ class ListDatasetsTool:
     supported_datasets: frozenset[str] | None = None  # Always available
 
     def invoke(
-        self, dataset: DatasetDefinition, params: ListDatasetsInput
+        self,
+        dataset: DatasetDefinition,
+        params: ListDatasetsInput,
+        context: M4ExecutionContext | None = None,
     ) -> dict[str, Any]:
         """List all available datasets with their status.
 
@@ -71,9 +75,12 @@ class ListDatasetsTool:
                 - backend: str - Backend type (duckdb or bigquery)
                 - datasets: dict[str, dict] - Dataset availability info
         """
-        active = get_active_dataset()
+        try:
+            active = get_active_dataset()
+        except Exception:
+            active = context.dataset.name if context else None
         availability = detect_available_local_datasets()
-        backend_name = get_active_backend()
+        backend_name = context.backend_name if context else get_active_backend()
 
         datasets_info: dict[str, dict] = {}
 
@@ -135,7 +142,10 @@ class SetDatasetTool:
     supported_datasets: frozenset[str] | None = None  # Always available
 
     def invoke(
-        self, dataset: DatasetDefinition, params: SetDatasetInput
+        self,
+        dataset: DatasetDefinition,
+        params: SetDatasetInput,
+        context: M4ExecutionContext | None = None,
     ) -> dict[str, Any]:
         """Switch to a different dataset.
 
@@ -152,7 +162,7 @@ class SetDatasetTool:
         """
         dataset_name = params.dataset_name.lower()
         availability = detect_available_local_datasets()
-        backend_name = get_active_backend()
+        backend_name = context.backend_name if context else get_active_backend()
 
         if dataset_name not in availability:
             supported = ", ".join(availability.keys())

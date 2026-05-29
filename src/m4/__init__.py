@@ -21,6 +21,7 @@ from vitrine import show
 from m4.api import (
     # Exceptions
     DatasetError,
+    M4Client,
     M4Error,
     ModalityError,
     QueryError,
@@ -43,6 +44,7 @@ from m4.core.telemetry import set_agent_id
 
 __all__ = [
     "DatasetError",
+    "M4Client",
     "M4Error",
     "ModalityError",
     "QueryError",

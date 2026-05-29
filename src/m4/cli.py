@@ -13,6 +13,7 @@ from typing import Annotated, Any
 import pandas as pd
 import typer
 
+from m4.client import M4Client
 from m4.config import (
     get_active_backend,
     get_active_dataset,
@@ -55,13 +56,7 @@ from m4.core.derived.materializer import (
     materialize_all,
 )
 from m4.core.exceptions import DatasetError, M4Error
-from m4.core.telemetry import invoke_tracked, set_interface
-from m4.core.tools import ToolRegistry, init_tools
-from m4.core.tools.tabular import (
-    ExecuteQueryInput,
-    GetDatabaseSchemaInput,
-    GetTableInfoInput,
-)
+from m4.core.tools import init_tools
 from m4.data_io import (
     convert_csv_to_parquet,
     download_dataset,
@@ -1199,33 +1194,35 @@ def schema_cmd(
     """List tables for a dataset/backend pair without mutating active config."""
     command = "schema"
     init_tools()
-    set_interface("cli")
+    ctx = resolve_runtime_context(dataset=dataset_name, backend=backend_name)
     with _silence_m4_logging() if json_output else nullcontext():
-        with _runtime_env_override(dataset=dataset_name, backend=backend_name):
-            ctx = resolve_runtime_context(dataset=dataset_name, backend=backend_name)
-            dataset = _resolve_agent_dataset(
-                command, dataset_name, ctx.public_context()
+        try:
+            client = M4Client(
+                dataset=dataset_name,
+                backend=backend_name,
+                interface="cli",
+                project_id=ctx.project_id,
+                path_disclosure=ctx.path_disclosure,
             )
-            try:
-                tool = ToolRegistry.get("get_database_schema")
-                result = invoke_tracked(tool, dataset, GetDatabaseSchemaInput())
-            except M4Error as exc:
-                if json_output:
-                    _emit_agent_error(
-                        command,
-                        "schema_failed",
-                        str(exc),
-                        context=ctx.public_context(),
-                    )
-                error(str(exc))
-                raise typer.Exit(code=1)
+            result = client.schema()
+            ctx_public = client.context.public_context()
+        except M4Error as exc:
+            if json_output:
+                _emit_agent_error(
+                    command,
+                    "schema_failed",
+                    str(exc),
+                    context=ctx.public_context(),
+                )
+            error(str(exc))
+            raise typer.Exit(code=1)
 
     if json_output:
         _emit_json(
             _agent_success_payload(
                 command,
                 {"tables": result.get("tables", [])},
-                context=ctx.public_context(),
+                context=ctx_public,
             )
         )
         return
@@ -1266,33 +1263,28 @@ def describe_table_cmd(
     """Describe a single table without mutating active config."""
     command = "describe-table"
     init_tools()
-    set_interface("cli")
+    ctx = resolve_runtime_context(dataset=dataset_name, backend=backend_name)
     with _silence_m4_logging() if json_output else nullcontext():
-        with _runtime_env_override(dataset=dataset_name, backend=backend_name):
-            ctx = resolve_runtime_context(dataset=dataset_name, backend=backend_name)
-            dataset = _resolve_agent_dataset(
-                command, dataset_name, ctx.public_context()
+        try:
+            client = M4Client(
+                dataset=dataset_name,
+                backend=backend_name,
+                interface="cli",
+                project_id=ctx.project_id,
+                path_disclosure=ctx.path_disclosure,
             )
-            try:
-                tool = ToolRegistry.get("get_table_info")
-                result = invoke_tracked(
-                    tool,
-                    dataset,
-                    GetTableInfoInput(
-                        table_name=table_name,
-                        show_sample=show_sample,
-                    ),
+            result = client.table_info(table_name, show_sample=show_sample)
+            ctx_public = client.context.public_context()
+        except M4Error as exc:
+            if json_output:
+                _emit_agent_error(
+                    command,
+                    "describe_table_failed",
+                    str(exc),
+                    context=ctx.public_context(),
                 )
-            except M4Error as exc:
-                if json_output:
-                    _emit_agent_error(
-                        command,
-                        "describe_table_failed",
-                        str(exc),
-                        context=ctx.public_context(),
-                    )
-                error(str(exc))
-                raise typer.Exit(code=1)
+            error(str(exc))
+            raise typer.Exit(code=1)
 
     if json_output:
         _emit_json(
@@ -1303,7 +1295,7 @@ def describe_table_cmd(
                     "schema": _dataframe_payload(result.get("schema")),
                     "sample": _dataframe_payload(result.get("sample")),
                 },
-                context=ctx.public_context(),
+                context=ctx_public,
             )
         )
         return
@@ -1343,26 +1335,28 @@ def query_cmd(
     """Execute a read-only SQL query without mutating active config."""
     command = "query"
     init_tools()
-    set_interface("cli")
+    ctx = resolve_runtime_context(dataset=dataset_name, backend=backend_name)
     with _silence_m4_logging() if json_output else nullcontext():
-        with _runtime_env_override(dataset=dataset_name, backend=backend_name):
-            ctx = resolve_runtime_context(dataset=dataset_name, backend=backend_name)
-            dataset = _resolve_agent_dataset(
-                command, dataset_name, ctx.public_context()
+        try:
+            client = M4Client(
+                dataset=dataset_name,
+                backend=backend_name,
+                interface="cli",
+                project_id=ctx.project_id,
+                path_disclosure=ctx.path_disclosure,
             )
-            try:
-                tool = ToolRegistry.get("execute_query")
-                result = invoke_tracked(tool, dataset, ExecuteQueryInput(sql_query=sql))
-            except M4Error as exc:
-                if json_output:
-                    _emit_agent_error(
-                        command,
-                        "query_failed",
-                        str(exc),
-                        context=ctx.public_context(),
-                    )
-                error(str(exc))
-                raise typer.Exit(code=1)
+            result = client.query(sql)
+            ctx_public = client.context.public_context()
+        except M4Error as exc:
+            if json_output:
+                _emit_agent_error(
+                    command,
+                    "query_failed",
+                    str(exc),
+                    context=ctx.public_context(),
+                )
+            error(str(exc))
+            raise typer.Exit(code=1)
 
     if json_output:
         _emit_json(
@@ -1371,7 +1365,7 @@ def query_cmd(
                 {
                     "result": _dataframe_payload(result),
                 },
-                context=ctx.public_context(),
+                context=ctx_public,
             )
         )
         return

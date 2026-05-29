@@ -20,6 +20,7 @@ from typing import Any
 import pandas as pd
 
 from m4.core.backends import get_backend
+from m4.core.context import M4ExecutionContext
 from m4.core.datasets import DatasetDefinition, Modality
 from m4.core.exceptions import QueryError
 from m4.core.tools.base import ToolInput
@@ -83,7 +84,10 @@ class SearchNotesTool:
     supported_datasets: frozenset[str] | None = None
 
     def invoke(
-        self, dataset: DatasetDefinition, params: SearchNotesInput
+        self,
+        dataset: DatasetDefinition,
+        params: SearchNotesInput,
+        context: M4ExecutionContext | None = None,
     ) -> dict[str, Any]:
         """Search notes and return snippets around matches.
 
@@ -97,7 +101,7 @@ class SearchNotesTool:
         Raises:
             QueryError: If note_type is invalid
         """
-        backend = get_backend()
+        backend = context.backend if context else get_backend()
 
         # Determine which tables to search
         tables_to_search = self._get_tables_for_type(params.note_type)
@@ -134,14 +138,22 @@ class SearchNotesTool:
                 LIMIT {params.limit}
             """
 
-            result = backend.execute_query(sql, dataset)
+            result = (
+                backend.execute_query(sql, dataset, context)
+                if context
+                else backend.execute_query(sql, dataset)
+            )
             if result.success and result.dataframe is not None:
                 results[table] = result.dataframe
             elif result.error:
                 errors.append(f"{table}: {result.error}")
 
         response: dict[str, Any] = {
-            "backend_info": backend.get_backend_info(dataset),
+            "backend_info": (
+                backend.get_backend_info(dataset, context)
+                if context
+                else backend.get_backend_info(dataset)
+            ),
             "query": params.query,
             "snippet_length": params.snippet_length,
             "results": results,
@@ -191,7 +203,10 @@ class GetNoteTool:
     supported_datasets: frozenset[str] | None = None
 
     def invoke(
-        self, dataset: DatasetDefinition, params: GetNoteInput
+        self,
+        dataset: DatasetDefinition,
+        params: GetNoteInput,
+        context: M4ExecutionContext | None = None,
     ) -> dict[str, Any]:
         """Retrieve a single note by ID.
 
@@ -207,7 +222,7 @@ class GetNoteTool:
         Raises:
             QueryError: If note not found
         """
-        backend = get_backend()
+        backend = context.backend if context else get_backend()
 
         # Note IDs contain the note type (e.g., "10000032_DS-1" for discharge)
         note_id = params.note_id.replace("'", "''")
@@ -226,7 +241,11 @@ class GetNoteTool:
                 LIMIT 1
             """
 
-            result = backend.execute_query(sql, dataset)
+            result = (
+                backend.execute_query(sql, dataset, context)
+                if context
+                else backend.execute_query(sql, dataset)
+            )
             if result.error:
                 errors.append(f"{table}: {result.error}")
                 continue
@@ -246,7 +265,11 @@ class GetNoteTool:
                     truncated = True
 
                 return {
-                    "backend_info": backend.get_backend_info(dataset),
+                    "backend_info": (
+                        backend.get_backend_info(dataset, context)
+                        if context
+                        else backend.get_backend_info(dataset)
+                    ),
                     "note_id": str(row["note_id"]),
                     "subject_id": int(row["subject_id"]),
                     "text": text,
@@ -294,7 +317,10 @@ class ListPatientNotesTool:
     supported_datasets: frozenset[str] | None = None
 
     def invoke(
-        self, dataset: DatasetDefinition, params: ListPatientNotesInput
+        self,
+        dataset: DatasetDefinition,
+        params: ListPatientNotesInput,
+        context: M4ExecutionContext | None = None,
     ) -> dict[str, Any]:
         """List notes for a patient without returning full text.
 
@@ -307,7 +333,7 @@ class ListPatientNotesTool:
         Raises:
             QueryError: If note_type is invalid
         """
-        backend = get_backend()
+        backend = context.backend if context else get_backend()
 
         tables_to_query = self._get_tables_for_type(params.note_type)
 
@@ -334,14 +360,22 @@ class ListPatientNotesTool:
                 LIMIT {params.limit}
             """
 
-            result = backend.execute_query(sql, dataset)
+            result = (
+                backend.execute_query(sql, dataset, context)
+                if context
+                else backend.execute_query(sql, dataset)
+            )
             if result.success and result.dataframe is not None:
                 notes[table] = result.dataframe
             elif result.error:
                 errors.append(f"{table}: {result.error}")
 
         response: dict[str, Any] = {
-            "backend_info": backend.get_backend_info(dataset),
+            "backend_info": (
+                backend.get_backend_info(dataset, context)
+                if context
+                else backend.get_backend_info(dataset)
+            ),
             "subject_id": params.subject_id,
             "notes": notes,
         }

@@ -299,7 +299,7 @@ class TestQueryCohortMCPIntegration:
             with patch(
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
             ):
-                with patch("m4.apps.cohort_builder.tool.get_backend") as mock_backend:
+                with patch("m4.client.get_backend") as mock_backend:
                     from m4.core.backends.duckdb import DuckDBBackend
 
                     mock_backend.return_value = DuckDBBackend(
@@ -338,7 +338,7 @@ class TestQueryCohortMCPIntegration:
             with patch(
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
             ):
-                with patch("m4.apps.cohort_builder.tool.get_backend") as mock_backend:
+                with patch("m4.client.get_backend") as mock_backend:
                     from m4.core.backends.duckdb import DuckDBBackend
 
                     mock_backend.return_value = DuckDBBackend(
@@ -377,7 +377,7 @@ class TestQueryCohortMCPIntegration:
             with patch(
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
             ):
-                with patch("m4.apps.cohort_builder.tool.get_backend") as mock_backend:
+                with patch("m4.client.get_backend") as mock_backend:
                     from m4.core.backends.duckdb import DuckDBBackend
 
                     mock_backend.return_value = DuckDBBackend(
@@ -415,7 +415,7 @@ class TestQueryCohortMCPIntegration:
             with patch(
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
             ):
-                with patch("m4.apps.cohort_builder.tool.get_backend") as mock_backend:
+                with patch("m4.client.get_backend") as mock_backend:
                     from m4.core.backends.duckdb import DuckDBBackend
 
                     mock_backend.return_value = DuckDBBackend(
@@ -455,7 +455,7 @@ class TestQueryCohortMCPIntegration:
             with patch(
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
             ):
-                with patch("m4.apps.cohort_builder.tool.get_backend") as mock_backend:
+                with patch("m4.client.get_backend") as mock_backend:
                     from m4.core.backends.duckdb import DuckDBBackend
 
                     mock_backend.return_value = DuckDBBackend(
@@ -504,7 +504,7 @@ class TestQueryCohortMCPIntegration:
             with patch(
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
             ):
-                with patch("m4.apps.cohort_builder.tool.get_backend") as mock_backend:
+                with patch("m4.client.get_backend") as mock_backend:
                     from m4.core.backends.duckdb import DuckDBBackend
 
                     mock_backend.return_value = DuckDBBackend(
@@ -544,7 +544,7 @@ class TestQueryCohortMCPIntegration:
             with patch(
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
             ):
-                with patch("m4.apps.cohort_builder.tool.get_backend") as mock_backend:
+                with patch("m4.client.get_backend") as mock_backend:
                     from m4.core.backends.duckdb import DuckDBBackend
 
                     mock_backend.return_value = DuckDBBackend(

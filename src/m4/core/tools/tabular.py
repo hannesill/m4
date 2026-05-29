@@ -19,6 +19,7 @@ from typing import Any
 import pandas as pd
 
 from m4.core.backends import get_backend
+from m4.core.context import M4ExecutionContext
 from m4.core.datasets import DatasetDefinition, Modality
 from m4.core.exceptions import QueryError, SecurityError
 from m4.core.tools.base import ToolInput
@@ -71,7 +72,10 @@ class GetDatabaseSchemaTool:
     supported_datasets: frozenset[str] | None = None
 
     def invoke(
-        self, dataset: DatasetDefinition, params: GetDatabaseSchemaInput
+        self,
+        dataset: DatasetDefinition,
+        params: GetDatabaseSchemaInput,
+        context: M4ExecutionContext | None = None,
     ) -> dict[str, Any]:
         """List available tables using the backend.
 
@@ -80,11 +84,19 @@ class GetDatabaseSchemaTool:
                 - backend_info: str - Backend description
                 - tables: list[str] - List of table names
         """
-        backend = get_backend()
-        tables = backend.get_table_list(dataset)
+        backend = context.backend if context else get_backend()
+        tables = (
+            backend.get_table_list(dataset, context)
+            if context
+            else backend.get_table_list(dataset)
+        )
 
         return {
-            "backend_info": backend.get_backend_info(dataset),
+            "backend_info": (
+                backend.get_backend_info(dataset, context)
+                if context
+                else backend.get_backend_info(dataset)
+            ),
             "tables": tables,
         }
 
@@ -115,7 +127,10 @@ class GetTableInfoTool:
     supported_datasets: frozenset[str] | None = None
 
     def invoke(
-        self, dataset: DatasetDefinition, params: GetTableInfoInput
+        self,
+        dataset: DatasetDefinition,
+        params: GetTableInfoInput,
+        context: M4ExecutionContext | None = None,
     ) -> dict[str, Any]:
         """Get table structure and sample data using the backend.
 
@@ -129,19 +144,27 @@ class GetTableInfoTool:
         Raises:
             QueryError: If table doesn't exist or query fails
         """
-        backend = get_backend()
+        backend = context.backend if context else get_backend()
 
         # Validate table name
         if not validate_table_name(params.table_name):
             raise QueryError(f"Invalid table name '{params.table_name}'")
 
         # Get table schema
-        schema_result = backend.get_table_info(params.table_name, dataset)
+        schema_result = (
+            backend.get_table_info(params.table_name, dataset, context)
+            if context
+            else backend.get_table_info(params.table_name, dataset)
+        )
         if not schema_result.success:
             raise QueryError(schema_result.error or "Failed to get table info")
 
         result = {
-            "backend_info": backend.get_backend_info(dataset),
+            "backend_info": (
+                backend.get_backend_info(dataset, context)
+                if context
+                else backend.get_backend_info(dataset)
+            ),
             "table_name": params.table_name,
             "schema": schema_result.dataframe,
             "sample": None,
@@ -149,7 +172,13 @@ class GetTableInfoTool:
 
         # Get sample data if requested
         if params.show_sample:
-            sample_result = backend.get_sample_data(params.table_name, dataset, limit=3)
+            sample_result = (
+                backend.get_sample_data(
+                    params.table_name, dataset, limit=3, context=context
+                )
+                if context
+                else backend.get_sample_data(params.table_name, dataset, limit=3)
+            )
             if sample_result.success:
                 result["sample"] = sample_result.dataframe
 
@@ -182,7 +211,10 @@ class ExecuteQueryTool:
     supported_datasets: frozenset[str] | None = None
 
     def invoke(
-        self, dataset: DatasetDefinition, params: ExecuteQueryInput
+        self,
+        dataset: DatasetDefinition,
+        params: ExecuteQueryInput,
+        context: M4ExecutionContext | None = None,
     ) -> pd.DataFrame:
         """Execute a SQL query with safety validation.
 
@@ -198,8 +230,12 @@ class ExecuteQueryTool:
         if not safe:
             raise SecurityError(msg, query=params.sql_query)
 
-        backend = get_backend()
-        result = backend.execute_query(params.sql_query, dataset)
+        backend = context.backend if context else get_backend()
+        result = (
+            backend.execute_query(params.sql_query, dataset, context)
+            if context
+            else backend.execute_query(params.sql_query, dataset)
+        )
 
         if not result.success:
             raise QueryError(result.error or "Unknown error", sql=params.sql_query)

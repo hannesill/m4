@@ -17,6 +17,7 @@ from m4.apps.cohort_builder.query_builder import (
     build_gender_distribution_sql,
 )
 from m4.core.backends import get_backend
+from m4.core.context import M4ExecutionContext
 from m4.core.datasets import DatasetDefinition, Modality
 from m4.core.exceptions import QueryError, SecurityError
 from m4.core.tools.base import ToolInput
@@ -57,7 +58,10 @@ class CohortBuilderTool:
     supported_datasets: frozenset[str] | None = frozenset({"mimic-iv-demo", "mimic-iv"})
 
     def invoke(
-        self, dataset: DatasetDefinition, params: CohortBuilderInput
+        self,
+        dataset: DatasetDefinition,
+        params: CohortBuilderInput,
+        context: M4ExecutionContext | None = None,
     ) -> dict[str, Any]:
         """Launch the cohort builder.
 
@@ -119,7 +123,10 @@ class QueryCohortTool:
     supported_datasets: frozenset[str] | None = frozenset({"mimic-iv-demo", "mimic-iv"})
 
     def invoke(
-        self, dataset: DatasetDefinition, params: QueryCohortInput
+        self,
+        dataset: DatasetDefinition,
+        params: QueryCohortInput,
+        context: M4ExecutionContext | None = None,
     ) -> dict[str, Any]:
         """Execute cohort query and return results.
 
@@ -153,23 +160,35 @@ class QueryCohortTool:
                 )
 
         # Execute queries
-        backend = get_backend()
+        backend = context.backend if context else get_backend()
 
-        count_result = backend.execute_query(count_sql, dataset)
+        count_result = (
+            backend.execute_query(count_sql, dataset, context)
+            if context
+            else backend.execute_query(count_sql, dataset)
+        )
         if not count_result.success:
             raise QueryError(
                 count_result.error or "Count query failed",
                 sql=count_sql,
             )
 
-        demographics_result = backend.execute_query(demographics_sql, dataset)
+        demographics_result = (
+            backend.execute_query(demographics_sql, dataset, context)
+            if context
+            else backend.execute_query(demographics_sql, dataset)
+        )
         if not demographics_result.success:
             raise QueryError(
                 demographics_result.error or "Demographics query failed",
                 sql=demographics_sql,
             )
 
-        gender_result = backend.execute_query(gender_sql, dataset)
+        gender_result = (
+            backend.execute_query(gender_sql, dataset, context)
+            if context
+            else backend.execute_query(gender_sql, dataset)
+        )
         if not gender_result.success:
             raise QueryError(
                 gender_result.error or "Gender query failed",

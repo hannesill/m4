@@ -5,6 +5,7 @@ protocol for executing queries against local DuckDB databases.
 """
 
 import os
+import threading
 from pathlib import Path
 
 import duckdb
@@ -16,6 +17,7 @@ from m4.core.backends.base import (
     TableNotFoundError,
     sanitize_error_message,
 )
+from m4.core.context import M4ExecutionContext
 from m4.core.datasets import DatasetDefinition
 
 
@@ -51,18 +53,23 @@ class DuckDBBackend:
                             regardless of the dataset parameter.
         """
         self._db_path_override = Path(db_path_override) if db_path_override else None
+        self._connection_lock = threading.Lock()
 
     @property
     def name(self) -> str:
         """Get the backend name."""
         return "duckdb"
 
-    def _get_db_path(self, dataset: DatasetDefinition) -> Path:
+    def _get_db_path(
+        self,
+        dataset: DatasetDefinition,
+        context: M4ExecutionContext | None = None,
+    ) -> Path:
         """Get the database path for a dataset.
 
         Priority:
-        1. Instance override (db_path_override)
-        2. Environment variable M4_DB_PATH
+        1. Execution context override
+        2. Instance override (db_path_override)
         3. Default path based on dataset configuration
 
         Args:
@@ -74,14 +81,18 @@ class DuckDBBackend:
         Raises:
             ConnectionError: If no valid database path can be determined
         """
-        # Priority 1: Instance override
+        # Priority 1: Per-client execution context override
+        if context and context.db_path:
+            return context.db_path
+
+        # Priority 2: Instance override
         if self._db_path_override:
             return self._db_path_override
 
-        # Priority 2: Environment variable
-        env_path = os.getenv("M4_DB_PATH")
-        if env_path:
-            return Path(env_path)
+        if context is None:
+            env_path = os.getenv("M4_DB_PATH")
+            if env_path:
+                return Path(env_path)
 
         # Priority 3: Default based on dataset
         db_path = get_default_database_path(dataset.name)
@@ -93,7 +104,11 @@ class DuckDBBackend:
 
         return db_path
 
-    def _connect(self, dataset: DatasetDefinition) -> duckdb.DuckDBPyConnection:
+    def _connect(
+        self,
+        dataset: DatasetDefinition,
+        context: M4ExecutionContext | None = None,
+    ) -> duckdb.DuckDBPyConnection:
         """Create a connection to the DuckDB database.
 
         Args:
@@ -105,7 +120,7 @@ class DuckDBBackend:
         Raises:
             ConnectionError: If the database file doesn't exist or can't be opened
         """
-        db_path = self._get_db_path(dataset)
+        db_path = self._get_db_path(dataset, context)
 
         if not db_path.exists():
             raise ConnectionError(
@@ -134,7 +149,12 @@ class DuckDBBackend:
                 backend=self.name,
             ) from e
 
-    def execute_query(self, sql: str, dataset: DatasetDefinition) -> QueryResult:
+    def execute_query(
+        self,
+        sql: str,
+        dataset: DatasetDefinition,
+        context: M4ExecutionContext | None = None,
+    ) -> QueryResult:
         """Execute a SQL query against the dataset.
 
         Args:
@@ -145,28 +165,29 @@ class DuckDBBackend:
             QueryResult with query output as native DataFrame
         """
         try:
-            conn = self._connect(dataset)
-            try:
-                df = conn.execute(sql).df()
+            with self._connection_lock:
+                conn = self._connect(dataset, context)
+                try:
+                    df = conn.execute(sql).df()
 
-                if df.empty:
-                    import pandas as pd
+                    if df.empty:
+                        import pandas as pd
+
+                        return QueryResult(
+                            dataframe=pd.DataFrame(),
+                            row_count=0,
+                        )
+
+                    row_count = len(df)
+                    truncated = row_count > 50
 
                     return QueryResult(
-                        dataframe=pd.DataFrame(),
-                        row_count=0,
+                        dataframe=df,
+                        row_count=row_count,
+                        truncated=truncated,
                     )
-
-                row_count = len(df)
-                truncated = row_count > 50
-
-                return QueryResult(
-                    dataframe=df,
-                    row_count=row_count,
-                    truncated=truncated,
-                )
-            finally:
-                conn.close()
+                finally:
+                    conn.close()
 
         except ConnectionError:
             raise
@@ -177,7 +198,11 @@ class DuckDBBackend:
                 error=sanitize_error_message(e, self.name),
             )
 
-    def get_table_list(self, dataset: DatasetDefinition) -> list[str]:
+    def get_table_list(
+        self,
+        dataset: DatasetDefinition,
+        context: M4ExecutionContext | None = None,
+    ) -> list[str]:
         """Get list of available tables in the dataset.
 
         Returns schema-qualified names (e.g. ``mimiciv_hosp.patients``) when
@@ -198,7 +223,7 @@ class DuckDBBackend:
         WHERE table_schema NOT IN ('main', 'information_schema', 'pg_catalog')
         ORDER BY table_schema, table_name
         """
-        result = self.execute_query(schema_query, dataset)
+        result = self.execute_query(schema_query, dataset, context)
 
         if (
             result.error is None
@@ -214,7 +239,7 @@ class DuckDBBackend:
         WHERE table_schema = 'main'
         ORDER BY table_name
         """
-        result = self.execute_query(fallback_query, dataset)
+        result = self.execute_query(fallback_query, dataset, context)
 
         if result.error or result.dataframe is None or result.dataframe.empty:
             return []
@@ -222,7 +247,10 @@ class DuckDBBackend:
         return result.dataframe["table_name"].tolist()
 
     def get_table_info(
-        self, table_name: str, dataset: DatasetDefinition
+        self,
+        table_name: str,
+        dataset: DatasetDefinition,
+        context: M4ExecutionContext | None = None,
     ) -> QueryResult:
         """Get schema information for a specific table.
 
@@ -257,16 +285,17 @@ class DuckDBBackend:
             query = f"PRAGMA table_info('{table_name}')"
 
         try:
-            conn = self._connect(dataset)
-            try:
-                df = conn.execute(query).df()
+            with self._connection_lock:
+                conn = self._connect(dataset, context)
+                try:
+                    df = conn.execute(query).df()
 
-                if df.empty:
-                    raise TableNotFoundError(table_name, backend=self.name)
+                    if df.empty:
+                        raise TableNotFoundError(table_name, backend=self.name)
 
-                return QueryResult(dataframe=df, row_count=len(df))
-            finally:
-                conn.close()
+                    return QueryResult(dataframe=df, row_count=len(df))
+                finally:
+                    conn.close()
 
         except TableNotFoundError:
             raise
@@ -283,7 +312,11 @@ class DuckDBBackend:
             )
 
     def get_sample_data(
-        self, table_name: str, dataset: DatasetDefinition, limit: int = 3
+        self,
+        table_name: str,
+        dataset: DatasetDefinition,
+        limit: int = 3,
+        context: M4ExecutionContext | None = None,
     ) -> QueryResult:
         """Get sample rows from a table.
 
@@ -306,9 +339,13 @@ class DuckDBBackend:
             query = f'SELECT * FROM {schema}."{table}" LIMIT {limit}'
         else:
             query = f'SELECT * FROM "{table_name}" LIMIT {limit}'
-        return self.execute_query(query, dataset)
+        return self.execute_query(query, dataset, context)
 
-    def get_backend_info(self, dataset: DatasetDefinition) -> str:
+    def get_backend_info(
+        self,
+        dataset: DatasetDefinition,
+        context: M4ExecutionContext | None = None,
+    ) -> str:
         """Get human-readable information about the current backend.
 
         Args:
@@ -321,9 +358,15 @@ class DuckDBBackend:
             f"**Current Backend:** DuckDB (local database)\n"
             f"**Active Dataset:** {dataset.name}"
         )
-        if os.getenv("M4_PATH_DISCLOSURE", "").lower() in {"1", "true", "yes", "on"}:
+        disclose = (
+            context.path_disclosure
+            if context
+            else os.getenv("M4_PATH_DISCLOSURE", "").lower()
+            in {"1", "true", "yes", "on"}
+        )
+        if disclose:
             try:
-                db_path = self._get_db_path(dataset)
+                db_path = self._get_db_path(dataset, context)
             except ConnectionError:
                 db_path = "unknown"
             info += f"\n**Database Path:** {db_path}"

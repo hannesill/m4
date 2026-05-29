@@ -121,7 +121,7 @@ class TestMCPTools:
             with patch(
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
             ):
-                with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
+                with patch("m4.client.get_backend") as mock_get_backend:
                     from m4.core.backends.duckdb import DuckDBBackend
 
                     # Use real DuckDB backend with test database
@@ -209,7 +209,7 @@ class TestMCPTools:
             with patch(
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
             ):
-                with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
+                with patch("m4.client.get_backend") as mock_get_backend:
                     mock_get_backend.return_value = DuckDBBackend(
                         db_path_override=test_db
                     )
@@ -249,7 +249,7 @@ class TestMCPTools:
             with patch(
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
             ):
-                with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
+                with patch("m4.client.get_backend") as mock_get_backend:
                     mock_get_backend.return_value = DuckDBBackend(
                         db_path_override=test_db
                     )
@@ -333,7 +333,7 @@ class TestBigQueryIntegration:
             with patch(
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=mock_ds
             ):
-                with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
+                with patch("m4.client.get_backend") as mock_get_backend:
                     # Mock the backend
                     mock_backend = Mock()
                     mock_backend.name = "bigquery"
@@ -399,7 +399,7 @@ class TestModalityChecking:
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=notes_only_ds
             ):
                 # Mock backend that should NOT be called
-                with patch("m4.core.tools.tabular.get_backend") as mock_backend:
+                with patch("m4.client.get_backend") as mock_backend:
                     async with Client(mcp) as client:
                         # Call execute_query which requires TABULAR modality
                         result = await client.call_tool(
@@ -454,7 +454,7 @@ class TestModalityChecking:
             with patch(
                 "m4.mcp_server.DatasetRegistry.get_active", return_value=tabular_ds
             ):
-                with patch("m4.core.tools.tabular.get_backend") as mock_get_backend:
+                with patch("m4.client.get_backend") as mock_get_backend:
                     mock_get_backend.return_value = DuckDBBackend(
                         db_path_override=str(db_path)
                     )
