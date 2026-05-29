@@ -3,6 +3,7 @@
 import json
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from unittest.mock import patch
 
 import pandas as pd
@@ -282,8 +283,26 @@ class TestTelemetryFilename:
 
 class TestGetTelemetryPath:
     def test_returns_correct_path(self, tmp_path):
-        with patch("m4.config.get_telemetry_dir", return_value=tmp_path):
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("M4_EVENT_LOG", None)
+            with patch("m4.config.get_telemetry_dir", return_value=tmp_path):
+                from m4.api import get_telemetry_path
+
+                path = get_telemetry_path()
+        assert path == tmp_path / "tool_calls.jsonl"
+
+    def test_returns_event_log_env_path(self, tmp_path):
+        event_log = tmp_path / "custom-events.jsonl"
+        with patch.dict(os.environ, {"M4_EVENT_LOG": str(event_log)}):
+            with patch("m4.config.get_telemetry_dir", return_value=tmp_path / "unused"):
+                from m4.api import get_telemetry_path
+
+                path = get_telemetry_path()
+        assert path == event_log
+
+    def test_expands_event_log_env_path(self):
+        with patch.dict(os.environ, {"M4_EVENT_LOG": "~/custom-events.jsonl"}):
             from m4.api import get_telemetry_path
 
             path = get_telemetry_path()
-        assert path == tmp_path / "tool_calls.jsonl"
+        assert path == Path("~/custom-events.jsonl").expanduser()

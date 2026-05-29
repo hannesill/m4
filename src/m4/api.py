@@ -26,6 +26,7 @@ that work on both DuckDB and BigQuery backends. Use set_dataset()
 to switch between datasets.
 """
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -374,5 +375,9 @@ def get_telemetry_path() -> Path:
     """
     from m4.config import get_telemetry_dir
     from m4.core.telemetry import TELEMETRY_FILENAME
+
+    event_log = os.environ.get("M4_EVENT_LOG")
+    if event_log:
+        return Path(event_log).expanduser()
 
     return get_telemetry_dir() / TELEMETRY_FILENAME
