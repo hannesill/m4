@@ -11,6 +11,7 @@ from typing import Protocol, runtime_checkable
 import pandas as pd
 
 from m4.config import logger
+from m4.core.context import M4ExecutionContext
 from m4.core.datasets import DatasetDefinition
 
 # Re-export exceptions from the central exceptions module for backwards compatibility
@@ -143,7 +144,7 @@ class Backend(Protocol):
 
     Example:
         class DuckDBBackend:
-            def execute_query(self, sql, dataset):
+            def execute_query(self, sql, dataset, context):
                 # DuckDB-specific implementation
                 ...
 
@@ -156,12 +157,18 @@ class Backend(Protocol):
         result = backend.execute_query("SELECT * FROM patients LIMIT 5", mimic_demo)
     """
 
-    def execute_query(self, sql: str, dataset: DatasetDefinition) -> QueryResult:
+    def execute_query(
+        self,
+        sql: str,
+        dataset: DatasetDefinition,
+        context: M4ExecutionContext,
+    ) -> QueryResult:
         """Execute a SQL query against the dataset.
 
         Args:
             sql: SQL query string (must be a safe SELECT or PRAGMA query)
             dataset: The dataset definition to query against
+            context: Resolved execution context
 
         Returns:
             QueryResult with the query output or error message
@@ -172,7 +179,9 @@ class Backend(Protocol):
         """
         ...
 
-    def get_table_list(self, dataset: DatasetDefinition) -> list[str]:
+    def get_table_list(
+        self, dataset: DatasetDefinition, context: M4ExecutionContext
+    ) -> list[str]:
         """Get list of available tables in the dataset.
 
         Args:
@@ -184,7 +193,10 @@ class Backend(Protocol):
         ...
 
     def get_table_info(
-        self, table_name: str, dataset: DatasetDefinition
+        self,
+        table_name: str,
+        dataset: DatasetDefinition,
+        context: M4ExecutionContext,
     ) -> QueryResult:
         """Get schema information for a specific table.
 
@@ -198,7 +210,11 @@ class Backend(Protocol):
         ...
 
     def get_sample_data(
-        self, table_name: str, dataset: DatasetDefinition, limit: int = 3
+        self,
+        table_name: str,
+        dataset: DatasetDefinition,
+        limit: int,
+        context: M4ExecutionContext,
     ) -> QueryResult:
         """Get sample rows from a table.
 
@@ -212,7 +228,9 @@ class Backend(Protocol):
         """
         ...
 
-    def get_backend_info(self, dataset: DatasetDefinition) -> str:
+    def get_backend_info(
+        self, dataset: DatasetDefinition, context: M4ExecutionContext
+    ) -> str:
         """Get human-readable information about the current backend.
 
         Args:

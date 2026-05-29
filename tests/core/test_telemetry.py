@@ -9,6 +9,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
+from m4.core.context import M4ExecutionContext
 from m4.core.datasets import DatasetDefinition, Modality
 from m4.core.exceptions import M4Error
 from m4.core.telemetry import (
@@ -45,7 +46,7 @@ class MockTool:
         self._return_value = return_value
         self._side_effect = side_effect
 
-    def invoke(self, dataset, params):
+    def invoke(self, dataset, params, context):
         if self._side_effect:
             raise self._side_effect
         return self._return_value
@@ -75,12 +76,32 @@ def reset_telemetry_state():
     _agent_id_var.reset(token_agent)
 
 
-def _capture_record(mock_dataset, tool=None, params=None):
+def _make_context(
+    mock_dataset,
+    *,
+    interface="unknown",
+    study_id=None,
+    session_id=None,
+    actor=None,
+):
+    return M4ExecutionContext(
+        dataset=mock_dataset,
+        backend_name="mock",
+        backend=object(),
+        interface=interface,
+        study_id=study_id,
+        session_id=session_id,
+        actor=actor,
+    )
+
+
+def _capture_record(mock_dataset, tool=None, params=None, context=None):
     """Helper: invoke a tool and return the parsed telemetry record."""
     tool = tool or MockTool(return_value="ok")
     params = params or MockInput()
+    context = context or _make_context(mock_dataset)
     with patch("m4.core.telemetry.logger") as mock_logger:
-        invoke_tracked(tool, mock_dataset, params)
+        invoke_tracked(tool, mock_dataset, params, context)
         return json.loads(mock_logger.info.call_args[0][0])
 
 
@@ -92,7 +113,9 @@ def _capture_record(mock_dataset, tool=None, params=None):
 class TestInvokeTracked:
     def test_returns_tool_result(self, mock_dataset):
         tool = MockTool(return_value={"data": [1, 2, 3]})
-        result = invoke_tracked(tool, mock_dataset, MockInput())
+        result = invoke_tracked(
+            tool, mock_dataset, MockInput(), _make_context(mock_dataset)
+        )
         assert result == {"data": [1, 2, 3]}
 
     def test_success_record(self, mock_dataset):
@@ -110,7 +133,9 @@ class TestInvokeTracked:
 
         with patch("m4.core.telemetry.logger") as mock_logger:
             with pytest.raises(M4Error, match="something broke"):
-                invoke_tracked(tool, mock_dataset, MockInput())
+                invoke_tracked(
+                    tool, mock_dataset, MockInput(), _make_context(mock_dataset)
+                )
 
             record = json.loads(mock_logger.info.call_args[0][0])
 
@@ -119,10 +144,12 @@ class TestInvokeTracked:
         assert record["error_message"] == "something broke"
 
     def test_context_vars_in_record(self, mock_dataset):
-        set_interface("mcp")
         set_agent_id("agent-42")
 
-        record = _capture_record(mock_dataset)
+        record = _capture_record(
+            mock_dataset,
+            context=_make_context(mock_dataset, interface="mcp"),
+        )
 
         assert record["interface"] == "mcp"
         assert record["agent_id"] == "agent-42"
@@ -136,16 +163,16 @@ class TestInvokeTracked:
         assert record["params_summary"]["limit"] == 5
         assert record["query_hash"] is not None
 
-    def test_env_attribution_fields(self, mock_dataset):
-        with patch.dict(
-            os.environ,
-            {
-                "M4_STUDY_ID": "study-1",
-                "M4_SESSION_ID": "session-1",
-                "M4_ACTOR": "actor-1",
-            },
-        ):
-            record = _capture_record(mock_dataset)
+    def test_explicit_attribution_fields(self, mock_dataset):
+        record = _capture_record(
+            mock_dataset,
+            context=_make_context(
+                mock_dataset,
+                study_id="study-1",
+                session_id="session-1",
+                actor="actor-1",
+            ),
+        )
 
         assert record["study_id"] == "study-1"
         assert record["session_id"] == "session-1"
@@ -167,8 +194,13 @@ class TestJSONLFile:
         """JSONL file is written with valid JSON per line."""
         with patch("m4.config.get_telemetry_dir", return_value=tmp_path):
             tool = MockTool(return_value="ok")
-            invoke_tracked(tool, mock_dataset, MockInput())
-            invoke_tracked(tool, mock_dataset, MockInput(sql_query="SELECT 2"))
+            invoke_tracked(tool, mock_dataset, MockInput(), _make_context(mock_dataset))
+            invoke_tracked(
+                tool,
+                mock_dataset,
+                MockInput(sql_query="SELECT 2"),
+                _make_context(mock_dataset),
+            )
 
         jsonl_path = tmp_path / "tool_calls.jsonl"
         assert jsonl_path.exists()
@@ -186,7 +218,9 @@ class TestJSONLFile:
         with patch.dict(os.environ, {"M4_TELEMETRY": "off"}):
             with patch("m4.config.get_telemetry_dir", return_value=tmp_path):
                 tool = MockTool(return_value="ok")
-                invoke_tracked(tool, mock_dataset, MockInput())
+                invoke_tracked(
+                    tool, mock_dataset, MockInput(), _make_context(mock_dataset)
+                )
 
         jsonl_path = tmp_path / "tool_calls.jsonl"
         assert not jsonl_path.exists()
@@ -195,7 +229,9 @@ class TestJSONLFile:
         event_log = tmp_path / "events.jsonl"
         with patch.dict(os.environ, {"M4_EVENT_LOG": str(event_log)}):
             with patch("m4.config.get_telemetry_dir", return_value=tmp_path / "unused"):
-                invoke_tracked(MockTool(), mock_dataset, MockInput())
+                invoke_tracked(
+                    MockTool(), mock_dataset, MockInput(), _make_context(mock_dataset)
+                )
 
         assert event_log.exists()
         assert not (tmp_path / "unused" / "tool_calls.jsonl").exists()
@@ -260,7 +296,9 @@ class TestRowCount:
         tool = MockTool(side_effect=M4Error("fail"))
         with patch("m4.core.telemetry.logger") as mock_logger:
             with pytest.raises(M4Error):
-                invoke_tracked(tool, mock_dataset, MockInput())
+                invoke_tracked(
+                    tool, mock_dataset, MockInput(), _make_context(mock_dataset)
+                )
             record = json.loads(mock_logger.info.call_args[0][0])
         assert record["row_count"] is None
 
@@ -277,7 +315,9 @@ class TestTelemetryFilename:
 
     def test_jsonl_uses_constant(self, mock_dataset, tmp_path):
         with patch("m4.config.get_telemetry_dir", return_value=tmp_path):
-            invoke_tracked(MockTool(), mock_dataset, MockInput())
+            invoke_tracked(
+                MockTool(), mock_dataset, MockInput(), _make_context(mock_dataset)
+            )
         assert (tmp_path / TELEMETRY_FILENAME).exists()
 
 

@@ -31,9 +31,9 @@ from m4.core.datasets import DatasetDefinition, DatasetRegistry, Modality
 from m4.core.exceptions import SecurityError
 from m4.core.tools import init_tools
 
-# Patch at the point of use in tool modules, not where defined
-TABULAR_BACKEND_PATCH = "m4.core.tools.tabular.get_backend"
-NOTES_BACKEND_PATCH = "m4.core.tools.notes.get_backend"
+# Patch at the client backend factory boundary.
+TABULAR_BACKEND_PATCH = "m4.client.get_backend"
+NOTES_BACKEND_PATCH = "m4.client.get_backend"
 
 
 @pytest.fixture(autouse=True)

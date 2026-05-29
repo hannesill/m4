@@ -29,25 +29,14 @@ from fastmcp import FastMCP
 from m4.apps import init_apps
 from m4.apps.cohort_builder import RESOURCE_URI as COHORT_BUILDER_URI
 from m4.apps.cohort_builder import get_ui_html
-from m4.apps.cohort_builder.query_builder import QueryCohortInput
-from m4.apps.cohort_builder.tool import CohortBuilderInput
 from m4.auth import init_oauth2, require_oauth2
+from m4.client import M4Client
 from m4.core.datasets import DatasetRegistry
 from m4.core.exceptions import M4Error
 from m4.core.serialization import serialize_for_mcp
-from m4.core.telemetry import invoke_tracked, set_interface
-from m4.core.tools import ToolRegistry, ToolSelector, init_tools
-from m4.core.tools.management import ListDatasetsInput, SetDatasetInput
-from m4.core.tools.notes import (
-    GetNoteInput,
-    ListPatientNotesInput,
-    SearchNotesInput,
-)
-from m4.core.tools.tabular import (
-    ExecuteQueryInput,
-    GetDatabaseSchemaInput,
-    GetTableInfoInput,
-)
+from m4.core.telemetry import set_interface
+from m4.core.tools import ToolSelector, init_tools
+from m4.core.tools.management import SetDatasetInput
 
 # Create FastMCP server instance
 mcp = FastMCP("m4")
@@ -279,9 +268,8 @@ def list_datasets() -> str:
         and showing availability of local database and BigQuery support.
     """
     try:
-        tool = ToolRegistry.get("list_datasets")
-        dataset = DatasetRegistry.get_active()
-        result = invoke_tracked(tool, dataset, ListDatasetsInput())
+        client = M4Client.from_active(interface="mcp")
+        result = client.dataset_status()
         return _serialize_datasets_result(result)
     except M4Error as e:
         return f"**Error:** {e}"
@@ -301,10 +289,9 @@ def set_dataset(dataset_name: str) -> str:
         # Check if target dataset exists before switching
         target_dataset_def = DatasetRegistry.get(dataset_name.lower())
 
-        tool = ToolRegistry.get("set_dataset")
-        dataset = DatasetRegistry.get_active()
-        result = invoke_tracked(
-            tool, dataset, SetDatasetInput(dataset_name=dataset_name)
+        client = M4Client.from_active(interface="mcp")
+        result = client.invoke_tool(
+            "set_dataset", SetDatasetInput(dataset_name=dataset_name)
         )
         output = _serialize_set_dataset_result(result)
 
@@ -330,7 +317,8 @@ def get_database_schema() -> str:
         List of all available tables in the database with current backend info.
     """
     try:
-        dataset = DatasetRegistry.get_active()
+        client = M4Client.from_active(interface="mcp")
+        dataset = client.dataset
 
         # Proactive capability check
         compat_result = _tool_selector.check_compatibility(
@@ -339,8 +327,7 @@ def get_database_schema() -> str:
         if not compat_result.compatible:
             return compat_result.error_message
 
-        tool = ToolRegistry.get("get_database_schema")
-        result = invoke_tracked(tool, dataset, GetDatabaseSchemaInput())
+        result = client.schema()
         return _serialize_schema_result(result)
     except M4Error as e:
         return f"**Error:** {e}"
@@ -361,18 +348,17 @@ def get_table_info(table_name: str, show_sample: bool = True) -> str:
         Table structure with column names, types, and sample data.
     """
     try:
-        dataset = DatasetRegistry.get_active()
+        client = M4Client.from_active(interface="mcp")
+        dataset = client.dataset
 
         # Proactive capability check
         compat_result = _tool_selector.check_compatibility("get_table_info", dataset)
         if not compat_result.compatible:
             return compat_result.error_message
 
-        tool = ToolRegistry.get("get_table_info")
-        result = invoke_tracked(
-            tool,
-            dataset,
-            GetTableInfoInput(table_name=table_name, show_sample=show_sample),
+        result = client.table_info(
+            table_name=table_name,
+            show_sample=show_sample,
         )
         return _serialize_table_info_result(result)
     except M4Error as e:
@@ -396,15 +382,15 @@ def execute_query(sql_query: str) -> str:
         Query results or helpful error messages.
     """
     try:
-        dataset = DatasetRegistry.get_active()
+        client = M4Client.from_active(interface="mcp")
+        dataset = client.dataset
 
         # Proactive capability check
         compat_result = _tool_selector.check_compatibility("execute_query", dataset)
         if not compat_result.compatible:
             return compat_result.error_message
 
-        tool = ToolRegistry.get("execute_query")
-        result = invoke_tracked(tool, dataset, ExecuteQueryInput(sql_query=sql_query))
+        result = client.query(sql_query)
         # Result is a DataFrame - serialize it
         return serialize_for_mcp(result)
     except M4Error as e:
@@ -441,22 +427,18 @@ def search_notes(
         Matching snippets with note IDs for follow-up retrieval.
     """
     try:
-        dataset = DatasetRegistry.get_active()
+        client = M4Client.from_active(interface="mcp")
+        dataset = client.dataset
 
         compat_result = _tool_selector.check_compatibility("search_notes", dataset)
         if not compat_result.compatible:
             return compat_result.error_message
 
-        tool = ToolRegistry.get("search_notes")
-        result = invoke_tracked(
-            tool,
-            dataset,
-            SearchNotesInput(
-                query=query,
-                note_type=note_type,
-                limit=limit,
-                snippet_length=snippet_length,
-            ),
+        result = client.search_notes(
+            query=query,
+            note_type=note_type,
+            limit=limit,
+            snippet_length=snippet_length,
         )
         return _serialize_search_notes_result(result)
     except M4Error as e:
@@ -480,17 +462,16 @@ def get_note(note_id: str, max_length: int | None = None) -> str:
         Full note text, or truncated version if max_length specified.
     """
     try:
-        dataset = DatasetRegistry.get_active()
+        client = M4Client.from_active(interface="mcp")
+        dataset = client.dataset
 
         compat_result = _tool_selector.check_compatibility("get_note", dataset)
         if not compat_result.compatible:
             return compat_result.error_message
 
-        tool = ToolRegistry.get("get_note")
-        result = invoke_tracked(
-            tool,
-            dataset,
-            GetNoteInput(note_id=note_id, max_length=max_length),
+        result = client.get_note(
+            note_id=note_id,
+            max_length=max_length,
         )
         return _serialize_get_note_result(result)
     except M4Error as e:
@@ -521,7 +502,8 @@ def list_patient_notes(
         List of available notes with metadata for the patient.
     """
     try:
-        dataset = DatasetRegistry.get_active()
+        client = M4Client.from_active(interface="mcp")
+        dataset = client.dataset
 
         compat_result = _tool_selector.check_compatibility(
             "list_patient_notes", dataset
@@ -529,15 +511,10 @@ def list_patient_notes(
         if not compat_result.compatible:
             return compat_result.error_message
 
-        tool = ToolRegistry.get("list_patient_notes")
-        result = invoke_tracked(
-            tool,
-            dataset,
-            ListPatientNotesInput(
-                subject_id=subject_id,
-                note_type=note_type,
-                limit=limit,
-            ),
+        result = client.list_patient_notes(
+            subject_id=subject_id,
+            note_type=note_type,
+            limit=limit,
         )
         return _serialize_list_patient_notes_result(result)
     except M4Error as e:
@@ -571,15 +548,15 @@ def cohort_builder() -> str:
         interactive cohort builder interface.
     """
     try:
-        dataset = DatasetRegistry.get_active()
+        client = M4Client.from_active(interface="mcp")
+        dataset = client.dataset
 
         # Proactive capability check
         compat_result = _tool_selector.check_compatibility("cohort_builder", dataset)
         if not compat_result.compatible:
             return compat_result.error_message
 
-        tool = ToolRegistry.get("cohort_builder")
-        result = invoke_tracked(tool, dataset, CohortBuilderInput())
+        result = client.cohort_builder()
         return serialize_for_mcp(result)
     except M4Error as e:
         return f"**Error:** {e}"
@@ -614,7 +591,8 @@ def query_cohort(
         JSON with patient_count, admission_count, demographics, and SQL.
     """
     try:
-        dataset = DatasetRegistry.get_active()
+        client = M4Client.from_active(interface="mcp")
+        dataset = client.dataset
 
         # Proactive capability check
         compat_result = _tool_selector.check_compatibility("query_cohort", dataset)
@@ -622,19 +600,14 @@ def query_cohort(
             # Return JSON error for UI compatibility
             return json.dumps({"error": compat_result.error_message})
 
-        tool = ToolRegistry.get("query_cohort")
-        result = invoke_tracked(
-            tool,
-            dataset,
-            QueryCohortInput(
-                age_min=age_min,
-                age_max=age_max,
-                gender=gender,
-                icd_codes=icd_codes,
-                icd_match_all=icd_match_all,
-                has_icu_stay=has_icu_stay,
-                in_hospital_mortality=in_hospital_mortality,
-            ),
+        result = client.query_cohort(
+            age_min=age_min,
+            age_max=age_max,
+            gender=gender,
+            icd_codes=icd_codes,
+            icd_match_all=icd_match_all,
+            has_icu_stay=has_icu_stay,
+            in_hospital_mortality=in_hospital_mortality,
         )
         # Return JSON directly for MCP App UI compatibility
         return json.dumps(result)

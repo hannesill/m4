@@ -14,6 +14,7 @@ from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
+from m4.core.context import M4ExecutionContext
 from m4.core.datasets import DatasetDefinition, Modality
 
 
@@ -85,9 +86,9 @@ class Tool(Protocol):
             required_modalities = frozenset({Modality.TABULAR})
             supported_datasets = None
 
-            def invoke(self, dataset, params) -> pd.DataFrame:
+            def invoke(self, dataset, params, context) -> pd.DataFrame:
                 # Returns DataFrame directly
-                result = backend.execute_query(sql, dataset)
+                result = backend.execute_query(sql, dataset, context)
                 if not result.success:
                     raise QueryError(result.error)
                 return result.dataframe
@@ -108,12 +109,18 @@ class Tool(Protocol):
     required_modalities: AbstractSet[Modality]
     supported_datasets: AbstractSet[str] | None  # None = all compatible datasets
 
-    def invoke(self, dataset: DatasetDefinition, params: ToolInput) -> Any:
+    def invoke(
+        self,
+        dataset: DatasetDefinition,
+        params: ToolInput,
+        context: M4ExecutionContext,
+    ) -> Any:
         """Execute the tool with given parameters on the specified dataset.
 
         Args:
             dataset: The dataset definition to query
             params: Tool-specific input parameters
+            context: Resolved execution context for this invocation
 
         Returns:
             Native Python type appropriate for the tool:

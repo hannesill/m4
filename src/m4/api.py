@@ -32,23 +32,14 @@ from typing import Any
 
 import pandas as pd
 
+from m4.client import M4Client
 from m4.config import _ensure_custom_datasets_loaded
 from m4.config import get_active_dataset as _get_active_dataset
 from m4.config import set_active_dataset as _set_active_dataset
 from m4.core.datasets import DatasetRegistry
 from m4.core.exceptions import DatasetError, M4Error, ModalityError, QueryError
-from m4.core.telemetry import invoke_tracked, set_interface
-from m4.core.tools import ToolRegistry, ToolSelector, init_tools
-from m4.core.tools.notes import (
-    GetNoteInput,
-    ListPatientNotesInput,
-    SearchNotesInput,
-)
-from m4.core.tools.tabular import (
-    ExecuteQueryInput,
-    GetDatabaseSchemaInput,
-    GetTableInfoInput,
-)
+from m4.core.telemetry import set_interface
+from m4.core.tools import ToolSelector, init_tools
 
 # Initialize tools on module import
 init_tools()
@@ -60,6 +51,7 @@ _tool_selector = ToolSelector()
 # Re-export exceptions for convenience
 __all__ = [
     "DatasetError",
+    "M4Client",
     "M4Error",
     "ModalityError",
     "QueryError",
@@ -157,9 +149,7 @@ def get_schema() -> dict[str, Any]:
         >>> print(schema['tables'])
         ['admissions', 'diagnoses_icd', 'patients', ...]
     """
-    dataset = DatasetRegistry.get_active()
-    tool = ToolRegistry.get("get_database_schema")
-    return invoke_tracked(tool, dataset, GetDatabaseSchemaInput())
+    return M4Client.from_active(interface="python_api").schema()
 
 
 def get_table_info(table_name: str, show_sample: bool = True) -> dict[str, Any]:
@@ -184,10 +174,8 @@ def get_table_info(table_name: str, show_sample: bool = True) -> dict[str, Any]:
         >>> print(info['schema'])  # DataFrame with column info
         >>> print(info['sample'])  # DataFrame with sample rows
     """
-    dataset = DatasetRegistry.get_active()
-    tool = ToolRegistry.get("get_table_info")
-    return invoke_tracked(
-        tool, dataset, GetTableInfoInput(table_name=table_name, show_sample=show_sample)
+    return M4Client.from_active(interface="python_api").table_info(
+        table_name, show_sample=show_sample
     )
 
 
@@ -211,9 +199,7 @@ def execute_query(sql: str) -> pd.DataFrame:
         0       M            55
         1       F            45
     """
-    dataset = DatasetRegistry.get_active()
-    tool = ToolRegistry.get("execute_query")
-    return invoke_tracked(tool, dataset, ExecuteQueryInput(sql_query=sql))
+    return M4Client.from_active(interface="python_api").query(sql)
 
 
 # =============================================================================
@@ -266,17 +252,11 @@ def search_notes(
     """
     _check_notes_compatibility("search_notes")
 
-    dataset = DatasetRegistry.get_active()
-    tool = ToolRegistry.get("search_notes")
-    return invoke_tracked(
-        tool,
-        dataset,
-        SearchNotesInput(
-            query=query,
-            note_type=note_type,
-            limit=limit,
-            snippet_length=snippet_length,
-        ),
+    return M4Client.from_active(interface="python_api").search_notes(
+        query=query,
+        note_type=note_type,
+        limit=limit,
+        snippet_length=snippet_length,
     )
 
 
@@ -306,12 +286,8 @@ def get_note(note_id: str, max_length: int | None = None) -> dict[str, Any]:
     """
     _check_notes_compatibility("get_note")
 
-    dataset = DatasetRegistry.get_active()
-    tool = ToolRegistry.get("get_note")
-    return invoke_tracked(
-        tool,
-        dataset,
-        GetNoteInput(note_id=note_id, max_length=max_length),
+    return M4Client.from_active(interface="python_api").get_note(
+        note_id=note_id, max_length=max_length
     )
 
 
@@ -344,16 +320,10 @@ def list_patient_notes(
     """
     _check_notes_compatibility("list_patient_notes")
 
-    dataset = DatasetRegistry.get_active()
-    tool = ToolRegistry.get("list_patient_notes")
-    return invoke_tracked(
-        tool,
-        dataset,
-        ListPatientNotesInput(
-            subject_id=subject_id,
-            note_type=note_type,
-            limit=limit,
-        ),
+    return M4Client.from_active(interface="python_api").list_patient_notes(
+        subject_id=subject_id,
+        note_type=note_type,
+        limit=limit,
     )
 
 
