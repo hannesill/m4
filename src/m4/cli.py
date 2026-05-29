@@ -1,10 +1,12 @@
 import json
 import logging
+import math
 import os
 import subprocess
 import sys
 from contextlib import contextmanager, nullcontext
 from dataclasses import is_dataclass
+from datetime import date, datetime, time
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -101,7 +103,7 @@ def _silence_m4_logging():
 
 
 def _emit_json(payload: dict[str, Any]) -> None:
-    typer.echo(json.dumps(payload, indent=2))
+    typer.echo(json.dumps(_jsonable(payload), indent=2, allow_nan=False))
 
 
 def _emit_command_json(result: CommandResult | CommandError) -> None:
@@ -217,21 +219,55 @@ def _dataframe_payload(df: pd.DataFrame | None) -> dict[str, Any] | None:
         return None
     return {
         "columns": [str(column) for column in df.columns],
-        "rows": df.to_dict(orient="records"),
+        "rows": _jsonable(df.to_dict(orient="records")),
         "row_count": len(df),
     }
 
 
 def _jsonable(value: Any) -> Any:
+    if value is None:
+        return None
     if isinstance(value, pd.DataFrame):
         return _dataframe_payload(value)
     if isinstance(value, dict):
         return {str(key): _jsonable(item) for key, item in value.items()}
-    if isinstance(value, list | tuple):
+    if isinstance(value, list | tuple | set):
         return [_jsonable(item) for item in value]
     if is_dataclass(value):
         return _jsonable(value.__dict__)
+    if _is_missing_value(value):
+        return None
+    if isinstance(value, datetime | date | time | pd.Timestamp):
+        return value.isoformat()
+    if hasattr(value, "tolist"):
+        try:
+            return _jsonable(value.tolist())
+        except (TypeError, ValueError):
+            pass
+    if hasattr(value, "item"):
+        try:
+            return _jsonable(value.item())
+        except (AttributeError, TypeError, ValueError):
+            pass
+    if isinstance(value, float) and not math.isfinite(value):
+        return str(value)
+    try:
+        json.dumps(value, allow_nan=False)
+    except (TypeError, ValueError):
+        return str(value)
     return value
+
+
+def _is_missing_value(value: Any) -> bool:
+    try:
+        missing = pd.isna(value)
+    except (TypeError, ValueError):
+        return False
+    if isinstance(missing, bool):
+        return missing
+    if getattr(missing, "shape", None) == ():
+        return bool(missing)
+    return False
 
 
 @contextmanager
