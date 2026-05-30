@@ -314,7 +314,6 @@ class TestInitTools:
 
         # Management tools
         assert "list_datasets" in tool_names
-        assert "set_dataset" in tool_names
 
         # Tabular tools
         assert "get_database_schema" in tool_names
@@ -326,8 +325,8 @@ class TestInitTools:
         assert "get_note" in tool_names
         assert "list_patient_notes" in tool_names
 
-        # Total: 8 tools (2 management + 3 tabular + 3 notes)
-        assert len(all_tools) == 8
+        # Total: 7 registered tools (1 management + 3 tabular + 3 notes)
+        assert len(all_tools) == 7
 
         # Cleanup
         reset_tools()
@@ -343,9 +342,9 @@ class TestInitTools:
         init_tools()
         init_tools()
 
-        # Should still have exactly 8 tools
+        # Should still have exactly 7 tools
         all_tools = ToolRegistry.list_all()
-        assert len(all_tools) == 8
+        assert len(all_tools) == 7
 
         reset_tools()
 
@@ -354,14 +353,14 @@ class TestInitTools:
         from m4.core.tools import init_tools, reset_tools
 
         init_tools()
-        assert len(ToolRegistry.list_all()) == 8
+        assert len(ToolRegistry.list_all()) == 7
 
         reset_tools()
         assert len(ToolRegistry.list_all()) == 0
 
         # Can reinitialize after reset
         init_tools()
-        assert len(ToolRegistry.list_all()) == 8
+        assert len(ToolRegistry.list_all()) == 7
 
         reset_tools()
 
@@ -375,7 +374,6 @@ class TestInitTools:
             ListDatasetsTool,
             ListPatientNotesTool,
             SearchNotesTool,
-            SetDatasetTool,
         )
 
         tool_classes = [
@@ -383,7 +381,6 @@ class TestInitTools:
             GetTableInfoTool,
             ExecuteQueryTool,
             ListDatasetsTool,
-            SetDatasetTool,
             SearchNotesTool,
             GetNoteTool,
             ListPatientNotesTool,
@@ -415,7 +412,6 @@ class TestInitTools:
 
         # Management tools should always be available
         assert "list_datasets" in demo_names
-        assert "set_dataset" in demo_names
 
         # Tabular tools should be available for demo
         assert "get_database_schema" in demo_names
@@ -433,10 +429,9 @@ class TestInitTools:
 
     def test_management_tools_always_compatible(self):
         """Test that management tools work with any dataset."""
-        from m4.core.tools import ListDatasetsTool, SetDatasetTool
+        from m4.core.tools import ListDatasetsTool
 
         list_tool = ListDatasetsTool()
-        set_tool = SetDatasetTool()
 
         # Create a minimal dataset
         minimal_ds = DatasetDefinition(
@@ -446,4 +441,3 @@ class TestInitTools:
 
         # Management tools should be compatible with any dataset
         assert list_tool.is_compatible(minimal_ds)
-        assert set_tool.is_compatible(minimal_ds)

@@ -2,7 +2,7 @@
 
 This module defines the core Tool protocol that all M4 tools must implement.
 Tools declare their required modalities and are automatically filtered based
-on the active dataset's modalities.
+on the selected dataset's modalities.
 
 Architecture Note:
     Tools return native Python types (DataFrame, list, dict, str, None).

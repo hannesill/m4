@@ -318,10 +318,10 @@ def test_use_full_happy_path(mock_detect, mock_set_active):
     }
 
     result = runner.invoke(app, ["use", "mimic-iv"])
-    assert result.exit_code == 0
-    # Updated format without trailing period
-    assert "Active dataset set to 'mimic-iv'" in result.stdout
-    mock_set_active.assert_called_once_with("mimic-iv")
+    assert result.exit_code == 1
+    assert "Active Dataset Removed" in result.stdout
+    assert "explicit dataset" in result.stdout
+    mock_set_active.assert_not_called()
 
 
 @patch("m4.services.use.get_active_backend", return_value="duckdb")
@@ -341,17 +341,13 @@ def test_use_json_success_includes_warning_codes(
 
     result = runner.invoke(app, ["use", "mimic-iv", "--json"])
 
-    assert result.exit_code == 0
+    assert result.exit_code == 1
     payload = json.loads(result.stdout)
-    assert payload["ok"] is True
+    assert payload["ok"] is False
     assert payload["command"] == "use"
-    assert payload["active_dataset"] == "mimic-iv"
-    assert payload["backend"] == "duckdb"
-    assert payload["dataset"]["name"] == "mimic-iv"
-    assert payload["dataset"]["db_present"] is False
-    assert payload["warnings"] == ["local_db_missing"]
+    assert payload["error"]["code"] == "active_dataset_removed"
     assert "Active dataset set" not in result.stdout
-    mock_set_active.assert_called_once_with("mimic-iv")
+    mock_set_active.assert_not_called()
 
 
 @patch("m4.services.use.set_active_dataset")
@@ -363,7 +359,7 @@ def test_use_json_dataset_not_found_emits_error(mock_detect, mock_set_active):
     payload = json.loads(result.stdout)
     assert payload["ok"] is False
     assert payload["command"] == "use"
-    assert payload["error"]["code"] == "dataset_not_found"
+    assert payload["error"]["code"] == "active_dataset_removed"
     assert "Dataset Not Found" not in result.stdout
     mock_set_active.assert_not_called()
 
@@ -387,7 +383,7 @@ def test_use_json_backend_incompatible_emits_error(
 
     assert result.exit_code == 1
     payload = json.loads(result.stdout)
-    assert payload["error"]["code"] == "backend_incompatible"
+    assert payload["error"]["code"] == "active_dataset_removed"
     assert "Backend Incompatible" not in result.stdout
     mock_set_active.assert_not_called()
 
@@ -413,7 +409,7 @@ def test_status_happy_path(mock_detect, mock_active, mock_size):
 
     result = runner.invoke(app, ["status"])
     assert result.exit_code == 0
-    assert "Active dataset:" in result.stdout
+    assert "Dataset:" in result.stdout
     assert "mimic-iv" in result.stdout
     # Updated Rich format: "Parquet size:  X.XX GB"
     assert "Parquet size:" in result.stdout
@@ -538,13 +534,12 @@ def test_status_json_no_active_dataset_returns_empty_dataset_list(
 
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
-    assert payload == {
-        "version": 1,
-        "active_dataset": None,
-        "backend": "duckdb",
-        "bigquery_project_id": None,
-        "datasets": [],
-    }
+    assert payload["version"] == 1
+    assert payload["active_dataset"] is None
+    assert payload["selected_dataset"] is None
+    assert payload["backend"] == "duckdb"
+    assert payload["bigquery_project_id"] is None
+    assert payload["datasets"] == []
 
 
 @patch("m4.services.status.get_bigquery_project_id", return_value=None)
@@ -737,7 +732,7 @@ def test_status_derived_flag(
     mock_db_path.return_value = db_file
     mock_mat.return_value = {"sofa", "sepsis3", "age"}
 
-    result = runner.invoke(app, ["status", "--derived"])
+    result = runner.invoke(app, ["status", "--derived", "--dataset", "mimic-iv"])
     assert result.exit_code == 0
     assert "Derived tables for mimic-iv" in result.stdout
     assert "materialized" in result.stdout
@@ -747,7 +742,7 @@ def test_status_derived_flag(
 @patch("m4.cli.get_active_dataset", return_value="mimic-iv-demo")
 def test_status_derived_flag_unsupported_dataset(mock_active, mock_backend):
     """Test --derived with a dataset that has no derived support."""
-    result = runner.invoke(app, ["status", "--derived"])
+    result = runner.invoke(app, ["status", "--derived", "--dataset", "mimic-iv-demo"])
     assert result.exit_code == 0
     assert "not available" in result.stdout
 
@@ -757,7 +752,7 @@ def test_status_derived_flag_no_active_dataset(mock_active):
     """Test --derived with no active dataset set."""
     result = runner.invoke(app, ["status", "--derived"])
     assert result.exit_code == 0
-    assert "No active dataset" in result.stdout
+    assert "--dataset is required" in result.stdout
 
 
 # ----------------------------------------------------------------
@@ -803,7 +798,7 @@ def test_backend_bigquery_happy_path(
 def test_backend_bigquery_blocks_unsupported_dataset(
     mock_registry, mock_get_dataset, mock_set_backend
 ):
-    """Test that switching to bigquery is blocked when dataset doesn't support BQ."""
+    """Backend switching no longer depends on a selected dataset."""
     # Mock a dataset that doesn't support BigQuery
     mock_get_dataset.return_value = "custom-dataset"
     mock_ds = MagicMock()
@@ -813,8 +808,7 @@ def test_backend_bigquery_blocks_unsupported_dataset(
     result = runner.invoke(app, ["backend", "bigquery"])
 
     assert result.exit_code == 1
-    assert "Dataset Incompatible" in result.stdout
-    assert "not available on BigQuery" in result.stdout
+    assert "Project ID Required" in result.stdout
     mock_set_backend.assert_not_called()
 
 
@@ -868,7 +862,6 @@ def test_backend_json_duckdb_success(
         "ok": True,
         "command": "backend",
         "backend": "duckdb",
-        "active_dataset": "mimic-iv",
         "bigquery_project_id": None,
         "warnings": [],
     }
@@ -891,7 +884,6 @@ def test_backend_json_bigquery_with_project_id_success(
     assert payload["ok"] is True
     assert payload["command"] == "backend"
     assert payload["backend"] == "bigquery"
-    assert payload["active_dataset"] == "mimic-iv"
     assert payload["bigquery_project_id"] == "my-project"
     assert payload["warnings"] == []
     mock_set_backend.assert_called_once_with("bigquery")
@@ -931,7 +923,7 @@ def test_backend_json_bigquery_blocks_incompatible_active_dataset(
 
     assert result.exit_code == 1
     payload = json.loads(result.stdout)
-    assert payload["error"]["code"] == "dataset_incompatible"
+    assert payload["error"]["code"] == "project_id_required"
     assert "Dataset Incompatible" not in result.stdout
     mock_set_backend.assert_not_called()
 

@@ -15,7 +15,7 @@ Architecture:
 
 Tool Surface:
     The MCP tool surface is stable - all tools remain registered regardless of
-    the active dataset. Compatibility is enforced per-call via proactive
+    the selected dataset. Compatibility is enforced per-call via proactive
     capability checking before tool invocation.
 """
 
@@ -36,7 +36,8 @@ from m4.core.exceptions import M4Error
 from m4.core.serialization import serialize_for_mcp
 from m4.core.telemetry import set_interface
 from m4.core.tools import ToolSelector, init_tools
-from m4.core.tools.management import SetDatasetInput
+from m4.core.tools.management import ListDatasetsInput, ListDatasetsTool
+from m4.services.capabilities import build_capabilities_manifest
 
 # Create FastMCP server instance
 mcp = FastMCP("m4")
@@ -50,11 +51,10 @@ set_interface("mcp")
 # Tool selector for capability-based filtering
 _tool_selector = ToolSelector()
 
-# MCP-exposed tool names (for filtering in set_dataset snapshot)
+# MCP-exposed tool names (for capability snapshots)
 _MCP_TOOL_NAMES = frozenset(
     {
         "list_datasets",
-        "set_dataset",
         "get_database_schema",
         "get_table_info",
         "execute_query",
@@ -118,21 +118,23 @@ def _serialize_table_info_result(result: dict[str, Any]) -> str:
 
 def _serialize_datasets_result(result: dict[str, Any]) -> str:
     """Serialize list_datasets result to MCP string."""
-    active = result.get("active_dataset") or "(unset)"
+    selected = result.get("selected_dataset")
     backend = result.get("backend", "duckdb")
     datasets = result.get("datasets", {})
 
     if not datasets:
         return "No datasets detected."
 
-    output = [f"Active dataset: {active}\n"]
+    output = []
+    if selected:
+        output.append(f"Selected dataset: {selected}\n")
     output.append(
         f"Backend: {'local (DuckDB)' if backend == 'duckdb' else 'cloud (BigQuery)'}\n"
     )
 
     for label, info in datasets.items():
-        is_active = " (Active)" if info.get("is_active") else ""
-        output.append(f"=== {label.upper()}{is_active} ===")
+        is_selected = " (Selected)" if info.get("selected") else ""
+        output.append(f"=== {label.upper()}{is_selected} ===")
 
         parquet_icon = "✅" if info.get("parquet_present") else "❌"
         db_icon = "✅" if info.get("db_present") else "❌"
@@ -159,19 +161,6 @@ def _serialize_datasets_result(result: dict[str, Any]) -> str:
         output.append("")
 
     return "\n".join(output)
-
-
-def _serialize_set_dataset_result(result: dict[str, Any]) -> str:
-    """Serialize set_dataset result to MCP string."""
-    dataset_name = result.get("dataset_name", "")
-    warnings = result.get("warnings", [])
-
-    status_msg = f"✅ Active dataset switched to '{dataset_name}'."
-
-    for warning in warnings:
-        status_msg += f"\n⚠️ {warning}"
-
-    return status_msg
 
 
 def _serialize_search_notes_result(result: dict[str, Any]) -> str:
@@ -260,18 +249,21 @@ def _serialize_list_patient_notes_result(result: dict[str, Any]) -> str:
 # ==========================================
 
 
+def _client_for_dataset(dataset: str | None) -> M4Client:
+    resolved = dataset if dataset is not None else DatasetRegistry.get_active()
+    return M4Client(dataset=resolved, interface="mcp")
+
+
 @mcp.resource("m4://capabilities", mime_type="application/json")
 def capabilities_resource() -> str:
     """Return the M4 capability manifest as JSON."""
-    client = M4Client.from_active(interface="mcp", allow_missing_dataset=True)
-    return json.dumps(client.capabilities(), indent=2)
+    return json.dumps(build_capabilities_manifest(), indent=2)
 
 
 @mcp.tool()
 def capabilities() -> str:
     """Return the M4 capability manifest as JSON."""
-    client = M4Client.from_active(interface="mcp", allow_missing_dataset=True)
-    return json.dumps(client.capabilities(), indent=2)
+    return json.dumps(build_capabilities_manifest(), indent=2)
 
 
 @mcp.tool()
@@ -279,12 +271,12 @@ def list_datasets() -> str:
     """📋 List all available datasets and their status.
 
     Returns:
-        A formatted string listing available datasets, indicating which one is active,
+        A formatted string listing available datasets, indicating selected status,
         and showing availability of local database and BigQuery support.
     """
     try:
-        client = M4Client.from_active(interface="mcp")
-        result = client.dataset_status()
+        dummy = DatasetRegistry.list_all()[0]
+        result = ListDatasetsTool().invoke(dummy, ListDatasetsInput(), context=None)
         return _serialize_datasets_result(result)
     except M4Error as e:
         return f"**Error:** {e}"
@@ -292,52 +284,33 @@ def list_datasets() -> str:
 
 @mcp.tool()
 def set_dataset(dataset_name: str) -> str:
-    """🔄 Switch the active dataset.
-
-    Args:
-        dataset_name: The name of the dataset to switch to (e.g., 'mimic-iv-demo').
-
-    Returns:
-        Confirmation message with supported tools snapshot, or error if not found.
-    """
-    try:
-        # Check if target dataset exists before switching
-        target_dataset_def = DatasetRegistry.get(dataset_name.lower())
-
-        client = M4Client.from_active(interface="mcp")
-        result = client.invoke_tool(
-            "set_dataset", SetDatasetInput(dataset_name=dataset_name)
-        )
-        output = _serialize_set_dataset_result(result)
-
-        # Append supported tools snapshot if dataset is valid
-        if target_dataset_def is not None:
-            output += _tool_selector.get_supported_tools_snapshot(
-                target_dataset_def, _MCP_TOOL_NAMES
-            )
-
-        return output
-    except M4Error as e:
-        return f"**Error:** {e}"
+    """Deprecated: M4 no longer keeps a global active dataset."""
+    return (
+        "**Error:** set_dataset is no longer supported. M4 tools now require an "
+        "explicit dataset argument, for example dataset='mimic-iv'."
+    )
 
 
 @mcp.tool()
 @require_oauth2
-def get_database_schema() -> str:
+def get_database_schema(dataset: str | None = None) -> str:
     """📚 Discover what data is available in the database.
 
     **When to use:** Start here to understand what tables exist.
+
+    Args:
+        dataset: Dataset name, e.g. 'mimic-iv'.
 
     Returns:
         List of all available tables in the database with current backend info.
     """
     try:
-        client = M4Client.from_active(interface="mcp")
-        dataset = client.dataset
+        client = _client_for_dataset(dataset)
+        dataset_def = client.dataset
 
         # Proactive capability check
         compat_result = _tool_selector.check_compatibility(
-            "get_database_schema", dataset
+            "get_database_schema", dataset_def
         )
         if not compat_result.compatible:
             return compat_result.error_message
@@ -350,12 +323,15 @@ def get_database_schema() -> str:
 
 @mcp.tool()
 @require_oauth2
-def get_table_info(table_name: str, show_sample: bool = True) -> str:
+def get_table_info(
+    table_name: str, show_sample: bool = True, dataset: str | None = None
+) -> str:
     """🔍 Explore a specific table's structure and see sample data.
 
     **When to use:** After identifying relevant tables from get_database_schema().
 
     Args:
+        dataset: Dataset name, e.g. 'mimic-iv'.
         table_name: Exact table name (case-sensitive).
         show_sample: Whether to include sample rows (default: True).
 
@@ -363,11 +339,13 @@ def get_table_info(table_name: str, show_sample: bool = True) -> str:
         Table structure with column names, types, and sample data.
     """
     try:
-        client = M4Client.from_active(interface="mcp")
-        dataset = client.dataset
+        client = _client_for_dataset(dataset)
+        dataset_def = client.dataset
 
         # Proactive capability check
-        compat_result = _tool_selector.check_compatibility("get_table_info", dataset)
+        compat_result = _tool_selector.check_compatibility(
+            "get_table_info", dataset_def
+        )
         if not compat_result.compatible:
             return compat_result.error_message
 
@@ -382,7 +360,7 @@ def get_table_info(table_name: str, show_sample: bool = True) -> str:
 
 @mcp.tool()
 @require_oauth2
-def execute_query(sql_query: str) -> str:
+def execute_query(sql_query: str, dataset: str | None = None) -> str:
     """🚀 Execute SQL queries to analyze data.
 
     **Recommended workflow:**
@@ -391,17 +369,18 @@ def execute_query(sql_query: str) -> str:
     3. Write your SQL query with exact names
 
     Args:
+        dataset: Dataset name, e.g. 'mimic-iv'.
         sql_query: Your SQL SELECT query (SELECT only).
 
     Returns:
         Query results or helpful error messages.
     """
     try:
-        client = M4Client.from_active(interface="mcp")
-        dataset = client.dataset
+        client = _client_for_dataset(dataset)
+        dataset_def = client.dataset
 
         # Proactive capability check
-        compat_result = _tool_selector.check_compatibility("execute_query", dataset)
+        compat_result = _tool_selector.check_compatibility("execute_query", dataset_def)
         if not compat_result.compatible:
             return compat_result.error_message
 
@@ -424,6 +403,7 @@ def search_notes(
     note_type: str = "all",
     limit: int = 5,
     snippet_length: int = 300,
+    dataset: str | None = None,
 ) -> str:
     """🔍 Search clinical notes by keyword.
 
@@ -433,6 +413,7 @@ def search_notes(
     **Note types:** 'discharge' (summaries), 'radiology' (reports), or 'all'
 
     Args:
+        dataset: Dataset name, e.g. 'mimic-iv-note'.
         query: Search term to find in notes.
         note_type: Type of notes to search ('discharge', 'radiology', or 'all').
         limit: Maximum number of results per note type (default: 5).
@@ -442,10 +423,10 @@ def search_notes(
         Matching snippets with note IDs for follow-up retrieval.
     """
     try:
-        client = M4Client.from_active(interface="mcp")
-        dataset = client.dataset
+        client = _client_for_dataset(dataset)
+        dataset_def = client.dataset
 
-        compat_result = _tool_selector.check_compatibility("search_notes", dataset)
+        compat_result = _tool_selector.check_compatibility("search_notes", dataset_def)
         if not compat_result.compatible:
             return compat_result.error_message
 
@@ -462,7 +443,9 @@ def search_notes(
 
 @mcp.tool()
 @require_oauth2
-def get_note(note_id: str, max_length: int | None = None) -> str:
+def get_note(
+    note_id: str, max_length: int | None = None, dataset: str | None = None
+) -> str:
     """📄 Retrieve full text of a specific clinical note.
 
     **Warning:** Clinical notes can be very long. Consider using
@@ -470,6 +453,7 @@ def get_note(note_id: str, max_length: int | None = None) -> str:
     to truncate output.
 
     Args:
+        dataset: Dataset name, e.g. 'mimic-iv-note'.
         note_id: The note ID (e.g., from search_notes or list_patient_notes).
         max_length: Optional maximum characters to return (truncates if exceeded).
 
@@ -477,10 +461,10 @@ def get_note(note_id: str, max_length: int | None = None) -> str:
         Full note text, or truncated version if max_length specified.
     """
     try:
-        client = M4Client.from_active(interface="mcp")
-        dataset = client.dataset
+        client = _client_for_dataset(dataset)
+        dataset_def = client.dataset
 
-        compat_result = _tool_selector.check_compatibility("get_note", dataset)
+        compat_result = _tool_selector.check_compatibility("get_note", dataset_def)
         if not compat_result.compatible:
             return compat_result.error_message
 
@@ -499,6 +483,7 @@ def list_patient_notes(
     subject_id: int,
     note_type: str = "all",
     limit: int = 20,
+    dataset: str | None = None,
 ) -> str:
     """📋 List available clinical notes for a patient.
 
@@ -509,6 +494,7 @@ def list_patient_notes(
     use it here to find related clinical notes.
 
     Args:
+        dataset: Dataset name, e.g. 'mimic-iv-note'.
         subject_id: Patient identifier (same as in MIMIC-IV).
         note_type: Type of notes to list ('discharge', 'radiology', or 'all').
         limit: Maximum notes to return (default: 20).
@@ -517,11 +503,11 @@ def list_patient_notes(
         List of available notes with metadata for the patient.
     """
     try:
-        client = M4Client.from_active(interface="mcp")
-        dataset = client.dataset
+        client = _client_for_dataset(dataset)
+        dataset_def = client.dataset
 
         compat_result = _tool_selector.check_compatibility(
-            "list_patient_notes", dataset
+            "list_patient_notes", dataset_def
         )
         if not compat_result.compatible:
             return compat_result.error_message
@@ -549,7 +535,7 @@ def cohort_builder_ui() -> str:
 
 @mcp.tool()
 @require_oauth2
-def cohort_builder() -> str:
+def cohort_builder(dataset: str | None = None) -> str:
     """Launch the interactive cohort builder.
 
     Opens a visual interface for filtering patients by demographics and
@@ -563,11 +549,13 @@ def cohort_builder() -> str:
         interactive cohort builder interface.
     """
     try:
-        client = M4Client.from_active(interface="mcp")
-        dataset = client.dataset
+        client = _client_for_dataset(dataset)
+        dataset_def = client.dataset
 
         # Proactive capability check
-        compat_result = _tool_selector.check_compatibility("cohort_builder", dataset)
+        compat_result = _tool_selector.check_compatibility(
+            "cohort_builder", dataset_def
+        )
         if not compat_result.compatible:
             return compat_result.error_message
 
@@ -587,6 +575,7 @@ def query_cohort(
     icd_match_all: bool | None = None,
     has_icu_stay: bool | None = None,
     in_hospital_mortality: bool | None = None,
+    dataset: str | None = None,
 ) -> str:
     """Query cohort counts based on filtering criteria.
 
@@ -594,6 +583,7 @@ def query_cohort(
     Can also be called directly to get cohort statistics.
 
     Args:
+        dataset: Dataset name, e.g. 'mimic-iv'.
         age_min: Minimum patient age (0-130, inclusive).
         age_max: Maximum patient age (0-130, inclusive).
         gender: Patient gender ('M' or 'F').
@@ -606,11 +596,11 @@ def query_cohort(
         JSON with patient_count, admission_count, demographics, and SQL.
     """
     try:
-        client = M4Client.from_active(interface="mcp")
-        dataset = client.dataset
+        client = _client_for_dataset(dataset)
+        dataset_def = client.dataset
 
         # Proactive capability check
-        compat_result = _tool_selector.check_compatibility("query_cohort", dataset)
+        compat_result = _tool_selector.check_compatibility("query_cohort", dataset_def)
         if not compat_result.compatible:
             # Return JSON error for UI compatibility
             return json.dumps({"error": compat_result.error_message})

@@ -12,7 +12,8 @@ def test_agent_env_local_includes_data_dir(monkeypatch, tmp_path):
     )
 
     assert result.command == "agent-env"
-    assert result.data["environment"]["M4_DATASET"] == "mimic-iv-demo"
+    assert "M4_DATASET" not in result.data["environment"]
+    assert result.data["defaults"]["dataset"] == "mimic-iv-demo"
     assert result.data["environment"]["M4_BACKEND"] == "duckdb"
     assert "M4_DATA_DIR" in result.data["environment"]
     assert result.data["raw_paths_hidden"] is True

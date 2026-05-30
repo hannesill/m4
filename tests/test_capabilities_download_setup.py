@@ -430,7 +430,7 @@ def test_setup_agent_service_loads_custom_dataset(tmp_path, monkeypatch):
     )
 
     assert isinstance(result, CommandResult)
-    assert result.data["environment"]["M4_DATASET"] == "custom-ed"
+    assert "M4_DATASET" not in result.data["environment"]
 
 
 @patch("m4.services.setup.get_active_backend", return_value="duckdb")
@@ -462,5 +462,5 @@ def test_doctor_only_requires_active_duckdb_dataset(
 
     assert result.data["summary"]["ok"] is True
     check_names = [check["name"] for check in result.data["checks"]]
-    assert "duckdb:mimic-iv-demo" in check_names
+    assert "duckdb:mimic-iv-demo" not in check_names
     assert "duckdb:mimic-iv" not in check_names

@@ -38,7 +38,6 @@ def build_agent_env_service(
     )
     env = {
         "M4_HOME": str(ctx.home),
-        "M4_DATASET": ctx.dataset,
         "M4_BACKEND": ctx.backend,
         "M4_STUDY_ID": ctx.study_id,
         "M4_SESSION_ID": ctx.session_id,

@@ -96,12 +96,12 @@ Copy the generated JSON into your client's MCP settings, restart, and start aski
 For complex analysis that goes beyond simple queries, M4 provides a Python API that returns Python data types instead of formatted strings (e.g. pd.DataFrame for SQL queries). This transforms M4 from a query tool into a complete clinical data analysis environment.
 
 ```python
-from m4 import set_dataset, execute_query, get_schema
+from m4 import execute_query, get_schema
 
-set_dataset("mimic-iv")
+dataset = "mimic-iv"
 
 # Get schema as a dict
-schema = get_schema()
+schema = get_schema(dataset=dataset)
 print(schema['tables'])  # ['mimiciv_hosp.admissions', 'mimiciv_hosp.diagnoses_icd', ...]
 
 # Query returns a pandas DataFrame
@@ -111,7 +111,7 @@ df = execute_query("""
     GROUP BY icd_code
     ORDER BY n DESC
     LIMIT 10
-""")
+""", dataset=dataset)
 
 # Use full pandas power: filter, join, compute statistics
 df[df['n'] > 100].plot(kind='bar')
@@ -209,19 +209,18 @@ Once connected, try asking:
 
 These datasets are supported out of the box. However, it is possible to add any other custom dataset by following [these instructions](docs/CUSTOM_DATASETS.md).
 
-Switch datasets or backends anytime:
+Choose datasets explicitly at each call site and switch the saved backend anytime:
 ```bash
-m4 use mimic-iv     # Switch to full MIMIC-IV
 m4 backend bigquery # Switch to BigQuery (or duckdb)
 m4 capabilities     # Show available interfaces, datasets, tools, and policies
 m4 doctor           # Diagnose local, BigQuery, and MCP setup
-m4 status           # Show active dataset and backend
+m4 status --dataset mimic-iv # Show dataset and backend status
 m4 status --all     # List all available datasets
-m4 status --derived # Show per-table derived materialization status
+m4 status --dataset mimic-iv --derived # Show per-table derived materialization status
 ```
 
 For automation and external agents, M4 also provides non-interactive JSON
-commands that do not mutate active configuration unless explicitly documented:
+commands that use request-scoped dataset and backend options:
 
 ```bash
 m4 agent-env --dataset mimic-iv --backend duckdb --json
@@ -315,13 +314,13 @@ This converts the CSV files to Parquet format and creates a local DuckDB databas
 
 ## Available Tools
 
-M4 exposes these tools to your AI client. Tools are filtered based on the active dataset's modality.
+M4 exposes these tools to your AI client. Data tools are checked against the explicit dataset selected for that call.
 
 **Dataset Management:**
 | Tool | Description |
 |------|-------------|
 | `list_datasets` | List available datasets and their status |
-| `set_dataset` | Switch the active dataset |
+| `set_dataset` | Removed migration aid; pass `dataset` to data tools |
 
 **Tabular Data Tools** (mimic-iv, mimic-iv-demo, eicu):
 | Tool | Description |

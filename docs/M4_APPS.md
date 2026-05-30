@@ -86,7 +86,7 @@ M4 Apps use the MCP Apps protocol to serve interactive UIs alongside tool respon
 
 M4 Apps require:
 - **Host support**: A client that implements the MCP Apps protocol (Claude Desktop 1.x+)
-- **M4 initialized**: An active dataset (`m4 init mimic-iv-demo`)
+- **M4 initialized**: A dataset initialized locally (`m4 init mimic-iv-demo`)
 - **MCP connection**: M4 configured in your client (`m4 config claude --quick`)
 
 Apps gracefully degrade in hosts without MCP Apps support—you'll get text-based results instead of the interactive UI.

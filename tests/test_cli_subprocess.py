@@ -228,11 +228,11 @@ def test_use_json_subprocess_is_parseable(tmp_path):
 
     result = _run_m4(["use", "mimic-iv-demo", "--json"], tmp_path)
 
-    assert result.returncode == 0
+    assert result.returncode == 1
     payload = _assert_single_json_stdout(result)
-    assert payload["ok"] is True
+    assert payload["ok"] is False
     assert payload["command"] == "use"
-    assert payload["active_dataset"] == "mimic-iv-demo"
+    assert payload["error"]["code"] == "active_dataset_removed"
 
 
 def test_backend_json_subprocess_is_parseable(tmp_path):

@@ -10,11 +10,11 @@ from typing import Any
 from m4.config import (
     ensure_custom_datasets_loaded,
     get_active_backend,
-    get_active_dataset,
+    get_active_dataset,  # noqa: F401 - retained for compatibility patch targets
     get_bigquery_project_id,
     resolve_runtime_context,
     set_active_backend,
-    set_active_dataset,
+    set_active_dataset,  # noqa: F401 - retained for compatibility patch targets
     set_bigquery_project_id,
 )
 from m4.core.datasets import DatasetRegistry
@@ -68,21 +68,6 @@ def doctor_service(*, include_paths: bool = False) -> CommandResult:
         )
     )
 
-    try:
-        active_dataset = get_active_dataset()
-        checks.append(_check("active_dataset", True, active_dataset))
-    except Exception as exc:
-        active_dataset = None
-        checks.append(
-            _check(
-                "active_dataset",
-                False,
-                str(exc),
-                "Run m4 quickstart or m4 use <dataset>.",
-            )
-        )
-        warnings.append("no_active_dataset")
-
     backend = get_active_backend()
     checks.append(
         _check(
@@ -94,20 +79,6 @@ def doctor_service(*, include_paths: bool = False) -> CommandResult:
     )
 
     snapshot = collect_status_snapshot(show_all=True, include_paths=include_paths)
-    if backend == "duckdb" and active_dataset:
-        active_status = next(
-            (ds for ds in snapshot["datasets"] if ds["name"] == active_dataset), None
-        )
-        checks.append(
-            _check(
-                f"duckdb:{active_dataset}",
-                bool(active_status and active_status["db_present"]),
-                "local DuckDB present"
-                if active_status and active_status["db_present"]
-                else "local DuckDB missing",
-                f"Run m4 init {active_dataset}.",
-            )
-        )
 
     for ds in snapshot["datasets"]:
         warnings.extend(ds.get("warnings", []))
@@ -201,8 +172,6 @@ def setup_agent_service(
         )
 
     if apply_config:
-        if dataset:
-            set_active_dataset(dataset)
         if backend:
             set_active_backend(resolved_backend)
         if project_id:
@@ -212,7 +181,6 @@ def setup_agent_service(
     env = {
         "M4_HOME": str(ctx.home),
         "M4_BACKEND": resolved_backend,
-        "M4_DATASET": dataset or ctx.dataset,
         "M4_TELEMETRY_DIR": str(ctx.telemetry_dir),
     }
     if mode == "local":
@@ -306,7 +274,10 @@ def quickstart_service(
                     "command": f"m4 backend bigquery --project-id {project_id or 'YOUR_PROJECT_ID'}",
                     "mutates": True,
                 },
-                {"command": f"m4 use {resolved_dataset}", "mutates": True},
+                {
+                    "command": f"m4 status --dataset {resolved_dataset}",
+                    "mutates": False,
+                },
             ]
         )
 
@@ -314,8 +285,6 @@ def quickstart_service(
         set_active_backend(resolved_backend)
         if project_id:
             set_bigquery_project_id(project_id)
-        if DatasetRegistry.get(resolved_dataset):
-            set_active_dataset(resolved_dataset)
 
     return CommandResult(
         command="quickstart",

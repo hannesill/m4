@@ -57,7 +57,7 @@ For pre-computed APACHE IV scores:
 - `eicu_crd.apachepredvar` - Demographics and mapped diagnosis categories
 - `eicu_crd.patient` - Patient outcomes and demographics
 
-Call `set_dataset("eicu")` before running these queries.
+Pass `dataset="eicu"` when running these queries through the M4 Python API.
 
 ## Critical Implementation Notes
 

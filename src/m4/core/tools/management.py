@@ -2,7 +2,7 @@
 
 This module provides tools for switching between datasets and listing
 available datasets. These tools are always available regardless of
-the active dataset.
+the selected request dataset.
 
 All tools use config functions directly - no circular dependencies.
 
@@ -18,8 +18,8 @@ from typing import Any
 from m4.config import (
     detect_available_local_datasets,
     get_active_backend,
-    get_active_dataset,
-    set_active_dataset,
+    get_active_dataset,  # noqa: F401 - retained for compatibility patch targets
+    set_active_dataset,  # noqa: F401 - retained for compatibility patch targets
 )
 from m4.core.context import M4ExecutionContext
 from m4.core.datasets import DatasetDefinition, DatasetRegistry, Modality
@@ -50,7 +50,7 @@ class ListDatasetsTool:
     both locally (DuckDB) and remotely (BigQuery).
 
     Returns:
-        dict with active dataset, backend info, and dataset availability
+        dict with selected dataset, backend info, and dataset availability
     """
 
     name = "list_datasets"
@@ -71,14 +71,14 @@ class ListDatasetsTool:
 
         Returns:
             dict with:
-                - active_dataset: str | None - Currently active dataset
+                - selected_dataset: str | None - Request-scoped dataset, if any
                 - backend: str - Backend type (duckdb or bigquery)
                 - datasets: dict[str, dict] - Dataset availability info
         """
         try:
-            active = get_active_dataset()
+            selected = context.dataset.name if context else None
         except Exception:
-            active = context.dataset.name if context else None
+            selected = None
         availability = detect_available_local_datasets()
         backend_name = context.backend_name if context else get_active_backend()
 
@@ -104,7 +104,8 @@ class ListDatasetsTool:
                 }
 
             datasets_info[label] = {
-                "is_active": label == active,
+                "is_active": label == selected,
+                "selected": label == selected,
                 "parquet_present": info["parquet_present"],
                 "db_present": info["db_present"],
                 "bigquery_support": bool(ds_def and ds_def.bigquery_dataset_ids),
@@ -113,7 +114,8 @@ class ListDatasetsTool:
             }
 
         return {
-            "active_dataset": active,
+            "active_dataset": selected,
+            "selected_dataset": selected,
             "backend": backend_name,
             "datasets": datasets_info,
         }
@@ -124,14 +126,7 @@ class ListDatasetsTool:
 
 
 class SetDatasetTool:
-    """Tool for switching the active dataset.
-
-    Changes which dataset subsequent queries will run against.
-    Automatically handles both DuckDB and BigQuery backends.
-
-    Returns:
-        dict with new dataset info and any warnings
-    """
+    """Deprecated compatibility shim for removed global dataset state."""
 
     name = "set_dataset"
     description = "🔄 Switch to a different dataset"
@@ -147,70 +142,10 @@ class SetDatasetTool:
         params: SetDatasetInput,
         context: M4ExecutionContext | None = None,
     ) -> dict[str, Any]:
-        """Switch to a different dataset.
-
-        Returns:
-            dict with:
-                - dataset_name: str - New active dataset
-                - db_present: bool - Whether local DB exists
-                - bigquery_support: bool - Whether BigQuery is configured
-                - modalities: list[str] - Available modalities
-                - warnings: list[str] - Any warnings
-
-        Raises:
-            DatasetError: If dataset doesn't exist
-        """
-        dataset_name = params.dataset_name.lower()
-        availability = detect_available_local_datasets()
-        backend_name = context.backend_name if context else get_active_backend()
-
-        if dataset_name not in availability:
-            supported = ", ".join(availability.keys())
-            raise DatasetError(
-                f"Dataset '{dataset_name}' not found. Supported datasets: {supported}",
-                dataset_name=dataset_name,
-            )
-
-        # Check backend compatibility before switching
-        info = availability[dataset_name]
-        ds_def = DatasetRegistry.get(dataset_name)
-
-        if ds_def and not ds_def.bigquery_dataset_ids and backend_name == "bigquery":
-            available = [
-                name
-                for name in availability
-                if (ds := DatasetRegistry.get(name)) and ds.bigquery_dataset_ids
-            ]
-            hint = (
-                f" BigQuery-compatible datasets: {', '.join(available)}."
-                if available
-                else ""
-            )
-            raise DatasetError(
-                f"Dataset '{dataset_name}' is not available on the BigQuery backend."
-                f"{hint}"
-                f" Or switch to DuckDB: set the M4_BACKEND environment variable"
-                f" or run `m4 backend duckdb`.",
-                dataset_name=dataset_name,
-            )
-
-        set_active_dataset(dataset_name)
-
-        warnings: list[str] = []
-
-        if not info["db_present"] and backend_name == "duckdb":
-            warnings.append(
-                "Local database not found. "
-                "You may need to run initialization if using DuckDB."
-            )
-
-        return {
-            "dataset_name": dataset_name,
-            "db_present": info["db_present"],
-            "bigquery_support": bool(ds_def and ds_def.bigquery_dataset_ids),
-            "modalities": [m.name for m in ds_def.modalities] if ds_def else [],
-            "warnings": warnings,
-        }
+        raise DatasetError(
+            "set_dataset is no longer supported because M4 no longer keeps a "
+            "global active dataset. Pass dataset explicitly to each tool call."
+        )
 
     def is_compatible(self, dataset: DatasetDefinition) -> bool:
         """Management tools are always compatible."""

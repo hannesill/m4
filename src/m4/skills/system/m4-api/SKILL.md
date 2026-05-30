@@ -25,27 +25,29 @@ The M4 Python API provides programmatic access to clinical datasets for code exe
 
 **You must follow this sequence:**
 
-1. `set_dataset()` - Select which dataset to query (REQUIRED FIRST)
-2. `get_schema()` / `get_table_info()` - Explore available tables
+1. Choose a dataset name and pass it explicitly, or create `M4Client(dataset=...)`
+2. `get_schema(dataset=...)` / `get_table_info(..., dataset=...)` - Explore available tables
 3. `execute_query()` - Run SQL queries
 
 ```python
-from m4 import set_dataset, get_schema, get_table_info, execute_query
+from m4 import get_schema, get_table_info, execute_query
 
-# Step 1: Always set dataset first
-set_dataset("mimic-iv")  # or "mimic-iv-demo", "eicu", "mimic-iv-note"
+dataset = "mimic-iv"  # or "mimic-iv-demo", "eicu", "mimic-iv-note"
 
-# Step 2: Explore schema
-schema = get_schema()
+# Step 1: Explore schema
+schema = get_schema(dataset=dataset)
 print(schema['tables'])  # List of table names
 
-# Step 3: Inspect specific tables before querying
-info = get_table_info("mimiciv_hosp.patients")
+# Step 2: Inspect specific tables before querying
+info = get_table_info("mimiciv_hosp.patients", dataset=dataset)
 print(info['schema'])  # DataFrame with column names, types
 print(info['sample'])  # DataFrame with sample rows
 
-# Step 4: Execute queries
-df = execute_query("SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROUP BY gender")
+# Step 3: Execute queries
+df = execute_query(
+    "SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROUP BY gender",
+    dataset=dataset,
+)
 # Returns pd.DataFrame - use pandas operations freely
 ```
 
@@ -56,27 +58,26 @@ df = execute_query("SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROU
 | Function | Returns | Description |
 |----------|---------|-------------|
 | `list_datasets()` | `list[str]` | Available dataset names |
-| `set_dataset(name)` | `str` | Set active dataset (confirmation message) |
-| `get_active_dataset()` | `str` | Get current dataset name |
+| `M4Client(dataset=...)` | `M4Client` | Preferred explicit client for one dataset |
 
 ### Tabular Data (requires TABULAR modality)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `get_schema()` | `dict` | `{'backend_info': str, 'tables': list[str]}` |
-| `get_table_info(table, show_sample=True)` | `dict` | `{'schema': DataFrame, 'sample': DataFrame}` |
-| `execute_query(sql)` | `DataFrame` | Query results as pandas DataFrame |
+| `get_schema(dataset=...)` | `dict` | `{'backend_info': str, 'tables': list[str]}` |
+| `get_table_info(table, dataset=..., show_sample=True)` | `dict` | `{'schema': DataFrame, 'sample': DataFrame}` |
+| `execute_query(sql, dataset=...)` | `DataFrame` | Query results as pandas DataFrame |
 
-`backend_info` summarizes the backend and active dataset. Local DuckDB paths are
+`backend_info` summarizes the backend and dataset. Local DuckDB paths are
 hidden unless `M4_PATH_DISCLOSURE=1` is set for the process.
 
 ### Clinical Notes (requires NOTES modality)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `search_notes(query, note_type, limit, snippet_length)` | `dict` | `{'results': dict[str, DataFrame]}` |
-| `get_note(note_id, max_length)` | `dict` | `{'text': str, 'subject_id': int, ...}` |
-| `list_patient_notes(subject_id, note_type, limit)` | `dict` | `{'notes': dict[str, DataFrame]}` |
+| `search_notes(query, dataset=..., note_type, limit, snippet_length)` | `dict` | `{'results': dict[str, DataFrame]}` |
+| `get_note(note_id, dataset=..., max_length)` | `dict` | `{'text': str, 'subject_id': int, ...}` |
+| `list_patient_notes(subject_id, dataset=..., note_type, limit)` | `dict` | `{'notes': dict[str, DataFrame]}` |
 
 ## Error Handling
 
@@ -92,23 +93,22 @@ M4Error (base)
 **Recovery patterns:**
 
 ```python
-from m4 import execute_query, set_dataset, DatasetError, QueryError, ModalityError
+from m4 import execute_query, DatasetError, QueryError, ModalityError
 
 try:
-    df = execute_query("SELECT * FROM mimiciv_hosp.patients")
+    df = execute_query("SELECT * FROM mimiciv_hosp.patients", dataset="mimic-iv")
 except DatasetError as e:
-    # No dataset selected, or dataset not found
-    # Recovery: call set_dataset() first, or check list_datasets()
-    set_dataset("mimic-iv")
-    df = execute_query("SELECT * FROM mimiciv_hosp.patients")
+    # Dataset missing, not initialized, or misspelled.
+    # Recovery: check list_datasets() and m4 status --dataset mimic-iv.
+    print(f"Dataset problem: {e}")
 except QueryError as e:
     # SQL error or table not found
     # Recovery: check table name with get_schema(), fix SQL syntax
     print(f"Query failed: {e}")
 except ModalityError as e:
     # Tried notes function on tabular-only dataset
-    # Recovery: switch to dataset with NOTES modality
-    set_dataset("mimic-iv-note")
+    # Recovery: pass dataset="mimic-iv-note" to notes functions
+    print(f"Modality problem: {e}")
 ```
 
 ## Displaying Results
@@ -119,23 +119,27 @@ Use `show()` from the vitrine module to present query results to the researcher 
 from m4 import execute_query
 from vitrine import show
 
-df = execute_query("SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROUP BY gender")
+df = execute_query(
+    "SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROUP BY gender",
+    dataset="mimic-iv",
+)
 df.to_csv("output/demographics.csv", index=False)  # Save for reproducibility
 show(df, title="Demographics", study="my-study")   # Show for review
 ```
 
 For blocking review (agent waits for researcher approval), use `show(df, wait=True, prompt="Proceed?")`. For the full display API, use the `vitrine-api` skill.
 
-## Dataset State
+## Dataset Selection
 
-**Important:** Dataset selection is module-level state that persists across function calls.
+**Important:** Dataset selection is explicit. Prefer `M4Client(dataset=...)` when several calls target the same dataset, or pass `dataset=...` to each convenience function.
 
 ```python
-set_dataset("mimic-iv")
-df1 = execute_query("SELECT COUNT(*) FROM mimiciv_hosp.patients")  # Uses mimic-iv
+from m4 import M4Client, execute_query
 
-set_dataset("eicu")
-df2 = execute_query("SELECT COUNT(*) FROM patient")        # Uses eicu
+client = M4Client(dataset="mimic-iv")
+df1 = client.execute_query("SELECT COUNT(*) FROM mimiciv_hosp.patients")
+
+df2 = execute_query("SELECT COUNT(*) FROM patient", dataset="eicu")
 ```
 
 ## MCP Tool Equivalence

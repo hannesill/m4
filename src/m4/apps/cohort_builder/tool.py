@@ -69,7 +69,7 @@ class CohortBuilderTool:
         is handled by the MCP Apps protocol via _meta.ui.resourceUri.
 
         Args:
-            dataset: The active dataset
+            dataset: The selected dataset
             params: Tool parameters (empty for this tool)
 
         Returns:
@@ -131,7 +131,7 @@ class QueryCohortTool:
         """Execute cohort query and return results.
 
         Args:
-            dataset: The active dataset
+            dataset: The selected dataset
             params: Cohort filtering criteria
 
         Returns:

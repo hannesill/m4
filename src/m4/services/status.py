@@ -10,7 +10,6 @@ from m4.config import (
 from m4.core.datasets import DatasetRegistry
 from m4.core.derived.builtins import has_derived_support, list_builtins
 from m4.core.derived.materializer import get_derived_table_count
-from m4.core.exceptions import DatasetError
 from m4.data_io import compute_parquet_dir_size, verify_table_rowcount
 from m4.services.results import WARNING_PARQUET_PATH_MISMATCH
 
@@ -29,7 +28,7 @@ def _is_path_mismatch_error(exc: Exception) -> bool:
 def _collect_dataset_status(
     name: str,
     ds_info: dict[str, Any],
-    active_dataset: str | None,
+    selected_dataset: str | None,
     backend: str,
     *,
     include_row_count: bool,
@@ -104,7 +103,7 @@ def _collect_dataset_status(
 
     result = {
         "name": name,
-        "active": name == active_dataset,
+        "selected": name == selected_dataset,
         "raw_present": raw_present,
         "parquet_present": parquet_present,
         "db_present": db_present,
@@ -132,17 +131,21 @@ def _collect_dataset_status(
 
 
 def collect_status_snapshot(
-    show_all: bool, include_paths: bool = False
+    show_all: bool,
+    include_paths: bool = False,
+    selected_dataset: str | None = None,
+    backend: str | None = None,
 ) -> dict[str, Any]:
-    try:
-        active = get_active_dataset()
-    except DatasetError:
-        active = None
-
-    backend = get_active_backend()
+    selected = selected_dataset.lower() if selected_dataset else None
+    if selected is None:
+        try:
+            selected = get_active_dataset()
+        except Exception:
+            selected = None
+    backend_name = (backend or get_active_backend()).lower()
     availability = detect_available_local_datasets()
 
-    dataset_names = list(availability) if show_all else ([active] if active else [])
+    dataset_names = list(availability) if show_all else ([selected] if selected else [])
     datasets = []
     for name in dataset_names:
         ds_info = availability.get(name)
@@ -152,8 +155,8 @@ def collect_status_snapshot(
             _collect_dataset_status(
                 name,
                 ds_info,
-                active,
-                backend,
+                selected,
+                backend_name,
                 include_row_count=not show_all,
                 include_paths=include_paths,
             )
@@ -161,8 +164,9 @@ def collect_status_snapshot(
 
     return {
         "version": 1,
-        "active_dataset": active,
-        "backend": backend,
+        "active_dataset": selected,
+        "selected_dataset": selected,
+        "backend": backend_name,
         "bigquery_project_id": get_bigquery_project_id(),
         "datasets": datasets,
     }

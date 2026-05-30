@@ -40,7 +40,7 @@ class ToolRegistry:
 
     This class maintains a global registry of all tools that can be
     exposed via the MCP server. Tools are filtered dynamically based
-    on the active dataset's modalities.
+    on the explicitly selected dataset's modalities.
 
     Example:
         # Register tools
@@ -104,7 +104,7 @@ class ToolSelector:
     """Intelligent tool selection based on dataset modalities.
 
     This class provides the core filtering logic that determines which
-    tools should be exposed to the LLM based on the active dataset's
+    tools should be exposed to the LLM based on the selected dataset's
     declared modalities.
 
     Example:
@@ -279,7 +279,7 @@ class ToolSelector:
                 "",
                 "**Suggestions:**",
                 "   - Use `list_datasets()` to see all available datasets",
-                "   - Use `set_dataset('dataset-name')` to switch datasets",
+                "   - Pass `dataset='dataset-name'` explicitly for the tool call",
             ]
         )
 
@@ -320,7 +320,7 @@ class ToolSelector:
         snapshot_parts = [
             "",
             "─" * 40,
-            f"**Active dataset:** {dataset.name}",
+            f"**Dataset:** {dataset.name}",
             f"**Modalities:** {', '.join(modalities) or '(none)'}",
         ]
 

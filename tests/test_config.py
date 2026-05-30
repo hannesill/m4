@@ -253,8 +253,8 @@ class TestBigQueryProjectId:
         set_bigquery_project_id(None)
         assert get_bigquery_project_id() is None
 
-    def test_preserves_other_config(self, isolated_config):
-        """Setting project ID preserves other config values."""
+    def test_preserves_supported_config_and_drops_legacy_dataset(self, isolated_config):
+        """Setting project ID preserves supported values and drops active_dataset."""
         import json
 
         isolated_config.write_text(
@@ -266,7 +266,7 @@ class TestBigQueryProjectId:
         saved = json.loads(isolated_config.read_text())
         assert saved["bigquery_project_id"] == "my-project"
         assert saved["backend"] == "bigquery"
-        assert saved["active_dataset"] == "mimic-iv"
+        assert "active_dataset" not in saved
 
 
 class TestValidBackends:

@@ -84,7 +84,7 @@ class ToolCallRecord:
             captured. Groups tool calls by terminal session — all processes
             spawned from the same terminal share this value. None on
             platforms without os.getsid (Windows).
-        dataset_name: Active dataset at call time (e.g., 'mimic-iv')
+        dataset_name: Dataset selected for the call (e.g., 'mimic-iv')
         timestamp: ISO 8601 UTC timestamp of call start
         duration_ms: Wall-clock time in milliseconds
         success: True if tool returned without exception

@@ -7,7 +7,6 @@ from typing import Any
 from m4.config import (
     ensure_custom_datasets_loaded,
     get_active_backend,
-    get_active_dataset,
     get_bigquery_project_id,
 )
 from m4.core.datasets import DatasetDefinition, DatasetRegistry
@@ -149,10 +148,6 @@ def _derived_inventory() -> dict[str, Any]:
 def build_capabilities_manifest() -> dict[str, Any]:
     """Return the stable M4 capability manifest."""
     ensure_custom_datasets_loaded()
-    try:
-        active_dataset = get_active_dataset()
-    except Exception:
-        active_dataset = None
 
     commands = [
         {"name": "capabilities", "flags": ["--json"], "mutates": False},
@@ -245,9 +240,9 @@ def build_capabilities_manifest() -> dict[str, Any]:
             "output_formats": ["text", "json", "dotenv"],
         },
         "runtime": {
-            "active_dataset": active_dataset,
             "backend": get_active_backend(),
             "bigquery_project_id_configured": bool(get_bigquery_project_id()),
+            "dataset_selection": "explicit",
         },
         "commands": commands,
         "tools": _tool_payloads(),

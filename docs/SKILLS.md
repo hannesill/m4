@@ -8,7 +8,7 @@ For the canonical list of bundled skills, see `src/m4/skills/SKILLS_INDEX.md`.
 
 Without skills, an AI assistant might guess at APIs or make assumptions about clinical concepts. With M4 skills installed:
 
-- **m4-api**: Claude knows to call `set_dataset()` before queries, returns proper DataFrames, handles errors correctly
+- **m4-api**: Claude knows to pass `dataset=...` or use `M4Client(dataset=...)`, returns proper DataFrames, handles errors correctly
 - **Clinical skills**: Claude understands SOFA scoring, Sepsis-3 criteria, KDIGO AKI staging, and other validated clinical concepts
 
 Skills activate automatically when relevant. Ask Claude to "calculate SOFA scores for my cohort" and it will use the validated SQL from MIT-LCP without you needing to look up the implementation.
@@ -57,7 +57,7 @@ Skills are installed to `.claude/skills/` (or equivalent for other tools). AI as
 
 | Skill | Triggers On | Description |
 |-------|-------------|-------------|
-| **m4-api** | "M4 API", "query MIMIC with Python", "clinical data analysis" | Complete Python API usage including `set_dataset()`, DataFrame handling, error handling |
+| **m4-api** | "M4 API", "query MIMIC with Python", "clinical data analysis" | Complete Python API usage including explicit dataset selection, DataFrame handling, error handling |
 | **clinical-research-session** | "research workflow", "clinical study", "protocol" | Structured clinical research workflow and protocol drafting |
 | **m4-setup** | "M4 setup", "fix M4", "dataset missing", "skills missing", "vitrine broken" | Diagnose and repair M4 environment, dataset, skill installation, backend, and vitrine issues |
 | **vitrine-api** | "vitrine", "show results", "forms", "visualization", "approval" | Display results, collect structured input, manage study cards, and export research trails |
@@ -190,15 +190,14 @@ When identifying cardiac surgery patients in MIMIC-IV:
 ## Standard Query
 
 \`\`\`python
-from m4 import set_dataset, execute_query
+from m4 import execute_query
 
-set_dataset("mimic-iv")
 cardiac_cohort = execute_query("""
     SELECT DISTINCT p.subject_id, p.hadm_id
     FROM procedures_icd p
     WHERE p.icd_code LIKE '02%'
       AND p.icd_version = 10
-""")
+""", dataset="mimic-iv")
 \`\`\`
 ```
 

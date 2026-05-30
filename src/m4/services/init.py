@@ -7,7 +7,7 @@ from m4.config import (
     get_active_backend,
     get_dataset_parquet_root,
     get_default_database_path,
-    set_active_dataset,
+    set_active_dataset,  # noqa: F401 - retained for compatibility patch targets
 )
 from m4.console import console
 from m4.core.datasets import DatasetRegistry
@@ -286,8 +286,6 @@ def initialize_dataset_service(
             steps.append(
                 _step("verification", "skipped", "No verification table configured.")
             )
-
-        set_active_dataset(dataset_key)
 
         if has_derived_support(dataset_key) and get_active_backend() == "duckdb":
             try:

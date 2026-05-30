@@ -216,20 +216,17 @@ class TestDatasetRegistryEdgeCases:
         DatasetRegistry.reset()
         assert DatasetRegistry.get("nonexistent-dataset-xyz") is None
 
-    def test_get_active_no_config_raises(self, monkeypatch):
-        """get_active() raises DatasetError when no dataset is configured."""
+    def test_get_active_raises_removed_state_error(self):
+        """get_active() raises DatasetError because global state was removed."""
         import pytest
 
-        import m4.config as cfg
         from m4.core.exceptions import DatasetError
 
-        monkeypatch.setattr(cfg, "get_active_dataset", lambda: None)
-
-        with pytest.raises(DatasetError, match="No active dataset"):
+        with pytest.raises(DatasetError, match=r"DatasetRegistry\.get_active"):
             DatasetRegistry.get_active()
 
-    def test_get_active_unknown_dataset_raises(self, monkeypatch):
-        """get_active() raises DatasetError when config points to unknown dataset."""
+    def test_get_active_ignores_legacy_config(self, monkeypatch):
+        """get_active() does not route through legacy active dataset config."""
         import pytest
 
         import m4.config as cfg
@@ -237,7 +234,7 @@ class TestDatasetRegistryEdgeCases:
 
         monkeypatch.setattr(cfg, "get_active_dataset", lambda: "no-such-dataset")
 
-        with pytest.raises(DatasetError, match="not found in registry"):
+        with pytest.raises(DatasetError, match=r"DatasetRegistry\.get_active"):
             DatasetRegistry.get_active()
 
     def test_custom_json_oversized_file_skipped(self, tmp_path):

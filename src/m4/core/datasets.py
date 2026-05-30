@@ -146,35 +146,12 @@ class DatasetRegistry:
 
     @classmethod
     def get_active(cls) -> DatasetDefinition:
-        """Get the currently active dataset definition.
-
-        This method retrieves the active dataset from config and returns
-        its definition. Raises an error if no active dataset is configured.
-
-        Returns:
-            DatasetDefinition for the active dataset
-
-        Raises:
-            DatasetError: If no active dataset is configured or dataset not found
-        """
-        # Import here to avoid circular dependency
-        from m4.config import get_active_dataset
-
-        active_ds_name = get_active_dataset()
-        if not active_ds_name:
-            raise DatasetError(
-                "No active dataset configured. "
-                "Use `set_dataset('dataset-name')` to select a dataset."
-            )
-
-        ds_def = cls.get(active_ds_name)
-        if not ds_def:
-            raise DatasetError(
-                f"Active dataset '{active_ds_name}' not found in registry. "
-                f"Available datasets: {', '.join(d.name for d in cls.list_all())}"
-            )
-
-        return ds_def
+        """Deprecated compatibility shim for removed global dataset state."""
+        raise DatasetError(
+            "DatasetRegistry.get_active() is no longer supported because M4 no "
+            "longer keeps a global active dataset. Resolve datasets explicitly "
+            "with DatasetRegistry.get(name) or M4Client(dataset=name)."
+        )
 
     @classmethod
     def reset(cls):

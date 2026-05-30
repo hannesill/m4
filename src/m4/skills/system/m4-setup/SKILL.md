@@ -24,12 +24,11 @@ Run commands from the M4 repo root unless the user is intentionally working else
 ```bash
 pwd
 uv run python - <<'PY'
-from m4 import list_datasets, get_active_dataset
-print("active:", get_active_dataset())
+from m4 import list_datasets
 print("datasets:", list_datasets())
 PY
 uv run m4 status --all
-uv run m4 agent-env --json
+uv run m4 agent-env --dataset mimic-iv-demo --json
 uv run m4 skills --list
 uv run vitrine status
 ```
@@ -61,7 +60,7 @@ find "${M4_DATA_DIR:-m4_data}/databases" -maxdepth 1 -type f -name '*.duckdb' -p
 find "${M4_DATA_DIR:-m4_data}/datasets" -maxdepth 1 -type f -name '*.json' -print
 ```
 
-Use `set_dataset("name")` before querying, then inspect schema with `get_schema()` and `get_table_info()`.
+Pass `dataset="name"` when querying, then inspect schema with `get_schema(dataset=...)` and `get_table_info(..., dataset=...)`.
 
 ## Skill Installation Repair
 
@@ -81,7 +80,6 @@ Check `${M4_HOME:-${M4_DATA_DIR:-m4_data}}/config.json`:
 | Field | Meaning |
 |-------|---------|
 | `backend` | `duckdb` or `bigquery` |
-| `active_dataset` | Dataset used by API calls |
 | `bigquery_project_id` | Billing/project id for BigQuery |
 
 For local work, `backend: "duckdb"` requires the matching file in the data
@@ -104,6 +102,6 @@ Use the `vitrine-api` skill for display API details.
 ## Recovery Rules
 
 - Prefer `uv run ...` commands to avoid using the wrong environment.
-- Do not guess table names. Call `get_schema()` and `get_table_info()` after `set_dataset()`.
+- Do not guess table names. Call `get_schema(dataset=...)` and `get_table_info(..., dataset=...)`.
 - If a dataset appears in `m4 status --all` but not in `list_datasets()`, check the data directory's `datasets/*.json` files and reload through the M4 API.
 - If skills reference missing functions or outdated tables, compare the installed copy with `src/m4/skills` and reinstall from the canonical source.

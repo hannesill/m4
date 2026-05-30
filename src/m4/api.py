@@ -11,19 +11,21 @@ Unlike the MCP server, this API returns native Python types:
 - etc.
 
 Example:
-    from m4 import execute_query, set_dataset, get_schema
+    from m4 import M4Client, execute_query, get_schema
     import pandas as pd
 
-    set_dataset("mimic-iv")
-    schema = get_schema()  # Returns dict with 'tables' list
+    client = M4Client(dataset="mimic-iv")
+    schema = client.schema()  # Returns dict with 'tables' list
     print(schema['tables'])
 
-    df = execute_query("SELECT COUNT(*) FROM mimiciv_hosp.patients")
+    df = execute_query(
+        "SELECT COUNT(*) FROM mimiciv_hosp.patients",
+        dataset="mimic-iv",
+    )
     print(df)  # DataFrame
 
 All queries use canonical schema.table names (e.g., mimiciv_hosp.patients)
-that work on both DuckDB and BigQuery backends. Use set_dataset()
-to switch between datasets.
+that work on both DuckDB and BigQuery backends.
 """
 
 import os
@@ -33,20 +35,15 @@ from typing import Any
 import pandas as pd
 
 from m4.client import M4Client
-from m4.config import _ensure_custom_datasets_loaded
-from m4.config import get_active_dataset as _get_active_dataset
-from m4.config import set_active_dataset as _set_active_dataset
+from m4.config import _ensure_custom_datasets_loaded, get_bigquery_project_id
 from m4.core.datasets import DatasetRegistry
 from m4.core.exceptions import DatasetError, M4Error, ModalityError, QueryError
 from m4.core.telemetry import set_interface
-from m4.core.tools import ToolSelector, init_tools
+from m4.core.tools import init_tools
 
 # Initialize tools on module import
 init_tools()
 set_interface("python_api")
-
-# Tool selector for compatibility checking
-_tool_selector = ToolSelector()
 
 # Re-export exceptions for convenience
 __all__ = [
@@ -78,7 +75,7 @@ def list_datasets() -> list[str]:
     """List all available datasets.
 
     Returns:
-        List of dataset names that can be used with set_dataset().
+        List of dataset names that can be used with M4Client(dataset=...).
 
     Example:
         >>> list_datasets()
@@ -89,53 +86,49 @@ def list_datasets() -> list[str]:
 
 
 def set_dataset(name: str) -> str:
-    """Set the active dataset for subsequent queries.
-
-    Args:
-        name: Dataset name (e.g., 'mimic-iv', 'eicu')
-
-    Returns:
-        Confirmation message with dataset info.
-
-    Raises:
-        DatasetError: If dataset doesn't exist.
-
-    Example:
-        >>> set_dataset("mimic-iv")
-        'Active dataset: mimic-iv (modalities: TABULAR)'
-    """
-    try:
-        _set_active_dataset(name)
-        dataset = DatasetRegistry.get(name)
-        if not dataset:
-            raise ValueError(f"Dataset '{name}' not found")
-        modalities = ", ".join(m.name for m in dataset.modalities)
-        return f"Active dataset: {name} (modalities: {modalities})"
-    except ValueError as e:
-        available = ", ".join(list_datasets())
-        raise DatasetError(f"{e}. Available datasets: {available}") from e
+    """Deprecated compatibility shim for removed global dataset state."""
+    raise DatasetError(
+        f"set_dataset({name!r}) is no longer supported because M4 no longer keeps "
+        "a global active dataset. Use M4Client(dataset='mimic-iv') or pass "
+        "dataset='mimic-iv' to convenience functions such as execute_query(...)."
+    )
 
 
 def get_active_dataset() -> str:
-    """Get the name of the currently active dataset.
-
-    Returns:
-        Name of the active dataset.
-
-    Raises:
-        DatasetError: If no dataset is active.
-    """
-    try:
-        return _get_active_dataset()
-    except ValueError as e:
-        raise DatasetError(str(e)) from e
+    """Deprecated compatibility shim for removed global dataset state."""
+    raise DatasetError(
+        "get_active_dataset() is no longer supported because M4 no longer keeps "
+        "a global active dataset. Pass dataset explicitly, for example "
+        "M4Client(dataset='mimic-iv') or execute_query(sql, dataset='mimic-iv')."
+    )
 
 
 def get_capabilities() -> dict[str, Any]:
     """Return the stable M4 capability manifest."""
-    return M4Client.from_active(
-        interface="python_api", allow_missing_dataset=True
-    ).capabilities()
+    from m4.services.capabilities import build_capabilities_manifest
+
+    return build_capabilities_manifest()
+
+
+def _client(dataset: str, backend: str | None = None) -> M4Client:
+    path_disclosure = os.getenv("M4_PATH_DISCLOSURE", "").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+        "paths",
+    }
+    return M4Client(
+        dataset=dataset,
+        backend=backend,
+        interface="python_api",
+        study_id=os.getenv("M4_STUDY_ID"),
+        session_id=os.getenv("M4_SESSION_ID"),
+        actor=os.getenv("M4_ACTOR"),
+        project_id=get_bigquery_project_id(),
+        db_path=os.getenv("M4_DB_PATH"),
+        path_disclosure=path_disclosure,
+    )
 
 
 # =============================================================================
@@ -143,8 +136,8 @@ def get_capabilities() -> dict[str, Any]:
 # =============================================================================
 
 
-def get_schema() -> dict[str, Any]:
-    """Get database schema information for the active dataset.
+def get_schema(dataset: str, backend: str | None = None) -> dict[str, Any]:
+    """Get database schema information for a dataset.
 
     Returns:
         dict with:
@@ -152,15 +145,20 @@ def get_schema() -> dict[str, Any]:
             - tables: list[str] - List of table names
 
     Example:
-        >>> set_dataset("mimic-iv")
-        >>> schema = get_schema()
+        >>> schema = get_schema(dataset="mimic-iv")
         >>> print(schema['tables'])
         ['admissions', 'diagnoses_icd', 'patients', ...]
     """
-    return M4Client.from_active(interface="python_api").schema()
+    return _client(dataset, backend).schema()
 
 
-def get_table_info(table_name: str, show_sample: bool = True) -> dict[str, Any]:
+def get_table_info(
+    table_name: str,
+    *,
+    dataset: str,
+    backend: str | None = None,
+    show_sample: bool = True,
+) -> dict[str, Any]:
     """Get column information and sample data for a table.
 
     Args:
@@ -182,13 +180,16 @@ def get_table_info(table_name: str, show_sample: bool = True) -> dict[str, Any]:
         >>> print(info['schema'])  # DataFrame with column info
         >>> print(info['sample'])  # DataFrame with sample rows
     """
-    return M4Client.from_active(interface="python_api").table_info(
-        table_name, show_sample=show_sample
-    )
+    return _client(dataset, backend).table_info(table_name, show_sample=show_sample)
 
 
-def execute_query(sql: str) -> pd.DataFrame:
-    """Execute a SQL SELECT query against the active dataset.
+def execute_query(
+    sql: str,
+    *,
+    dataset: str,
+    backend: str | None = None,
+) -> pd.DataFrame:
+    """Execute a SQL SELECT query against a dataset.
 
     Args:
         sql: SQL SELECT query string.
@@ -207,7 +208,7 @@ def execute_query(sql: str) -> pd.DataFrame:
         0       M            55
         1       F            45
     """
-    return M4Client.from_active(interface="python_api").query(sql)
+    return _client(dataset, backend).query(sql)
 
 
 # =============================================================================
@@ -215,20 +216,11 @@ def execute_query(sql: str) -> pd.DataFrame:
 # =============================================================================
 
 
-def _check_notes_compatibility(tool_name: str) -> None:
-    """Check that active dataset supports notes tools."""
-    dataset = DatasetRegistry.get_active()
-    result = _tool_selector.check_compatibility(tool_name, dataset)
-    if not result.compatible:
-        raise ModalityError(
-            f"Dataset '{dataset.name}' does not support clinical notes. "
-            f"Available modalities: {', '.join(m.name for m in dataset.modalities)}. "
-            f"Use a dataset with NOTES modality (e.g., 'mimic-iv-note')."
-        )
-
-
 def search_notes(
     query: str,
+    *,
+    dataset: str,
+    backend: str | None = None,
     note_type: str = "all",
     limit: int = 5,
     snippet_length: int = 300,
@@ -249,18 +241,15 @@ def search_notes(
             - results: dict[str, pd.DataFrame] - Results by note type
 
     Raises:
-        ModalityError: If active dataset doesn't support notes.
+        ModalityError: If dataset doesn't support notes.
         QueryError: If note_type is invalid.
 
     Example:
-        >>> set_dataset("mimic-iv-note")
-        >>> results = search_notes("pneumonia", limit=3)
+        >>> results = search_notes("pneumonia", dataset="mimic-iv-note", limit=3)
         >>> for note_type, df in results['results'].items():
         ...     print(f"{note_type}: {len(df)} matches")
     """
-    _check_notes_compatibility("search_notes")
-
-    return M4Client.from_active(interface="python_api").search_notes(
+    return _client(dataset, backend).search_notes(
         query=query,
         note_type=note_type,
         limit=limit,
@@ -268,7 +257,13 @@ def search_notes(
     )
 
 
-def get_note(note_id: str, max_length: int | None = None) -> dict[str, Any]:
+def get_note(
+    note_id: str,
+    *,
+    dataset: str,
+    backend: str | None = None,
+    max_length: int | None = None,
+) -> dict[str, Any]:
     """Retrieve full text of a clinical note by ID.
 
     Args:
@@ -285,22 +280,21 @@ def get_note(note_id: str, max_length: int | None = None) -> dict[str, Any]:
             - truncated: bool - Whether text was truncated
 
     Raises:
-        ModalityError: If active dataset doesn't support notes.
+        ModalityError: If dataset doesn't support notes.
         QueryError: If note not found.
 
     Example:
         >>> note = get_note("10000032_DS-1")
         >>> print(note['text'][:500])
     """
-    _check_notes_compatibility("get_note")
-
-    return M4Client.from_active(interface="python_api").get_note(
-        note_id=note_id, max_length=max_length
-    )
+    return _client(dataset, backend).get_note(note_id=note_id, max_length=max_length)
 
 
 def list_patient_notes(
     subject_id: int,
+    *,
+    dataset: str,
+    backend: str | None = None,
     note_type: str = "all",
     limit: int = 20,
 ) -> dict[str, Any]:
@@ -318,7 +312,7 @@ def list_patient_notes(
             - notes: dict[str, pd.DataFrame] - Note metadata by type
 
     Raises:
-        ModalityError: If active dataset doesn't support notes.
+        ModalityError: If dataset doesn't support notes.
         QueryError: If note_type is invalid.
 
     Example:
@@ -326,9 +320,7 @@ def list_patient_notes(
         >>> for note_type, df in notes['notes'].items():
         ...     print(f"{note_type}: {len(df)} notes")
     """
-    _check_notes_compatibility("list_patient_notes")
-
-    return M4Client.from_active(interface="python_api").list_patient_notes(
+    return _client(dataset, backend).list_patient_notes(
         subject_id=subject_id,
         note_type=note_type,
         limit=limit,
