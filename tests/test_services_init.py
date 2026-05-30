@@ -94,7 +94,7 @@ def test_init_service_raw_to_parquet_conversion_path(
 
 @patch("m4.services.init.get_default_database_path")
 @patch("m4.services.init.get_dataset_parquet_root")
-def test_init_service_credentialed_dataset_returns_blocked_state(
+def test_init_service_credentialed_dataset_missing_files_is_error(
     mock_parquet_root, mock_db_path, tmp_path
 ):
     pq_root = tmp_path / "parquet" / "mimic-iv"
@@ -105,9 +105,8 @@ def test_init_service_credentialed_dataset_returns_blocked_state(
 
     result = initialize_dataset_service("mimic-iv")
 
-    assert isinstance(result, CommandResult)
-    assert _step_by_name(result, "raw_files")["status"] == "blocked"
-    assert _step_by_name(result, "database")["status"] == "skipped"
+    assert isinstance(result, CommandError)
+    assert result.code == "raw_files_missing"
 
 
 @patch("m4.services.init.has_derived_support", return_value=False)

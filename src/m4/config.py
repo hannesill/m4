@@ -291,6 +291,10 @@ def _has_parquet_files(path: Path | None) -> bool:
     return bool(path and path.exists() and any(path.rglob("*.parquet")))
 
 
+def _has_raw_files(path: Path | None) -> bool:
+    return bool(path and path.exists() and any(path.rglob("*.csv.gz")))
+
+
 def detect_available_local_datasets() -> dict[str, dict[str, Any]]:
     """Return presence flags for all registered datasets."""
     _ensure_custom_datasets_loaded()
@@ -312,10 +316,13 @@ def detect_available_local_datasets() -> dict[str, dict[str, Any]]:
 
         db_path_str = cfg.get("duckdb_paths", {}).get(name)
         db_path = Path(db_path_str) if db_path_str else get_default_database_path(name)
+        raw_root = _PROJECT_DATA_DIR / "raw_files" / name
 
         results[name] = {
+            "raw_present": _has_raw_files(raw_root),
             "parquet_present": _has_parquet_files(parquet_root),
             "db_present": bool(db_path and db_path.exists()),
+            "raw_root": str(raw_root),
             "parquet_root": str(parquet_root) if parquet_root else "",
             "db_path": str(db_path) if db_path else "",
         }

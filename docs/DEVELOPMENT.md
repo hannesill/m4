@@ -67,8 +67,12 @@ non-zero.
     {
       "name": "mimic-iv",
       "active": true,
+      "raw_present": true,
       "parquet_present": true,
       "db_present": true,
+      "requires_authentication": true,
+      "download_available": true,
+      "setup_state": "ready",
       "bigquery_available": true,
       "row_count": 431231,
       "parquet_size_gb": 8.5,
@@ -86,7 +90,7 @@ non-zero.
 
 Raw local paths are hidden by default in machine-facing output. Pass
 `--paths` or set `M4_PATH_DISCLOSURE=1` to include path fields such as
-`parquet_root` and `db_path`.
+`raw_root`, `parquet_root`, and `db_path`.
 
 Dataset `warnings` is a list of stable warning codes. Currently documented
 status warnings:
@@ -125,7 +129,11 @@ Command errors use the same envelope with `ok: false`:
 
 Stable command error codes are `dataset_not_found`, `backend_incompatible`,
 `invalid_backend`, `invalid_option`, `project_id_required`, and
-`dataset_incompatible`.
+`dataset_incompatible`. Dataset setup can also return `missing_credentials`,
+`physionet_auth_failed`, `physionet_access_forbidden`,
+`download_network_failed`, `download_filesystem_failed`,
+`download_interrupted`, `raw_files_missing`, `conversion_failed`,
+`duckdb_init_failed`, and `verification_failed`.
 
 `m4 init DATASET --json` uses the same result/error envelope and runs
 non-interactively. Human prompts, progress panels, and download output are
@@ -142,17 +150,42 @@ states:
   "parquet_root": "/absolute/path/to/parquet/mimic-iv",
   "raw_root": "/absolute/path/to/raw_files/mimic-iv",
   "steps": [
-    {"name": "raw_files", "status": "blocked", "message": "Download manually and rerun init."},
-    {"name": "parquet", "status": "skipped"},
-    {"name": "database", "status": "skipped"}
+    {"name": "raw_files", "status": "completed", "message": "Raw files are present."},
+    {"name": "parquet", "status": "completed", "message": "Converted CSV to Parquet."},
+    {"name": "database", "status": "completed", "message": "Created DuckDB views."}
   ],
   "warnings": []
 }
 ```
 
 Init step status is one of `skipped`, `completed`, `blocked`, or `failed`.
-Credentialed/manual-download cases that the human CLI treats as informational
-return `ok: true` with blocked or skipped steps.
+For credentialed datasets, missing raw/parquet/database artifacts are an
+`ok: false` `raw_files_missing` result unless `--download` is requested.
+
+For progress-aware wrappers, add `--events ndjson`:
+
+```bash
+m4 init mimic-iv --json --events ndjson --no-interactive --download \
+  --physionet-credentials-file /path/to/physionet-credentials.json
+```
+
+With `--events ndjson`, stdout changes from one JSON object to a newline-delimited
+JSON stream. The final command payload appears in `operation_completed.result`;
+setup failures appear in `operation_failed.error`.
+
+PhysioNet credentials files are JSON:
+
+```json
+{
+  "username": "YOUR_USERNAME",
+  "password": "YOUR_PASSWORD"
+}
+```
+
+Do not expose passwords as command-line flags. M4 follows the same source basis
+as PhysioNet's documented recursive resumable downloads (`wget -r -N -c -np`
+from `/files/...`) but performs the download internally so wrappers can receive
+structured progress and error events.
 
 Agent-oriented commands use a stable envelope with `version`, `ok`, `command`,
 `context`, `data`, `warnings`, and optional provenance fields:
