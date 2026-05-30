@@ -88,7 +88,7 @@ class TestEndToEnd:
 
     def test_execute_query_full_stack(self, integration_env):
         """ExecuteQueryTool returns correct DataFrame through the full stack."""
-        dataset, backend, db_path = integration_env
+        dataset, backend, _db_path = integration_env
 
         tool = ExecuteQueryTool()
         with patch("m4.core.tools.tabular.get_backend", return_value=backend):
@@ -105,7 +105,7 @@ class TestEndToEnd:
 
     def test_get_database_schema_full_stack(self, integration_env):
         """GetDatabaseSchemaTool lists schema-qualified tables."""
-        dataset, backend, db_path = integration_env
+        dataset, backend, _db_path = integration_env
 
         tool = GetDatabaseSchemaTool()
         with patch("m4.core.tools.tabular.get_backend", return_value=backend):
@@ -119,7 +119,7 @@ class TestEndToEnd:
 
     def test_get_table_info_full_stack(self, integration_env):
         """GetTableInfoTool returns schema and sample data for a real table."""
-        dataset, backend, db_path = integration_env
+        dataset, backend, _db_path = integration_env
 
         tool = GetTableInfoTool()
         with patch("m4.core.tools.tabular.get_backend", return_value=backend):
@@ -144,7 +144,7 @@ class TestEndToEnd:
 
     def test_execute_query_error_full_stack(self, integration_env):
         """ExecuteQueryTool raises QueryError for a nonexistent table."""
-        dataset, backend, db_path = integration_env
+        dataset, backend, _db_path = integration_env
 
         tool = ExecuteQueryTool()
         with patch("m4.core.tools.tabular.get_backend", return_value=backend):
@@ -160,7 +160,7 @@ class TestEndToEnd:
 
     def test_invalid_sql_full_stack(self, integration_env):
         """ExecuteQueryTool raises SecurityError for dangerous SQL."""
-        dataset, backend, db_path = integration_env
+        dataset, backend, _db_path = integration_env
 
         tool = ExecuteQueryTool()
         with patch("m4.core.tools.tabular.get_backend", return_value=backend):
@@ -172,7 +172,7 @@ class TestEndToEnd:
 
     def test_execute_query_with_join(self, integration_env):
         """ExecuteQueryTool handles JOIN queries across schemas."""
-        dataset, backend, db_path = integration_env
+        dataset, backend, _db_path = integration_env
 
         tool = ExecuteQueryTool()
         sql = """
@@ -193,7 +193,7 @@ class TestEndToEnd:
 
     def test_execute_query_with_aggregation(self, integration_env):
         """ExecuteQueryTool handles GROUP BY aggregation queries."""
-        dataset, backend, db_path = integration_env
+        dataset, backend, _db_path = integration_env
 
         tool = ExecuteQueryTool()
         sql = (
@@ -212,7 +212,7 @@ class TestEndToEnd:
 
     def test_execute_query_empty_result(self, integration_env):
         """ExecuteQueryTool returns empty DataFrame for no-match queries."""
-        dataset, backend, db_path = integration_env
+        dataset, backend, _db_path = integration_env
 
         tool = ExecuteQueryTool()
         sql = "SELECT * FROM mimiciv_hosp.patients WHERE subject_id = -1"
