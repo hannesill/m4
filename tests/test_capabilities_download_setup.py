@@ -310,7 +310,7 @@ def test_init_credentialed_guidance_matches_download_command(tmp_path):
 
     assert result.exit_code == 0
     assert "--cut-dirs=3 -nH" in result.output
-    assert "raw_files/mimic-iv" in result.output
+    assert "raw_files/mimic-iv" in result.output.replace("\n", "")
 
 
 def test_credentialed_download_with_credentials_delegates(tmp_path):
