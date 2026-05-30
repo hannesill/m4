@@ -128,6 +128,51 @@ def test_explicit_attribution_recorded_without_environment(tabular_dataset, back
     assert record["actor"] == "actor-1"
 
 
+def test_with_dataset_returns_new_client_with_same_session_context(
+    tabular_dataset, notes_dataset, backend, tmp_path
+):
+    db_path = tmp_path / "source.duckdb"
+    client = M4Client(
+        dataset=tabular_dataset,
+        backend=backend,
+        study_id="study-1",
+        session_id="session-1",
+        actor="agent-1",
+        interface="python_api",
+        project_id="project-1",
+        db_path=db_path,
+        path_disclosure=True,
+    )
+
+    switched = client.with_dataset(notes_dataset)
+
+    assert switched is not client
+    assert client.dataset is tabular_dataset
+    assert client.context.dataset is tabular_dataset
+    assert switched.dataset is notes_dataset
+    assert switched.context.dataset is notes_dataset
+    assert switched.backend is backend
+    assert switched.context.study_id == "study-1"
+    assert switched.context.session_id == "session-1"
+    assert switched.context.actor == "agent-1"
+    assert switched.context.interface == "python_api"
+    assert switched.context.project_id == "project-1"
+    assert switched.context.db_path == db_path
+    assert switched.context.path_disclosure is True
+
+
+def test_switch_dataset_mutates_client_and_context(
+    tabular_dataset, notes_dataset, backend
+):
+    client = M4Client(dataset=tabular_dataset, backend=backend)
+
+    returned = client.switch_dataset(notes_dataset)
+
+    assert returned is client
+    assert client.dataset is notes_dataset
+    assert client.context.dataset is notes_dataset
+
+
 def test_notes_methods_raise_for_tabular_dataset(tabular_dataset, backend):
     client = M4Client(dataset=tabular_dataset, backend=backend)
 
