@@ -13,7 +13,7 @@ Quick Start:
 For MCP server usage, run: m4 serve
 """
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 # Expose API functions at package level for easy imports
 from vitrine import show
