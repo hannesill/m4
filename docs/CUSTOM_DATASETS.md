@@ -147,10 +147,13 @@ For datasets requiring PhysioNet credentials (most full datasets):
 1. Get credentialed access on PhysioNet
 2. Download manually using wget:
    ```bash
-   wget -r -N -c -np --user YOUR_USERNAME --ask-password \
+   wget -r -N -c -np --cut-dirs=3 -nH --user YOUR_USERNAME --ask-password \
      https://physionet.org/files/dataset-name/version/ \
      -P m4_data/raw_files/dataset-name
    ```
+   Set `--cut-dirs` to the number of path components in the listing URL
+   (`files/dataset-name/version` is 3) so files land in the top-level raw
+   layout expected by `m4 init`.
 3. Initialize:
    ```bash
    m4 init dataset-name

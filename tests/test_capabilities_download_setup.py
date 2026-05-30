@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -10,7 +11,11 @@ from m4.cli import app
 from m4.core.datasets import DatasetRegistry
 from m4.data_io import DatasetDownloadError, PhysioNetCredentials
 from m4.services.capabilities import build_capabilities_manifest
-from m4.services.download import download_dataset_service, validate_raw_layout
+from m4.services.download import (
+    build_wget_command,
+    download_dataset_service,
+    validate_raw_layout,
+)
 from m4.services.results import CommandError, CommandResult
 from m4.services.setup import doctor_service, setup_agent_service
 
@@ -59,6 +64,112 @@ def test_capabilities_manifest_shape():
     assert commands["setup-agent"]["mutates"] is False
     assert commands["setup-agent"]["mutates_with"] == ["--apply"]
     assert "--apply" in commands["quickstart"]["flags"]
+
+
+def test_capabilities_manifest_structural_contract():
+    manifest = build_capabilities_manifest()
+
+    assert {
+        "schema_version",
+        "interfaces",
+        "runtime",
+        "commands",
+        "tools",
+        "datasets",
+        "limits",
+        "concepts",
+        "provenance_policy",
+    }.issubset(manifest)
+
+    for command in manifest["commands"]:
+        assert {"name", "flags", "mutates"}.issubset(command)
+
+    for dataset in manifest["datasets"]:
+        assert {
+            "name",
+            "requires_authentication",
+            "modalities",
+            "bigquery",
+            "verification_table",
+            "schema_mapping",
+            "expected_local_layout",
+        }.issubset(dataset)
+        assert {
+            "available",
+            "project_id",
+            "dataset_ids",
+            "schema_mapping",
+        }.issubset(dataset["bigquery"])
+        assert {
+            "recommended_raw_root",
+            "raw_subdirectories",
+            "parquet_root",
+            "duckdb_filename",
+        }.issubset(dataset["expected_local_layout"])
+
+    for tool in manifest["tools"]:
+        assert {
+            "name",
+            "description",
+            "input_fields",
+            "required_modalities",
+            "compatible_datasets",
+            "supported_datasets",
+        }.issubset(tool)
+
+    assert {
+        "query_row_limit_default",
+        "path_redaction_default",
+        "supported_backends",
+        "conversion_env",
+    }.issubset(manifest["limits"])
+    assert {"derived_tables", "skills"}.issubset(manifest["concepts"])
+    assert {
+        "telemetry_destination",
+        "path_redaction",
+        "event_export_command",
+        "non_phi_policy",
+    }.issubset(manifest["provenance_policy"])
+
+
+def test_capabilities_manifest_agent_command_contract():
+    manifest = build_capabilities_manifest()
+    commands = {command["name"]: command for command in manifest["commands"]}
+    expected = {
+        "download",
+        "init",
+        "setup-agent",
+        "quickstart",
+        "doctor",
+        "capabilities",
+        "schema",
+        "query",
+    }
+
+    assert expected.issubset(commands)
+    for name in expected:
+        assert isinstance(commands[name]["flags"], list)
+        assert isinstance(commands[name]["mutates"], bool)
+    assert commands["setup-agent"]["mutates_with"] == ["--apply"]
+    assert commands["quickstart"]["mutates_with"] == ["--apply"]
+
+
+def test_capabilities_manifest_builtin_dataset_identity_contract():
+    manifest = build_capabilities_manifest()
+    datasets = {dataset["name"]: dataset for dataset in manifest["datasets"]}
+    expected = {"mimic-iv-demo", "mimic-iv", "mimic-iv-note", "eicu"}
+
+    assert expected.issubset(datasets)
+    for name in expected:
+        dataset = datasets[name]
+        assert dataset["name"] == name
+        assert isinstance(dataset["requires_authentication"], bool)
+        assert dataset["modalities"]
+        assert dataset["expected_local_layout"]["recommended_raw_root"]
+        assert dataset["expected_local_layout"]["duckdb_filename"]
+        assert "available" in dataset["bigquery"]
+        assert "dataset_ids" in dataset["bigquery"]
+        assert "verification_table" in dataset
 
 
 def test_python_get_capabilities_exports_manifest():
@@ -112,9 +223,18 @@ def test_credentialed_download_returns_wget_guidance(tmp_path):
     assert isinstance(result, CommandResult)
     assert result.ok is True
     assert result.data["status"] == "blocked"
-    assert "--cut-dirs=2 -nH" in result.data["wget_command"]
+    assert "--cut-dirs=3 -nH" in result.data["wget_command"]
     assert "--ask-password" in result.data["wget_command"]
     assert result.data["next_steps"][0].endswith("mimiciv/")
+
+
+def test_eicu_download_returns_top_level_raw_layout_guidance(tmp_path):
+    result = download_dataset_service("eicu", target=str(tmp_path))
+
+    assert isinstance(result, CommandResult)
+    assert result.data["status"] == "blocked"
+    assert "--cut-dirs=3 -nH" in result.data["wget_command"]
+    assert "https://physionet.org/files/eicu-crd/2.0/" in result.data["wget_command"]
 
 
 def test_download_service_loads_custom_dataset_and_quotes_target(tmp_path, monkeypatch):
@@ -126,8 +246,20 @@ def test_download_service_loads_custom_dataset_and_quotes_target(tmp_path, monke
     assert isinstance(result, CommandResult)
     assert result.data["status"] == "blocked"
     assert result.data["dataset"] == "custom-ed"
+    assert "--cut-dirs=3 -nH" in result.data["wget_command"]
     assert f"-P '{target}'" in result.data["wget_command"]
     assert result.data["next_steps"][0].endswith("/custom-ed/1.0/")
+
+
+def test_wget_command_cut_dirs_follows_listing_url_path(tmp_path, monkeypatch):
+    _install_custom_dataset(tmp_path, monkeypatch)
+    cfg_mod.ensure_custom_datasets_loaded()
+    dataset = DatasetRegistry.get("custom-ed")
+
+    command = build_wget_command(dataset, tmp_path / "target with spaces")
+
+    assert "--cut-dirs=3 -nH" in command
+    assert f"-P '{tmp_path / 'target with spaces'}'" in command
 
 
 def test_public_download_service_uses_downloader(tmp_path):
@@ -164,6 +296,21 @@ def test_credentialed_download_cli_without_credentials_returns_guidance():
     assert payload["status"] == "blocked"
     assert payload["wget_command"]
     assert "None" not in "\n".join(payload["next_steps"])
+
+
+def test_init_credentialed_guidance_matches_download_command(tmp_path):
+    pq_root = tmp_path / "m4_data" / "parquet" / "mimic-iv"
+    pq_root.mkdir(parents=True)
+
+    with (
+        patch("m4.config._find_project_root_from_cwd", return_value=Path.cwd()),
+        patch("m4.cli.get_dataset_parquet_root", return_value=pq_root),
+    ):
+        result = runner.invoke(app, ["init", "mimic-iv", "--no-interactive"])
+
+    assert result.exit_code == 0
+    assert "--cut-dirs=3 -nH" in result.output
+    assert "raw_files/mimic-iv" in result.output
 
 
 def test_credentialed_download_with_credentials_delegates(tmp_path):

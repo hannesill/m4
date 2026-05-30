@@ -65,7 +65,7 @@ from m4.data_io import (
     verify_table_rowcount,
 )
 from m4.services.backend import set_active_backend_service
-from m4.services.download import download_dataset_service
+from m4.services.download import build_wget_command, download_dataset_service
 from m4.services.events import NdjsonEventReporter
 from m4.services.init import initialize_dataset_service
 from m4.services.results import CommandError, CommandResult
@@ -890,7 +890,7 @@ def dataset_init_cmd(
             console.print()
 
             # Wget command tailored to the user's path
-            wget_cmd = f"wget -r -N -c -np --user YOUR_USERNAME --ask-password {base_url} -P {csv_root}"
+            wget_cmd = build_wget_command(ds, csv_root)
             print_command(wget_cmd)
             console.print()
             console.print(

@@ -292,16 +292,16 @@ After running `m4 init mimic-iv`, you are prompted whether to materialize derive
 
    ```bash
    # For MIMIC-IV
-   wget -r -N -c -np --cut-dirs=2 -nH --user YOUR_USERNAME --ask-password \
+   wget -r -N -c -np --cut-dirs=3 -nH --user YOUR_USERNAME --ask-password \
      https://physionet.org/files/mimiciv/3.1/ \
      -P m4_data/raw_files/mimic-iv
 
    # For eICU
-   wget -r -N -c -np --cut-dirs=2 -nH --user YOUR_USERNAME --ask-password \
+   wget -r -N -c -np --cut-dirs=3 -nH --user YOUR_USERNAME --ask-password \
      https://physionet.org/files/eicu-crd/2.0/ \
      -P m4_data/raw_files/eicu
    ```
-   The `--cut-dirs=2 -nH` flags ensure CSV files land directly in `m4_data/raw_files/mimic-iv/` rather than a nested `physionet.org/files/...` structure.
+   The `--cut-dirs=3 -nH` flags remove the PhysioNet `files/<dataset>/<version>/` prefix so CSV files land under `m4_data/raw_files/<dataset>/` with only dataset-internal folders preserved.
 
 3. **Initialize after a manual download:**
    ```bash
