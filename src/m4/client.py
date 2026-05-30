@@ -45,11 +45,14 @@ class M4Client:
         project_id: str | None = None,
         db_path: str | Path | None = None,
         path_disclosure: bool = False,
+        allow_missing_dataset: bool = False,
     ) -> None:
         init_tools()
         _ensure_custom_datasets_loaded()
 
-        self.dataset = self._resolve_dataset(dataset)
+        self.dataset = self._resolve_dataset(
+            dataset, allow_missing_dataset=allow_missing_dataset
+        )
         self.backend_name, self.backend = self._resolve_backend(backend)
         self.context = M4ExecutionContext(
             dataset=self.dataset,
@@ -66,7 +69,9 @@ class M4Client:
         self._tool_selector = ToolSelector()
 
     @classmethod
-    def from_active(cls, interface: str = "python_api") -> "M4Client":
+    def from_active(
+        cls, interface: str = "python_api", allow_missing_dataset: bool = False
+    ) -> "M4Client":
         """Create a client from active runtime configuration and environment."""
         path_disclosure = os.getenv("M4_PATH_DISCLOSURE", "").lower() in {
             "1",
@@ -83,6 +88,7 @@ class M4Client:
             project_id=get_bigquery_project_id(),
             db_path=os.getenv("M4_DB_PATH"),
             path_disclosure=path_disclosure,
+            allow_missing_dataset=allow_missing_dataset,
         )
 
     def schema(self) -> dict[str, Any]:
@@ -108,6 +114,12 @@ class M4Client:
     def dataset_status(self) -> dict[str, Any]:
         """Return detailed dataset availability information."""
         return self._invoke("list_datasets", ListDatasetsInput())
+
+    def capabilities(self) -> dict[str, Any]:
+        """Return the stable M4 capability manifest."""
+        from m4.services.capabilities import build_capabilities_manifest
+
+        return build_capabilities_manifest()
 
     def search_notes(
         self,
@@ -179,13 +191,21 @@ class M4Client:
         return invoke_tracked(tool, self.dataset, params, self.context)
 
     def _resolve_dataset(
-        self, dataset: str | DatasetDefinition | None
+        self,
+        dataset: str | DatasetDefinition | None,
+        *,
+        allow_missing_dataset: bool = False,
     ) -> DatasetDefinition:
         if isinstance(dataset, DatasetDefinition):
             return dataset
 
         if dataset is None:
-            return DatasetRegistry.get_active()
+            try:
+                return DatasetRegistry.get_active()
+            except DatasetError:
+                if allow_missing_dataset:
+                    return DatasetRegistry.list_all()[0]
+                raise
 
         resolved = DatasetRegistry.get(dataset.lower())
         if resolved is None:

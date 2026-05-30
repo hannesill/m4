@@ -57,6 +57,7 @@ __all__ = [
     "QueryError",
     "execute_query",
     "get_active_dataset",
+    "get_capabilities",
     "get_note",
     "get_schema",
     "get_table_info",
@@ -128,6 +129,13 @@ def get_active_dataset() -> str:
         return _get_active_dataset()
     except ValueError as e:
         raise DatasetError(str(e)) from e
+
+
+def get_capabilities() -> dict[str, Any]:
+    """Return the stable M4 capability manifest."""
+    return M4Client.from_active(
+        interface="python_api", allow_missing_dataset=True
+    ).capabilities()
 
 
 # =============================================================================

@@ -63,6 +63,7 @@ _MCP_TOOL_NAMES = frozenset(
         "list_patient_notes",
         "cohort_builder",
         "query_cohort",
+        "capabilities",
     }
 )
 
@@ -257,6 +258,20 @@ def _serialize_list_patient_notes_result(result: dict[str, Any]) -> str:
 # ==========================================
 # MCP TOOLS - Thin adapters to tool classes
 # ==========================================
+
+
+@mcp.resource("m4://capabilities", mime_type="application/json")
+def capabilities_resource() -> str:
+    """Return the M4 capability manifest as JSON."""
+    client = M4Client.from_active(interface="mcp", allow_missing_dataset=True)
+    return json.dumps(client.capabilities(), indent=2)
+
+
+@mcp.tool()
+def capabilities() -> str:
+    """Return the M4 capability manifest as JSON."""
+    client = M4Client.from_active(interface="mcp", allow_missing_dataset=True)
+    return json.dumps(client.capabilities(), indent=2)
 
 
 @mcp.tool()
