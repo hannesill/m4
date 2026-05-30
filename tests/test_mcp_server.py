@@ -501,7 +501,11 @@ class TestModalityChecking:
             modalities={Modality.TABULAR},
         )
 
-        with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"M4_OAUTH2_ENABLED": "false", "M4_BACKEND": "duckdb"},
+            clear=True,
+        ):
             with patch(
                 "m4.core.tools.management.detect_available_local_datasets",
                 return_value={
