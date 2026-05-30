@@ -65,9 +65,11 @@ from m4.data_io import (
     verify_table_rowcount,
 )
 from m4.services.backend import set_active_backend_service
+from m4.services.download import download_dataset_service
 from m4.services.events import NdjsonEventReporter
 from m4.services.init import initialize_dataset_service
 from m4.services.results import CommandError, CommandResult
+from m4.services.setup import doctor_service, quickstart_service, setup_agent_service
 from m4.services.status import collect_status_snapshot
 from m4.services.use import set_active_dataset_service
 
@@ -105,6 +107,16 @@ def _emit_json(payload: dict[str, Any]) -> None:
 
 def _emit_command_json(result: CommandResult | CommandError) -> None:
     _emit_json(result.to_json_dict())
+
+
+def _dotenv_lines(values: dict[str, Any]) -> list[str]:
+    lines = []
+    for key, value in values.items():
+        if value is None:
+            continue
+        text = str(value).replace("\n", "\\n")
+        lines.append(f"{key}={text}")
+    return lines
 
 
 def _json_error(command: str, code: str, message: str, hint: str | None = None) -> None:
@@ -349,6 +361,302 @@ def main_callback(
         m4_logger.setLevel(logging.INFO)
         for handler in m4_logger.handlers:
             handler.setLevel(logging.INFO)
+
+
+@app.command("capabilities")
+def capabilities_cmd(
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print the stable capability manifest as JSON."),
+    ] = False,
+):
+    """Show M4 interfaces, commands, tools, datasets, limits, and policies."""
+    manifest = M4Client.from_active(
+        interface="cli", allow_missing_dataset=True
+    ).capabilities()
+    if json_output:
+        _emit_json(manifest)
+        return
+
+    console.print("[bold]M4 capabilities[/bold]")
+    console.print(f"Schema version: {manifest['schema_version']}")
+    console.print(
+        "Interfaces: "
+        + ", ".join(
+            sorted(key for key in manifest["interfaces"] if key != "output_formats")
+        )
+    )
+    console.print("Datasets: " + ", ".join(ds["name"] for ds in manifest["datasets"]))
+    console.print("Tools: " + ", ".join(tool["name"] for tool in manifest["tools"]))
+    console.print("Machine output: [command]m4 capabilities --json[/command]")
+
+
+@app.command("doctor")
+def doctor_cmd(
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print diagnostics as JSON."),
+    ] = False,
+    include_paths: Annotated[
+        bool,
+        typer.Option("--paths", help="Disclose raw local paths in diagnostics."),
+    ] = False,
+):
+    """Run non-mutating diagnostics for local, BigQuery, and MCP setup."""
+    result = doctor_service(include_paths=include_paths)
+    if json_output:
+        _emit_command_json(result)
+        return
+
+    summary = result.data["summary"]
+    if summary["ok"]:
+        success("Doctor checks passed")
+    else:
+        warning("Doctor found setup issues")
+    for check in result.data["checks"]:
+        marker = "OK" if check["ok"] else "FAIL"
+        console.print(f"{marker} {check['name']}: {check['message']}")
+        if not check["ok"] and check.get("hint"):
+            console.print(f"  Hint: {check['hint']}")
+
+
+@app.command("download")
+def download_cmd(
+    dataset_name: Annotated[
+        str,
+        typer.Argument(help="Dataset to download or prepare download guidance for."),
+    ],
+    target: Annotated[
+        str | None,
+        typer.Option("--target", help="Raw CSV.gz destination root."),
+    ] = None,
+    command_only: Annotated[
+        bool,
+        typer.Option("--command-only", help="Only print/generated command guidance."),
+    ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print result as JSON."),
+    ] = False,
+    events: Annotated[
+        str | None,
+        typer.Option(
+            "--events",
+            help="Emit structured progress events. Supported: ndjson.",
+        ),
+    ] = None,
+    physionet_credentials_file: Annotated[
+        str | None,
+        typer.Option(
+            "--physionet-credentials-file",
+            help="JSON file containing PhysioNet username and password fields.",
+        ),
+    ] = None,
+):
+    """Download public datasets or generate credentialed PhysioNet commands."""
+    if events and events != "ndjson":
+        _json_error(
+            "download",
+            "invalid_option",
+            f"Unsupported event format '{events}'.",
+            hint="Use: --events ndjson",
+        )
+    if events and not json_output:
+        _json_error(
+            "download",
+            "invalid_option",
+            "--events requires --json.",
+            hint="Use: m4 download DATASET --json --events ndjson",
+        )
+
+    reporter = NdjsonEventReporter(command="download") if events == "ndjson" else None
+    credentials = None
+    if physionet_credentials_file:
+        try:
+            credentials = PhysioNetCredentials.from_json_file(
+                Path(physionet_credentials_file).expanduser().resolve()
+            )
+        except Exception as exc:
+            result = CommandError(
+                command="download",
+                code="missing_credentials",
+                message=f"Could not read PhysioNet credentials file: {exc}",
+            )
+            if reporter:
+                reporter.operation_failed(result.to_json_dict()["error"])
+            elif json_output:
+                _emit_command_json(result)
+            else:
+                print_error_panel("Download Failed", result.message, hint=result.hint)
+            raise typer.Exit(code=1)
+
+    if reporter:
+        reporter.operation_started(
+            dataset=dataset_name,
+            command_only=command_only,
+            credentials=bool(credentials),
+        )
+
+    with _silence_m4_logging() if json_output else nullcontext():
+        result = download_dataset_service(
+            dataset_name,
+            target=target,
+            command_only=command_only,
+            physionet_credentials=credentials,
+            event_reporter=reporter,
+        )
+
+    if json_output:
+        if reporter:
+            if isinstance(result, CommandError):
+                reporter.operation_failed(result.to_json_dict()["error"])
+            else:
+                reporter.operation_completed(result.to_json_dict())
+        else:
+            _emit_command_json(result)
+        if isinstance(result, CommandError):
+            raise typer.Exit(code=1)
+        return
+
+    if isinstance(result, CommandError):
+        print_error_panel("Download Failed", result.message, hint=result.hint)
+        raise typer.Exit(code=1)
+
+    data = result.data
+    status = data.get("status")
+    if status == "completed":
+        success(f"Downloaded {data['dataset']} to {data['target']}")
+    elif status == "blocked":
+        warning(f"Credentialed dataset '{data['dataset']}' requires credentials")
+    else:
+        info(f"Download guidance for {data['dataset']}")
+
+    if data.get("wget_command"):
+        console.print()
+        print_command(data["wget_command"])
+    layout = data.get("layout", {})
+    if layout.get("warnings") or layout.get("errors"):
+        console.print()
+        warning("Layout validation reported issues")
+        for item in layout.get("errors", []):
+            console.print(f"  {item}")
+        for hint in layout.get("recovery", []):
+            console.print(f"  Hint: {hint}")
+
+
+@app.command("setup-agent")
+def setup_agent_cmd(
+    mode: Annotated[
+        str, typer.Option("--mode", help="Agent mode: local or protected.")
+    ] = "local",
+    client: Annotated[
+        str, typer.Option("--client", help="Client: claude or generic.")
+    ] = "generic",
+    dataset_name: Annotated[
+        str | None, typer.Option("--dataset", help="Default dataset.")
+    ] = None,
+    backend_name: Annotated[
+        str | None, typer.Option("--backend", help="Backend: duckdb or bigquery.")
+    ] = None,
+    project_id: Annotated[
+        str | None, typer.Option("--project-id", help="BigQuery billing project ID.")
+    ] = None,
+    output_format: Annotated[
+        str,
+        typer.Option("--format", help="Output format: json, dotenv, or text."),
+    ] = "text",
+    apply_config: Annotated[
+        bool,
+        typer.Option("--apply", help="Apply dataset/backend/project configuration."),
+    ] = False,
+):
+    """Emit or apply agent environment and MCP client recommendations."""
+    if output_format not in {"json", "dotenv", "text"}:
+        _json_error(
+            "setup-agent",
+            "invalid_format",
+            f"Unsupported format '{output_format}'.",
+            "Use --format json, dotenv, or text.",
+        )
+    result = setup_agent_service(
+        mode=mode,
+        client=client,
+        dataset=dataset_name,
+        backend=backend_name,
+        project_id=project_id,
+        apply_config=apply_config,
+    )
+    if isinstance(result, CommandError):
+        if output_format == "json":
+            _emit_command_json(result)
+        else:
+            print_error_panel("Setup Agent Failed", result.message, hint=result.hint)
+        raise typer.Exit(code=1)
+
+    if output_format == "json":
+        _emit_command_json(result)
+        return
+    if output_format == "dotenv":
+        typer.echo("\n".join(_dotenv_lines(result.data["environment"])))
+        return
+
+    console.print("[bold]Agent environment[/bold]")
+    for line in _dotenv_lines(result.data["environment"]):
+        typer.echo(line)
+    console.print()
+    console.print("[bold]Recommended commands[/bold]")
+    for command in result.data["recommended_commands"]:
+        console.print(f"  [command]{command}[/command]")
+
+
+@app.command("quickstart")
+def quickstart_cmd(
+    workflow: Annotated[
+        str,
+        typer.Option("--workflow", help="Workflow: demo, local, or bigquery."),
+    ] = "demo",
+    dataset_name: Annotated[
+        str | None, typer.Option("--dataset", help="Dataset name.")
+    ] = None,
+    backend_name: Annotated[
+        str | None, typer.Option("--backend", help="Backend name.")
+    ] = None,
+    project_id: Annotated[
+        str | None, typer.Option("--project-id", help="BigQuery billing project ID.")
+    ] = None,
+    apply_config: Annotated[
+        bool,
+        typer.Option("--apply", help="Apply the quickstart configuration."),
+    ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print result as JSON."),
+    ] = False,
+):
+    """Show or run the guided happy path for demo, local, or BigQuery use."""
+    result = quickstart_service(
+        workflow=workflow,
+        dataset=dataset_name,
+        backend=backend_name,
+        project_id=project_id,
+        apply_config=apply_config,
+    )
+    if json_output:
+        _emit_command_json(result)
+        if isinstance(result, CommandError):
+            raise typer.Exit(code=1)
+        return
+    if isinstance(result, CommandError):
+        print_error_panel("Quickstart Failed", result.message, hint=result.hint)
+        raise typer.Exit(code=1)
+
+    console.print(f"[bold]Quickstart: {result.data['workflow']}[/bold]")
+    for step in result.data["steps"]:
+        if "command" in step:
+            console.print(f"  [command]{step['command']}[/command]")
+    if result.warnings:
+        for item in result.warnings:
+            warning(item)
 
 
 @app.command("init")
@@ -1468,18 +1776,39 @@ def agent_env_cmd(
         str | None,
         typer.Option("--backend", help="Default backend for agent sessions."),
     ] = None,
+    project_id: Annotated[
+        str | None,
+        typer.Option("--project-id", help="BigQuery billing project ID."),
+    ] = None,
     json_output: Annotated[
         bool,
         typer.Option("--json", help="Print result as JSON."),
     ] = False,
+    output_format: Annotated[
+        str,
+        typer.Option("--format", help="Output format: dotenv, json, or text."),
+    ] = "dotenv",
     include_paths: Annotated[
         bool,
         typer.Option("--paths", help="Disclose raw local paths in metadata."),
     ] = False,
 ):
     """Return environment variables and command recommendations for agents."""
+    if json_output:
+        output_format = "json"
+    if output_format not in {"dotenv", "json", "text"}:
+        if output_format == "json":
+            _emit_agent_error(
+                "agent-env",
+                "invalid_format",
+                f"Unsupported format '{output_format}'.",
+                hint="Use --format dotenv, json, or text.",
+            )
+        error("Unsupported format. Use 'dotenv', 'json', or 'text'.")
+        raise typer.Exit(code=1)
+
     if mode not in {"local", "protected"}:
-        if json_output:
+        if output_format == "json":
             _emit_agent_error(
                 "agent-env",
                 "invalid_mode",
@@ -1501,6 +1830,8 @@ def agent_env_cmd(
         "M4_ACTOR": ctx.actor,
         "M4_TELEMETRY_DIR": str(ctx.telemetry_dir),
     }
+    if project_id or ctx.project_id:
+        env["M4_PROJECT_ID"] = project_id or ctx.project_id
     if mode == "local":
         env["M4_DATA_DIR"] = str(ctx.data_dir)
     else:
@@ -1542,7 +1873,7 @@ def agent_env_cmd(
         ],
     }
 
-    if json_output:
+    if output_format == "json":
         _emit_json(
             _agent_success_payload(
                 "agent-env",
@@ -1553,8 +1884,17 @@ def agent_env_cmd(
         )
         return
 
-    for key, value in data["environment"].items():
-        typer.echo(f"{key}={value}")
+    if output_format == "dotenv":
+        typer.echo("\n".join(_dotenv_lines(data["environment"])))
+        return
+
+    console.print("[bold]Agent environment[/bold]")
+    for line in _dotenv_lines(data["environment"]):
+        typer.echo(line)
+    console.print()
+    console.print("[bold]Recommended commands[/bold]")
+    for command in data["recommended_commands"]:
+        console.print(f"  [command]{command}[/command]")
 
 
 @provenance_app.command("export")

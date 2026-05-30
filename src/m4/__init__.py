@@ -29,6 +29,7 @@ from m4.api import (
     execute_query,
     # Dataset management
     get_active_dataset,
+    get_capabilities,
     # Clinical notes
     get_note,
     get_schema,
@@ -51,6 +52,7 @@ __all__ = [
     "__version__",
     "execute_query",
     "get_active_dataset",
+    "get_capabilities",
     "get_note",
     "get_schema",
     "get_table_info",

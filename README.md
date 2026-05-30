@@ -213,6 +213,8 @@ Switch datasets or backends anytime:
 ```bash
 m4 use mimic-iv     # Switch to full MIMIC-IV
 m4 backend bigquery # Switch to BigQuery (or duckdb)
+m4 capabilities     # Show available interfaces, datasets, tools, and policies
+m4 doctor           # Diagnose local, BigQuery, and MCP setup
 m4 status           # Show active dataset and backend
 m4 status --all     # List all available datasets
 m4 status --derived # Show per-table derived materialization status
@@ -223,6 +225,9 @@ commands that do not mutate active configuration unless explicitly documented:
 
 ```bash
 m4 agent-env --dataset mimic-iv --backend duckdb --json
+m4 capabilities --json
+m4 doctor --json
+m4 download mimic-iv --json
 m4 list-datasets --json --no-interactive
 m4 schema --dataset mimic-iv --backend duckdb --json --no-interactive
 m4 describe-table mimiciv_hosp.patients --dataset mimic-iv --json --no-interactive
@@ -278,6 +283,13 @@ After running `m4 init mimic-iv`, you are prompted whether to materialize derive
    expected raw layout under `m4_data/raw_files/<dataset>/`.
 
    You can still download manually if needed:
+   ```bash
+   m4 download mimic-iv
+   ```
+
+   For credentialed datasets, `m4 download` validates the expected local layout
+   and prints a dataset-specific resumable `wget` command.
+
    ```bash
    # For MIMIC-IV
    wget -r -N -c -np --cut-dirs=2 -nH --user YOUR_USERNAME --ask-password \

@@ -2,6 +2,10 @@
 
 Use Google Cloud BigQuery to access full clinical datasets without downloading files locally.
 
+For local DuckDB workflows, use `m4 download DATASET` followed by
+`m4 init DATASET`. For BigQuery workflows, skip local download entirely and
+configure credentials/project billing as described below.
+
 ## Prerequisites
 
 1. **Google Cloud account** with BigQuery access
@@ -37,6 +41,13 @@ m4 config --backend bigquery --project-id YOUR_PROJECT_ID
 ```
 
 Replace `YOUR_PROJECT_ID` with your own billing project for BigQuery usage, not the PhysioNet dataset project. The variable is mandatory to ensure billing is correctly attributed.
+
+You can also emit agent-ready environment guidance without changing config:
+
+```bash
+m4 setup-agent --backend bigquery --project-id YOUR_PROJECT_ID --format dotenv
+m4 doctor --json
+```
 
 ### 4. Set the dataset
 
@@ -100,7 +111,14 @@ BigQuery charges based on data scanned. Tips to minimize costs:
 **"Project not found" error:**
 - Check the project ID is correct
 - Ensure BigQuery API is enabled in your project
+- Confirm `M4_PROJECT_ID` or `m4 config --project-id` refers to your billing project
 
 **Slow queries:**
 - BigQuery has network latency; consider local DuckDB for development
 - Use smaller `LIMIT` values while exploring
+
+**Local download layout problems:**
+- Run `m4 download mimic-iv` or `m4 download eicu` to print dataset-specific
+  recovery guidance and a resumable `wget` command.
+- If files landed under `physionet.org/files/...`, move the dataset contents up
+  to `m4_data/raw_files/DATASET` or rerun `wget` with `--cut-dirs=2 -nH`.

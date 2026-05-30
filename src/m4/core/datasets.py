@@ -82,6 +82,14 @@ class DatasetDefinition:
     # Format: {"dataset-name": "Description of how to link"}
     related_datasets: dict[str, str] = field(default_factory=dict)
 
+    # Access and local layout guidance. These fields are metadata only; M4 does
+    # not collect credentialed dataset passwords.
+    dataset_page_url: str | None = None
+    dua_url: str | None = None
+    bigquery_access_url: str | None = None
+    expected_raw_subdirectories: list[str] = field(default_factory=list)
+    recommended_local_target_root: str | None = None
+
     # Filesystem directory -> canonical schema name
     # e.g. {"hosp": "mimiciv_hosp", "icu": "mimiciv_icu"}
     # Root-level files use empty string key: {"": "eicu_crd"}
@@ -232,8 +240,11 @@ class DatasetRegistry:
         mimic_iv_demo = DatasetDefinition(
             name="mimic-iv-demo",
             description="MIMIC-IV Clinical Database Demo",
+            dataset_page_url="https://physionet.org/content/mimic-iv-demo/",
             file_listing_url="https://physionet.org/files/mimic-iv-demo/2.2/",
             subdirectories_to_scan=["hosp", "icu"],
+            expected_raw_subdirectories=["hosp", "icu"],
+            recommended_local_target_root="m4_data/raw_files/mimic-iv-demo",
             primary_verification_table="mimiciv_hosp.admissions",
             bigquery_project_id=None,
             bigquery_dataset_ids=[],
@@ -244,8 +255,13 @@ class DatasetRegistry:
         mimic_iv = DatasetDefinition(
             name="mimic-iv",
             description="MIMIC-IV Clinical Database",
+            dataset_page_url="https://physionet.org/content/mimiciv/",
+            dua_url="https://physionet.org/content/mimiciv/",
+            bigquery_access_url="https://physionet.org/content/mimiciv/view-required-training/3.1/",
             file_listing_url="https://physionet.org/files/mimiciv/3.1/",
             subdirectories_to_scan=["hosp", "icu"],
+            expected_raw_subdirectories=["hosp", "icu"],
+            recommended_local_target_root="m4_data/raw_files/mimic-iv",
             primary_verification_table="mimiciv_hosp.admissions",
             bigquery_project_id="physionet-data",
             bigquery_dataset_ids=[
@@ -276,8 +292,13 @@ class DatasetRegistry:
         mimic_iv_note = DatasetDefinition(
             name="mimic-iv-note",
             description="MIMIC-IV Clinical Notes (discharge summaries, radiology reports)",
+            dataset_page_url="https://physionet.org/content/mimic-iv-note/",
+            dua_url="https://physionet.org/content/mimic-iv-note/",
+            bigquery_access_url="https://physionet.org/content/mimic-iv-note/view-required-training/2.2/",
             file_listing_url="https://physionet.org/files/mimic-iv-note/2.2/",
             subdirectories_to_scan=["note"],
+            expected_raw_subdirectories=["note"],
+            recommended_local_target_root="m4_data/raw_files/mimic-iv-note",
             primary_verification_table="mimiciv_note.discharge",
             bigquery_project_id="physionet-data",
             bigquery_dataset_ids=["mimiciv_note"],
@@ -296,8 +317,13 @@ class DatasetRegistry:
         eicu = DatasetDefinition(
             name="eicu",
             description="eICU Collaborative Research Database",
+            dataset_page_url="https://physionet.org/content/eicu-crd/",
+            dua_url="https://physionet.org/content/eicu-crd/",
+            bigquery_access_url="https://physionet.org/content/eicu-crd/view-required-training/2.0/",
             file_listing_url="https://physionet.org/files/eicu-crd/2.0/",
             subdirectories_to_scan=[],
+            expected_raw_subdirectories=[],
+            recommended_local_target_root="m4_data/raw_files/eicu",
             primary_verification_table="eicu_crd.patient",
             bigquery_project_id="physionet-data",
             bigquery_dataset_ids=["eicu_crd"],

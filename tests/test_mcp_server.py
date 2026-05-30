@@ -39,6 +39,22 @@ class TestMCPServerSetup:
         assert mcp is not None
         assert mcp.name == "m4"
 
+    @pytest.mark.asyncio
+    async def test_capabilities_tool_via_client(self):
+        async with Client(mcp) as client:
+            result = await client.call_tool("capabilities", {})
+            result_text = str(result)
+            assert "schema_version" in result_text
+            assert "m4://capabilities" in result_text
+
+    @pytest.mark.asyncio
+    async def test_capabilities_resource_via_client(self):
+        async with Client(mcp) as client:
+            result = await client.read_resource("m4://capabilities")
+            result_text = str(result)
+            assert "schema_version" in result_text
+            assert "m4://capabilities" in result_text
+
 
 class TestMCPTools:
     """Test MCP tools functionality."""

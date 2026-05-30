@@ -165,9 +165,14 @@ _CUSTOM_DATASETS_DIR = _PROJECT_DATA_DIR / "datasets"
 # --------------------------------------------------
 
 
-def _ensure_custom_datasets_loaded():
+def ensure_custom_datasets_loaded():
     """Ensure custom datasets are loaded from the custom datasets directory."""
     DatasetRegistry.load_custom_datasets(_CUSTOM_DATASETS_DIR)
+
+
+def _ensure_custom_datasets_loaded():
+    """Backward-compatible private wrapper for existing internal callers."""
+    ensure_custom_datasets_loaded()
 
 
 def resolve_runtime_context(
