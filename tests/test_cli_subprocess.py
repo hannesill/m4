@@ -13,9 +13,11 @@ def _run_m4(args: list[str], tmp_path: Path) -> subprocess.CompletedProcess[str]
     env = os.environ.copy()
     env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1] / "src")
     env["M4_DATA_DIR"] = str(tmp_path / "m4_data")
+    env.pop("M4_HOME", None)
     env.pop("M4_BACKEND", None)
     env.pop("M4_DATASET", None)
     env.pop("M4_PROJECT_ID", None)
+    env.pop("M4_TELEMETRY_DIR", None)
     return subprocess.run(
         [sys.executable, "-m", "m4.cli", *args],
         text=True,

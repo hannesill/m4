@@ -4,7 +4,8 @@ from unittest.mock import Mock, patch
 from m4.services.init_derived import init_derived_service
 
 
-def test_init_derived_list_returns_tables():
+@patch("m4.services.init_derived.get_active_backend", return_value="duckdb")
+def test_init_derived_list_returns_tables(mock_backend):
     result = init_derived_service("mimic-iv", list_only=True)
 
     assert result.ok is True
