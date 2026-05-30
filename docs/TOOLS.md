@@ -202,17 +202,19 @@ Use the `note_type` parameter to filter searches and listings.
 
 After running `m4 init-derived mimic-iv`, the following pre-computed tables become available in the `mimiciv_derived` schema. Query them with `execute_query` like any other table (e.g., `SELECT * FROM mimiciv_derived.sofa LIMIT 10`).
 
+<!-- BEGIN GENERATED DERIVED TABLES -->
 | Category | Tables | Description |
 |----------|--------|-------------|
-| **Scores** | `sofa`, `sapsii`, `apsiii`, `oasis`, `lods`, `sirs` | Severity and mortality prediction scores |
-| **Sepsis** | `sepsis3`, `suspicion_of_infection` | Sepsis-3 cohort identification and suspected infection events |
-| **Organ Failure** | `kdigo_creatinine`, `kdigo_uo`, `kdigo_stages`, `meld` | KDIGO AKI staging and MELD liver score |
-| **Medications** | `norepinephrine`, `epinephrine`, `dopamine`, `dobutamine`, `phenylephrine`, `vasopressin`, `milrinone`, `norepinephrine_equivalent_dose`, `vasoactive_agent`, `antibiotic`, `acei`, `nsaid`, `neuroblock` | Individual vasopressors, equivalents, and other drug classes |
-| **Measurements** | `vitalsign`, `bg`, `blood_gas`, `chemistry`, `complete_blood_count`, `coagulation`, `cardiac_marker`, `enzyme`, `inflammation`, `icp`, `height`, `urine_output`, `urine_output_rate`, `ventilator_setting`, `oxygen_delivery`, `rhythm`, `gcs`, `creatinine_baseline`, `blood_differential` | Labs, vitals, and clinical measurements |
-| **Demographics** | `age`, `icustay_detail`, `icustay_times`, `icustay_hourly`, `weight_durations` | Patient demographics and ICU stay metadata |
-| **First Day** | `first_day_bg`, `first_day_bg_art`, `first_day_gcs`, `first_day_height`, `first_day_lab`, `first_day_rrt`, `first_day_sofa`, `first_day_urine_output`, `first_day_vitalsign`, `first_day_weight` | Aggregated values from the first 24 hours of ICU admission |
-| **Treatment** | `ventilation`, `rrt`, `crrt`, `invasive_line` | Mechanical ventilation, renal replacement therapy, and lines |
+| **Demographics** | `icustay_times`, `icustay_hourly`, `weight_durations`, `age`, `icustay_detail` | Patient demographics and ICU stay metadata |
+| **Measurements** | `urine_output`, `bg`, `blood_differential`, `cardiac_marker`, `chemistry`, `coagulation`, `complete_blood_count`, `creatinine_baseline`, `enzyme`, `gcs`, `height`, `icp`, `inflammation`, `oxygen_delivery`, `rhythm`, `urine_output_rate`, `ventilator_setting`, `vitalsign` | Labs, vitals, and clinical measurements |
+| **Organ Failure** | `kdigo_uo`, `kdigo_creatinine`, `meld`, `kdigo_stages` | KDIGO AKI staging and MELD liver score |
 | **Comorbidity** | `charlson` | Charlson comorbidity index |
+| **Medications** | `acei`, `antibiotic`, `dobutamine`, `dopamine`, `epinephrine`, `milrinone`, `neuroblock`, `norepinephrine`, `nsaid`, `phenylephrine`, `vasopressin`, `vasoactive_agent`, `norepinephrine_equivalent_dose` | Individual vasopressors, equivalents, and other drug classes |
+| **Treatment** | `crrt`, `invasive_line`, `rrt`, `ventilation` | Mechanical ventilation, renal replacement therapy, and lines |
+| **First Day** | `first_day_bg`, `first_day_bg_art`, `first_day_gcs`, `first_day_height`, `first_day_lab`, `first_day_rrt`, `first_day_urine_output`, `first_day_vitalsign`, `first_day_weight`, `first_day_sofa` | Aggregated values from the first 24 hours of ICU admission |
+| **Scores** | `apsiii`, `lods`, `oasis`, `sapsii`, `sirs`, `sofa` | Severity and mortality prediction scores |
+| **Sepsis** | `suspicion_of_infection`, `sepsis3` | Sepsis-3 cohort identification and suspected infection events |
+<!-- END GENERATED DERIVED TABLES -->
 
 These tables are materialized from vendored [mimic-code](https://github.com/MIT-LCP/mimic-code) SQL and are available for MIMIC-IV only (not mimic-iv-demo or eICU). BigQuery users already have access via `physionet-data.mimiciv_derived`.
 

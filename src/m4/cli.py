@@ -2,8 +2,6 @@ import json
 import logging
 import math
 import os
-import subprocess
-import sys
 from contextlib import contextmanager, nullcontext
 from dataclasses import is_dataclass
 from datetime import date, datetime, time
@@ -17,15 +15,12 @@ from m4.client import M4Client
 from m4.config import (
     get_active_backend,
     get_active_dataset,
-    get_bigquery_project_id,
     get_dataset_parquet_root,
     get_default_database_path,
     get_telemetry_dir,
     logger,
     resolve_runtime_context,
-    set_active_backend,
     set_active_dataset,
-    set_bigquery_project_id,
 )
 from m4.console import (
     console,
@@ -48,7 +43,6 @@ from m4.core.datasets import DatasetRegistry
 from m4.core.derived.builtins import (
     get_tables_by_category,
     has_derived_support,
-    list_builtins,
 )
 from m4.core.derived.materializer import (
     get_derived_table_count,
@@ -64,10 +58,18 @@ from m4.data_io import (
     init_duckdb_from_parquet,
     verify_table_rowcount,
 )
+from m4.services.agent_env import build_agent_env_service
 from m4.services.backend import set_active_backend_service
+from m4.services.config import (
+    MCPConfigRequest,
+    configure_mcp_service,
+    install_config_skills_service,
+    summarize_generated_config,
+)
 from m4.services.download import build_wget_command, download_dataset_service
-from m4.services.events import EventReporter, NdjsonEventReporter
+from m4.services.events import NdjsonEventReporter
 from m4.services.init import initialize_dataset_service
+from m4.services.init_derived import init_derived_service
 from m4.services.results import CommandError, CommandResult
 from m4.services.setup import doctor_service, quickstart_service, setup_agent_service
 from m4.services.status import collect_status_snapshot
@@ -552,130 +554,6 @@ def download_cmd(
             console.print(f"  {item}")
         for hint in layout.get("recovery", []):
             console.print(f"  Hint: {hint}")
-
-
-def _init_derived_json_result(
-    dataset_name: str,
-    *,
-    list_only: bool,
-    force: bool,
-    event_reporter: EventReporter | None = None,
-) -> CommandResult | CommandError:
-    dataset_key = dataset_name.lower()
-    ds = DatasetRegistry.get(dataset_key)
-
-    if not ds:
-        supported = ", ".join([d.name for d in DatasetRegistry.list_all()])
-        return CommandError(
-            command="init-derived",
-            code="dataset_not_found",
-            message=f"Dataset '{dataset_name}' is not supported or not configured.",
-            hint=f"Supported datasets: {supported}",
-        )
-
-    if dataset_key in ("mimic-iv-demo",):
-        return CommandError(
-            command="init-derived",
-            code="derived_not_supported",
-            message=f"Derived tables are not supported for '{dataset_key}'.",
-            hint=(
-                "The demo dataset has only 100 patients; many derived concepts "
-                "produce empty or unreliable results. Use the full mimic-iv dataset."
-            ),
-        )
-
-    if get_active_backend() == "bigquery":
-        return CommandResult(
-            command="init-derived",
-            data={
-                "dataset": dataset_key,
-                "status": "skipped",
-                "reason": "bigquery_derived_tables_available",
-                "created_tables": [],
-                "table_count": 0,
-            },
-        )
-
-    if list_only:
-        try:
-            names = list_builtins(dataset_key)
-        except ValueError as exc:
-            return CommandError(
-                command="init-derived",
-                code="derived_not_supported",
-                message=str(exc),
-            )
-        return CommandResult(
-            command="init-derived",
-            data={
-                "dataset": dataset_key,
-                "status": "listed",
-                "tables": names,
-                "table_count": len(names),
-            },
-        )
-
-    db_path = get_default_database_path(dataset_key)
-    if not db_path or not db_path.exists():
-        return CommandError(
-            command="init-derived",
-            code="database_not_found",
-            message=f"No DuckDB database found for '{dataset_key}'.",
-            hint=f"Initialize first: m4 init {dataset_key}",
-        )
-
-    existing_count = get_derived_table_count(db_path)
-    if existing_count > 0 and not force:
-        return CommandResult(
-            command="init-derived",
-            data={
-                "dataset": dataset_key,
-                "status": "skipped",
-                "reason": "already_materialized",
-                "database": str(db_path),
-                "existing_table_count": existing_count,
-                "created_tables": [],
-                "table_count": 0,
-            },
-        )
-
-    try:
-        created = materialize_all(dataset_key, db_path, event_reporter=event_reporter)
-    except ValueError as exc:
-        return CommandError(
-            command="init-derived",
-            code="derived_not_supported",
-            message=str(exc),
-        )
-    except RuntimeError as exc:
-        return CommandError(
-            command="init-derived",
-            code="derived_materialization_failed",
-            message=str(exc),
-            hint=(
-                "If the database is locked, stop MCP servers or notebooks using it."
-                if "locked by another process" in str(exc)
-                else None
-            ),
-        )
-    except Exception as exc:
-        logger.error(f"Derived table materialization error: {exc}", exc_info=True)
-        return CommandError(
-            command="init-derived",
-            code="derived_materialization_failed",
-            message=f"Materialization failed: {exc}",
-        )
-
-    return CommandResult(
-        command="init-derived",
-        data={
-            "dataset": dataset_key,
-            "status": "completed",
-            "database": str(db_path),
-            "created_tables": created,
-            "table_count": len(created),
-        },
-    )
 
 
 @app.command("setup-agent")
@@ -1251,23 +1129,30 @@ def init_derived_cmd(
             hint="Use: m4 init-derived DATASET --json --events ndjson",
         )
 
-    if json_output:
-        reporter = (
-            NdjsonEventReporter(command="init-derived") if events == "ndjson" else None
+    reporter = (
+        NdjsonEventReporter(command="init-derived")
+        if json_output and events == "ndjson"
+        else None
+    )
+    if reporter:
+        reporter.operation_started(
+            dataset=dataset_name,
+            list_only=list_only,
+            force=force,
         )
-        if reporter:
-            reporter.operation_started(
-                dataset=dataset_name,
-                list_only=list_only,
-                force=force,
-            )
-        with _silence_m4_logging(), _silence_console_output():
-            result = _init_derived_json_result(
-                dataset_name,
-                list_only=list_only,
-                force=force,
-                event_reporter=reporter,
-            )
+
+    with (
+        _silence_m4_logging() if json_output else nullcontext(),
+        _silence_console_output() if json_output else nullcontext(),
+    ):
+        result = init_derived_service(
+            dataset_name,
+            list_only=list_only,
+            force=force,
+            event_reporter=reporter,
+        )
+
+    if json_output:
         if reporter:
             if isinstance(result, CommandError):
                 reporter.operation_failed(result.to_json_dict()["error"])
@@ -1279,90 +1164,43 @@ def init_derived_cmd(
             raise typer.Exit(code=1)
         return
 
-    dataset_key = dataset_name.lower()
-    ds = DatasetRegistry.get(dataset_key)
-
-    if not ds:
-        supported = ", ".join([d.name for d in DatasetRegistry.list_all()])
-        print_error_panel(
-            "Dataset Not Found",
-            f"Dataset '{dataset_name}' is not supported or not configured.",
-            hint=f"Supported datasets: {supported}",
-        )
+    if isinstance(result, CommandError):
+        title = {
+            "dataset_not_found": "Dataset Not Found",
+            "derived_not_supported": "Not Supported",
+            "database_not_found": "Database Not Found",
+            "derived_materialization_failed": "Materialization Failed",
+        }.get(result.code, "Init Derived Failed")
+        if result.hint:
+            print_error_panel(title, result.message, hint=result.hint)
+        else:
+            error(result.message)
         raise typer.Exit(code=1)
 
-    # Block unsupported datasets
-    if dataset_key in ("mimic-iv-demo",):
-        print_error_panel(
-            "Not Supported",
-            f"Derived tables are not supported for '{dataset_key}'.",
-            hint=(
-                "The demo dataset has only 100 patients; many derived concepts "
-                "produce empty or unreliable results. Use the full mimic-iv dataset."
-            ),
-        )
-        raise typer.Exit(code=1)
-
-    # Block if BigQuery backend
-    if get_active_backend() == "bigquery":
+    data = result.data
+    status = data.get("status")
+    if status == "listed":
+        console.print(f"\n[bold]Available derived tables for {data['dataset']}:[/bold]")
+        console.print(f"[muted]({data['table_count']} tables)[/muted]\n")
+        for name in data["tables"]:
+            console.print(f"  {name}")
+    elif (
+        status == "skipped"
+        and data.get("reason") == "bigquery_derived_tables_available"
+    ):
         info(
             "BigQuery backend active — built-in derived tables are already available "
             "on physionet-data.mimiciv_derived. No materialization needed."
         )
-        return
-
-    if list_only:
-        try:
-            names = list_builtins(dataset_key)
-            console.print(f"\n[bold]Available derived tables for {dataset_key}:[/bold]")
-            console.print(f"[muted]({len(names)} tables)[/muted]\n")
-            for name in names:
-                console.print(f"  {name}")
-        except ValueError as e:
-            error(str(e))
-            raise typer.Exit(code=1)
-        return
-
-    db_path = get_default_database_path(dataset_key)
-    if not db_path or not db_path.exists():
-        print_error_panel(
-            "Database Not Found",
-            f"No DuckDB database found for '{dataset_key}'.",
-            hint=f"Initialize first: m4 init {dataset_key}",
-        )
-        raise typer.Exit(code=1)
-
-    # Skip if derived tables already exist (unless --force)
-    existing_count = get_derived_table_count(db_path)
-    if existing_count > 0 and not force:
+    elif status == "skipped" and data.get("reason") == "already_materialized":
         info(
-            f"Derived tables already materialized ({existing_count} tables). "
+            f"Derived tables already materialized ({data['existing_table_count']} tables). "
             "Use --force to recreate."
         )
-        return
-
-    try:
-        created = materialize_all(dataset_key, db_path)
-        success(f"Created {len(created)} derived tables in mimiciv_derived schema")
-    except ValueError as e:
-        error(str(e))
-        raise typer.Exit(code=1)
-    except RuntimeError as e:
-        if "locked by another process" in str(e):
-            print_error_panel(
-                "Database Locked",
-                str(e),
-                hint="If the M4 MCP server is running, stop it before "
-                "materializing derived tables.",
-            )
-        else:
-            error(f"Materialization failed: {e}")
-            logger.error(f"Derived table materialization error: {e}", exc_info=True)
-        raise typer.Exit(code=1)
-    except Exception as e:
-        error(f"Materialization failed: {e}")
-        logger.error(f"Derived table materialization error: {e}", exc_info=True)
-        raise typer.Exit(code=1)
+    elif status == "completed":
+        success(
+            f"Created {data['table_count']} derived tables in mimiciv_derived schema"
+        )
 
 
 @app.command("use")
@@ -1998,79 +1836,33 @@ def agent_env_cmd(
         error("Unsupported format. Use 'dotenv', 'json', or 'text'.")
         raise typer.Exit(code=1)
 
-    if mode not in {"local", "protected"}:
+    result = build_agent_env_service(
+        mode=mode,
+        dataset=dataset_name,
+        backend=backend_name,
+        project_id=project_id,
+        include_paths=include_paths,
+    )
+    if isinstance(result, CommandError):
         if output_format == "json":
             _emit_agent_error(
                 "agent-env",
-                "invalid_mode",
-                f"Unsupported mode '{mode}'.",
-                hint="Use --mode local or --mode protected.",
+                result.code,
+                result.message,
+                hint=result.hint,
             )
         error("Unsupported mode. Use 'local' or 'protected'.")
         raise typer.Exit(code=1)
 
-    ctx = resolve_runtime_context(
-        dataset=dataset_name, backend=backend_name, path_disclosure=include_paths
-    )
-    env = {
-        "M4_HOME": str(ctx.home),
-        "M4_DATASET": ctx.dataset,
-        "M4_BACKEND": ctx.backend,
-        "M4_STUDY_ID": ctx.study_id,
-        "M4_SESSION_ID": ctx.session_id,
-        "M4_ACTOR": ctx.actor,
-        "M4_TELEMETRY_DIR": str(ctx.telemetry_dir),
-    }
-    if project_id or ctx.project_id:
-        env["M4_PROJECT_ID"] = project_id or ctx.project_id
-    if mode == "local":
-        env["M4_DATA_DIR"] = str(ctx.data_dir)
-    else:
-        env["M4_TELEMETRY_DIR"] = str(ctx.telemetry_dir)
-
-    warnings_list: list[str] = []
-    if ctx.dataset and not DatasetRegistry.get(ctx.dataset):
-        warnings_list.append(f"Dataset '{ctx.dataset}' is not registered.")
-    if ctx.backend == "bigquery" and ctx.dataset:
-        ds = DatasetRegistry.get(ctx.dataset)
-        if ds and not ds.bigquery_dataset_ids:
-            warnings_list.append(
-                f"Dataset '{ctx.dataset}' is not available on the BigQuery backend."
-            )
-    if mode == "protected":
-        warnings_list.append(
-            "Protected mode omits M4_DATA_DIR; expose only an M4 service, socket, MCP server, or gateway to agents."
-        )
-
-    data = {
-        "mode": mode,
-        "environment": {key: value for key, value in env.items() if value is not None},
-        "path_recommendations": {
-            "python": sys.executable,
-            "cli": "m4",
-        },
-        "defaults": {
-            "dataset": ctx.dataset,
-            "backend": ctx.backend,
-        },
-        "telemetry_destination": str(ctx.telemetry_dir),
-        "raw_paths_hidden": not include_paths,
-        "recommended_commands": [
-            "m4 status --json --no-interactive",
-            "m4 list-datasets --json --no-interactive",
-            "m4 schema --dataset <dataset> --backend <backend> --json --no-interactive",
-            "m4 describe-table <table> --dataset <dataset> --backend <backend> --json --no-interactive",
-            "m4 query --dataset <dataset> --backend <backend> --sql <sql> --json --no-interactive",
-        ],
-    }
+    data = result.data
 
     if output_format == "json":
         _emit_json(
             _agent_success_payload(
                 "agent-env",
                 data,
-                context=ctx.public_context(),
-                warnings=warnings_list,
+                context=result.context,
+                warnings=result.warnings,
             )
         )
         return
@@ -2561,174 +2353,68 @@ def config_cmd(
 
     • m4 config claude --backend bigquery --project-id my-project
     """
-    try:
-        from m4 import mcp_client_configs
-
-        script_dir = Path(mcp_client_configs.__file__).parent
-    except ImportError:
-        error("Could not find m4.mcp_client_configs package")
-        raise typer.Exit(code=1)
-
-    # Track whether backend/project_id were explicitly provided by the user
-    backend_explicit = backend is not None
-    project_id_explicit = project_id is not None
-    if backend is None:
-        backend = get_active_backend()
-
-    # Infer project_id from config when backend is bigquery and not explicitly passed
-    if backend == "bigquery" and not project_id:
-        project_id = get_bigquery_project_id()
-
-    # Validate backend-specific arguments only when --backend is explicit
-    if backend_explicit:
-        # duckdb: db_path allowed, project_id not allowed
-        if backend == "duckdb" and project_id:
-            error("--project-id can only be used with --backend bigquery")
-            raise typer.Exit(code=1)
-
-        # bigquery: requires project_id, db_path not allowed
-        if backend == "bigquery" and db_path:
-            error("--db-path can only be used with --backend duckdb")
-            raise typer.Exit(code=1)
-        if backend == "bigquery" and not project_id:
-            error("--project-id is required when using --backend bigquery")
-            raise typer.Exit(code=1)
-
-    # Even when inferred, bigquery still requires a project_id
-    if backend == "bigquery" and not project_id:
-        error(
-            "BigQuery backend requires a project ID. "
-            "Set it with: m4 backend bigquery --project-id <ID>"
+    if client != "claude":
+        info(
+            "Generating M4 MCP configuration..."
+            if quick
+            else "Starting interactive M4 MCP configuration..."
         )
+
+    result = configure_mcp_service(
+        MCPConfigRequest(
+            client=client,
+            backend=backend,
+            db_path=db_path,
+            project_id=project_id,
+            python_path=python_path,
+            working_directory=working_directory,
+            server_name=server_name,
+            output=output,
+            quick=quick,
+        )
+    )
+    if isinstance(result, CommandError):
+        error(result.message)
         raise typer.Exit(code=1)
 
     if client == "claude":
-        # Run the Claude Desktop setup script
-        script_path = script_dir / "setup_claude_desktop.py"
-
-        if not script_path.exists():
-            error(f"Claude Desktop setup script not found at {script_path}")
-            raise typer.Exit(code=1)
-
-        # Build command arguments with smart defaults inferred from runtime config
-        cmd = [sys.executable, str(script_path)]
-
-        # Always pass backend if not duckdb; duckdb is the script default
-        if backend != "duckdb":
-            cmd.extend(["--backend", backend])
-
-        # For duckdb, pass db_path only if explicitly provided.
-        # If omitted, the server will resolve it dynamically based on the active dataset.
-        if backend == "duckdb" and db_path:
-            inferred_db_path = Path(db_path).resolve()
-            cmd.extend(["--db-path", str(inferred_db_path)])
-
-        elif backend == "bigquery" and project_id:
-            cmd.extend(["--project-id", project_id])
-
-        try:
-            result = subprocess.run(cmd, check=True, capture_output=False)
-            if result.returncode == 0:
-                # Persist backend and project_id only if explicitly provided
-                if backend_explicit:
-                    set_active_backend(backend)
-                if project_id_explicit:
-                    set_bigquery_project_id(project_id)
-                success("Claude Desktop configuration completed!")
-        except subprocess.CalledProcessError as e:
-            error(f"Claude Desktop setup failed with exit code {e.returncode}")
-            raise typer.Exit(code=e.returncode)
-        except FileNotFoundError:
-            error("Python interpreter not found. Please ensure Python is installed.")
-            raise typer.Exit(code=1)
-
-        # Install skills if requested (Claude-only for backwards compatibility)
+        success("Claude Desktop configuration completed!")
         if skills:
-            from m4.skills import AI_TOOLS, install_skills
+            skill_result = install_config_skills_service(["claude"])
+            if isinstance(skill_result, CommandError):
+                warning(f"Skills installation failed: {skill_result.message}")
+            else:
+                for item in skill_result.data["installed"]:
+                    success(f"Installed skill: {item['skill']} -> {item['path']}")
+        return
 
-            try:
-                results = install_skills(tools=["claude"])
-                for tool_name, paths in results.items():
-                    tool = AI_TOOLS[tool_name]
-                    for skill_path in paths:
-                        success(f"Installed skill: {skill_path.name} → {skill_path}")
-            except Exception as e:
-                warning(f"Skills installation failed: {e}")
+    data = result.data
+    for line in summarize_generated_config(data["config"], data["backend"]):
+        typer.echo(line)
 
+    if data["output"]:
+        typer.echo(f"\nConfiguration saved to: {data['output']}")
     else:
-        # Run the dynamic config generator
-        script_path = script_dir / "dynamic_mcp_config.py"
+        typer.echo("\nMCP Configuration (copy and paste this into your MCP client):")
+        typer.echo("=" * 70)
+        typer.echo(data["config_json"])
+        typer.echo("=" * 70)
 
-        if not script_path.exists():
-            error(f"Dynamic config script not found at {script_path}")
-            raise typer.Exit(code=1)
+    if quick:
+        success("Configuration generated successfully!")
 
-        # Build command arguments
-        cmd = [sys.executable, str(script_path)]
-
-        if quick:
-            cmd.append("--quick")
-
-        if backend != "duckdb":
-            cmd.extend(["--backend", backend])
-
-        if server_name != "m4":
-            cmd.extend(["--server-name", server_name])
-
-        if python_path:
-            cmd.extend(["--python-path", python_path])
-
-        if working_directory:
-            cmd.extend(["--working-directory", working_directory])
-
-        if backend == "duckdb" and db_path:
-            cmd.extend(["--db-path", db_path])
-        elif backend == "bigquery" and project_id:
-            cmd.extend(["--project-id", project_id])
-
-        if output:
-            cmd.extend(["--output", output])
-
-        if quick:
-            info("Generating M4 MCP configuration...")
+    if skills:
+        selected_tools = _prompt_select_tools()
+        console.print()
+        info(f"Installing skills for: {', '.join(selected_tools)}")
+        skill_result = install_config_skills_service(selected_tools)
+        if isinstance(skill_result, CommandError):
+            warning(f"Skills installation failed: {skill_result.message}")
         else:
-            info("Starting interactive M4 MCP configuration...")
-
-        try:
-            result = subprocess.run(cmd, check=True, capture_output=False)
-            if result.returncode == 0:
-                # Persist backend and project_id only if explicitly provided
-                if backend_explicit:
-                    set_active_backend(backend)
-                if project_id_explicit:
-                    set_bigquery_project_id(project_id)
-                if quick:
-                    success("Configuration generated successfully!")
-        except subprocess.CalledProcessError as e:
-            error(f"Configuration generation failed with exit code {e.returncode}")
-            raise typer.Exit(code=e.returncode)
-        except FileNotFoundError:
-            error("Python interpreter not found. Please ensure Python is installed.")
-            raise typer.Exit(code=1)
-
-        # Install skills if requested (interactive tool selection)
-        if skills:
-            from m4.skills import AI_TOOLS, install_skills
-
-            selected_tools = _prompt_select_tools()
-            console.print()
-            info(f"Installing skills for: {', '.join(selected_tools)}")
-
-            try:
-                results = install_skills(tools=selected_tools)
-                for tool_name, paths in results.items():
-                    tool = AI_TOOLS[tool_name]
-                    for skill_path in paths:
-                        success(
-                            f"Installed skill: {skill_path.name} → {tool.display_name}"
-                        )
-            except Exception as e:
-                warning(f"Skills installation failed: {e}")
+            for item in skill_result.data["installed"]:
+                success(
+                    f"Installed skill: {item['skill']} -> {item['tool_display_name']}"
+                )
 
 
 if __name__ == "__main__":

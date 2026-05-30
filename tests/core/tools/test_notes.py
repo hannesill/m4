@@ -26,6 +26,8 @@ from m4.core.tools.notes import (
     ListPatientNotesTool,
     SearchNotesInput,
     SearchNotesTool,
+    quote_sql_literal,
+    validate_positive_int,
 )
 
 
@@ -227,6 +229,43 @@ class TestSearchNotesTool:
 
             sql_arg = mock_backend.execute_query.call_args[0][0]
             assert "patient''s condition" in sql_arg
+
+    def test_invoke_empty_query_raises(self, notes_dataset, mock_backend):
+        with patch(
+            "m4.core.tools.notes.get_backend",
+            return_value=mock_backend,
+        ):
+            tool = SearchNotesTool()
+            params = SearchNotesInput(query="")
+
+            with pytest.raises(QueryError, match="query must be a non-empty string"):
+                tool.invoke(notes_dataset, params)
+
+    @pytest.mark.parametrize("limit", [0, -1, 101])
+    def test_invoke_rejects_bad_limit(self, notes_dataset, mock_backend, limit):
+        with patch(
+            "m4.core.tools.notes.get_backend",
+            return_value=mock_backend,
+        ):
+            tool = SearchNotesTool()
+            params = SearchNotesInput(query="sepsis", limit=limit)
+
+            with pytest.raises(QueryError, match="limit"):
+                tool.invoke(notes_dataset, params)
+
+    @pytest.mark.parametrize("snippet_length", [0, -10, 10001])
+    def test_invoke_rejects_bad_snippet_length(
+        self, notes_dataset, mock_backend, snippet_length
+    ):
+        with patch(
+            "m4.core.tools.notes.get_backend",
+            return_value=mock_backend,
+        ):
+            tool = SearchNotesTool()
+            params = SearchNotesInput(query="sepsis", snippet_length=snippet_length)
+
+            with pytest.raises(QueryError, match="snippet_length"):
+                tool.invoke(notes_dataset, params)
 
     def test_invoke_sql_contains_search_term_and_limit(
         self, notes_dataset, mock_backend
@@ -516,6 +555,31 @@ class TestGetNoteTool:
             sql_arg = mock_backend.execute_query.call_args[0][0]
             assert "10000032_DS-1''; DROP TABLE--" in sql_arg
 
+    def test_invoke_empty_note_id_raises(self, notes_dataset, mock_backend):
+        with patch(
+            "m4.core.tools.notes.get_backend",
+            return_value=mock_backend,
+        ):
+            tool = GetNoteTool()
+            params = GetNoteInput(note_id="")
+
+            with pytest.raises(QueryError, match="note_id must be a non-empty string"):
+                tool.invoke(notes_dataset, params)
+
+    @pytest.mark.parametrize("max_length", [0, -1, 200001])
+    def test_invoke_rejects_bad_max_length(
+        self, notes_dataset, mock_backend, max_length
+    ):
+        with patch(
+            "m4.core.tools.notes.get_backend",
+            return_value=mock_backend,
+        ):
+            tool = GetNoteTool()
+            params = GetNoteInput(note_id="10001_DS-1", max_length=max_length)
+
+            with pytest.raises(QueryError, match="max_length"):
+                tool.invoke(notes_dataset, params)
+
     def test_compatibility(self, notes_dataset, tabular_only_dataset):
         """Test compatibility with NOTES and TABULAR-only datasets."""
         tool = GetNoteTool()
@@ -619,6 +683,18 @@ class TestListPatientNotesTool:
             params = ListPatientNotesInput(subject_id=10001, note_type="invalid")
 
             with pytest.raises(QueryError, match="Invalid note_type"):
+                tool.invoke(notes_dataset, params)
+
+    @pytest.mark.parametrize("limit", [0, -1, 101])
+    def test_invoke_rejects_bad_limit(self, notes_dataset, mock_backend, limit):
+        with patch(
+            "m4.core.tools.notes.get_backend",
+            return_value=mock_backend,
+        ):
+            tool = ListPatientNotesTool()
+            params = ListPatientNotesInput(subject_id=10001, limit=limit)
+
+            with pytest.raises(QueryError, match="limit"):
                 tool.invoke(notes_dataset, params)
 
     def test_invoke_empty_results(self, notes_dataset, mock_backend):
@@ -775,3 +851,14 @@ class TestNoteToolProtocolConformance:
 
         for tool in tools:
             assert Modality.NOTES in tool.required_modalities
+
+
+class TestSqlHelpers:
+    def test_quote_sql_literal_escapes_single_quotes(self):
+        assert quote_sql_literal("patient's") == "'patient''s'"
+
+    def test_validate_positive_int_rejects_bool_and_bounds(self):
+        with pytest.raises(QueryError):
+            validate_positive_int(True, name="limit", maximum=10)
+        with pytest.raises(QueryError):
+            validate_positive_int(11, name="limit", maximum=10)

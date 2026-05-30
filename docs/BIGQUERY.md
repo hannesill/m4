@@ -72,7 +72,7 @@ M4 uses these PhysioNet BigQuery datasets:
 
 ## Derived Tables on BigQuery
 
-BigQuery users already have access to ~63 pre-computed derived concept tables (SOFA scores, sepsis cohorts, KDIGO AKI staging, medications, etc.) via `physionet-data.mimiciv_derived`. These tables are maintained by PhysioNet and are the same concepts that local DuckDB users materialize with `m4 init-derived mimic-iv`.
+BigQuery users already have access to pre-computed derived concept tables (SOFA scores, sepsis cohorts, KDIGO AKI staging, medications, etc.) via `physionet-data.mimiciv_derived`. These tables are maintained by PhysioNet and are the same concepts that local DuckDB users materialize with `m4 init-derived mimic-iv`.
 
 You do **not** need to run `m4 init-derived` when using BigQuery -- the tables are already available. Query them directly:
 

@@ -1,5 +1,4 @@
 import json
-import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -220,7 +219,7 @@ def test_config_validation_bigquery_with_db_path():
     assert "db-path can only be used with --backend duckdb" in result.output
 
 
-@patch("m4.cli.get_bigquery_project_id", return_value=None)
+@patch("m4.services.config.get_bigquery_project_id", return_value=None)
 def test_config_validation_bigquery_requires_project_id(mock_get_project):
     """Test that bigquery backend requires project-id parameter."""
     result = runner.invoke(app, ["config", "claude", "--backend", "bigquery"])
@@ -240,86 +239,64 @@ def test_config_validation_duckdb_with_project_id():
     assert "project-id can only be used with --backend bigquery" in result.output
 
 
-@patch("subprocess.run")
-@patch("m4.cli.get_active_backend", return_value="duckdb")
-def test_config_claude_success(mock_backend, mock_subprocess):
+@patch("m4.services.config.setup_claude_desktop", return_value=True)
+@patch("m4.services.config.get_active_backend", return_value="duckdb")
+def test_config_claude_success(mock_backend, mock_setup):
     """Test successful Claude Desktop configuration."""
-    mock_subprocess.return_value = MagicMock(returncode=0)
-
     result = runner.invoke(app, ["config", "claude"])
     assert result.exit_code == 0
     assert "Claude Desktop configuration completed" in result.stdout
 
-    mock_subprocess.assert_called_once()
-    call_args = mock_subprocess.call_args[0][0]
-    # correct script should be invoked
-    assert "setup_claude_desktop.py" in call_args[1]
+    mock_setup.assert_called_once_with(backend="duckdb", db_path=None, project_id=None)
 
 
-@patch("subprocess.run")
-@patch("m4.cli.get_active_backend", return_value="duckdb")
-def test_config_universal_quick_mode(mock_backend, mock_subprocess):
+@patch("m4.services.config.MCPConfigGenerator")
+@patch("m4.services.config.get_active_backend", return_value="duckdb")
+def test_config_universal_quick_mode(mock_backend, mock_generator_cls):
     """Test universal config generator in quick mode."""
-    mock_subprocess.return_value = MagicMock(returncode=0)
+    mock_generator = mock_generator_cls.return_value
+    mock_generator.generate_config.return_value = {
+        "mcpServers": {
+            "m4": {
+                "command": "python",
+                "args": ["-m", "m4.mcp_server"],
+                "cwd": ".",
+                "env": {},
+            }
+        }
+    }
 
     result = runner.invoke(app, ["config", "--quick"])
     assert result.exit_code == 0
     assert "Generating M4 MCP configuration" in result.stdout
 
-    mock_subprocess.assert_called_once()
-    call_args = mock_subprocess.call_args[0][0]
-    assert "dynamic_mcp_config.py" in call_args[1]
-    assert "--quick" in call_args
+    mock_generator.generate_config.assert_called_once()
 
 
-@patch("subprocess.run")
-@patch("m4.cli.get_active_backend", return_value="duckdb")
-def test_config_script_failure(mock_backend, mock_subprocess):
+@patch("m4.services.config.setup_claude_desktop", return_value=False)
+@patch("m4.services.config.get_active_backend", return_value="duckdb")
+def test_config_script_failure(mock_backend, mock_setup):
     """Test error handling when config script fails."""
-    mock_subprocess.side_effect = subprocess.CalledProcessError(1, "cmd")
-
     result = runner.invoke(app, ["config", "claude"])
-    # command should return failure exit code when subprocess fails
     assert result.exit_code == 1
-    # Just verify that the command failed with the right exit code
-    # The specific error message may vary
 
 
-@patch("subprocess.run")
-@patch("m4.cli.get_active_backend", return_value="duckdb")
-@patch("m4.cli.get_default_database_path")
-@patch("m4.cli.get_active_dataset")
-def test_config_claude_infers_db_path_demo(
-    mock_active, mock_get_default, mock_backend, mock_subprocess
-):
-    mock_active.return_value = None  # unset -> default to demo
-    mock_get_default.return_value = Path("/tmp/inferred-demo.duckdb")
-    mock_subprocess.return_value = MagicMock(returncode=0)
-
+@patch("m4.services.config.setup_claude_desktop", return_value=True)
+@patch("m4.services.config.get_active_backend", return_value="duckdb")
+def test_config_claude_infers_db_path_demo(mock_backend, mock_setup):
     result = runner.invoke(app, ["config", "claude"])
     assert result.exit_code == 0
 
-    # subprocess run should NOT be called with inferred --db-path (dynamic resolution)
-    call_args = mock_subprocess.call_args[0][0]
-    assert "--db-path" not in call_args
+    mock_setup.assert_called_once_with(backend="duckdb", db_path=None, project_id=None)
 
 
-@patch("subprocess.run")
-@patch("m4.cli.get_active_backend", return_value="duckdb")
-@patch("m4.cli.get_default_database_path")
-@patch("m4.cli.get_active_dataset")
-def test_config_claude_infers_db_path_full(
-    mock_active, mock_get_default, mock_backend, mock_subprocess
-):
-    mock_active.return_value = "mimic-iv"
-    mock_get_default.return_value = Path("/tmp/inferred-full.duckdb")
-    mock_subprocess.return_value = MagicMock(returncode=0)
-
+@patch("m4.services.config.setup_claude_desktop", return_value=True)
+@patch("m4.services.config.get_active_backend", return_value="duckdb")
+def test_config_claude_infers_db_path_full(mock_backend, mock_setup):
     result = runner.invoke(app, ["config", "claude"])
     assert result.exit_code == 0
 
-    call_args = mock_subprocess.call_args[0][0]
-    assert "--db-path" not in call_args
+    mock_setup.assert_called_once_with(backend="duckdb", db_path=None, project_id=None)
 
 
 @patch("m4.services.use.set_active_dataset")
@@ -1140,15 +1117,13 @@ def test_backend_bigquery_without_flag_uses_config_project_id(
 # ----------------------------------------------------------------
 
 
-@patch("subprocess.run")
-@patch("m4.cli.set_bigquery_project_id")
-@patch("m4.cli.set_active_backend")
+@patch("m4.services.config.setup_claude_desktop", return_value=True)
+@patch("m4.services.config.set_bigquery_project_id")
+@patch("m4.services.config.set_active_backend")
 def test_config_claude_bigquery_persists_to_config(
-    mock_set_backend, mock_set_project, mock_subprocess
+    mock_set_backend, mock_set_project, mock_setup
 ):
     """Test that m4 config claude --backend bigquery persists backend and project_id."""
-    mock_subprocess.return_value = MagicMock(returncode=0)
-
     result = runner.invoke(
         app,
         ["config", "claude", "--backend", "bigquery", "--project-id", "my-project"],
@@ -1159,16 +1134,14 @@ def test_config_claude_bigquery_persists_to_config(
     mock_set_project.assert_called_once_with("my-project")
 
 
-@patch("subprocess.run")
-@patch("m4.cli.get_active_backend", return_value="duckdb")
-@patch("m4.cli.set_bigquery_project_id")
-@patch("m4.cli.set_active_backend")
+@patch("m4.services.config.setup_claude_desktop", return_value=True)
+@patch("m4.services.config.get_active_backend", return_value="duckdb")
+@patch("m4.services.config.set_bigquery_project_id")
+@patch("m4.services.config.set_active_backend")
 def test_config_claude_without_backend_flag_does_not_overwrite(
-    mock_set_backend, mock_set_project, mock_get_backend, mock_subprocess
+    mock_set_backend, mock_set_project, mock_get_backend, mock_setup
 ):
     """Test that m4 config claude without --backend does not overwrite the active backend."""
-    mock_subprocess.return_value = MagicMock(returncode=0)
-
     result = runner.invoke(app, ["config", "claude"])
 
     assert result.exit_code == 0
@@ -1176,28 +1149,23 @@ def test_config_claude_without_backend_flag_does_not_overwrite(
     mock_set_project.assert_not_called()
 
 
-@patch("subprocess.run")
-@patch("m4.cli.get_bigquery_project_id", return_value="inferred-project")
-@patch("m4.cli.get_active_backend", return_value="bigquery")
+@patch("m4.services.config.setup_claude_desktop", return_value=True)
+@patch("m4.services.config.get_bigquery_project_id", return_value="inferred-project")
+@patch("m4.services.config.get_active_backend", return_value="bigquery")
 def test_config_claude_infers_bigquery_project_from_config(
-    mock_backend, mock_get_project, mock_subprocess
+    mock_backend, mock_get_project, mock_setup
 ):
     """Test that m4 config claude infers project-id from config.json when backend is bigquery."""
-    mock_subprocess.return_value = MagicMock(returncode=0)
-
     result = runner.invoke(app, ["config", "claude"])
 
     assert result.exit_code == 0
-    # Verify the setup script was called with --backend bigquery and --project-id
-    call_args = mock_subprocess.call_args[0][0]
-    assert "--backend" in call_args
-    assert "bigquery" in call_args
-    assert "--project-id" in call_args
-    assert "inferred-project" in call_args
+    mock_setup.assert_called_once_with(
+        backend="bigquery", db_path=None, project_id="inferred-project"
+    )
 
 
-@patch("m4.cli.get_bigquery_project_id", return_value=None)
-@patch("m4.cli.get_active_backend", return_value="bigquery")
+@patch("m4.services.config.get_bigquery_project_id", return_value=None)
+@patch("m4.services.config.get_active_backend", return_value="bigquery")
 def test_config_claude_errors_when_bigquery_no_project_in_config(
     mock_backend, mock_get_project
 ):
@@ -1208,14 +1176,24 @@ def test_config_claude_errors_when_bigquery_no_project_in_config(
     assert "BigQuery backend requires a project ID" in result.output
 
 
-@patch("subprocess.run")
-@patch("m4.cli.set_bigquery_project_id")
-@patch("m4.cli.set_active_backend")
+@patch("m4.services.config.MCPConfigGenerator")
+@patch("m4.services.config.set_bigquery_project_id")
+@patch("m4.services.config.set_active_backend")
 def test_config_universal_bigquery_persists_to_config(
-    mock_set_backend, mock_set_project, mock_subprocess
+    mock_set_backend, mock_set_project, mock_generator_cls
 ):
     """Test that m4 config --quick --backend bigquery persists to config.json."""
-    mock_subprocess.return_value = MagicMock(returncode=0)
+    mock_generator = mock_generator_cls.return_value
+    mock_generator.generate_config.return_value = {
+        "mcpServers": {
+            "m4": {
+                "command": "python",
+                "args": ["-m", "m4.mcp_server"],
+                "cwd": ".",
+                "env": {"M4_PROJECT_ID": "my-project"},
+            }
+        }
+    }
 
     result = runner.invoke(
         app,

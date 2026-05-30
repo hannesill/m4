@@ -20,6 +20,12 @@ repos:
 
   - repo: local
     hooks:
+      - id: derived-docs
+        name: derived docs freshness
+        entry: uv run python scripts/update_derived_docs.py --check
+        language: system
+        files: '^(docs/TOOLS\.md|scripts/update_derived_docs\.py|src/m4/core/derived/builtins/.*\.sql)$'
+        pass_filenames: false
       - id: pytest
         name: pytest
         entry: uv run pytest
