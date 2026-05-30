@@ -66,7 +66,7 @@ from m4.data_io import (
 )
 from m4.services.backend import set_active_backend_service
 from m4.services.download import build_wget_command, download_dataset_service
-from m4.services.events import NdjsonEventReporter
+from m4.services.events import EventReporter, NdjsonEventReporter
 from m4.services.init import initialize_dataset_service
 from m4.services.results import CommandError, CommandResult
 from m4.services.setup import doctor_service, quickstart_service, setup_agent_service
@@ -107,6 +107,16 @@ def _emit_json(payload: dict[str, Any]) -> None:
 
 def _emit_command_json(result: CommandResult | CommandError) -> None:
     _emit_json(result.to_json_dict())
+
+
+@contextmanager
+def _silence_console_output():
+    previous_quiet = console.quiet
+    console.quiet = True
+    try:
+        yield
+    finally:
+        console.quiet = previous_quiet
 
 
 def _dotenv_lines(values: dict[str, Any]) -> list[str]:
@@ -542,6 +552,130 @@ def download_cmd(
             console.print(f"  {item}")
         for hint in layout.get("recovery", []):
             console.print(f"  Hint: {hint}")
+
+
+def _init_derived_json_result(
+    dataset_name: str,
+    *,
+    list_only: bool,
+    force: bool,
+    event_reporter: EventReporter | None = None,
+) -> CommandResult | CommandError:
+    dataset_key = dataset_name.lower()
+    ds = DatasetRegistry.get(dataset_key)
+
+    if not ds:
+        supported = ", ".join([d.name for d in DatasetRegistry.list_all()])
+        return CommandError(
+            command="init-derived",
+            code="dataset_not_found",
+            message=f"Dataset '{dataset_name}' is not supported or not configured.",
+            hint=f"Supported datasets: {supported}",
+        )
+
+    if dataset_key in ("mimic-iv-demo",):
+        return CommandError(
+            command="init-derived",
+            code="derived_not_supported",
+            message=f"Derived tables are not supported for '{dataset_key}'.",
+            hint=(
+                "The demo dataset has only 100 patients; many derived concepts "
+                "produce empty or unreliable results. Use the full mimic-iv dataset."
+            ),
+        )
+
+    if get_active_backend() == "bigquery":
+        return CommandResult(
+            command="init-derived",
+            data={
+                "dataset": dataset_key,
+                "status": "skipped",
+                "reason": "bigquery_derived_tables_available",
+                "created_tables": [],
+                "table_count": 0,
+            },
+        )
+
+    if list_only:
+        try:
+            names = list_builtins(dataset_key)
+        except ValueError as exc:
+            return CommandError(
+                command="init-derived",
+                code="derived_not_supported",
+                message=str(exc),
+            )
+        return CommandResult(
+            command="init-derived",
+            data={
+                "dataset": dataset_key,
+                "status": "listed",
+                "tables": names,
+                "table_count": len(names),
+            },
+        )
+
+    db_path = get_default_database_path(dataset_key)
+    if not db_path or not db_path.exists():
+        return CommandError(
+            command="init-derived",
+            code="database_not_found",
+            message=f"No DuckDB database found for '{dataset_key}'.",
+            hint=f"Initialize first: m4 init {dataset_key}",
+        )
+
+    existing_count = get_derived_table_count(db_path)
+    if existing_count > 0 and not force:
+        return CommandResult(
+            command="init-derived",
+            data={
+                "dataset": dataset_key,
+                "status": "skipped",
+                "reason": "already_materialized",
+                "database": str(db_path),
+                "existing_table_count": existing_count,
+                "created_tables": [],
+                "table_count": 0,
+            },
+        )
+
+    try:
+        created = materialize_all(dataset_key, db_path, event_reporter=event_reporter)
+    except ValueError as exc:
+        return CommandError(
+            command="init-derived",
+            code="derived_not_supported",
+            message=str(exc),
+        )
+    except RuntimeError as exc:
+        return CommandError(
+            command="init-derived",
+            code="derived_materialization_failed",
+            message=str(exc),
+            hint=(
+                "If the database is locked, stop MCP servers or notebooks using it."
+                if "locked by another process" in str(exc)
+                else None
+            ),
+        )
+    except Exception as exc:
+        logger.error(f"Derived table materialization error: {exc}", exc_info=True)
+        return CommandError(
+            command="init-derived",
+            code="derived_materialization_failed",
+            message=f"Materialization failed: {exc}",
+        )
+
+    return CommandResult(
+        command="init-derived",
+        data={
+            "dataset": dataset_key,
+            "status": "completed",
+            "database": str(db_path),
+            "created_tables": created,
+            "table_count": len(created),
+        },
+    )
 
 
 @app.command("setup-agent")
@@ -1079,6 +1213,20 @@ def init_derived_cmd(
             help="Force re-materialization even if derived tables already exist.",
         ),
     ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            help="Print result as JSON for scripts and automation.",
+        ),
+    ] = False,
+    events: Annotated[
+        str | None,
+        typer.Option(
+            "--events",
+            help="Emit structured progress events. Supported: ndjson.",
+        ),
+    ] = None,
 ):
     """Materialize built-in derived tables for a dataset.
 
@@ -1088,6 +1236,49 @@ def init_derived_cmd(
 
     On BigQuery, derived tables already exist — no materialization needed.
     """
+    if events and events != "ndjson":
+        _json_error(
+            "init-derived",
+            "invalid_option",
+            f"Unsupported event format '{events}'.",
+            hint="Use: --events ndjson",
+        )
+    if events and not json_output:
+        _json_error(
+            "init-derived",
+            "invalid_option",
+            "--events requires --json.",
+            hint="Use: m4 init-derived DATASET --json --events ndjson",
+        )
+
+    if json_output:
+        reporter = (
+            NdjsonEventReporter(command="init-derived") if events == "ndjson" else None
+        )
+        if reporter:
+            reporter.operation_started(
+                dataset=dataset_name,
+                list_only=list_only,
+                force=force,
+            )
+        with _silence_m4_logging(), _silence_console_output():
+            result = _init_derived_json_result(
+                dataset_name,
+                list_only=list_only,
+                force=force,
+                event_reporter=reporter,
+            )
+        if reporter:
+            if isinstance(result, CommandError):
+                reporter.operation_failed(result.to_json_dict()["error"])
+            else:
+                reporter.operation_completed(result.to_json_dict())
+        else:
+            _emit_command_json(result)
+        if isinstance(result, CommandError):
+            raise typer.Exit(code=1)
+        return
+
     dataset_key = dataset_name.lower()
     ds = DatasetRegistry.get(dataset_key)
 

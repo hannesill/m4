@@ -20,6 +20,7 @@ import duckdb
 from m4.config import logger
 from m4.console import console, create_task_progress, success
 from m4.core.derived.builtins import get_execution_order
+from m4.services.events import EventReporter, get_event_reporter
 
 # Base schemas that vendored SQL expects to exist per dataset.
 # These are created by `m4 init` via schema_mapping in DatasetDefinition.
@@ -127,6 +128,7 @@ def list_materialized_tables(db_path: Path) -> set[str]:
 def materialize_all(
     dataset_name: str,
     db_path: Path,
+    event_reporter: EventReporter | None = None,
 ) -> list[str]:
     """Materialize all derived concept tables for a dataset.
 
@@ -148,6 +150,7 @@ def materialize_all(
         duckdb.Error: If SQL execution fails.
     """
     execution_order = get_execution_order(dataset_name)
+    reporter = get_event_reporter(event_reporter)
 
     try:
         con = duckdb.connect(str(db_path))
@@ -169,6 +172,12 @@ def materialize_all(
 
         created: list[str] = []
         start_time = time.time()
+        reporter.emit(
+            "derived_started",
+            dataset=dataset_name,
+            database=str(db_path),
+            table_count=len(execution_order),
+        )
 
         console.print()
         with create_task_progress() as progress:
@@ -180,6 +189,14 @@ def materialize_all(
             for sql_path in execution_order:
                 table_name = sql_path.stem
                 progress.update(task, description=f"Creating {table_name}...")
+                reporter.emit(
+                    "derived_table_started",
+                    dataset=dataset_name,
+                    database=str(db_path),
+                    table=table_name,
+                    completed=len(created),
+                    table_count=len(execution_order),
+                )
 
                 sql = sql_path.read_text()
                 t0 = time.time()
@@ -187,6 +204,15 @@ def materialize_all(
                     con.execute(sql)
                 except Exception as e:
                     progress.stop()
+                    reporter.emit(
+                        "derived_table_failed",
+                        dataset=dataset_name,
+                        database=str(db_path),
+                        table=table_name,
+                        completed=len(created),
+                        table_count=len(execution_order),
+                        error=str(e),
+                    )
                     raise RuntimeError(
                         f"Failed to create derived table '{table_name}': {e}"
                     ) from e
@@ -197,9 +223,25 @@ def materialize_all(
                     logger.debug(f"  {table_name}: {dt:.1f}s")
 
                 progress.update(task, advance=1)
+                reporter.emit(
+                    "derived_table_completed",
+                    dataset=dataset_name,
+                    database=str(db_path),
+                    table=table_name,
+                    completed=len(created),
+                    table_count=len(execution_order),
+                    elapsed_seconds=dt,
+                )
 
         elapsed = time.time() - start_time
         success(f"Materialized {len(created)} derived tables in {elapsed:.1f}s")
+        reporter.emit(
+            "derived_completed",
+            dataset=dataset_name,
+            database=str(db_path),
+            table_count=len(created),
+            elapsed_seconds=elapsed,
+        )
         logger.info(
             f"Created derived tables: {', '.join(created[:10])}"
             f"{'...' if len(created) > 10 else ''}"

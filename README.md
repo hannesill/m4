@@ -244,6 +244,7 @@ Long-running dataset setup can emit newline-delimited JSON progress events:
 ```bash
 m4 init mimic-iv --json --events ndjson --no-interactive --download \
   --physionet-credentials-file /path/to/physionet-credentials.json
+m4 init-derived mimic-iv --json --events ndjson
 ```
 
 When `--events ndjson` is used, stdout is an NDJSON stream instead of a single
