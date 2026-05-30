@@ -792,11 +792,12 @@ def test_backend_bigquery_happy_path(
     mock_set_backend.assert_called_once_with("bigquery")
 
 
+@patch("m4.services.backend.get_bigquery_project_id", return_value=None)
 @patch("m4.services.backend.set_active_backend")
 @patch("m4.services.backend.get_active_dataset")
 @patch("m4.services.backend.DatasetRegistry.get")
 def test_backend_bigquery_blocks_unsupported_dataset(
-    mock_registry, mock_get_dataset, mock_set_backend
+    mock_registry, mock_get_dataset, mock_set_backend, mock_get_project
 ):
     """Backend switching no longer depends on a selected dataset."""
     # Mock a dataset that doesn't support BigQuery
@@ -914,10 +915,11 @@ def test_backend_json_duckdb_rejects_project_id(mock_set_backend, mock_set_proje
     mock_set_project.assert_not_called()
 
 
+@patch("m4.services.backend.get_bigquery_project_id", return_value=None)
 @patch("m4.services.backend.set_active_backend")
 @patch("m4.services.backend.get_active_dataset", return_value="mimic-iv-demo")
 def test_backend_json_bigquery_blocks_incompatible_active_dataset(
-    mock_get_dataset, mock_set_backend
+    mock_get_dataset, mock_set_backend, mock_get_project
 ):
     result = runner.invoke(app, ["backend", "bigquery", "--json"])
 
