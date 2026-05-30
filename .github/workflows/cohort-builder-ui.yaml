@@ -1,0 +1,41 @@
+name: Cohort Builder UI
+
+on:
+  push:
+    paths:
+      - "src/m4/apps/cohort_builder/ui/**"
+      - "src/m4/apps/cohort_builder/mcp-app.html"
+      - "scripts/check_cohort_builder_bundle.py"
+      - ".github/workflows/cohort-builder-ui.yaml"
+  pull_request:
+    paths:
+      - "src/m4/apps/cohort_builder/ui/**"
+      - "src/m4/apps/cohort_builder/mcp-app.html"
+      - "scripts/check_cohort_builder_bundle.py"
+      - ".github/workflows/cohort-builder-ui.yaml"
+
+jobs:
+  check-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install UV and Python
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          version: "latest"
+          python-version: "3.12"
+
+      - name: Install Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "src/m4/apps/cohort_builder/ui/package-lock.json"
+
+      - name: Install UI dependencies
+        run: npm ci
+        working-directory: src/m4/apps/cohort_builder/ui
+
+      - name: Check packaged bundle
+        run: uv run python scripts/check_cohort_builder_bundle.py

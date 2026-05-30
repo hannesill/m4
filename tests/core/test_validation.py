@@ -13,24 +13,24 @@ class TestIsSafeQuery:
 
     def test_simple_select(self):
         """Simple SELECT queries should be safe."""
-        is_safe, msg = is_safe_query("SELECT * FROM patients LIMIT 10")
+        is_safe, _msg = is_safe_query("SELECT * FROM patients LIMIT 10")
         assert is_safe is True
 
     def test_select_with_where(self):
         """SELECT with WHERE clause should be safe."""
-        is_safe, msg = is_safe_query("SELECT * FROM patients WHERE subject_id = 12345")
+        is_safe, _msg = is_safe_query("SELECT * FROM patients WHERE subject_id = 12345")
         assert is_safe is True
 
     def test_select_with_join(self):
         """SELECT with JOIN should be safe."""
-        is_safe, msg = is_safe_query(
+        is_safe, _msg = is_safe_query(
             "SELECT p.*, a.* FROM patients p JOIN admissions a ON p.subject_id = a.subject_id"
         )
         assert is_safe is True
 
     def test_pragma_allowed(self):
         """PRAGMA statements should be allowed."""
-        is_safe, msg = is_safe_query("PRAGMA table_info(patients)")
+        is_safe, _msg = is_safe_query("PRAGMA table_info(patients)")
         assert is_safe is True
 
     def test_empty_query(self):
@@ -41,7 +41,7 @@ class TestIsSafeQuery:
 
     def test_whitespace_only(self):
         """Whitespace-only queries should fail."""
-        is_safe, msg = is_safe_query("   ")
+        is_safe, _msg = is_safe_query("   ")
         assert is_safe is False
 
     def test_multiple_statements(self):
@@ -52,22 +52,22 @@ class TestIsSafeQuery:
 
     def test_insert_blocked(self):
         """INSERT statements should be blocked."""
-        is_safe, msg = is_safe_query("INSERT INTO patients VALUES (1)")
+        is_safe, _msg = is_safe_query("INSERT INTO patients VALUES (1)")
         assert is_safe is False
 
     def test_update_blocked(self):
         """UPDATE statements should be blocked."""
-        is_safe, msg = is_safe_query("UPDATE patients SET name = 'test'")
+        is_safe, _msg = is_safe_query("UPDATE patients SET name = 'test'")
         assert is_safe is False
 
     def test_delete_blocked(self):
         """DELETE statements should be blocked."""
-        is_safe, msg = is_safe_query("DELETE FROM patients")
+        is_safe, _msg = is_safe_query("DELETE FROM patients")
         assert is_safe is False
 
     def test_drop_blocked(self):
         """DROP statements should be blocked."""
-        is_safe, msg = is_safe_query("DROP TABLE patients")
+        is_safe, _msg = is_safe_query("DROP TABLE patients")
         assert is_safe is False
 
     def test_injection_1_equals_1(self):
@@ -78,7 +78,7 @@ class TestIsSafeQuery:
 
     def test_injection_or_1_1(self):
         """OR 1=1 injection should be blocked."""
-        is_safe, msg = is_safe_query(
+        is_safe, _msg = is_safe_query(
             "SELECT * FROM patients WHERE subject_id = 1 OR 1=1"
         )
         assert is_safe is False
@@ -98,7 +98,7 @@ class TestIsSafeQuery:
     def test_suspicious_admin_standalone(self):
         """Queries with standalone ADMIN keyword should be blocked."""
         # Standalone ADMIN is blocked (word boundary match)
-        is_safe, msg = is_safe_query("SELECT * FROM ADMIN")
+        is_safe, _msg = is_safe_query("SELECT * FROM ADMIN")
         assert is_safe is False
 
     def test_admin_in_compound_name_allowed(self):
@@ -107,12 +107,12 @@ class TestIsSafeQuery:
         Word boundary matching allows 'admin_users' but blocks standalone 'ADMIN'.
         This prevents false positives on legitimate medical database columns.
         """
-        is_safe, msg = is_safe_query("SELECT * FROM admin_users")
+        is_safe, _msg = is_safe_query("SELECT * FROM admin_users")
         assert is_safe is True  # admin_users is a valid table name
 
     def test_case_insensitive_blocking(self):
         """Injection patterns should be case-insensitive."""
-        is_safe, msg = is_safe_query("SELECT * FROM patients WHERE 1=1")
+        is_safe, _msg = is_safe_query("SELECT * FROM patients WHERE 1=1")
         assert is_safe is False
 
 
@@ -131,7 +131,7 @@ class TestIsSafeQueryAdvancedInjection:
         for medical data security.
         """
         # Comments alone don't make a query unsafe
-        is_safe, msg = is_safe_query(
+        is_safe, _msg = is_safe_query(
             "SELECT * FROM patients WHERE id = 100 -- comment here"
         )
         assert is_safe is True  # This is valid SQL with a comment
@@ -147,7 +147,7 @@ class TestIsSafeQueryAdvancedInjection:
 
     def test_union_injection_information_schema(self):
         """Test UNION injection targeting system tables."""
-        is_safe, msg = is_safe_query(
+        is_safe, _msg = is_safe_query(
             "SELECT * FROM patients UNION SELECT * FROM information_schema.tables"
         )
         # This is valid SQL for schema introspection, but union with patients is odd
@@ -160,7 +160,7 @@ class TestIsSafeQueryAdvancedInjection:
         Word boundary matching allows 'admin_users' and 'user_id' since
         they are compound names, not standalone suspicious keywords.
         """
-        is_safe, msg = is_safe_query(
+        is_safe, _msg = is_safe_query(
             "SELECT * FROM patients WHERE id IN (SELECT user_id FROM admin_users)"
         )
         # Compound names like admin_users and user_id are allowed
@@ -177,7 +177,7 @@ class TestIsSafeQueryAdvancedInjection:
     def test_hex_encoded_attack(self):
         """Test hex-encoded injection patterns."""
         # Hex encoding of 'DROP' is 0x44524F50
-        is_safe, msg = is_safe_query("SELECT * FROM patients WHERE name = 0x44524F50")
+        is_safe, _msg = is_safe_query("SELECT * FROM patients WHERE name = 0x44524F50")
         # This is valid SQL, just selecting by hex value
         assert is_safe is True
 
@@ -255,7 +255,7 @@ class TestIsSafeQueryAdvancedInjection:
             "SELECT session_cookie FROM tokens",  # session_cookie is compound
         ]
         for query in allowed_columns:
-            is_safe, msg = is_safe_query(query)
+            is_safe, _msg = is_safe_query(query)
             assert is_safe is True, f"Compound name query should be allowed: {query}"
 
     def test_standalone_credential_names_blocked(self):
@@ -267,7 +267,7 @@ class TestIsSafeQueryAdvancedInjection:
             "SELECT AUTH FROM tokens",  # AUTH standalone
         ]
         for query in blocked_queries:
-            is_safe, msg = is_safe_query(query)
+            is_safe, _msg = is_safe_query(query)
             assert is_safe is False, f"Standalone keyword should be blocked: {query}"
 
     def test_case_variations_bypass(self):
@@ -283,7 +283,7 @@ class TestIsSafeQueryAdvancedInjection:
             "select * from patients where 1=1",
         ]
         for query in blocked_variations:
-            is_safe, msg = is_safe_query(query)
+            is_safe, _msg = is_safe_query(query)
             assert is_safe is False, f"Case variation should be blocked: {query}"
 
         # Note: '1 = 1' with spaces may not be caught by current regex
@@ -292,14 +292,14 @@ class TestIsSafeQueryAdvancedInjection:
     def test_valid_medical_query_with_numbers(self):
         """Test that legitimate medical queries with numbers pass."""
         # Legitimate query comparing lab values
-        is_safe, msg = is_safe_query(
+        is_safe, _msg = is_safe_query(
             "SELECT * FROM labevents WHERE valuenum > 100 AND valuenum < 200"
         )
         assert is_safe is True
 
     def test_valid_join_query(self):
         """Test that legitimate JOIN queries pass."""
-        is_safe, msg = is_safe_query(
+        is_safe, _msg = is_safe_query(
             """
             SELECT p.subject_id, a.hadm_id, l.value
             FROM patients p
@@ -313,7 +313,7 @@ class TestIsSafeQueryAdvancedInjection:
 
     def test_valid_aggregate_query(self):
         """Test that legitimate aggregate queries pass."""
-        is_safe, msg = is_safe_query(
+        is_safe, _msg = is_safe_query(
             """
             SELECT race, COUNT(*) as count, AVG(anchor_age) as avg_age
             FROM hosp_admissions
@@ -323,6 +323,36 @@ class TestIsSafeQueryAdvancedInjection:
             """
         )
         assert is_safe is True
+
+    def test_common_clinical_derived_table_query_allowed(self):
+        """Joins against derived concept tables should stay allowed."""
+        is_safe, msg = is_safe_query(
+            """
+            SELECT s.stay_id, s.sofa_24hours, k.aki_stage
+            FROM mimiciv_derived.sofa s
+            JOIN mimiciv_derived.kdigo_stages k USING (stay_id)
+            WHERE s.sofa_24hours >= 2
+            ORDER BY s.sofa_24hours DESC
+            LIMIT 25
+            """
+        )
+        assert is_safe is True, msg
+
+    def test_common_clinical_time_window_query_allowed(self):
+        """Clinical queries often filter by relative chart times."""
+        is_safe, msg = is_safe_query(
+            """
+            SELECT ce.subject_id, ce.stay_id, AVG(ce.valuenum) AS mean_hr
+            FROM mimiciv_icu.chartevents ce
+            WHERE ce.itemid = 220045
+              AND ce.charttime >= TIMESTAMP '2160-01-01 00:00:00'
+              AND ce.charttime < TIMESTAMP '2160-01-02 00:00:00'
+            GROUP BY ce.subject_id, ce.stay_id
+            HAVING AVG(ce.valuenum) > 100
+            LIMIT 100
+            """
+        )
+        assert is_safe is True, msg
 
 
 class TestFormatErrorWithGuidance:
@@ -456,7 +486,7 @@ class TestIsSafeQueryRobustness:
 
     def test_cte_queries_allowed(self):
         """Common Table Expressions (WITH ... AS) are safe."""
-        is_safe, msg = is_safe_query(
+        is_safe, _msg = is_safe_query(
             "WITH cohort AS (SELECT subject_id FROM patients) "
             "SELECT * FROM cohort LIMIT 10"
         )
@@ -464,7 +494,7 @@ class TestIsSafeQueryRobustness:
 
     def test_window_functions_allowed(self):
         """Window functions are legitimate clinical analysis SQL."""
-        is_safe, msg = is_safe_query(
+        is_safe, _msg = is_safe_query(
             "SELECT subject_id, ROW_NUMBER() OVER (PARTITION BY subject_id ORDER BY charttime) "
             "FROM labevents LIMIT 10"
         )
@@ -472,7 +502,7 @@ class TestIsSafeQueryRobustness:
 
     def test_subquery_in_select_allowed(self):
         """Subqueries in SELECT list are legitimate."""
-        is_safe, msg = is_safe_query(
+        is_safe, _msg = is_safe_query(
             "SELECT subject_id, "
             "(SELECT COUNT(*) FROM admissions a WHERE a.subject_id = p.subject_id) "
             "FROM patients p LIMIT 10"

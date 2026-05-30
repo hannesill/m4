@@ -74,11 +74,11 @@ m4-mcp-server = "m4.mcp_server:main"  # Kept for backwards compatibility
 vitrine = "vitrine.cli:app"  # Standalone vitrine CLI (from vitrine package)
 
 [project.urls]
-Homepage = "https://github.com/rafiattrach/m4"
-Repository = "https://github.com/rafiattrach/m4"
-Documentation = "https://github.com/rafiattrach/m4#readme"
-Issues = "https://github.com/rafiattrach/m4/issues"
-Changelog = "https://github.com/rafiattrach/m4/releases"
+Homepage = "https://github.com/hannesill/m4"
+Repository = "https://github.com/hannesill/m4"
+Documentation = "https://github.com/hannesill/m4#readme"
+Issues = "https://github.com/hannesill/m4/issues"
+Changelog = "https://github.com/hannesill/m4/releases"
 
 [tool.pdm.version]
 source = "file"

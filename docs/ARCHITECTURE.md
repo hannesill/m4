@@ -177,7 +177,7 @@ The `ToolSelector` filters tools based on active dataset modalities.
 
 ### Derived Table System (`core/derived/`)
 
-Pre-computed clinical concept tables materialized from vendored SQL. This system provides ~63 derived tables for MIMIC-IV, covering severity scores, sepsis definitions, organ failure staging, medications, measurements, and more.
+Pre-computed clinical concept tables materialized from vendored SQL. This system provides derived tables for MIMIC-IV, covering severity scores, sepsis definitions, organ failure staging, medications, measurements, and more.
 
 **Architecture:**
 

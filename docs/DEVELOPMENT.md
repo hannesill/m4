@@ -78,8 +78,8 @@ non-zero.
       "parquet_size_gb": 8.5,
       "derived": {
         "supported": true,
-        "total": 42,
-        "materialized": 42,
+        "total": 63,
+        "materialized": 63,
         "bigquery": false
       },
       "warnings": []
@@ -425,6 +425,17 @@ Run the full test suite before submitting PRs:
 uv run pre-commit run --all-files
 ```
 
+If you change the cohort-builder UI under `src/m4/apps/cohort_builder/ui/`,
+regenerate the packaged single-file app and verify it matches the tracked
+artifact:
+
+```bash
+cd src/m4/apps/cohort_builder/ui && npm ci
+cd -
+uv run python scripts/check_cohort_builder_bundle.py --update
+uv run python scripts/check_cohort_builder_bundle.py
+```
+
 ## Updating Vendored Derived SQL
 
 The derived table SQL in `src/m4/core/derived/builtins/mimic_iv/` is vendored from the [mimic-code](https://github.com/MIT-LCP/mimic-code) repository. When mimic-code releases updated SQL (e.g., bug fixes or new concept tables), follow these steps to update:
@@ -437,7 +448,7 @@ The derived table SQL in `src/m4/core/derived/builtins/mimic_iv/` is vendored fr
 
 4. **Test materialization:** Run `m4 init-derived mimic-iv` against a local MIMIC-IV database to verify all tables build successfully.
 
-5. **Update documentation:** If new table categories or tables were added, update `docs/TOOLS.md` (Derived Table Categories section) and `README.md`.
+5. **Update documentation:** If new table categories or tables were added, run `uv run python scripts/update_derived_docs.py` and update related README prose as needed. Use `uv run python scripts/update_derived_docs.py --check` to verify docs freshness.
 
 The vendored approach means M4 works offline and ensures reproducibility -- users get the exact SQL version bundled with their M4 release, regardless of upstream changes.
 

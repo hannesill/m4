@@ -203,7 +203,7 @@ Once connected, try asking:
 | Dataset | Modality | Size | Access | Local | BigQuery | Derived Tables |
 |---------|----------|------|--------|-------|----------|----------------|
 | **mimic-iv-demo** | Tabular | 100 patients | Free | Yes | No | No |
-| **mimic-iv** | Tabular | 365k patients | [PhysioNet credentialed](https://physionet.org/content/mimiciv/) | Yes | Yes | Yes (63 tables) |
+| **mimic-iv** | Tabular | 365k patients | [PhysioNet credentialed](https://physionet.org/content/mimiciv/) | Yes | Yes | Yes |
 | **mimic-iv-note** | Notes | 331k notes | [PhysioNet credentialed](https://physionet.org/content/mimic-iv-note/) | Yes | Yes | No |
 | **eicu** | Tabular | 200k+ patients | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes | No |
 
@@ -253,7 +253,7 @@ failures are emitted as `operation_failed.error`.
 
 **Derived concept tables** (MIMIC-IV only):
 ```bash
-m4 init-derived mimic-iv         # Materialize ~63 derived tables (SOFA, sepsis3, KDIGO, etc.)
+m4 init-derived mimic-iv         # Materialize derived tables (SOFA, sepsis3, KDIGO, etc.)
 m4 init-derived mimic-iv --list  # List available derived tables without materializing
 ```
 
