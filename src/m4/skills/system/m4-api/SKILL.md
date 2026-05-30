@@ -59,6 +59,8 @@ df = execute_query(
 |----------|---------|-------------|
 | `list_datasets()` | `list[str]` | Available dataset names |
 | `M4Client(dataset=...)` | `M4Client` | Preferred explicit client for one dataset |
+| `client.with_dataset(name)` | `M4Client` | New client with the same session context and a different dataset |
+| `client.switch_dataset(name)` | `M4Client` | Mutate a client to another dataset for notebook-style sessions |
 
 ### Tabular Data (requires TABULAR modality)
 
@@ -131,15 +133,19 @@ For blocking review (agent waits for researcher approval), use `show(df, wait=Tr
 
 ## Dataset Selection
 
-**Important:** Dataset selection is explicit. Prefer `M4Client(dataset=...)` when several calls target the same dataset, or pass `dataset=...` to each convenience function.
+**Important:** Dataset selection is explicit. Prefer `M4Client(dataset=...)` when several calls target the same dataset, or pass `dataset=...` to each convenience function. For a long-lived session, use `client.with_dataset(...)` to create a new client for another dataset without mutating the current one. Use `client.switch_dataset(...)` only for single-session, notebook-style workflows where mutation is expected.
 
 ```python
 from m4 import M4Client, execute_query
 
 client = M4Client(dataset="mimic-iv")
-df1 = client.execute_query("SELECT COUNT(*) FROM mimiciv_hosp.patients")
+df1 = client.query("SELECT COUNT(*) FROM mimiciv_hosp.patients")
 
-df2 = execute_query("SELECT COUNT(*) FROM patient", dataset="eicu")
+eicu_client = client.with_dataset("eicu")
+df2 = eicu_client.query("SELECT COUNT(*) FROM patient")
+
+client.switch_dataset("mimic-iv-note")  # mutates client and its execution context
+df3 = execute_query("SELECT COUNT(*) FROM patient", dataset="eicu")
 ```
 
 ## MCP Tool Equivalence

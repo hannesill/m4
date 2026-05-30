@@ -92,6 +92,34 @@ class M4Client:
         """Execute a read-only SQL query."""
         return self._invoke("execute_query", ExecuteQueryInput(sql_query=sql))
 
+    def with_dataset(self, dataset: str | DatasetDefinition) -> "M4Client":
+        """Return a new client with the same context but a different dataset.
+
+        This keeps dataset transitions explicit while preserving session
+        attribution, backend selection, project settings, and path disclosure.
+        """
+        return M4Client(
+            dataset=dataset,
+            backend=self.backend if self.backend is not None else self.backend_name,
+            study_id=self.context.study_id,
+            session_id=self.context.session_id,
+            actor=self.context.actor,
+            interface=self.context.interface,
+            project_id=self.context.project_id,
+            db_path=self.context.db_path,
+            path_disclosure=self.context.path_disclosure,
+        )
+
+    def switch_dataset(self, dataset: str | DatasetDefinition) -> "M4Client":
+        """Switch this client to another dataset and return itself.
+
+        Prefer ``with_dataset()`` for concurrent or reproducible workflows. This
+        mutating helper is intended for notebook-style, single-session use.
+        """
+        self.dataset = self._resolve_dataset(dataset)
+        self.context = replace(self.context, dataset=self.dataset)
+        return self
+
     def list_datasets(self) -> list[str]:
         """Return registered dataset names."""
         _ensure_custom_datasets_loaded()

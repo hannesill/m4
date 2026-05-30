@@ -45,6 +45,8 @@ print(df.describe())
 |----------|---------|-------------|
 | `list_datasets()` | `list[str]` | Available dataset names |
 | `M4Client(dataset=...)` | `M4Client` | Preferred explicit client for one dataset |
+| `client.with_dataset(name)` | `M4Client` | New client with the same session context and a different dataset |
+| `client.switch_dataset(name)` | `M4Client` | Mutate a client to another dataset for notebook-style sessions |
 
 ```python
 from m4 import M4Client, list_datasets
@@ -52,6 +54,9 @@ from m4 import M4Client, list_datasets
 print(list_datasets())  # ['mimic-iv', 'mimic-iv-note', 'eicu', ...]
 client = M4Client(dataset="mimic-iv")
 print(client.dataset.name)  # 'mimic-iv'
+
+eicu_client = client.with_dataset("eicu")  # original client still targets mimic-iv
+client.switch_dataset("mimic-iv-note")    # mutates client and its execution context
 ```
 
 ### Tabular Data
@@ -92,6 +97,8 @@ print(df)
 > **Table naming convention:** Tables use canonical `schema.table` names (e.g., `mimiciv_hosp.patients`, `mimiciv_icu.icustays`) that work on both DuckDB and BigQuery backends. Use `get_schema()` to see all available tables.
 
 > **Path disclosure:** DuckDB backend metadata hides raw local database paths by default. Set `M4_PATH_DISCLOSURE=1` only when code is allowed to receive local filesystem paths.
+
+> **Dataset switching:** Prefer `client.with_dataset(...)` for concurrent or reproducible workflows. Use `client.switch_dataset(...)` only when a single long-lived interactive client should move to a different dataset.
 
 ### Clinical Notes
 
