@@ -265,12 +265,11 @@ def test_init_json_subprocess_error_is_parseable(tmp_path):
     assert payload["error"]["code"] == "dataset_not_found"
 
 
-def test_init_json_subprocess_blocked_state_is_parseable(tmp_path):
+def test_init_json_subprocess_missing_credentialed_raw_files_is_parseable(tmp_path):
     result = _run_m4(["init", "mimic-iv", "--json"], tmp_path)
 
-    assert result.returncode == 0
+    assert result.returncode != 0
     payload = _assert_single_json_stdout(result)
-    assert payload["ok"] is True
+    assert payload["ok"] is False
     assert payload["command"] == "init"
-    assert payload["dataset"] == "mimic-iv"
-    assert payload["steps"][0]["status"] == "blocked"
+    assert payload["error"]["code"] == "raw_files_missing"

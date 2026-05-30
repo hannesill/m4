@@ -234,6 +234,17 @@ Machine-facing status and backend metadata hide local filesystem paths by
 default. Use `--paths` or `M4_PATH_DISCLOSURE=1` only when the caller is allowed
 to see raw local paths.
 
+Long-running dataset setup can emit newline-delimited JSON progress events:
+
+```bash
+m4 init mimic-iv --json --events ndjson --no-interactive --download \
+  --physionet-credentials-file /path/to/physionet-credentials.json
+```
+
+When `--events ndjson` is used, stdout is an NDJSON stream instead of a single
+JSON object. The final result is emitted as `operation_completed.result`; setup
+failures are emitted as `operation_failed.error`.
+
 **Derived concept tables** (MIMIC-IV only):
 ```bash
 m4 init-derived mimic-iv         # Materialize ~63 derived tables (SOFA, sepsis3, KDIGO, etc.)
@@ -247,7 +258,26 @@ After running `m4 init mimic-iv`, you are prompted whether to materialize derive
 
 1. **Get PhysioNet credentials:** Complete the [credentialing process](https://physionet.org/settings/credentialing/) and sign the data use agreement for the dataset.
 
-2. **Download the data:**
+2. **Download the data with M4:**
+   ```bash
+   cat > physionet-credentials.json <<'JSON'
+   {
+     "username": "YOUR_USERNAME",
+     "password": "YOUR_PASSWORD"
+   }
+   JSON
+
+   m4 init mimic-iv --download --physionet-credentials-file physionet-credentials.json
+   ```
+
+   Do not pass PhysioNet passwords as command-line flags. Use a scoped
+   credentials file with restrictive permissions and delete it after setup.
+
+   M4 implements the same recursive, resumable pattern PhysioNet documents for
+   `wget -r -N -c -np` against `/files/...` dataset URLs, while preserving the
+   expected raw layout under `m4_data/raw_files/<dataset>/`.
+
+   You can still download manually if needed:
    ```bash
    # For MIMIC-IV
    wget -r -N -c -np --cut-dirs=2 -nH --user YOUR_USERNAME --ask-password \
@@ -261,7 +291,7 @@ After running `m4 init mimic-iv`, you are prompted whether to materialize derive
    ```
    The `--cut-dirs=2 -nH` flags ensure CSV files land directly in `m4_data/raw_files/mimic-iv/` rather than a nested `physionet.org/files/...` structure.
 
-3. **Initialize:**
+3. **Initialize after a manual download:**
    ```bash
    m4 init mimic-iv   # or: m4 init eicu
    ```

@@ -8,10 +8,12 @@ from m4.core.backends.duckdb import DuckDBBackend
 from m4.core.datasets import DatasetDefinition, Modality
 from m4.data_io import (
     COMMON_USER_AGENT,
+    PhysioNetCredentials,
     _create_duckdb_with_views,
     _scrape_urls_from_html_page,
     compute_parquet_dir_size,
     convert_csv_to_parquet,
+    download_dataset,
     init_duckdb_from_parquet,
     verify_table_rowcount,
 )
@@ -85,6 +87,55 @@ def test_common_user_agent_header():
     # Ensure the constant is set and looks like a UA string
     assert isinstance(COMMON_USER_AGENT, str)
     assert "Mozilla/" in COMMON_USER_AGENT
+
+
+def test_download_dataset_uses_credentials_and_preserves_listing_layout(
+    tmp_path, monkeypatch
+):
+    class Response:
+        def __init__(self, content=b"", status_code=200, headers=None):
+            self.content = content
+            self.status_code = status_code
+            self.headers = headers or {}
+            self.reason = "OK"
+
+        def iter_content(self, chunk_size=8192):
+            for index in range(0, len(self.content), chunk_size):
+                yield self.content[index : index + chunk_size]
+
+    class Session:
+        def __init__(self):
+            self.headers = {}
+            self.auth = None
+
+        def head(self, url, **kwargs):
+            return Response(headers={"content-length": "9", "accept-ranges": "bytes"})
+
+        def get(self, url, **kwargs):
+            if url.endswith("/hosp/"):
+                return Response(
+                    b'<a href="admissions.csv.gz">admissions</a>',
+                    headers={"content-length": "9"},
+                )
+            if url.endswith("/icu/"):
+                return Response(b"", headers={"content-length": "0"})
+            return Response(b"csv-bytes", headers={"content-length": "9"})
+
+    sessions = []
+
+    def make_session():
+        session = Session()
+        sessions.append(session)
+        return session
+
+    monkeypatch.setattr("m4.data_io.requests.Session", make_session)
+
+    credentials = PhysioNetCredentials(username="alice", password="secret")
+    ok = download_dataset("mimic-iv", tmp_path, credentials=credentials)
+
+    assert ok is True
+    assert (tmp_path / "hosp" / "admissions.csv.gz").read_bytes() == b"csv-bytes"
+    assert sessions[0].auth == ("alice", "secret")
 
 
 # ------------------------------------------------------------

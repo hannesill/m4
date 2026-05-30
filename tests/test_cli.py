@@ -8,8 +8,13 @@ from typer.testing import CliRunner
 
 from m4.cli import app
 from m4.core.exceptions import DatasetError
+from m4.services.results import CommandResult
 
 runner = CliRunner()
+
+
+def _ndjson_lines(output: str) -> list[dict]:
+    return [json.loads(line) for line in output.splitlines() if line.strip()]
 
 
 @pytest.fixture(autouse=True)
@@ -80,6 +85,129 @@ def test_init_command_duckdb_custom_path(tmp_path):
     )
     # verification query should be attempted
     mock_rowcount.assert_called()
+
+
+@patch("m4.cli.initialize_dataset_service")
+def test_init_json_preserves_single_object_output(mock_init):
+    mock_init.return_value = CommandResult(
+        command="init",
+        data={
+            "dataset": "mimic-iv-demo",
+            "db_path": None,
+            "parquet_root": None,
+            "raw_root": None,
+            "steps": [],
+        },
+    )
+
+    result = runner.invoke(app, ["init", "mimic-iv-demo", "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["dataset"] == "mimic-iv-demo"
+    assert len(result.stdout.strip().splitlines()) > 1
+    assert not result.stdout.lstrip().startswith('{"version"')
+
+
+@patch("m4.cli.initialize_dataset_service")
+def test_init_json_events_ndjson_wraps_final_result(mock_init):
+    mock_init.return_value = CommandResult(
+        command="init",
+        data={
+            "dataset": "mimic-iv-demo",
+            "db_path": None,
+            "parquet_root": None,
+            "raw_root": None,
+            "steps": [],
+        },
+    )
+
+    result = runner.invoke(
+        app,
+        ["init", "mimic-iv-demo", "--json", "--events", "ndjson", "--no-interactive"],
+    )
+
+    assert result.exit_code == 0
+    events = _ndjson_lines(result.stdout)
+    assert events[0]["event"] == "operation_started"
+    assert events[-1]["event"] == "operation_completed"
+    assert events[-1]["result"]["ok"] is True
+    assert events[-1]["result"]["dataset"] == "mimic-iv-demo"
+
+
+@patch("m4.services.init.get_default_database_path")
+@patch("m4.services.init.get_dataset_parquet_root")
+def test_init_download_missing_credentials_returns_structured_error(
+    mock_parquet_root, mock_db_path, tmp_path
+):
+    pq_root = tmp_path / "parquet" / "mimic-iv"
+    pq_root.mkdir(parents=True)
+    mock_parquet_root.return_value = pq_root
+    mock_db_path.return_value = tmp_path / "mimic.duckdb"
+
+    result = runner.invoke(
+        app,
+        ["init", "mimic-iv", "--json", "--no-interactive", "--download"],
+    )
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is False
+    assert payload["error"]["code"] == "missing_credentials"
+
+
+@patch("m4.services.init.get_default_database_path")
+@patch("m4.services.init.get_dataset_parquet_root")
+def test_init_events_invalid_physionet_credentials_redacts_password(
+    mock_parquet_root, mock_db_path, tmp_path
+):
+    class UnauthorizedResponse:
+        def __init__(self):
+            self.status_code = 401
+            self.reason = "Unauthorized"
+            self.content = b""
+            self.headers = {}
+
+    class Session:
+        def __init__(self):
+            self.headers = {}
+            self.auth = None
+
+        def get(self, *args, **kwargs):
+            return UnauthorizedResponse()
+
+    pq_root = tmp_path / "parquet" / "mimic-iv"
+    pq_root.mkdir(parents=True)
+    mock_parquet_root.return_value = pq_root
+    mock_db_path.return_value = tmp_path / "mimic.duckdb"
+    credentials_path = tmp_path / "physionet.json"
+    credentials_path.write_text(
+        json.dumps({"username": "alice", "password": "do-not-print"})
+    )
+
+    with patch("m4.data_io.requests.Session", Session):
+        result = runner.invoke(
+            app,
+            [
+                "init",
+                "mimic-iv",
+                "--json",
+                "--events",
+                "ndjson",
+                "--no-interactive",
+                "--download",
+                "--physionet-credentials-file",
+                str(credentials_path),
+            ],
+        )
+
+    assert result.exit_code == 1
+    events = _ndjson_lines(result.stdout)
+    assert events[-1]["event"] == "operation_failed"
+    assert events[-1]["error"]["code"] == "physionet_auth_failed"
+    assert "do-not-print" not in result.stdout
+    assert "do-not-print" not in result.stderr
 
 
 def test_config_validation_bigquery_with_db_path():
@@ -505,6 +633,52 @@ def test_status_json_excludes_secret_values_but_allows_project_id(
     assert "allowed-project" in result.stdout
     assert "secret-service" not in result.stdout
     assert "super-secret-password" not in result.stdout
+
+
+@patch("m4.services.status.get_bigquery_project_id", return_value=None)
+@patch("m4.services.status.get_active_backend", return_value="duckdb")
+@patch("m4.services.status.detect_available_local_datasets")
+@patch("m4.services.status.get_active_dataset", return_value="mimic-iv")
+def test_status_json_redacts_paths_by_default_and_exposes_with_paths(
+    mock_active,
+    mock_detect,
+    mock_backend,
+    mock_project,
+):
+    mock_detect.return_value = {
+        "mimic-iv": {
+            "raw_present": False,
+            "parquet_present": False,
+            "db_present": False,
+            "raw_root": "/tmp/m4/raw_files/mimic-iv",
+            "parquet_root": "/tmp/m4/parquet/mimic-iv",
+            "db_path": "/tmp/m4/databases/mimic.duckdb",
+        }
+    }
+
+    default_result = runner.invoke(app, ["status", "--json", "--no-interactive"])
+    paths_result = runner.invoke(
+        app, ["status", "--json", "--paths", "--no-interactive"]
+    )
+
+    assert default_result.exit_code == 0
+    default_dataset = json.loads(default_result.stdout)["datasets"][0]
+    assert default_dataset["setup_state"] == "credentials_required"
+    assert default_dataset["requires_authentication"] is True
+    assert "raw_root" not in default_dataset
+    assert "/tmp/m4" not in default_result.stdout
+
+    assert paths_result.exit_code == 0
+    paths_dataset = json.loads(paths_result.stdout)["datasets"][0]
+    assert paths_dataset["raw_root"] == str(
+        Path("/tmp/m4/raw_files/mimic-iv").resolve()
+    )
+    assert paths_dataset["parquet_root"] == str(
+        Path("/tmp/m4/parquet/mimic-iv").resolve()
+    )
+    assert paths_dataset["db_path"] == str(
+        Path("/tmp/m4/databases/mimic.duckdb").resolve()
+    )
 
 
 @patch("m4.services.status.get_bigquery_project_id", return_value=None)

@@ -14,11 +14,14 @@ from m4.core.datasets import DatasetRegistry
 from m4.core.derived.builtins import has_derived_support
 from m4.core.derived.materializer import get_derived_table_count, materialize_all
 from m4.data_io import (
+    DatasetDownloadError,
+    PhysioNetCredentials,
     convert_csv_to_parquet,
     download_dataset,
     init_duckdb_from_parquet,
     verify_table_rowcount,
 )
+from m4.services.events import EventReporter, get_event_reporter
 from m4.services.results import (
     ERROR_DATASET_NOT_FOUND,
     ERROR_INVALID_OPTION,
@@ -73,8 +76,12 @@ def initialize_dataset_service(
     src: str | None = None,
     db_path_str: str | None = None,
     force: bool = False,
+    download: bool = False,
+    physionet_credentials: PhysioNetCredentials | None = None,
+    event_reporter: EventReporter | None = None,
 ) -> CommandResult | CommandError:
     """Run the non-interactive dataset initialization workflow."""
+    reporter = get_event_reporter(event_reporter)
     dataset_key = dataset_name.lower()
     ds = DatasetRegistry.get(dataset_key)
     if not ds:
@@ -109,34 +116,26 @@ def initialize_dataset_service(
 
         if not raw_present and not parquet_present:
             if ds.requires_authentication:
-                steps.extend(
-                    [
-                        _step(
-                            "raw_files",
-                            "blocked",
-                            (
-                                f"Files not found for credentialed dataset "
-                                f"'{dataset_key}'. Download manually and rerun init."
-                            ),
+                if not download:
+                    return CommandError(
+                        command="init",
+                        code="raw_files_missing",
+                        message=(
+                            f"Files not found for credentialed dataset '{dataset_key}'. "
+                            "Pass --download with --physionet-credentials-file or place raw "
+                            "CSV.gz files in the expected location."
                         ),
-                        _step("parquet", "skipped", "Raw files are not available."),
-                        _step(
-                            "database", "skipped", "Parquet files are not available."
+                    )
+                if physionet_credentials is None:
+                    return CommandError(
+                        command="init",
+                        code="missing_credentials",
+                        message=(
+                            f"Dataset '{dataset_key}' requires PhysioNet credentials "
+                            "for download."
                         ),
-                        _step(
-                            "derived",
-                            "skipped",
-                            "Database initialization did not run.",
-                        ),
-                    ]
-                )
-                return CommandResult(
-                    command="init",
-                    data=_build_data(
-                        dataset_key, final_db_path, pq_root, csv_root, steps
-                    ),
-                    warnings=[],
-                )
+                        hint="Provide --physionet-credentials-file with username and password fields.",
+                    )
 
             listing_url = ds.file_listing_url
             if not listing_url:
@@ -170,10 +169,23 @@ def initialize_dataset_service(
                 )
 
             csv_root_default.mkdir(parents=True, exist_ok=True)
-            if not download_dataset(dataset_key, csv_root_default):
+            try:
+                downloaded = download_dataset(
+                    dataset_key,
+                    csv_root_default,
+                    credentials=physionet_credentials,
+                    event_reporter=reporter if event_reporter is not None else None,
+                )
+            except DatasetDownloadError as exc:
                 return CommandError(
                     command="init",
-                    code=ERROR_INVALID_OPTION,
+                    code=exc.code,
+                    message=exc.message,
+                )
+            if not downloaded:
+                return CommandError(
+                    command="init",
+                    code="download_network_failed",
                     message="Download failed. Please check logs for details.",
                 )
             csv_root = csv_root_default
@@ -191,10 +203,15 @@ def initialize_dataset_service(
                 steps.append(
                     _step("parquet", "skipped", "Raw files are not available.")
                 )
-            elif not convert_csv_to_parquet(dataset_key, csv_root, pq_root):
+            elif not convert_csv_to_parquet(
+                dataset_key,
+                csv_root,
+                pq_root,
+                event_reporter=reporter if event_reporter is not None else None,
+            ):
                 return CommandError(
                     command="init",
-                    code=ERROR_INVALID_OPTION,
+                    code="conversion_failed",
                     message="Conversion failed. Please check logs for details.",
                 )
             else:
@@ -221,12 +238,16 @@ def initialize_dataset_service(
                 message=f"Parquet directory not found at {pq_root}",
             )
 
-        if not init_duckdb_from_parquet(
-            dataset_name=dataset_key, db_target_path=final_db_path
-        ):
+        init_kwargs = {
+            "dataset_name": dataset_key,
+            "db_target_path": final_db_path,
+        }
+        if event_reporter is not None:
+            init_kwargs["event_reporter"] = reporter
+        if not init_duckdb_from_parquet(**init_kwargs):
             return CommandError(
                 command="init",
-                code=ERROR_INVALID_OPTION,
+                code="duckdb_init_failed",
                 message=(
                     f"Dataset '{dataset_name}' initialization FAILED. "
                     "Please check logs for details."
@@ -240,6 +261,11 @@ def initialize_dataset_service(
                 record_count = verify_table_rowcount(
                     final_db_path, verification_table_name
                 )
+                reporter.emit(
+                    "verification_completed",
+                    table=verification_table_name,
+                    row_count=record_count,
+                )
                 steps.append(
                     _step(
                         "verification",
@@ -250,6 +276,11 @@ def initialize_dataset_service(
             except Exception as exc:
                 steps.append(
                     _step("verification", "failed", f"Verification failed: {exc}")
+                )
+                return CommandError(
+                    command="init",
+                    code="verification_failed",
+                    message=f"Verification failed: {exc}",
                 )
         else:
             steps.append(

@@ -36,11 +36,15 @@ def _collect_dataset_status(
     include_paths: bool,
 ) -> dict[str, Any]:
     ds_def = DatasetRegistry.get(name)
+    raw_present = bool(ds_info.get("raw_present"))
     parquet_present = bool(ds_info.get("parquet_present"))
     db_present = bool(ds_info.get("db_present"))
+    raw_root = _absolute_path_or_none(ds_info.get("raw_root"))
     parquet_root = _absolute_path_or_none(ds_info.get("parquet_root"))
     db_path = _absolute_path_or_none(ds_info.get("db_path"))
     bigquery_available = bool(ds_def and ds_def.bigquery_dataset_ids)
+    requires_authentication = bool(ds_def and ds_def.requires_authentication)
+    download_available = bool(ds_def and ds_def.file_listing_url)
     warnings: list[str] = []
 
     parquet_size_gb = None
@@ -85,11 +89,28 @@ def _collect_dataset_status(
         except Exception:
             pass
 
+    if parquet_present and db_present:
+        setup_state = "ready"
+    elif requires_authentication and not raw_present and not parquet_present:
+        setup_state = "credentials_required"
+    elif not raw_present and not parquet_present:
+        setup_state = "missing_raw_files"
+    elif not parquet_present:
+        setup_state = "missing_parquet"
+    elif not db_present:
+        setup_state = "missing_database"
+    else:
+        setup_state = "ready"
+
     result = {
         "name": name,
         "active": name == active_dataset,
+        "raw_present": raw_present,
         "parquet_present": parquet_present,
         "db_present": db_present,
+        "requires_authentication": requires_authentication,
+        "download_available": download_available,
+        "setup_state": setup_state,
         "bigquery_available": bigquery_available,
         "row_count": row_count,
         "parquet_size_gb": parquet_size_gb,
@@ -103,6 +124,7 @@ def _collect_dataset_status(
     }
 
     if include_paths:
+        result["raw_root"] = raw_root
         result["parquet_root"] = parquet_root
         result["db_path"] = db_path
 

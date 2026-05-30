@@ -58,12 +58,14 @@ from m4.core.derived.materializer import (
 from m4.core.exceptions import DatasetError, M4Error
 from m4.core.tools import init_tools
 from m4.data_io import (
+    PhysioNetCredentials,
     convert_csv_to_parquet,
     download_dataset,
     init_duckdb_from_parquet,
     verify_table_rowcount,
 )
 from m4.services.backend import set_active_backend_service
+from m4.services.events import NdjsonEventReporter
 from m4.services.init import initialize_dataset_service
 from m4.services.results import CommandError, CommandResult
 from m4.services.status import collect_status_snapshot
@@ -393,6 +395,34 @@ def dataset_init_cmd(
             help="Print result as JSON for scripts and automation.",
         ),
     ] = False,
+    events: Annotated[
+        str | None,
+        typer.Option(
+            "--events",
+            help="Emit structured progress events. Supported: ndjson.",
+        ),
+    ] = None,
+    no_interactive: Annotated[
+        bool,
+        typer.Option(
+            "--no-interactive",
+            help="Accepted for automation; JSON init never prompts.",
+        ),
+    ] = False,
+    download_requested: Annotated[
+        bool,
+        typer.Option(
+            "--download",
+            help="Download missing raw files when a dataset listing URL is configured.",
+        ),
+    ] = False,
+    physionet_credentials_file: Annotated[
+        str | None,
+        typer.Option(
+            "--physionet-credentials-file",
+            help="JSON file containing PhysioNet username and password fields.",
+        ),
+    ] = None,
 ):
     """
     Initialize a local dataset in one step by detecting what's already present:
@@ -404,15 +434,64 @@ def dataset_init_cmd(
     - Auto-download is based on the dataset definition URL.
     - For datasets without a download URL (e.g. mimic-iv-full), you must provide the --src path or place files in the expected location.
     """
+    if events and events != "ndjson":
+        _json_error(
+            "init",
+            "invalid_option",
+            f"Unsupported event format '{events}'.",
+            hint="Use: --events ndjson",
+        )
+    if events and not json_output:
+        _json_error(
+            "init",
+            "invalid_option",
+            "--events requires --json.",
+            hint="Use: m4 init DATASET --json --events ndjson",
+        )
+
     if json_output:
+        reporter = NdjsonEventReporter(command="init") if events == "ndjson" else None
+        credentials = None
+        if physionet_credentials_file:
+            try:
+                credentials = PhysioNetCredentials.from_json_file(
+                    Path(physionet_credentials_file).expanduser().resolve()
+                )
+            except Exception as exc:
+                result = CommandError(
+                    command="init",
+                    code="missing_credentials",
+                    message=f"Could not read PhysioNet credentials file: {exc}",
+                )
+                if reporter:
+                    reporter.operation_failed(result.to_json_dict()["error"])
+                else:
+                    _emit_command_json(result)
+                raise typer.Exit(code=1)
+
+        if reporter:
+            reporter.operation_started(
+                dataset=dataset_name,
+                download=download_requested,
+                no_interactive=no_interactive,
+            )
         with _silence_m4_logging():
             result = initialize_dataset_service(
                 dataset_name,
                 src=src,
                 db_path_str=db_path_str,
                 force=force,
+                download=download_requested,
+                physionet_credentials=credentials,
+                event_reporter=reporter,
             )
-        _emit_command_json(result)
+        if reporter:
+            if isinstance(result, CommandError):
+                reporter.operation_failed(result.to_json_dict()["error"])
+            else:
+                reporter.operation_completed(result.to_json_dict())
+        else:
+            _emit_command_json(result)
         if isinstance(result, CommandError):
             raise typer.Exit(code=1)
         return
