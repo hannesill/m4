@@ -14,13 +14,13 @@ import typer
 from m4.client import M4Client
 from m4.config import (
     get_active_backend,
-    get_active_dataset,
+    get_active_dataset,  # noqa: F401 - retained for compatibility patch targets
     get_dataset_parquet_root,
     get_default_database_path,
     get_telemetry_dir,
     logger,
     resolve_runtime_context,
-    set_active_dataset,
+    set_active_dataset,  # noqa: F401 - retained for compatibility patch targets
 )
 from m4.console import (
     console,
@@ -49,7 +49,7 @@ from m4.core.derived.materializer import (
     list_materialized_tables,
     materialize_all,
 )
-from m4.core.exceptions import DatasetError, M4Error
+from m4.core.exceptions import M4Error
 from m4.core.tools import init_tools
 from m4.data_io import (
     PhysioNetCredentials,
@@ -294,12 +294,9 @@ def _is_missing_value(value: Any) -> bool:
 @contextmanager
 def _runtime_env_override(*, dataset: str | None = None, backend: str | None = None):
     previous: dict[str, str | None] = {
-        "M4_DATASET": os.environ.get("M4_DATASET"),
         "M4_BACKEND": os.environ.get("M4_BACKEND"),
     }
     try:
-        if dataset:
-            os.environ["M4_DATASET"] = dataset
         if backend:
             os.environ["M4_BACKEND"] = backend
         yield
@@ -316,13 +313,12 @@ def _resolve_agent_dataset(
 ):
     from m4.core.datasets import DatasetRegistry
 
-    try:
-        effective = dataset_name or get_active_dataset()
-    except DatasetError:
+    effective = dataset_name.lower() if dataset_name else None
+    if not effective:
         _emit_agent_error(
             command,
             "dataset_required",
-            "No dataset was provided and no active dataset is configured.",
+            "No dataset was provided.",
             hint=f"Use: m4 {command} --dataset <dataset> --json",
             context=context,
         )
@@ -383,9 +379,9 @@ def capabilities_cmd(
     ] = False,
 ):
     """Show M4 interfaces, commands, tools, datasets, limits, and policies."""
-    manifest = M4Client.from_active(
-        interface="cli", allow_missing_dataset=True
-    ).capabilities()
+    from m4.services.capabilities import build_capabilities_manifest
+
+    manifest = build_capabilities_manifest()
     if json_output:
         _emit_json(manifest)
         return
@@ -1015,9 +1011,6 @@ def dataset_init_cmd(
             )
             error(f"Verification failed: {e}")
 
-    # Set active dataset to match init target
-    set_active_dataset(dataset_key)
-
     # Offer to materialize derived tables for supported datasets
     if has_derived_support(dataset_key) and get_active_backend() == "duckdb":
         existing_derived = get_derived_table_count(final_db_path)
@@ -1207,9 +1200,7 @@ def init_derived_cmd(
 def use_cmd(
     target: Annotated[
         str,
-        typer.Argument(
-            help="Select active dataset: name (e.g., mimic-iv-full)", metavar="TARGET"
-        ),
+        typer.Argument(help="Deprecated global dataset selector.", metavar="TARGET"),
     ],
     json_output: Annotated[
         bool,
@@ -1219,47 +1210,16 @@ def use_cmd(
         ),
     ] = False,
 ):
-    """Set the active dataset selection for the project."""
+    """Deprecated: global active dataset selection has been removed."""
     with _silence_m4_logging() if json_output else nullcontext():
         result = set_active_dataset_service(target)
 
-    if isinstance(result, CommandError):
-        if json_output:
-            _emit_command_json(result)
-            raise typer.Exit(code=1)
-
-        title = {
-            "dataset_not_found": "Dataset Not Found",
-            "backend_incompatible": "Backend Incompatible",
-        }.get(result.code, "Command Failed")
-        print_error_panel(title, result.message, hint=result.hint)
-        raise typer.Exit(code=1)
-
     if json_output:
         _emit_command_json(result)
-        return
+        raise typer.Exit(code=1)
 
-    target = result.data["active_dataset"]
-    dataset = result.data["dataset"]
-    success(f"Active dataset set to '{target}'")
-
-    if not dataset["parquet_present"]:
-        warning(f"Local Parquet files not found at {dataset['parquet_root']}")
-        console.print(
-            "  [muted]This is fine if you are using the BigQuery backend.[/muted]"
-        )
-        console.print(
-            "  [muted]For DuckDB (local), run:[/muted] [command]m4 init[/command]"
-        )
-    else:
-        info("Local: Available", prefix="status")
-
-    if dataset["bigquery_available"]:
-        ds_def = DatasetRegistry.get(target)
-        info(
-            f"BigQuery: Available (Project: {ds_def.bigquery_project_id if ds_def else None})",
-            prefix="status",
-        )
+    print_error_panel("Active Dataset Removed", result.message, hint=result.hint)
+    raise typer.Exit(code=1)
 
 
 @app.command("backend")
@@ -1378,7 +1338,7 @@ def status_cmd(
         ),
     ] = False,
 ):
-    """Show active dataset status. Use --all for all supported datasets."""
+    """Show dataset status. Use --dataset for one dataset or --all for all."""
     if show_derived and json_output:
         _json_error(
             "status",
@@ -1393,28 +1353,28 @@ def status_cmd(
             _runtime_env_override(dataset=dataset_name, backend=backend_name),
         ):
             snapshot = collect_status_snapshot(
-                show_all=show_all, include_paths=include_paths
+                show_all=show_all,
+                include_paths=include_paths,
+                selected_dataset=dataset_name,
+                backend=backend_name,
             )
         _emit_json(snapshot)
         return
 
     # --derived: detailed per-table view (early return)
     if show_derived:
-        try:
-            active = get_active_dataset()
-        except DatasetError:
-            active = None
-        if not active:
-            console.print("[warning]No active dataset set.[/warning]")
+        selected = dataset_name.lower() if dataset_name else None
+        if not selected:
+            console.print("[warning]--dataset is required for --derived.[/warning]")
             raise typer.Exit()
 
-        if not has_derived_support(active):
+        if not has_derived_support(selected):
             console.print(
-                f"[muted]Derived tables are not available for '{active}'.[/muted]"
+                f"[muted]Derived tables are not available for '{selected}'.[/muted]"
             )
             raise typer.Exit()
 
-        backend = get_active_backend()
+        backend = (backend_name or get_active_backend()).lower()
         if backend == "bigquery":
             info(
                 "BigQuery backend active — derived tables are available "
@@ -1422,19 +1382,19 @@ def status_cmd(
             )
             raise typer.Exit()
 
-        db_path = get_default_database_path(active)
+        db_path = get_default_database_path(selected)
         if not db_path or not db_path.exists():
             console.print(
-                f"[warning]No DuckDB database found for '{active}'.[/warning]"
+                f"[warning]No DuckDB database found for '{selected}'.[/warning]"
             )
             console.print(
-                f"  [muted]Initialize with:[/muted] [command]m4 init {active}[/command]"
+                f"  [muted]Initialize with:[/muted] [command]m4 init {selected}[/command]"
             )
             raise typer.Exit()
 
-        categories = get_tables_by_category(active)
+        categories = get_tables_by_category(selected)
         materialized = list_materialized_tables(db_path)
-        print_derived_detail(active, categories, materialized)
+        print_derived_detail(selected, categories, materialized)
         return
 
     print_logo(show_tagline=False, show_version=True)
@@ -1442,9 +1402,12 @@ def status_cmd(
 
     with _runtime_env_override(dataset=dataset_name, backend=backend_name):
         snapshot = collect_status_snapshot(
-            show_all=show_all, include_paths=include_paths
+            show_all=show_all,
+            include_paths=include_paths,
+            selected_dataset=dataset_name,
+            backend=backend_name,
         )
-    active = snapshot["active_dataset"]
+    selected = snapshot["selected_dataset"]
     datasets = snapshot["datasets"]
 
     if show_all:
@@ -1467,22 +1430,21 @@ def status_cmd(
             for dataset in datasets
         ]
 
-        print_datasets_table(datasets_info, active_dataset=active)
+        print_datasets_table(datasets_info, selected_dataset=selected)
         return
 
-    # Default: show only active dataset with full detail
-    if not active:
-        console.print("[warning]No active dataset set.[/warning]")
+    if not selected:
+        console.print("[warning]No dataset selected.[/warning]")
         console.print()
         console.print(
-            "[muted]Set one with:[/muted] [command]m4 use <dataset>[/command]"
+            "[muted]Use:[/muted] [command]m4 status --dataset <dataset>[/command]"
         )
         console.print(
             "[muted]List all with:[/muted] [command]m4 status --all[/command]"
         )
         return
 
-    console.print(f"[bold]Active dataset:[/bold] [success]{active}[/success]")
+    console.print(f"[bold]Dataset:[/bold] [success]{selected}[/success]")
 
     backend = snapshot["backend"]
     backend_label = backend
@@ -1490,24 +1452,24 @@ def status_cmd(
         backend_label = f"{backend} ({snapshot['bigquery_project_id']})"
     console.print(f"[bold]Backend:[/bold] [success]{backend_label}[/success]")
 
-    # Get info for active dataset
+    # Get info for selected dataset
     dataset = datasets[0] if datasets else None
     if not dataset:
         console.print()
-        warning(f"Dataset '{active}' is set but not found locally.")
+        warning(f"Dataset '{selected}' was not found locally.")
         console.print(
-            f"  [muted]Initialize with:[/muted] [command]m4 init {active}[/command]"
+            f"  [muted]Initialize with:[/muted] [command]m4 init {selected}[/command]"
         )
         return
 
     if "parquet_path_mismatch" in dataset["warnings"]:
         warning("Database views may point to wrong parquet location")
         console.print(
-            f"  [muted]Try:[/muted] [command]m4 init {active} --force[/command]"
+            f"  [muted]Try:[/muted] [command]m4 init {selected} --force[/command]"
         )
 
     print_dataset_status(
-        name=active,
+        name=selected,
         parquet_present=dataset["parquet_present"],
         db_present=dataset["db_present"],
         parquet_root=dataset.get("parquet_root") or "",
@@ -1515,7 +1477,7 @@ def status_cmd(
         parquet_size_gb=dataset["parquet_size_gb"],
         bigquery_available=dataset["bigquery_available"],
         row_count=dataset["row_count"],
-        is_active=True,
+        is_selected=True,
         derived_materialized=dataset["derived"]["materialized"],
         derived_total=dataset["derived"]["total"],
         derived_has_support=dataset["derived"]["supported"],
@@ -1555,7 +1517,10 @@ def list_datasets_cmd(
                 path_disclosure=include_paths,
             )
             snapshot = collect_status_snapshot(
-                show_all=True, include_paths=include_paths
+                show_all=True,
+                include_paths=include_paths,
+                selected_dataset=dataset_name,
+                backend=backend_name,
             )
 
     if json_output:
@@ -1563,7 +1528,7 @@ def list_datasets_cmd(
             _agent_success_payload(
                 "list-datasets",
                 {
-                    "active_dataset": snapshot["active_dataset"],
+                    "selected_dataset": snapshot["selected_dataset"],
                     "backend": snapshot["backend"],
                     "datasets": snapshot["datasets"],
                     "raw_paths_hidden": not include_paths,
@@ -1585,7 +1550,7 @@ def list_datasets_cmd(
         }
         for dataset in snapshot["datasets"]
     ]
-    print_datasets_table(datasets_info, active_dataset=snapshot["active_dataset"])
+    print_datasets_table(datasets_info, selected_dataset=snapshot["selected_dataset"])
 
 
 @app.command("schema")

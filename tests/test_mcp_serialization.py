@@ -8,7 +8,6 @@ Tests cover:
 - _serialize_schema_result: Table listing output
 - _serialize_table_info_result: Column info + sample data
 - _serialize_datasets_result: Multi-dataset status display
-- _serialize_set_dataset_result: Switch confirmation with warnings
 - _serialize_search_notes_result: Note search snippets
 - _serialize_get_note_result: Full note text with truncation
 - _serialize_list_patient_notes_result: Patient note metadata
@@ -22,7 +21,6 @@ from m4.mcp_server import (
     _serialize_list_patient_notes_result,
     _serialize_schema_result,
     _serialize_search_notes_result,
-    _serialize_set_dataset_result,
     _serialize_table_info_result,
 )
 
@@ -112,18 +110,18 @@ class TestSerializeDatasetsResult:
 
     def test_no_datasets(self):
         """No datasets returns simple message."""
-        result = _serialize_datasets_result({"active_dataset": None, "datasets": {}})
+        result = _serialize_datasets_result({"selected_dataset": None, "datasets": {}})
         assert "No datasets detected" in result
 
-    def test_single_active_dataset(self):
-        """Single active dataset shows status correctly."""
+    def test_single_selected_dataset(self):
+        """Single selected dataset shows status correctly."""
         result = _serialize_datasets_result(
             {
-                "active_dataset": "mimic-iv-demo",
+                "selected_dataset": "mimic-iv-demo",
                 "backend": "duckdb",
                 "datasets": {
                     "mimic-iv-demo": {
-                        "is_active": True,
+                        "selected": True,
                         "parquet_present": True,
                         "db_present": True,
                         "bigquery_support": False,
@@ -132,19 +130,19 @@ class TestSerializeDatasetsResult:
                 },
             }
         )
-        assert "Active dataset: mimic-iv-demo" in result
-        assert "(Active)" in result
+        assert "Selected dataset: mimic-iv-demo" in result
+        assert "(Selected)" in result
         assert "DuckDB" in result
 
     def test_dataset_with_derived_tables(self):
         """Derived table info is included when present."""
         result = _serialize_datasets_result(
             {
-                "active_dataset": "mimic-iv",
+                "selected_dataset": "mimic-iv",
                 "backend": "duckdb",
                 "datasets": {
                     "mimic-iv": {
-                        "is_active": True,
+                        "selected": True,
                         "parquet_present": True,
                         "db_present": True,
                         "bigquery_support": True,
@@ -164,11 +162,11 @@ class TestSerializeDatasetsResult:
         """Partial derived tables show init hint."""
         result = _serialize_datasets_result(
             {
-                "active_dataset": "mimic-iv",
+                "selected_dataset": "mimic-iv",
                 "backend": "duckdb",
                 "datasets": {
                     "mimic-iv": {
-                        "is_active": True,
+                        "selected": True,
                         "parquet_present": True,
                         "db_present": True,
                         "bigquery_support": True,
@@ -188,11 +186,11 @@ class TestSerializeDatasetsResult:
         """BigQuery backend shows 'cloud (BigQuery)' label."""
         result = _serialize_datasets_result(
             {
-                "active_dataset": "mimic-iv",
+                "selected_dataset": "mimic-iv",
                 "backend": "bigquery",
                 "datasets": {
                     "mimic-iv": {
-                        "is_active": True,
+                        "selected": True,
                         "parquet_present": False,
                         "db_present": False,
                         "bigquery_support": True,
@@ -202,29 +200,6 @@ class TestSerializeDatasetsResult:
             }
         )
         assert "BigQuery" in result
-
-
-class TestSerializeSetDatasetResult:
-    """Test _serialize_set_dataset_result output formatting."""
-
-    def test_successful_switch(self):
-        """Successful switch shows confirmation."""
-        result = _serialize_set_dataset_result(
-            {"dataset_name": "mimic-iv-demo", "warnings": []}
-        )
-        assert "mimic-iv-demo" in result
-        assert "switched" in result.lower()
-
-    def test_switch_with_warnings(self):
-        """Switch with warnings appends warning messages."""
-        result = _serialize_set_dataset_result(
-            {
-                "dataset_name": "mimic-iv",
-                "warnings": ["Local database not found."],
-            }
-        )
-        assert "mimic-iv" in result
-        assert "Local database not found" in result
 
 
 class TestSerializeSearchNotesResult:

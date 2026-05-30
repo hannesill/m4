@@ -49,10 +49,10 @@ m4 setup-agent --backend bigquery --project-id YOUR_PROJECT_ID --format dotenv
 m4 doctor --json
 ```
 
-### 4. Set the dataset
+### 4. Query with an explicit dataset
 
 ```bash
-m4 use mimic-iv    # or eicu
+m4 status --dataset mimic-iv --backend bigquery
 ```
 
 ### 5. Restart your MCP client
@@ -84,12 +84,11 @@ The `mimiciv_derived` schema is accessible alongside the standard `mimiciv_hosp`
 
 ## Environment Variables
 
-You can also override the backend and dataset via environment variables. These
+You can also override the backend and project via environment variables. These
 take priority over saved CLI configuration for the current process:
 
 ```bash
 export M4_BACKEND=bigquery
-export M4_DATASET=mimic-iv
 export M4_PROJECT_ID=your-project-id
 ```
 

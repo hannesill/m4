@@ -79,7 +79,7 @@ Every analysis step that produces a result shown in vitrine MUST be executed fro
 Interactive exploration (checking schemas, small test queries to understand data shape) is fine — not everything needs a script. But the moment you produce a result you'll show to the researcher, it comes from a stored script.
 
 **Script requirements:**
-- **Self-contained**: imports, `set_dataset()`, SQL strings, analysis code, output writes — everything to run `python scripts/01_cohort_definition.py` from the output directory
+- **Self-contained**: imports, explicit dataset selection, SQL strings, analysis code, output writes — everything to run `python scripts/01_cohort_definition.py` from the output directory
 - **Relative paths**: use `out = Path(__file__).resolve().parent.parent` to locate `data/` and `plots/`
 - **Saves outputs**: `.parquet` to `data/`, `.json` to `plots/` via `fig.write_json()` (never `.html` or `.png`)
 - **Plotly reload**: `plotly.io.from_json(open("plots/fig.json").read())` to reconstruct a `Figure` for `show()`
@@ -91,9 +91,8 @@ Interactive exploration (checking schemas, small test queries to understand data
 (output_dir / "scripts" / "01_cohort_definition.py").write_text('''\
 """01 — Define sepsis cohort from MIMIC-IV."""
 from pathlib import Path
-from m4 import execute_query, set_dataset
+from m4 import execute_query
 
-set_dataset("mimic-iv")
 out = Path(__file__).resolve().parent.parent
 
 sql = """
@@ -104,7 +103,7 @@ INNER JOIN mimiciv_derived.icustay_detail i ON s.stay_id = i.stay_id
 INNER JOIN mimiciv_hosp.admissions a ON s.hadm_id = a.hadm_id
 WHERE i.first_icu_stay = true AND i.admission_age >= 18
 """
-cohort = execute_query(sql)
+cohort = execute_query(sql, dataset="mimic-iv")
 cohort.to_parquet(out / "data" / "cohort.parquet")
 print(f"Cohort: {len(cohort)} patients")
 ''')

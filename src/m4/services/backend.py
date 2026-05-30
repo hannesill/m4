@@ -2,28 +2,19 @@ from __future__ import annotations
 
 from m4.config import (
     VALID_BACKENDS,
-    get_active_dataset,
+    get_active_dataset,  # noqa: F401 - retained for compatibility patch targets
     get_bigquery_project_id,
     set_active_backend,
     set_bigquery_project_id,
 )
-from m4.core.datasets import DatasetRegistry
-from m4.core.exceptions import DatasetError
+from m4.core.datasets import DatasetRegistry  # noqa: F401 - compatibility patch target
 from m4.services.results import (
-    ERROR_DATASET_INCOMPATIBLE,
     ERROR_INVALID_BACKEND,
     ERROR_INVALID_OPTION,
     ERROR_PROJECT_ID_REQUIRED,
     CommandError,
     CommandResult,
 )
-
-
-def _get_active_dataset_or_none() -> str | None:
-    try:
-        return get_active_dataset()
-    except DatasetError:
-        return None
 
 
 def set_active_backend_service(
@@ -47,19 +38,6 @@ def set_active_backend_service(
             message="--project-id can only be used with bigquery backend.",
         )
 
-    active_dataset = _get_active_dataset_or_none()
-    if target == "bigquery" and active_dataset:
-        ds_def = DatasetRegistry.get(active_dataset)
-        if ds_def and not ds_def.bigquery_dataset_ids:
-            return CommandError(
-                command="backend",
-                code=ERROR_DATASET_INCOMPATIBLE,
-                message=(
-                    f"Current dataset '{active_dataset}' is not available on BigQuery."
-                ),
-                hint="Switch dataset first: m4 use <dataset>",
-            )
-
     effective_project_id = None
     if target == "bigquery":
         effective_project_id = project_id or get_bigquery_project_id()
@@ -79,7 +57,6 @@ def set_active_backend_service(
         command="backend",
         data={
             "backend": target,
-            "active_dataset": active_dataset,
             "bigquery_project_id": (
                 project_id or effective_project_id or get_bigquery_project_id()
             ),

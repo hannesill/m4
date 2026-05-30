@@ -36,17 +36,14 @@ uv run m4 init-derived mimic-iv
 # List available derived tables without materializing
 uv run m4 init-derived mimic-iv --list
 
-# Switch active dataset
-uv run m4 use mimic-iv
-
-# Show active dataset status (detailed view)
-uv run m4 status
+# Show dataset status (detailed view)
+uv run m4 status --dataset mimic-iv
 
 # List all datasets (compact table)
 uv run m4 status --all
 
 # Show per-table derived materialization status
-uv run m4 status --derived
+uv run m4 status --dataset mimic-iv --derived
 ```
 
 ### CLI JSON Output
@@ -60,13 +57,13 @@ non-zero.
 ```json
 {
   "version": 1,
-  "active_dataset": "mimic-iv",
+  "selected_dataset": "mimic-iv",
   "backend": "duckdb",
   "bigquery_project_id": "my-project",
   "datasets": [
     {
       "name": "mimic-iv",
-      "active": true,
+      "selected": true,
       "raw_present": true,
       "parquet_present": true,
       "db_present": true,
@@ -98,17 +95,15 @@ status warnings:
 - `parquet_path_mismatch`: row-count verification could not read the Parquet
   path referenced by the local DuckDB views.
 
-`m4 use TARGET --json` and `m4 backend BACKEND --json` wrap command results in
-an `ok` envelope:
+`m4 backend BACKEND --json` wraps command results in an `ok` envelope:
 
 ```json
 {
   "version": 1,
   "ok": true,
-  "command": "use",
-  "active_dataset": "mimic-iv",
+  "command": "backend",
   "backend": "duckdb",
-  "warnings": ["local_db_missing"]
+  "warnings": []
 }
 ```
 
@@ -128,8 +123,8 @@ Command errors use the same envelope with `ok: false`:
 ```
 
 Stable command error codes are `dataset_not_found`, `backend_incompatible`,
-`invalid_backend`, `invalid_option`, `project_id_required`, and
-`dataset_incompatible`. Dataset setup can also return `missing_credentials`,
+`invalid_backend`, `invalid_option`, `project_id_required`,
+`dataset_incompatible`, and `active_dataset_removed`. Dataset setup can also return `missing_credentials`,
 `physionet_auth_failed`, `physionet_access_forbidden`,
 `download_network_failed`, `download_filesystem_failed`,
 `download_interrupted`, `raw_files_missing`, `conversion_failed`,
@@ -200,7 +195,7 @@ m4 provenance export --json
 ```
 
 These commands accept `--dataset` and `--backend` to resolve context without
-changing saved active configuration. `agent-env --mode protected` omits
+changing saved backend configuration. `agent-env --mode protected` omits
 `M4_DATA_DIR` so a caller can expose only a service, socket, MCP server, or
 gateway to agents.
 
@@ -212,7 +207,6 @@ Durable environment controls:
 |----------|---------|
 | `M4_DATA_DIR` | Exact M4 data directory containing `databases/`, `parquet/`, `datasets/`, and `raw_files/`. |
 | `M4_HOME` | Runtime home for config and default telemetry when separate from the data directory. |
-| `M4_DATASET` | Active dataset override. |
 | `M4_BACKEND` | Active backend override, such as `duckdb` or `bigquery`. |
 | `M4_PROJECT_ID` | BigQuery billing/project override. |
 | `M4_TELEMETRY_DIR` | Directory for telemetry JSONL when `M4_EVENT_LOG` is not set. |
@@ -276,8 +270,8 @@ Point your MCP client to your local development environment:
 
 For normal local development, configure the active backend with
 `m4 backend duckdb` or `m4 backend bigquery`. For isolated agents or MCP
-servers, `M4_BACKEND` and `M4_DATASET` may be supplied in the environment to
-override saved configuration for that process.
+servers, `M4_BACKEND` may be supplied in the environment to override saved
+backend configuration for that process. Datasets are selected per request.
 
 ## Architecture Overview
 
@@ -312,7 +306,7 @@ class ExecuteQueryTool:
     required_modalities = frozenset({Modality.TABULAR})
 ```
 
-The `ToolSelector` automatically filters tools based on the active dataset's modalities. If a dataset lacks a required modality, the tool returns a helpful error message instead of failing silently.
+The `ToolSelector` filters tools based on the request's explicit dataset. If a dataset lacks a required modality, the tool returns a helpful error message instead of failing silently.
 
 ### Backend Abstraction
 
@@ -389,7 +383,9 @@ def init_tools():
 @mcp.tool()
 @require_oauth2
 def my_new_tool(param1: str, limit: int = 10) -> str:
-    dataset = DatasetRegistry.get_active()
+    dataset = DatasetRegistry.get("mimic-iv")
+    if dataset is None:
+        return "Dataset 'mimic-iv' is not registered."
     result = _tool_selector.check_compatibility("my_new_tool", dataset)
     if not result.compatible:
         return result.error_message

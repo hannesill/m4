@@ -349,14 +349,13 @@ class DuckDBBackend:
         """Get human-readable information about the current backend.
 
         Args:
-            dataset: The active dataset definition
+            dataset: The dataset definition
 
         Returns:
             Formatted string with backend details
         """
         info = (
-            f"**Current Backend:** DuckDB (local database)\n"
-            f"**Active Dataset:** {dataset.name}"
+            f"**Current Backend:** DuckDB (local database)\n**Dataset:** {dataset.name}"
         )
         disclose = (
             context.path_disclosure

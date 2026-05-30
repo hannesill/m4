@@ -181,13 +181,8 @@ def resolve_runtime_context(
     backend: str | None = None,
     path_disclosure: bool | None = None,
 ) -> M4Context:
-    """Resolve runtime context with CLI flag > env > config/default precedence."""
+    """Resolve runtime context for explicit command/client settings."""
     resolved_dataset = dataset
-    if resolved_dataset is None:
-        try:
-            resolved_dataset = get_active_dataset()
-        except DatasetError:
-            resolved_dataset = None
 
     resolved_backend = (backend or get_active_backend()).lower()
     env_home = os.getenv("M4_HOME")
@@ -254,7 +249,7 @@ def get_dataset_parquet_root(dataset_name: str) -> Path | None:
 
 
 # -----------------------------
-# Runtime config (active dataset)
+# Runtime config
 # -----------------------------
 def _ensure_data_dirs():
     _DEFAULT_DATABASES_DIR.mkdir(parents=True, exist_ok=True)
@@ -268,7 +263,6 @@ def _get_default_runtime_config() -> dict:
     # We initialize with empty overrides.
     # Paths are derived dynamically from registry unless overridden here.
     return {
-        "active_dataset": None,
         "duckdb_paths": {},  # Map dataset_name -> path
         "parquet_roots": {},  # Map dataset_name -> path
         "bigquery_project_id": None,
@@ -280,7 +274,9 @@ def load_runtime_config() -> dict:
     _ensure_data_dirs()
     if _RUNTIME_CONFIG_PATH.exists():
         try:
-            return json.loads(_RUNTIME_CONFIG_PATH.read_text())
+            cfg = json.loads(_RUNTIME_CONFIG_PATH.read_text())
+            cfg.pop("active_dataset", None)
+            return {**_get_default_runtime_config(), **cfg}
         except Exception:
             logger.warning("Could not parse runtime config; using defaults")
     # defaults
@@ -336,50 +332,20 @@ def detect_available_local_datasets() -> dict[str, dict[str, Any]]:
 
 
 def get_active_dataset() -> str:
-    """Get the active dataset name.
-
-    Raises:
-        DatasetError: If no dataset is configured and none can be auto-detected.
-    """
-    # Ensure custom datasets are loaded so they can be found in the registry
-    _ensure_custom_datasets_loaded()
-
-    # Priority 1: Environment variable
-    env_dataset = os.getenv("M4_DATASET")
-    if env_dataset:
-        return env_dataset
-
-    # Priority 2: Config file
-    cfg = load_runtime_config()
-    active = cfg.get("active_dataset")
-
-    # Else, raise an error that no active dataset is configured.
-    if not active:
-        raise DatasetError(
-            "No active dataset configured. Please rerun 'm4 init' to configure a dataset."
-        )
-
-    return active
+    """Deprecated compatibility shim for removed global dataset state."""
+    raise DatasetError(
+        "Global active dataset state has been removed. Pass the dataset explicitly: "
+        "M4Client(dataset='mimic-iv') or execute_query(sql, dataset='mimic-iv')."
+    )
 
 
 def set_active_dataset(choice: str) -> None:
-    """Set the active dataset.
-
-    Args:
-        choice: Dataset name to set as active
-
-    Raises:
-        ValueError: If the dataset is not registered
-    """
-    _ensure_custom_datasets_loaded()
-    valid_names = {ds.name for ds in DatasetRegistry.list_all()}
-
-    if choice not in valid_names:
-        raise ValueError(f"active_dataset must be a registered dataset. Got: {choice}")
-
-    cfg = load_runtime_config()
-    cfg["active_dataset"] = choice
-    save_runtime_config(cfg)
+    """Deprecated compatibility shim for removed global dataset state."""
+    raise DatasetError(
+        f"Cannot set active dataset to '{choice}'. Global active dataset state has "
+        "been removed. Use M4Client(dataset=...) or pass dataset=... to the "
+        "top-level convenience functions."
+    )
 
 
 VALID_BACKENDS = {"duckdb", "bigquery"}

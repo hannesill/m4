@@ -13,7 +13,6 @@ import threading
 from m4.core.tools.base import Tool, ToolInput, ToolOutput
 from m4.core.tools.management import (
     ListDatasetsTool,
-    SetDatasetTool,
 )
 from m4.core.tools.notes import (
     GetNoteTool,
@@ -58,7 +57,6 @@ def init_tools() -> None:
 
         # Register management tools (always available)
         ToolRegistry.register(ListDatasetsTool())
-        ToolRegistry.register(SetDatasetTool())
 
         # Register tabular data tools
         ToolRegistry.register(GetDatabaseSchemaTool())
@@ -95,7 +93,6 @@ __all__ = [
     "ListDatasetsTool",
     "ListPatientNotesTool",
     "SearchNotesTool",
-    "SetDatasetTool",
     "Tool",
     "ToolInput",
     "ToolOutput",

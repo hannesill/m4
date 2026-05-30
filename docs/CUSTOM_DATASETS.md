@@ -34,7 +34,7 @@ m4 init mimic-iv-ed --src /path/to/your/csv/files
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `name` | Yes | Unique identifier (used in `m4 use <name>`) |
+| `name` | Yes | Unique identifier passed as `--dataset <name>` or `dataset="<name>"` |
 | `description` | Yes | Human-readable description |
 | `file_listing_url` | No | PhysioNet URL for auto-download (demo datasets only) |
 | `subdirectories_to_scan` | No | Subdirs containing CSV files (e.g., `["hosp", "icu"]`) |

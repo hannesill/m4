@@ -234,7 +234,7 @@ class Backend(Protocol):
         """Get human-readable information about the current backend.
 
         Args:
-            dataset: The active dataset definition
+            dataset: The dataset definition
 
         Returns:
             Formatted string with backend details (type, connection info, etc.)

@@ -55,7 +55,7 @@ def test_init_service_parquet_already_present_path(
     mock_init.assert_called_once_with(
         dataset_name="mimic-iv-demo", db_target_path=db_path
     )
-    mock_set_active.assert_called_once_with("mimic-iv-demo")
+    mock_set_active.assert_not_called()
 
 
 @patch("m4.services.init.has_derived_support", return_value=False)

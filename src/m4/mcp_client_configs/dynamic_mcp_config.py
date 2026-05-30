@@ -227,9 +227,7 @@ class MCPConfigGenerator:
                 raise ValueError(_DATABASE_PATH_ERROR_MSG)
             print(f"Default database path: {default_db_path}")
 
-            print(
-                "\nLeaving database path empty allows switching datasets dynamically via 'm4 use'."
-            )
+            print("\nLeaving database path empty uses dataset-specific defaults.")
             db_path = (
                 input(
                     "DuckDB database path (optional, press Enter for dynamic): "

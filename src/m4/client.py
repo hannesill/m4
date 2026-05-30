@@ -1,6 +1,5 @@
 """First-class Python client for M4 data access."""
 
-import os
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -10,7 +9,6 @@ import pandas as pd
 from m4.config import (
     _ensure_custom_datasets_loaded,
     get_active_backend,
-    get_bigquery_project_id,
 )
 from m4.core.backends import Backend, get_backend
 from m4.core.context import M4ExecutionContext
@@ -36,7 +34,7 @@ class M4Client:
 
     def __init__(
         self,
-        dataset: str | DatasetDefinition | None = None,
+        dataset: str | DatasetDefinition | None,
         backend: str | Backend | None = None,
         study_id: str | None = None,
         session_id: str | None = None,
@@ -72,23 +70,11 @@ class M4Client:
     def from_active(
         cls, interface: str = "python_api", allow_missing_dataset: bool = False
     ) -> "M4Client":
-        """Create a client from active runtime configuration and environment."""
-        path_disclosure = os.getenv("M4_PATH_DISCLOSURE", "").lower() in {
-            "1",
-            "true",
-            "yes",
-            "on",
-            "paths",
-        }
-        return cls(
-            interface=interface,
-            study_id=os.getenv("M4_STUDY_ID"),
-            session_id=os.getenv("M4_SESSION_ID"),
-            actor=os.getenv("M4_ACTOR"),
-            project_id=get_bigquery_project_id(),
-            db_path=os.getenv("M4_DB_PATH"),
-            path_disclosure=path_disclosure,
-            allow_missing_dataset=allow_missing_dataset,
+        """Deprecated compatibility shim for removed global dataset state."""
+        raise DatasetError(
+            "M4Client.from_active() has been removed because M4 no longer keeps "
+            "a global active dataset. Use M4Client(dataset='mimic-iv', ...) "
+            "instead."
         )
 
     def schema(self) -> dict[str, Any]:
@@ -200,12 +186,12 @@ class M4Client:
             return dataset
 
         if dataset is None:
-            try:
-                return DatasetRegistry.get_active()
-            except DatasetError:
-                if allow_missing_dataset:
-                    return DatasetRegistry.list_all()[0]
-                raise
+            if allow_missing_dataset:
+                return DatasetRegistry.list_all()[0]
+            raise DatasetError(
+                "A dataset is required. Use M4Client(dataset='mimic-iv') or pass "
+                "dataset='mimic-iv' to a top-level convenience function."
+            )
 
         resolved = DatasetRegistry.get(dataset.lower())
         if resolved is None:

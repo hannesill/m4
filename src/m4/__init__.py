@@ -4,11 +4,13 @@ M4 provides rigorous, auditable infrastructure for AI-assisted clinical research
 offering a safe interface for LLMs and autonomous agents to interact with EHR data.
 
 Quick Start:
-    from m4 import execute_query, set_dataset, get_schema
+    from m4 import execute_query, get_schema
 
-    set_dataset("mimic-iv")
-    print(get_schema())
-    result = execute_query("SELECT COUNT(*) FROM mimiciv_hosp.patients")
+    print(get_schema(dataset="mimic-iv"))
+    result = execute_query(
+        "SELECT COUNT(*) FROM mimiciv_hosp.patients",
+        dataset="mimic-iv",
+    )
 
 For MCP server usage, run: m4 serve
 """

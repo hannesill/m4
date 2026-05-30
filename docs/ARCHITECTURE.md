@@ -76,9 +76,11 @@ AI Client → MCP Protocol → M4 Tools → Backend → Dataset
 For complex analysis: multi-step workflows, statistical computations, survival analysis.
 
 ```python
-from m4 import set_dataset, execute_query
-set_dataset("mimic-iv")
-df = execute_query("SELECT * FROM mimiciv_hosp.patients")  # Returns DataFrame
+from m4 import execute_query
+df = execute_query(
+    "SELECT * FROM mimiciv_hosp.patients",
+    dataset="mimic-iv",
+)  # Returns DataFrame
 ```
 
 **3. Agent Skills (Knowledge)**
@@ -110,7 +112,7 @@ class SearchNotesTool:
     required_modalities = frozenset({Modality.NOTES})
 ```
 
-When you switch datasets, M4 automatically shows only compatible tools. Query a tabular dataset? You get SQL tools. Switch to MIMIC-IV-Note? You get notes search tools.
+When a request selects a dataset, M4 checks which tools are compatible with that dataset. Query a tabular dataset? SQL tools are available. Query MIMIC-IV-Note? Notes search tools are available.
 
 ### 2. Backend Abstraction
 
@@ -144,7 +146,7 @@ M4's skills and concept mappings handle these translations, enabling external va
 FastMCP server exposing tools via Model Context Protocol. Thin adapter over core functionality.
 
 **Tools exposed:**
-- Dataset management: `list_datasets`, `set_dataset`
+- Dataset management: `list_datasets`; `set_dataset` remains only as a migration-error helper
 - Tabular: `get_database_schema`, `get_table_info`, `execute_query`
 - Notes: `search_notes`, `get_note`, `list_patient_notes`
 
@@ -154,10 +156,10 @@ Direct programmatic access returning native Python types:
 
 | Function | Returns |
 |----------|---------|
-| `execute_query(sql)` | `pd.DataFrame` |
-| `get_schema()` | `dict` |
-| `get_table_info(table)` | `dict` with DataFrame values |
-| `search_notes(query)` | `dict` with DataFrame values |
+| `execute_query(sql, dataset=...)` | `pd.DataFrame` |
+| `get_schema(dataset=...)` | `dict` |
+| `get_table_info(table, dataset=...)` | `dict` with DataFrame values |
+| `search_notes(query, dataset=...)` | `dict` with DataFrame values |
 
 ### Tool System (`core/tools/`)
 
@@ -173,7 +175,7 @@ class Tool(Protocol):
     def is_compatible(self, dataset) -> bool: ...
 ```
 
-The `ToolSelector` filters tools based on active dataset modalities.
+The `ToolSelector` filters tools based on explicit dataset modalities.
 
 ### Derived Table System (`core/derived/`)
 
@@ -250,9 +252,7 @@ Implementations handle database-specific details (DuckDB views, BigQuery schemas
 
 ```python
 # Claude Code with M4 skills generates:
-from m4 import set_dataset, execute_query
-
-set_dataset("mimic-iv")
+from m4 import execute_query
 
 # KDIGO AKI staging (validated)
 aki_cohort = execute_query("""
@@ -263,7 +263,7 @@ aki_cohort = execute_query("""
     FROM mimiciv_derived.kdigo_stages k
     JOIN admissions a ON k.hadm_id = a.hadm_id
     WHERE k.aki_stage >= 1
-""")
+""", dataset="mimic-iv")
 
 mortality_rate = aki_cohort['hospital_expire_flag'].mean()
 ```

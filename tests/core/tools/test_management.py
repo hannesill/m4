@@ -80,7 +80,7 @@ class TestListDatasetsTool:
                     # Result is now a dict
                     assert "mimic-iv-demo" in result["datasets"]
                     assert "mimic-iv" in result["datasets"]
-                    assert result["active_dataset"] == "mimic-iv-demo"
+                    assert result["selected_dataset"] is None
 
     def test_invoke_shows_parquet_status(self, mock_availability, dummy_dataset):
         """Test that parquet availability is included."""
@@ -218,135 +218,18 @@ class TestListDatasetsTool:
 
 
 class TestSetDatasetTool:
-    """Test SetDatasetTool functionality."""
+    """Test deprecated SetDatasetTool behavior."""
 
-    def test_invoke_switches_to_valid_dataset(self, mock_availability, dummy_dataset):
-        """Test successful dataset switch."""
-        with patch(
-            "m4.core.tools.management.detect_available_local_datasets",
-            return_value=mock_availability,
-        ):
-            with patch("m4.core.tools.management.set_active_dataset") as mock_set:
-                with patch("m4.core.tools.management.DatasetRegistry.get") as mock_reg:
-                    mock_reg.return_value = DatasetDefinition(
-                        name="mimic-iv-demo", bigquery_dataset_ids=[]
-                    )
-                    with patch(
-                        "m4.core.tools.management.get_active_backend",
-                        return_value="duckdb",
-                    ):
-                        tool = SetDatasetTool()
-                        params = SetDatasetInput(dataset_name="mimic-iv-demo")
-                        result = tool.invoke(dummy_dataset, params)
+    def test_invoke_raises_migration_error(self, dummy_dataset):
+        """set_dataset no longer mutates global state."""
+        tool = SetDatasetTool()
+        params = SetDatasetInput(dataset_name="mimic-iv-demo")
 
-                        mock_set.assert_called_once_with("mimic-iv-demo")
-                        assert result["dataset_name"] == "mimic-iv-demo"
+        with pytest.raises(DatasetError) as exc_info:
+            tool.invoke(dummy_dataset, params)
 
-    def test_invoke_rejects_unknown_dataset(self, mock_availability, dummy_dataset):
-        """Test rejection of unknown dataset raises DatasetError."""
-        with patch(
-            "m4.core.tools.management.detect_available_local_datasets",
-            return_value=mock_availability,
-        ):
-            with patch("m4.core.tools.management.set_active_dataset") as mock_set:
-                tool = SetDatasetTool()
-                params = SetDatasetInput(dataset_name="unknown-dataset")
-
-                with pytest.raises(DatasetError) as exc_info:
-                    tool.invoke(dummy_dataset, params)
-
-                mock_set.assert_not_called()
-                assert "not found" in str(exc_info.value)
-
-    def test_invoke_shows_supported_datasets_on_error(
-        self, mock_availability, dummy_dataset
-    ):
-        """Test that error message lists supported datasets."""
-        with patch(
-            "m4.core.tools.management.detect_available_local_datasets",
-            return_value=mock_availability,
-        ):
-            with patch("m4.core.tools.management.set_active_dataset"):
-                tool = SetDatasetTool()
-                params = SetDatasetInput(dataset_name="nonexistent")
-
-                with pytest.raises(DatasetError) as exc_info:
-                    tool.invoke(dummy_dataset, params)
-
-                assert "mimic-iv-demo" in str(exc_info.value)
-                assert "mimic-iv" in str(exc_info.value)
-
-    def test_invoke_warns_missing_db_for_duckdb(self, mock_availability, dummy_dataset):
-        """Test warning when database file is missing for DuckDB backend."""
-        # Modify availability: parquet present but db missing
-        availability = {
-            "mimic-iv-demo": {
-                "parquet_present": True,
-                "db_present": False,  # Missing!
-            },
-        }
-
-        with patch(
-            "m4.core.tools.management.detect_available_local_datasets",
-            return_value=availability,
-        ):
-            with patch("m4.core.tools.management.set_active_dataset"):
-                with patch("m4.core.tools.management.DatasetRegistry.get") as mock_reg:
-                    mock_reg.return_value = DatasetDefinition(
-                        name="mimic-iv-demo", bigquery_dataset_ids=[]
-                    )
-                    with patch.dict("os.environ", {"M4_BACKEND": "duckdb"}):
-                        tool = SetDatasetTool()
-                        params = SetDatasetInput(dataset_name="mimic-iv-demo")
-                        result = tool.invoke(dummy_dataset, params)
-
-                        assert "Local database not found" in result["warnings"][0]
-
-    def test_invoke_blocks_no_bigquery_config(self, mock_availability, dummy_dataset):
-        """Test that switching to a dataset without BigQuery config is blocked."""
-        with patch(
-            "m4.core.tools.management.detect_available_local_datasets",
-            return_value=mock_availability,
-        ):
-            with patch("m4.core.tools.management.set_active_dataset") as mock_set:
-                with patch("m4.core.tools.management.DatasetRegistry.get") as mock_reg:
-                    mock_reg.return_value = DatasetDefinition(
-                        name="mimic-iv-demo",
-                        bigquery_dataset_ids=[],  # No BigQuery config
-                    )
-                    with patch.dict("os.environ", {"M4_BACKEND": "bigquery"}):
-                        tool = SetDatasetTool()
-                        params = SetDatasetInput(dataset_name="mimic-iv-demo")
-
-                        with pytest.raises(DatasetError) as exc_info:
-                            tool.invoke(dummy_dataset, params)
-
-                        mock_set.assert_not_called()
-                        assert "not available on the BigQuery backend" in str(
-                            exc_info.value
-                        )
-
-    def test_invoke_case_insensitive(self, mock_availability, dummy_dataset):
-        """Test that dataset name lookup is case-insensitive."""
-        with patch(
-            "m4.core.tools.management.detect_available_local_datasets",
-            return_value=mock_availability,
-        ):
-            with patch("m4.core.tools.management.set_active_dataset") as mock_set:
-                with patch("m4.core.tools.management.DatasetRegistry.get") as mock_reg:
-                    mock_reg.return_value = DatasetDefinition(
-                        name="mimic-iv-demo", bigquery_dataset_ids=[]
-                    )
-                    with patch(
-                        "m4.core.tools.management.get_active_backend",
-                        return_value="duckdb",
-                    ):
-                        tool = SetDatasetTool()
-                        params = SetDatasetInput(dataset_name="MIMIC-IV-DEMO")
-                        tool.invoke(dummy_dataset, params)
-
-                        # Should normalize to lowercase
-                        mock_set.assert_called_once_with("mimic-iv-demo")
+        assert "no longer keeps a global active dataset" in str(exc_info.value)
+        assert "Pass dataset explicitly" in str(exc_info.value)
 
     def test_is_compatible_always_true(self):
         """Test that management tools are always compatible."""

@@ -431,7 +431,7 @@ class TestModalityChecking:
 
                         # Verify suggestions are included
                         assert "list_datasets" in result_text
-                        assert "set_dataset" in result_text
+                        assert "dataset='dataset-name'" in result_text
 
                         # Verify backend was NOT called (no execution attempted)
                         mock_backend.assert_not_called()
@@ -489,97 +489,42 @@ class TestModalityChecking:
                         assert "not available" not in result_text.lower()
 
     @pytest.mark.asyncio
-    async def test_set_dataset_returns_supported_tools_snapshot(self):
-        """Test that set_dataset includes supported tools in response."""
+    async def test_set_dataset_returns_migration_error(self):
+        """set_dataset is retained only as migration guidance."""
         from m4.core.backends import reset_backend_cache
 
         reset_backend_cache()
-
-        # Create a dataset with TABULAR modality
-        target_ds = DatasetDefinition(
-            name="test-dataset",
-            modalities={Modality.TABULAR},
-        )
 
         with patch.dict(
             os.environ,
             {"M4_OAUTH2_ENABLED": "false", "M4_BACKEND": "duckdb"},
             clear=True,
         ):
-            with patch(
-                "m4.core.tools.management.detect_available_local_datasets",
-                return_value={
-                    "test-dataset": {"parquet_present": True, "db_present": True}
-                },
-            ):
-                with patch("m4.core.tools.management.set_active_dataset"):
-                    with patch(
-                        "m4.config.get_active_dataset",
-                        return_value="test-dataset",
-                    ):
-                        with patch(
-                            "m4.core.tools.management.DatasetRegistry.get",
-                            return_value=target_ds,
-                        ):
-                            with patch(
-                                "m4.mcp_server.DatasetRegistry.get",
-                                return_value=target_ds,
-                            ):
-                                with patch(
-                                    "m4.core.tools.management.get_active_backend",
-                                    return_value="duckdb",
-                                ):
-                                    async with Client(mcp) as client:
-                                        result = await client.call_tool(
-                                            "set_dataset",
-                                            {"dataset_name": "test-dataset"},
-                                        )
-                                        result_text = str(result)
+            async with Client(mcp) as client:
+                result = await client.call_tool(
+                    "set_dataset",
+                    {"dataset_name": "test-dataset"},
+                )
+                result_text = str(result)
 
-                                        # Verify snapshot is included
-                                        assert "Active dataset" in result_text
-                                        assert "test-dataset" in result_text
-                                        assert "Modalities" in result_text
-                                        assert "Supported tools" in result_text
-
-                                        # Tools should be sorted alphabetically
-                                        assert "execute_query" in result_text
+                assert "set_dataset is no longer supported" in result_text
+                assert "explicit dataset" in result_text
 
     @pytest.mark.asyncio
-    async def test_set_dataset_invalid_returns_error_without_snapshot(self):
-        """Test that set_dataset with invalid dataset returns error without snapshot."""
+    async def test_set_dataset_invalid_returns_same_migration_error(self):
+        """set_dataset does not validate targets because it no longer switches."""
         from m4.core.backends import reset_backend_cache
 
         reset_backend_cache()
 
-        # Create a valid mock dataset for get_active
-        mock_active_ds = DatasetDefinition(
-            name="mimic-iv-demo",
-            modalities={Modality.TABULAR},
-        )
-
         with patch.dict(os.environ, {"M4_OAUTH2_ENABLED": "false"}, clear=True):
-            with patch(
-                "m4.core.tools.management.detect_available_local_datasets",
-                return_value={
-                    "mimic-iv-demo": {"parquet_present": True, "db_present": True}
-                },
-            ):
-                with patch(
-                    "m4.mcp_server.DatasetRegistry.get_active",
-                    return_value=mock_active_ds,
-                ):
-                    with patch(
-                        "m4.mcp_server.DatasetRegistry.get", return_value=None
-                    ):  # Unknown dataset for snapshot lookup
-                        async with Client(mcp) as client:
-                            result = await client.call_tool(
-                                "set_dataset", {"dataset_name": "nonexistent-dataset"}
-                            )
-                            result_text = str(result)
+            async with Client(mcp) as client:
+                result = await client.call_tool(
+                    "set_dataset", {"dataset_name": "nonexistent-dataset"}
+                )
+                result_text = str(result)
 
-                            # Should have error
-                            assert "not found" in result_text.lower()
+                assert "set_dataset is no longer supported" in result_text
 
     @pytest.mark.asyncio
     async def test_tool_incompatibility_with_notes_only(self):
@@ -659,7 +604,7 @@ class TestModalityChecking:
         snapshot = selector.get_supported_tools_snapshot(tabular_ds)
 
         # Verify structure
-        assert "Active dataset" in snapshot
+        assert "Dataset" in snapshot
         assert "tabular-dataset" in snapshot
         assert "Modalities" in snapshot
         assert "Supported tools" in snapshot

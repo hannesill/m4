@@ -185,7 +185,7 @@ class BigQueryBackend:
                 error=(
                     f"Dataset '{dataset.name}' is not available in BigQuery. "
                     f"Use 'm4 backend duckdb' to switch to local database, "
-                    f"or 'm4 use <dataset>' to choose a BigQuery-enabled dataset."
+                    f"or pass a BigQuery-enabled dataset explicitly."
                 ),
             )
 
@@ -348,7 +348,7 @@ class BigQueryBackend:
                 error=(
                     f"Dataset '{dataset.name}' is not available in BigQuery. "
                     f"Use 'm4 backend duckdb' to switch to local database, "
-                    f"or 'm4 use <dataset>' to choose a BigQuery-enabled dataset."
+                    f"or pass a BigQuery-enabled dataset explicitly."
                 ),
             )
 
@@ -444,7 +444,7 @@ class BigQueryBackend:
                 error=(
                     f"Dataset '{dataset.name}' is not available in BigQuery. "
                     f"Use 'm4 backend duckdb' to switch to local database, "
-                    f"or 'm4 use <dataset>' to choose a BigQuery-enabled dataset."
+                    f"or pass a BigQuery-enabled dataset explicitly."
                 ),
             )
 
@@ -475,7 +475,7 @@ class BigQueryBackend:
         """Get human-readable information about the current backend.
 
         Args:
-            dataset: The active dataset definition
+            dataset: The dataset definition
 
         Returns:
             Formatted string with backend details
@@ -489,7 +489,7 @@ class BigQueryBackend:
 
         return (
             f"**Current Backend:** BigQuery (cloud database)\n"
-            f"**Active Dataset:** {dataset.name}\n"
+            f"**Dataset:** {dataset.name}\n"
             f"**Project ID:** {project_id}\n"
             f"**Dataset IDs:** {dataset_ids}"
         )
