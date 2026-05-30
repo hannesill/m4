@@ -121,4 +121,5 @@ BigQuery charges based on data scanned. Tips to minimize costs:
 - Run `m4 download mimic-iv` or `m4 download eicu` to print dataset-specific
   recovery guidance and a resumable `wget` command.
 - If files landed under `physionet.org/files/...`, move the dataset contents up
-  to `m4_data/raw_files/DATASET` or rerun `wget` with `--cut-dirs=2 -nH`.
+  to `m4_data/raw_files/DATASET` or rerun `wget` with the generated
+  `--cut-dirs` and `-nH` flags.

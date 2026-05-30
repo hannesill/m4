@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from shlex import quote
 from typing import Any
+from urllib.parse import urlparse
 
 from m4.config import ensure_custom_datasets_loaded, resolve_runtime_context
 from m4.console import console
@@ -38,8 +39,12 @@ def expected_raw_subdirectories(ds: DatasetDefinition) -> list[str]:
 def build_wget_command(ds: DatasetDefinition, target: Path) -> str:
     if not ds.file_listing_url:
         return ""
+    path_parts = [
+        part for part in urlparse(ds.file_listing_url).path.split("/") if part
+    ]
+    cut_dirs = len(path_parts)
     return (
-        "wget -r -N -c -np --cut-dirs=2 -nH "
+        f"wget -r -N -c -np --cut-dirs={cut_dirs} -nH "
         "--user YOUR_USERNAME --ask-password "
         f"{quote(ds.file_listing_url)} -P {quote(str(target))}"
     )
@@ -81,7 +86,7 @@ def validate_raw_layout(dataset_name: str, root: Path) -> dict[str, Any]:
     if any(path.exists() for path in nested_markers):
         warnings.append("nested_physionet_layout")
         recovery.append(
-            "Move the dataset contents up to the raw root or rerun wget with --cut-dirs=2 -nH."
+            "Move the dataset contents up to the raw root or rerun wget with the generated --cut-dirs and -nH flags."
         )
 
     csv_files = sorted(root.rglob("*.csv.gz"))
