@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "publisher": "m4",
+  "packageVersion": "0.5.4",
+  "bundleDigest": "sha256:d8ecc3a3df86bf9f9a470ba8f5e3dc20754b4e9a97f51620f07b280fea131029",
+  "skills": [
+    {
+      "id": "m4:example-clinical",
+      "publisher": "m4",
+      "name": "example-clinical",
+      "description": "Minimal managed catalog compatibility fixture.",
+      "category": "clinical",
+      "tier": "validated",
+      "bundleVersion": "0.5.4",
+      "contentDigest": "sha256:dae083dc97b2ada379a6e244abe4a2277ce43694ef9e2308ce7fde7577c3fa8f",
+      "treeDigest": "sha256:eb15448b4bf118da2bc530c0da3869b448b99652cd8bd17e36d4ba485cb63459",
+      "relativeRoot": "clinical/example-clinical",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "size": 232,
+          "contentDigest": "sha256:dae083dc97b2ada379a6e244abe4a2277ce43694ef9e2308ce7fde7577c3fa8f"
+        },
+        {
+          "path": "assets/example.sql",
+          "size": 10,
+          "contentDigest": "sha256:4a45092ccf992ea92250053a80b931b787924ba61648f420555511b84f10ab6c"
+        }
+      ],
+      "kind": "domain"
+    }
+  ]
+}

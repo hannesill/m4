@@ -3,6 +3,7 @@ name: gcs-calculation
 description: Extract and calculate Glasgow Coma Scale (GCS) for ICU patients. Use for neurological assessment, consciousness monitoring, or trauma severity scoring.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # Glasgow Coma Scale (GCS) Calculation

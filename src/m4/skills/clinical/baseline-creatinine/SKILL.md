@@ -3,6 +3,7 @@ name: baseline-creatinine
 description: Estimate baseline serum creatinine for AKI assessment. Use for KDIGO staging, AKI research, or renal function baseline establishment.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # Baseline Creatinine Estimation

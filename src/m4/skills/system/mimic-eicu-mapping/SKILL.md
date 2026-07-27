@@ -3,6 +3,7 @@ name: mimic-eicu-mapping
 description: Map equivalent concepts between MIMIC-IV and eICU databases. Use for multi-database studies, external validation, or understanding structural differences between databases.
 tier: validated
 category: system
+kind: methodology
 ---
 
 # MIMIC-IV to eICU Mapping

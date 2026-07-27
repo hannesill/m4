@@ -85,6 +85,13 @@ app = typer.Typer(
 provenance_app = typer.Typer(help="Inspect and export M4 provenance events.")
 app.add_typer(provenance_app, name="provenance")
 
+skills_app = typer.Typer(
+    help="Install, inspect, and materialize M4 skills.",
+    invoke_without_command=True,
+    no_args_is_help=False,
+)
+app.add_typer(skills_app, name="skills")
+
 
 def version_callback(value: bool):
     if value:
@@ -2046,8 +2053,9 @@ def _prompt_select_skills() -> tuple[
     return None, None, None
 
 
-@app.command("skills")
+@skills_app.callback(invoke_without_command=True)
 def skills_cmd(
+    ctx: typer.Context,
     tools: Annotated[
         str | None,
         typer.Option(
@@ -2107,6 +2115,10 @@ def skills_cmd(
     • m4 skills --tools claude --skills sofa-score,m4-api  # Specific skills
 
     • m4 skills --list                       # Show installed skills
+
+    • m4 skills catalog --json               # Emit versioned catalog
+
+    • m4 skills materialize --target PATH --json  # Copy managed bundle
     """
     from m4.skills import (
         AI_TOOLS,
@@ -2115,6 +2127,9 @@ def skills_cmd(
         install_skills,
     )
     from m4.skills.installer import _parse_skill_metadata
+
+    if ctx.invoked_subcommand is not None:
+        return
 
     if list_installed:
         # Show installed skills with metadata
@@ -2226,6 +2241,92 @@ def skills_cmd(
     except Exception as e:
         error(f"Skills installation failed: {e}")
         raise typer.Exit(code=1)
+
+
+@skills_app.command("catalog")
+def skills_catalog_cmd(
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit the versioned machine-readable manifest."),
+    ] = False,
+):
+    """Inspect the complete packaged M4 skill catalog without installing it."""
+    from m4.skills import build_catalog
+
+    try:
+        with _silence_m4_logging():
+            manifest = build_catalog()
+    except Exception as exc:
+        if json_output:
+            _emit_json(
+                {
+                    "schemaVersion": 1,
+                    "ok": False,
+                    "error": {"code": "skills_catalog_failed", "message": str(exc)},
+                }
+            )
+        else:
+            error(f"Skills catalog failed: {exc}")
+        raise typer.Exit(code=1)
+
+    if json_output:
+        _emit_json(manifest)
+        return
+
+    typer.echo(
+        f"M4 {manifest['packageVersion']} skills: {len(manifest['skills'])} "
+        f"({manifest['bundleDigest']})"
+    )
+    for skill in manifest["skills"]:
+        typer.echo(f"- {skill['id']} [{skill['tier']}/{skill['category']}]")
+
+
+@skills_app.command("materialize")
+def skills_materialize_cmd(
+    target: Annotated[
+        Path,
+        typer.Option(
+            "--target",
+            help="Explicit destination for the immutable managed skill bundle.",
+        ),
+    ],
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit a machine-readable result."),
+    ] = False,
+):
+    """Atomically materialize the complete packaged bundle into TARGET."""
+    from m4.skills import materialize_catalog
+
+    try:
+        with _silence_m4_logging():
+            result = materialize_catalog(target)
+    except Exception as exc:
+        if json_output:
+            _emit_json(
+                {
+                    "schemaVersion": 1,
+                    "ok": False,
+                    "error": {
+                        "code": "skills_materialize_failed",
+                        "message": str(exc),
+                    },
+                }
+            )
+        else:
+            error(f"Skills materialization failed: {exc}")
+        raise typer.Exit(code=1)
+
+    payload = {"ok": True, **result}
+    if json_output:
+        _emit_json(payload)
+        return
+
+    state = "Reused" if result["reused"] else "Materialized"
+    success(
+        f"{state} {result['skillCount']} M4 skills at {result['target']} "
+        f"({result['bundleDigest']})"
+    )
 
 
 @app.command("config")

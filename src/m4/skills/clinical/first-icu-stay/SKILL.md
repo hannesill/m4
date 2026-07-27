@@ -3,6 +3,7 @@ name: first-icu-stay
 description: Identify first ICU stays and first hospital admissions for cohort selection. Use to exclude readmissions, create independent observations, or build adult patient cohorts.
 tier: validated
 category: clinical
+kind: methodology
 ---
 
 # First ICU Stay Selection

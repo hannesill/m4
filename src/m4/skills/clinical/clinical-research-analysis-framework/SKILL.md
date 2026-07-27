@@ -3,6 +3,7 @@ name: clinical-research-analysis-framework
 description: Guided workflow for statistical and ML analysis of clinical data. Use when planning or executing research analyses on MIMIC, eICU, or similar EHR data. Ensures methodological rigor through structured consultation, assumption checking, and stepwise execution with audit trails.
 tier: expert
 category: clinical
+kind: methodology
 ---
 
 # Statistical Analysis Framework

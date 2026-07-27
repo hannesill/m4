@@ -3,6 +3,7 @@ name: lods-score
 description: Calculate LODS (Logistic Organ Dysfunction Score) for ICU patients. Use for organ dysfunction assessment across 6 systems with weighted scoring.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # LODS Score Calculation

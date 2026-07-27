@@ -3,6 +3,7 @@ name: equiflow
 description: Generate equity-focused cohort selection flow diagrams. Tracks demographic, socioeconomic, and outcome variables at each exclusion step and calculates SMD to detect selection bias. Use for cohort construction, CONSORT-style diagrams, or bias detection in clinical ML/research.
 tier: expert
 category: clinical
+kind: methodology
 ---
 
 # EquiFlow - Equity-Focused Cohort Flow Diagrams

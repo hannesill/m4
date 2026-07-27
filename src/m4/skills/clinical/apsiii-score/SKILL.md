@@ -3,6 +3,7 @@ name: apsiii-score
 description: Calculate APACHE III (Acute Physiology Score III) for ICU patients. Use for mortality prediction, severity stratification, case-mix adjustment, or risk-adjusted outcome comparisons.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # APACHE III (APS III) Score Calculation

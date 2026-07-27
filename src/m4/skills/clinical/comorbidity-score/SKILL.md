@@ -3,6 +3,7 @@ name: comorbidity-score
 description: Calculate Charlson Comorbidity Index (CCI) and Elixhauser Comorbidity Index for hospital admissions. Use for risk adjustment, mortality prediction, case-mix analysis, or comparing comorbidity burden across patient populations.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # Comorbidity Scores

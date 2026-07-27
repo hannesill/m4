@@ -3,6 +3,7 @@ name: mimic-table-relationships
 description: Understand MIMIC-IV table relationships, join patterns, and identifier hierarchy. Use for correct data linkage, avoiding duplicates, and proper temporal joins.
 tier: validated
 category: system
+kind: domain
 ---
 
 # MIMIC-IV Table Relationships

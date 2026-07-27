@@ -5,9 +5,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from m4.config import logger
-
-VALID_TIERS = {"validated", "expert", "community"}
-VALID_CATEGORIES = {"clinical", "system"}
+from m4.skills.catalog import (
+    SkillInfo,
+    discover_skills,
+    get_available_skills,
+    get_skills_source,
+    parse_skill_metadata,
+)
 
 
 @dataclass
@@ -19,17 +23,6 @@ class AITool:
     skills_dir: str  # e.g., ".claude/skills"
 
 
-@dataclass
-class SkillInfo:
-    """Metadata for a bundled skill parsed from SKILL.md frontmatter."""
-
-    name: str
-    description: str
-    tier: str  # validated | expert | community
-    category: str  # clinical | system
-    path: Path
-
-
 # Supported AI coding tools that use the .TOOL_NAME/skills/ convention
 AI_TOOLS: dict[str, AITool] = {
     "claude": AITool("claude", "Claude Code", ".claude/skills"),
@@ -39,16 +32,6 @@ AI_TOOLS: dict[str, AITool] = {
     "gemini": AITool("gemini", "Gemini CLI", ".gemini/skills"),
     "copilot": AITool("copilot", "GitHub Copilot", ".copilot/skills"),
 }
-
-
-def get_skills_source() -> Path:
-    """Get path to bundled skills in the package.
-
-    Returns:
-        Path to the skills directory within the installed package.
-    """
-    # Get the directory where this module is located (skills/)
-    return Path(__file__).parent
 
 
 def get_available_tools() -> list[AITool]:
@@ -72,83 +55,7 @@ def _parse_skill_metadata(skill_dir: Path) -> SkillInfo | None:
     Returns:
         SkillInfo if parsing succeeds, None otherwise.
     """
-    skill_md = skill_dir / "SKILL.md"
-    if not skill_md.exists():
-        return None
-
-    text = skill_md.read_text(encoding="utf-8")
-
-    # Frontmatter is between the first two "---" lines
-    if not text.startswith("---"):
-        logger.debug(f"No frontmatter in {skill_md}")
-        return None
-
-    end = text.find("---", 3)
-    if end == -1:
-        logger.debug(f"Unclosed frontmatter in {skill_md}")
-        return None
-
-    frontmatter = text[3:end].strip()
-    fields: dict[str, str] = {}
-    for line in frontmatter.splitlines():
-        if ":" not in line:
-            continue
-        key, _, value = line.partition(":")
-        fields[key.strip()] = value.strip()
-
-    required = {"name", "description", "tier", "category"}
-    missing = required - fields.keys()
-    if missing:
-        logger.debug(f"Missing frontmatter fields {missing} in {skill_md}")
-        return None
-
-    return SkillInfo(
-        name=fields["name"],
-        description=fields["description"],
-        tier=fields["tier"],
-        category=fields["category"],
-        path=skill_dir,
-    )
-
-
-def get_available_skills(
-    tier: list[str] | None = None,
-    category: list[str] | None = None,
-    names: list[str] | None = None,
-) -> list[SkillInfo]:
-    """List all bundled skills, optionally filtered.
-
-    Filters combine with AND logic: ``tier=["validated"]`` and
-    ``category=["clinical"]`` returns only validated clinical skills.
-
-    Args:
-        tier: Keep skills whose tier is in this list.
-        category: Keep skills whose category is in this list.
-        names: Keep skills whose name is in this list.
-
-    Returns:
-        Sorted list of matching SkillInfo objects.
-    """
-    source = get_skills_source()
-    all_skills: list[SkillInfo] = []
-
-    for skill_dir in _discover_skills(source):
-        info = _parse_skill_metadata(skill_dir)
-        if info is not None:
-            all_skills.append(info)
-
-    # Apply filters (AND logic)
-    if names is not None:
-        name_set = {n.lower() for n in names}
-        all_skills = [s for s in all_skills if s.name.lower() in name_set]
-    if tier is not None:
-        tier_set = {t.lower() for t in tier}
-        all_skills = [s for s in all_skills if s.tier.lower() in tier_set]
-    if category is not None:
-        cat_set = {c.lower() for c in category}
-        all_skills = [s for s in all_skills if s.category.lower() in cat_set]
-
-    return sorted(all_skills, key=lambda s: s.name)
+    return parse_skill_metadata(skill_dir)
 
 
 def install_skills(
@@ -248,7 +155,7 @@ def _discover_skills(source: Path) -> list[Path]:
     Returns:
         Sorted list of skill directory paths.
     """
-    return sorted(p.parent for p in source.rglob("SKILL.md"))
+    return discover_skills(source)
 
 
 def _install_skills_to_dir(skills: list[SkillInfo], target_dir: Path) -> list[Path]:

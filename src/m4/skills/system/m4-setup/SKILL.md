@@ -3,6 +3,7 @@ name: m4-setup
 description: Diagnose and repair common M4 environment, dataset, skill installation, backend, and vitrine setup problems. Use when M4 tools, datasets, skills, or visualization are missing or broken.
 tier: community
 category: system
+kind: maintenance
 ---
 
 # M4 Setup And Repair

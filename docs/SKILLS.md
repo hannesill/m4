@@ -50,6 +50,36 @@ Filters combine with AND logic: `--tier validated --category clinical` installs 
 
 Skills are installed to `.claude/skills/` (or equivalent for other tools). AI assistants automatically discover skills in these locations.
 
+## Managed Catalog Integration
+
+Applications that consume M4 skills without modifying a user's project can use the
+versioned JSON contract:
+
+```bash
+m4 skills catalog --json
+m4 skills materialize --target /absolute/managed/path --json
+```
+
+These managed catalog commands are available in `m4-infra` 0.5.4 and later.
+
+`catalog` reports schema version `1`, the M4 package version, a deterministic bundle
+digest, and a descriptor for every packaged skill and asset. Paths in this manifest
+are relative to the packaged skill root.
+
+`materialize` copies the complete bundle into the explicit target, verifies every
+declared file digest, writes `.m4-skills-manifest.json`, and atomically publishes the
+target. It never installs into `.claude`, `.codex`, or another provider directory.
+An existing verified target with the same digest is reused; any other existing
+target is left untouched and reported as an error.
+
+Compatibility policy:
+
+- consumers must reject unsupported `schemaVersion` values;
+- additive fields may be introduced within schema version `1`;
+- incompatible changes require a new schema version;
+- `packageVersion` plus `bundleDigest` identifies a reproducible bundle;
+- individual `contentDigest` and `treeDigest` values identify exact skill content.
+
 
 ## Available Skills
 
@@ -155,6 +185,7 @@ name: sofa-score
 description: Calculate SOFA score for ICU patients...
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # SOFA Score Calculation
@@ -162,7 +193,7 @@ category: clinical
 [Detailed instructions, SQL examples, clinical context...]
 ```
 
-The frontmatter has four required fields: `name`, `description`, `tier` (one of `validated`, `expert`, `community`), and `category` (`clinical` or `system`). See `src/m4/skills/SKILL_FORMAT.md` for full details.
+The frontmatter has four required fields: `name`, `description`, `tier` (one of `validated`, `expert`, `community`), and `category` (`clinical` or `system`). `kind` is optional and classifies how catalog consumers should group the skill. See `src/m4/skills/SKILL_FORMAT.md` for full details.
 
 Clinical skills include validated SQL scripts in their `scripts/` subdirectory.
 
@@ -177,6 +208,7 @@ name: cardiac-surgery-cohort
 description: Identify cardiac surgery patients. Triggers on "CABG", "valve replacement", "cardiac surgery"
 tier: community
 category: clinical
+kind: domain
 ---
 
 # Cardiac Surgery Cohort Selection

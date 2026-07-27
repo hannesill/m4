@@ -3,6 +3,7 @@ name: create-m4-skill
 description: Guide users through creating M4 skills with proper structure, provenance tracking, and tier assignment. Use when users want to create a new M4 skill, document a clinical concept, or contribute a skill to the M4 skills library.
 tier: community
 category: system
+kind: authoring
 ---
 
 # M4 Skill Creator

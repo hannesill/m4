@@ -8,7 +8,8 @@ This document defines how M4 skills should be structured, including metadata, pr
 
 **Context-efficient.** SKILL.md is loaded into AI context. Every line should earn its place. Provenance, licensing, and authorship belong in PROVENANCE.yaml, not in the frontmatter. The body should only include information the AI can't already infer.
 
-**Minimal frontmatter.** Four fields. Everything else belongs in the body or in PROVENANCE.yaml.
+**Minimal frontmatter.** Four required fields and one optional catalog classification.
+Everything else belongs in the body or in PROVENANCE.yaml.
 
 ## Skill Directory Structure
 
@@ -59,6 +60,7 @@ name: sofa-score
 description: Calculate SOFA (Sequential Organ Failure Assessment) score for ICU patients. Use for sepsis severity assessment, organ dysfunction quantification, mortality prediction, or Sepsis-3 criteria evaluation.
 tier: validated
 category: clinical
+kind: domain
 ---
 ```
 
@@ -68,8 +70,9 @@ category: clinical
 | `description` | Yes | One-sentence description. Should state what the skill does and when to use it. This is what AI assistants match against to decide when to activate the skill. |
 | `tier` | Yes | Trust level: `validated`, `expert`, or `community`. See [Tier System](#tier-system) below. |
 | `category` | Yes | Skill type: `clinical` or `system`. See [Category System](#category-system) below. |
+| `kind` | No | Catalog purpose: `domain`, `methodology`, `integration`, `workflow`, `maintenance`, or `authoring`. |
 
-Keep the frontmatter to these four fields. Licensing, authorship, version, source URLs, and validation status belong in `PROVENANCE.yaml`.
+Keep the frontmatter to these fields. Licensing, authorship, version, source URLs, and validation status belong in `PROVENANCE.yaml`.
 
 ### Body
 

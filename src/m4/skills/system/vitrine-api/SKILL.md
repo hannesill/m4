@@ -3,6 +3,7 @@ name: vitrine-api
 description: Use the vitrine display API for M4 research visualization, review cards, forms, study tracking, approvals, exports, and recovery of displayed results.
 tier: community
 category: system
+kind: integration
 ---
 
 # Vitrine API

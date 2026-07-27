@@ -3,6 +3,7 @@ name: hfrs
 description: Calculate Hospital Frailty Risk Score (HFRS) for ICU patients using ICD diagnosis codes. Use for frailty assessment, risk stratification, or outcome prediction in older patients. Supports both ICD-9-CM and ICD-10-CM codes for MIMIC-IV compatibility.
 tier: expert
 category: clinical
+kind: domain
 ---
 
 # Hospital Frailty Risk Score (HFRS)

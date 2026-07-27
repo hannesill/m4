@@ -3,6 +3,7 @@ name: ventilation-classification
 description: Classify ventilation status into InvasiveVent, NonInvasiveVent, HFNC, SupplementalOxygen, Tracheostomy, or None from charting data. Use for ventilation duration analysis, respiratory support characterization, or as a component of severity scores (SOFA respiratory, OASIS).
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # Ventilation Classification

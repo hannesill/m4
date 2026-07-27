@@ -3,6 +3,7 @@ name: sepsis-3-cohort
 description: Identify Sepsis-3 patients using the consensus definition (SOFA >= 2 + suspected infection). Use for sepsis cohort studies, outcome research, or quality metrics.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # Sepsis-3 Cohort Identification

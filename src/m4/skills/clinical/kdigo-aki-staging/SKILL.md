@@ -3,6 +3,7 @@ name: kdigo-aki-staging
 description: Calculate KDIGO AKI (Acute Kidney Injury) staging for ICU patients using creatinine and urine output criteria. Use for nephrology research, AKI outcome studies, or renal function monitoring.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # KDIGO AKI Staging
