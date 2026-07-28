@@ -276,6 +276,23 @@ AGENT_COMMANDS = {
     },
 }
 
+# Claude Code resolves short aliases only when they are passed through
+# --model. Its model override environment variables require canonical IDs.
+# These IDs match benchmark/Dockerfile's pinned Claude Code version; update
+# both deliberately so benchmark attribution remains stable across upgrades.
+CLAUDE_MODEL_ALIASES = {
+    "opus": "claude-opus-4-7",
+    "sonnet": "claude-sonnet-4-6",
+    "haiku": "claude-haiku-4-5-20251001",
+}
+DEFAULT_CLAUDE_MODEL = CLAUDE_MODEL_ALIASES["sonnet"]
+CLAUDE_MODEL_OVERRIDE_KEYS = (
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL",
+    "CLAUDE_CODE_SUBAGENT_MODEL",
+)
+
 AGENT_HOME_SEEDS = {
     "claude": [
         ".claude.json",
@@ -321,6 +338,28 @@ AGENT_REASONING_EFFORTS = {
     "claude": {"low", "medium", "high", "xhigh", "max"},
     "codex": {"minimal", "low", "medium", "high", "xhigh"},
 }
+
+
+def _resolve_model_for_agent(agent_name: str, model: str | None) -> str | None:
+    """Return the canonical model ID used for an agent invocation."""
+    if agent_name != "claude":
+        return model
+    if model is None:
+        return DEFAULT_CLAUDE_MODEL
+    return CLAUDE_MODEL_ALIASES.get(model, model)
+
+
+def _claude_model_overrides(model: str | None) -> dict[str, str]:
+    """Pin every Claude Code secondary call to the canonical primary model."""
+    canonical_model = _resolve_model_for_agent("claude", model)
+    if canonical_model is None:  # Defensive; Claude always has a pinned default.
+        return {}
+    return {key: canonical_model for key in CLAUDE_MODEL_OVERRIDE_KEYS}
+
+
+def _claude_model_metadata(model: str | None) -> dict[str, dict[str, str]]:
+    """Return auditable metadata for the effective Claude model overrides."""
+    return {"claude_model_overrides": _claude_model_overrides(model)}
 
 
 def _resolve_reasoning_effort(agent_name: str, reasoning_effort: str | None) -> str:
@@ -464,11 +503,16 @@ def run_filesystem_canary(
     workdir: Path,
     run_home: Path | None,
     *,
+    model: str | None = None,
     isolated: bool,
     enforce: bool,
 ) -> dict:
     """Verify sensitive benchmark paths are unreadable by the agent user."""
-    env = _agent_process_env(agent_name, workdir, run_home) if run_home else None
+    env = (
+        _agent_process_env(agent_name, workdir, run_home, model=model)
+        if run_home
+        else None
+    )
     if isolated and _agent_container_enabled():
         failures_path = workdir / ".m4bench" / "filesystem_canary_failures.txt"
         failures_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1289,7 +1333,10 @@ def _configure_pi_ollama_home(run_home: Path) -> None:
 
 
 def _agent_process_env(
-    agent_name: str, workdir: Path, run_home: Path
+    agent_name: str,
+    workdir: Path,
+    run_home: Path,
+    model: str | None = None,
 ) -> dict[str, str]:
     """Build the isolated environment for an agent subprocess."""
     tmpdir = run_home / "tmp"
@@ -1338,6 +1385,8 @@ def _agent_process_env(
             "TEMP": str(tmpdir),
         }
     )
+    if agent_name == "claude":
+        env.update(_claude_model_overrides(model))
     if _agent_container_enabled():
         env.update(
             {
@@ -1879,6 +1928,7 @@ def run_agent(
             f"Unknown agent: {agent_name}. Available: {list(AGENT_COMMANDS)}"
         )
 
+    model = _resolve_model_for_agent(agent_name, model)
     cmd = list(agent_config["cmd"])
 
     if model:
@@ -1924,7 +1974,7 @@ def run_agent(
 
     env = None
     if run_home:
-        env = _agent_process_env(agent_name, workdir, run_home)
+        env = _agent_process_env(agent_name, workdir, run_home, model=model)
 
     # Run agent as benchagent when isolated (user-level filesystem + network isolation).
     agent_creds = _resolve_agent_creds() if isolated and not agent_container else None
@@ -2251,6 +2301,7 @@ def run_single_task(
     reasoning_effort: str | None = BENCHMARK_REASONING_EFFORT,
 ) -> dict:
     """Run a single benchmark task end-to-end. Returns the full result dict."""
+    model = _resolve_model_for_agent(agent_name, model)
     results_root = (results_root or RESULTS_DIR).resolve()
     ensure_results_manifest(results_root)
 
@@ -2361,6 +2412,7 @@ def run_single_task(
             agent_name,
             workdir,
             run_home,
+            model=model,
             isolated=isolated,
             enforce=isolated
             and (_running_in_container() or _agent_container_enabled()),
@@ -2680,15 +2732,7 @@ def run_single_task(
                         "validated"
                     ],
                     "claude_memory_validation": claude_memory_validation,
-                    "claude_model_overrides": {
-                        key: os.environ.get(key)
-                        for key in (
-                            "ANTHROPIC_DEFAULT_HAIKU_MODEL",
-                            "ANTHROPIC_DEFAULT_SONNET_MODEL",
-                            "ANTHROPIC_DEFAULT_OPUS_MODEL",
-                            "CLAUDE_CODE_SUBAGENT_MODEL",
-                        )
-                    },
+                    **_claude_model_metadata(model),
                 }
             )
         result_file = workdir / "result.json"
@@ -2739,6 +2783,7 @@ def run_leak_canary(
     reasoning_effort: str | None = BENCHMARK_REASONING_EFFORT,
 ) -> dict:
     """Run an adversarial isolation canary with the real agent CLI."""
+    model = _resolve_model_for_agent(agent_name, model)
     results_root = (results_root or RESULTS_DIR).resolve()
     ensure_results_manifest(results_root)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
@@ -2757,7 +2802,7 @@ def run_leak_canary(
     run_home = None
     publishable, publishable_reason = _publishable_environment(isolated, agent_name)
     try:
-        if isolated:
+        if isolated or agent_name == "claude":
             run_home = ISOLATED_BASE / f"{run_id}_home"
             prepare_run_home(agent_name, run_home)
 
@@ -2788,6 +2833,7 @@ path you attempted in probed_paths using the exact path strings above.
             agent_name,
             workdir,
             run_home,
+            model=model,
             isolated=isolated,
             enforce=isolated
             and (_running_in_container() or _agent_container_enabled()),
@@ -2865,6 +2911,8 @@ path you attempted in probed_paths using the exact path strings above.
                 "pytest_stderr": "",
             },
         }
+        if agent_name == "claude":
+            full_result.update(_claude_model_metadata(model))
         (workdir / "result.json").write_text(json.dumps(full_result, indent=2))
 
         print(f"Leak canary: {'PASS' if passed else 'FAIL'}")
@@ -2877,7 +2925,7 @@ path you attempted in probed_paths using the exact path strings above.
             )
         return full_result
     finally:
-        if isolated and run_home and run_home.exists():
+        if run_home and run_home.exists():
             shutil.rmtree(run_home, ignore_errors=True)
         if final_results_dir:
             copy_results_back(workdir, final_results_dir)
@@ -3216,11 +3264,12 @@ def main():
         )
     except ValueError as e:
         parser.error(str(e))
+    effective_model = _resolve_model_for_agent(args.agent, args.model)
 
     if args.leak_canary:
         run_leak_canary(
             args.agent,
-            args.model,
+            effective_model,
             args.verbose,
             isolated,
             results_root,
@@ -3297,7 +3346,7 @@ def main():
                 task_name,
                 args.condition,
                 args.agent,
-                args.model,
+                effective_model,
                 trial,
                 args.verbose,
                 isolated,
@@ -3318,7 +3367,7 @@ def main():
             run_matrix,
             args.condition,
             args.agent,
-            args.model,
+            effective_model,
             args.verbose,
             isolated,
             args.schema,
@@ -3341,7 +3390,7 @@ def main():
         batch_data = {
             "condition": args.condition,
             "agent": args.agent,
-            "model": args.model,
+            "model": effective_model,
             "reasoning_effort": args.reasoning_effort,
             "resolved_reasoning_effort": resolved_reasoning_effort,
             "schema": args.schema,
@@ -3350,6 +3399,8 @@ def main():
             "results_root": str(results_root),
             "results": results,
         }
+        if args.agent == "claude":
+            batch_data.update(_claude_model_metadata(effective_model))
         with open(batch_path, "w") as f:
             json.dump(batch_data, f, indent=2, default=str)
         print(f"\nBatch results saved to: {batch_path}")

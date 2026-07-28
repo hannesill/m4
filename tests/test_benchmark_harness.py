@@ -5,6 +5,7 @@ import io
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -246,7 +247,7 @@ def test_prepare_run_home_claude_login_copies_only_auth_files(monkeypatch, tmp_p
     assert not (claude_home / ".claude" / "projects").exists()
 
 
-def test_claude_env_includes_api_key(monkeypatch, tmp_path):
+def test_direct_claude_run_pins_command_and_env(monkeypatch, tmp_path):
     run = _load_module("benchmark_run_claude_env", "benchmark/run.py")
 
     workdir = tmp_path / "work"
@@ -267,17 +268,32 @@ def test_claude_env_includes_api_key(monkeypatch, tmp_path):
             raise AssertionError("process should not be killed")
 
     def fake_popen(cmd, **kwargs):
+        captured["cmd"] = cmd
         captured["kwargs"] = kwargs
         return FakeProcess()
 
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     monkeypatch.setattr(run.subprocess, "Popen", fake_popen)
 
-    result = run.run_agent("write output.csv", "claude", workdir, run_home=run_home)
+    result = run.run_agent(
+        "write output.csv",
+        "claude",
+        workdir,
+        model="sonnet",
+        run_home=run_home,
+    )
 
     assert result["returncode"] == 0
-    assert captured["kwargs"]["env"]["ANTHROPIC_API_KEY"] == "sk-ant-test"
-    assert captured["kwargs"]["env"]["HOME"] == str(run_home)
+    env = captured["kwargs"]["env"]
+    assert env["ANTHROPIC_API_KEY"] == "sk-ant-test"
+    assert env["HOME"] == str(run_home)
+    assert captured["cmd"][captured["cmd"].index("--model") + 1] == "claude-sonnet-4-6"
+    assert {env[key] for key in run.CLAUDE_MODEL_OVERRIDE_KEYS} == {"claude-sonnet-4-6"}
+    assert run._claude_model_metadata("sonnet") == {
+        "claude_model_overrides": {
+            key: "claude-sonnet-4-6" for key in run.CLAUDE_MODEL_OVERRIDE_KEYS
+        }
+    }
 
 
 def test_validate_claude_memory_paths_requires_run_home(tmp_path):
@@ -393,6 +409,23 @@ def test_agent_process_env_filters_host_environment(monkeypatch, tmp_path):
     for env in (claude_env, codex_env, gemini_env):
         assert "HTTP_PROXY" not in env
         assert "AWS_SECRET_ACCESS_KEY" not in env
+
+
+def test_agent_process_env_pins_direct_claude_run_to_canonical_model(tmp_path):
+    run = _load_module("benchmark_run_direct_claude_model", "benchmark/run.py")
+
+    env = run._agent_process_env(
+        "claude",
+        tmp_path / "work",
+        tmp_path / "home",
+        model="opus",
+    )
+
+    assert {env[key] for key in run.CLAUDE_MODEL_OVERRIDE_KEYS} == {"claude-opus-4-7"}
+    assert run._claude_model_overrides("opus") == {
+        key: "claude-opus-4-7" for key in run.CLAUDE_MODEL_OVERRIDE_KEYS
+    }
+    assert run._resolve_model_for_agent("claude", None) == "claude-sonnet-4-6"
 
 
 def test_agent_process_env_uses_container_paths(monkeypatch, tmp_path):
@@ -1359,6 +1392,129 @@ def test_leak_canary_report_requires_all_sensitive_paths():
 
     assert not run.validate_leak_canary_report(incomplete)["passed"]
     assert run.validate_leak_canary_report(complete)["passed"]
+
+
+def test_nonisolated_claude_leak_canary_pins_command_env_and_metadata(
+    monkeypatch, tmp_path
+):
+    run = _load_module("benchmark_run_local_claude_canary", "benchmark/run.py")
+    captured = {}
+
+    class FakeProcess:
+        def __init__(self):
+            self.stdout = io.StringIO('{"type":"result","subtype":"success"}\n')
+            self.returncode = 0
+
+        def wait(self, timeout):
+            return 0
+
+        def kill(self):
+            raise AssertionError("process should not be killed")
+
+    def fake_prepare_run_home(_agent_name, run_home):
+        run_home.mkdir(parents=True)
+        return []
+
+    def fake_popen(cmd, **kwargs):
+        captured["cmd"] = cmd
+        captured["env"] = kwargs["env"]
+        report = {
+            "leak_found": False,
+            "probed_paths": list(run.LEAK_CANARY_PATHS),
+            "evidence": [
+                f"permission denied for {path}" for path in run.LEAK_CANARY_PATHS
+            ],
+        }
+        (Path(kwargs["cwd"]) / "canary_report.json").write_text(json.dumps(report))
+        return FakeProcess()
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "must-not-leak")
+    monkeypatch.setattr(run, "prepare_run_home", fake_prepare_run_home)
+    monkeypatch.setattr(
+        run,
+        "run_filesystem_canary",
+        lambda *args, **kwargs: {
+            "passed": True,
+            "required": False,
+            "failures": [],
+        },
+    )
+    monkeypatch.setattr(run.subprocess, "Popen", fake_popen)
+
+    result = run.run_leak_canary(
+        "claude",
+        "sonnet",
+        verbose=False,
+        isolated=False,
+        results_root=tmp_path,
+    )
+
+    assert captured["cmd"][captured["cmd"].index("--model") + 1] == (
+        "claude-sonnet-4-6"
+    )
+    assert captured["env"]["ANTHROPIC_API_KEY"] == "sk-ant-test"
+    assert "AWS_SECRET_ACCESS_KEY" not in captured["env"]
+    assert {captured["env"][key] for key in run.CLAUDE_MODEL_OVERRIDE_KEYS} == {
+        "claude-sonnet-4-6"
+    }
+    assert result["model"] == "claude-sonnet-4-6"
+    assert result["claude_model_overrides"] == {
+        key: "claude-sonnet-4-6" for key in run.CLAUDE_MODEL_OVERRIDE_KEYS
+    }
+    stored_result = json.loads(
+        next(tmp_path.glob("leak-canary_*/result.json")).read_text()
+    )
+    assert stored_result["model"] == "claude-sonnet-4-6"
+    assert stored_result["claude_model_overrides"] == result["claude_model_overrides"]
+
+
+def test_batch_metadata_uses_canonical_claude_model(monkeypatch, tmp_path):
+    run = _load_module("benchmark_run_claude_batch_metadata", "benchmark/run.py")
+    child_models = []
+
+    def fake_run_single_task(*args, **kwargs):
+        child_models.append(args[3])
+        return {
+            "task": args[0],
+            "condition": args[1],
+            "model": args[3],
+            "test_results": {"reward": 1.0},
+            "agent_result": {"elapsed_seconds": 0},
+        }
+
+    monkeypatch.setattr(run, "resolve_tasks", lambda _args: ["fake-task"])
+    monkeypatch.setattr(run, "run_single_task", fake_run_single_task)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "benchmark/run.py",
+            "--task",
+            "fake-task",
+            "--condition",
+            "no-skill",
+            "--agent",
+            "claude",
+            "--model",
+            "sonnet",
+            "--seeds",
+            "2",
+            "--no-isolation",
+            "--results-root",
+            str(tmp_path),
+        ],
+    )
+
+    run.main()
+
+    batch_path = next(tmp_path.glob("batch_*.json"))
+    batch = json.loads(batch_path.read_text())
+    assert child_models == ["claude-sonnet-4-6", "claude-sonnet-4-6"]
+    assert batch["model"] == "claude-sonnet-4-6"
+    assert batch["claude_model_overrides"] == {
+        key: "claude-sonnet-4-6" for key in run.CLAUDE_MODEL_OVERRIDE_KEYS
+    }
 
 
 def test_sandbox_hook_extracts_quoted_paths():

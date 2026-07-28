@@ -78,7 +78,10 @@ def test_provider_comparison_profile_uses_requested_seeds_for_claude(tmp_path):
     tiers = matrix.build_tiers(seeds=5, agent="claude", profile="provider-comparison")
 
     assert sum(len(tier.runs) for tier in tiers) == 190
-    assert {run["model"] for tier in tiers for run in tier.runs} == {"opus", "sonnet"}
+    assert {run["model"] for tier in tiers for run in tier.runs} == {
+        "claude-opus-4-7",
+        "claude-sonnet-4-6",
+    }
     assert {run["condition"] for run in tiers[0].runs} == {"no-skill", "with-skill"}
     assert {run["trial"] for tier in tiers for run in tier.runs} == {1, 2, 3, 4, 5}
 
@@ -300,6 +303,15 @@ def test_build_tiers_uses_agent_specific_pi_ollama_models():
     assert models == {"qwen3:4b"}
 
 
+def test_operational_spec_uses_canonical_claude_model():
+    matrix = _load_module("benchmark_matrix_operational_model", "benchmark/matrix.py")
+    model_plan = matrix._model_plan_for_agent("claude")
+
+    assert matrix._operational_spec_models("claude", model_plan) == (
+        "claude-sonnet-4-6",
+    )
+
+
 def test_container_results_root_maps_under_benchmark_root():
     matrix = _load_module("benchmark_matrix_container_root", "benchmark/matrix.py")
     results_root = (ROOT / "benchmark" / "results" / "paper-smoke").resolve()
@@ -363,6 +375,36 @@ def test_run_via_bench_builds_publishable_command(monkeypatch):
     assert "--reasoning-effort" in seen["cmd"]
     assert "medium" in seen["cmd"]
     assert seen["env"]["M4BENCH_CONTAINER_NAME"].startswith("m4bench-codex-")
+
+
+def test_run_via_bench_resolves_claude_alias_before_invocation(monkeypatch):
+    matrix = _load_module("benchmark_matrix_claude_model", "benchmark/matrix.py")
+
+    results_root = (ROOT / "benchmark" / "results" / "paper-smoke").resolve()
+    seen = {}
+
+    def fake_subprocess_run(cmd, cwd=None, env=None):
+        seen["cmd"] = cmd
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(matrix.subprocess, "run", fake_subprocess_run)
+    monkeypatch.setattr(
+        matrix,
+        "_find_latest_result",
+        lambda *args, **kwargs: {"model": "claude-sonnet-4-6"},
+    )
+
+    result = matrix._run_via_bench(
+        {"task": "mimic-kdigo-48h", "trial": 1},
+        condition="with-skill",
+        model="sonnet",
+        schema="native",
+        agent="claude",
+        results_root=results_root,
+    )
+
+    assert seen["cmd"][seen["cmd"].index("--model") + 1] == "claude-sonnet-4-6"
+    assert result["model"] == "claude-sonnet-4-6"
 
 
 def test_run_via_bench_can_skip_per_run_preflight(monkeypatch):

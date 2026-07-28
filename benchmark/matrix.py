@@ -54,8 +54,10 @@ from lib.db import (
 )
 from run import (
     BENCHMARK_REASONING_EFFORT,
+    CLAUDE_MODEL_ALIASES,
     PROVIDER_DEFAULT_REASONING,
     REASONING_EFFORT_CHOICES,
+    _resolve_model_for_agent,
     _resolve_reasoning_effort,
 )
 
@@ -180,10 +182,16 @@ def _model_plan_for_agent(agent: str) -> AgentModelPlan:
     """Return the default model set for each supported agent CLI."""
     if agent == "claude":
         return AgentModelPlan(
-            primary_models=("opus", "sonnet"),
-            hurts_models=("opus", "sonnet"),
-            contamination_models=("sonnet",),
-            noise_models=("opus",),
+            primary_models=(
+                CLAUDE_MODEL_ALIASES["opus"],
+                CLAUDE_MODEL_ALIASES["sonnet"],
+            ),
+            hurts_models=(
+                CLAUDE_MODEL_ALIASES["opus"],
+                CLAUDE_MODEL_ALIASES["sonnet"],
+            ),
+            contamination_models=(CLAUDE_MODEL_ALIASES["sonnet"],),
+            noise_models=(CLAUDE_MODEL_ALIASES["opus"],),
         )
     if agent == "codex":
         return AgentModelPlan(
@@ -292,6 +300,7 @@ def _run_via_bench(
     skip_preflight: bool = False,
 ) -> dict:
     """Execute one publishable run by invoking bench.sh on the host."""
+    model = _resolve_model_for_agent(agent, model) or model
     bench_script = BENCHMARK_ROOT / "bench.sh"
     container_results_root = _container_results_root(results_root)
     container_name = _docker_container_name(agent, run["task"], run["trial"])
@@ -327,20 +336,6 @@ def _run_via_bench(
         **os.environ,
         "M4BENCH_CONTAINER_NAME": container_name,
     }
-    if agent == "claude":
-        # Keep Claude Code background and subagent calls on the exact primary
-        # model selected for this cell.
-        env.update(
-            {
-                key: model
-                for key in (
-                    "ANTHROPIC_DEFAULT_HAIKU_MODEL",
-                    "ANTHROPIC_DEFAULT_SONNET_MODEL",
-                    "ANTHROPIC_DEFAULT_OPUS_MODEL",
-                    "CLAUDE_CODE_SUBAGENT_MODEL",
-                )
-            }
-        )
     if skip_preflight:
         env["M4BENCH_SKIP_PREFLIGHT"] = "1"
 
@@ -430,7 +425,7 @@ def build_tiers(
 def _operational_spec_models(agent: str, model_plan: AgentModelPlan) -> tuple[str, ...]:
     """Return models for the operational-spec baseline follow-up."""
     if agent == "claude":
-        return ("sonnet",)
+        return (CLAUDE_MODEL_ALIASES["sonnet"],)
     return model_plan.primary_models
 
 
