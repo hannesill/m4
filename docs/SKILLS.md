@@ -70,7 +70,9 @@ are relative to the packaged skill root.
 declared file digest, writes `.m4-skills-manifest.json`, and atomically publishes the
 target. It never installs into `.claude`, `.codex`, or another provider directory.
 An existing verified target with the same digest is reused; any other existing
-target is left untouched and reported as an error.
+target is left untouched and reported as an error. Target paths containing
+symlinks are rejected, and publication fails closed if the platform cannot provide
+an atomic no-replace directory rename.
 
 Compatibility policy:
 

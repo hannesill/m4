@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -8,6 +9,7 @@ from m4.cli import app
 from m4.skills.catalog import (
     CATALOG_SCHEMA_VERSION,
     MANIFEST_FILE_NAME,
+    _atomic_publish_directory,
     _validated_relative_path,
     build_catalog,
     materialize_catalog,
@@ -65,8 +67,13 @@ def test_catalog_is_deterministic_and_covers_every_packaged_skill():
             assert file["contentDigest"].startswith("sha256:")
 
 
-def test_catalog_v1_compatibility_fixture_matches_publisher_output():
+def test_catalog_v1_compatibility_fixture_matches_publisher_output(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    import m4.skills.catalog as catalog
+
     expected = json.loads(CATALOG_V1_FIXTURE_PATH.read_text(encoding="utf-8"))
+    monkeypatch.setattr(catalog, "__version__", expected["packageVersion"])
 
     assert build_catalog(CATALOG_V1_FIXTURE_ROOT) == expected
 
@@ -117,6 +124,89 @@ def test_materialize_refuses_existing_unverified_target(tmp_path: Path):
         materialize_catalog(target)
 
     assert marker.read_text(encoding="utf-8") == "preserve me"
+
+
+def test_materialize_rejects_dangling_target_symlink(tmp_path: Path):
+    managed = tmp_path / "managed"
+    managed.mkdir()
+    redirected = tmp_path / "redirected"
+    target = managed / "bundle"
+    target.symlink_to(redirected, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="may not contain symlinks"):
+        materialize_catalog(target)
+
+    assert target.is_symlink()
+    assert not redirected.exists()
+
+
+def test_materialize_rejects_symlinked_parent(tmp_path: Path):
+    redirected = tmp_path / "redirected"
+    redirected.mkdir()
+    managed = tmp_path / "managed"
+    managed.symlink_to(redirected, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="may not contain symlinks"):
+        materialize_catalog(managed / "bundle")
+
+    assert not (redirected / "bundle").exists()
+
+
+def test_materialize_does_not_replace_concurrently_claimed_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    import m4.skills.catalog as catalog
+
+    target = tmp_path / "bundle"
+
+    def claim_then_publish(source: Path, destination: Path) -> None:
+        destination.mkdir()
+        _atomic_publish_directory(source, destination)
+
+    monkeypatch.setattr(catalog, "_atomic_publish_directory", claim_then_publish)
+
+    with pytest.raises(FileExistsError, match="concurrently created target"):
+        materialize_catalog(target)
+
+    assert target.is_dir()
+    assert list(target.iterdir()) == []
+    assert not list(tmp_path.glob(".bundle-*"))
+
+
+def test_verify_rejects_undeclared_empty_directory(tmp_path: Path):
+    target = tmp_path / "bundle"
+    materialize_catalog(target)
+    manifest = json.loads((target / MANIFEST_FILE_NAME).read_text(encoding="utf-8"))
+    (target / "undeclared-empty").mkdir()
+
+    with pytest.raises(ValueError, match="directory set mismatch"):
+        verify_materialized_bundle(target, manifest)
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="FIFO creation is unsupported")
+def test_verify_rejects_special_file(tmp_path: Path):
+    target = tmp_path / "bundle"
+    materialize_catalog(target)
+    manifest = json.loads((target / MANIFEST_FILE_NAME).read_text(encoding="utf-8"))
+    os.mkfifo(target / "undeclared-fifo")
+
+    with pytest.raises(ValueError, match="special file"):
+        verify_materialized_bundle(target, manifest)
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="FIFO creation is unsupported")
+def test_verify_rejects_declared_file_replaced_with_fifo(tmp_path: Path):
+    target = tmp_path / "bundle"
+    materialize_catalog(target)
+    manifest = json.loads((target / MANIFEST_FILE_NAME).read_text(encoding="utf-8"))
+    skill = manifest["skills"][0]
+    declared = target / skill["relativeRoot"] / skill["files"][0]["path"]
+    declared.unlink()
+    os.mkfifo(declared)
+
+    with pytest.raises(ValueError, match="special file"):
+        verify_materialized_bundle(target, manifest)
 
 
 def test_materialize_refuses_manifest_tampering_with_unchanged_bundle_digest(

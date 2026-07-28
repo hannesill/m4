@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import ctypes
+import errno
 import hashlib
 import json
 import os
 import shutil
+import stat
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -245,10 +249,138 @@ def build_catalog(source: Path | None = None) -> dict[str, Any]:
     }
 
 
+def _absolute_path_without_symlink_resolution(path: Path) -> Path:
+    """Return an absolute lexical path without following filesystem symlinks."""
+    expanded = path.expanduser()
+    if not expanded.is_absolute():
+        expanded = Path.cwd() / expanded
+    return Path(os.path.abspath(os.fspath(expanded)))
+
+
+def _reject_symlink_components(path: Path) -> None:
+    """Reject symlinks in every existing component, including dangling targets."""
+    absolute = _absolute_path_without_symlink_resolution(path)
+    current = Path(absolute.anchor)
+    for part in absolute.parts[1:]:
+        current /= part
+        try:
+            metadata = current.lstat()
+        except FileNotFoundError:
+            continue
+        is_windows_reparse_point = os.name == "nt" and bool(
+            getattr(metadata, "st_file_attributes", 0)
+            & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x00000400)
+        )
+        if stat.S_ISLNK(metadata.st_mode) or is_windows_reparse_point:
+            raise ValueError(f"Managed bundle path may not contain symlinks: {current}")
+        if current != absolute and not stat.S_ISDIR(metadata.st_mode):
+            raise NotADirectoryError(
+                f"Managed bundle parent is not a directory: {current}"
+            )
+
+
+def _raise_atomic_publish_error(target: Path, error_number: int) -> None:
+    if error_number in {errno.EEXIST, errno.ENOTEMPTY}:
+        raise FileExistsError(
+            f"Refusing to replace concurrently created target: {target}"
+        )
+    raise OSError(error_number, os.strerror(error_number), target)
+
+
+def _atomic_publish_directory(source: Path, target: Path) -> None:
+    """Atomically rename SOURCE to an absent TARGET without replacement."""
+    if source.parent != target.parent:
+        raise ValueError("Atomic publication requires source and target to be siblings")
+
+    if os.name == "nt":
+        move_file_ex = ctypes.WinDLL("kernel32", use_last_error=True).MoveFileExW
+        move_file_ex.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
+        move_file_ex.restype = ctypes.c_int
+        if not move_file_ex(str(source), str(target), 0):
+            error_number = ctypes.get_last_error()
+            if error_number in {80, 183}:  # ERROR_FILE_EXISTS, ERROR_ALREADY_EXISTS
+                raise FileExistsError(
+                    f"Refusing to replace concurrently created target: {target}"
+                )
+            raise ctypes.WinError(error_number)
+        return
+
+    open_flags = os.O_RDONLY
+    open_flags |= getattr(os, "O_DIRECTORY", 0)
+    open_flags |= getattr(os, "O_NOFOLLOW", 0)
+    parent_fd = os.open(target.parent, open_flags)
+    try:
+        parent_stat = os.fstat(parent_fd)
+        current_parent_stat = target.parent.stat(follow_symlinks=False)
+        if (
+            parent_stat.st_dev,
+            parent_stat.st_ino,
+        ) != (
+            current_parent_stat.st_dev,
+            current_parent_stat.st_ino,
+        ):
+            raise OSError("Managed bundle parent changed during materialization")
+
+        libc = ctypes.CDLL(None, use_errno=True)
+        source_name = os.fsencode(source.name)
+        target_name = os.fsencode(target.name)
+
+        if sys.platform == "darwin":
+            rename = libc.renameatx_np
+            rename.argtypes = [
+                ctypes.c_int,
+                ctypes.c_char_p,
+                ctypes.c_int,
+                ctypes.c_char_p,
+                ctypes.c_uint,
+            ]
+            rename.restype = ctypes.c_int
+            result = rename(
+                parent_fd,
+                source_name,
+                parent_fd,
+                target_name,
+                0x00000004,  # RENAME_EXCL
+            )
+        elif sys.platform.startswith("linux"):
+            try:
+                rename = libc.renameat2
+            except AttributeError as error:
+                raise RuntimeError(
+                    "Atomic no-replace publication requires renameat2 on Linux"
+                ) from error
+            rename.argtypes = [
+                ctypes.c_int,
+                ctypes.c_char_p,
+                ctypes.c_int,
+                ctypes.c_char_p,
+                ctypes.c_uint,
+            ]
+            rename.restype = ctypes.c_int
+            result = rename(
+                parent_fd,
+                source_name,
+                parent_fd,
+                target_name,
+                0x00000001,  # RENAME_NOREPLACE
+            )
+        else:
+            raise RuntimeError(
+                f"Atomic no-replace publication is unsupported on {sys.platform}"
+            )
+
+        if result != 0:
+            _raise_atomic_publish_error(target, ctypes.get_errno())
+    finally:
+        os.close(parent_fd)
+
+
 def verify_materialized_bundle(target: Path, manifest: dict[str, Any]) -> None:
-    """Verify all declared materialized files and reject undeclared symlinks."""
-    root = target.resolve()
+    """Verify the manifest and exact materialized filesystem tree."""
+    root = _absolute_path_without_symlink_resolution(target)
+    _reject_symlink_components(root)
     declared_paths: set[Path] = set()
+    declared_directories: set[Path] = {root}
 
     for skill in manifest["skills"]:
         relative_root = _validated_relative_path(skill["relativeRoot"])
@@ -256,8 +388,13 @@ def verify_materialized_bundle(target: Path, manifest: dict[str, Any]) -> None:
         for file in skill["files"]:
             relative_file = _validated_relative_path(file["path"])
             file_path = skill_root.joinpath(*relative_file.parts)
-            if file_path.is_symlink():
+            file_metadata = file_path.lstat()
+            if stat.S_ISLNK(file_metadata.st_mode):
                 raise ValueError(f"Materialized bundle contains symlink: {file_path}")
+            if not stat.S_ISREG(file_metadata.st_mode):
+                raise ValueError(
+                    f"Materialized bundle contains special file: {file_path}"
+                )
             resolved = file_path.resolve(strict=True)
             if not resolved.is_relative_to(root):
                 raise ValueError(f"Materialized file escapes bundle root: {file_path}")
@@ -267,26 +404,66 @@ def verify_materialized_bundle(target: Path, manifest: dict[str, Any]) -> None:
             if _sha256(contents) != file["contentDigest"]:
                 raise ValueError(f"Materialized file digest mismatch: {file_path}")
             declared_paths.add(resolved)
+            parent = resolved.parent
+            while parent != root:
+                declared_directories.add(parent)
+                parent = parent.parent
 
     actual_paths: set[Path] = set()
-    for candidate in target.rglob("*"):
-        if candidate.is_symlink():
-            raise ValueError(f"Materialized bundle contains symlink: {candidate}")
-        if candidate.is_file() and candidate.name != MANIFEST_FILE_NAME:
-            actual_paths.add(candidate.resolve())
+    actual_directories: set[Path] = {root}
+    manifest_path = root / MANIFEST_FILE_NAME
+    pending = [root]
+    while pending:
+        directory = pending.pop()
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                candidate = Path(entry.path)
+                if entry.is_symlink():
+                    raise ValueError(
+                        f"Materialized bundle contains symlink: {candidate}"
+                    )
+                if entry.is_dir(follow_symlinks=False):
+                    actual_directories.add(candidate)
+                    pending.append(candidate)
+                elif entry.is_file(follow_symlinks=False):
+                    if candidate == manifest_path:
+                        continue
+                    actual_paths.add(candidate)
+                else:
+                    raise ValueError(
+                        f"Materialized bundle contains special file: {candidate}"
+                    )
+
+    try:
+        materialized_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"Invalid materialized manifest: {manifest_path}") from error
+    if materialized_manifest != manifest:
+        raise ValueError(f"Materialized manifest mismatch: {manifest_path}")
+
     if actual_paths != declared_paths:
         missing = sorted(str(path) for path in declared_paths - actual_paths)
         extra = sorted(str(path) for path in actual_paths - declared_paths)
         raise ValueError(
             f"Materialized file set mismatch; missing={missing}, extra={extra}"
         )
+    if actual_directories != declared_directories:
+        missing = sorted(
+            str(path) for path in declared_directories - actual_directories
+        )
+        extra = sorted(str(path) for path in actual_directories - declared_directories)
+        raise ValueError(
+            f"Materialized directory set mismatch; missing={missing}, extra={extra}"
+        )
 
 
 def materialize_catalog(target: Path) -> dict[str, Any]:
     """Atomically copy the verified skill bundle into an explicit target."""
     manifest = build_catalog()
-    target = target.expanduser().resolve()
+    target = _absolute_path_without_symlink_resolution(target)
+    _reject_symlink_components(target)
     target.parent.mkdir(parents=True, exist_ok=True)
+    _reject_symlink_components(target)
 
     if target.exists():
         manifest_path = target / MANIFEST_FILE_NAME
@@ -330,7 +507,7 @@ def materialize_catalog(target: Path) -> dict[str, Any]:
             encoding="utf-8",
         )
         verify_materialized_bundle(temporary, manifest)
-        os.replace(temporary, target)
+        _atomic_publish_directory(temporary, target)
     except BaseException:
         shutil.rmtree(temporary, ignore_errors=True)
         raise
