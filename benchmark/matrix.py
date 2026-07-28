@@ -327,6 +327,20 @@ def _run_via_bench(
         **os.environ,
         "M4BENCH_CONTAINER_NAME": container_name,
     }
+    if agent == "claude":
+        # Keep Claude Code background and subagent calls on the exact primary
+        # model selected for this cell.
+        env.update(
+            {
+                key: model
+                for key in (
+                    "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+                    "ANTHROPIC_DEFAULT_SONNET_MODEL",
+                    "ANTHROPIC_DEFAULT_OPUS_MODEL",
+                    "CLAUDE_CODE_SUBAGENT_MODEL",
+                )
+            }
+        )
     if skip_preflight:
         env["M4BENCH_SKIP_PREFLIGHT"] = "1"
 

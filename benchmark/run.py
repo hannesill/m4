@@ -1310,6 +1310,10 @@ def _agent_process_env(
             "ANTHROPIC_API_KEY",
             "M4BENCH_CLAUDE_AUTH_ROOT",
             "M4BENCH_CLAUDE_AUTH_VOLUME",
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+            "ANTHROPIC_DEFAULT_SONNET_MODEL",
+            "ANTHROPIC_DEFAULT_OPUS_MODEL",
+            "CLAUDE_CODE_SUBAGENT_MODEL",
         },
         "codex": {"CODEX_API_KEY", "OPENAI_API_KEY"},
         "gemini": {"GOOGLE_API_KEY", "GEMINI_API_KEY"},
@@ -2676,6 +2680,15 @@ def run_single_task(
                         "validated"
                     ],
                     "claude_memory_validation": claude_memory_validation,
+                    "claude_model_overrides": {
+                        key: os.environ.get(key)
+                        for key in (
+                            "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+                            "ANTHROPIC_DEFAULT_SONNET_MODEL",
+                            "ANTHROPIC_DEFAULT_OPUS_MODEL",
+                            "CLAUDE_CODE_SUBAGENT_MODEL",
+                        )
+                    },
                 }
             )
         result_file = workdir / "result.json"
