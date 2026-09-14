@@ -6,12 +6,14 @@ from pathlib import Path
 
 import duckdb
 
+import m4
+
 RICH_FRAGMENTS = ["[bold]", "[success]", "__  __", "Medical Data", "─", "│"]
 
 
 def _run_m4(args: list[str], tmp_path: Path) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1] / "src")
+    env["PYTHONPATH"] = str(Path(m4.__file__).resolve().parent.parent)
     env["M4_DATA_DIR"] = str(tmp_path / "m4_data")
     env.pop("M4_HOME", None)
     env.pop("M4_BACKEND", None)

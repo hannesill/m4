@@ -22,7 +22,63 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --all-groups
+          uv sync --frozen --all-groups
 
       - name: Run tests
-        run: uv run pytest -v
+        run: uv run --frozen pytest -v
+
+  distribution:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+        artifact: [wheel, sdist]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install UV and Python
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          version: "latest"
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build and validate distributions
+        run: |
+          uv build --no-sources
+          uvx --from twine twine check --strict dist/*
+          python scripts/check_distribution.py dist
+
+      - name: Install distribution with independently resolved runtime dependencies
+        env:
+          ARTIFACT: ${{ matrix.artifact }}
+        run: |
+          uv venv --python '${{ matrix.python-version }}' "$RUNNER_TEMP/runtime"
+          if [ "$ARTIFACT" = wheel ]; then
+            uv pip install --python "$RUNNER_TEMP/runtime/bin/python" dist/*.whl
+          else
+            uv pip install --python "$RUNNER_TEMP/runtime/bin/python" dist/*.tar.gz
+          fi
+          uv pip check --python "$RUNNER_TEMP/runtime/bin/python"
+          uv pip freeze --python "$RUNNER_TEMP/runtime/bin/python" > "$RUNNER_TEMP/runtime-constraints.txt"
+
+      - name: Exercise installed runtime before adding test dependencies
+        run: |
+          cd "$RUNNER_TEMP"
+          runtime/bin/python -I "$GITHUB_WORKSPACE/scripts/check_installed_distribution.py"
+
+      - name: Run full public and synthetic suite against the installed package
+        env:
+          M4_DATA_DIR: ${{ runner.temp }}/m4-test-data
+        run: |
+          uv pip install --python "$RUNNER_TEMP/runtime/bin/python" \
+            -c "$RUNNER_TEMP/runtime-constraints.txt" \
+            'pytest>=8' 'pytest-asyncio>=0.24' 'pytest-mock>=3.10' 'aiohttp>=3.8'
+          uv pip check --python "$RUNNER_TEMP/runtime/bin/python"
+          "$RUNNER_TEMP/runtime/bin/python" -I -m pytest -o pythonpath= -v
+
+      - name: Preserve resolved dependency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-${{ matrix.python-version }}-${{ matrix.artifact }}
+          path: ${{ runner.temp }}/runtime-constraints.txt

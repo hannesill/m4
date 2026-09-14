@@ -533,7 +533,7 @@ def cohort_builder_ui() -> str:
     return get_ui_html()
 
 
-@mcp.tool()
+@mcp.tool(meta={"ui": {"resourceUri": COHORT_BUILDER_URI}})
 @require_oauth2
 def cohort_builder(dataset: str | None = None) -> str:
     """Launch the interactive cohort builder.
@@ -619,40 +619,6 @@ def query_cohort(
     except M4Error as e:
         # Return JSON error for UI compatibility
         return json.dumps({"error": str(e)})
-
-
-# ==========================================
-# _meta.ui.resourceUri INJECTION
-# ==========================================
-
-
-def _inject_cohort_builder_meta() -> None:
-    """Inject _meta.ui.resourceUri into the cohort_builder tool.
-
-    FastMCP doesn't expose _meta via the decorator, so we monkey-patch
-    the tool's to_mcp_tool method to include it.
-    """
-    try:
-        tool_manager = mcp._tool_manager
-        tool_obj = tool_manager._tools.get("cohort_builder")
-        if tool_obj is None:
-            return
-
-        original_to_mcp = tool_obj.to_mcp_tool
-
-        def patched_to_mcp(**overrides: Any) -> Any:
-            overrides.setdefault("_meta", {"ui": {"resourceUri": COHORT_BUILDER_URI}})
-            return original_to_mcp(**overrides)
-
-        # Bypass Pydantic's __setattr__ validation
-        object.__setattr__(tool_obj, "to_mcp_tool", patched_to_mcp)
-    except (AttributeError, TypeError):
-        # FastMCP internals may change; fail silently
-        pass
-
-
-# Apply the _meta injection
-_inject_cohort_builder_meta()
 
 
 def main():
