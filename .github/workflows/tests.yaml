@@ -27,6 +27,21 @@ jobs:
       - name: Run tests
         run: uv run --frozen pytest -v
 
+  windows-config:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v8.1.0
+        with:
+          version: "latest"
+          python-version: "3.12"
+      - name: Install dependencies
+        run: uv sync --frozen --all-groups
+      - name: Test Claude Desktop configuration discovery
+        env:
+          M4_DATA_DIR: ${{ runner.temp }}/m4-config-test-data
+        run: uv run --frozen pytest tests/test_claude_desktop_config.py -v
+
   distribution:
     runs-on: ubuntu-latest
     strategy:
