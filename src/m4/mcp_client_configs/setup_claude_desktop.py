@@ -26,10 +26,31 @@ def get_claude_config_path():
     if claude_config.parent.exists():
         return claude_config
 
-    # Windows path
-    claude_config = (
-        home / "AppData" / "Roaming" / "Claude" / "claude_desktop_config.json"
+    # Windows MSIX installs virtualize the roaming directory. Prefer that
+    # location even when a stale traditional config also exists.
+    local_appdata = Path(os.environ.get("LOCALAPPDATA") or home / "AppData" / "Local")
+    msix_configs = sorted(
+        directory / "claude_desktop_config.json"
+        for directory in (local_appdata / "Packages").glob(
+            "Claude_*/LocalCache/Roaming/Claude"
+        )
+        if directory.is_dir()
     )
+    existing_configs = [path for path in msix_configs if path.is_file()]
+    candidates = existing_configs or msix_configs
+    if len(candidates) == 1:
+        return candidates[0]
+    if len(candidates) > 1:
+        paths = "\n".join(str(path) for path in candidates)
+        raise FileNotFoundError(
+            "Multiple Claude Desktop MSIX configuration locations found. "
+            "Configure the intended installation manually; no file was changed:\n"
+            f"{paths}"
+        )
+
+    # Traditional Windows install, including redirected roaming profiles.
+    appdata = Path(os.environ.get("APPDATA") or home / "AppData" / "Roaming")
+    claude_config = appdata / "Claude" / "claude_desktop_config.json"
     if claude_config.parent.exists():
         return claude_config
 
