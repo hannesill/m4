@@ -13,7 +13,6 @@ Tests cover:
 """
 
 import pandas as pd
-import pytest
 
 from m4.core.serialization import serialize_for_mcp
 
@@ -102,13 +101,11 @@ class TestSerializeList:
         assert "table_b" in result
         assert "table_c" in result
 
-    def test_list_of_dicts_uses_table_format(self):
-        """List of dicts is formatted as a table.
+    def test_list_of_dicts_uses_table_format(self, monkeypatch):
+        """Table serialization works without pandas' optional tabulate extra."""
+        import sys
 
-        Requires the optional 'tabulate' dependency for DataFrame.to_markdown().
-        This test also documents that missing 'tabulate' would crash serialization.
-        """
-        pytest.importorskip("tabulate")
+        monkeypatch.setitem(sys.modules, "tabulate", None)
         items = [
             {"name": "patients", "rows": 100},
             {"name": "admissions", "rows": 200},
@@ -117,6 +114,8 @@ class TestSerializeList:
         assert "patients" in result
         assert "admissions" in result
         assert "100" in result
+        assert result.splitlines()[0].split() == ["name", "rows"]
+        assert result.splitlines()[1].split() == ["patients", "100"]
 
     def test_list_of_integers(self):
         """List of integers is joined with newlines."""
