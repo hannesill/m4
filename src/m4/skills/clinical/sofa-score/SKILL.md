@@ -3,6 +3,7 @@ name: sofa-score
 description: Calculate SOFA (Sequential Organ Failure Assessment) score for ICU patients. Use for sepsis severity assessment, organ dysfunction quantification, mortality prediction, or Sepsis-3 criteria evaluation.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # SOFA Score Calculation

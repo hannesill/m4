@@ -3,6 +3,7 @@ name: clinical-research-pitfalls
 description: Avoid common methodological mistakes in clinical research with EHR databases. Covers immortal time bias, information leakage, selection bias, and other critical pitfalls.
 tier: validated
 category: clinical
+kind: methodology
 ---
 
 # Clinical Research Pitfalls

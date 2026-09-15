@@ -3,6 +3,7 @@ name: suspicion-of-infection
 description: Identify suspected infection events using antibiotic administration plus culture timing. Use as a component of Sepsis-3 definition or for infection research.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # Suspicion of Infection

@@ -3,6 +3,7 @@ name: clinical-research-session
 description: Start a structured clinical research session. Use when users describe research goals, want to analyze cohorts, investigate hypotheses, or need a rigorous research plan. Interviews the user, then produces a research protocol.
 tier: validated
 category: system
+kind: workflow
 ---
 
 # M4 Clinical Research Workflow

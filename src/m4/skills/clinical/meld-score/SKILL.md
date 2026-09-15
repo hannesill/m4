@@ -3,6 +3,7 @@ name: meld-score
 description: Calculate MELD (Model for End-Stage Liver Disease) score for ICU patients. Use for liver disease severity assessment, transplant prioritization, or hepatology research.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # MELD Score Calculation

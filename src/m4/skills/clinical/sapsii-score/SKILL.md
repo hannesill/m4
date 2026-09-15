@@ -3,6 +3,7 @@ name: sapsii-score
 description: Calculate SAPS-II (Simplified Acute Physiology Score II) for ICU patients. Use for mortality prediction, severity assessment, or international ICU benchmarking.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # SAPS-II Score Calculation

@@ -1,12 +1,8 @@
 """Tests for MCP configuration scripts."""
 
-import sys
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from m4.mcp_client_configs.dynamic_mcp_config import MCPConfigGenerator
 

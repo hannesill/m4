@@ -3,6 +3,7 @@ name: apache-iv-score
 description: Calculate APACHE IV (Acute Physiology and Chronic Health Evaluation IV) score for ICU mortality prediction. Use for severity assessment, hospital mortality prediction, ICU benchmarking, or case-mix adjustment. eICU has pre-computed scores; MIMIC-IV requires custom implementation with diagnosis mapping challenges.
 tier: expert
 category: clinical
+kind: domain
 ---
 
 # APACHE IV Score Calculation

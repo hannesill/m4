@@ -3,6 +3,7 @@ name: sirs-criteria
 description: Calculate SIRS (Systemic Inflammatory Response Syndrome) criteria for ICU patients. Use for historical sepsis definitions, inflammatory response assessment, or research comparing SIRS vs Sepsis-3.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # SIRS Criteria Calculation

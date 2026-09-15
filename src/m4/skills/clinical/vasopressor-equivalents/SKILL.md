@@ -3,6 +3,7 @@ name: vasopressor-equivalents
 description: Calculate norepinephrine-equivalent dose for vasopressor comparison. Use for hemodynamic support quantification, shock severity assessment, or vasopressor weaning studies.
 tier: validated
 category: clinical
+kind: domain
 ---
 
 # Vasopressor Equivalent Dose

@@ -116,7 +116,7 @@ def _serialize_list_of_dicts(items: list[dict]) -> str:
 
     # Convert to DataFrame for consistent table formatting
     df = pd.DataFrame(items)
-    return df.to_markdown(index=False)
+    return df.to_string(index=False)
 
 
 def _serialize_dict(data: dict) -> str:

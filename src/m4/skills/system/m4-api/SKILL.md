@@ -3,6 +3,7 @@ name: m4-api
 description: Use the M4 Python API to query clinical datasets programmatically. Use when writing code to access clinical databases, executing SQL via Python, or performing multi-step data analysis.
 tier: community
 category: system
+kind: integration
 ---
 
 # M4 Python API
