@@ -20,6 +20,9 @@ Usage:
     # Run an operational-spec baseline when the task has operational-spec.md
     python benchmark/run.py --task mimic-oasis-24h --condition operational-spec --agent codex
 
+    # Optional single-model comparison (default: native Claude Code routing)
+    M4BENCH_CLAUDE_MODEL_ROUTING=single-model python benchmark/run.py --task mimic-sirs-24h --condition no-skill --agent claude
+
     # List available tasks
     python benchmark/run.py --list
 
@@ -344,22 +347,59 @@ def _resolve_model_for_agent(agent_name: str, model: str | None) -> str | None:
     """Return the canonical model ID used for an agent invocation."""
     if agent_name != "claude":
         return model
+    _claude_routing_mode()  # Reject invalid experiment settings before running.
     if model is None:
         return DEFAULT_CLAUDE_MODEL
     return CLAUDE_MODEL_ALIASES.get(model, model)
 
 
+def _claude_routing_mode() -> str:
+    """Native routing is the benchmark default; pinning is an opt-in ablation."""
+    mode = os.environ.get("M4BENCH_CLAUDE_MODEL_ROUTING", "native")
+    if mode not in {"native", "single-model"}:
+        raise ValueError("M4BENCH_CLAUDE_MODEL_ROUTING must be native or single-model")
+    return mode
+
+
 def _claude_model_overrides(model: str | None) -> dict[str, str]:
-    """Pin every Claude Code secondary call to the canonical primary model."""
-    canonical_model = _resolve_model_for_agent("claude", model)
-    if canonical_model is None:  # Defensive; Claude always has a pinned default.
+    """Configure secondary models only for an explicit single-model comparison."""
+    if _claude_routing_mode() == "native":
         return {}
+    canonical_model = _resolve_model_for_agent("claude", model)
     return {key: canonical_model for key in CLAUDE_MODEL_OVERRIDE_KEYS}
 
 
-def _claude_model_metadata(model: str | None) -> dict[str, dict[str, str]]:
-    """Return auditable metadata for the effective Claude model overrides."""
-    return {"claude_model_overrides": _claude_model_overrides(model)}
+def _claude_model_metadata(
+    model: str | None, trace_path: str | Path | None = None
+) -> dict:
+    """Separate routing configuration from models reported by assistant events.
+
+    Observations cover the retained trace only, not every internal API call.
+    Missing or unreadable traces remain unknown, never the requested model.
+    """
+    observed = set()
+    if trace_path:
+        try:
+            with Path(trace_path).open() as trace:
+                for line in trace:
+                    try:
+                        event = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if not isinstance(event, dict) or event.get("type") != "assistant":
+                        continue
+                    message = event.get("message")
+                    if isinstance(message, dict):
+                        name = message.get("model")
+                        if isinstance(name, str) and name.startswith("claude-"):
+                            observed.add(name)
+        except (OSError, UnicodeError):
+            pass
+    return {
+        "claude_model_routing": _claude_routing_mode(),
+        "claude_model_overrides": _claude_model_overrides(model),
+        "claude_observed_models": sorted(observed) or None,
+    }
 
 
 def _resolve_reasoning_effort(agent_name: str, reasoning_effort: str | None) -> str:
@@ -1357,10 +1397,6 @@ def _agent_process_env(
             "ANTHROPIC_API_KEY",
             "M4BENCH_CLAUDE_AUTH_ROOT",
             "M4BENCH_CLAUDE_AUTH_VOLUME",
-            "ANTHROPIC_DEFAULT_HAIKU_MODEL",
-            "ANTHROPIC_DEFAULT_SONNET_MODEL",
-            "ANTHROPIC_DEFAULT_OPUS_MODEL",
-            "CLAUDE_CODE_SUBAGENT_MODEL",
         },
         "codex": {"CODEX_API_KEY", "OPENAI_API_KEY"},
         "gemini": {"GOOGLE_API_KEY", "GEMINI_API_KEY"},
@@ -1975,6 +2011,13 @@ def run_agent(
     env = None
     if run_home:
         env = _agent_process_env(agent_name, workdir, run_home, model=model)
+    elif agent_name == "claude":
+        env = {
+            key: value
+            for key, value in os.environ.items()
+            if key not in CLAUDE_MODEL_OVERRIDE_KEYS
+        }
+        env.update(_claude_model_overrides(model))
 
     # Run agent as benchagent when isolated (user-level filesystem + network isolation).
     agent_creds = _resolve_agent_creds() if isolated and not agent_container else None
@@ -2732,7 +2775,7 @@ def run_single_task(
                         "validated"
                     ],
                     "claude_memory_validation": claude_memory_validation,
-                    **_claude_model_metadata(model),
+                    **_claude_model_metadata(model, agent_result.get("trace_file")),
                 }
             )
         result_file = workdir / "result.json"
@@ -2912,7 +2955,9 @@ path you attempted in probed_paths using the exact path strings above.
             },
         }
         if agent_name == "claude":
-            full_result.update(_claude_model_metadata(model))
+            full_result.update(
+                _claude_model_metadata(model, agent_result.get("trace_file"))
+            )
         (workdir / "result.json").write_text(json.dumps(full_result, indent=2))
 
         print(f"Leak canary: {'PASS' if passed else 'FAIL'}")
