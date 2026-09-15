@@ -547,3 +547,39 @@ def test_run_tier_parallel_uses_global_scheduled_queue(monkeypatch, tmp_path):
         "mimic-sepsis3-raw",
         "mimic-oasis-24h",
     ]
+
+
+def test_claude_resume_and_selection_do_not_mix_routing_modes(monkeypatch, tmp_path):
+    matrix = _load_module("benchmark_routing_resume", "benchmark/matrix.py")
+    result = {
+        "agent": "claude",
+        "model": "claude-sonnet-4-6",
+        "task": "synthetic",
+        "condition": "no-skill",
+        "schema": "native",
+        "trial": 1,
+        "resolved_reasoning_effort": "provider-default",
+        "publishable": True,
+        "agent_result": {"returncode": 0},
+        "agent_db": {"path": "synthetic.duckdb", "sha256": "test"},
+        "filesystem_canary": {"passed": True},
+        "contamination_lint": {"passed": True},
+        "test_results": {"reward": 1.0, "errors": 0},
+    }
+    path = tmp_path / "result.json"
+    for requested in ["native", "single-model"]:
+        monkeypatch.setenv("M4BENCH_CLAUDE_MODEL_ROUTING", requested)
+        for recorded in [None, "native", "single-model"]:
+            data = {**result, "claude_model_routing": recorded}
+            path.write_text(json.dumps(data))
+            assert bool(matrix._scan_existing(tmp_path)) == (recorded == requested)
+            selected = matrix._find_latest_result(
+                tmp_path,
+                "synthetic",
+                "no-skill",
+                "claude",
+                "claude-sonnet-4-6",
+                "native",
+                1,
+            )
+            assert (selected is not None) == (recorded == requested)

@@ -57,6 +57,7 @@ from run import (
     CLAUDE_MODEL_ALIASES,
     PROVIDER_DEFAULT_REASONING,
     REASONING_EFFORT_CHOICES,
+    _claude_routing_mode,
     _resolve_model_for_agent,
     _resolve_reasoning_effort,
 )
@@ -235,6 +236,17 @@ def _docker_container_name(agent: str, task: str, trial: int) -> str:
     return re.sub(r"[^a-zA-Z0-9_.-]+", "-", raw).strip("-").lower()
 
 
+def _matches_claude_routing(data: dict) -> bool:
+    """Never reuse a different or unrecorded Claude routing experiment."""
+    model = data.get("model") or ""
+    is_claude = (
+        data.get("agent") == "claude"
+        or model.startswith("claude-")
+        or model in CLAUDE_MODEL_ALIASES
+    )
+    return not is_claude or data.get("claude_model_routing") == _claude_routing_mode()
+
+
 def _find_latest_result(
     results_root: Path,
     task: str,
@@ -265,6 +277,7 @@ def _find_latest_result(
             and data.get("condition") == condition
             and data.get("agent") == agent
             and data.get("model") == model
+            and _matches_claude_routing(data)
             and data.get("schema", "native") == schema
             and data.get("trial") == trial
             and (
@@ -953,6 +966,8 @@ def _scan_existing(results_root: Path) -> dict[str, set[int]]:
         if condition.startswith("_batch-"):
             condition = condition.replace("_batch-", "")
 
+        if not _matches_claude_routing(data):
+            continue
         if not _is_publishable_completed_result(data):
             continue
         try:

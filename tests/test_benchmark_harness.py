@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -247,7 +249,12 @@ def test_prepare_run_home_claude_login_copies_only_auth_files(monkeypatch, tmp_p
     assert not (claude_home / ".claude" / "projects").exists()
 
 
-def test_direct_claude_run_pins_command_and_env(monkeypatch, tmp_path):
+@pytest.mark.parametrize("routing", ["native", "single-model"])
+@pytest.mark.parametrize("managed_home", [False, True])
+def test_direct_claude_run_configures_command_and_env(
+    monkeypatch, tmp_path, routing, managed_home
+):
+    monkeypatch.setenv("M4BENCH_CLAUDE_MODEL_ROUTING", routing)
     run = _load_module("benchmark_run_claude_env", "benchmark/run.py")
 
     workdir = tmp_path / "work"
@@ -272,6 +279,8 @@ def test_direct_claude_run_pins_command_and_env(monkeypatch, tmp_path):
         captured["kwargs"] = kwargs
         return FakeProcess()
 
+    for key in run.CLAUDE_MODEL_OVERRIDE_KEYS:
+        monkeypatch.setenv(key, "stale-host-override")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     monkeypatch.setattr(run.subprocess, "Popen", fake_popen)
 
@@ -280,19 +289,27 @@ def test_direct_claude_run_pins_command_and_env(monkeypatch, tmp_path):
         "claude",
         workdir,
         model="sonnet",
-        run_home=run_home,
+        run_home=run_home if managed_home else None,
     )
 
     assert result["returncode"] == 0
     env = captured["kwargs"]["env"]
     assert env["ANTHROPIC_API_KEY"] == "sk-ant-test"
-    assert env["HOME"] == str(run_home)
+    if managed_home:
+        assert env["HOME"] == str(run_home)
     assert captured["cmd"][captured["cmd"].index("--model") + 1] == "claude-sonnet-4-6"
-    assert {env[key] for key in run.CLAUDE_MODEL_OVERRIDE_KEYS} == {"claude-sonnet-4-6"}
+    expected = (
+        {key: "claude-sonnet-4-6" for key in run.CLAUDE_MODEL_OVERRIDE_KEYS}
+        if routing == "single-model"
+        else {}
+    )
+    assert {
+        key: env[key] for key in run.CLAUDE_MODEL_OVERRIDE_KEYS if key in env
+    } == expected
     assert run._claude_model_metadata("sonnet") == {
-        "claude_model_overrides": {
-            key: "claude-sonnet-4-6" for key in run.CLAUDE_MODEL_OVERRIDE_KEYS
-        }
+        "claude_model_routing": routing,
+        "claude_observed_models": None,
+        "claude_model_overrides": expected,
     }
 
 
@@ -411,7 +428,10 @@ def test_agent_process_env_filters_host_environment(monkeypatch, tmp_path):
         assert "AWS_SECRET_ACCESS_KEY" not in env
 
 
-def test_agent_process_env_pins_direct_claude_run_to_canonical_model(tmp_path):
+def test_agent_process_env_pins_direct_claude_run_to_canonical_model(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setenv("M4BENCH_CLAUDE_MODEL_ROUTING", "single-model")
     run = _load_module("benchmark_run_direct_claude_model", "benchmark/run.py")
 
     env = run._agent_process_env(
@@ -1397,6 +1417,7 @@ def test_leak_canary_report_requires_all_sensitive_paths():
 def test_nonisolated_claude_leak_canary_pins_command_env_and_metadata(
     monkeypatch, tmp_path
 ):
+    monkeypatch.setenv("M4BENCH_CLAUDE_MODEL_ROUTING", "single-model")
     run = _load_module("benchmark_run_local_claude_canary", "benchmark/run.py")
     captured = {}
 
@@ -1512,9 +1533,8 @@ def test_batch_metadata_uses_canonical_claude_model(monkeypatch, tmp_path):
     batch = json.loads(batch_path.read_text())
     assert child_models == ["claude-sonnet-4-6", "claude-sonnet-4-6"]
     assert batch["model"] == "claude-sonnet-4-6"
-    assert batch["claude_model_overrides"] == {
-        key: "claude-sonnet-4-6" for key in run.CLAUDE_MODEL_OVERRIDE_KEYS
-    }
+    assert batch["claude_model_overrides"] == {}
+    assert batch["claude_model_routing"] == "native"
 
 
 def test_sandbox_hook_extracts_quoted_paths():
@@ -1535,3 +1555,55 @@ def test_setup_parser_allows_schema_with_all():
 
     assert args.schema == "obfuscated"
     assert args.all is True
+
+
+def test_native_claude_routing_does_not_force_secondary_models(monkeypatch, tmp_path):
+    run = _load_module("benchmark_native_routing", "benchmark/run.py")
+    monkeypatch.delenv("M4BENCH_CLAUDE_MODEL_ROUTING", raising=False)
+    for key in run.CLAUDE_MODEL_OVERRIDE_KEYS:
+        monkeypatch.setenv(key, "stale-host-override")
+    env = run._agent_process_env("claude", tmp_path, tmp_path / "home", model="sonnet")
+    assert not set(run.CLAUDE_MODEL_OVERRIDE_KEYS).intersection(env)
+    metadata = run._claude_model_metadata("sonnet")
+    assert metadata["claude_model_routing"] == "native"
+    assert metadata["claude_model_overrides"] == {}
+    assert metadata["claude_observed_models"] is None
+
+
+def test_invalid_claude_routing_fails_before_invocation(monkeypatch):
+    run = _load_module("benchmark_invalid_routing", "benchmark/run.py")
+    monkeypatch.setenv("M4BENCH_CLAUDE_MODEL_ROUTING", "typo")
+    with pytest.raises(ValueError, match="M4BENCH_CLAUDE_MODEL_ROUTING"):
+        run._resolve_model_for_agent("claude", "sonnet")
+
+
+def test_claude_observed_models_come_from_trace_not_requested_model(
+    monkeypatch, tmp_path
+):
+    run = _load_module("benchmark_observed_models", "benchmark/run.py")
+    monkeypatch.delenv("M4BENCH_CLAUDE_MODEL_ROUTING", raising=False)
+    trace = tmp_path / "trace.jsonl"
+    trace.write_text(
+        "\n".join(
+            [
+                json.dumps({"type": "system", "model": "requested-only"}),
+                json.dumps(
+                    {"type": "assistant", "message": {"model": "claude-sonnet-4-6"}}
+                ),
+                json.dumps(
+                    {
+                        "type": "assistant",
+                        "message": {"model": "claude-haiku-4-5-20251001"},
+                    }
+                ),
+                "incomplete line",
+                "null",
+            ]
+        )
+    )
+    result = run._claude_model_metadata("opus", trace)
+    assert result["claude_observed_models"] == [
+        "claude-haiku-4-5-20251001",
+        "claude-sonnet-4-6",
+    ]
+    assert result["claude_model_overrides"] == {}

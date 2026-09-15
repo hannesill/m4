@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import duckdb
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -66,3 +67,34 @@ def test_alias_ground_truth_generates_target_and_manifest(monkeypatch, tmp_path)
     assert raw_manifest["source"] == "alias"
     assert raw_manifest["alias_target"] == "score"
     assert raw_manifest["alias_manifest"]["source"] == "sql"
+
+
+@pytest.mark.parametrize("query_name", ["gcs", "oasis"])
+def test_eicu_ground_truth_uses_initialized_dataset_schema(tmp_path, query_name):
+    """Compile the real queries against M4-created views, without clinical data."""
+    from m4.core.datasets import DatasetRegistry
+    from m4.data_io import _create_duckdb_with_views
+
+    tables = {
+        "patient": "patientunitstayid INTEGER, uniquepid VARCHAR, patienthealthsystemstayid INTEGER, hospitaladmitoffset INTEGER, age VARCHAR, unitadmitsource VARCHAR",
+        "nursecharting": "patientunitstayid INTEGER, nursingchartoffset INTEGER, nursingchartcelltypevallabel VARCHAR, nursingchartcelltypevalname VARCHAR, nursingchartvalue VARCHAR, nursingchartcelltypecat VARCHAR",
+        "physicalexam": "patientunitstayid INTEGER, physicalexamvalue VARCHAR, physicalexampath VARCHAR, physicalexamoffset INTEGER",
+        "intakeoutput": "patientunitstayid INTEGER, intakeoutputoffset INTEGER, cellpath VARCHAR, cellvaluenumeric DOUBLE",
+        "apacheapsvar": "patientunitstayid INTEGER, urine DOUBLE, intubated INTEGER",
+        "apachepredvar": "patientunitstayid INTEGER, electivesurgery INTEGER, oobintubday1 INTEGER",
+        "respiratorycare": "patientunitstayid INTEGER, airwaytype VARCHAR, airwaysize VARCHAR, airwayposition VARCHAR, cuffpressure VARCHAR, setapneatv VARCHAR, respcarestatusoffset INTEGER",
+    }
+    parquet = tmp_path / "parquet"
+    parquet.mkdir()
+    with duckdb.connect() as connection:
+        for table, columns in tables.items():
+            connection.execute(f"CREATE TABLE {table} ({columns})")
+            destination = str(parquet / f"{table}.parquet").replace("'", "''")
+            connection.execute(f"COPY {table} TO '{destination}' (FORMAT PARQUET)")
+    dataset = DatasetRegistry.get("eicu")
+    assert dataset is not None
+    db = tmp_path / "eicu.duckdb"
+    assert _create_duckdb_with_views(db, parquet, dataset.schema_mapping)
+    query = (ROOT / "benchmark" / "ground_truth" / f"{query_name}.sql").read_text()
+    with duckdb.connect(str(db)) as connection:
+        assert connection.execute(query).fetchall() == []
