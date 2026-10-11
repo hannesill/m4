@@ -41,18 +41,24 @@ class PhysioNetCredentials:
     password: str
 
     @classmethod
-    def from_json_file(cls, path: Path) -> "PhysioNetCredentials":
+    def from_json_text(cls, text: str) -> "PhysioNetCredentials":
         import json
 
-        payload = json.loads(path.read_text())
+        payload = json.loads(text)
+        if not isinstance(payload, dict):
+            raise ValueError("PhysioNet credentials must be a JSON object.")
         username = payload.get("username") or payload.get("user")
         password = payload.get("password")
         if not isinstance(username, str) or not isinstance(password, str):
             raise ValueError(
-                "PhysioNet credentials file must contain string username and password fields."
+                "PhysioNet credentials must contain string username and password fields."
             )
         register_sensitive_value(password)
         return cls(username=username, password=password)
+
+    @classmethod
+    def from_json_file(cls, path: Path) -> "PhysioNetCredentials":
+        return cls.from_json_text(path.read_text())
 
 
 class DatasetDownloadError(RuntimeError):

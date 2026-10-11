@@ -2,6 +2,7 @@ import json
 import logging
 import math
 import os
+import sys
 from contextlib import contextmanager, nullcontext
 from dataclasses import is_dataclass
 from datetime import date, datetime, time
@@ -435,6 +436,37 @@ def doctor_cmd(
             console.print(f"  Hint: {check['hint']}")
 
 
+def _read_physionet_credentials(
+    credentials_file: str | None, from_stdin: bool
+) -> PhysioNetCredentials | None:
+    """Read a PhysioNet login from a JSON file or from standard input.
+
+    Standard input is for a program that starts M4 on a user's behalf: the
+    login then never touches the disk, a command line, or the environment.
+    """
+    if credentials_file and from_stdin:
+        raise ValueError(
+            "Pass --physionet-credentials-file or --physionet-credentials-stdin, not both."
+        )
+    if from_stdin:
+        try:
+            return PhysioNetCredentials.from_json_text(sys.stdin.read())
+        except Exception as exc:
+            raise ValueError(
+                f"Could not read PhysioNet credentials from standard input: {exc}"
+            ) from exc
+    if credentials_file:
+        try:
+            return PhysioNetCredentials.from_json_file(
+                Path(credentials_file).expanduser().resolve()
+            )
+        except Exception as exc:
+            raise ValueError(
+                f"Could not read PhysioNet credentials file: {exc}"
+            ) from exc
+    return None
+
+
 @app.command("download")
 def download_cmd(
     dataset_name: Annotated[
@@ -467,6 +499,13 @@ def download_cmd(
             help="JSON file containing PhysioNet username and password fields.",
         ),
     ] = None,
+    physionet_credentials_stdin: Annotated[
+        bool,
+        typer.Option(
+            "--physionet-credentials-stdin",
+            help="Read the PhysioNet credentials JSON from standard input.",
+        ),
+    ] = False,
 ):
     """Download public datasets or generate credentialed PhysioNet commands."""
     if events and events != "ndjson":
@@ -486,16 +525,16 @@ def download_cmd(
 
     reporter = NdjsonEventReporter(command="download") if events == "ndjson" else None
     credentials = None
-    if physionet_credentials_file:
+    if physionet_credentials_file or physionet_credentials_stdin:
         try:
-            credentials = PhysioNetCredentials.from_json_file(
-                Path(physionet_credentials_file).expanduser().resolve()
+            credentials = _read_physionet_credentials(
+                physionet_credentials_file, physionet_credentials_stdin
             )
-        except Exception as exc:
+        except ValueError as exc:
             result = CommandError(
                 command="download",
                 code="missing_credentials",
-                message=f"Could not read PhysioNet credentials file: {exc}",
+                message=str(exc),
             )
             if reporter:
                 reporter.operation_failed(result.to_json_dict()["error"])
@@ -746,6 +785,13 @@ def dataset_init_cmd(
             help="JSON file containing PhysioNet username and password fields.",
         ),
     ] = None,
+    physionet_credentials_stdin: Annotated[
+        bool,
+        typer.Option(
+            "--physionet-credentials-stdin",
+            help="Read the PhysioNet credentials JSON from standard input.",
+        ),
+    ] = False,
 ):
     """
     Initialize a local dataset in one step by detecting what's already present:
@@ -775,16 +821,16 @@ def dataset_init_cmd(
     if json_output:
         reporter = NdjsonEventReporter(command="init") if events == "ndjson" else None
         credentials = None
-        if physionet_credentials_file:
+        if physionet_credentials_file or physionet_credentials_stdin:
             try:
-                credentials = PhysioNetCredentials.from_json_file(
-                    Path(physionet_credentials_file).expanduser().resolve()
+                credentials = _read_physionet_credentials(
+                    physionet_credentials_file, physionet_credentials_stdin
                 )
-            except Exception as exc:
+            except ValueError as exc:
                 result = CommandError(
                     command="init",
                     code="missing_credentials",
-                    message=f"Could not read PhysioNet credentials file: {exc}",
+                    message=str(exc),
                 )
                 if reporter:
                     reporter.operation_failed(result.to_json_dict()["error"])

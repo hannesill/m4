@@ -60,6 +60,8 @@ def test_capabilities_manifest_shape():
     commands = {command["name"]: command for command in manifest["commands"]}
     assert "agent-env" in commands
     assert "--physionet-credentials-file" in commands["download"]["flags"]
+    assert "--physionet-credentials-stdin" in commands["download"]["flags"]
+    assert "--physionet-credentials-stdin" in commands["init"]["flags"]
     assert "--events" in commands["download"]["flags"]
     assert commands["setup-agent"]["mutates"] is False
     assert commands["setup-agent"]["mutates_with"] == ["--apply"]
@@ -464,3 +466,78 @@ def test_doctor_only_requires_active_duckdb_dataset(
     check_names = [check["name"] for check in result.data["checks"]]
     assert "duckdb:mimic-iv-demo" not in check_names
     assert "duckdb:mimic-iv" not in check_names
+
+
+def test_download_reads_physionet_credentials_from_stdin(tmp_path):
+    """A program starting M4 for a user can pass the login without a file."""
+    with patch(
+        "m4.services.download.download_dataset", return_value=True
+    ) as mock_download:
+        result = runner.invoke(
+            app,
+            [
+                "download",
+                "mimic-iv",
+                "--target",
+                str(tmp_path),
+                "--json",
+                "--physionet-credentials-stdin",
+            ],
+            input=json.dumps({"username": "alice", "password": "from-stdin"}),
+        )
+
+    assert result.exit_code == 0
+    assert json.loads(result.stdout)["status"] == "completed"
+    credentials = mock_download.call_args.kwargs["credentials"]
+    assert (credentials.username, credentials.password) == ("alice", "from-stdin")
+    assert "from-stdin" not in result.stdout
+
+
+def test_download_rejects_unreadable_stdin_credentials_without_echoing_them(tmp_path):
+    with patch("m4.services.download.download_dataset") as mock_download:
+        result = runner.invoke(
+            app,
+            [
+                "download",
+                "mimic-iv",
+                "--target",
+                str(tmp_path),
+                "--json",
+                "--events",
+                "ndjson",
+                "--physionet-credentials-stdin",
+            ],
+            input="alice:typed-not-json",
+        )
+
+    assert result.exit_code == 1
+    failure = json.loads(result.stdout.splitlines()[-1])
+    assert failure["event"] == "operation_failed"
+    assert failure["error"]["code"] == "missing_credentials"
+    assert "standard input" in failure["error"]["message"]
+    assert "typed-not-json" not in result.stdout
+    mock_download.assert_not_called()
+
+
+def test_download_rejects_credentials_from_both_file_and_stdin(tmp_path):
+    creds_file = tmp_path / "physionet.json"
+    creds_file.write_text(json.dumps({"username": "alice", "password": "secret"}))
+
+    with patch("m4.services.download.download_dataset") as mock_download:
+        result = runner.invoke(
+            app,
+            [
+                "download",
+                "mimic-iv",
+                "--json",
+                "--physionet-credentials-file",
+                str(creds_file),
+                "--physionet-credentials-stdin",
+            ],
+            input=json.dumps({"username": "bob", "password": "other"}),
+        )
+
+    assert result.exit_code == 1
+    assert json.loads(result.stdout)["error"]["code"] == "missing_credentials"
+    assert "not both" in json.loads(result.stdout)["error"]["message"]
+    mock_download.assert_not_called()

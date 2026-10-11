@@ -209,6 +209,59 @@ def test_init_events_invalid_physionet_credentials_redacts_password(
     assert "do-not-print" not in result.stderr
 
 
+@patch("m4.services.init.get_default_database_path")
+@patch("m4.services.init.get_dataset_parquet_root")
+def test_init_download_takes_physionet_credentials_from_stdin(
+    mock_parquet_root, mock_db_path, tmp_path
+):
+    """The login reaches PhysioNet from standard input and is never printed."""
+    seen_auth = []
+
+    class UnauthorizedResponse:
+        def __init__(self):
+            self.status_code = 401
+            self.reason = "Unauthorized"
+            self.content = b""
+            self.headers = {}
+
+    class Session:
+        def __init__(self):
+            self.headers = {}
+            self.auth = None
+
+        def get(self, *args, **kwargs):
+            seen_auth.append(self.auth)
+            return UnauthorizedResponse()
+
+    pq_root = tmp_path / "parquet" / "mimic-iv"
+    pq_root.mkdir(parents=True)
+    mock_parquet_root.return_value = pq_root
+    mock_db_path.return_value = tmp_path / "mimic.duckdb"
+
+    with patch("m4.data_io.requests.Session", Session):
+        result = runner.invoke(
+            app,
+            [
+                "init",
+                "mimic-iv",
+                "--json",
+                "--events",
+                "ndjson",
+                "--no-interactive",
+                "--download",
+                "--physionet-credentials-stdin",
+            ],
+            input=json.dumps({"username": "alice", "password": "do-not-print"}),
+        )
+
+    assert result.exit_code == 1
+    assert seen_auth[0] == ("alice", "do-not-print")
+    events = _ndjson_lines(result.stdout)
+    assert events[-1]["error"]["code"] == "physionet_auth_failed"
+    assert "do-not-print" not in result.stdout
+    assert "do-not-print" not in result.stderr
+
+
 def test_config_validation_bigquery_with_db_path():
     """Test that bigquery backend rejects db-path parameter."""
     result = runner.invoke(
