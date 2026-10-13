@@ -67,6 +67,7 @@ non-zero.
       "raw_present": true,
       "parquet_present": true,
       "db_present": true,
+      "prepared": true,
       "requires_authentication": true,
       "download_available": true,
       "setup_state": "ready",
@@ -84,6 +85,23 @@ non-zero.
   ]
 }
 ```
+
+`prepared` is true, and `setup_state` is `ready`, only when `m4 init` ran to the
+end for the dataset: every raw file has its table, the views exist, and the
+verification query answered. Parquet files and a database that merely exist do
+not count, because an interrupted `m4 init` leaves both. Other values of
+`setup_state` are `credentials_required`, `missing_raw_files`,
+`missing_parquet`, `missing_database`, and `incomplete` (files exist but the
+last initialization did not finish, or they were made by M4 0.5.5 or earlier,
+which did not record that it finished). Running `m4 init DATASET` again, with
+the same `--src` if one was used, finishes an interrupted dataset: it converts
+only the raw files that have no finished Parquet file yet.
+
+M4 keeps this state in two small files. `<database>.m4-prepared.json`, next to
+the DuckDB file, is written last by `m4 init` and lists the Parquet files the
+views were verified over; a dataset stops being ready when those files change.
+`.m4-converting.json`, in the dataset's Parquet folder, exists while a
+conversion is unfinished. Tables being converted carry the suffix `.part`.
 
 Raw local paths are hidden by default in machine-facing output. Pass
 `--paths` or set `M4_PATH_DISCLOSURE=1` to include path fields such as
@@ -149,13 +167,21 @@ states:
     {"name": "parquet", "status": "completed", "message": "Converted CSV to Parquet."},
     {"name": "database", "status": "completed", "message": "Created DuckDB views."}
   ],
+  "prepared": true,
   "warnings": []
 }
 ```
 
 Init step status is one of `skipped`, `completed`, `blocked`, or `failed`.
+`prepared` says whether the dataset is now ready, as `m4 status` reports it.
 For credentialed datasets, missing raw/parquet/database artifacts are an
 `ok: false` `raw_files_missing` result unless `--download` is requested.
+With `--download`, raw files already in M4's own raw folder are gone over
+again, so that a download that was interrupted is completed; files that are
+complete are skipped. For a credentialed dataset this needs the credentials.
+`raw_files_missing` is also the answer when `--src` is not the folder that
+holds the dataset's files directly (for example the `physionet.org/` folder a
+plain `wget -r` creates); `error.hint` then names the folder to use.
 
 For progress-aware wrappers, add `--events ndjson`:
 
@@ -167,6 +193,11 @@ m4 init mimic-iv --json --events ndjson --no-interactive --download \
 With `--events ndjson`, stdout changes from one JSON object to a newline-delimited
 JSON stream. The final command payload appears in `operation_completed.result`;
 setup failures appear in `operation_failed.error`.
+
+`conversion_started.file_count` counts the files this run converts.
+`skipped_count` counts the raw files that already had a finished Parquet file,
+which is not zero when an interrupted run is continued. When nothing is left to
+convert, no conversion events are emitted.
 
 PhysioNet credentials files are JSON:
 

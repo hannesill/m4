@@ -294,8 +294,12 @@ def print_dataset_status(
     derived_total: int | None = None,
     derived_has_support: bool = False,
     derived_is_bigquery: bool = False,
+    prepared: bool = True,
 ) -> None:
-    """Print formatted dataset status information."""
+    """Print formatted dataset status information.
+
+    Pass prepared=False when local files exist but `m4 init` has not finished.
+    """
     # Header with selected indicator
     status_indicator = "[success] (selected)[/success]" if is_selected else ""
     console.print(f"\n[brand]{name.upper()}[/brand]{status_indicator}")
@@ -307,6 +311,11 @@ def print_dataset_status(
 
     console.print(f"  [muted]Local Parquet:[/muted] {pq_status}")
     console.print(f"  [muted]Local DuckDB:[/muted]  {db_status}")
+    if (parquet_present or db_present) and not prepared:
+        console.print(
+            "  [muted]Local setup:[/muted]   [warning]INCOMPLETE[/warning] "
+            f"(run m4 init {name})"
+        )
     console.print(f"  [muted]BigQuery:[/muted]      {bq_status}")
 
     # Derived status line
@@ -366,7 +375,8 @@ def print_datasets_table(
 
     Args:
         datasets: List of dicts with keys: name, parquet_present, db_present,
-                  bigquery_available, parquet_size_gb (optional)
+                  prepared (optional), bigquery_available,
+                  parquet_size_gb (optional)
         selected_dataset: Name of the dataset selected for this status view
     """
     table = Table(
@@ -393,8 +403,11 @@ def print_datasets_table(
         # Local status (combine parquet + duckdb)
         pq = ds.get("parquet_present", False)
         db = ds.get("db_present", False)
-        if pq and db:
+        if pq and db and ds.get("prepared", True):
             local_str = "[success]OK[/success]"
+        elif pq and db:
+            # The files are there, but m4 init has not finished
+            local_str = "[warning]Incomplete[/warning]"
         elif pq:
             local_str = "[warning]Parquet[/warning]"
         elif db:

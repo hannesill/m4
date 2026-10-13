@@ -56,7 +56,9 @@ from m4.data_io import (
     PhysioNetCredentials,
     convert_csv_to_parquet,
     download_dataset,
+    find_unconverted,
     init_duckdb_from_parquet,
+    mark_dataset_prepared,
     verify_table_rowcount,
 )
 from m4.services.agent_env import build_agent_env_service
@@ -69,7 +71,7 @@ from m4.services.config import (
 )
 from m4.services.download import build_wget_command, download_dataset_service
 from m4.services.events import NdjsonEventReporter
-from m4.services.init import initialize_dataset_service
+from m4.services.init import initialize_dataset_service, source_problem
 from m4.services.init_derived import init_derived_service
 from m4.services.results import CommandError, CommandResult
 from m4.services.setup import doctor_service, quickstart_service, setup_agent_service
@@ -795,9 +797,11 @@ def dataset_init_cmd(
 ):
     """
     Initialize a local dataset in one step by detecting what's already present:
-    - If Parquet exists: only initialize DuckDB views
-    - If raw CSV.gz exists but Parquet is missing: convert then initialize
+    - If raw CSV.gz exists: convert the files that have no Parquet file yet, then initialize DuckDB views
+    - If only Parquet exists: only initialize DuckDB views
     - If neither exists: download (demo only), convert, then initialize
+
+    Running it again finishes an initialization that was interrupted.
 
     Notes:
     - Auto-download is based on the dataset definition URL.
@@ -993,17 +997,28 @@ def dataset_init_cmd(
             )
             return
 
-    # Step 2: Ensure Parquet exists (convert if missing)
-    if not parquet_present:
+    problem = source_problem(
+        ds, csv_root, pq_root, raw_present=raw_present, src_given=bool(src)
+    )
+    if problem:
         console.print()
-        print_step(2, 3, "Converting CSV to Parquet")
-        print_key_value("Source", csv_root)
-        print_key_value("Destination", pq_root)
+        print_error_panel("Cannot Initialize", problem.message, hint=problem.hint)
+        raise typer.Exit(code=1)
+
+    # Step 2: Convert every raw file that has no finished Parquet file yet
+    if raw_present:
+        to_convert = find_unconverted(csv_root, pq_root)
+        if to_convert:
+            console.print()
+            print_step(2, 3, "Converting CSV to Parquet")
+            print_key_value("Source", csv_root)
+            print_key_value("Destination", pq_root)
         ok = convert_csv_to_parquet(dataset_key, csv_root, pq_root)
         if not ok:
             error("Conversion failed. Please check logs for details.")
             raise typer.Exit(code=1)
-        success("Conversion complete")
+        if to_convert:
+            success("Conversion complete")
 
     # Step 3: Initialize DuckDB over Parquet
     final_db_path = (
@@ -1050,6 +1065,7 @@ def dataset_init_cmd(
         logger.warning(
             f"No 'primary_verification_table' configured for '{dataset_name}'. Skipping DB query test."
         )
+        mark_dataset_prepared(pq_root, final_db_path)
         print_init_complete(dataset_name, str(final_db_path), str(pq_root))
     else:
         try:
@@ -1057,6 +1073,7 @@ def dataset_init_cmd(
             success(
                 f"Verified: {record_count:,} records in '{verification_table_name}'"
             )
+            mark_dataset_prepared(pq_root, final_db_path)
             print_init_complete(dataset_name, str(final_db_path), str(pq_root))
         except Exception as e:
             logger.error(
@@ -1475,6 +1492,7 @@ def status_cmd(
                 "name": dataset["name"],
                 "parquet_present": dataset["parquet_present"],
                 "db_present": dataset["db_present"],
+                "prepared": dataset["prepared"],
                 "bigquery_available": dataset["bigquery_available"],
                 "parquet_size_gb": dataset["parquet_size_gb"],
                 "derived_materialized": dataset["derived"]["materialized"],
@@ -1525,6 +1543,7 @@ def status_cmd(
         name=selected,
         parquet_present=dataset["parquet_present"],
         db_present=dataset["db_present"],
+        prepared=dataset["prepared"],
         parquet_root=dataset.get("parquet_root") or "",
         db_path=dataset.get("db_path") or "",
         parquet_size_gb=dataset["parquet_size_gb"],
@@ -1596,6 +1615,7 @@ def list_datasets_cmd(
             "name": dataset["name"],
             "parquet_present": dataset["parquet_present"],
             "db_present": dataset["db_present"],
+            "prepared": dataset["prepared"],
             "bigquery_available": dataset["bigquery_available"],
             "parquet_size_gb": dataset["parquet_size_gb"],
             "derived_materialized": dataset["derived"]["materialized"],

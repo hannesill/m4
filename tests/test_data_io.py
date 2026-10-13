@@ -14,7 +14,12 @@ from m4.data_io import (
     compute_parquet_dir_size,
     convert_csv_to_parquet,
     download_dataset,
+    find_raw_root,
+    find_unconverted,
     init_duckdb_from_parquet,
+    is_dataset_prepared,
+    mark_dataset_prepared,
+    unfinished_conversion_source,
     verify_table_rowcount,
 )
 
@@ -195,6 +200,133 @@ def test_convert_csv_to_parquet_and_init_duckdb(tmp_path, monkeypatch):
     finally:
         con.close()
     assert cnt == 2
+
+
+def test_failed_conversion_leaves_no_table_and_a_second_run_finishes_it(tmp_path):
+    src_root = tmp_path / "src"
+    (src_root / "hosp").mkdir(parents=True)
+    _write_gz_csv(src_root / "hosp" / "admissions.csv.gz", "subject_id\n1\n2\n")
+    broken = src_root / "hosp" / "patients.csv.gz"
+    broken.write_bytes(b"this is not gzip")
+    dst_root = tmp_path / "parquet"
+
+    assert not convert_csv_to_parquet("mimic-iv-demo", src_root, dst_root)
+
+    # The table that failed is not there in any form, and the folder says so.
+    assert sorted(p.name for p in dst_root.rglob("*") if p.is_file()) == [
+        ".m4-converting.json",
+        "admissions.parquet",
+    ]
+    assert unfinished_conversion_source(dst_root) == str(src_root.resolve())
+    assert find_unconverted(src_root, dst_root) == [broken]
+
+    _write_gz_csv(broken, "subject_id,gender\n1,F\n")
+
+    assert convert_csv_to_parquet("mimic-iv-demo", src_root, dst_root)
+    assert find_unconverted(src_root, dst_root) == []
+    assert unfinished_conversion_source(dst_root) is None
+    assert sorted(p.name for p in dst_root.rglob("*") if p.is_file()) == [
+        "admissions.parquet",
+        "patients.parquet",
+    ]
+
+
+def test_prepared_mark_is_for_one_database_over_one_parquet_folder(tmp_path):
+    parquet_root = tmp_path / "old" / "parquet"
+    _create_parquet(parquet_root / "hosp", "admissions", "subject_id\n1\n")
+    db_path = tmp_path / "old" / "mimic.duckdb"
+    db_path.touch()
+
+    assert not is_dataset_prepared(parquet_root, db_path)
+    mark_dataset_prepared(parquet_root, db_path)
+    assert is_dataset_prepared(parquet_root, db_path)
+
+    # Another database over the same files was not initialized by that run.
+    assert not is_dataset_prepared(parquet_root, tmp_path / "old" / "other.duckdb")
+
+    # Views name their Parquet files by absolute path, so a data directory
+    # that was moved needs `m4 init` again.
+    (tmp_path / "old").rename(tmp_path / "new")
+    assert not is_dataset_prepared(
+        tmp_path / "new" / "parquet", tmp_path / "new" / "mimic.duckdb"
+    )
+
+
+MIMIC_IV_MAPPING = {
+    "hosp": "mimiciv_hosp",
+    "icu": "mimiciv_icu",
+    "derived": "mimiciv_derived",
+}
+
+
+def _touch_raw(root, *names):
+    for name in names:
+        path = root / f"{name}.csv.gz"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.touch()
+    return root
+
+
+def test_find_raw_root_accepts_the_folder_the_dataset_is_laid_out_in(tmp_path):
+    root = _touch_raw(tmp_path, "hosp/admissions", "icu/icustays")
+
+    assert find_raw_root(root, MIMIC_IV_MAPPING) == root
+
+
+def test_find_raw_root_finds_the_version_folder_below_a_wget_tree(tmp_path):
+    version = _touch_raw(
+        tmp_path / "physionet.org" / "files" / "mimiciv" / "3.1",
+        "hosp/admissions",
+        "icu/icustays",
+    )
+
+    assert find_raw_root(tmp_path, MIMIC_IV_MAPPING) == version
+    assert find_raw_root(tmp_path / "physionet.org", MIMIC_IV_MAPPING) == version
+
+
+def test_find_raw_root_for_files_that_belong_at_the_top_level(tmp_path):
+    # eICU keeps every table directly in its folder.
+    version = _touch_raw(tmp_path / "files" / "eicu-crd" / "2.0", "patient", "lab")
+
+    assert find_raw_root(tmp_path, {"": "eicu_crd"}) == version
+    assert find_raw_root(version, {"": "eicu_crd"}) == version
+
+
+def test_find_raw_root_prefers_the_folder_above_a_single_schema_folder(tmp_path):
+    # mimic-iv-note is accepted both as note/*.csv.gz and as bare files.
+    version = _touch_raw(tmp_path / "files" / "mimic-iv-note" / "2.2", "note/discharge")
+
+    assert find_raw_root(tmp_path, {"note": "mimiciv_note"}) == version
+    assert find_raw_root(version / "note", {"note": "mimiciv_note"}) == version / "note"
+
+
+def test_find_raw_root_without_a_fitting_folder(tmp_path):
+    root = _touch_raw(tmp_path, "admissions", "other/icustays")
+
+    assert find_raw_root(root, MIMIC_IV_MAPPING) is None
+
+
+def test_find_raw_root_without_a_schema_mapping_takes_any_layout(tmp_path):
+    root = _touch_raw(tmp_path, "anything/goes/table")
+
+    assert find_raw_root(root, None) == root
+
+
+def test_no_view_created_is_a_failure(tmp_path):
+    """Parquet files that all sit outside the mapped folders give an empty
+    database, which must not pass for an initialized one."""
+    parquet_root = tmp_path / "parquet"
+    _create_parquet(
+        parquet_root / "files" / "mimiciv" / "3.1" / "hosp",
+        "admissions",
+        "subject_id,hadm_id\n1,100\n",
+    )
+
+    ok = _create_duckdb_with_views(
+        tmp_path / "test.duckdb", parquet_root, schema_mapping=MIMIC_IV_MAPPING
+    )
+
+    assert not ok
 
 
 # ------------------------------------------------------------

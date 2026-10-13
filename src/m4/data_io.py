@@ -1,8 +1,10 @@
+import json
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import duckdb
@@ -42,8 +44,6 @@ class PhysioNetCredentials:
 
     @classmethod
     def from_json_text(cls, text: str) -> "PhysioNetCredentials":
-        import json
-
         payload = json.loads(text)
         if not isinstance(payload, dict):
             raise ValueError("PhysioNet credentials must be a JSON object.")
@@ -454,15 +454,123 @@ def download_dataset(
 
 
 ########################################################
+# Preparation markers
+########################################################
+
+# Two small files say how far the preparation of a dataset got:
+# - Next to the Parquet files: the raw folder of a conversion that has not
+#   finished. Only a conversion writes it, and removes it when it is done.
+# - Next to a database: the Parquet files its views were created and verified
+#   over. An initialization writes it last, and only with it is a dataset ready.
+CONVERSION_NOTE = ".m4-converting.json"
+PREPARED_SUFFIX = ".m4-prepared.json"
+
+
+def _read_marker(path: Path) -> dict[str, Any]:
+    try:
+        marker = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(marker, dict) or marker.get("version") != 1:
+        return {}
+    return marker
+
+
+def _write_marker(path: Path, **facts: Any) -> None:
+    scratch = path.with_name(f"{path.name}.tmp")
+    scratch.write_text(json.dumps({"version": 1, **facts}, indent=2))
+    os.replace(scratch, path)
+
+
+def _prepared_marker(db_path: Path) -> Path:
+    return db_path.with_name(db_path.name + PREPARED_SUFFIX)
+
+
+def _parquet_listing(parquet_root: Path) -> list[str]:
+    return sorted(
+        path.relative_to(parquet_root).as_posix()
+        for path in parquet_root.rglob("*.parquet")
+    )
+
+
+def unfinished_conversion_source(parquet_root: Path) -> str | None:
+    """The raw folder of a conversion into `parquet_root` that did not finish."""
+    source = _read_marker(parquet_root / CONVERSION_NOTE).get("source")
+    return source if isinstance(source, str) else None
+
+
+def mark_dataset_prepared(parquet_root: Path, db_path: Path) -> None:
+    """Record that `db_path` has verified views over the tables in `parquet_root`.
+
+    Call it last in an initialization: only then is the dataset reported ready.
+    """
+    _write_marker(
+        _prepared_marker(db_path),
+        parquet_root=str(parquet_root.resolve()),
+        parquet_files=_parquet_listing(parquet_root),
+    )
+
+
+def is_dataset_prepared(parquet_root: Path, db_path: Path) -> bool:
+    """Whether an initialization of these Parquet files into `db_path` finished.
+
+    No longer true once the Parquet files differ from the ones it finished
+    with, as after a later conversion whose new tables have no views yet.
+    """
+    marker = _read_marker(_prepared_marker(db_path))
+    return (
+        marker.get("parquet_root") == str(parquet_root.resolve())
+        and marker.get("parquet_files") == _parquet_listing(parquet_root)
+        and unfinished_conversion_source(parquet_root) is None
+    )
+
+
+########################################################
 # CSV to Parquet conversion
 ########################################################
+
+# A table is written under this suffix and renamed once it is complete, so a
+# conversion that is killed never leaves a file that passes for a table.
+PARTIAL_SUFFIX = ".part"
+PARQUET_MAGIC = b"PAR1"
+
+
+def _parquet_path_for(csv_gz: Path, src_root: Path, parquet_root: Path) -> Path:
+    rel = csv_gz.relative_to(src_root)
+    return parquet_root / rel.with_suffix("").with_suffix(".parquet")
+
+
+def _is_complete_parquet(path: Path) -> bool:
+    """Whether `path` is a finished Parquet file.
+
+    A Parquet file starts and ends with the bytes PAR1. A writer that was killed
+    leaves a file without the closing ones (M4 0.5.5 and earlier wrote straight
+    to the final name).
+    """
+    try:
+        with open(path, "rb") as f:
+            if f.read(4) != PARQUET_MAGIC:
+                return False
+            return f.seek(-4, os.SEEK_END) >= 8 and f.read(4) == PARQUET_MAGIC
+    except OSError:
+        return False
+
+
+def find_unconverted(csv_root: Path, parquet_root: Path) -> list[Path]:
+    """Raw CSV.gz files under `csv_root` that have no finished Parquet file."""
+    return [
+        csv_gz
+        for csv_gz in sorted(csv_root.rglob("*.csv.gz"))
+        if not _is_complete_parquet(_parquet_path_for(csv_gz, csv_root, parquet_root))
+    ]
 
 
 def _csv_to_parquet_all(
     src_root: Path, parquet_root: Path, event_reporter: EventReporter | None = None
 ) -> bool:
     """
-    Convert all CSV files in the source directory to Parquet files.
+    Convert the CSV files in the source directory that have no finished Parquet
+    file yet, so a run that was interrupted is continued rather than repeated.
     - Streams via DuckDB COPY to keep memory low
     - Low concurrency to avoid parallel memory spikes
     - Tunable via env:
@@ -471,10 +579,19 @@ def _csv_to_parquet_all(
         M4_DUCKDB_THREADS     (default: 2)
     """
     parquet_paths: list[Path] = []
-    csv_files = list(src_root.rglob("*.csv.gz"))
-    if not csv_files:
+    raw_files = list(src_root.rglob("*.csv.gz"))
+    if not raw_files:
         logger.error(f"No CSV files found in {src_root}")
         return False
+    conversion_note = parquet_root / CONVERSION_NOTE
+    csv_files = find_unconverted(src_root, parquet_root)
+    if not csv_files:
+        # Whatever an earlier run left unfinished, these raw files are all
+        # converted. (Checked first: the folder may not be writable.)
+        if conversion_note.exists():
+            conversion_note.unlink()
+        return True
+    skipped_count = len(raw_files) - len(csv_files)
     reporter = get_event_reporter(event_reporter)
 
     # Optional: process small files first so progress moves smoothly
@@ -486,9 +603,10 @@ def _csv_to_parquet_all(
     def _convert_one(csv_gz: Path) -> tuple[Path | None, float, str]:
         """Convert one CSV file and return the output path, time taken, and filename."""
         start = time.time()
-        rel = csv_gz.relative_to(src_root)
-        out = parquet_root / rel.with_suffix("").with_suffix(".parquet")
+        out = _parquet_path_for(csv_gz, src_root, parquet_root)
         out.parent.mkdir(parents=True, exist_ok=True)
+        partial = out.with_name(out.name + PARTIAL_SUFFIX)
+        partial.unlink(missing_ok=True)
 
         con = duckdb.connect()
         try:
@@ -508,13 +626,20 @@ def _csv_to_parquet_all(
                     ignore_errors=false
                   )
                 )
-                TO '{out.as_posix()}' (FORMAT PARQUET, COMPRESSION ZSTD);
+                TO '{partial.as_posix()}' (FORMAT PARQUET, COMPRESSION ZSTD);
             """
             con.execute(sql)
-            elapsed = time.time() - start
-            return out, elapsed, csv_gz.name
+        except Exception:
+            # A failed conversion keeps no half-written file, which matters most
+            # when the reason is a full disk. Closing first releases the file.
+            con.close()
+            partial.unlink(missing_ok=True)
+            raise
         finally:
             con.close()
+        os.replace(partial, out)
+        elapsed = time.time() - start
+        return out, elapsed, csv_gz.name
 
     start_time = time.time()
     max_workers = max(1, int(os.environ.get("M4_CONVERT_MAX_WORKERS", "4")))
@@ -523,13 +648,17 @@ def _csv_to_parquet_all(
     completed = 0
 
     logger.info(
-        f"Converting {total_files} CSV files to Parquet using {max_workers} workers..."
+        f"Converting {total_files} CSV files to Parquet using {max_workers} workers"
+        f" ({skipped_count} already converted)..."
     )
+    # Until every file is converted, the Parquet folder is not a whole dataset.
+    _write_marker(conversion_note, source=str(src_root.resolve()))
     reporter.emit(
         "conversion_started",
         source=str(src_root),
         destination=str(parquet_root),
         file_count=total_files,
+        skipped_count=skipped_count,
     )
 
     console.print()
@@ -566,12 +695,14 @@ def _csv_to_parquet_all(
                     ex.shutdown(cancel_futures=True)
                     return False
 
+    conversion_note.unlink(missing_ok=True)
     elapsed_time = time.time() - start_time
     success(f"Converted {len(parquet_paths)} files in {elapsed_time:.1f}s")
     reporter.emit(
         "conversion_completed",
         destination=str(parquet_root),
         file_count=len(parquet_paths),
+        skipped_count=skipped_count,
         elapsed_seconds=elapsed_time,
     )
     return True
@@ -633,6 +764,45 @@ def init_duckdb_from_parquet(
     )
 
 
+def _schema_for(directory: Path, schema_mapping: dict[str, str]) -> str | None:
+    """The schema for files in `directory`, given relative to the dataset root."""
+    dir_key = str(directory)
+    if dir_key == ".":
+        dir_key = ""
+    schema_name = schema_mapping.get(dir_key)
+    if schema_name is None:
+        # Fallback: flat files with a single-schema mapping
+        # (e.g. mimic-iv-note parquets at root instead of note/)
+        unique_schemas = set(schema_mapping.values())
+        if dir_key == "" and len(unique_schemas) == 1:
+            schema_name = next(iter(unique_schemas))
+    return schema_name
+
+
+def find_raw_root(csv_root: Path, schema_mapping: dict[str, str] | None) -> Path | None:
+    """The folder at or below `csv_root` whose CSV.gz files become the dataset's tables.
+
+    That is `csv_root` itself when it is laid out as the dataset expects. When
+    the files sit deeper, as under physionet.org/files/<dataset>/<version>/
+    after a plain `wget -r`, it is that deeper folder. None when no folder fits.
+    """
+    if not schema_mapping:
+        return csv_root  # Flat naming gives every file a table
+    fitting: dict[Path, int] = {}
+    for csv_gz in csv_root.rglob("*.csv.gz"):
+        folders = csv_gz.relative_to(csv_root).parent.parts
+        for depth in range(len(folders) + 1):
+            if _schema_for(Path(*folders[depth:]), schema_mapping) is not None:
+                root = csv_root.joinpath(*folders[:depth])
+                fitting[root] = fitting.get(root, 0) + 1
+    if not fitting:
+        return None
+    if csv_root in fitting:
+        return csv_root
+    # The folder most files fit under, and the shallowest of those
+    return max(fitting, key=lambda root: (fitting[root], -len(root.parts)))
+
+
 def _create_duckdb_with_views(
     db_path: Path,
     parquet_root: Path,
@@ -651,7 +821,14 @@ def _create_duckdb_with_views(
 
     If schema_mapping is None (backward compat for custom datasets),
     uses flat naming: hosp/admissions.parquet → hosp_admissions
+
+    Returns False when the database is locked or no view could be created.
     """
+    # A database that is only now created has no views, whatever was recorded
+    # for one that used to be at this path.
+    if not db_path.exists():
+        _prepared_marker(db_path).unlink(missing_ok=True)
+
     try:
         con = duckdb.connect(str(db_path))
     except duckdb.IOException as e:
@@ -671,6 +848,11 @@ def _create_duckdb_with_views(
         if not parquet_files:
             logger.error(f"No Parquet files found in {parquet_root}")
             return False
+
+        # The views change from here on, now that the database is known not to
+        # be locked. Whoever initializes the dataset marks it prepared again
+        # once they are all there and verified.
+        _prepared_marker(db_path).unlink(missing_ok=True)
 
         # Optimize DuckDB settings
         cpu_count = os.cpu_count() or 4
@@ -706,26 +888,13 @@ def _create_duckdb_with_views(
 
                 if schema_mapping:
                     # Resolve directory to schema name
-                    dir_key = str(rel.parent)
-                    if dir_key == ".":
-                        dir_key = ""
-                    schema_name = schema_mapping.get(dir_key)
+                    schema_name = _schema_for(rel.parent, schema_mapping)
                     if schema_name is None:
-                        # Fallback: flat files with a single-schema mapping
-                        # (e.g. mimic-iv-note parquets at root instead of note/)
-                        unique_schemas = set(schema_mapping.values())
-                        if dir_key == "" and len(unique_schemas) == 1:
-                            schema_name = next(iter(unique_schemas))
-                            logger.debug(
-                                f"Flat file '{pq.name}' mapped to sole "
-                                f"schema '{schema_name}'"
-                            )
-                        else:
-                            logger.warning(
-                                f"No schema mapping for directory '{dir_key}', "
-                                f"skipping {pq}"
-                            )
-                            continue
+                        logger.warning(
+                            f"No schema mapping for directory '{rel.parent}', "
+                            f"skipping {pq}"
+                        )
+                        continue
                     table_name = rel.stem.lower()
                     view_name = f"{schema_name}.{table_name}"
                 else:
@@ -760,6 +929,13 @@ def _create_duckdb_with_views(
                 except Exception as e:
                     logger.error(f"Failed to create view {view_name} from {pq}: {e}")
                     raise
+
+        if not created:
+            logger.error(
+                f"None of the Parquet files in {parquet_root} sits in a folder "
+                "that this dataset maps to a schema, so no view was created."
+            )
+            return False
 
         con.commit()
         elapsed_time = time.time() - start_time

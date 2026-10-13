@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from pathlib import Path
+from shlex import quote
 
 from m4.config import (
     get_active_backend,
@@ -10,7 +11,7 @@ from m4.config import (
     set_active_dataset,  # noqa: F401 - retained for compatibility patch targets
 )
 from m4.console import console
-from m4.core.datasets import DatasetRegistry
+from m4.core.datasets import DatasetDefinition, DatasetRegistry
 from m4.core.derived.builtins import has_derived_support
 from m4.core.derived.materializer import get_derived_table_count, materialize_all
 from m4.data_io import (
@@ -18,9 +19,14 @@ from m4.data_io import (
     PhysioNetCredentials,
     convert_csv_to_parquet,
     download_dataset,
+    find_raw_root,
+    find_unconverted,
     init_duckdb_from_parquet,
+    mark_dataset_prepared,
+    unfinished_conversion_source,
     verify_table_rowcount,
 )
+from m4.services.download import expected_raw_subdirectories
 from m4.services.events import EventReporter, get_event_reporter
 from m4.services.results import (
     ERROR_DATASET_NOT_FOUND,
@@ -61,6 +67,8 @@ def _build_data(
     pq_root: Path | None,
     raw_root: Path | None,
     steps: list[dict[str, str]],
+    *,
+    prepared: bool,
 ) -> dict:
     return {
         "dataset": dataset_key,
@@ -68,7 +76,70 @@ def _build_data(
         "parquet_root": str(pq_root.resolve()) if pq_root else None,
         "raw_root": str(raw_root.resolve()) if raw_root else None,
         "steps": steps,
+        "prepared": prepared,
     }
+
+
+def source_problem(
+    ds: DatasetDefinition,
+    csv_root: Path,
+    pq_root: Path,
+    *,
+    raw_present: bool,
+    src_given: bool,
+) -> CommandError | None:
+    """Why the files at hand cannot become the whole dataset, or None if they can.
+
+    Raw files must sit where the dataset's tables are mapped from, and Parquet
+    files left by an interrupted conversion need the raw files to finish it.
+    """
+    if not raw_present:
+        source = unfinished_conversion_source(pq_root)
+        if source is None:
+            return None
+        return CommandError(
+            command="init",
+            code="raw_files_missing",
+            message=(
+                f"The conversion of '{ds.name}' did not finish, and no raw files "
+                f"were found in {csv_root} to finish it."
+            ),
+            hint=(
+                f"The conversion read from {source}. Run: m4 init {ds.name} "
+                "--src <folder with the raw CSV.gz files>"
+            ),
+        )
+
+    located = find_raw_root(csv_root, ds.schema_mapping)
+    if located == csv_root:
+        return None
+    if located is None:
+        folders = expected_raw_subdirectories(ds) or [
+            folder for folder in ds.schema_mapping if folder
+        ]
+        return CommandError(
+            command="init",
+            code="raw_files_missing",
+            message=(
+                f"The CSV.gz files in {csv_root} are not in the folders "
+                f"'{ds.name}' keeps its tables in."
+            ),
+            hint=(
+                "Choose the folder that contains "
+                + " and ".join(f"{folder}/" for folder in folders)
+                + "."
+            ),
+        )
+    return CommandError(
+        command="init",
+        code="raw_files_missing",
+        message=f"The '{ds.name}' files are not directly in {csv_root}.",
+        hint=(
+            f"Choose {located} instead."
+            if src_given
+            else f"Run: m4 init {ds.name} --src {quote(str(located))}"
+        ),
+    )
 
 
 def initialize_dataset_service(
@@ -113,8 +184,18 @@ def initialize_dataset_service(
         steps: list[dict[str, str]] = []
         parquet_present = any(pq_root.rglob("*.parquet"))
         raw_present = any(csv_root.rglob("*.csv.gz"))
+        # Raw files in M4's own folder may be all that an interrupted download
+        # got to. Asked to download, M4 goes over them again where it can: the
+        # downloader skips every file that is complete.
+        resume_download = (
+            download
+            and raw_present
+            and not src
+            and bool(ds.file_listing_url)
+            and (not ds.requires_authentication or physionet_credentials is not None)
+        )
 
-        if not raw_present and not parquet_present:
+        if resume_download or (not raw_present and not parquet_present):
             if ds.requires_authentication:
                 if not download:
                     return CommandError(
@@ -163,7 +244,12 @@ def initialize_dataset_service(
                 return CommandResult(
                     command="init",
                     data=_build_data(
-                        dataset_key, final_db_path, pq_root, csv_root, steps
+                        dataset_key,
+                        final_db_path,
+                        pq_root,
+                        csv_root,
+                        steps,
+                        prepared=False,
                     ),
                     warnings=[],
                 )
@@ -198,25 +284,28 @@ def initialize_dataset_service(
                 _step("raw_files", "skipped", "Parquet files are already present.")
             )
 
-        if not parquet_present:
-            if not raw_present:
-                steps.append(
-                    _step("parquet", "skipped", "Raw files are not available.")
-                )
-            elif not convert_csv_to_parquet(
-                dataset_key,
-                csv_root,
-                pq_root,
-                event_reporter=reporter if event_reporter is not None else None,
-            ):
-                return CommandError(
-                    command="init",
-                    code="conversion_failed",
-                    message="Conversion failed. Please check logs for details.",
-                )
-            else:
-                parquet_present = True
-                steps.append(_step("parquet", "completed", "Converted CSV to Parquet."))
+        problem = source_problem(
+            ds, csv_root, pq_root, raw_present=raw_present, src_given=bool(src)
+        )
+        if problem:
+            return problem
+
+        # Conversion is decided per file: Parquet left by an earlier run says
+        # nothing about the raw files that run did not get to.
+        to_convert = find_unconverted(csv_root, pq_root) if raw_present else []
+        if raw_present and not convert_csv_to_parquet(
+            dataset_key,
+            csv_root,
+            pq_root,
+            event_reporter=reporter if event_reporter is not None else None,
+        ):
+            return CommandError(
+                command="init",
+                code="conversion_failed",
+                message="Conversion failed. Please check logs for details.",
+            )
+        if to_convert:
+            steps.append(_step("parquet", "completed", "Converted CSV to Parquet."))
         else:
             steps.append(_step("parquet", "skipped", "Parquet files are present."))
 
@@ -244,7 +333,23 @@ def initialize_dataset_service(
         }
         if event_reporter is not None:
             init_kwargs["event_reporter"] = reporter
-        if not init_duckdb_from_parquet(**init_kwargs):
+        try:
+            views_created = init_duckdb_from_parquet(**init_kwargs)
+        except Exception as exc:
+            return CommandError(
+                command="init",
+                code="duckdb_init_failed",
+                message=f"Could not create the views for '{dataset_name}': {exc}",
+                hint=(
+                    None
+                    if raw_present
+                    else (
+                        "If a Parquet file is damaged, convert it again: "
+                        f"m4 init {dataset_key} --src <folder with the raw CSV.gz files>"
+                    )
+                ),
+            )
+        if not views_created:
             return CommandError(
                 command="init",
                 code="duckdb_init_failed",
@@ -286,6 +391,10 @@ def initialize_dataset_service(
             steps.append(
                 _step("verification", "skipped", "No verification table configured.")
             )
+
+        # Every raw file has its table and the views answer: only now is the
+        # dataset reported as ready.
+        mark_dataset_prepared(pq_root, final_db_path)
 
         if has_derived_support(dataset_key) and get_active_backend() == "duckdb":
             try:
@@ -345,6 +454,8 @@ def initialize_dataset_service(
 
         return CommandResult(
             command="init",
-            data=_build_data(dataset_key, final_db_path, pq_root, csv_root, steps),
+            data=_build_data(
+                dataset_key, final_db_path, pq_root, csv_root, steps, prepared=True
+            ),
             warnings=[],
         )

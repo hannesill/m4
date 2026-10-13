@@ -10,7 +10,11 @@ from m4.config import (
 from m4.core.datasets import DatasetRegistry
 from m4.core.derived.builtins import has_derived_support, list_builtins
 from m4.core.derived.materializer import get_derived_table_count
-from m4.data_io import compute_parquet_dir_size, verify_table_rowcount
+from m4.data_io import (
+    compute_parquet_dir_size,
+    is_dataset_prepared,
+    verify_table_rowcount,
+)
 from m4.services.results import WARNING_PARQUET_PATH_MISMATCH
 
 
@@ -88,7 +92,17 @@ def _collect_dataset_status(
         except Exception:
             pass
 
-    if parquet_present and db_present:
+    # Files being there is not enough: `m4 init` must have run to the end, so
+    # that every raw file has its table and the views exist.
+    prepared = bool(
+        parquet_present
+        and db_present
+        and parquet_root
+        and db_path
+        and is_dataset_prepared(Path(parquet_root), Path(db_path))
+    )
+
+    if prepared:
         setup_state = "ready"
     elif requires_authentication and not raw_present and not parquet_present:
         setup_state = "credentials_required"
@@ -99,7 +113,7 @@ def _collect_dataset_status(
     elif not db_present:
         setup_state = "missing_database"
     else:
-        setup_state = "ready"
+        setup_state = "incomplete"
 
     result = {
         "name": name,
@@ -107,6 +121,7 @@ def _collect_dataset_status(
         "raw_present": raw_present,
         "parquet_present": parquet_present,
         "db_present": db_present,
+        "prepared": prepared,
         "requires_authentication": requires_authentication,
         "download_available": download_available,
         "setup_state": setup_state,
