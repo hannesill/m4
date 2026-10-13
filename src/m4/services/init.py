@@ -515,7 +515,14 @@ def initialize_dataset_service(
 
         # Every raw file has its table and the views answer: only now is the
         # dataset reported as ready.
-        mark_dataset_prepared(pq_root, final_db_path)
+        try:
+            mark_dataset_prepared(pq_root, final_db_path)
+        except OSError as exc:
+            return CommandError(
+                command="init",
+                code="duckdb_init_failed",
+                message=f"Could not record that '{dataset_name}' is ready: {exc}",
+            )
 
         if has_derived_support(dataset_key) and get_active_backend() == "duckdb":
             try:

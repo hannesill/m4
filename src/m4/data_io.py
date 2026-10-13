@@ -1,6 +1,8 @@
+import glob
 import json
 import os
 import time
+import uuid
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -729,8 +731,17 @@ def _csv_to_parquet_all(
         start = time.time()
         out = _parquet_path_for(csv_gz, src_root, parquet_root)
         out.parent.mkdir(parents=True, exist_ok=True)
-        partial = out.with_name(out.name + PARTIAL_SUFFIX)
-        partial.unlink(missing_ok=True)
+        # The table is written under a name no other run uses: two runs at
+        # once would otherwise publish what the other has written so far. What
+        # earlier runs left of the table is cleared first, to give the disk
+        # back. That takes the file of a run that is still going too, which
+        # then fails when it comes to publish it, instead of going wrong.
+        for leftover in out.parent.glob(f"{glob.escape(out.name)}*{PARTIAL_SUFFIX}"):
+            try:
+                leftover.unlink(missing_ok=True)
+            except OSError:
+                pass  # Held open by a run that is still writing it (Windows)
+        partial = out.with_name(f"{out.name}.{uuid.uuid4().hex}{PARTIAL_SUFFIX}")
 
         con = duckdb.connect()
         try:
@@ -778,16 +789,21 @@ def _csv_to_parquet_all(
     # Until every file is converted, the Parquet folder is not a whole dataset.
     # The tables are listed, so that only their being there settles the note.
     if not keeps_note:
-        _write_marker(
-            conversion_note,
-            source=str(src_root.resolve()),
-            tables=sorted(
-                _parquet_path_for(csv_gz, src_root, parquet_root)
-                .relative_to(parquet_root)
-                .as_posix()
-                for csv_gz in csv_files
-            ),
-        )
+        try:
+            _write_marker(
+                conversion_note,
+                source=str(src_root.resolve()),
+                tables=sorted(
+                    _parquet_path_for(csv_gz, src_root, parquet_root)
+                    .relative_to(parquet_root)
+                    .as_posix()
+                    for csv_gz in csv_files
+                ),
+            )
+        except OSError as e:
+            # A full disk, most likely. Nothing has been converted yet.
+            logger.error(f"Could not note the conversion in {parquet_root}: {e}")
+            return False
     reporter.emit(
         "conversion_started",
         source=str(src_root),

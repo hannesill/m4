@@ -6,6 +6,7 @@ rows of made-up CSV.gz data. "Killed" stands in for the process dying, which a
 wrapper causes when its user cancels, and which leaves no chance to clean up.
 """
 
+import errno
 import gzip
 import json
 import os
@@ -193,7 +194,7 @@ def test_conversion_killed_then_init_again_converts_the_missing_table(
     # dataset is not ready although Parquet files exist.
     in_flight = _parquet(data_dir) / "icu" / "chartevents.parquet"
     assert not in_flight.exists()
-    assert in_flight.with_name("chartevents.parquet.part").exists()
+    assert len(list(in_flight.parent.glob("chartevents.parquet.*.part"))) == 1
     assert (_parquet(data_dir) / "hosp" / "admissions.parquet").exists()
     _assert_not_ready(_listed())
 
@@ -1260,3 +1261,63 @@ def test_wget_tree_where_several_folders_fit_names_them_all(data_dir, tmp_path):
     assert "instead" not in failure["error"]["hint"]
     assert not list(data_dir.rglob("*.parquet"))
     _assert_not_ready(_listed("eicu"))
+
+
+# ------------------------------------------------------------
+# A disk that is full
+# ------------------------------------------------------------
+
+PREPARED_MARKER = "mimic_iv.duckdb.m4-prepared.json"
+CONVERSION_NOTE = ".m4-converting.json"
+
+
+def _disk_full_when_writing(monkeypatch, name: str) -> None:
+    """Fail as a full disk does when M4 writes the file called `name`."""
+    real_write_text = Path.write_text
+
+    def write_text(self, *args, **kwargs):
+        if self.name.startswith(name):
+            raise OSError(errno.ENOSPC, "No space left on device", str(self))
+        return real_write_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", write_text)
+
+
+@pytest.mark.parametrize(
+    ("file_name", "code"),
+    [(CONVERSION_NOTE, "conversion_failed"), (PREPARED_MARKER, "duckdb_init_failed")],
+)
+def test_full_disk_is_a_reported_failure(data_dir, raw, monkeypatch, file_name, code):
+    with monkeypatch.context() as full:
+        _disk_full_when_writing(full, file_name)
+        result, events = _init("--src", str(raw))
+
+    # A wrapper learns of the failure from the last event, not from a traceback.
+    assert result.exit_code == 1
+    failure = events[-1]
+    assert failure["event"] == "operation_failed"
+    assert failure["error"]["code"] == code
+    _assert_not_ready(_listed())
+
+    result, _ = _init("--src", str(raw))
+
+    assert result.exit_code == 0
+    _assert_ready(_listed())
+
+
+@pytest.mark.parametrize("file_name", [CONVERSION_NOTE, PREPARED_MARKER])
+def test_full_disk_is_a_reported_failure_without_json_too(
+    data_dir, raw, monkeypatch, file_name
+):
+    monkeypatch.setattr("m4.config._find_project_root_from_cwd", Path.cwd)
+
+    with monkeypatch.context() as full:
+        _disk_full_when_writing(full, file_name)
+        result = runner.invoke(
+            app, ["init", "mimic-iv", "--src", str(raw)], input="n\n"
+        )
+
+    assert result.exit_code == 1
+    assert isinstance(result.exception, SystemExit)
+    assert "Materialize derived tables?" not in result.output
+    _assert_not_ready(_listed())

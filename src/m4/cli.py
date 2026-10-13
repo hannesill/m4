@@ -1086,25 +1086,33 @@ def dataset_init_cmd(
     )
 
     verification_table_name = ds.primary_verification_table
+    verified = True
     if not verification_table_name:
         logger.warning(
             f"No 'primary_verification_table' configured for '{dataset_name}'. Skipping DB query test."
         )
-        mark_dataset_prepared(pq_root, final_db_path)
-        print_init_complete(dataset_name, str(final_db_path), str(pq_root))
     else:
         try:
             record_count = verify_table_rowcount(final_db_path, verification_table_name)
             success(
                 f"Verified: {record_count:,} records in '{verification_table_name}'"
             )
-            mark_dataset_prepared(pq_root, final_db_path)
-            print_init_complete(dataset_name, str(final_db_path), str(pq_root))
         except Exception as e:
             logger.error(
                 f"Unexpected error during database verification: {e}", exc_info=True
             )
             error(f"Verification failed: {e}")
+            verified = False
+
+    if verified:
+        # Every raw file has its table and the views answer: only now is the
+        # dataset reported as ready.
+        try:
+            mark_dataset_prepared(pq_root, final_db_path)
+        except OSError as e:
+            error(f"Could not record that '{dataset_name}' is ready: {e}")
+            raise typer.Exit(code=1)
+        print_init_complete(dataset_name, str(final_db_path), str(pq_root))
 
     # Offer to materialize derived tables for supported datasets
     if has_derived_support(dataset_key) and get_active_backend() == "duckdb":

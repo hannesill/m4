@@ -111,8 +111,8 @@ to the DuckDB file (the file itself, where its path is a link), is written
 last by `m4 init` and lists the Parquet files the views were verified over; a
 dataset stops being ready when those files change.
 `.m4-converting.json`, in the dataset's Parquet folder, exists while a
-conversion is unfinished and lists the tables it set out to make. Tables
-being converted carry the suffix `.part`.
+conversion is unfinished and lists the tables it set out to make. A table
+that is being converted is named `<table>.parquet.<id>.part`.
 `.m4-downloading.json`, in a raw folder, exists while a download by M4 into
 that folder is unfinished. A file that is being downloaded is named
 `<file>.csv.gz.part`; one that is left without its finished file says that a

@@ -1,13 +1,18 @@
 import base64
 import errno
 import gzip
+import io
 import json
+import os
+import re
 from pathlib import Path
 from unittest import mock
 
 import duckdb
 import pytest
 import requests
+from rich.console import Console
+from rich.progress import Progress
 
 from m4.core.backends.duckdb import DuckDBBackend
 from m4.core.datasets import DatasetDefinition, Modality
@@ -917,6 +922,76 @@ def test_find_raw_root_names_no_folder_when_several_fit(tmp_path):
     # The folder that was asked about is taken when it fits itself.
     eicu = tree / "eicu-crd" / "2.0"
     assert find_raw_root(eicu, {"": "eicu_crd"}) == eicu
+
+
+def test_table_is_not_published_from_what_another_run_is_still_writing(
+    tmp_path, monkeypatch
+):
+    """Two runs converting the same table must not share its temporary file:
+    the first to finish would publish what the other has written so far."""
+    src_root = tmp_path / "src"
+    (src_root / "hosp").mkdir(parents=True)
+    _write_gz_csv(src_root / "hosp" / "admissions.csv.gz", "subject_id\n1\n2\n")
+    dst_root = tmp_path / "parquet"
+    table = dst_root / "hosp" / "admissions.parquet"
+
+    class Died(BaseException):
+        """The other run was killed in the middle of the table."""
+
+    class OtherRunWritingHalfATable:
+        def execute(self, sql):
+            target = re.search(r"TO '([^']+)'", sql)
+            if target:
+                Path(target.group(1)).write_bytes(b"PAR1 and half a table")
+                raise Died()
+
+        def close(self):
+            pass
+
+    real_replace = os.replace
+    other_run_started = []
+
+    def replace(src, dst):
+        # This run is about to publish the table. Right now another run
+        # starts on the same table, and gets halfway.
+        if Path(dst) == table and not other_run_started:
+            other_run_started.append(True)
+            with monkeypatch.context() as other, pytest.raises(Died):
+                other.setattr(
+                    "m4.data_io.duckdb.connect", lambda: OtherRunWritingHalfATable()
+                )
+                # The other run is another process, with a terminal of its own.
+                other.setattr(
+                    "m4.data_io.create_task_progress",
+                    lambda: Progress(console=Console(file=io.StringIO())),
+                )
+                convert_csv_to_parquet("mimic-iv-demo", src_root, dst_root)
+        return real_replace(src, dst)
+
+    monkeypatch.setattr("m4.data_io.os.replace", replace)
+
+    published = convert_csv_to_parquet("mimic-iv-demo", src_root, dst_root)
+
+    # The other run cleared what it found of the table, this run's file
+    # included. So this run fails, and no half-written file passes for a table.
+    assert other_run_started
+    assert published is False
+    assert not table.exists()
+
+    monkeypatch.setattr("m4.data_io.os.replace", real_replace)
+    assert convert_csv_to_parquet("mimic-iv-demo", src_root, dst_root)
+    assert find_unconverted(src_root, dst_root) == []
+    assert sorted(p.name for p in dst_root.rglob("*") if p.is_file()) == [
+        "admissions.parquet"
+    ]
+    con = duckdb.connect()
+    try:
+        rows = con.execute(
+            f"SELECT COUNT(*) FROM read_parquet('{table.as_posix()}')"
+        ).fetchone()[0]
+    finally:
+        con.close()
+    assert rows == 2
 
 
 # ------------------------------------------------------------
