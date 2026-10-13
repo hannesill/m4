@@ -20,6 +20,7 @@ from typer.testing import CliRunner
 
 import m4.config as cfg_mod
 from m4.cli import app
+from m4.core.datasets import DatasetDefinition, DatasetRegistry
 from m4.services.events import NdjsonEventReporter
 
 runner = CliRunner()
@@ -1321,3 +1322,92 @@ def test_full_disk_is_a_reported_failure_without_json_too(
     assert isinstance(result.exception, SystemExit)
     assert "Materialize derived tables?" not in result.output
     _assert_not_ready(_listed())
+
+
+# ------------------------------------------------------------
+# The prepared marker
+# ------------------------------------------------------------
+
+
+@pytest.fixture
+def plain_dataset(data_dir):
+    """A dataset without a verification table and without schemas."""
+    DatasetRegistry.register(DatasetDefinition(name="plain"))
+    yield "plain"
+    DatasetRegistry.reset()
+
+
+def test_init_without_json_makes_the_dataset_ready(data_dir, raw, monkeypatch):
+    monkeypatch.setattr("m4.config._find_project_root_from_cwd", Path.cwd)
+
+    result = runner.invoke(app, ["init", "mimic-iv", "--src", str(raw)], input="n\n")
+
+    assert result.exit_code == 0
+    assert _views(data_dir) == ALL_VIEWS
+    _assert_ready(_listed())
+
+
+def test_init_without_json_of_a_dataset_without_verification_table_makes_it_ready(
+    data_dir, raw, plain_dataset, monkeypatch
+):
+    monkeypatch.setattr("m4.config._find_project_root_from_cwd", Path.cwd)
+
+    result = runner.invoke(app, ["init", plain_dataset, "--src", str(raw)])
+
+    assert result.exit_code == 0
+    assert _views(data_dir, plain_dataset) == {
+        "main.hosp_admissions",
+        "main.hosp_patients",
+        "main.icu_chartevents",
+    }
+    _assert_ready(_listed(plain_dataset))
+
+
+def test_ready_dataset_is_not_ready_while_a_later_conversion_is_unfinished(
+    data_dir, raw, monkeypatch
+):
+    _init("--src", str(raw))
+    _assert_ready(_listed())
+    _write_raw(raw, {"icu/icustays": "subject_id,stay_id\n1,10\n"})
+
+    with monkeypatch.context() as dying, pytest.raises(Killed):
+        _die_before_publishing(dying, "icustays")
+        _init("--src", str(raw))
+
+    # All that the first run made is still there: its marker, the database,
+    # and the very tables it was verified over. Only the conversion that was
+    # cut short says that a table is missing.
+    assert _database(data_dir).with_name(PREPARED_MARKER).exists()
+    assert _views(data_dir) == ALL_VIEWS
+    assert len(list(_parquet(data_dir).rglob("*.parquet"))) == 3
+    listed = _listed()
+    assert listed["prepared"] is False
+    assert listed["setup_state"] == "incomplete"
+
+    result, _ = _init("--src", str(raw))
+
+    assert result.exit_code == 0
+    assert _views(data_dir) == ALL_VIEWS | {"mimiciv_icu.icustays"}
+    _assert_ready(_listed())
+
+
+def test_ready_dataset_is_not_ready_once_its_views_are_being_made_again(
+    data_dir, raw, monkeypatch
+):
+    _init("--src", str(raw))
+    _assert_ready(_listed())
+
+    with monkeypatch.context() as dying, pytest.raises(Killed):
+        _die_after_view(dying, 1)
+        _init("--src", str(raw))
+
+    # The marker of the first run must not vouch for views it did not see.
+    assert not _database(data_dir).with_name(PREPARED_MARKER).exists()
+    listed = _listed()
+    assert listed["prepared"] is False
+    assert listed["setup_state"] == "incomplete"
+
+    result, _ = _init("--src", str(raw))
+
+    assert result.exit_code == 0
+    _assert_ready(_listed())
