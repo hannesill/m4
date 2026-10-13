@@ -3,8 +3,8 @@
 
 This tool keeps rows, code, commands, and run metadata where possible, while
 pseudonymizing row identifiers and replacing bulk credentialed-data previews in
-traces with structured placeholders. It creates a reviewer-facing artifact with
-a machine-readable report of what was changed.
+traces with structured placeholders. It writes a machine-readable report of
+what was changed.
 """
 
 from __future__ import annotations
@@ -208,11 +208,16 @@ DATA_TERMS = {
     "uniquepid",
 }
 RESULT_JSON_TEXT_PATHS = {
-    ("agent_result", "stdout"),
     ("agent_result", "stderr"),
     ("test_results", "pytest_output"),
     ("test_results", "pytest_stderr"),
 }
+# Agent CLI stdout is a tail of the JSON event stream, so its first line can be
+# a truncated event whose tool output cannot be separated from agent text.
+RESULT_JSON_EVENT_STREAM_PATH = ("agent_result", "stdout")
+# Written by repair_result_json.py for malformed historical result.json: the
+# verbatim malformed block, in which tool output cannot be located at all.
+RESULT_JSON_UNPARSED_PATH = ("agent_result", "unparsed_original_text")
 
 
 @dataclass
@@ -245,6 +250,8 @@ class FileReport:
     transformed_columns: list[str] = field(default_factory=list)
     redacted_blocks: int = 0
     redacted_terms: int = 0
+    redacted_secrets: int = 0
+    withheld_unparseable: int = 0
     remaining_at_signs: int = 0
     kept_columns: list[str] = field(default_factory=list)
     dropped_columns: list[str] = field(default_factory=list)
@@ -283,7 +290,7 @@ class SanitizationReport:
             files.append(record)
 
         data = {
-            "description": ("Sanitizer report for a reviewer-facing artifact."),
+            "description": "Sanitization report.",
             "started_at": self.started_at,
             "finished_at": datetime.now(timezone.utc)
             .isoformat()
@@ -311,6 +318,10 @@ class SanitizationReport:
                 "redacted_private_terms": sum(
                     item.redacted_terms for item in self.files
                 ),
+                "redacted_secrets": sum(item.redacted_secrets for item in self.files),
+                "withheld_unparseable_events": sum(
+                    item.withheld_unparseable for item in self.files
+                ),
                 "remaining_at_signs": sum(
                     item.remaining_at_signs for item in self.files
                 ),
@@ -318,8 +329,8 @@ class SanitizationReport:
                 "dropped_columns": dict(sorted(dropped_columns.items())),
             },
             "notes": [
-                "Clinical scores, categorical results, and relative event patterns are preserved for review.",
-                "Trace bulk data previews are replaced with structured placeholders.",
+                "Tool and command outputs in traces are replaced with structured placeholders.",
+                "Events that are not valid JSON in the source are withheld whole, because their tool output cannot be separated from agent text.",
             ],
             "files": files,
         }
@@ -536,6 +547,66 @@ def redact_private_text(
     return redacted, count
 
 
+# Path characters stop at backslashes as well as quotes and whitespace. Traces
+# and agent stdout embed JSON-escaped text, so a path followed by an escaped
+# quote (`\"`) must not consume the escape; doing so produced the malformed
+# result.json files in the original review archive.
+LOCAL_PATH_PATTERNS = (
+    (re.compile(r"/Users/[^\s\"'\\]+"), "<ANON_LOCAL_PATH>"),
+    (re.compile(r"/home/[^\s\"'\\]+"), "<ANON_LOCAL_PATH>"),
+    (re.compile(r"/var/folders/[^\s\"'\\]+"), "<ANON_TMP_PATH>"),
+    # Claude Code names project directories after the host path with slashes
+    # turned into dashes (`~/.claude/projects/-Users-name-repo`).
+    (re.compile(r"-var-folders-[A-Za-z0-9_-]+"), "<ANON_TMP_PATH>"),
+    (re.compile(r"(?<![A-Za-z0-9])-Users-[A-Za-z0-9_.-]+"), "<ANON_LOCAL_PATH>"),
+)
+
+
+def redact_local_paths(text: str) -> str:
+    for pattern, replacement in LOCAL_PATH_PATTERNS:
+        text = pattern.sub(replacement, text)
+    return text
+
+
+# Trace and stdout text is often JSON-escaped one or more times, so a value can
+# directly follow an escaped newline or tab (`\n`, `\t`). The character before
+# it is then a letter and a plain word boundary does not match.
+AFTER_ESCAPE = r"(?<=\\[nrt])"
+
+# Agents sometimes print credential files (for example `.codex/auth.json`)
+# while exploring the container, so secrets are removed wherever they appear.
+SECRET_TOKEN = re.compile(
+    r"eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}(?:\.[A-Za-z0-9_-]+)?"  # JWT
+    rf"|(?:\b|{AFTER_ESCAPE})(?:"
+    r"rt_[A-Za-z0-9._-]{20,}"  # OpenAI refresh token
+    r"|sk-(?:ant-|proj-|svcacct-)?[A-Za-z0-9_-]{32,}"  # OpenAI/Anthropic API key
+    r"|gh[pousr]_[A-Za-z0-9]{30,}"
+    r"|AKIA[0-9A-Z]{16}"
+    r"|xox[abprs]-[A-Za-z0-9-]{10,}"
+    r"|hf_[A-Za-z0-9]{30,}"
+    r"|Bearer\s+[A-Za-z0-9._~+/=-]{20,}"
+    r")"
+)
+# `\\*"` accepts the quote at any JSON-escaping depth.
+SECRET_FIELD = re.compile(
+    r"(?P<key>(?:id_token|access_token|refresh_token|api_key|apikey|client_secret"
+    r"|session_token|session_key|authorization|account_id|chatgpt_account_id"
+    r'|chatgpt_user_id|installation_id)\\*"\s*:\s*\\*")(?P<value>[^"\\]{8,})',
+    flags=re.IGNORECASE,
+)
+
+
+def redact_secrets(text: str) -> tuple[str, int]:
+    text, fields = SECRET_FIELD.subn(r"\g<key><REDACTED_SECRET>", text)
+    text, tokens = SECRET_TOKEN.subn("<REDACTED_SECRET>", text)
+    return text, fields + tokens
+
+
+def keyed_digest(text: str, salt: bytes) -> str:
+    """Salted digest prefix: short redacted values cannot be brute-forced."""
+    return hmac.new(salt, text.encode("utf-8"), hashlib.sha256).hexdigest()[:16]
+
+
 def sanitize_text_basic(
     text: str,
     *,
@@ -548,6 +619,8 @@ def sanitize_text_basic(
         report.redacted_terms += n
     else:
         redacted = text
+    redacted, secrets = redact_secrets(redacted)
+    report.redacted_secrets += secrets
     redacted = re.sub(
         r'("signature"\s*:\s*")[^"]+(")',
         r"\1<REDACTED_SIGNATURE>\2",
@@ -570,9 +643,7 @@ def sanitize_text_basic(
     ):
         if old:
             redacted = redacted.replace(old, new)
-    redacted = re.sub(r"/Users/[^\s\"']+", "<ANON_LOCAL_PATH>", redacted)
-    redacted = re.sub(r"/home/[^\s\"']+", "<ANON_LOCAL_PATH>", redacted)
-    redacted = re.sub(r"/var/folders/[^\s\"']+", "<ANON_TMP_PATH>", redacted)
+    redacted = redact_local_paths(redacted)
     redacted = redact_named_ids(redacted, config.salt)
     report.remaining_at_signs += count_remaining_at_signs(
         redacted,
@@ -585,19 +656,18 @@ def redact_named_ids(text: str, salt: bytes) -> str:
     id_names = "|".join(
         re.escape(name) for name in sorted(ID_COLUMNS, key=len, reverse=True)
     )
+    # Values must be numeric identifiers. After a comma only long values count,
+    # so SQL column lists (`stay_id, t1.subject_id`) and `ORDER BY stay_id, 1`
+    # stay intact. A trailing `.0` covers identifiers printed as floats.
     pattern = re.compile(
-        rf"\b(?P<name>{id_names})\b(?P<sep>\s*[:=,]\s*['\"]?)(?P<value>[A-Za-z0-9_.-]+)",
+        rf"\b(?P<name>{id_names})\b(?P<sep>\s*[:=]\s*['\"]?|\s*,\s*['\"]?(?=\d{{5}}|0\d\d-))"
+        r"(?P<value>\d[\d-]*(?:\.0)?)(?![\w.])",
         flags=re.IGNORECASE,
     )
 
     def replace(match: re.Match[str]) -> str:
-        name = match.group("name").lower()
-        prefix = ID_COLUMNS.get(name)
-        if not prefix:
-            return match.group(0)
-        value = match.group("value")
-        if not re.search(r"\d", value):
-            return match.group(0)
+        prefix = ID_COLUMNS[match.group("name").lower()]
+        value = match.group("value").removesuffix(".0")
         return f"{match.group('name')}{match.group('sep')}{pseudonymize(value, prefix=prefix, salt=salt)}"
 
     return pattern.sub(replace, text)
@@ -630,17 +700,42 @@ def looks_like_table_header(line: str) -> bool:
     return any(sep in line for sep in (",", "|", "\t")) or len(line.split()) >= 4
 
 
+# A field that holds a value: a number, or an identifier or datetime that was
+# already replaced. Column names with digits (`uo_tm_6hr`) are not values, so a
+# column list that wraps over several lines is not mistaken for rows.
+VALUE_FIELD = re.compile(
+    r"^\W*(?:[-+]?\d[\d.,:eE+-]*%?"
+    r"|(?:MIMIC|EICU|AB|PERSON|ADMISSION)_[A-Z_]*[0-9A-F]{16}"
+    r"|<REDACTED_[A-Z_]+>)\W*$"
+)
+
+
 def looks_like_table_row(line: str) -> bool:
     stripped = line.strip()
     if not stripped:
         return False
     if any(sep in stripped for sep in (",", "|", "\t")):
         parts = re.split(r"[,|\t]", stripped)
-        numericish = sum(1 for part in parts if re.search(r"\d", part))
-        return len(parts) >= 3 and numericish >= 2
+        values = sum(1 for part in parts if VALUE_FIELD.match(part))
+        return len(parts) >= 3 and values >= 2
     parts = stripped.split()
-    numericish = sum(1 for part in parts if re.search(r"\d", part))
-    return len(parts) >= 4 and numericish >= 2
+    values = sum(1 for part in parts if VALUE_FIELD.match(part))
+    return len(parts) >= 4 and values >= 2
+
+
+# A row quoted in agent prose after scrubbing: it starts with a pseudonymized
+# identifier or a redacted datetime and continues with further delimited fields.
+IDENTIFIED_ROW = re.compile(
+    r"^\s*[(\[|]?\s*['\"]?"
+    r"(?:(?:MIMIC|EICU)_[A-Z_]+_[0-9A-F]{16}|<REDACTED_SHIFTED_DATETIME>)"
+    r"['\"]?\s*(?:[,|\t]|\s{2,})\s*\S"
+)
+
+
+def looks_like_identified_row(line: str) -> bool:
+    if not IDENTIFIED_ROW.match(line):
+        return False
+    return len(re.split(r"[,|\t]|\s{2,}", line.strip())) >= 3
 
 
 def redact_trace_data_blocks(
@@ -651,24 +746,36 @@ def redact_trace_data_blocks(
 ) -> str:
     lines = text.splitlines(keepends=True)
     out: list[str] = []
+
+    def placeholder(kind: str, block: list[str]) -> str:
+        block_text = "".join(block)
+        columns = sorted(term for term in DATA_TERMS if term in block_text.lower())
+        report.redacted_blocks += 1
+        return (
+            "<REDACTED_DATA_BLOCK "
+            f'type="{kind}" lines="{len(block)}" '
+            f'columns="{",".join(columns[:20])}" '
+            f'hmac_prefix="{keyed_digest(block_text, config.salt)}">\n'
+        )
+
     i = 0
     while i < len(lines):
         line = lines[i]
         if looks_like_table_header(line):
-            block = [line]
-            i += 1
-            while i < len(lines) and looks_like_table_row(lines[i]):
-                block.append(lines[i])
-                i += 1
-            block_text = "".join(block)
-            digest = sha256_bytes(block_text.encode("utf-8"))[:16]
-            columns = sorted(term for term in DATA_TERMS if term in block_text.lower())
-            out.append(
-                "<REDACTED_DATA_BLOCK "
-                f'type="tabular_preview" lines="{len(block)}" '
-                f'columns="{",".join(columns[:20])}" sha256_prefix="{digest}">\n'
-            )
-            report.redacted_blocks += 1
+            end = i + 1
+            while end < len(lines) and looks_like_table_row(lines[end]):
+                end += 1
+            # A column list without rows is a schema, SQL, or instruction line.
+            if end > i + 1:
+                out.append(placeholder("tabular_preview", lines[i:end]))
+                i = end
+                continue
+        if looks_like_identified_row(line):
+            end = i + 1
+            while end < len(lines) and looks_like_identified_row(lines[end]):
+                end += 1
+            out.append(placeholder("identified_rows", lines[i:end]))
+            i = end
             continue
         out.append(line)
         i += 1
@@ -910,6 +1017,16 @@ def sanitize_json_value(
         if lower_key in ID_COLUMNS and re.search(r"\d", value):
             report.transformed_columns.append(path[-1])
             return pseudonymize(value, prefix=ID_COLUMNS[lower_key], salt=config.salt)
+        if path[-2:] == RESULT_JSON_UNPARSED_PATH:
+            report.withheld_unparseable += 1
+            return (
+                f'<REDACTED_UNPARSED_AGENT_RESULT chars="{len(value)}" '
+                f'hmac_prefix="{keyed_digest(value, config.salt)}">'
+            )
+        if path[-2:] == RESULT_JSON_EVENT_STREAM_PATH:
+            return sanitize_text_payload(
+                value, config=config, report=report, event_stream=True
+            )
         if any(path[-len(item) :] == item for item in RESULT_JSON_TEXT_PATHS):
             return sanitize_text_payload(value, config=config, report=report)
         return sanitize_text_basic(value, config=config, report=report)
@@ -923,14 +1040,197 @@ def sanitize_json_value(
     return value
 
 
+# Keys whose values are tool/command output (database query results, file
+# reads) in Claude Code and Codex traces. Agent-authored content (messages,
+# SQL, code, tool inputs) is kept; tool output is replaced by a placeholder
+# because it can contain row-level credentialed data inside JSON strings,
+# where the line-based data-block detector cannot see it.
+TOOL_OUTPUT_KEYS = {
+    "toolUseResult",
+    "tool_use_result",
+    "aggregated_output",
+    "stdout",
+    "stderr",
+}
+TOOL_RESULT_TYPES = {"tool_result", "function_call_output"}
+TOOL_RESULT_CONTENT_KEYS = {"content", "output"}
+# Dates are shifted into 2100-2299. Python reprs (`datetime.date(2150, 1, 2)`)
+# and dates without zero padding are covered as well as ISO text.
+SHIFTED_DATETIME = re.compile(
+    rf"(?:\b|{AFTER_ESCAPE})"
+    r"2[12]\d\d-[01]?\d-[0-3]?\d(?:[ T][0-2]\d:[0-5]\d(?::[0-5]\d(?:\.\d+)?)?)?"
+    r"|(?:datetime\.)?(?:datetime|date)\(2[12]\d\d(?:,\s*\d+)*\)"
+)
+# MIMIC-IV subject/hadm/stay identifiers are 8-digit integers starting 1/2/3,
+# sometimes printed as floats (`30012345.0`). Word, hyphen, and decimal guards
+# keep run-id timestamps, UUID segments, and float digits intact.
+MIMIC_IDENTIFIER = re.compile(
+    rf"(?:(?<![\w.-])|{AFTER_ESCAPE})[123]\d{{7}}(?:\.0)?(?![\w-]|\.\d)"
+)
+# eICU `uniquepid` values look like `002-10009`.
+EICU_UNIQUE_PID = re.compile(
+    rf"(?:(?<![\w.-])|{AFTER_ESCAPE})0[0-3]\d-\d{{3,6}}(?![\w-])"
+)
+PATIENT_AGE = re.compile(r"(?<![\w.])\d{1,3}(?=[- ]?(?:year|yr)s?[- ]old\b)")
+
+
+def pseudonymize_bare_identifiers(text: str, salt: bytes) -> tuple[str, int]:
+    text, mimic = MIMIC_IDENTIFIER.subn(
+        lambda match: pseudonymize(
+            match.group(0).removesuffix(".0"), prefix="MIMIC_ID", salt=salt
+        ),
+        text,
+    )
+    text, eicu = EICU_UNIQUE_PID.subn(
+        lambda match: pseudonymize(
+            match.group(0), prefix=ID_COLUMNS["uniquepid"], salt=salt
+        ),
+        text,
+    )
+    return text, mimic + eicu
+
+
+def tool_output_placeholder(value: Any, salt: bytes) -> str:
+    text = value if isinstance(value, str) else json.dumps(value, sort_keys=True)
+    return (
+        f'<REDACTED_TOOL_OUTPUT chars="{len(text)}" '
+        f'hmac_prefix="{keyed_digest(text, salt)}">'
+    )
+
+
+def redact_tool_outputs(value: Any, report: FileReport, salt: bytes) -> Any:
+    if isinstance(value, list):
+        return [redact_tool_outputs(item, report, salt) for item in value]
+    if not isinstance(value, dict):
+        return value
+    is_tool_result = value.get("type") in TOOL_RESULT_TYPES
+    redacted = {}
+    for key, item in value.items():
+        if key in TOOL_OUTPUT_KEYS or (
+            is_tool_result and key in TOOL_RESULT_CONTENT_KEYS
+        ):
+            redacted[key] = tool_output_placeholder(item, salt)
+            report.redacted_blocks += 1
+        else:
+            redacted[key] = redact_tool_outputs(item, report, salt)
+    return redacted
+
+
+def sanitize_event_strings(
+    value: Any, *, config: SanitizerConfig, report: FileReport, key: str = ""
+) -> Any:
+    if isinstance(value, dict):
+        return {
+            name: sanitize_event_strings(item, config=config, report=report, key=name)
+            for name, item in value.items()
+        }
+    if isinstance(value, list):
+        return [
+            sanitize_event_strings(item, config=config, report=report, key=key)
+            for item in value
+        ]
+    if key == "signature" and isinstance(value, str):
+        return "<REDACTED_SIGNATURE>"  # opaque model-provider blob
+    if isinstance(value, str):
+        return redact_trace_data_blocks(
+            scrub_record_values(value, config=config, report=report),
+            config=config,
+            report=report,
+        )
+    # Identifiers passed as JSON numbers, for example in structured tool input.
+    prefix = ID_COLUMNS.get(key.lower())
+    if prefix and type(value) in (int, float):  # bool is not an identifier
+        report.redacted_terms += 1
+        return pseudonymize(
+            str(value).removesuffix(".0"), prefix=prefix, salt=config.salt
+        )
+    return value
+
+
+def scrub_record_values(
+    text: str, *, config: SanitizerConfig, report: FileReport
+) -> str:
+    """Basic redaction plus shifted datetimes, bare identifiers, and ages."""
+    text = sanitize_text_basic(text, config=config, report=report)
+    text, dates = SHIFTED_DATETIME.subn("<REDACTED_SHIFTED_DATETIME>", text)
+    text, identifiers = pseudonymize_bare_identifiers(text, config.salt)
+    text, ages = PATIENT_AGE.subn("<REDACTED_AGE>", text)
+    report.redacted_terms += dates + identifiers + ages
+    return text
+
+
+def sanitize_json_line(
+    line: str, *, config: SanitizerConfig, report: FileReport
+) -> str | None:
+    """Sanitize one JSON event line structurally; None if it is not an event.
+
+    A line that starts like JSON but does not parse is withheld whole: its tool
+    output cannot be separated from agent text, and line regexes do not reach
+    values inside escaped strings.
+    """
+    stripped = line.strip()
+    if not stripped.startswith(("{", "[")):
+        return None
+    newline = "\n" if line.endswith("\n") else ""
+    try:
+        event = json.loads(stripped)
+    except json.JSONDecodeError:
+        if stripped.startswith("["):  # a bracketed log line, not an event
+            return None
+        report.withheld_unparseable += 1
+        event_type = re.match(r'\{\s*"type"\s*:\s*"([A-Za-z_.]+)"', stripped)
+        placeholder = {
+            "type": "redacted_unparseable_event",
+            "original_type": event_type.group(1) if event_type else None,
+            "chars": len(stripped),
+            "hmac_prefix": keyed_digest(stripped, config.salt),
+        }
+        return json.dumps(placeholder) + newline
+    event = redact_tool_outputs(event, report, config.salt)
+    event = sanitize_event_strings(event, config=config, report=report)
+    return json.dumps(event, ensure_ascii=False) + newline
+
+
+def looks_like_event_fragment(line: str) -> bool:
+    stripped = line.strip()
+    return bool(stripped) and (
+        '":' in stripped or '\\"' in stripped or stripped[-1] in "}]"
+    )
+
+
 def sanitize_text_payload(
     text: str,
     *,
     config: SanitizerConfig,
     report: FileReport,
+    event_stream: bool = False,
 ) -> str:
-    sanitized = sanitize_text_basic(text, config=config, report=report)
-    return redact_trace_data_blocks(sanitized, config=config, report=report)
+    """Sanitize trace-like text: JSON event lines structurally, others as text.
+
+    With `event_stream`, the text is a tail of a JSON event stream, so a
+    non-JSON line that looks like part of an event (a truncated first line) is
+    withheld as well.
+    """
+    out = []
+    # JSON Lines are delimited by "\n" only; str.splitlines would also break
+    # events at U+2028 and similar characters inside strings.
+    for line in re.split(r"(?<=\n)", text):
+        if not line:
+            continue
+        structured = sanitize_json_line(line, config=config, report=report)
+        if structured is not None:
+            out.append(structured)
+            continue
+        if event_stream and looks_like_event_fragment(line):
+            report.withheld_unparseable += 1
+            newline = "\n" if line.endswith("\n") else ""
+            out.append(
+                f'<REDACTED_EVENT_FRAGMENT chars="{len(line.strip())}" '
+                f'hmac_prefix="{keyed_digest(line.strip(), config.salt)}">{newline}'
+            )
+            continue
+        out.append(scrub_record_values(line, config=config, report=report))
+    return redact_trace_data_blocks("".join(out), config=config, report=report)
 
 
 def sanitize_text_file(

@@ -1,0 +1,31 @@
+{
+  "conditions": [
+    "no-skill",
+    "with-skill"
+  ],
+  "created_at_utc": "2026-07-30T13:45:18.191122+00:00",
+  "m4_commit": "6ed55907679157e3dff46e99da487bb969c04a9c",
+  "model_slot_policy": "all Claude default and subagent slots pinned to cell model",
+  "models": [
+    "claude-opus-4-7",
+    "claude-sonnet-4-6"
+  ],
+  "parallel": 3,
+  "reasoning_effort": "medium",
+  "runs": 120,
+  "tasks": [
+    "mimic-kdigo-48h-raw",
+    "eicu-gcs",
+    "eicu-oasis",
+    "mimic-apsiii-24h",
+    "mimic-charlson-raw",
+    "mimic-creatinine-baseline"
+  ],
+  "trials": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ]
+}

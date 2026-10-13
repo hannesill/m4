@@ -45,6 +45,9 @@ EXPECTED_ARTIFACTS = [
 sys.path.insert(0, str(BENCHMARK_DIR))
 from report_results import load_rows  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from make_final_results import require_runs  # noqa: E402
+
 
 def run_key(row: dict[str, Any]) -> tuple[str, str, str, str, int]:
     return (
@@ -195,11 +198,10 @@ def condition_schema_model_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
 
 
 def main() -> None:
-    if not FOLLOWUP_ROOT.exists():
-        raise FileNotFoundError(f"Follow-up root not found: {FOLLOWUP_ROOT}")
+    rows = load_rows(FOLLOWUP_ROOT)
+    require_runs("Codex follow-up", rows, [FOLLOWUP_ROOT])
 
     PLANNING_DIR.mkdir(exist_ok=True)
-    rows = load_rows(FOLLOWUP_ROOT)
     canonical, superseded = canonicalize(rows)
 
     manifest = {

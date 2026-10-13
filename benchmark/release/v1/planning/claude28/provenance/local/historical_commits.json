@@ -1,0 +1,50 @@
+[
+  {
+    "sha": "f0f21bd67d9f30e733c327759d954d0480722bea",
+    "authored_at": "2026-05-15T08:16:41-07:00",
+    "committed_at": "2026-05-15T08:16:41-07:00",
+    "subject": "Fix benchmark branch pre-commit checks"
+  },
+  {
+    "sha": "6ed55907679157e3dff46e99da487bb969c04a9c",
+    "authored_at": "2026-05-30T22:17:59+02:00",
+    "committed_at": "2026-05-30T16:24:31-04:00",
+    "subject": "Bump package version to 0.5.3"
+  },
+  {
+    "sha": "5f1faabb5a9a36ff72bff86ca29f714cdcdf09ff",
+    "authored_at": "2026-07-28T17:45:18+02:00",
+    "committed_at": "2026-07-28T17:45:18+02:00",
+    "subject": "Pin Claude benchmark model selection"
+  },
+  {
+    "sha": "c38e0986df071aef712c323eb3fdbc1e75ded891",
+    "authored_at": "2026-07-28T19:16:44+02:00",
+    "committed_at": "2026-07-28T19:24:14+02:00",
+    "subject": "Fix Claude benchmark model pinning"
+  },
+  {
+    "sha": "7932b0b79408b2e5ebec051aa7a2f74bff5345e6",
+    "authored_at": "2026-07-28T17:45:18+02:00",
+    "committed_at": "2026-09-15T08:52:19+02:00",
+    "subject": "Pin Claude benchmark model selection"
+  },
+  {
+    "sha": "9aac2e4fd5f8e5d15fa545735b663d7323f89775",
+    "authored_at": "2026-07-28T19:16:44+02:00",
+    "committed_at": "2026-09-15T08:52:19+02:00",
+    "subject": "Fix Claude benchmark model pinning"
+  },
+  {
+    "sha": "31fecb245ec91c80bbd2597a1a5ac356afe688cb",
+    "authored_at": "2026-09-15T08:43:06+02:00",
+    "committed_at": "2026-09-15T08:52:19+02:00",
+    "subject": "Preserve native Claude routing and qualify benchmark schema contracts"
+  },
+  {
+    "sha": "7355bdf1eb538c85be9632cec311f7f8e2f8bb26",
+    "authored_at": "2026-09-15T08:58:26+02:00",
+    "committed_at": "2026-09-15T09:01:27+02:00",
+    "subject": "Release 0.5.5"
+  }
+]

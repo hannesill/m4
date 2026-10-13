@@ -58,11 +58,3 @@ Combined evidence treats the May 4 clinician-review reruns as replacements for m
 | `mimic-oasis-24h` | 0.048 | 0.000 | -0.048 |
 | `mimic-sofa-24h-raw` | 0.124 | 0.000 | -0.124 |
 | `mimic-vasopressor-equivalents-raw` | 0.165 | 0.000 | -0.165 |
-
-## Interpretation
-
-The headline result is stable. The Codex task-balanced native skill effect moves from 0.112 to 0.136; the positive-task count remains 26/28. The largest local changes are in the clinician-reviewed OASIS tasks, with creatinine-baseline raw also increasing after rerun.
-
-Claude remains a sentinel arm. The creatinine-baseline raw rerun increases the sentinel average, but the provider arm still covers only eight paired tasks and should not be promoted to co-primary evidence.
-
-The local gpt-oss-20b arm is useful as a reproducibility and open-model stress test, but it should not be mixed into the primary tables: reward is near zero, gains are positive on only three of eight paired sentinel tasks, no run is publishable under the paper criteria, and egress logs are absent.

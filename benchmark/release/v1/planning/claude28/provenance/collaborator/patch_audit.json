@@ -1,0 +1,30 @@
+{
+  "declared_base_commit": "f0f21bd67d9f30e733c327759d954d0480722bea",
+  "patch_sha256": "0348dc913c6719af0387c6cb7a401276c67b906cc23d431e75cfa39e74bebe5c",
+  "patch_applies_to_declared_base": true,
+  "check_stdout": "",
+  "check_stderr": "",
+  "modified_paths": [
+    "benchmark/ground_truth/obfuscated/apsiii-24h.sql",
+    "benchmark/ground_truth/obfuscated/charlson.sql",
+    "benchmark/ground_truth/obfuscated/creatinine-baseline.sql",
+    "benchmark/ground_truth/obfuscated/gcs-24h.sql",
+    "benchmark/ground_truth/obfuscated/kdigo-48h.sql",
+    "benchmark/ground_truth/obfuscated/meld-24h.sql",
+    "benchmark/ground_truth/obfuscated/oasis-24h.sql",
+    "benchmark/ground_truth/obfuscated/sapsii-24h.sql",
+    "benchmark/ground_truth/obfuscated/sepsis3.sql",
+    "benchmark/ground_truth/obfuscated/sirs-24h.sql",
+    "benchmark/ground_truth/obfuscated/sofa-24h.sql",
+    "benchmark/ground_truth/obfuscated/suspicion-infection.sql",
+    "benchmark/ground_truth/obfuscated/urine-output-rate.sql",
+    "benchmark/ground_truth/obfuscated/vasopressor-equivalents.sql",
+    "benchmark/ground_truth/obfuscated/ventilation.sql",
+    "benchmark/matrix.py",
+    "benchmark/run.py",
+    "tests/test_benchmark_matrix.py"
+  ],
+  "native_task_or_evaluator_files_changed": false,
+  "harness_changes": "rate-limit retry handling; expanded provider task list; skip auth/rate-limit incomplete results; final hard-coded MY_TASKS filter limited to two task names",
+  "warning": "End-of-campaign task selector is a retained working-tree snapshot, not a single launch configuration producing all ten tasks; retain included launch scripts/commands alongside it."
+}
