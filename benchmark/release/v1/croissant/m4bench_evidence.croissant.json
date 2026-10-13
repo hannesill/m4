@@ -133,9 +133,9 @@
       "name": "m4bench-evidence-claude-replication.tar.zst",
       "description": "Open per-run evidence for the July 2026 full-coverage Claude campaign: 560 canonical runs (28 tasks x Opus/Sonnet x no-skill/with-skill x 5 trials).",
       "contentUrl": "https://huggingface.co/datasets/hannesill/m4bench-evidence/resolve/main/m4bench-evidence-claude-replication.tar.zst",
-      "contentSize": "6400345 B",
+      "contentSize": "6398244 B",
       "encodingFormat": "application/zstd",
-      "sha256": "9f63e8c867dcbafe68da472954dfebe366246aa36d2a3599795279426c33c63c"
+      "sha256": "4aeb5eda83090f89e5a3bf5d0e8c4568c18309efd66b496c4655e11abd13471b"
     },
     {
       "@type": "cr:FileObject",
@@ -155,9 +155,9 @@
       "name": "m4bench-evidence-submission.tar.zst",
       "description": "Open per-run evidence for the May 2026 submission campaigns: 760 primary Codex, 190 Claude sentinel, 340 Codex follow-up, and 110 exploratory OSS runs.",
       "contentUrl": "https://huggingface.co/datasets/hannesill/m4bench-evidence/resolve/main/m4bench-evidence-submission.tar.zst",
-      "contentSize": "7548441 B",
+      "contentSize": "7548717 B",
       "encodingFormat": "application/zstd",
-      "sha256": "17215697caf9dd2746e2e1a855af31f355fe1203612c3b9892ee138b08357106"
+      "sha256": "f8b72940bd98cd9b2a852fa79c416310e2ed8ec7795b181941358d3b03ca708c"
     },
     {
       "@type": "cr:FileObject",

@@ -17,7 +17,9 @@ Structural checks:
 Content checks run on every string at every JSON nesting depth, with escaped
 newlines and quotes expanded first so that values inside JSON-in-JSON text are
 visible: credentials, raw MIMIC identifiers, shifted datetimes, rows that start
-with an identifier, home paths, e-mail addresses, and configured private terms.
+with an identifier, stated patient ages, home paths, e-mail addresses, and
+configured private terms. In eICU runs, whose stay identifiers are plain 6-7
+digit integers, any such integer that is not written as a count is flagged.
 JSON numbers are checked only under identifier keys (byte counts and token
 counters are not identifiers). Git patch headers are exempt from the e-mail
 check because they reproduce public commit metadata.
@@ -85,7 +87,24 @@ CONTENT = {
         r"|(?<![A-Za-z0-9])-Users-[A-Za-z]|-var-folders-"
     ),
     "email": re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE),
+    "patient_age": re.compile(
+        r"\bage[ds]?\b[ \t]*(?:=|==|:|is|was|of)?[ \t]*\d{1,3}\b"
+        r"(?!\.\d|[\d%]|[ \t]*(?:-|\u2013|\+|to\b|and\b|or\b|points?\b|pts?\b))"
+        r"|\b\d{1,3}[- ]?(?:years?|yrs?)[- ]old\b",
+        re.IGNORECASE,
+    ),
 }
+# eICU stay identifiers have no recognizable shape, so in eICU runs every bare
+# 6-7 digit integer counts unless the neighbouring words make it a count.
+EICU_BARE_INTEGER = re.compile(r"(?<![\w.,/-])\d{6,7}(?![\w/-]|[.,]\d)")
+EICU_COUNT_NEXT = re.compile(
+    r"`?[ \t]*(?:(?:data|output|total|distinct|unique|matching|reference|expected)[ \t]+)?"
+    r"(?:rows?|records?|keys?|patients|stays|entries|lines|tuples)\b",
+    re.IGNORECASE,
+)
+EICU_COUNT_PREVIOUS = re.compile(
+    r"\b(?:rows|count|total)\b[ \t]*(?:[:=]|is|of)?[ \t]*[`'\"(]*$", re.IGNORECASE
+)
 
 
 def expand_escapes(text: str) -> str:
@@ -118,6 +137,17 @@ class Scan:
             count = len(pattern.findall(visible))
             if count:
                 self.hit(name, count)
+        if any(part.startswith("eicu-") for part in self.path.parts):
+            count = sum(
+                1
+                for match in EICU_BARE_INTEGER.finditer(visible)
+                if not EICU_COUNT_NEXT.match(visible, match.end())
+                and not EICU_COUNT_PREVIOUS.search(
+                    visible, max(0, match.start() - 24), match.start()
+                )
+            )
+            if count:
+                self.hit("eicu_identifier", count)
 
     def value(self, value: Any, key: str = "") -> None:
         if isinstance(value, dict):

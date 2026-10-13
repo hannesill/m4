@@ -857,3 +857,82 @@ def test_dash_encoded_host_paths_and_signatures_are_redacted():
     assert json.loads(sanitized)["message"]["content"][0]["signature"] == (
         "<REDACTED_SIGNATURE>"
     )
+
+
+EICU_PROSE = (
+    "Looking at patient 141179:\n"
+    "- Patient 315753: minimum GCS=10 at offset 4\n"
+    "pid=273710\nrows=con.execute(q)\n"
+    "Maximum per component:\n- age: 6\n- gcs: 10\n"
+    "# Check row 141194 (gcs_min=12)\n"
+    "WHERE patientunitstayid IN (141168, 141178)\n"
+    "For patient 141178, the age of 52 maps to a score of 3; gender=F, age=76.\n"
+    "Validation passed: `200859` rows, rows: 200859, 5216/546028 matched.\n"
+    "Ages 75-80 score 7 points; age >= 16; mean age 62.1.\n"
+)
+
+
+def write_eicu_run(run_dir):
+    run_dir.mkdir(parents=True)
+    event = {
+        "type": "assistant",
+        "message": {"content": [{"type": "text", "text": EICU_PROSE}]},
+    }
+    (run_dir / "trace.jsonl").write_text(json.dumps(event) + "\n")
+
+
+def test_eicu_stay_ids_and_stated_ages_are_removed(tmp_path):
+    sanitizer = load_sanitizer()
+    source = tmp_path / "src"
+    output = tmp_path / "out"
+    write_eicu_run(source / "runs" / "eicu-gcs_no-skill_codex_t1")
+    config, _ = sanitizer_context(sanitizer)
+
+    sanitizer.sanitize_tree(source, output, config=config)
+
+    trace = output / "runs" / "eicu-gcs_no-skill_codex_t1" / "trace.jsonl"
+    text = json.loads(trace.read_text())["message"]["content"][0]["text"]
+    for stay_id in ("141179", "315753", "273710", "141168", "141178", "141194"):
+        assert stay_id not in text
+    assert text.count("EICU_") == 7
+    assert "age of <REDACTED_AGE>" in text
+    assert "age=<REDACTED_AGE>" in text
+    assert "- age: <REDACTED_AGE>\n- gcs: 10" in text
+    # Counts, fractions, age rules, and aggregates are not patient values.
+    assert "`200859` rows, rows: 200859, 5216/546028 matched" in text
+    assert "Ages 75-80 score 7 points; age >= 16; mean age 62.1." in text
+
+
+def test_six_digit_codes_outside_eicu_runs_are_kept(tmp_path):
+    sanitizer = load_sanitizer()
+    source = tmp_path / "src"
+    output = tmp_path / "out"
+    run = source / "runs" / "mimic-sofa-24h_no-skill_codex_t1"
+    run.mkdir(parents=True)
+    sql = "SELECT * FROM chartevents WHERE itemid IN (220045, 220050, 223761)"
+    event = {
+        "type": "assistant",
+        "message": {"content": [{"type": "text", "text": sql}]},
+    }
+    (run / "trace.jsonl").write_text(json.dumps(event) + "\n")
+    config, _ = sanitizer_context(sanitizer)
+
+    sanitizer.sanitize_tree(source, output, config=config)
+
+    trace = output / "runs" / run.name / "trace.jsonl"
+    assert json.loads(trace.read_text())["message"]["content"][0]["text"] == sql
+
+
+def test_scanner_flags_eicu_ids_and_ages_and_passes_sanitized_output(tmp_path):
+    sanitizer = load_sanitizer()
+    scanner = load_scanner()
+    source = tmp_path / "src"
+    output = tmp_path / "out"
+    write_eicu_run(source / "runs" / "eicu-gcs_no-skill_codex_t1")
+    config, _ = sanitizer_context(sanitizer)
+
+    assert scan_hits(scanner, source) >= {"eicu_identifier", "patient_age"}
+
+    sanitizer.sanitize_tree(source, output, config=config)
+
+    assert scan_hits(scanner, output) == set()

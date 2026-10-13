@@ -1072,6 +1072,54 @@ EICU_UNIQUE_PID = re.compile(
     rf"(?:(?<![\w.-])|{AFTER_ESCAPE})0[0-3]\d-\d{{3,6}}(?![\w-])"
 )
 PATIENT_AGE = re.compile(r"(?<![\w.])\d{1,3}(?=[- ]?(?:year|yr)s?[- ]old\b)")
+# Ages stated as a value (`age = 70`, `age of 52`, `aged 70`). Ranges, decimals,
+# and comparisons (`ages 75-80`, `age 5.73`, `age >= 16`) describe rules or
+# aggregates and are kept.
+PATIENT_AGE_VALUE = re.compile(
+    r"(?P<lead>\b(?:age[sd]?)\b[ \t]*(?:==?|:|is|was|of)?[ \t]*)(?P<value>\d{1,3})"
+    r"(?![\d%]|\.\d|[ \t]*(?:[-\u2013+]|to\b|and\b|or\b|points?\b|pts?\b))",
+    re.IGNORECASE,
+)
+# eICU stay identifiers are 6-7 digit integers with no fixed leading digit, so
+# they cannot be told apart from other numbers by shape. In eICU runs every
+# standalone integer of six to nine digits is pseudonymized unless the text
+# next to it on the same line marks it as a count. Fractions, decimals, and
+# digit groups stay.
+EICU_INTEGER = re.compile(
+    rf"(?:(?<![\w.,/-])|{AFTER_ESCAPE})\d{{6,9}}(?![\w/-]|[.,]\d)"
+)
+COUNT_AFTER = re.compile(
+    r"`?[ \t]*(?:(?:data|output|total|distinct|unique|matching|reference|expected)[ \t]+)?"
+    r"(?:rows?|records?|keys?|patients|stays|entries|lines|tuples)\b",
+    re.IGNORECASE,
+)
+COUNT_BEFORE = re.compile(
+    r"\b(?:rows|count|total)\b[ \t]*(?:[:=]|is|of)?[ \t]*[`'\"(]*$", re.IGNORECASE
+)
+REDACTION_PLACEHOLDER = re.compile(r"<REDACTED_[A-Z_]+[^<>]*>")
+
+
+def is_eicu_run(path: str) -> bool:
+    return any(part.startswith("eicu-") for part in Path(path).parts)
+
+
+def pseudonymize_eicu_integers(text: str, salt: bytes) -> tuple[str, int]:
+    protected = [m.span() for m in REDACTION_PLACEHOLDER.finditer(text)]
+    count = 0
+
+    def replace(match: re.Match[str]) -> str:
+        nonlocal count
+        start, end = match.span()
+        if any(a <= start < b for a, b in protected):
+            return match.group(0)
+        if COUNT_AFTER.match(text, end) or COUNT_BEFORE.search(
+            text, max(0, start - 24), start
+        ):
+            return match.group(0)
+        count += 1
+        return pseudonymize(match.group(0), prefix="EICU_ID", salt=salt)
+
+    return EICU_INTEGER.sub(replace, text), count
 
 
 def pseudonymize_bare_identifiers(text: str, salt: bytes) -> tuple[str, int]:
@@ -1154,8 +1202,12 @@ def scrub_record_values(
     text = sanitize_text_basic(text, config=config, report=report)
     text, dates = SHIFTED_DATETIME.subn("<REDACTED_SHIFTED_DATETIME>", text)
     text, identifiers = pseudonymize_bare_identifiers(text, config.salt)
+    if is_eicu_run(report.path):
+        text, eicu = pseudonymize_eicu_integers(text, config.salt)
+        identifiers += eicu
     text, ages = PATIENT_AGE.subn("<REDACTED_AGE>", text)
-    report.redacted_terms += dates + identifiers + ages
+    text, age_values = PATIENT_AGE_VALUE.subn(r"\g<lead><REDACTED_AGE>", text)
+    report.redacted_terms += dates + identifiers + ages + age_values
     return text
 
 
