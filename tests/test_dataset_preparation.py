@@ -14,6 +14,7 @@ from pathlib import Path
 
 import duckdb
 import pytest
+import requests
 from typer.testing import CliRunner
 
 import m4.config as cfg_mod
@@ -509,3 +510,387 @@ def test_init_download_fetches_what_an_interrupted_download_left_out(
     assert events[-1]["result"]["prepared"] is True
     assert _views(data_dir, "mimic-iv-demo") == ALL_VIEWS
     _assert_ready(_listed("mimic-iv-demo"))
+
+
+# ------------------------------------------------------------
+# Downloads that did not finish
+# ------------------------------------------------------------
+
+DEMO_LISTING = "https://physionet.org/files/mimic-iv-demo/2.2/"
+FULL_LISTING = "https://physionet.org/files/mimiciv/3.1/"
+SESSION = "m4.data_io.requests.Session"
+# Made up. It only ever reaches the fake below.
+FAKE_LOGIN = json.dumps({"username": "fake-user", "password": "FAKE-not-a-password"})
+
+# Two tables in each folder, so that a download killed at the last one leaves
+# both folders with files: nothing but M4's own note says it did not finish.
+DOWNLOADED = {**TABLES, "icu/icustays": "subject_id,stay_id\n1,10\n2,20\n"}
+DOWNLOADED_VIEWS = ALL_VIEWS | {"mimiciv_icu.icustays"}
+LAST = "icu/icustays"
+
+
+class _Answer:
+    def __init__(self, content=b"", headers=None, dies=False):
+        self.content = content
+        self.status_code = 200
+        self.headers = headers or {}
+        self.reason = "OK"
+        self._dies = dies
+
+    def iter_content(self, chunk_size=8192):
+        if self._dies:
+            # Half of the file arrived when the process died.
+            yield self.content[: len(self.content) // 2]
+            raise Killed()
+        yield self.content
+
+
+class FakePhysioNet:
+    """Stands in for requests.Session and answers like PhysioNet's listing of
+    one dataset, without any network. Downloading `dies_at` kills the process."""
+
+    def __init__(self, listing, tables=None, dies_at=None):
+        self.listing = listing
+        self.files = {
+            name: gzip.compress(text.encode())
+            for name, text in (tables or DOWNLOADED).items()
+        }
+        self.dies_at = dies_at
+        self.headers = {}
+        self.auth = None
+
+    def __call__(self):
+        return self
+
+    def head(self, url, **kwargs):
+        name = url.removeprefix(self.listing).removesuffix(".csv.gz")
+        return _Answer(headers={"content-length": str(len(self.files[name]))})
+
+    def get(self, url, **kwargs):
+        asked = url.removeprefix(self.listing)
+        if asked.endswith("/"):
+            links = [
+                f'<a href="{name.split("/")[1]}.csv.gz">table</a>'
+                for name in self.files
+                if name.startswith(asked)
+            ]
+            return _Answer("".join(links).encode())
+        name = asked.removesuffix(".csv.gz")
+        return _Answer(self.files[name], dies=name == self.dies_at)
+
+
+def _run(*args: str, input: str | None = None):
+    """Run an M4 command as a wrapper does and return (result, events)."""
+    result = runner.invoke(app, [*args, "--json", "--events", "ndjson"], input=input)
+    events = [json.loads(line) for line in result.stdout.splitlines() if line.strip()]
+    return result, events
+
+
+def _raw_root(data_dir: Path, name: str = "mimic-iv") -> Path:
+    return data_dir / "raw_files" / name
+
+
+def _raw_files(root: Path) -> list[str]:
+    return sorted(p.relative_to(root).as_posix() for p in root.rglob("*.csv.gz"))
+
+
+def _files_holding(root: Path, secret: str) -> list[str]:
+    """The files under `root` that contain `secret`."""
+    return sorted(
+        path.relative_to(root).as_posix()
+        for path in root.rglob("*")
+        if path.is_file() and secret.encode() in path.read_bytes()
+    )
+
+
+def _fetched(events: list[dict]) -> list[str]:
+    return sorted(
+        Path(e["path"]).name for e in events if e["event"] == "download_file_completed"
+    )
+
+
+def test_init_killed_while_downloading_fetches_the_rest_when_it_runs_again(
+    data_dir, monkeypatch
+):
+    """`m4 init` downloads an open dataset itself. Killed while it does, the
+    next run must not make a dataset of the files that happened to arrive."""
+    with monkeypatch.context() as dying, pytest.raises(Killed):
+        dying.setattr(SESSION, FakePhysioNet(DEMO_LISTING, dies_at=LAST))
+        _run("init", "mimic-iv-demo", "--no-interactive")
+
+    raw_root = _raw_root(data_dir, "mimic-iv-demo")
+    assert _raw_files(raw_root) == [
+        "hosp/admissions.csv.gz",
+        "hosp/patients.csv.gz",
+        "icu/chartevents.csv.gz",
+    ]
+    assert (raw_root / "icu" / "icustays.csv.gz.part").exists()
+    _assert_not_ready(_listed("mimic-iv-demo"))
+
+    monkeypatch.setattr(SESSION, FakePhysioNet(DEMO_LISTING))
+    result, events = _run("init", "mimic-iv-demo", "--no-interactive")
+
+    assert result.exit_code == 0
+    assert _fetched(events) == ["icustays.csv.gz"]
+    assert events[-1]["result"]["prepared"] is True
+    assert _views(data_dir, "mimic-iv-demo") == DOWNLOADED_VIEWS
+    _assert_ready(_listed("mimic-iv-demo"))
+
+
+def test_download_killed_then_init_fetches_the_rest(data_dir, monkeypatch):
+    with monkeypatch.context() as dying, pytest.raises(Killed):
+        dying.setattr(SESSION, FakePhysioNet(DEMO_LISTING, dies_at=LAST))
+        _run("download", "mimic-iv-demo")
+
+    monkeypatch.setattr(SESSION, FakePhysioNet(DEMO_LISTING))
+    result, events = _run("init", "mimic-iv-demo", "--no-interactive")
+
+    assert result.exit_code == 0
+    assert _fetched(events) == ["icustays.csv.gz"]
+    assert _views(data_dir, "mimic-iv-demo") == DOWNLOADED_VIEWS
+    _assert_ready(_listed("mimic-iv-demo"))
+
+
+def test_download_killed_then_init_without_json_fetches_the_rest(data_dir, monkeypatch):
+    monkeypatch.setattr("m4.config._find_project_root_from_cwd", Path.cwd)
+    with monkeypatch.context() as dying, pytest.raises(Killed):
+        dying.setattr(SESSION, FakePhysioNet(DEMO_LISTING, dies_at=LAST))
+        runner.invoke(app, ["init", "mimic-iv-demo"])
+
+    monkeypatch.setattr(SESSION, FakePhysioNet(DEMO_LISTING))
+    result = runner.invoke(app, ["init", "mimic-iv-demo"])
+
+    assert result.exit_code == 0
+    assert _views(data_dir, "mimic-iv-demo") == DOWNLOADED_VIEWS
+    _assert_ready(_listed("mimic-iv-demo"))
+
+
+def test_download_that_cannot_be_finished_without_json_fails_without_a_traceback(
+    data_dir, monkeypatch
+):
+    monkeypatch.setattr("m4.config._find_project_root_from_cwd", Path.cwd)
+    with monkeypatch.context() as dying, pytest.raises(Killed):
+        dying.setattr(SESSION, FakePhysioNet(DEMO_LISTING, dies_at=LAST))
+        runner.invoke(app, ["init", "mimic-iv-demo"])
+
+    class Offline(FakePhysioNet):
+        def get(self, url, **kwargs):
+            raise requests.exceptions.ConnectionError("no route to host")
+
+    monkeypatch.setattr(SESSION, Offline(DEMO_LISTING))
+    result = runner.invoke(app, ["init", "mimic-iv-demo"])
+
+    assert result.exit_code == 1
+    assert isinstance(result.exception, SystemExit)
+    assert "Download failed" in result.output
+    assert not list(data_dir.rglob("*.parquet"))
+    _assert_not_ready(_listed("mimic-iv-demo"))
+
+
+def test_credentialed_download_killed_is_only_finished_with_the_login(
+    data_dir, monkeypatch
+):
+    with monkeypatch.context() as dying, pytest.raises(Killed):
+        dying.setattr(SESSION, FakePhysioNet(FULL_LISTING, dies_at=LAST))
+        _run("download", "mimic-iv", "--physionet-credentials-stdin", input=FAKE_LOGIN)
+
+    # The note that the download left does not hold the login.
+    assert (_raw_root(data_dir) / ".m4-downloading.json").exists()
+    assert _files_holding(data_dir, "FAKE-not-a-password") == []
+
+    # Without the login M4 cannot fetch the rest, and must not prepare a
+    # dataset from the three tables that arrived.
+    result, events = _init()
+
+    assert result.exit_code == 1
+    failure = events[-1]
+    assert failure["event"] == "operation_failed"
+    assert failure["error"]["code"] == "raw_files_missing"
+    assert "did not finish" in failure["error"]["message"]
+    assert not list(data_dir.rglob("*.parquet"))
+    assert not _database(data_dir).exists()
+    _assert_not_ready(_listed())
+
+    monkeypatch.setattr(SESSION, FakePhysioNet(FULL_LISTING))
+    result, events = _run(
+        "init",
+        "mimic-iv",
+        "--no-interactive",
+        "--download",
+        "--physionet-credentials-stdin",
+        input=FAKE_LOGIN,
+    )
+
+    assert result.exit_code == 0
+    assert _fetched(events) == ["icustays.csv.gz"]
+    assert events[-1]["result"]["prepared"] is True
+    assert _views(data_dir) == DOWNLOADED_VIEWS
+    _assert_ready(_listed())
+    assert "FAKE-not-a-password" not in result.output
+    assert _files_holding(data_dir, "FAKE-not-a-password") == []
+
+
+def test_credentialed_download_killed_is_refused_without_json_too(
+    data_dir, monkeypatch
+):
+    monkeypatch.setattr("m4.config._find_project_root_from_cwd", Path.cwd)
+    with monkeypatch.context() as dying, pytest.raises(Killed):
+        dying.setattr(SESSION, FakePhysioNet(FULL_LISTING, dies_at=LAST))
+        _run("download", "mimic-iv", "--physionet-credentials-stdin", input=FAKE_LOGIN)
+
+    result = runner.invoke(app, ["init", "mimic-iv"])
+
+    assert result.exit_code == 1
+    assert "Cannot Initialize" in result.output
+    assert "m4 download mimic-iv" in result.output
+    assert not list(data_dir.rglob("*.parquet"))
+    _assert_not_ready(_listed())
+
+
+def test_src_folder_with_an_unfinished_download_is_refused(
+    data_dir, tmp_path, monkeypatch
+):
+    target = tmp_path / "my-download"
+    with monkeypatch.context() as dying, pytest.raises(Killed):
+        dying.setattr(SESSION, FakePhysioNet(DEMO_LISTING, dies_at=LAST))
+        _run("download", "mimic-iv-demo", "--target", str(target))
+
+    result, events = _run(
+        "init", "mimic-iv-demo", "--src", str(target), "--no-interactive"
+    )
+
+    assert result.exit_code == 1
+    failure = events[-1]
+    assert failure["event"] == "operation_failed"
+    assert failure["error"]["code"] == "raw_files_missing"
+    assert f"m4 download mimic-iv-demo --target {target}" in failure["error"]["hint"]
+    assert not list(data_dir.rglob("*.parquet"))
+    _assert_not_ready(_listed("mimic-iv-demo"))
+    # M4's check of a raw folder, which a wrapper asks before it starts, agrees.
+    plan = runner.invoke(
+        app,
+        [
+            "download",
+            "mimic-iv-demo",
+            "--target",
+            str(target),
+            "--command-only",
+            "--json",
+        ],
+    )
+    layout = json.loads(plan.stdout)["layout"]
+    assert layout["ok"] is False
+    assert "partial_download" in layout["warnings"]
+
+    # Finishing the download as the hint says makes the folder a whole dataset.
+    monkeypatch.setattr(SESSION, FakePhysioNet(DEMO_LISTING))
+    assert _run("download", "mimic-iv-demo", "--target", str(target))[0].exit_code == 0
+    result, events = _run(
+        "init", "mimic-iv-demo", "--src", str(target), "--no-interactive"
+    )
+
+    assert result.exit_code == 0
+    assert _views(data_dir, "mimic-iv-demo") == DOWNLOADED_VIEWS
+    _assert_ready(_listed("mimic-iv-demo"))
+
+
+def test_download_killed_without_a_note_is_finished_like_any_other(
+    data_dir, monkeypatch
+):
+    # M4 0.5.5 and earlier left no note. The file that was being written when
+    # the download was killed still says that it did not finish.
+    with monkeypatch.context() as dying, pytest.raises(Killed):
+        dying.setattr(SESSION, FakePhysioNet(DEMO_LISTING, dies_at=LAST))
+        _run("download", "mimic-iv-demo")
+    raw_root = _raw_root(data_dir, "mimic-iv-demo")
+    (raw_root / ".m4-downloading.json").unlink()
+    assert (raw_root / "icu" / "icustays.csv.gz.part").exists()
+
+    monkeypatch.setattr(SESSION, FakePhysioNet(DEMO_LISTING))
+    result, events = _run("init", "mimic-iv-demo", "--no-interactive")
+
+    assert result.exit_code == 0
+    assert _fetched(events) == ["icustays.csv.gz"]
+    assert _views(data_dir, "mimic-iv-demo") == DOWNLOADED_VIEWS
+    _assert_ready(_listed("mimic-iv-demo"))
+
+
+def test_src_folder_with_a_file_that_is_still_arriving_is_refused(data_dir, raw):
+    # A browser, like M4, keeps a file under <name>.part until it has all of it.
+    arriving = raw / "icu" / "icustays.csv.gz.part"
+    arriving.write_bytes(b"half of it")
+    # One that was left beside the finished file says nothing.
+    (raw / "hosp" / "admissions.csv.gz.part").write_bytes(b"left over")
+
+    result, events = _init("--src", str(raw))
+
+    assert result.exit_code == 1
+    failure = events[-1]
+    assert failure["error"]["code"] == "raw_files_missing"
+    assert "icu/icustays.csv.gz.part" in failure["error"]["message"]
+    assert not list(data_dir.rglob("*.parquet"))
+    _assert_not_ready(_listed())
+
+    arriving.unlink()
+    result, _ = _init("--src", str(raw))
+
+    assert result.exit_code == 0
+    assert _views(data_dir) == ALL_VIEWS
+    _assert_ready(_listed())
+
+
+def test_m4s_raw_folder_without_one_of_the_dataset_folders_is_refused(data_dir):
+    # A download that stopped before it reached icu/ and left nothing that says
+    # so: one that M4 did not make, or one that was killed between two files.
+    own = _write_raw(
+        _raw_root(data_dir, "mimic-iv-demo"),
+        {name: text for name, text in TABLES.items() if name.startswith("hosp/")},
+    )
+
+    result, events = _run("init", "mimic-iv-demo", "--no-interactive")
+
+    # Not fetched unasked: it is not known that M4 was downloading at all.
+    assert result.exit_code == 1
+    failure = events[-1]
+    assert failure["event"] == "operation_failed"
+    assert failure["error"]["code"] == "raw_files_missing"
+    assert "icu/" in failure["error"]["message"]
+    assert failure["error"]["hint"] == (
+        "Fetch them with: m4 download mimic-iv-demo. If these files are all the "
+        f"dataset is to hold, run: m4 init mimic-iv-demo --src {own}"
+    )
+    assert not list(data_dir.rglob("*.parquet"))
+    assert not _database(data_dir, "mimic-iv-demo").exists()
+    _assert_not_ready(_listed("mimic-iv-demo"))
+
+
+def test_folder_named_with_src_is_taken_as_it_is(data_dir):
+    # Whoever means a dataset to hold only part of it says so with --src, for
+    # M4's own raw folder as for any other.
+    own = _write_raw(
+        _raw_root(data_dir),
+        {name: text for name, text in TABLES.items() if name.startswith("hosp/")},
+    )
+    assert _init()[0].exit_code == 1
+
+    result, events = _init("--src", str(own))
+
+    assert result.exit_code == 0
+    assert events[-1]["result"]["prepared"] is True
+    assert _views(data_dir) == {"mimiciv_hosp.admissions", "mimiciv_hosp.patients"}
+    _assert_ready(_listed())
+
+
+def test_folder_that_is_already_converted_need_not_be_among_the_raw_files(
+    data_dir, raw
+):
+    # Raw files may be deleted once they are converted. What is left of them
+    # still initializes a dataset whose other folder already has its tables.
+    _init("--src", str(raw))
+    shutil.rmtree(raw / "icu")
+
+    result, _ = _init("--src", str(raw), "--force")
+
+    assert result.exit_code == 0
+    assert _views(data_dir) == ALL_VIEWS
+    _assert_ready(_listed())

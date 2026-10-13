@@ -77,9 +77,10 @@ def test_init_service_raw_to_parquet_conversion_path(
 ):
     pq_root = tmp_path / "parquet" / "mimic-iv-demo"
     pq_root.mkdir(parents=True)
-    raw_root = tmp_path / "raw_files" / "mimic-iv-demo" / "hosp"
-    raw_root.mkdir(parents=True)
-    (raw_root / "admissions.csv.gz").touch()
+    raw_root = tmp_path / "raw_files" / "mimic-iv-demo"
+    for table in ("hosp/admissions", "icu/icustays"):
+        (raw_root / f"{table}.csv.gz").parent.mkdir(parents=True)
+        (raw_root / f"{table}.csv.gz").touch()
     db_path = tmp_path / "mimic.duckdb"
     mock_parquet_root.return_value = pq_root
     mock_db_path.return_value = db_path

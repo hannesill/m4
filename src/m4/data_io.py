@@ -1,6 +1,7 @@
 import json
 import os
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -138,8 +139,13 @@ def _download_single_file(
     progress=None,
     task_id=None,
     event_reporter: EventReporter | None = None,
+    before_fetch: Callable[[], None] | None = None,
 ) -> bool:
-    """Downloads a single file with progress tracking."""
+    """Downloads a single file with progress tracking.
+
+    `before_fetch` is called once the file is known not to be complete, before
+    any of it is requested.
+    """
     reporter = get_event_reporter(event_reporter)
     logger.debug(f"Attempting to download {url} to {target_filepath}...")
     part_path = target_filepath.with_name(f"{target_filepath.name}.part")
@@ -156,6 +162,8 @@ def _download_single_file(
                 )
                 return True
 
+        if before_fetch is not None:
+            before_fetch()
         resume_from = part_path.stat().st_size if part_path.exists() else 0
         headers = {}
         mode = "wb"
@@ -390,6 +398,17 @@ def _download_dataset_files(
     info(f"Found {total_files} files to download")
     reporter.emit("download_started", dataset=dataset_name, file_count=total_files)
 
+    download_note = raw_files_root_dir / DOWNLOAD_NOTE
+
+    def note_unfinished() -> None:
+        # From the first file that has to be fetched, the folder holds part of
+        # a dataset. The note says so until every file has arrived, whatever
+        # ends this run before that. A run that finds every file complete
+        # writes nothing.
+        if not download_note.exists():
+            raw_files_root_dir.mkdir(parents=True, exist_ok=True)
+            _write_marker(download_note, dataset=dataset_name, file_count=total_files)
+
     downloaded_count = 0
     with create_download_progress() as progress:
         # Create overall progress task
@@ -407,6 +426,7 @@ def _download_dataset_files(
                 progress,
                 file_task,
                 event_reporter=reporter,
+                before_fetch=note_unfinished,
             ):
                 logger.error(
                     f"Critical download failed for '{target_filepath.name}'. "
@@ -423,6 +443,15 @@ def _download_dataset_files(
             progress.reset(file_task)
 
     # Success only if all identified files were downloaded
+    try:
+        # (Checked first: the folder may not be writable.)
+        if download_note.exists():
+            download_note.unlink()
+    except OSError as e:
+        raise DatasetDownloadError(
+            "download_filesystem_failed",
+            f"File system error removing {download_note}: {e}",
+        ) from e
     reporter.emit(
         "download_completed", dataset=dataset_name, file_count=downloaded_count
     )
@@ -483,11 +512,15 @@ def download_dataset(
 # Preparation markers
 ########################################################
 
-# Two small files say how far the preparation of a dataset got:
+# Three small files say how far the preparation of a dataset got:
+# - In a raw folder: a download into it that has not finished. Only M4's own
+#   download writes it, and removes it when every file has arrived. Of other
+#   downloads, the file that was being written says the same without a note.
 # - Next to the Parquet files: the raw folder of a conversion that has not
 #   finished. Only a conversion writes it, and removes it when it is done.
 # - Next to a database: the Parquet files its views were created and verified
 #   over. An initialization writes it last, and only with it is a dataset ready.
+DOWNLOAD_NOTE = ".m4-downloading.json"
 CONVERSION_NOTE = ".m4-converting.json"
 PREPARED_SUFFIX = ".m4-prepared.json"
 
@@ -517,6 +550,22 @@ def _parquet_listing(parquet_root: Path) -> list[str]:
         path.relative_to(parquet_root).as_posix()
         for path in parquet_root.rglob("*.parquet")
     )
+
+
+def unfinished_download(raw_root: Path) -> str | None:
+    """The file below `raw_root` that says a download into it did not finish.
+
+    That is the note of M4's own download. A download by M4 0.5.5 or earlier
+    left none, and neither does a browser. Of those, the file that was being
+    written says the same: it still carries the suffix it is downloaded under,
+    and no finished file lies beside it. None when nothing says so.
+    """
+    if (raw_root / DOWNLOAD_NOTE).exists():
+        return DOWNLOAD_NOTE
+    for partial in sorted(raw_root.rglob(f"*.csv.gz{PARTIAL_SUFFIX}")):
+        if not partial.with_name(partial.name[: -len(PARTIAL_SUFFIX)]).exists():
+            return partial.relative_to(raw_root).as_posix()
+    return None
 
 
 def unfinished_conversion_source(parquet_root: Path) -> str | None:
@@ -827,6 +876,31 @@ def find_raw_root(csv_root: Path, schema_mapping: dict[str, str] | None) -> Path
         return csv_root
     # The folder most files fit under, and the shallowest of those
     return max(fitting, key=lambda root: (fitting[root], -len(root.parts)))
+
+
+def folders_without_tables(
+    folders: list[str],
+    schema_mapping: dict[str, str] | None,
+    csv_root: Path,
+    parquet_root: Path,
+) -> list[str]:
+    """Those of the dataset's `folders` that converting `csv_root` leaves empty.
+
+    A folder has tables when a raw file under `csv_root` or a Parquet file
+    under `parquet_root` belongs to its schema.
+    """
+    if not schema_mapping:
+        return []  # Flat naming knows no folders
+    filled = {
+        _schema_for(path.relative_to(root).parent, schema_mapping)
+        for root, pattern in ((csv_root, "*.csv.gz"), (parquet_root, "*.parquet"))
+        for path in root.rglob(pattern)
+    }
+    return [
+        folder
+        for folder in folders
+        if folder in schema_mapping and schema_mapping[folder] not in filled
+    ]
 
 
 def _create_duckdb_with_views(

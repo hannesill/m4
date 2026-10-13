@@ -8,7 +8,12 @@ from urllib.parse import urlparse
 from m4.config import ensure_custom_datasets_loaded, resolve_runtime_context
 from m4.console import console
 from m4.core.datasets import DatasetDefinition, DatasetRegistry
-from m4.data_io import DatasetDownloadError, PhysioNetCredentials, download_dataset
+from m4.data_io import (
+    DatasetDownloadError,
+    PhysioNetCredentials,
+    download_dataset,
+    unfinished_download,
+)
 from m4.services.events import EventReporter, get_event_reporter
 from m4.services.results import (
     ERROR_DATASET_NOT_FOUND,
@@ -120,6 +125,14 @@ def validate_raw_layout(dataset_name: str, root: Path) -> dict[str, Any]:
 
     if expected_dirs and csv_files and missing_dirs:
         warnings.append("partial_download")
+
+    left_behind = unfinished_download(root)
+    if left_behind:
+        warnings.append("partial_download")
+        errors.append(
+            f"A download into this folder did not finish: {left_behind} is still there."
+        )
+        recovery.append("Finish the download before initializing the dataset.")
 
     return {
         "ok": not errors and not empty_files,

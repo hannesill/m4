@@ -15,15 +15,19 @@ from m4.core.datasets import DatasetDefinition, DatasetRegistry
 from m4.core.derived.builtins import has_derived_support
 from m4.core.derived.materializer import get_derived_table_count, materialize_all
 from m4.data_io import (
+    DOWNLOAD_NOTE,
+    PHYSIONET_URL_PREFIX,
     DatasetDownloadError,
     PhysioNetCredentials,
     convert_csv_to_parquet,
     download_dataset,
     find_raw_root,
     find_unconverted,
+    folders_without_tables,
     init_duckdb_from_parquet,
     mark_dataset_prepared,
     unfinished_conversion_source,
+    unfinished_download,
     verify_table_rowcount,
 )
 from m4.services.download import expected_raw_subdirectories
@@ -80,6 +84,52 @@ def _build_data(
     }
 
 
+def _download_command(ds: DatasetDefinition, target: Path | None = None) -> str | None:
+    """The command that has M4 download `ds`, or None where M4 cannot.
+
+    A PhysioNet login goes to PhysioNet only, so a credentialed dataset that
+    lives anywhere else is not M4's to download.
+    """
+    url = ds.file_listing_url
+    if not url or (
+        ds.requires_authentication and not url.startswith(PHYSIONET_URL_PREFIX)
+    ):
+        return None
+    command = f"m4 download {ds.name}"
+    if target is not None:
+        command += f" --target {quote(str(target))}"
+    if ds.requires_authentication:
+        command += " --physionet-credentials-file <file>"
+    return command
+
+
+def _download_unfinished(
+    ds: DatasetDefinition, csv_root: Path, left_behind: str, *, src_given: bool
+) -> CommandError:
+    """The refusal of raw files whose download did not finish.
+
+    `left_behind` is what says so, as `unfinished_download` names it.
+    """
+    command = _download_command(ds, csv_root if src_given else None)
+    steps = [f"Finish it with: {command}."] if command else []
+    if left_behind == DOWNLOAD_NOTE:
+        steps.append(
+            "If the files have all arrived another way, delete "
+            f"{csv_root / DOWNLOAD_NOTE}."
+        )
+    elif not command:
+        steps.append(f"Finish the download of {left_behind.removesuffix('.part')}.")
+    return CommandError(
+        command="init",
+        code="raw_files_missing",
+        message=(
+            f"The download of '{ds.name}' into {csv_root} did not finish: "
+            f"{left_behind} is still there."
+        ),
+        hint=" ".join(steps),
+    )
+
+
 def source_problem(
     ds: DatasetDefinition,
     csv_root: Path,
@@ -90,8 +140,9 @@ def source_problem(
 ) -> CommandError | None:
     """Why the files at hand cannot become the whole dataset, or None if they can.
 
-    Raw files must sit where the dataset's tables are mapped from, and Parquet
-    files left by an interrupted conversion need the raw files to finish it.
+    Raw files must sit where the dataset's tables are mapped from and be all
+    of the dataset as far as M4 can tell, and Parquet files left by an
+    interrupted conversion need the raw files to finish it.
     """
     if not raw_present:
         source = unfinished_conversion_source(pq_root)
@@ -111,8 +162,6 @@ def source_problem(
         )
 
     located = find_raw_root(csv_root, ds.schema_mapping)
-    if located == csv_root:
-        return None
     if located is None:
         folders = expected_raw_subdirectories(ds) or [
             folder for folder in ds.schema_mapping if folder
@@ -130,16 +179,48 @@ def source_problem(
                 + "."
             ),
         )
-    return CommandError(
-        command="init",
-        code="raw_files_missing",
-        message=f"The '{ds.name}' files are not directly in {csv_root}.",
-        hint=(
-            f"Choose {located} instead."
-            if src_given
-            else f"Run: m4 init {ds.name} --src {quote(str(located))}"
-        ),
+    if located != csv_root:
+        return CommandError(
+            command="init",
+            code="raw_files_missing",
+            message=f"The '{ds.name}' files are not directly in {csv_root}.",
+            hint=(
+                f"Choose {located} instead."
+                if src_given
+                else f"Run: m4 init {ds.name} --src {quote(str(located))}"
+            ),
+        )
+
+    # The folder is the right one. It must also hold all of the dataset.
+    left_behind = unfinished_download(csv_root)
+    if left_behind:
+        return _download_unfinished(ds, csv_root, left_behind, src_given=src_given)
+    if src_given:
+        # A folder that was chosen is taken as it is: the dataset may be meant
+        # to hold less than all of it.
+        return None
+    # M4's own raw folder is filled by a download. A folder of the dataset
+    # without a file in it, and without tables from an earlier run, is taken
+    # for a download that stopped short of it and left nothing to say so.
+    empty = folders_without_tables(
+        expected_raw_subdirectories(ds), ds.schema_mapping, csv_root, pq_root
     )
+    if empty:
+        command = _download_command(ds)
+        return CommandError(
+            command="init",
+            code="raw_files_missing",
+            message=(
+                f"The files in {csv_root} are not all of '{ds.name}': there are "
+                "none for " + " and ".join(f"{folder}/" for folder in empty) + "."
+            ),
+            hint=(
+                (f"Fetch them with: {command}. " if command else "")
+                + "If these files are all the dataset is to hold, run: "
+                f"m4 init {ds.name} --src {quote(str(csv_root))}"
+            ),
+        )
+    return None
 
 
 def initialize_dataset_service(
@@ -184,9 +265,14 @@ def initialize_dataset_service(
         steps: list[dict[str, str]] = []
         parquet_present = any(pq_root.rglob("*.parquet"))
         raw_present = any(csv_root.rglob("*.csv.gz"))
-        # Raw files in M4's own folder may be all that an interrupted download
-        # got to. Asked to download, M4 goes over them again where it can: the
-        # downloader skips every file that is complete.
+        # A download into M4's own raw folder that was cut short is finished
+        # before anything is made of the files that did arrive, where the
+        # dataset is one M4 downloads. The downloader skips every file that is
+        # complete.
+        left_behind = unfinished_download(csv_root) if raw_present and not src else None
+        finish_download = bool(left_behind and _download_command(ds))
+        # Asked to download, M4 also goes over raw files that look whole, where
+        # it can.
         resume_download = (
             download
             and raw_present
@@ -195,9 +281,17 @@ def initialize_dataset_service(
             and (not ds.requires_authentication or physionet_credentials is not None)
         )
 
-        if resume_download or (not raw_present and not parquet_present):
+        if (
+            finish_download
+            or resume_download
+            or (not raw_present and not parquet_present)
+        ):
             if ds.requires_authentication:
                 if not download:
+                    if left_behind:
+                        return _download_unfinished(
+                            ds, csv_root, left_behind, src_given=False
+                        )
                     return CommandError(
                         command="init",
                         code="raw_files_missing",

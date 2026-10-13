@@ -1,5 +1,7 @@
 import base64
+import errno
 import gzip
+from pathlib import Path
 from unittest import mock
 
 import duckdb
@@ -20,6 +22,7 @@ from m4.data_io import (
     download_dataset,
     find_raw_root,
     find_unconverted,
+    folders_without_tables,
     init_duckdb_from_parquet,
     is_dataset_prepared,
     mark_dataset_prepared,
@@ -486,6 +489,33 @@ def test_find_raw_root_without_a_schema_mapping_takes_any_layout(tmp_path):
     assert find_raw_root(root, None) == root
 
 
+def test_folders_without_tables_counts_raw_files_and_tables_alike(tmp_path):
+    raw_root = _touch_raw(tmp_path / "raw", "hosp/admissions")
+    parquet_root = tmp_path / "parquet"
+    folders = ["hosp", "icu"]
+
+    assert folders_without_tables(
+        folders, MIMIC_IV_MAPPING, raw_root, parquet_root
+    ) == ["icu"]
+
+    # Tables from an earlier run fill a folder as raw files do.
+    _create_parquet(parquet_root / "icu", "icustays", "subject_id\n1\n")
+    assert (
+        folders_without_tables(folders, MIMIC_IV_MAPPING, raw_root, parquet_root) == []
+    )
+
+    # Bare files fill the one folder of a dataset of one schema.
+    note_mapping = {"note": "mimiciv_note"}
+    bare = _touch_raw(tmp_path / "bare", "discharge")
+    nothing = tmp_path / "nothing"
+    assert folders_without_tables(["note"], note_mapping, bare, nothing) == []
+    assert folders_without_tables(["note"], note_mapping, nothing, nothing) == ["note"]
+
+    # A dataset without a mapping has no folders to fill.
+    assert folders_without_tables(folders, None, raw_root, nothing) == []
+    assert folders_without_tables(folders, {}, raw_root, nothing) == []
+
+
 def test_no_view_created_is_a_failure(tmp_path):
     """Parquet files that all sit outside the mapped folders give an empty
     database, which must not pass for an initialized one."""
@@ -705,3 +735,120 @@ def test_roundtrip_parquet_to_backend_api(tmp_path):
     assert sample.success is True
     assert sample.row_count <= 1
     assert "subject_id" in sample.dataframe.columns
+
+
+# ------------------------------------------------------------
+# A download says of itself whether it finished
+# ------------------------------------------------------------
+
+DOWNLOAD_NOTE = ".m4-downloading.json"
+
+
+def test_download_is_noted_as_unfinished_until_every_file_arrived(
+    tmp_path, monkeypatch
+):
+    listing = "https://example.test/open-data/"
+    out_of_reach = {"second.csv.gz"}
+
+    def answer(request):
+        if request.url == listing:
+            return 200, {}, b'<a href="first.csv.gz">a</a><a href="second.csv.gz">b</a>'
+        if request.url.rsplit("/", 1)[1] in out_of_reach:
+            return 503, {}, b""
+        if request.method == "HEAD":
+            return 200, {"content-length": "9"}, b""
+        return 200, {"content-length": "9"}, b"csv-bytes"
+
+    Wire(monkeypatch, answer)
+
+    with pytest.raises(DatasetDownloadError) as failed:
+        _download_dataset_files("open", {"file_listing_url": listing}, tmp_path)
+
+    # One file is there, and nothing but the note says that one is missing.
+    assert failed.value.code == "download_network_failed"
+    assert (tmp_path / "first.csv.gz").read_bytes() == b"csv-bytes"
+    assert (tmp_path / DOWNLOAD_NOTE).exists()
+
+    out_of_reach.clear()
+
+    assert _download_dataset_files("open", {"file_listing_url": listing}, tmp_path)
+    assert sorted(p.name for p in tmp_path.iterdir()) == [
+        "first.csv.gz",
+        "second.csv.gz",
+    ]
+
+
+def test_download_into_a_folder_that_cannot_be_noted_fetches_nothing(
+    tmp_path, monkeypatch
+):
+    listing = "https://example.test/open-data/"
+
+    def answer(request):
+        if request.url == listing:
+            return 200, {}, b'<a href="table.csv.gz">a</a>'
+        if request.method == "HEAD":
+            return 200, {"content-length": "9"}, b""
+        return 200, {"content-length": "9"}, b"csv-bytes"
+
+    wire = Wire(monkeypatch, answer)
+    real_write_text = Path.write_text
+
+    def write_text(self, *args, **kwargs):
+        if self.name.startswith(DOWNLOAD_NOTE):
+            raise OSError(28, "No space left on device", str(self))
+        return real_write_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", write_text)
+
+    with pytest.raises(DatasetDownloadError) as failed:
+        _download_dataset_files("open", {"file_listing_url": listing}, tmp_path)
+
+    # Without the note, files that arrive could pass for a whole download.
+    assert failed.value.code == "download_filesystem_failed"
+    assert [request.method for request in wire.sent] == ["GET", "HEAD"]
+    assert not list(tmp_path.rglob("*.csv.gz*"))
+
+
+def test_download_that_gets_no_listing_leaves_no_note(tmp_path, monkeypatch):
+    listing = "https://physionet.org/files/made-up/1.0/"
+    Wire(monkeypatch, lambda request: (401, {}, b""))
+
+    with pytest.raises(DatasetDownloadError) as refused:
+        _download_dataset_files(
+            "made-up", {"file_listing_url": listing}, tmp_path, credentials=FAKE_LOGIN
+        )
+
+    # Nothing was downloaded, so there is nothing to finish.
+    assert refused.value.code == "physionet_auth_failed"
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_download_that_finds_every_file_complete_writes_nothing(tmp_path, monkeypatch):
+    listing = "https://example.test/open-data/"
+
+    def answer(request):
+        if request.url == listing:
+            return 200, {}, b'<a href="table.csv.gz">a</a>'
+        if request.method == "HEAD":
+            return 200, {"content-length": "9"}, b""
+        return 200, {"content-length": "9"}, b"csv-bytes"
+
+    wire = Wire(monkeypatch, answer)
+    assert _download_dataset_files("open", {"file_listing_url": listing}, tmp_path)
+    wire.sent.clear()
+
+    # Going over a whole download again must work in a folder that cannot be
+    # written to, and being killed while doing so must leave no note.
+    def no_writing(*args, **kwargs):
+        raise AssertionError("Nothing is to be written.")
+
+    def read_only(self, *args, **kwargs):
+        # What a read-only mount answers, whether or not the file is there.
+        raise OSError(errno.EROFS, "Read-only file system", str(self))
+
+    monkeypatch.setattr("m4.data_io._write_marker", no_writing)
+    monkeypatch.setattr(Path, "unlink", read_only)
+
+    assert _download_dataset_files("open", {"file_listing_url": listing}, tmp_path)
+    assert [request.method for request in wire.sent] == ["GET", "HEAD"]
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["table.csv.gz"]

@@ -53,12 +53,14 @@ from m4.core.derived.materializer import (
 from m4.core.exceptions import M4Error
 from m4.core.tools import init_tools
 from m4.data_io import (
+    DatasetDownloadError,
     PhysioNetCredentials,
     convert_csv_to_parquet,
     download_dataset,
     find_unconverted,
     init_duckdb_from_parquet,
     mark_dataset_prepared,
+    unfinished_download,
     verify_table_rowcount,
 )
 from m4.services.agent_env import build_agent_env_service
@@ -938,8 +940,19 @@ def dataset_init_cmd(
         f"{pq_root} [{'[success]found[/]' if parquet_present else '[muted]missing[/]'}]",
     )
 
+    # A download into M4's own raw folder that was cut short is finished before
+    # anything is made of the files that did arrive. That needs no login for an
+    # open dataset; for a credentialed one, the check below says what to run.
+    resume_download = bool(
+        raw_present
+        and not src
+        and unfinished_download(csv_root)
+        and not ds.requires_authentication
+        and ds.file_listing_url
+    )
+
     # Step 1: Ensure raw dataset exists (download if missing, for requires_authentication datasets, inform and return)
-    if not raw_present and not parquet_present:
+    if resume_download or (not raw_present and not parquet_present):
         requires_auth = ds.requires_authentication
 
         if requires_auth:
@@ -976,7 +989,11 @@ def dataset_init_cmd(
             print_key_value("Source", listing_url)
             print_key_value("Destination", out_dir)
 
-            ok = download_dataset(dataset_key, out_dir)
+            try:
+                ok = download_dataset(dataset_key, out_dir)
+            except DatasetDownloadError as exc:
+                error(f"Download failed: {exc.message}")
+                raise typer.Exit(code=1)
             if not ok:
                 error("Download failed. Please check logs for details.")
                 raise typer.Exit(code=1)

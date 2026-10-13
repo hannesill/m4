@@ -97,11 +97,16 @@ which did not record that it finished). Running `m4 init DATASET` again, with
 the same `--src` if one was used, finishes an interrupted dataset: it converts
 only the raw files that have no finished Parquet file yet.
 
-M4 keeps this state in two small files. `<database>.m4-prepared.json`, next to
-the DuckDB file, is written last by `m4 init` and lists the Parquet files the
-views were verified over; a dataset stops being ready when those files change.
+M4 keeps this state in three small files. `<database>.m4-prepared.json`, next
+to the DuckDB file, is written last by `m4 init` and lists the Parquet files
+the views were verified over; a dataset stops being ready when those files
+change.
 `.m4-converting.json`, in the dataset's Parquet folder, exists while a
 conversion is unfinished. Tables being converted carry the suffix `.part`.
+`.m4-downloading.json`, in a raw folder, exists while a download by M4 into
+that folder is unfinished. A file that is being downloaded is named
+`<file>.csv.gz.part`; one that is left without its finished file says that a
+download did not finish, whoever made it.
 
 Raw local paths are hidden by default in machine-facing output. Pass
 `--paths` or set `M4_PATH_DISCLOSURE=1` to include path fields such as
@@ -176,12 +181,30 @@ Init step status is one of `skipped`, `completed`, `blocked`, or `failed`.
 `prepared` says whether the dataset is now ready, as `m4 status` reports it.
 For credentialed datasets, missing raw/parquet/database artifacts are an
 `ok: false` `raw_files_missing` result unless `--download` is requested.
-With `--download`, raw files already in M4's own raw folder are gone over
-again, so that a download that was interrupted is completed; files that are
-complete are skipped. For a credentialed dataset this needs the credentials.
-`raw_files_missing` is also the answer when `--src` is not the folder that
-holds the dataset's files directly (for example the `physionet.org/` folder a
-plain `wget -r` creates); `error.hint` then names the folder to use.
+
+A download that did not finish is finished before anything is converted.
+`m4 init` fetches the rest of an open dataset itself. For a credentialed
+dataset it needs `--download` and the credentials: without `--download` it
+fails with `raw_files_missing`, without the credentials with
+`missing_credentials`. Files that are complete are skipped. With `--download`,
+raw files in M4's own raw folder are gone over again even when no download is
+known to be unfinished, for a credentialed dataset only if the credentials are
+given. `m4 download` removes its note once every file is there; if the files
+arrived another way, deleting `.m4-downloading.json` says so.
+
+`raw_files_missing` is also the answer when the raw files are not all of the
+dataset as far as M4 can tell, or are not where the dataset has them:
+
+- The folder holds a download that did not finish, `--src` or not.
+  `error.hint` names the `m4 download` command that finishes it.
+- M4's own raw folder has no file for one of the dataset's folders, such as
+  `icu/`, and there are no tables for it either. That is all M4 can tell of a
+  download that left nothing behind to say it stopped. A folder named with
+  `--src` is taken as it is, which is also how to initialize a dataset that is
+  meant to hold only some of its folders.
+- `--src` is not the folder that holds the dataset's files directly (for
+  example the `physionet.org/` folder a plain `wget -r` creates). `error.hint`
+  then names the folder to use.
 
 For progress-aware wrappers, add `--events ndjson`:
 
