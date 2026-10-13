@@ -875,6 +875,50 @@ def test_conversion_note_without_its_tables_is_only_settled_from_its_own_folder(
     assert not note.exists()
 
 
+def test_find_raw_root_next_to_another_dataset_goes_by_the_folder_name(tmp_path):
+    # One wget tree with MIMIC-IV and its notes. Bare files pass for a dataset
+    # of one schema, so hosp/ and icu/ would fit the notes as well, and hold
+    # more files than note/ does.
+    tree = tmp_path / "physionet.org" / "files"
+    _touch_raw(
+        tree / "mimiciv" / "3.1",
+        "hosp/admissions",
+        "hosp/patients",
+        "hosp/labevents",
+        "icu/icustays",
+        "icu/chartevents",
+    )
+    notes = _touch_raw(
+        tree / "mimic-iv-note" / "2.2", "note/discharge", "note/radiology"
+    )
+
+    assert find_raw_root(tmp_path, {"note": "mimiciv_note"}) == notes
+    assert find_raw_root(tree, MIMIC_IV_MAPPING) == tree / "mimiciv" / "3.1"
+
+
+def test_find_raw_root_names_no_folder_when_several_fit(tmp_path):
+    # eICU keeps its tables directly in its folder, and so does every folder
+    # of another dataset next to it. The full dataset and its demo are laid
+    # out alike. M4 cannot tell which one is meant, and a wrong guess puts
+    # one dataset's tables into another.
+    tree = tmp_path / "physionet.org" / "files"
+    _touch_raw(
+        tree / "mimiciv" / "3.1",
+        "hosp/admissions",
+        "hosp/patients",
+        "hosp/labevents",
+        "icu/icustays",
+    )
+    _touch_raw(tree / "mimic-iv-demo" / "2.2", "hosp/admissions", "icu/icustays")
+    _touch_raw(tree / "eicu-crd" / "2.0", "patient", "lab")
+
+    assert find_raw_root(tmp_path, {"": "eicu_crd"}) is None
+    assert find_raw_root(tmp_path, MIMIC_IV_MAPPING) is None
+    # The folder that was asked about is taken when it fits itself.
+    eicu = tree / "eicu-crd" / "2.0"
+    assert find_raw_root(eicu, {"": "eicu_crd"}) == eicu
+
+
 # ------------------------------------------------------------
 # A download says of itself whether it finished
 # ------------------------------------------------------------

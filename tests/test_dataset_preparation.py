@@ -1174,3 +1174,89 @@ def test_init_into_another_database_says_prepared_as_status_does(
     assert result.exit_code == 0
     assert events[-1]["result"]["prepared"] is True
     _assert_ready(_listed())
+
+
+# ------------------------------------------------------------
+# Which folder M4 names when the files sit deeper
+# ------------------------------------------------------------
+
+
+def _wget_tree_with_several_datasets(root: Path) -> dict[str, Path]:
+    files = root / "physionet.org" / "files"
+    return {
+        "mimic-iv": _write_raw(files / "mimiciv" / "3.1"),
+        "mimic-iv-note": _write_raw(
+            files / "mimic-iv-note" / "2.2",
+            {"note/discharge": "subject_id,text\n1,home\n"},
+        ),
+        "eicu": _write_raw(
+            files / "eicu-crd" / "2.0", {"patient": "patientunitstayid\n1\n"}
+        ),
+    }
+
+
+def test_wget_tree_with_other_datasets_names_the_folder_of_the_notes(
+    data_dir, tmp_path
+):
+    tree = tmp_path / "downloads"
+    folders = _wget_tree_with_several_datasets(tree)
+
+    result, events = _run(
+        "init", "mimic-iv-note", "--src", str(tree), "--no-interactive"
+    )
+
+    # Not hosp/, which holds more files and would fill the notes with MIMIC-IV.
+    assert result.exit_code == 1
+    assert events[-1]["error"]["code"] == "raw_files_missing"
+    assert events[-1]["error"]["hint"] == f"Choose {folders['mimic-iv-note']} instead."
+
+    result, _ = _run(
+        "init",
+        "mimic-iv-note",
+        "--src",
+        str(folders["mimic-iv-note"]),
+        "--no-interactive",
+    )
+
+    assert result.exit_code == 0
+    assert _views(data_dir, "mimic-iv-note") == {"mimiciv_note.discharge"}
+
+
+def test_dataset_with_its_tables_directly_in_its_folder(data_dir, tmp_path):
+    # eICU has no folders of its own, in a folder M4 is pointed at and in M4's.
+    eicu = {"patient": "patientunitstayid\n1\n2\n", "lab": "patientunitstayid\n1\n"}
+    views = {"eicu_crd.patient", "eicu_crd.lab"}
+    chosen = _write_raw(tmp_path / "eicu-crd" / "2.0", eicu)
+
+    result, events = _run("init", "eicu", "--src", str(chosen), "--no-interactive")
+
+    assert result.exit_code == 0
+    assert events[-1]["result"]["prepared"] is True
+    assert _views(data_dir, "eicu") == views
+    _assert_ready(_listed("eicu"))
+
+    _write_raw(_raw_root(data_dir, "eicu"), {**eicu, "vitalperiodic": "a\n1\n"})
+    assert _listed("eicu")["setup_state"] == "incomplete"
+
+    result, _ = _run("init", "eicu", "--no-interactive")
+
+    assert result.exit_code == 0
+    assert _views(data_dir, "eicu") == views | {"eicu_crd.vitalperiodic"}
+    _assert_ready(_listed("eicu"))
+
+
+def test_wget_tree_where_several_folders_fit_names_them_all(data_dir, tmp_path):
+    # eICU keeps its tables directly in its folder, like every folder that
+    # holds another dataset's files. M4 cannot tell which one is meant.
+    tree = tmp_path / "downloads"
+    folders = _wget_tree_with_several_datasets(tree)
+
+    result, events = _run("init", "eicu", "--src", str(tree), "--no-interactive")
+
+    assert result.exit_code == 1
+    failure = events[-1]
+    assert failure["error"]["code"] == "raw_files_missing"
+    assert str(folders["eicu"]) in failure["error"]["hint"]
+    assert "instead" not in failure["error"]["hint"]
+    assert not list(data_dir.rglob("*.parquet"))
+    _assert_not_ready(_listed("eicu"))

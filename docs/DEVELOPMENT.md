@@ -217,7 +217,8 @@ dataset as far as M4 can tell, or are not where the dataset has them:
   meant to hold only some of its folders.
 - `--src` is not the folder that holds the dataset's files directly (for
   example the `physionet.org/` folder a plain `wget -r` creates). `error.hint`
-  then names the folder to use.
+  names the folder to use when exactly one fits, and lists them when several
+  do, as in a tree that holds more than one dataset.
 
 For progress-aware wrappers, add `--events ndjson`:
 

@@ -25,6 +25,7 @@ from m4.data_io import (
     download_dataset,
     find_raw_root,
     find_unconverted,
+    fitting_raw_roots,
     folders_without_tables,
     init_duckdb_from_parquet,
     mark_dataset_prepared,
@@ -178,6 +179,17 @@ def source_problem(
 
     located = find_raw_root(csv_root, ds.schema_mapping)
     if located is None:
+        several = fitting_raw_roots(csv_root, ds.schema_mapping)
+        if several:
+            return CommandError(
+                command="init",
+                code="raw_files_missing",
+                message=(
+                    f"More than one folder in {csv_root} is laid out as "
+                    f"'{ds.name}' is, and M4 cannot tell which of them holds it."
+                ),
+                hint="Choose one of: " + ", ".join(str(folder) for folder in several),
+            )
         folders = expected_raw_subdirectories(ds) or [
             folder for folder in ds.schema_mapping if folder
         ]

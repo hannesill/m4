@@ -900,11 +900,15 @@ def init_duckdb_from_parquet(
     )
 
 
+def _folder_key(directory: Path) -> str:
+    """How a schema mapping names `directory`, given relative to the dataset root."""
+    dir_key = str(directory)
+    return "" if dir_key == "." else dir_key
+
+
 def _schema_for(directory: Path, schema_mapping: dict[str, str]) -> str | None:
     """The schema for files in `directory`, given relative to the dataset root."""
-    dir_key = str(directory)
-    if dir_key == ".":
-        dir_key = ""
+    dir_key = _folder_key(directory)
     schema_name = schema_mapping.get(dir_key)
     if schema_name is None:
         # Fallback: flat files with a single-schema mapping
@@ -915,28 +919,43 @@ def _schema_for(directory: Path, schema_mapping: dict[str, str]) -> str | None:
     return schema_name
 
 
+def fitting_raw_roots(csv_root: Path, schema_mapping: dict[str, str]) -> list[Path]:
+    """The folders at or below `csv_root` whose CSV.gz files would become tables.
+
+    A folder fits when files lie below it in a folder the dataset names. Only
+    where no folder fits that way do folders count that hold bare files, which
+    a dataset of one schema also takes: next to another dataset's files, every
+    folder would otherwise pass for such a dataset.
+    """
+    named: set[Path] = set()
+    bare: set[Path] = set()
+    for csv_gz in csv_root.rglob("*.csv.gz"):
+        folders = csv_gz.relative_to(csv_root).parent.parts
+        for depth in range(len(folders) + 1):
+            below = Path(*folders[depth:])
+            root = csv_root.joinpath(*folders[:depth])
+            if _folder_key(below) in schema_mapping:
+                named.add(root)
+            elif _schema_for(below, schema_mapping) is not None:
+                bare.add(root)
+    return sorted(named or bare)
+
+
 def find_raw_root(csv_root: Path, schema_mapping: dict[str, str] | None) -> Path | None:
     """The folder at or below `csv_root` whose CSV.gz files become the dataset's tables.
 
     That is `csv_root` itself when it is laid out as the dataset expects. When
     the files sit deeper, as under physionet.org/files/<dataset>/<version>/
-    after a plain `wget -r`, it is that deeper folder. None when no folder fits.
+    after a plain `wget -r`, it is that deeper folder. None when no folder
+    fits, and when several do: M4 cannot tell which of them holds this dataset,
+    and the wrong one would fill it with another dataset's tables.
     """
     if not schema_mapping:
         return csv_root  # Flat naming gives every file a table
-    fitting: dict[Path, int] = {}
-    for csv_gz in csv_root.rglob("*.csv.gz"):
-        folders = csv_gz.relative_to(csv_root).parent.parts
-        for depth in range(len(folders) + 1):
-            if _schema_for(Path(*folders[depth:]), schema_mapping) is not None:
-                root = csv_root.joinpath(*folders[:depth])
-                fitting[root] = fitting.get(root, 0) + 1
-    if not fitting:
-        return None
+    fitting = fitting_raw_roots(csv_root, schema_mapping)
     if csv_root in fitting:
         return csv_root
-    # The folder most files fit under, and the shallowest of those
-    return max(fitting, key=lambda root: (fitting[root], -len(root.parts)))
+    return fitting[0] if len(fitting) == 1 else None
 
 
 def raw_files_left_to_convert(
