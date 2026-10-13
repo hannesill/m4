@@ -517,7 +517,8 @@ def download_dataset(
 #   download writes it, and removes it when every file has arrived. Of other
 #   downloads, the file that was being written says the same without a note.
 # - Next to the Parquet files: the raw folder of a conversion that has not
-#   finished. Only a conversion writes it, and removes it when it is done.
+#   finished, and the tables it set out to make. Only a conversion writes it,
+#   and removes it when it is done.
 # - Next to a database: the Parquet files its views were created and verified
 #   over. An initialization writes it last, and only with it is a dataset ready.
 DOWNLOAD_NOTE = ".m4-downloading.json"
@@ -568,10 +569,51 @@ def unfinished_download(raw_root: Path) -> str | None:
     return None
 
 
-def unfinished_conversion_source(parquet_root: Path) -> str | None:
-    """The raw folder of a conversion into `parquet_root` that did not finish."""
-    source = _read_marker(parquet_root / CONVERSION_NOTE).get("source")
-    return source if isinstance(source, str) else None
+def unfinished_conversion(parquet_root: Path) -> tuple[str, list[str] | None] | None:
+    """What a conversion into `parquet_root` that did not finish still owes.
+
+    Returns the raw folder it read from and the tables it has yet to finish,
+    as paths below `parquet_root`. The tables are None for a note that does
+    not list them, as M4 wrote it for a short time. None when nothing is owed.
+    """
+    note = _read_marker(parquet_root / CONVERSION_NOTE)
+    source = note.get("source")
+    if not isinstance(source, str):
+        return None
+    tables = note.get("tables")
+    if not isinstance(tables, list):
+        return source, None
+    owed = [
+        table
+        for table in tables
+        if isinstance(table, str) and not _is_complete_parquet(parquet_root / table)
+    ]
+    return (source, owed) if owed else None
+
+
+def conversion_out_of_reach(parquet_root: Path, csv_root: Path) -> str | None:
+    """The raw folder an unfinished conversion read from, if `csv_root` cannot finish it.
+
+    None when no conversion into `parquet_root` is unfinished, when `csv_root`
+    is the folder that conversion read from, or when it holds the raw file of
+    every table the conversion still owes.
+    """
+    unfinished = unfinished_conversion(parquet_root)
+    if unfinished is None:
+        return None
+    source, owed = unfinished
+    if str(csv_root.resolve()) == source:
+        # The folder the conversion read from finishes it with the raw files
+        # it holds now: one that could not be converted may have been taken
+        # out since.
+        within_reach = any(csv_root.rglob("*.csv.gz"))
+    else:
+        # Any other folder has to bring every table that is still missing.
+        # Which those are is only known where the note lists them.
+        within_reach = owed is not None and all(
+            (csv_root / table).with_suffix(".csv.gz").is_file() for table in owed
+        )
+    return None if within_reach else source
 
 
 def mark_dataset_prepared(parquet_root: Path, db_path: Path) -> None:
@@ -596,7 +638,7 @@ def is_dataset_prepared(parquet_root: Path, db_path: Path) -> bool:
     return (
         marker.get("parquet_root") == str(parquet_root.resolve())
         and marker.get("parquet_files") == _parquet_listing(parquet_root)
-        and unfinished_conversion_source(parquet_root) is None
+        and unfinished_conversion(parquet_root) is None
     )
 
 
@@ -659,11 +701,15 @@ def _csv_to_parquet_all(
         logger.error(f"No CSV files found in {src_root}")
         return False
     conversion_note = parquet_root / CONVERSION_NOTE
+    # A conversion from another folder may be unfinished, with tables this
+    # folder holds no raw file for. Whatever this run converts, those tables
+    # stay missing, so the note that lists them is left as it is.
+    keeps_note = conversion_out_of_reach(parquet_root, src_root) is not None
     csv_files = find_unconverted(src_root, parquet_root)
     if not csv_files:
         # Whatever an earlier run left unfinished, these raw files are all
         # converted. (Checked first: the folder may not be writable.)
-        if conversion_note.exists():
+        if conversion_note.exists() and not keeps_note:
             conversion_note.unlink()
         return True
     skipped_count = len(raw_files) - len(csv_files)
@@ -727,7 +773,18 @@ def _csv_to_parquet_all(
         f" ({skipped_count} already converted)..."
     )
     # Until every file is converted, the Parquet folder is not a whole dataset.
-    _write_marker(conversion_note, source=str(src_root.resolve()))
+    # The tables are listed, so that only their being there settles the note.
+    if not keeps_note:
+        _write_marker(
+            conversion_note,
+            source=str(src_root.resolve()),
+            tables=sorted(
+                _parquet_path_for(csv_gz, src_root, parquet_root)
+                .relative_to(parquet_root)
+                .as_posix()
+                for csv_gz in csv_files
+            ),
+        )
     reporter.emit(
         "conversion_started",
         source=str(src_root),
@@ -770,7 +827,8 @@ def _csv_to_parquet_all(
                     ex.shutdown(cancel_futures=True)
                     return False
 
-    conversion_note.unlink(missing_ok=True)
+    if not keeps_note:
+        conversion_note.unlink(missing_ok=True)
     elapsed_time = time.time() - start_time
     success(f"Converted {len(parquet_paths)} files in {elapsed_time:.1f}s")
     reporter.emit(

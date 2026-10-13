@@ -894,3 +894,82 @@ def test_folder_that_is_already_converted_need_not_be_among_the_raw_files(
     assert result.exit_code == 0
     assert _views(data_dir) == ALL_VIEWS
     _assert_ready(_listed())
+
+
+# ------------------------------------------------------------
+# A conversion that did not finish, and another raw folder
+# ------------------------------------------------------------
+
+
+def test_conversion_that_failed_is_finished_from_the_same_folder_without_the_bad_file(
+    data_dir, raw
+):
+    # What macOS leaves beside a file on a drive that cannot keep its attributes.
+    junk = raw / "hosp" / "._admissions.csv.gz"
+    junk.write_bytes(b"\x00\x05\x16\x07 not a table")
+
+    result, events = _init("--src", str(raw))
+
+    assert result.exit_code == 1
+    assert events[-1]["error"]["code"] == "conversion_failed"
+    _assert_not_ready(_listed())
+
+    junk.unlink()
+    result, _ = _init("--src", str(raw))
+
+    assert result.exit_code == 0
+    assert _views(data_dir) == ALL_VIEWS
+    _assert_ready(_listed())
+
+
+def _converted(data_dir: Path) -> list[str]:
+    parquet = _parquet(data_dir)
+    return sorted(p.relative_to(parquet).as_posix() for p in parquet.rglob("*.parquet"))
+
+
+@pytest.mark.parametrize("other_is_m4s_own_folder", [False, True])
+@pytest.mark.parametrize("other_holds_a_new_table", [False, True])
+def test_conversion_killed_then_init_from_another_folder_is_refused(
+    data_dir,
+    raw,
+    tmp_path,
+    monkeypatch,
+    other_is_m4s_own_folder,
+    other_holds_a_new_table,
+):
+    with monkeypatch.context() as dying, pytest.raises(Killed):
+        _die_before_publishing(dying, "patients")
+        _init("--src", str(raw))
+    assert _converted(data_dir) == [
+        "hosp/admissions.parquet",
+        "icu/chartevents.parquet",
+    ]
+
+    # Another folder holds the raw files of the tables that were converted,
+    # and not the one of the table that was in flight.
+    tables = {name: text for name, text in TABLES.items() if name != "hosp/patients"}
+    if other_holds_a_new_table:
+        tables["hosp/transfers"] = "subject_id,hadm_id\n1,100\n"
+    other = _raw_root(data_dir) if other_is_m4s_own_folder else tmp_path / "other"
+    _write_raw(other, tables)
+
+    result, events = _init() if other_is_m4s_own_folder else _init("--src", str(other))
+
+    # Building the database now would hide that patients is missing.
+    assert result.exit_code == 1
+    failure = events[-1]
+    assert failure["event"] == "operation_failed"
+    assert failure["error"]["code"] == "raw_files_missing"
+    assert "hosp/patients" in failure["error"]["message"]
+    assert str(raw) in failure["error"]["hint"]
+    assert _converted(data_dir) == [
+        "hosp/admissions.parquet",
+        "icu/chartevents.parquet",
+    ]
+    assert not _database(data_dir).exists()
+    _assert_not_ready(_listed())
+
+    result, _ = _init("--src", str(raw))
+
+    assert result.exit_code == 0
+    assert _views(data_dir) == ALL_VIEWS

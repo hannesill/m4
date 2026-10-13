@@ -1,6 +1,7 @@
 import base64
 import errno
 import gzip
+import json
 from pathlib import Path
 from unittest import mock
 
@@ -18,6 +19,7 @@ from m4.data_io import (
     _download_dataset_files,
     _scrape_urls_from_html_page,
     compute_parquet_dir_size,
+    conversion_out_of_reach,
     convert_csv_to_parquet,
     download_dataset,
     find_raw_root,
@@ -26,7 +28,7 @@ from m4.data_io import (
     init_duckdb_from_parquet,
     is_dataset_prepared,
     mark_dataset_prepared,
-    unfinished_conversion_source,
+    unfinished_conversion,
     verify_table_rowcount,
 )
 
@@ -394,14 +396,17 @@ def test_failed_conversion_leaves_no_table_and_a_second_run_finishes_it(tmp_path
         ".m4-converting.json",
         "admissions.parquet",
     ]
-    assert unfinished_conversion_source(dst_root) == str(src_root.resolve())
+    assert unfinished_conversion(dst_root) == (
+        str(src_root.resolve()),
+        ["hosp/patients.parquet"],
+    )
     assert find_unconverted(src_root, dst_root) == [broken]
 
     _write_gz_csv(broken, "subject_id,gender\n1,F\n")
 
     assert convert_csv_to_parquet("mimic-iv-demo", src_root, dst_root)
     assert find_unconverted(src_root, dst_root) == []
-    assert unfinished_conversion_source(dst_root) is None
+    assert unfinished_conversion(dst_root) is None
     assert sorted(p.name for p in dst_root.rglob("*") if p.is_file()) == [
         "admissions.parquet",
         "patients.parquet",
@@ -735,6 +740,93 @@ def test_roundtrip_parquet_to_backend_api(tmp_path):
     assert sample.success is True
     assert sample.row_count <= 1
     assert "subject_id" in sample.dataframe.columns
+
+
+def test_unfinished_conversion_is_not_settled_by_converting_another_folder(tmp_path):
+    first = tmp_path / "first"
+    (first / "hosp").mkdir(parents=True)
+    _write_gz_csv(first / "hosp" / "admissions.csv.gz", "subject_id\n1\n2\n")
+    broken = first / "hosp" / "patients.csv.gz"
+    broken.write_bytes(b"this is not gzip")
+    dst_root = tmp_path / "parquet"
+    assert not convert_csv_to_parquet("mimic-iv-demo", first, dst_root)
+
+    # A folder without the raw file of the table that failed converts what it
+    # holds, and leaves the first conversion as unfinished as it was.
+    second = tmp_path / "second"
+    (second / "hosp").mkdir(parents=True)
+    _write_gz_csv(second / "hosp" / "admissions.csv.gz", "subject_id\n1\n2\n")
+    _write_gz_csv(second / "hosp" / "transfers.csv.gz", "subject_id\n1\n")
+
+    assert convert_csv_to_parquet("mimic-iv-demo", second, dst_root)
+    assert (dst_root / "hosp" / "transfers.parquet").exists()
+    assert unfinished_conversion(dst_root) == (
+        str(first.resolve()),
+        ["hosp/patients.parquet"],
+    )
+
+    _write_gz_csv(broken, "subject_id,gender\n1,F\n")
+
+    assert convert_csv_to_parquet("mimic-iv-demo", first, dst_root)
+    assert unfinished_conversion(dst_root) is None
+    assert not (dst_root / ".m4-converting.json").exists()
+
+
+def test_failed_conversion_is_finished_from_its_own_folder_without_the_bad_file(
+    tmp_path,
+):
+    src_root = tmp_path / "src"
+    (src_root / "hosp").mkdir(parents=True)
+    _write_gz_csv(src_root / "hosp" / "admissions.csv.gz", "subject_id\n1\n2\n")
+    # What macOS leaves beside a file on a drive that cannot keep its attributes.
+    junk = src_root / "hosp" / "._admissions.csv.gz"
+    junk.write_bytes(b"\x00\x05\x16\x07 not a table")
+    dst_root = tmp_path / "parquet"
+
+    assert not convert_csv_to_parquet("mimic-iv-demo", src_root, dst_root)
+    assert unfinished_conversion(dst_root) is not None
+
+    # Another folder would have to bring the table that failed. The folder
+    # the conversion read from finishes it with whatever it holds by then.
+    other = _touch_raw(tmp_path / "other", "hosp/admissions")
+    assert conversion_out_of_reach(dst_root, other) == str(src_root.resolve())
+    assert conversion_out_of_reach(dst_root, src_root) is None
+
+    junk.unlink()
+
+    assert conversion_out_of_reach(dst_root, src_root) is None
+    assert convert_csv_to_parquet("mimic-iv-demo", src_root, dst_root)
+    assert unfinished_conversion(dst_root) is None
+    assert sorted(p.name for p in dst_root.rglob("*") if p.is_file()) == [
+        "admissions.parquet"
+    ]
+
+
+def test_conversion_note_without_its_tables_is_only_settled_from_its_own_folder(
+    tmp_path,
+):
+    # For a short time M4 noted the folder an unfinished conversion read from,
+    # and not the tables it was to make. Which of them are missing is then
+    # unknown, so no other folder can be taken to finish it.
+    first = tmp_path / "first"
+    (first / "hosp").mkdir(parents=True)
+    _write_gz_csv(first / "hosp" / "admissions.csv.gz", "subject_id\n1\n2\n")
+    _write_gz_csv(first / "hosp" / "patients.csv.gz", "subject_id,gender\n1,F\n")
+    second = tmp_path / "second"
+    (second / "hosp").mkdir(parents=True)
+    _write_gz_csv(second / "hosp" / "admissions.csv.gz", "subject_id\n1\n2\n")
+    dst_root = tmp_path / "parquet"
+    dst_root.mkdir()
+    note = dst_root / ".m4-converting.json"
+    note.write_text(json.dumps({"version": 1, "source": str(first.resolve())}))
+
+    assert convert_csv_to_parquet("mimic-iv-demo", second, dst_root)
+    assert convert_csv_to_parquet("mimic-iv-demo", second, dst_root)
+    assert unfinished_conversion(dst_root) == (str(first.resolve()), None)
+
+    assert convert_csv_to_parquet("mimic-iv-demo", first, dst_root)
+    assert unfinished_conversion(dst_root) is None
+    assert not note.exists()
 
 
 # ------------------------------------------------------------

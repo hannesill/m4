@@ -15,10 +15,12 @@ from m4.core.datasets import DatasetDefinition, DatasetRegistry
 from m4.core.derived.builtins import has_derived_support
 from m4.core.derived.materializer import get_derived_table_count, materialize_all
 from m4.data_io import (
+    CONVERSION_NOTE,
     DOWNLOAD_NOTE,
     PHYSIONET_URL_PREFIX,
     DatasetDownloadError,
     PhysioNetCredentials,
+    conversion_out_of_reach,
     convert_csv_to_parquet,
     download_dataset,
     find_raw_root,
@@ -26,7 +28,7 @@ from m4.data_io import (
     folders_without_tables,
     init_duckdb_from_parquet,
     mark_dataset_prepared,
-    unfinished_conversion_source,
+    unfinished_conversion,
     unfinished_download,
     verify_table_rowcount,
 )
@@ -130,6 +132,15 @@ def _download_unfinished(
     )
 
 
+def _named(tables: list[str] | None, limit: int = 3) -> str:
+    """A few of `tables` by name, for a message that speaks of them."""
+    if not tables:
+        return ""
+    names = [table.removesuffix(".parquet") for table in tables[:limit]]
+    more = len(tables) - limit
+    return f" ({', '.join(names)}{f' and {more} more' if more > 0 else ''})"
+
+
 def source_problem(
     ds: DatasetDefinition,
     csv_root: Path,
@@ -142,24 +153,27 @@ def source_problem(
 
     Raw files must sit where the dataset's tables are mapped from and be all
     of the dataset as far as M4 can tell, and Parquet files left by an
-    interrupted conversion need the raw files to finish it.
+    interrupted conversion need the raw files of the tables that are missing.
     """
-    if not raw_present:
-        source = unfinished_conversion_source(pq_root)
-        if source is None:
-            return None
+    source = conversion_out_of_reach(pq_root, csv_root)
+    if source is not None:
+        unfinished = unfinished_conversion(pq_root)
         return CommandError(
             command="init",
             code="raw_files_missing",
             message=(
-                f"The conversion of '{ds.name}' did not finish, and no raw files "
-                f"were found in {csv_root} to finish it."
+                f"The conversion of '{ds.name}' did not finish, and the raw files "
+                f"of the tables that are missing{_named(unfinished and unfinished[1])} "
+                f"were not found in {csv_root}."
             ),
             hint=(
                 f"The conversion read from {source}. Run: m4 init {ds.name} "
-                "--src <folder with the raw CSV.gz files>"
+                "--src <folder with the raw CSV.gz files>. To go on without "
+                f"those tables, delete {pq_root / CONVERSION_NOTE} first."
             ),
         )
+    if not raw_present:
+        return None
 
     located = find_raw_root(csv_root, ds.schema_mapping)
     if located is None:

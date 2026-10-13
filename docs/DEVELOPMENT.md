@@ -96,13 +96,18 @@ last initialization did not finish, or they were made by M4 0.5.5 or earlier,
 which did not record that it finished). Running `m4 init DATASET` again, with
 the same `--src` if one was used, finishes an interrupted dataset: it converts
 only the raw files that have no finished Parquet file yet.
+A conversion that was interrupted is finished from the folder it read from,
+or from one that holds the raw files of the tables it did not get to. From any
+other folder `m4 init` fails with `raw_files_missing` instead of building a
+database without those tables.
 
 M4 keeps this state in three small files. `<database>.m4-prepared.json`, next
 to the DuckDB file, is written last by `m4 init` and lists the Parquet files
 the views were verified over; a dataset stops being ready when those files
 change.
 `.m4-converting.json`, in the dataset's Parquet folder, exists while a
-conversion is unfinished. Tables being converted carry the suffix `.part`.
+conversion is unfinished and lists the tables it set out to make. Tables
+being converted carry the suffix `.part`.
 `.m4-downloading.json`, in a raw folder, exists while a download by M4 into
 that folder is unfinished. A file that is being downloaded is named
 `<file>.csv.gz.part`; one that is left without its finished file says that a
