@@ -9,6 +9,7 @@ from m4.config import ensure_custom_datasets_loaded, resolve_runtime_context
 from m4.console import console
 from m4.core.datasets import DatasetDefinition, DatasetRegistry
 from m4.data_io import (
+    PHYSIONET_URL_PREFIX,
     DatasetDownloadError,
     PhysioNetCredentials,
     download_dataset,
@@ -42,7 +43,14 @@ def expected_raw_subdirectories(ds: DatasetDefinition) -> list[str]:
 
 
 def build_wget_command(ds: DatasetDefinition, target: Path) -> str:
-    if not ds.file_listing_url:
+    """The wget command that downloads `ds` into `target`, or "" if M4 has none.
+
+    The command asks for the PhysioNet password, so there is one only for an
+    address the PhysioNet login may go to.
+    """
+    if not ds.file_listing_url or not ds.file_listing_url.startswith(
+        PHYSIONET_URL_PREFIX
+    ):
         return ""
     path_parts = [
         part for part in urlparse(ds.file_listing_url).path.split("/") if part
@@ -198,7 +206,11 @@ def download_dataset_service(
         data["status"] = "blocked"
         data["next_steps"] = [
             f"Confirm PhysioNet access: {access_url}",
-            "Run the generated wget command yourself, or pass --physionet-credentials-file to let M4 download.",
+            (
+                "Run the generated wget command yourself, or pass --physionet-credentials-file to let M4 download."
+                if data["wget_command"]
+                else f"Download the raw CSV.gz files yourself and place them in {target_root}."
+            ),
             f"Then run: m4 init {dataset_key}",
         ]
         return CommandResult(

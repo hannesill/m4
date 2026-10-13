@@ -9,7 +9,7 @@ from typer.testing import CliRunner
 import m4.config as cfg_mod
 from m4 import M4Client, get_capabilities
 from m4.cli import app
-from m4.core.datasets import DatasetRegistry
+from m4.core.datasets import DatasetDefinition, DatasetRegistry
 from m4.data_io import DatasetDownloadError, PhysioNetCredentials
 from m4.services.capabilities import build_capabilities_manifest
 from m4.services.download import (
@@ -620,3 +620,65 @@ def test_download_refuses_to_send_the_login_to_another_host(tmp_path, monkeypatc
     assert "https://example.test/collect/" in failure["error"]["message"]
     assert sent == []
     assert "FAKE-do-not-send" not in result.output
+
+
+@pytest.mark.parametrize(
+    "listing_url",
+    [
+        "http://physionet.org/files/custom-ed/1.0/",
+        "https://example.test/collect/",
+        "https://physionet.org.example.test/files/custom-ed/1.0/",
+        "https://physionet.org@example.test/files/custom-ed/1.0/",
+    ],
+)
+def test_wget_command_is_only_made_for_physionet(tmp_path, listing_url):
+    """The command asks for a PhysioNet password. M4 must not hand out one that
+    sends what the user types to another host, or without encryption."""
+    dataset = DatasetDefinition(
+        name="elsewhere", file_listing_url=listing_url, requires_authentication=True
+    )
+
+    assert build_wget_command(dataset, tmp_path) == ""
+
+
+def test_download_guidance_for_another_host_offers_no_password_prompt(
+    tmp_path, monkeypatch
+):
+    _write_custom_dataset(
+        tmp_path,
+        monkeypatch,
+        name="elsewhere",
+        file_listing_url="http://example.test/collect/",
+        requires_authentication=True,
+    )
+    pq_root = tmp_path / "m4_data" / "parquet" / "elsewhere"
+    pq_root.mkdir(parents=True)
+
+    plan = runner.invoke(
+        app,
+        [
+            "download",
+            "elsewhere",
+            "--target",
+            str(tmp_path / "raw"),
+            "--command-only",
+            "--json",
+        ],
+    )
+    blocked = runner.invoke(
+        app, ["download", "elsewhere", "--target", str(tmp_path / "raw"), "--json"]
+    )
+    with (
+        patch("m4.config._find_project_root_from_cwd", return_value=Path.cwd()),
+        patch("m4.cli.get_dataset_parquet_root", return_value=pq_root),
+    ):
+        init = runner.invoke(app, ["init", "elsewhere", "--no-interactive"])
+
+    assert plan.exit_code == 0
+    assert json.loads(plan.stdout)["wget_command"] is None
+    assert blocked.exit_code == 0
+    assert json.loads(blocked.stdout)["wget_command"] is None
+    assert init.exit_code == 0
+    for shown in (plan.output, blocked.output, init.output):
+        assert "--ask-password" not in shown
+        assert "password" not in shown.lower()

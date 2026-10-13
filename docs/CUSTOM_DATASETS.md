@@ -144,8 +144,9 @@ M4 will:
 
 M4 sends a PhysioNet login only to addresses that start with
 `https://physionet.org/`. A credentialed dataset with any other
-`file_listing_url` cannot be downloaded by M4; download it yourself and use
-`m4 init <dataset> --src`.
+`file_listing_url` cannot be downloaded by M4, and M4 prints no `wget` command
+for it, since that command asks for the PhysioNet password; download it
+yourself and use `m4 init <dataset> --src`.
 
 For datasets requiring PhysioNet credentials (most full datasets):
 

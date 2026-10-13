@@ -965,15 +965,20 @@ def dataset_init_cmd(
             console.print(
                 f"  [bold]1.[/bold] Sign the DUA at: [link]{base_url or 'https://physionet.org'}[/link]"
             )
-            console.print(
-                "  [bold]2.[/bold] Run this command (you'll be prompted for your PhysioNet password):"
-            )
-            console.print()
-
-            # Wget command tailored to the user's path
+            # Wget command tailored to the user's path. There is none for a
+            # dataset that PhysioNet does not serve.
             wget_cmd = build_wget_command(ds, csv_root)
-            print_command(wget_cmd)
-            console.print()
+            if wget_cmd:
+                console.print(
+                    "  [bold]2.[/bold] Run this command (you'll be prompted for your PhysioNet password):"
+                )
+                console.print()
+                print_command(wget_cmd)
+                console.print()
+            else:
+                console.print(
+                    f"  [bold]2.[/bold] Download its CSV.gz files and place them under: [path]{csv_root}[/path]"
+                )
             console.print(
                 f"  [bold]3.[/bold] Re-run: [command]m4 init {dataset_key}[/command]"
             )
