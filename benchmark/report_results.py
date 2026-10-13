@@ -663,13 +663,6 @@ def make_report(
         lines.append(f"| `{row['task']}` | {fmt(row['delta'])} |")
     lines += [
         "",
-        "## Surprises",
-        "",
-        "- The OASIS/sepsis skill-hurts concern from the pilot did not reproduce in this clean Codex campaign. `mimic-oasis-24h`, `mimic-oasis-24h-raw`, `eicu-oasis`, and `mimic-sepsis3-raw` all have positive skill deltas for both models.",
-        "- The largest skill gains are concentrated in procedural data-engineering tasks: urine-output rolling windows, MELD, suspected infection timing, baseline creatinine, and ventilation episodes.",
-        "- The strongest remaining negative mean effects are small in task-balanced terms except `mimic-vasopressor-equivalents-raw` for gpt-5.5 and `mimic-ventilation-raw` for gpt-5.4-mini.",
-        "- `gpt-5.5` is stronger overall, but not uniformly. It trails `gpt-5.4-mini` on some no-skill cells, notably MELD native/raw and suspected-infection raw, while both models reach much higher performance once the targeted skill is available.",
-        "",
         "## Task Form And Schema Summary",
         "",
         "| Model | Condition | Schema | Task form | Runs | Mean reward |",
@@ -716,15 +709,7 @@ def make_report(
             )
         lines.append("")
     lines += [
-        "## Failure Modes",
-        "",
-        "The low-reward runs are valid executions rather than infrastructure failures. The dominant failure modes are:",
-        "",
-        "- Wrong key grain or row explosion, especially urine-output rate and vasopressor interval tasks. These failures emit plausible CSVs at the wrong temporal grain or with incorrect interval keys.",
-        "- Infection and Sepsis-3 temporal-pairing mistakes. The likely errors are antibiotic-culture window direction, timestamp choice, culture over-inclusion, and compounding with SOFA timing.",
-        "- Ventilation interval segmentation failures. Raw ventilation remains weak even with skills, suggesting episode construction, mode priority, and contiguous-state collapse are still difficult.",
-        "- Severity-score component drift. APSIII, SAPS-II, OASIS, SOFA, MELD, and KDIGO often have correct-shaped output but miss exact bin boundaries, windows, defaults, or component formulas.",
-        "- Baseline creatinine hierarchy errors. Some runs have perfect key precision but poor clinical values, consistent with wrong CKD logic, MDRD back-calculation, demographic joins, or hierarchy ordering.",
+        "## Weakest Cells",
         "",
         "Weakest cells by mean reward:",
         "",

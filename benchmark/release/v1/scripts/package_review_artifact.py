@@ -11,6 +11,7 @@ directories. The Claude sentinel arm can be added explicitly with
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import io
 import json
@@ -68,6 +69,7 @@ from sanitize_artifacts import (  # noqa: E402
     SanitizationReport,
     SanitizerConfig,
     load_private_patterns,
+    redact_local_paths,
     sanitized_payload_for,
 )
 
@@ -168,10 +170,7 @@ def redact_text(text: str) -> str:
         redacted,
         flags=re.IGNORECASE,
     )
-    redacted = re.sub(r"/Users/[^\s\"']+", "<ANON_LOCAL_PATH>", redacted)
-    redacted = re.sub(r"/home/[^\s\"']+", "<ANON_LOCAL_PATH>", redacted)
-    redacted = re.sub(r"/var/folders/[^\s\"']+", "<ANON_TMP_PATH>", redacted)
-    return redacted
+    return redact_local_paths(redacted)
 
 
 def should_redact(source: Path) -> bool:
@@ -248,6 +247,56 @@ def verify_artifact(source: Path, expected: dict[str, dict[str, Any]]) -> None:
         raise ValueError(f"SHA-256 mismatch for {relative}")
 
 
+DECLARED_SELECTIONS = {
+    "codex_primary": PLANNING_DIR / "final_codex_runs.csv",
+    "claude_sentinel": PLANNING_DIR / "final_claude_runs.csv",
+    "oss_exploratory": PLANNING_DIR / "final_oss_runs.csv",
+}
+
+
+class IncompleteEvidenceError(SystemExit):
+    """Raised when the selected evidence does not match the declared selection."""
+
+
+def declared_run_dirs(campaign: str) -> set[str]:
+    """Return results-root-relative run directories declared for a campaign."""
+    if campaign == "codex_followup":
+        manifest = json.loads(FOLLOWUP_MANIFEST.read_text())
+        return {record["relative_run_dir"] for record in manifest["canonical_runs"]}
+    path = DECLARED_SELECTIONS[campaign]
+    if not path.exists():
+        raise IncompleteEvidenceError(f"Declared selection {path} is missing.")
+    with path.open(newline="") as handle:
+        return {
+            str(Path(row["path"]).relative_to("benchmark/results"))
+            for row in csv.DictReader(handle)
+        }
+
+
+def verify_selection(campaign: str, rows: list[dict[str, Any]]) -> None:
+    """Fail unless rows cover the declared run selection with every artifact.
+
+    Loaders select whatever run directories exist, so a missing results root
+    silently yields zero rows. Packaging must never treat that as success.
+    """
+    declared = declared_run_dirs(campaign)
+    selected = {str(Path(row["path"]).relative_to(RESULTS_DIR)) for row in rows}
+    problems = [f"missing run: {run}" for run in sorted(declared - selected)]
+    problems += [f"undeclared run: {run}" for run in sorted(selected - declared)]
+    for run in sorted(declared & selected):
+        for name in EXPECTED_ARTIFACTS:
+            if not (RESULTS_DIR / run / name).is_file():
+                problems.append(f"missing artifact: {run}/{name}")
+    if problems:
+        shown = "\n  ".join(problems[:20])
+        more = f"\n  ... {len(problems) - 20} more" if len(problems) > 20 else ""
+        raise IncompleteEvidenceError(
+            f"{campaign}: selected evidence does not match the declared selection "
+            f"({len(declared)} declared runs, {len(selected)} found, "
+            f"{len(problems)} problems) under {RESULTS_DIR}:\n  {shown}{more}"
+        )
+
+
 def followup_rows_from_manifest() -> list[dict[str, Any]]:
     manifest = json.loads(FOLLOWUP_MANIFEST.read_text())
     rows = []
@@ -267,8 +316,8 @@ def add_file(
     sanitization_report: SanitizationReport | None = None,
     dry_run: bool,
 ) -> tuple[int, str, bool]:
-    if not source.exists():
-        return 0, "", False
+    if not source.is_file():
+        raise IncompleteEvidenceError(f"Expected packaged file is missing: {source}")
     if dry_run:
         return (
             source.stat().st_size,
@@ -432,9 +481,12 @@ def add_metadata(
     file_count = 0
     byte_count = 0
     assert tar is not None or dry_run
+    missing = [str(source) for source in metadata_files if not source.is_file()]
+    if missing:
+        raise IncompleteEvidenceError(
+            "Required release metadata is missing:\n  " + "\n  ".join(missing)
+        )
     for source in metadata_files:
-        if not source.exists():
-            continue
         arcname = (
             Path("m4bench-review-artifact") / "metadata" / source.relative_to(PAPER_DIR)
         )
@@ -722,6 +774,12 @@ def main() -> None:
         "codex_followup": len(followup_rows),
         "oss_exploratory": len(oss_rows),
     }
+    verify_selection("codex_primary", codex_rows)
+    verify_selection("codex_followup", followup_rows)
+    if args.include_claude:
+        verify_selection("claude_sentinel", claude_rows)
+    if args.include_oss:
+        verify_selection("oss_exploratory", oss_rows)
 
     tar: tarfile.TarFile | None = None
     args.output.parent.mkdir(parents=True, exist_ok=True)

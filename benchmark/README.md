@@ -1,22 +1,31 @@
 # M4Bench
 
-## Review Artifact
+## Camera-Ready Evidence (NeurIPS 2026)
 
-Paper-facing benchmark run artifacts are available at:
+The paper-facing per-run evidence is released as two open packages, hosted at
+<https://huggingface.co/datasets/hannesill/m4bench-evidence> and attached
+to the `m4bench-neurips2026-camera-ready` GitHub release:
 
-https://mega.nz/file/tyNVyRaS#Fw5ta4akUKusFnKy8ZjpDkVkXGS8EsKlwyh_nQTVhbQ
+| Package | Runs | Size (bytes) | SHA-256 |
+|---|---:|---:|---|
+| `m4bench-evidence-submission.tar.zst` | 1,400 | 7,548,441 | `17215697caf9dd2746e2e1a855af31f355fe1203612c3b9892ee138b08357106` |
+| `m4bench-evidence-claude-replication.tar.zst` | 560 | 6,400,345 | `9f63e8c867dcbafe68da472954dfebe366246aa36d2a3599795279426c33c63c` |
 
-Filename: `m4bench-paper-results-artifact-sanitized.tar.zst`
+The submission package holds the submitted campaigns (760 primary Codex,
+190 Claude sentinel, 340 Codex follow-up, 110 exploratory OSS runs); the
+Claude package holds the July 2026 full-coverage replication. Each package
+contains `result.json`, sanitized `trace.jsonl`, `instruction.md`,
+`egress.jsonl` (not for the OSS runs), and an `output_summary.json` in place
+of the row-level `output.csv`, plus `metadata/public_artifact_manifest.json`
+mapping every source hash to its public hash. Row-level agent outputs, tool
+outputs, MIMIC-IV/eICU data, task databases, and reference outputs are not
+included.
+Croissant metadata: `benchmark/release/v1/croissant/m4bench_evidence.croissant.json`.
+Verification and table regeneration:
+[`release/v1/README.md`](release/v1/README.md#camera-ready-release).
 
-Size: `8,176,110,255` bytes
-
-SHA-256:
-`2ab74851089476f7991118a4194e9a08771c9a78f72cf4dc1b578b4d0b7bb38c`
-
-The review archive is produced by
-`benchmark/release/v1/scripts/package_review_artifact.py` and excludes
-MIMIC-IV, eICU, and generated DuckDB task databases; full reconstruction still
-requires independent PhysioNet credentialed access.
+Earlier review-phase archives are superseded by these packages and should not
+be used.
 
 Benchmark for evaluating AI agents' ability to derive validated clinical concepts
 from real EHR databases. 15 task families (28 tasks) covering severity scores,
@@ -63,7 +72,7 @@ include runnable examples that query dropped target concept tables, and they do
 not ship the production SQL scripts. Run `python benchmark/preflight.py` before
 launching a release-grade campaign to check that this separation still holds.
 Release-facing clinical design notes live in `benchmark/task_design_notes/`.
-They document task construction and known conventions for reviewers, but they
+They document task construction and known conventions for readers, but they
 are never mounted into agent runtimes and are kept outside `benchmark/tasks/`.
 
 A contamination analysis dimension (`--schema`) probes schema memorization by
@@ -126,23 +135,22 @@ the task database copied into the workdir. It does not mount `benchmark/tasks`,
 `benchmark/ground_truth`, `benchmark/results`, `benchmark/agent_db`, or the
 obfuscation dictionary.
 
-## Release Plan
+## Execution Plan
 
 The canonical release-facing execution spec lives in this README, and
 `benchmark/matrix.py` contains the current execution plan. The default matrix
-profile is the audited v1.1 submission profile. The explicit
+profile is the paper's primary profile (v1.1). The explicit
 `--profile rerun-v1.1` flag is retained as a stable alias for provenance.
 
-For a fresh-machine reviewer workflow covering PhysioNet downloads, `m4 init`
+For a fresh-machine reproduction workflow covering PhysioNet downloads, `m4 init`
 for MIMIC-IV and eICU, benchmark artifact generation, canary checks, full
 campaign execution, and analysis export, see
 [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md).
 
-Paper-facing paper review table, figure, metadata, and review-artifact
-packaging scripts live under
-[`release/v1/`](release/v1/). That tree includes the frozen
-planning manifests and generated tables needed to inspect the submitted
-analysis without a private manuscript checkout. Set `M4BENCH_PAPER_DIR` only
+The table, figure, metadata, and evidence-packaging scripts for the paper live
+under [`release/v1/`](release/v1/). That tree includes the frozen planning
+manifests and generated tables needed to inspect the analysis without the
+manuscript checkout. Set `M4BENCH_PAPER_DIR` only
 when intentionally regenerating tables or figures into a separate paper
 workspace.
 
@@ -154,42 +162,31 @@ export M4BENCH_RESULTS_DIR=/path/to/m4/benchmark/results
 export M4BENCH_PAPER_DIR=/path/to/output/workspace
 ```
 
-## Reviewer Quickstart
+## Verification Quickstart
 
-1. Verify the linked review artifact before unpacking:
+1. Download the two evidence packages, check their SHA-256 sidecars, and run
+   `verify_public_evidence.py` and `scan_public_evidence.py` on them. The exact
+   commands are in
+   [`release/v1/README.md`](release/v1/README.md#verify-and-regenerate-tables-from-a-clean-checkout).
+   This needs no credentialed data and regenerates the paper's result tables
+   from the packages.
 
-```bash
-shasum -a 256 -c m4bench-paper-results-artifact.tar.zst.sha256
-python -m json.tool m4bench-paper-results-artifact.tar.zst.manifest.json >/dev/null
-```
-
-2. Inspect the packaged run selection and hashes:
-
-```bash
-tar --list -f m4bench-paper-results-artifact.tar.zst | head
-tar --extract -f m4bench-paper-results-artifact.tar.zst \
-  m4bench-review-artifact/metadata/planning/packaged_artifact_manifest.json
-```
-
-3. Run source and generated-artifact checks from this checkout:
+2. Run the source checks from this checkout:
 
 ```bash
 uv run python benchmark/preflight.py --skip-db-check
-uv run python benchmark/preflight.py
 ```
 
-4. Regenerate submitted analysis metadata and tables from local release files:
+3. With PhysioNet access, rebuild the task databases and reference outputs and
+   run `uv run python benchmark/preflight.py` without the flag. The full path,
+   including downloads and Docker-backed campaign execution, is in
+   [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md). The canonical wrapper is
+   `benchmark/scripts/run_paper_rerun.sh`.
 
-```bash
-uv run python benchmark/release/v1/scripts/make_release_metadata.py
-uv run python benchmark/release/v1/scripts/make_final_results.py
-uv run python benchmark/release/v1/scripts/make_followup_manifest.py
-uv run python benchmark/release/v1/scripts/make_followup_tables.py
-```
-
-The full rerun path, including PhysioNet downloads and Docker-backed campaign
-execution, is documented in [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md). The
-canonical wrapper is `benchmark/scripts/run_paper_rerun.sh`.
+The table generators under `release/v1/scripts/` (`make_final_results.py` and
+others) read the private run roots and exit without writing when those are
+absent. Which code and skill text each campaign ran is recorded in
+[`release/v1/README.md`](release/v1/README.md#code-and-skill-state-by-campaign).
 
 ## Licenses & Attribution
 
@@ -200,7 +197,7 @@ canonical wrapper is `benchmark/scripts/run_paper_rerun.sh`.
   lineage is recorded in `benchmark/tasks/*/PROVENANCE.yaml` and SQL headers.
 - MIMIC-IV v3.1 and eICU-CRD v2.0: credentialed PhysioNet datasets governed by
   their respective data-use agreements. Source databases and generated task
-  DuckDB files are not redistributed by the review artifact.
+  DuckDB files are not redistributed.
 
 See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for the concise
 release-facing notice.
@@ -300,7 +297,7 @@ configuration without copying unrelated auth files.
 - Gemini: `gemini-3.1-pro-preview`, `gemini-3-flash-preview`
 - Pi/Ollama: `qwen3:4b`
 
-The default matrix profile is the audited v1.1 GPT-primary submission profile:
+The default matrix profile is the paper's GPT-primary profile (v1.1):
 run it with `--agent codex`, then use `--profile provider-comparison` for sparse
 Claude or Gemini sentinel runs. `pi-ollama` is the OSS local-model baseline for
 zero-API-cost reproducibility. Provider-comparison runs are supplementary and
@@ -314,9 +311,9 @@ validity-followup` combines both tiers. The operational-spec condition expects
 each scheduled task directory to contain `operational-spec.md`; the runner fails
 closed if the file is missing or empty.
 
-Because matrix profiles can allocate different numbers of runs by tier, final
-reporting should pre-register equal task/cell weighting or tier-specific
-estimands. Do not report naive run-weighted averages as headline effects.
+Because matrix profiles can allocate different numbers of runs by tier, the
+release analysis uses equal task/cell weighting. Naive run-weighted averages
+are not valid headline effects.
 
 Reasoning policy is pinned by default through `--reasoning-effort auto`: Codex
 and Claude Code run at `medium`, while Gemini CLI and `pi-ollama` are recorded

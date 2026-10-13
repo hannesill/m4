@@ -16,8 +16,7 @@
 #   2. Ensure Docker image is current (bench.sh handles container).
 #   3. Set OPENAI_API_KEY (or whichever the codex CLI expects).
 #
-# After completion, set M4BENCH_PAPER_DIR if the paper is not a sibling
-# checkout at ../m4bench-paper, then run the release scripts below.
+# After completion, regenerate the single-root tables as printed at the end.
 
 set -euo pipefail
 
@@ -55,18 +54,5 @@ uv run python benchmark/report_results.py \
     --agent codex \
     --seeds 5
 
-echo "==> Done. Regenerating tables and figures."
-PAPER_DIR="${M4BENCH_PAPER_DIR:-../m4bench-paper}"
-if [[ ! -f "${PAPER_DIR}/main.tex" ]]; then
-    echo "Paper source not found at ${PAPER_DIR}. Set M4BENCH_PAPER_DIR to regenerate manuscript tables/PDF."
-    exit 0
-fi
-export M4BENCH_PAPER_DIR="$(cd "${PAPER_DIR}" && pwd)"
-export M4BENCH_M4_DIR="$(pwd)"
-export M4BENCH_PAPER_ROOT="${RESULTS_ROOT}"
-uv run python benchmark/release/v1/scripts/make_codex_tables.py
-
-echo "==> Build paper PDF"
-( cd "${M4BENCH_PAPER_DIR}" && latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex )
-
-echo "==> Done. Inspect ${M4BENCH_PAPER_DIR}/main.pdf"
+echo "==> Done. To regenerate the single-root Codex tables from this results root:"
+echo "    M4BENCH_PAPER_ROOT=${RESULTS_ROOT} uv run python benchmark/release/v1/scripts/make_codex_tables.py"

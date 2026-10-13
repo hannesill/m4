@@ -48,9 +48,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from make_final_results import (  # noqa: E402
     CODEX_RELEASE,
     CODEX_RERUN,
+    FROZEN_REFERENCE,
     bootstrap_ci,
     combine_rows,
     fmt,
+    model_label,
+    require_runs,
     write_table,
 )
 
@@ -260,16 +263,21 @@ def write_operational_spec_tables(base_idx: dict, follow_idx: dict) -> dict[str,
     }
 
 
-def write_schema_tables(
-    base_idx: dict, follow_rows: list[dict[str, Any]]
-) -> dict[str, Any]:
-    no_skill_rows = [
+def schema_no_skill_rows() -> list[dict[str, Any]]:
+    return [
         row
         for row in canonicalize(load_rows(SCHEMA_NO_SKILL_ROOT))
         if row["condition"] == "no-skill"
         and row["schema"] in {"obfuscated", "restructured"}
         and row["model"] == "gpt-5.4-mini"
     ]
+
+
+def write_schema_tables(
+    base_idx: dict,
+    follow_rows: list[dict[str, Any]],
+    no_skill_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
     with_skill_rows = [
         row
         for row in follow_rows
@@ -349,7 +357,12 @@ def write_schema_tables(
 
 
 def write_followup_integrity_table(follow_rows: list[dict[str, Any]]) -> None:
-    raw_count = len(load_rows(FOLLOWUP_ROOT))
+    if os.environ.get("M4BENCH_FROZEN_REFERENCE") == "1":
+        # Evidence packages hold only canonical runs; superseded retries are
+        # recorded in the frozen manifest rather than shipped as directories.
+        raw_count = json.loads(FOLLOWUP_MANIFEST.read_text())["raw_run_count"]
+    else:
+        raw_count = len(load_rows(FOLLOWUP_ROOT))
     canonical_count = len(follow_rows)
     condition_counts = Counter(
         (row["condition"], row["schema"], row["model"]) for row in follow_rows
@@ -395,7 +408,7 @@ def write_followup_integrity_table(follow_rows: list[dict[str, Any]]) -> None:
         ],
     ]
     for (condition, schema, model), count in sorted(condition_counts.items()):
-        rows.append([f"{condition} / {schema} / {model}", count])
+        rows.append([f"{condition} / {schema} / {model_label(model)}", count])
     write_table(
         TABLE_DIR / "codex_followup_integrity.tex",
         ["Audit quantity", "Count"],
@@ -429,15 +442,27 @@ def write_summary(ops: dict[str, Any], schema: dict[str, Any]) -> None:
 
 
 def main() -> None:
+    base_rows, _ = combine_rows(CODEX_RELEASE, CODEX_RERUN)
+    no_skill_rows = schema_no_skill_rows()
+    if not FROZEN_REFERENCE:
+        # Evidence packages do not hold the April root, so frozen-reference
+        # mode still writes that table for verify_public_evidence.py to report.
+        require_runs("Codex follow-up", load_rows(FOLLOWUP_ROOT), [FOLLOWUP_ROOT])
+        require_runs("Codex primary", base_rows, [CODEX_RELEASE, CODEX_RERUN])
+        require_runs(
+            "Codex April transformed-schema no-skill",
+            no_skill_rows,
+            [SCHEMA_NO_SKILL_ROOT],
+        )
+    follow_rows = load_followup_rows_from_manifest()
+
     TABLE_DIR.mkdir(exist_ok=True)
     PLANNING_DIR.mkdir(exist_ok=True)
-    follow_rows = load_followup_rows_from_manifest()
-    base_rows, _ = combine_rows(CODEX_RELEASE, CODEX_RERUN)
     base_idx = cells_index(with_neutral_tier(base_rows))
     follow_idx = cells_index(follow_rows)
 
     ops_summary = write_operational_spec_tables(base_idx, follow_idx)
-    schema_summary = write_schema_tables(base_idx, follow_rows)
+    schema_summary = write_schema_tables(base_idx, follow_rows, no_skill_rows)
     write_followup_integrity_table(follow_rows)
     write_summary(ops_summary, schema_summary)
     print("Wrote follow-up result tables and summary.")

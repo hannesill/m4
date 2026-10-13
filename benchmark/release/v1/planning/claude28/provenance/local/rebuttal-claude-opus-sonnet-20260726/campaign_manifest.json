@@ -1,0 +1,10 @@
+{
+  "created_at_utc": "2026-07-26T20:49:17.454927+00:00",
+  "results_root": "<ANON_LOCAL_PATH>",
+  "canonical_release_spec": "<ANON_LOCAL_PATH>",
+  "publishable_run_requirements": [
+    "run via benchmark/bench.sh inside Docker",
+    "do not mix with legacy benchmark/results outputs",
+    "treat local run.py executions as debugging only"
+  ]
+}

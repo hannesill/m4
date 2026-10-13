@@ -1,0 +1,39 @@
+{
+  "git_remote": "https://github.com/hannesill/m4.git",
+  "git_branch": "m4bench",
+  "git_head": "f0f21bd67d9f30e733c327759d954d0480722bea",
+  "git_describe": "v0.4.3-148-gf0f21bd",
+  "git_head_date": "2026-05-15 08:16:41 -0700",
+  "working_tree_dirty": true,
+  "modified_tracked_files": [
+    "benchmark/ground_truth/obfuscated/charlson.sql",
+    "benchmark/ground_truth/obfuscated/creatinine-baseline.sql",
+    "benchmark/ground_truth/obfuscated/gcs-24h.sql",
+    "benchmark/ground_truth/obfuscated/kdigo-48h.sql",
+    "benchmark/ground_truth/obfuscated/meld-24h.sql",
+    "benchmark/ground_truth/obfuscated/oasis-24h.sql",
+    "benchmark/ground_truth/obfuscated/sapsii-24h.sql",
+    "benchmark/ground_truth/obfuscated/sepsis3.sql",
+    "benchmark/ground_truth/obfuscated/sirs-24h.sql",
+    "benchmark/ground_truth/obfuscated/sofa-24h.sql",
+    "benchmark/ground_truth/obfuscated/suspicion-infection.sql",
+    "benchmark/ground_truth/obfuscated/urine-output-rate.sql",
+    "benchmark/ground_truth/obfuscated/vasopressor-equivalents.sql",
+    "benchmark/ground_truth/obfuscated/ventilation.sql",
+    "benchmark/matrix.py",
+    "benchmark/run.py",
+    "tests/test_benchmark_matrix.py"
+  ],
+  "untracked_files": [
+    "benchmark/finish_five_tasks.sh",
+    "benchmark/finish_four_tasks.sh",
+    "benchmark/finish_next_four_tasks.sh",
+    "benchmark/finish_remaining_gaps.sh",
+    "figure1.tex",
+    "rajna_7task_results.csv",
+    "rajna_all_tasks_results.csv",
+    "rajna_complete_tasks_results.csv"
+  ],
+  "claude_code_version": "2.1.119",
+  "note": "No commits exist after HEAD; runs were made from HEAD plus the uncommitted working-tree diff captured in code_diff.patch."
+}

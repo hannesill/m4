@@ -1,36 +1,75 @@
 cff-version: 1.2.0
-message: "Citation for this repository"
+message: "If you use M4 or M4Bench, please cite the M4Bench paper. M4 builds on M3, so please also cite the M3 paper listed under references."
+title: "M4: Infrastructure for AI-Assisted Clinical Research"
+type: software
+version: m4bench-neurips2026-camera-ready
+date-released: 2026-10-13
+license: MIT
+repository-code: "https://github.com/hannesill/m4"
+url: "https://github.com/hannesill/m4/tree/m4bench-neurips2026-camera-ready/benchmark"
 authors:
+  - family-names: Ill
+    given-names: Hannes
   - family-names: Al Attrach
     given-names: Rafi
-  - family-names: Moreira
-    given-names: Pedro
   - family-names: Fani
     given-names: Rajna
-  - family-names: Umeton
-    given-names: Renato
+  - family-names: Han
+    given-names: Ahram
+  - family-names: Yamamoto
+    given-names: Ryohei
+  - family-names: Moerig
+    given-names: Marlene Louisa
+  - family-names: Yoon
+    given-names: Dukyong
   - family-names: Celi
     given-names: Leo Anthony
-title: "Conversational LLMs Simplify Secure Clinical Data Access, Understanding, and Analysis"
-date-released: 2025-06-27
-doi: 10.48550/arXiv.2507.01053
-url: https://arxiv.org/abs/2507.01053
+keywords:
+  - clinical EHR
+  - MIMIC-IV
+  - eICU
+  - coding agents
+  - benchmark
 preferred-citation:
-  type: article
+  type: conference-paper
+  title: "M4Bench: Evaluating Procedural Specification for Clinical EHR Derivation Agents"
   authors:
+    - family-names: Ill
+      given-names: Hannes
     - family-names: Al Attrach
       given-names: Rafi
-    - family-names: Moreira
-      given-names: Pedro
     - family-names: Fani
       given-names: Rajna
-    - family-names: Umeton
-      given-names: Renato
+    - family-names: Han
+      given-names: Ahram
+    - family-names: Yamamoto
+      given-names: Ryohei
+    - family-names: Moerig
+      given-names: Marlene Louisa
+    - family-names: Yoon
+      given-names: Dukyong
     - family-names: Celi
       given-names: Leo Anthony
-  title: "Conversational LLMs Simplify Secure Clinical Data Access, Understanding, and Analysis"
-  doi: 10.48550/arXiv.2507.01053
-  year: 2025
-  month: 6
-  url: https://arxiv.org/abs/2507.01053
-  publisher: arXiv
+  collection-title: "Advances in Neural Information Processing Systems 39 (NeurIPS 2026), Evaluations and Datasets Track"
+  conference:
+    name: "The Fortieth Annual Conference on Neural Information Processing Systems (NeurIPS 2026)"
+  year: 2026
+references:
+  - type: article
+    title: "Conversational LLMs Simplify Secure Clinical Data Access, Understanding, and Analysis"
+    authors:
+      - family-names: Al Attrach
+        given-names: Rafi
+      - family-names: Moreira
+        given-names: Pedro
+      - family-names: Fani
+        given-names: Rajna
+      - family-names: Umeton
+        given-names: Renato
+      - family-names: Celi
+        given-names: Leo Anthony
+    doi: 10.48550/arXiv.2507.01053
+    url: "https://arxiv.org/abs/2507.01053"
+    year: 2025
+    publisher:
+      name: arXiv

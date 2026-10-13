@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate final paper result tables from release roots plus reviewer reruns."""
+"""Generate final paper result tables from release roots plus clinician-review reruns."""
 
 from __future__ import annotations
 
@@ -73,6 +73,29 @@ from report_results import (  # noqa: E402
 
 UNORDERED_VALUE_COLUMNS = {"specimen", "ventilation_status"}
 DIAGNOSTIC_CACHE = PLANNING_DIR / "secondary_metric_cache.json"
+# Frozen-reference mode regenerates tables from retained or public evidence
+# without credentialed reference CSVs: reference row counts come from the
+# frozen task_details.tex and ordered-value nMAE must come from the tracked
+# cache. Public evidence packages replace output.csv with output_summary.json.
+FROZEN_REFERENCE = os.environ.get("M4BENCH_FROZEN_REFERENCE") == "1"
+PUBLIC_STANDINS = {"output.csv": "output_summary.json"}
+
+
+def frozen_reference_rows() -> dict[str, int]:
+    rows = {}
+    for line in (TABLE_DIR / "task_details.tex").read_text().splitlines():
+        fields = [part.strip().removesuffix(r"\\").strip() for part in line.split("&")]
+        if len(fields) == 6 and fields[5].isdigit():
+            rows[fields[0]] = int(fields[5])
+    return rows
+
+
+MODEL_LABELS = {"gpt-5.4-mini": "GPT 5.4 Mini", "gpt-5.5": "GPT 5.5"}
+
+
+def model_label(model: str) -> str:
+    """Display name for table cells; run records keep the API identifier."""
+    return MODEL_LABELS.get(model, model)
 
 
 def latex_escape(value: object) -> str:
@@ -175,6 +198,25 @@ def load_rows_for_cells(root: Path) -> list[dict]:
     return rows
 
 
+def require_runs(campaign: str, rows: list[dict], roots: list[Path]) -> None:
+    """Fail before any output is written if a campaign selected no runs.
+
+    Loaders select whatever run directories exist, so a missing results root
+    silently yields zero rows and the tracked outputs would be overwritten
+    with empty tables.
+    """
+    if rows:
+        return
+    searched = ", ".join(str(root) for root in roots)
+    raise SystemExit(
+        f"{campaign}: no runs found under {searched}; refusing to overwrite "
+        "tracked outputs with empty tables. Restore the run roots or set "
+        "M4BENCH_RESULTS_DIR. From a public checkout, run "
+        "benchmark/release/v1/scripts/verify_public_evidence.py on an extracted "
+        "evidence package instead."
+    )
+
+
 def filter_claude_paper_rows(rows: list[dict]) -> list[dict]:
     """Keep the 190 paper-facing Claude sentinel rows from a broader local root."""
     filtered = []
@@ -206,7 +248,11 @@ def diagnostics_failed_count(rows: list[dict]) -> int:
 
 
 def artifact_count(rows: list[dict], name: str) -> int:
-    return sum((Path(row["path"]) / name).exists() for row in rows)
+    names = [name] + ([PUBLIC_STANDINS[name]] if name in PUBLIC_STANDINS else [])
+    return sum(
+        any((Path(row["path"]) / candidate).exists() for candidate in names)
+        for row in rows
+    )
 
 
 def native_reward_groups(rows: list[dict]) -> dict[tuple[str, str], list[float]]:
@@ -215,6 +261,19 @@ def native_reward_groups(rows: list[dict]) -> dict[tuple[str, str], list[float]]
         if row["schema"] == "native" and row["condition"] in {"no-skill", "with-skill"}:
             groups[(row["model"], row["condition"])].append(float(row["reward"]))
     return groups
+
+
+# Task-level deltas are differences of averages, so a metric that did not
+# change can come out as 1e-13 instead of zero. Such noise is not a direction.
+DELTA_EPSILON = 1e-9
+
+
+def count_positive(values: list[float]) -> int:
+    return sum(value > DELTA_EPSILON for value in values)
+
+
+def count_negative(values: list[float]) -> int:
+    return sum(value < -DELTA_EPSILON for value in values)
 
 
 def task_deltas(deltas: list[dict]) -> dict[str, float]:
@@ -317,6 +376,8 @@ def task_eval_config(task: str) -> dict:
 def truth_stats(
     task: str, con: duckdb.DuckDBPyConnection, *, include_nmae: bool
 ) -> dict:
+    if FROZEN_REFERENCE:
+        return {"truth_rows": frozen_reference_rows()[task], "ordered_columns": []}
     config = task_eval_config(task)
     gt_path = resolve_ground_truth(task)
     value_columns = [
@@ -472,6 +533,11 @@ def attach_secondary_metrics(rows: list[dict], *, compute_nmae_for=None) -> None
         if should_compute_nmae:
             run_id = row["run_id"]
             cached = cache.get(run_id)
+            if cached is None and FROZEN_REFERENCE:
+                raise SystemExit(
+                    f"Frozen-reference mode needs a cached nMAE for {run_id}; "
+                    "recompute it with credentialed reference outputs."
+                )
             if cached is None:
                 nmae, ordered_count = compute_run_nmae(
                     row, con=con, task_stats=task_stats
@@ -616,11 +682,11 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
         model_deltas = by_model[model]
         native_rows.append(
             [
-                f"Reward / {model}",
+                f"Reward / {model_label(model)}",
                 fmt(mean(groups[(model, "no-skill")])),
                 fmt(mean(groups[(model, "with-skill")])),
                 fmt_with_bootstrap_ci(model_deltas),
-                f"{sum(value > 0 for value in model_deltas)}/{len(model_deltas)}",
+                f"{count_positive(model_deltas)}/{len(model_deltas)}",
             ]
         )
     native_rows.append(
@@ -629,7 +695,7 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
             fmt(mean(reward_no.values())),
             fmt(mean(reward_with.values())),
             fmt_with_bootstrap_ci(task_values),
-            f"{sum(value > 0 for value in task_values)}/{len(task_values)}",
+            f"{count_positive(task_values)}/{len(task_values)}",
         ]
     )
     key_f1_values = list(key_f1_td.values())
@@ -639,7 +705,7 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
             fmt(mean(key_f1_no.values())),
             fmt(mean(key_f1_with.values())),
             fmt_with_bootstrap_ci(key_f1_values),
-            f"{sum(value > 0 for value in key_f1_values)}/{len(key_f1_values)}",
+            f"{count_positive(key_f1_values)}/{len(key_f1_values)}",
         ]
     )
     nmae_values = list(nmae_td.values())
@@ -649,7 +715,7 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
             fmt(mean(nmae_no.values())),
             fmt(mean(nmae_with.values())),
             fmt_with_bootstrap_ci(nmae_values),
-            f"{sum(value < 0 for value in nmae_values)}/{len(nmae_values)}",
+            f"{count_negative(nmae_values)}/{len(nmae_values)}",
         ]
     )
     write_table(
@@ -703,11 +769,11 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
             ]
             mode_rows.append(
                 [
-                    model,
+                    model_label(model),
                     mode,
                     len(values),
                     fmt(mean(values)),
-                    f"{sum(value > 0 for value in values)}/{len(values)}",
+                    f"{count_positive(values)}/{len(values)}",
                 ]
             )
     for mode in ("standard", "raw"):
@@ -718,7 +784,7 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
                 mode,
                 len(values),
                 fmt(mean(values)),
-                f"{sum(value > 0 for value in values)}/{len(values)}",
+                f"{count_positive(values)}/{len(values)}",
             ]
         )
     write_table(
@@ -793,7 +859,7 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
     for row in worst:
         kp_rows.append(
             [
-                f"{row['task']} / {row['condition']} / {row['model']}",
+                f"{row['task']} / {row['condition']} / {model_label(row['model'])}",
                 int(row["n"]),
                 fmt(float(row["mean_key_f1"])),
                 fmt(float(row["mean_key_precision"])),
@@ -888,12 +954,12 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
         "ci_low": ci_low,
         "ci_high": ci_high,
         "p_value": p_value,
-        "positive_tasks": sum(value > 0 for value in task_values),
+        "positive_tasks": count_positive(task_values),
         "tasks": len(task_values),
         "key_f1_delta": mean(key_f1_values),
-        "key_f1_positive_tasks": sum(value > 0 for value in key_f1_values),
+        "key_f1_positive_tasks": count_positive(key_f1_values),
         "nmae_delta": mean(nmae_values),
-        "nmae_improved_tasks": sum(value < 0 for value in nmae_values),
+        "nmae_improved_tasks": count_negative(nmae_values),
         "nmae_tasks": len(nmae_values),
     }
 
@@ -917,7 +983,7 @@ def write_claude_tables(rows: list[dict], deltas: list[dict]) -> dict:
                 fmt(mean(groups[(model, "no-skill")])),
                 fmt(mean(groups[(model, "with-skill")])),
                 fmt(mean(values)),
-                f"{sum(value > 0 for value in values)}/{len(values)}",
+                f"{count_positive(values)}/{len(values)}",
             ]
         )
     rows_out.append(
@@ -926,7 +992,7 @@ def write_claude_tables(rows: list[dict], deltas: list[dict]) -> dict:
             "--",
             "--",
             f"{fmt(mean(task_values))} [{fmt(ci_low)}, {fmt(ci_high)}]",
-            f"{sum(value > 0 for value in task_values)}/{len(task_values)}",
+            f"{count_positive(task_values)}/{len(task_values)}",
         ]
     )
     write_table(
@@ -968,7 +1034,7 @@ def write_claude_tables(rows: list[dict], deltas: list[dict]) -> dict:
         "task_delta": mean(task_values),
         "ci_low": ci_low,
         "ci_high": ci_high,
-        "positive_tasks": sum(value > 0 for value in task_values),
+        "positive_tasks": count_positive(task_values),
         "tasks": len(task_values),
     }
 
@@ -991,7 +1057,7 @@ def write_oss_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) ->
             fmt(mean(groups[(model, "no-skill")])),
             fmt(mean(groups[(model, "with-skill")])),
             f"{fmt(mean(task_values))} [{fmt(ci_low)}, {fmt(ci_high)}]",
-            f"{sum(value > 0 for value in task_values)}/{len(task_values)}",
+            f"{count_positive(task_values)}/{len(task_values)}",
         ]
     ]
     write_table(
@@ -1094,7 +1160,7 @@ def write_oss_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) ->
         "task_delta": mean(task_values),
         "ci_low": ci_low,
         "ci_high": ci_high,
-        "positive_tasks": sum(value > 0 for value in task_values),
+        "positive_tasks": count_positive(task_values),
         "tasks": len(task_values),
     }
 
@@ -1117,13 +1183,19 @@ def write_csv_rows(path: Path, rows: list[dict]) -> None:
 
 
 def main() -> None:
-    TABLE_DIR.mkdir(parents=True, exist_ok=True)
-    PLANNING_DIR.mkdir(parents=True, exist_ok=True)
-
     codex_rows, codex_replaced = combine_rows(CODEX_RELEASE, CODEX_RERUN)
     claude_rows_all, claude_replaced = combine_rows(CLAUDE_RELEASE, CLAUDE_RERUN)
     claude_rows = filter_claude_paper_rows(claude_rows_all)
     oss_rows = load_rows_for_cells(OSS_ROOT)
+    if not FROZEN_REFERENCE:
+        # verify_public_evidence.py checks a package against its manifest and
+        # regenerates into a scratch copy, so frozen-reference mode is unguarded.
+        require_runs("Codex primary", codex_rows, [CODEX_RELEASE, CODEX_RERUN])
+        require_runs("Claude sentinel", claude_rows, [CLAUDE_RELEASE, CLAUDE_RERUN])
+        require_runs("OSS exploratory", oss_rows, [OSS_ROOT])
+
+    TABLE_DIR.mkdir(parents=True, exist_ok=True)
+    PLANNING_DIR.mkdir(parents=True, exist_ok=True)
     attach_secondary_metrics(
         codex_rows,
         compute_nmae_for=lambda row: row["schema"] == "native"
@@ -1145,6 +1217,11 @@ def main() -> None:
     codex_summary = write_codex_tables(codex_rows, codex_cells, codex_deltas)
     claude_summary = write_claude_tables(claude_rows, claude_deltas)
     oss_summary = write_oss_tables(oss_rows, oss_cells, oss_deltas)
+    if FROZEN_REFERENCE:
+        # The May 2 versus final comparison needs the complete May 2 roots,
+        # whereas evidence packages keep only the canonical selection.
+        print("Frozen-reference mode: wrote tables; skipped final_results_update.md")
+        return
 
     release_codex_deltas = delta_rows(cell_rows(load_rows_for_cells(CODEX_RELEASE)))
     release_claude_deltas = delta_rows(cell_rows(load_rows_for_cells(CLAUDE_RELEASE)))
@@ -1228,19 +1305,7 @@ def main() -> None:
         report.append(
             f"| `{row['task']}` | {fmt(float(row['no_skill_mean']))} | {fmt(float(row['with_skill_mean']))} | {fmt(float(row['delta']))} |"
         )
-    report += [
-        "",
-        "## Interpretation",
-        "",
-        "The headline result is stable. The Codex task-balanced native skill effect moves from 0.112 to "
-        f"{fmt(codex_summary['task_delta'])}; the positive-task count remains {codex_summary['positive_tasks']}/28. "
-        "The largest local changes are in the clinician-reviewed OASIS tasks, with creatinine-baseline raw also increasing after rerun.",
-        "",
-        "Claude remains a sentinel arm. The creatinine-baseline raw rerun increases the sentinel average, but the provider arm still covers only eight paired tasks and should not be promoted to co-primary evidence.",
-        "",
-        "The local gpt-oss-20b arm is useful as a reproducibility and open-model stress test, but it should not be mixed into the primary tables: reward is near zero, gains are positive on only three of eight paired sentinel tasks, no run is publishable under the paper criteria, and egress logs are absent.",
-        "",
-    ]
+    report.append("")
     (PLANNING_DIR / "final_results_update.md").write_text("\n".join(report))
     print(
         f"Wrote {PLANNING_DIR / 'final_results_update.md'} and regenerated result tables"

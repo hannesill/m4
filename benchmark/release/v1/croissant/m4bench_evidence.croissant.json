@@ -1,0 +1,423 @@
+{
+  "@context": {
+    "@language": "en",
+    "@vocab": "https://schema.org/",
+    "citeAs": "cr:citeAs",
+    "column": "cr:column",
+    "conformsTo": "dct:conformsTo",
+    "containedIn": "cr:containedIn",
+    "cr": "http://mlcommons.org/croissant/",
+    "rai": "http://mlcommons.org/croissant/RAI/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "data": {
+      "@id": "cr:data",
+      "@type": "@json"
+    },
+    "dataType": {
+      "@id": "cr:dataType",
+      "@type": "@vocab"
+    },
+    "dct": "http://purl.org/dc/terms/",
+    "examples": {
+      "@id": "cr:examples",
+      "@type": "@json"
+    },
+    "extract": "cr:extract",
+    "field": "cr:field",
+    "fileObject": "cr:fileObject",
+    "fileProperty": "cr:fileProperty",
+    "fileSet": "cr:fileSet",
+    "format": "cr:format",
+    "includes": "cr:includes",
+    "isLiveDataset": "cr:isLiveDataset",
+    "jsonPath": "cr:jsonPath",
+    "key": "cr:key",
+    "md5": "cr:md5",
+    "parentField": "cr:parentField",
+    "path": "cr:path",
+    "recordSet": "cr:recordSet",
+    "references": "cr:references",
+    "regex": "cr:regex",
+    "repeated": "cr:repeated",
+    "replace": "cr:replace",
+    "sc": "https://schema.org/",
+    "separator": "cr:separator",
+    "samplingRate": "cr:samplingRate",
+    "equivalentProperty": "cr:equivalentProperty",
+    "source": "cr:source",
+    "subField": "cr:subField",
+    "transform": "cr:transform"
+  },
+  "@type": "sc:Dataset",
+  "name": "M4Bench per-run evidence",
+  "description": "Open, sanitized per-run evidence for the M4Bench clinical EHR derivation benchmark: evaluator results, agent traces with tool outputs redacted, task instructions, network egress logs, and source-to-public hash lineage. The benchmark itself (tasks, skills, harness, evaluator) is the M4 repository, https://github.com/hannesill/m4, tag m4bench-neurips2026-camera-ready.",
+  "conformsTo": [
+    "http://mlcommons.org/croissant/1.0",
+    "http://mlcommons.org/croissant/RAI/1.0"
+  ],
+  "citeAs": "Ill, H., Al Attrach, R., Fani, R., Han, A., Yamamoto, R., Moerig, M. L., Yoon, D., and Celi, L. A. M4Bench: Evaluating Procedural Specification for Clinical EHR Derivation Agents. NeurIPS 2026 Evaluations and Datasets Track.",
+  "license": "https://opensource.org/licenses/MIT",
+  "url": "https://huggingface.co/datasets/hannesill/m4bench-evidence",
+  "version": "1.0.0",
+  "datePublished": "2026-10-13",
+  "creator": [
+    {
+      "@type": "sc:Person",
+      "name": "Hannes Ill"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Rafi Al Attrach"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Rajna Fani"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Ahram Han"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Ryohei Yamamoto"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Marlene Louisa Moerig"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Dukyong Yoon"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Leo Anthony Celi"
+    }
+  ],
+  "keywords": [
+    "clinical EHR",
+    "MIMIC-IV",
+    "eICU",
+    "coding agents",
+    "benchmark",
+    "agent skills"
+  ],
+  "isLiveDataset": false,
+  "rai:dataLimitations": "Scores measure agreement with declared public-code reference derivations, not clinical correctness. 26 of 28 tasks use MIMIC-IV and two use eICU, so the evidence is not database- or hospital-general. Row-level agent outputs and tool outputs are withheld, so outputs cannot be re-evaluated from this package alone. The July Claude campaign mixes Claude Code CLI versions and routing profiles for some tasks; see the harness sensitivity table.",
+  "rai:dataBiases": "Task selection is critical-care focused and inherits the populations, documentation practices, and coding conventions of MIMIC-IV and eICU. Control subsets were purposively selected from pilot results and are not representative of all tasks.",
+  "rai:personalSensitiveInformation": "Derived from de-identified credentialed PhysioNet data. The open package keeps no source data, task databases, reference outputs, row-level agent outputs, or tool outputs. Events whose tool output could not be isolated are withheld whole. In the agent text that is kept, credentials, shifted datetimes, patient ages, and identifier-led rows are removed, MIMIC and eICU identifiers are pseudonymized, and local paths and user names are removed. Agent messages can still describe in words what the agent observed.",
+  "rai:dataUseCases": "Auditing and reproducing the M4Bench paper tables; inspecting agent behavior, failure modes, and isolation checks. Not for clinical decision-making or for estimating clinical outcomes.",
+  "rai:dataSocialImpact": "Supports transparent evaluation of AI agents for supervised clinical research workflows. Misreading reference agreement as clinical validity could encourage unsupervised use of agent-derived clinical variables.",
+  "rai:hasSyntheticData": false,
+  "prov:wasDerivedFrom": [
+    {
+      "@type": "sc:Dataset",
+      "name": "MIMIC-IV v3.1",
+      "url": "https://physionet.org/content/mimiciv/3.1/"
+    },
+    {
+      "@type": "sc:Dataset",
+      "name": "eICU Collaborative Research Database v2.0",
+      "url": "https://physionet.org/content/eicu-crd/2.0/"
+    }
+  ],
+  "prov:wasGeneratedBy": {
+    "@type": "prov:Activity",
+    "name": "M4Bench benchmark campaigns",
+    "description": "Docker-isolated Codex and Claude Code agent runs on per-task DuckDB clones, evaluated against hidden reference outputs, then packaged with benchmark/release/v1/scripts/package_public_evidence.py."
+  },
+  "distribution": [
+    {
+      "@type": "cr:FileObject",
+      "@id": "m4bench-evidence-claude-replication-archive",
+      "name": "m4bench-evidence-claude-replication.tar.zst",
+      "description": "Open per-run evidence for the July 2026 full-coverage Claude campaign: 560 canonical runs (28 tasks x Opus/Sonnet x no-skill/with-skill x 5 trials).",
+      "contentUrl": "https://huggingface.co/datasets/hannesill/m4bench-evidence/resolve/main/m4bench-evidence-claude-replication.tar.zst",
+      "contentSize": "6400345 B",
+      "encodingFormat": "application/zstd",
+      "sha256": "9f63e8c867dcbafe68da472954dfebe366246aa36d2a3599795279426c33c63c"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "m4bench-evidence-claude-replication-runs-csv",
+      "name": "claude28_canonical_runs.csv",
+      "description": "Canonical run index inside the archive.",
+      "containedIn": {
+        "@id": "m4bench-evidence-claude-replication-archive"
+      },
+      "contentUrl": "m4bench-evidence-claude-replication/metadata/claude28/claude28_canonical_runs.csv",
+      "encodingFormat": "text/csv",
+      "sha256": "fecd36356ab58dac0ab480313e2b4174dc233dde13faef6e4472376eec715510"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "m4bench-evidence-submission-archive",
+      "name": "m4bench-evidence-submission.tar.zst",
+      "description": "Open per-run evidence for the May 2026 submission campaigns: 760 primary Codex, 190 Claude sentinel, 340 Codex follow-up, and 110 exploratory OSS runs.",
+      "contentUrl": "https://huggingface.co/datasets/hannesill/m4bench-evidence/resolve/main/m4bench-evidence-submission.tar.zst",
+      "contentSize": "7548441 B",
+      "encodingFormat": "application/zstd",
+      "sha256": "17215697caf9dd2746e2e1a855af31f355fe1203612c3b9892ee138b08357106"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "m4bench-evidence-submission-runs-csv",
+      "name": "final_codex_runs.csv",
+      "description": "Canonical run index inside the archive.",
+      "containedIn": {
+        "@id": "m4bench-evidence-submission-archive"
+      },
+      "contentUrl": "m4bench-evidence-submission/metadata/planning/final_codex_runs.csv",
+      "encodingFormat": "text/csv",
+      "sha256": "716567cfb08e1b3122e53677444feedbc9edb702de576df14f71e7bb0e0b2707"
+    }
+  ],
+  "recordSet": [
+    {
+      "@type": "cr:RecordSet",
+      "@id": "m4bench-evidence-claude-replication-runs",
+      "name": "m4bench-evidence-claude-replication-runs",
+      "description": "One record per canonical run with evaluator reward.",
+      "key": {
+        "@id": "m4bench-evidence-claude-replication-runs/run_id"
+      },
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-claude-replication-runs/run_id",
+          "name": "run_id",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-claude-replication-runs-csv"
+            },
+            "extract": {
+              "column": "run_id"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-claude-replication-runs/task",
+          "name": "task",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-claude-replication-runs-csv"
+            },
+            "extract": {
+              "column": "task"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-claude-replication-runs/condition",
+          "name": "condition",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-claude-replication-runs-csv"
+            },
+            "extract": {
+              "column": "condition"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-claude-replication-runs/model_alias",
+          "name": "model_alias",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-claude-replication-runs-csv"
+            },
+            "extract": {
+              "column": "model_alias"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-claude-replication-runs/trial",
+          "name": "trial",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-claude-replication-runs-csv"
+            },
+            "extract": {
+              "column": "trial"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-claude-replication-runs/reward",
+          "name": "reward",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-claude-replication-runs-csv"
+            },
+            "extract": {
+              "column": "reward"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-claude-replication-runs/strict_pass",
+          "name": "strict_pass",
+          "dataType": "sc:Boolean",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-claude-replication-runs-csv"
+            },
+            "extract": {
+              "column": "strict_pass"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-claude-replication-runs/cli_versions",
+          "name": "cli_versions",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-claude-replication-runs-csv"
+            },
+            "extract": {
+              "column": "cli_versions"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-claude-replication-runs/recorded_model_overrides",
+          "name": "recorded_model_overrides",
+          "dataType": "sc:Boolean",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-claude-replication-runs-csv"
+            },
+            "extract": {
+              "column": "recorded_model_overrides"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "m4bench-evidence-submission-runs",
+      "name": "m4bench-evidence-submission-runs",
+      "description": "One record per canonical run with evaluator reward.",
+      "key": {
+        "@id": "m4bench-evidence-submission-runs/run_id"
+      },
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-runs/run_id",
+          "name": "run_id",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-runs-csv"
+            },
+            "extract": {
+              "column": "run_id"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-runs/task",
+          "name": "task",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-runs-csv"
+            },
+            "extract": {
+              "column": "task"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-runs/condition",
+          "name": "condition",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-runs-csv"
+            },
+            "extract": {
+              "column": "condition"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-runs/schema",
+          "name": "schema",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-runs-csv"
+            },
+            "extract": {
+              "column": "schema"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-runs/model",
+          "name": "model",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-runs-csv"
+            },
+            "extract": {
+              "column": "model"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-runs/trial",
+          "name": "trial",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-runs-csv"
+            },
+            "extract": {
+              "column": "trial"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-runs/reward",
+          "name": "reward",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-runs-csv"
+            },
+            "extract": {
+              "column": "reward"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
