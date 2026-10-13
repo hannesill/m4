@@ -543,6 +543,9 @@ def _write_marker(path: Path, **facts: Any) -> None:
 
 
 def _prepared_marker(db_path: Path) -> Path:
+    # Next to the database file itself. A database may be reached through a
+    # link, and init and status do not spell the path to it the same way.
+    db_path = db_path.resolve()
     return db_path.with_name(db_path.name + PREPARED_SUFFIX)
 
 
@@ -934,6 +937,19 @@ def find_raw_root(csv_root: Path, schema_mapping: dict[str, str] | None) -> Path
         return csv_root
     # The folder most files fit under, and the shallowest of those
     return max(fitting, key=lambda root: (fitting[root], -len(root.parts)))
+
+
+def raw_files_left_to_convert(
+    raw_root: Path, parquet_root: Path, schema_mapping: dict[str, str] | None
+) -> list[Path]:
+    """Raw files in M4's own raw folder `raw_root` that have no finished table.
+
+    They are looked for where `m4 init` reads them: in `raw_root`, or in the
+    one folder below it that init names when the files lie deeper. Files that
+    init cannot place at all are not counted: no run of it converts them.
+    """
+    located = find_raw_root(raw_root, schema_mapping)
+    return find_unconverted(located, parquet_root) if located else []
 
 
 def folders_without_tables(

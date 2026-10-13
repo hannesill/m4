@@ -973,3 +973,204 @@ def test_conversion_killed_then_init_from_another_folder_is_refused(
 
     assert result.exit_code == 0
     assert _views(data_dir) == ALL_VIEWS
+
+
+# ------------------------------------------------------------
+# What status goes by
+# ------------------------------------------------------------
+
+
+@pytest.mark.parametrize("made_from_m4s_own_folder", [True, False])
+def test_raw_files_added_after_init_are_not_ready_until_init_runs_again(
+    data_dir, raw, made_from_m4s_own_folder
+):
+    own = _raw_root(data_dir)
+    if made_from_m4s_own_folder:
+        shutil.copytree(raw, own)
+        assert _init()[0].exit_code == 0
+    else:
+        assert _init("--src", str(raw))[0].exit_code == 0
+    _assert_ready(_listed())
+
+    # A download that went on, or a copy by hand, brings the raw file of a
+    # table the dataset does not have.
+    _write_raw(own, {"icu/icustays": "subject_id,stay_id\n1,10\n"})
+
+    listed = _listed()
+    assert listed["prepared"] is False
+    assert listed["setup_state"] == "incomplete"
+
+    result, events = _init()
+
+    assert result.exit_code == 0
+    converted = [e for e in events if e["event"] == "conversion_file_completed"]
+    assert [Path(e["path"]).name for e in converted] == ["icustays.parquet"]
+    assert _views(data_dir) == ALL_VIEWS | {"mimiciv_icu.icustays"}
+    _assert_ready(_listed())
+
+
+def test_init_from_another_folder_does_not_vouch_for_m4s_own_raw_files(data_dir, raw):
+    assert _init("--src", str(raw))[0].exit_code == 0
+    _write_raw(_raw_root(data_dir), {"icu/icustays": "subject_id,stay_id\n1,10\n"})
+    assert _listed()["setup_state"] == "incomplete"
+
+    # The folder the dataset was made from knows nothing of the new file.
+    result, events = _init("--src", str(raw))
+
+    assert result.exit_code == 0
+    assert events[-1]["result"]["prepared"] is False
+    assert _views(data_dir) == ALL_VIEWS
+    assert _listed()["setup_state"] == "incomplete"
+
+    result, events = _init()
+
+    assert result.exit_code == 0
+    assert events[-1]["result"]["prepared"] is True
+    assert _views(data_dir) == ALL_VIEWS | {"mimiciv_icu.icustays"}
+    _assert_ready(_listed())
+
+
+def test_raw_file_that_arrives_while_init_runs_is_not_vouched_for(
+    data_dir, monkeypatch
+):
+    # A download that M4 does not make, such as wget, may still be running
+    # when `m4 init` starts. What it brings after the conversion was decided
+    # has no table, and the run that just ended must not vouch for it.
+    own = _write_raw(_raw_root(data_dir))
+    real_emit = NdjsonEventReporter.emit
+
+    def emit(self, event, **fields):
+        real_emit(self, event, **fields)
+        if event == "conversion_completed":
+            _write_raw(own, {"icu/icustays": "subject_id,stay_id\n1,10\n"})
+
+    with monkeypatch.context() as downloading:
+        downloading.setattr(NdjsonEventReporter, "emit", emit)
+        result, events = _init()
+
+    assert result.exit_code == 0
+    assert events[-1]["result"]["prepared"] is False
+    assert _listed()["setup_state"] == "incomplete"
+
+    result, events = _init()
+
+    assert result.exit_code == 0
+    assert events[-1]["result"]["prepared"] is True
+    assert _views(data_dir) == ALL_VIEWS | {"mimiciv_icu.icustays"}
+    _assert_ready(_listed())
+
+
+def test_dataset_made_from_a_folder_is_ready_beside_a_download_that_was_cut_short(
+    data_dir, raw, monkeypatch
+):
+    # Someone gives up on a download and brings the files another way. What
+    # the download left in M4's own raw folder is no reason to hold back the
+    # dataset made from the folder they chose.
+    with monkeypatch.context() as dying, pytest.raises(Killed):
+        dying.setattr(SESSION, FakePhysioNet(FULL_LISTING, dies_at=LAST))
+        _run("download", "mimic-iv", "--physionet-credentials-stdin", input=FAKE_LOGIN)
+
+    result, events = _init("--src", str(raw))
+
+    assert result.exit_code == 0
+    assert events[-1]["result"]["prepared"] is True
+    assert _views(data_dir) == ALL_VIEWS
+    _assert_ready(_listed())
+
+    # The download is finished after all, and brings a table the folder lacked.
+    monkeypatch.setattr(SESSION, FakePhysioNet(FULL_LISTING))
+    result, _ = _run(
+        "download", "mimic-iv", "--physionet-credentials-stdin", input=FAKE_LOGIN
+    )
+
+    assert result.exit_code == 0
+    assert _listed()["setup_state"] == "incomplete"
+
+    result, _ = _init()
+
+    assert result.exit_code == 0
+    assert _views(data_dir) == DOWNLOADED_VIEWS
+    _assert_ready(_listed())
+
+
+def test_download_again_leaves_a_ready_dataset_ready(data_dir, monkeypatch):
+    monkeypatch.setattr(SESSION, FakePhysioNet(DEMO_LISTING))
+    assert _run("init", "mimic-iv-demo", "--no-interactive")[0].exit_code == 0
+    _assert_ready(_listed("mimic-iv-demo"))
+
+    result, events = _run("download", "mimic-iv-demo")
+
+    # Every file is complete, so nothing is fetched and nothing is noted.
+    assert result.exit_code == 0
+    assert _fetched(events) == []
+    assert not (_raw_root(data_dir, "mimic-iv-demo") / ".m4-downloading.json").exists()
+    _assert_ready(_listed("mimic-iv-demo"))
+
+
+def test_wget_tree_in_m4s_own_raw_folder_is_ready_once_init_ran_on_the_folder_named(
+    data_dir,
+):
+    # Plain `wget -r` into M4's raw folder. The files M4 sees there afterwards
+    # are the ones the dataset was made from, deeper down as they lie.
+    nested = _write_raw(
+        _raw_root(data_dir) / "physionet.org" / "files" / "mimiciv" / "3.1"
+    )
+
+    result, events = _init()
+
+    assert result.exit_code == 1
+    assert events[-1]["error"]["hint"] == f"Run: m4 init mimic-iv --src {nested}"
+
+    result, events = _init("--src", str(nested))
+
+    assert result.exit_code == 0
+    assert events[-1]["result"]["prepared"] is True
+    _assert_ready(_listed())
+
+
+def test_raw_files_removed_after_init_leave_the_dataset_ready(data_dir):
+    # Raw files are often deleted once they are converted, to get the disk back.
+    own = _write_raw(_raw_root(data_dir))
+    _init()
+
+    shutil.rmtree(own / "icu")
+    _assert_ready(_listed())
+
+    shutil.rmtree(own)
+    _assert_ready(_listed())
+
+
+def test_database_reached_through_a_symlink_is_ready_after_init(
+    data_dir, raw, tmp_path
+):
+    # The database is kept on another disk, with a link where M4 looks for it.
+    other_disk = tmp_path / "other-disk"
+    other_disk.mkdir()
+    _database(data_dir).parent.mkdir(parents=True)
+    _database(data_dir).symlink_to(other_disk / "mimic_iv.duckdb")
+
+    result, events = _init("--src", str(raw))
+
+    assert result.exit_code == 0
+    assert events[-1]["result"]["prepared"] is True
+    assert (other_disk / "mimic_iv.duckdb").is_file()
+    _assert_ready(_listed())
+
+
+def test_init_into_another_database_says_prepared_as_status_does(
+    data_dir, raw, tmp_path
+):
+    # M4 reads a dataset from its default database, which this run did not make.
+    result, events = _init("--src", str(raw), "--db-path", str(tmp_path / "my.duckdb"))
+
+    assert result.exit_code == 0
+    assert (tmp_path / "my.duckdb").exists()
+    listed = _listed()
+    assert listed["setup_state"] == "missing_database"
+    assert events[-1]["result"]["prepared"] is listed["prepared"] is False
+
+    result, events = _init("--src", str(raw))
+
+    assert result.exit_code == 0
+    assert events[-1]["result"]["prepared"] is True
+    _assert_ready(_listed())

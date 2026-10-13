@@ -28,6 +28,7 @@ from m4.data_io import (
     init_duckdb_from_parquet,
     is_dataset_prepared,
     mark_dataset_prepared,
+    raw_files_left_to_convert,
     unfinished_conversion,
     verify_table_rowcount,
 )
@@ -492,6 +493,51 @@ def test_find_raw_root_without_a_schema_mapping_takes_any_layout(tmp_path):
     root = _touch_raw(tmp_path, "anything/goes/table")
 
     assert find_raw_root(root, None) == root
+
+
+def test_raw_files_left_to_convert_are_those_without_a_finished_table(tmp_path):
+    raw_root = _touch_raw(tmp_path / "raw", "hosp/admissions", "icu/icustays")
+    parquet_root = tmp_path / "parquet"
+    _create_parquet(parquet_root / "hosp", "admissions", "subject_id\n1\n")
+    waiting = [raw_root / "icu" / "icustays.csv.gz"]
+
+    assert (
+        raw_files_left_to_convert(raw_root, parquet_root, MIMIC_IV_MAPPING) == waiting
+    )
+
+    table = _create_parquet(parquet_root / "icu", "icustays", "subject_id\n1\n")
+    assert raw_files_left_to_convert(raw_root, parquet_root, MIMIC_IV_MAPPING) == []
+
+    # A table that was cut short is no table.
+    table.write_bytes(table.read_bytes()[:40])
+    assert (
+        raw_files_left_to_convert(raw_root, parquet_root, MIMIC_IV_MAPPING) == waiting
+    )
+
+
+def test_raw_files_left_to_convert_are_looked_for_where_init_reads_them(tmp_path):
+    # A wget tree in M4's raw folder: init names the folder deeper down, and
+    # converts from there.
+    raw_root = tmp_path / "raw"
+    nested = _touch_raw(
+        raw_root / "physionet.org" / "files" / "mimiciv" / "3.1", "hosp/admissions"
+    )
+    parquet_root = tmp_path / "parquet"
+
+    assert raw_files_left_to_convert(raw_root, parquet_root, MIMIC_IV_MAPPING) == [
+        nested / "hosp" / "admissions.csv.gz"
+    ]
+
+    _create_parquet(parquet_root / "hosp", "admissions", "subject_id\n1\n")
+    assert raw_files_left_to_convert(raw_root, parquet_root, MIMIC_IV_MAPPING) == []
+
+    # Files that init cannot place are not waited for: no run converts them.
+    unplaced = _touch_raw(tmp_path / "unplaced", "admissions", "other/icustays")
+    assert raw_files_left_to_convert(unplaced, parquet_root, MIMIC_IV_MAPPING) == []
+    # Neither is a folder that is not there, with or without a mapping.
+    missing = tmp_path / "missing"
+    assert raw_files_left_to_convert(missing, parquet_root, MIMIC_IV_MAPPING) == []
+    assert raw_files_left_to_convert(missing, parquet_root, None) == []
 
 
 def test_folders_without_tables_counts_raw_files_and_tables_alike(tmp_path):

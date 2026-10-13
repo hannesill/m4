@@ -13,6 +13,7 @@ from m4.core.derived.materializer import get_derived_table_count
 from m4.data_io import (
     compute_parquet_dir_size,
     is_dataset_prepared,
+    raw_files_left_to_convert,
     verify_table_rowcount,
 )
 from m4.services.results import WARNING_PARQUET_PATH_MISMATCH
@@ -27,6 +28,39 @@ def _absolute_path_or_none(path_value: str | Path | None) -> str | None:
 def _is_path_mismatch_error(exc: Exception) -> bool:
     message = str(exc)
     return "No files found" in message or "no such file" in message.lower()
+
+
+def _is_prepared(name: str, ds_info: dict[str, Any]) -> bool:
+    """Whether `m4 init` ran to the end for dataset `name`, which `ds_info` describes.
+
+    Files being there is not enough. The views must have been made and
+    verified over the Parquet files as they are now, and M4's own raw folder
+    must hold no file that init has yet to convert, as it does when files
+    came into it afterwards.
+    """
+    raw_root = _absolute_path_or_none(ds_info.get("raw_root"))
+    parquet_root = _absolute_path_or_none(ds_info.get("parquet_root"))
+    db_path = _absolute_path_or_none(ds_info.get("db_path"))
+    if not (
+        ds_info.get("parquet_present")
+        and ds_info.get("db_present")
+        and parquet_root
+        and db_path
+        and is_dataset_prepared(Path(parquet_root), Path(db_path))
+    ):
+        return False
+    if not raw_root:
+        return True
+    ds_def = DatasetRegistry.get(name)
+    return not raw_files_left_to_convert(
+        Path(raw_root), Path(parquet_root), ds_def.schema_mapping if ds_def else None
+    )
+
+
+def is_ready(name: str) -> bool:
+    """Whether dataset `name` is ready, as `m4 status` reports it."""
+    ds_info = detect_available_local_datasets().get(name.lower())
+    return bool(ds_info) and _is_prepared(name.lower(), ds_info)
 
 
 def _collect_dataset_status(
@@ -92,15 +126,7 @@ def _collect_dataset_status(
         except Exception:
             pass
 
-    # Files being there is not enough: `m4 init` must have run to the end, so
-    # that every raw file has its table and the views exist.
-    prepared = bool(
-        parquet_present
-        and db_present
-        and parquet_root
-        and db_path
-        and is_dataset_prepared(Path(parquet_root), Path(db_path))
-    )
+    prepared = _is_prepared(name, ds_info)
 
     if prepared:
         setup_state = "ready"

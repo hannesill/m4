@@ -378,7 +378,7 @@ m4 init mimic-iv-demo --force
 ```
 
 **`m4 status` shows a dataset as incomplete:**
-An initialization was interrupted, or the dataset was initialized by M4 0.5.5 or earlier, which did not record that it finished. Run `m4 init <dataset>` again, with the same `--src` if you used one. Only what is missing is redone, and a download that did not finish is completed first.
+An initialization was interrupted, a raw file came into M4's raw folder after it finished, or the dataset was initialized by M4 0.5.5 or earlier, which did not record that it finished. Run `m4 init <dataset>` again: with the same `--src` to go on with a run that read from another folder, without it to convert what is in M4's own raw folder. Only what is missing is redone, and a download that did not finish is completed first.
 
 **MCP client won't connect:**
 Check client logs (Claude Desktop: Help → View Logs) and ensure the config JSON is valid.

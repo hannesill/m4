@@ -40,6 +40,7 @@ from m4.services.results import (
     CommandError,
     CommandResult,
 )
+from m4.services.status import is_ready
 
 STEP_STATUSES = {"skipped", "completed", "blocked", "failed"}
 
@@ -563,7 +564,16 @@ def initialize_dataset_service(
         return CommandResult(
             command="init",
             data=_build_data(
-                dataset_key, final_db_path, pq_root, csv_root, steps, prepared=True
+                dataset_key,
+                final_db_path,
+                pq_root,
+                csv_root,
+                steps,
+                # As status reports it, which is not always true by now: M4
+                # reads a dataset from its default database, not from one made
+                # with --db-path, and a raw file may have come into its own raw
+                # folder that this run did not convert.
+                prepared=is_ready(dataset_key),
             ),
             warnings=[],
         )

@@ -88,23 +88,28 @@ non-zero.
 
 `prepared` is true, and `setup_state` is `ready`, only when `m4 init` ran to the
 end for the dataset: every raw file has its table, the views exist, and the
-verification query answered. Parquet files and a database that merely exist do
-not count, because an interrupted `m4 init` leaves both. Other values of
-`setup_state` are `credentials_required`, `missing_raw_files`,
-`missing_parquet`, `missing_database`, and `incomplete` (files exist but the
-last initialization did not finish, or they were made by M4 0.5.5 or earlier,
-which did not record that it finished). Running `m4 init DATASET` again, with
-the same `--src` if one was used, finishes an interrupted dataset: it converts
-only the raw files that have no finished Parquet file yet.
+verification query answered where the dataset has one. Parquet files and a
+database that merely exist do not count, because an interrupted `m4 init`
+leaves both. Other values of `setup_state` are `credentials_required`,
+`missing_raw_files`, `missing_parquet`, `missing_database`, and `incomplete`
+(files exist but the last initialization did not finish, a raw file in M4's
+raw folder has no table yet, or the files were made by M4 0.5.5 or earlier,
+which did not record that it finished). A raw file in a folder that the
+dataset maps to no schema is converted, but M4 makes no view for it.
+
+Running `m4 init DATASET` again finishes the dataset: it converts only the raw
+files that have no finished Parquet file yet. Pass the same `--src` again to
+go on with a run that read from another folder, and leave it out to convert
+what has come into M4's own raw folder since.
 A conversion that was interrupted is finished from the folder it read from,
 or from one that holds the raw files of the tables it did not get to. From any
 other folder `m4 init` fails with `raw_files_missing` instead of building a
 database without those tables.
 
 M4 keeps this state in three small files. `<database>.m4-prepared.json`, next
-to the DuckDB file, is written last by `m4 init` and lists the Parquet files
-the views were verified over; a dataset stops being ready when those files
-change.
+to the DuckDB file (the file itself, where its path is a link), is written
+last by `m4 init` and lists the Parquet files the views were verified over; a
+dataset stops being ready when those files change.
 `.m4-converting.json`, in the dataset's Parquet folder, exists while a
 conversion is unfinished and lists the tables it set out to make. Tables
 being converted carry the suffix `.part`.
@@ -184,6 +189,9 @@ states:
 
 Init step status is one of `skipped`, `completed`, `blocked`, or `failed`.
 `prepared` says whether the dataset is now ready, as `m4 status` reports it.
+A run that succeeds can still answer false: status reads M4's default
+database, not one made with `--db-path`, and a raw file may have come into
+M4's own raw folder that this run did not convert.
 For credentialed datasets, missing raw/parquet/database artifacts are an
 `ok: false` `raw_files_missing` result unless `--download` is requested.
 
