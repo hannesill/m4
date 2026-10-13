@@ -143,7 +143,7 @@ Command errors use the same envelope with `ok: false`:
 Stable command error codes are `dataset_not_found`, `backend_incompatible`,
 `invalid_backend`, `invalid_option`, `project_id_required`,
 `dataset_incompatible`, and `active_dataset_removed`. Dataset setup can also return `missing_credentials`,
-`physionet_auth_failed`, `physionet_access_forbidden`,
+`physionet_auth_failed`, `physionet_access_forbidden`, `physionet_url_required`,
 `download_network_failed`, `download_filesystem_failed`,
 `download_interrupted`, `raw_files_missing`, `conversion_failed`,
 `duckdb_init_failed`, and `verification_failed`.
@@ -212,6 +212,12 @@ Do not expose passwords as command-line flags. M4 follows the same source basis
 as PhysioNet's documented recursive resumable downloads (`wget -r -N -c -np`
 from `/files/...`) but performs the download internally so wrappers can receive
 structured progress and error events.
+
+M4 sends the login only with requests to `https://physionet.org/`. A dataset
+whose address is anywhere else fails with `physionet_url_required` before
+anything is sent, and the login is left out when PhysioNet redirects to another
+host. The password is kept out of the credentials object's repr, and the CLI's
+tracebacks do not print local variables.
 
 Agent-oriented commands use a stable envelope with `version`, `ok`, `command`,
 `context`, `data`, `warnings`, and optional provenance fields:

@@ -11,6 +11,8 @@ import json
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from m4.core.datasets import (
     DatasetDefinition,
     DatasetRegistry,
@@ -283,6 +285,48 @@ class TestDatasetRegistryEdgeCases:
         DatasetRegistry.load_custom_datasets(tmp_path)
         # Should not crash; malformed file is simply skipped
         assert DatasetRegistry.get("mimic-iv-demo") is not None
+
+    @pytest.mark.parametrize("name", ["mimic-iv", "MIMIC-IV", "eicu"])
+    def test_custom_json_cannot_redefine_a_builtin_dataset(
+        self, tmp_path, caplog, name
+    ):
+        """A file in the datasets folder must not change where a built-in
+        dataset is downloaded from, or anything else about it."""
+        DatasetRegistry.reset()
+        builtin = DatasetRegistry.get(name)
+        assert builtin.file_listing_url.startswith("https://physionet.org/files/")
+        (tmp_path / "anything.json").write_text(
+            json.dumps(
+                {
+                    "name": name,
+                    "file_listing_url": "https://example.test/collect/",
+                    "requires_authentication": True,
+                }
+            )
+        )
+
+        with caplog.at_level("WARNING", logger="m4.core.datasets"):
+            DatasetRegistry.load_custom_datasets(tmp_path)
+
+        assert DatasetRegistry.get(name) is builtin
+        assert "anything.json" in caplog.text
+        assert "built-in" in caplog.text
+
+        DatasetRegistry.reset()
+
+    def test_custom_json_with_a_new_name_still_loads_next_to_an_ignored_one(
+        self, tmp_path
+    ):
+        (tmp_path / "a-shadow.json").write_text(json.dumps({"name": "mimic-iv"}))
+        (tmp_path / "b-new.json").write_text(json.dumps({"name": "my-cohort"}))
+
+        DatasetRegistry.reset()
+        DatasetRegistry.load_custom_datasets(tmp_path)
+
+        assert DatasetRegistry.get("my-cohort") is not None
+        assert DatasetRegistry.get("mimic-iv").requires_authentication is True
+
+        DatasetRegistry.reset()
 
 
 class TestJSONLoading:

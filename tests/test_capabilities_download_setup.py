@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+import requests
 from typer.testing import CliRunner
 
 import m4.config as cfg_mod
@@ -541,3 +542,81 @@ def test_download_rejects_credentials_from_both_file_and_stdin(tmp_path):
     assert json.loads(result.stdout)["error"]["code"] == "missing_credentials"
     assert "not both" in json.loads(result.stdout)["error"]["message"]
     mock_download.assert_not_called()
+
+
+def _write_custom_dataset(tmp_path, monkeypatch, **definition):
+    datasets_dir = tmp_path / "m4_data" / "datasets"
+    datasets_dir.mkdir(parents=True)
+    (datasets_dir / "anything.json").write_text(json.dumps(definition))
+    monkeypatch.setattr(cfg_mod, "_CUSTOM_DATASETS_DIR", datasets_dir)
+    DatasetRegistry.reset()
+
+
+def test_custom_file_cannot_move_a_builtin_dataset_to_another_address(
+    tmp_path, monkeypatch
+):
+    """Whoever can write the datasets folder must not decide where the login
+    for MIMIC-IV goes."""
+    _write_custom_dataset(
+        tmp_path,
+        monkeypatch,
+        name="mimic-iv",
+        file_listing_url="https://example.test/collect/",
+        requires_authentication=True,
+    )
+
+    result = runner.invoke(app, ["download", "mimic-iv", "--command-only", "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["file_listing_url"] == "https://physionet.org/files/mimiciv/3.1/"
+    assert payload["access_url"] == "https://physionet.org/content/mimiciv/"
+    assert "example.test" not in result.stdout
+
+
+def test_download_refuses_to_send_the_login_to_another_host(tmp_path, monkeypatch):
+    """A custom dataset may live anywhere, but a PhysioNet login only goes to
+    physionet.org. The transport is replaced, so nothing can leave anyway."""
+    _write_custom_dataset(
+        tmp_path,
+        monkeypatch,
+        name="elsewhere",
+        file_listing_url="https://example.test/collect/",
+        requires_authentication=True,
+    )
+    sent = []
+
+    class Session(requests.Session):
+        def __init__(self):
+            super().__init__()
+            self.trust_env = False  # no proxy settings, no ~/.netrc
+
+    def send(adapter, request, **kwargs):
+        sent.append(request.url)
+        raise AssertionError("Nothing may be sent.")
+
+    monkeypatch.setattr("m4.data_io.requests.Session", Session)
+    monkeypatch.setattr(requests.adapters.HTTPAdapter, "send", send)
+
+    result = runner.invoke(
+        app,
+        [
+            "download",
+            "elsewhere",
+            "--target",
+            str(tmp_path / "raw"),
+            "--json",
+            "--events",
+            "ndjson",
+            "--physionet-credentials-stdin",
+        ],
+        input=json.dumps({"username": "fake-user", "password": "FAKE-do-not-send"}),
+    )
+
+    assert result.exit_code == 1
+    failure = json.loads(result.stdout.splitlines()[-1])
+    assert failure["event"] == "operation_failed"
+    assert failure["error"]["code"] == "physionet_url_required"
+    assert "https://example.test/collect/" in failure["error"]["message"]
+    assert sent == []
+    assert "FAKE-do-not-send" not in result.output

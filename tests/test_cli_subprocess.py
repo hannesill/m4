@@ -277,3 +277,47 @@ def test_init_json_subprocess_missing_credentialed_raw_files_is_parseable(tmp_pa
     assert payload["ok"] is False
     assert payload["command"] == "init"
     assert payload["error"]["code"] == "raw_files_missing"
+
+
+def test_crash_does_not_print_the_physionet_login(tmp_path):
+    """A traceback must not show the login that is in scope when M4 crashes.
+
+    The crash is put where the download would start, so nothing is requested.
+    """
+    crash_inside_download = """
+import sys
+
+import m4.services.download as download_service
+from m4.cli import app
+
+
+def crash(*args, **kwargs):
+    raise RuntimeError("simulated crash")
+
+
+download_service.download_dataset = crash
+sys.argv = ["m4", "download", "mimic-iv", "--json", "--physionet-credentials-stdin"]
+app()
+"""
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(Path(m4.__file__).resolve().parent.parent)
+    env["M4_DATA_DIR"] = str(tmp_path / "m4_data")
+    for name in ("M4_HOME", "M4_BACKEND", "M4_TELEMETRY_DIR"):
+        env.pop(name, None)
+    # The traceback as a person or a wrapper gets it by default.
+    env.pop("_TYPER_STANDARD_TRACEBACK", None)
+
+    result = subprocess.run(
+        [sys.executable, "-c", crash_inside_download],
+        input=json.dumps({"username": "fake-user", "password": "FAKE-pw-0123456"}),
+        text=True,
+        capture_output=True,
+        env=env,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "simulated crash" in result.stderr
+    for shown in (result.stdout, result.stderr):
+        assert "FAKE-pw-0123456" not in shown
+        assert "fake-user" not in shown

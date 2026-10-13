@@ -113,6 +113,10 @@ class DatasetRegistry:
     """
 
     _registry: ClassVar[dict[str, DatasetDefinition]] = {}
+    # The datasets that ship with M4. A file in the custom datasets folder
+    # cannot redefine one: wrappers and their users rely on these names meaning
+    # the definitions below, download address included.
+    _builtin_names: ClassVar[frozenset[str]] = frozenset()
 
     @classmethod
     def register(cls, dataset: DatasetDefinition):
@@ -186,6 +190,13 @@ class DatasetRegistry:
                     continue
 
                 data = json.loads(f.read_text())
+
+                if str(data.get("name", "")).lower() in cls._builtin_names:
+                    logger.warning(
+                        f"Ignoring custom dataset file {f}: '{data['name']}' is a "
+                        "built-in dataset, and a file cannot redefine one."
+                    )
+                    continue
 
                 # Convert string arrays to enum frozensets
                 if "modalities" in data:
@@ -310,10 +321,10 @@ class DatasetRegistry:
             bigquery_schema_mapping={"eicu_crd": "eicu_crd"},
         )
 
-        cls.register(mimic_iv_demo)
-        cls.register(mimic_iv)
-        cls.register(mimic_iv_note)
-        cls.register(eicu)
+        builtins = (mimic_iv_demo, mimic_iv, mimic_iv_note, eicu)
+        for dataset in builtins:
+            cls.register(dataset)
+        cls._builtin_names = frozenset(dataset.name.lower() for dataset in builtins)
 
 
 # Initialize registry

@@ -1,15 +1,19 @@
+import base64
 import gzip
 from unittest import mock
 
 import duckdb
+import pytest
 import requests
 
 from m4.core.backends.duckdb import DuckDBBackend
 from m4.core.datasets import DatasetDefinition, Modality
 from m4.data_io import (
     COMMON_USER_AGENT,
+    DatasetDownloadError,
     PhysioNetCredentials,
     _create_duckdb_with_views,
+    _download_dataset_files,
     _scrape_urls_from_html_page,
     compute_parquet_dir_size,
     convert_csv_to_parquet,
@@ -140,7 +144,177 @@ def test_download_dataset_uses_credentials_and_preserves_listing_layout(
 
     assert ok is True
     assert (tmp_path / "hosp" / "admissions.csv.gz").read_bytes() == b"csv-bytes"
-    assert sessions[0].auth == ("alice", "secret")
+    assert (sessions[0].auth.username, sessions[0].auth.password) == (
+        "alice",
+        "secret",
+    )
+
+
+# ------------------------------------------------------------
+# Where a PhysioNet login may go
+#
+# These tests use the real requests session and replace the transport below
+# it, so nothing reaches a network. The login is made up.
+# ------------------------------------------------------------
+
+FAKE_LOGIN = PhysioNetCredentials(username="fake-user", password="FAKE-not-a-password")
+FAKE_AUTHORIZATION = "Basic " + base64.b64encode(
+    b"fake-user:FAKE-not-a-password"
+).decode("ascii")
+
+
+class _SessionWithoutEnvironment(requests.Session):
+    """A real session that ignores proxy settings and ~/.netrc, so that a test
+    neither reads the developer's setup nor looks any host name up."""
+
+    def __init__(self):
+        super().__init__()
+        self.trust_env = False
+
+
+class Wire:
+    """Stands in for the network: keeps what would be sent, answers from a script."""
+
+    def __init__(self, monkeypatch, answer):
+        self.sent = []
+        self._answer = answer
+        monkeypatch.setattr("m4.data_io.requests.Session", _SessionWithoutEnvironment)
+        monkeypatch.setattr(requests.adapters.HTTPAdapter, "send", self._send)
+
+    def _send(self, request, **kwargs):
+        self.sent.append(request)
+        status, headers, body = self._answer(request)
+        response = requests.Response()
+        response.status_code = status
+        response.headers.update(headers)
+        response._content = body
+        response._content_consumed = True
+        response.url = request.url
+        response.request = request
+        return response
+
+    def sent_to(self, prefix):
+        return [request for request in self.sent if request.url.startswith(prefix)]
+
+
+def test_physionet_credentials_never_show_the_password():
+    assert FAKE_LOGIN.password == "FAKE-not-a-password"
+    for shown in (
+        repr(FAKE_LOGIN),
+        str(FAKE_LOGIN),
+        f"{FAKE_LOGIN}",
+        f"{FAKE_LOGIN!r}",
+    ):
+        assert "FAKE-not-a-password" not in shown
+    assert "FAKE-not-a-password" not in repr({"credentials": [FAKE_LOGIN]})
+
+
+@pytest.mark.parametrize(
+    "listing_url",
+    [
+        "https://example.test/collect/",
+        "http://physionet.org/files/mimiciv/3.1/",
+        "https://physionet.org.example.test/files/mimiciv/3.1/",
+        "https://physionet.org@example.test/files/mimiciv/3.1/",
+        "https://physionet.org:8443/files/mimiciv/3.1/",
+        "https://www.physionet.org/files/mimiciv/3.1/",
+    ],
+)
+def test_login_is_refused_to_anything_but_physionet_over_https(
+    tmp_path, monkeypatch, listing_url
+):
+    wire = Wire(monkeypatch, lambda request: (200, {}, b""))
+
+    with pytest.raises(DatasetDownloadError) as refused:
+        _download_dataset_files(
+            "somewhere-else",
+            {"file_listing_url": listing_url},
+            tmp_path,
+            credentials=FAKE_LOGIN,
+        )
+
+    assert refused.value.code == "physionet_url_required"
+    assert "https://physionet.org/" in refused.value.message
+    assert "FAKE-not-a-password" not in refused.value.message
+    assert wire.sent == []
+
+
+def test_login_goes_to_physionet_and_a_link_elsewhere_is_refused(tmp_path, monkeypatch):
+    listing = "https://physionet.org/files/made-up/1.0/"
+
+    def answer(request):
+        if request.url == listing:
+            page = (
+                b'<a href="admissions.csv.gz">a</a>'
+                b'<a href="https://example.test/patients.csv.gz">b</a>'
+            )
+            return 200, {}, page
+        if request.method == "HEAD":
+            return 200, {"content-length": "9"}, b""
+        return 200, {"content-length": "9"}, b"csv-bytes"
+
+    wire = Wire(monkeypatch, answer)
+
+    with pytest.raises(DatasetDownloadError) as refused:
+        _download_dataset_files(
+            "made-up", {"file_listing_url": listing}, tmp_path, credentials=FAKE_LOGIN
+        )
+
+    assert refused.value.code == "physionet_url_required"
+    assert "example.test" in refused.value.message
+    assert (tmp_path / "admissions.csv.gz").read_bytes() == b"csv-bytes"
+    assert len(wire.sent) == 3  # the listing, then HEAD and GET of the one file
+    assert wire.sent_to("https://physionet.org/") == wire.sent
+    assert {r.headers["Authorization"] for r in wire.sent} == {FAKE_AUTHORIZATION}
+
+
+def test_login_is_dropped_when_physionet_redirects_to_another_host(
+    tmp_path, monkeypatch
+):
+    listing = "https://physionet.org/files/made-up/1.0/"
+
+    def answer(request):
+        if request.url == listing:
+            return 200, {}, b'<a href="admissions.csv.gz">a</a>'
+        if request.url.startswith("https://physionet.org/"):
+            return (
+                302,
+                {"location": "https://example.test/mirror/admissions.csv.gz"},
+                b"",
+            )
+        if request.method == "HEAD":
+            return 200, {"content-length": "9"}, b""
+        return 200, {"content-length": "9"}, b"csv-bytes"
+
+    wire = Wire(monkeypatch, answer)
+
+    assert _download_dataset_files(
+        "made-up", {"file_listing_url": listing}, tmp_path, credentials=FAKE_LOGIN
+    )
+
+    elsewhere = wire.sent_to("https://example.test/")
+    assert len(elsewhere) == 2  # the redirected HEAD and GET
+    assert all("Authorization" not in request.headers for request in elsewhere)
+    for request in wire.sent_to("https://physionet.org/"):
+        assert request.headers["Authorization"] == FAKE_AUTHORIZATION
+
+
+def test_download_without_a_login_is_not_tied_to_physionet(tmp_path, monkeypatch):
+    listing = "https://example.test/open-data/"
+
+    def answer(request):
+        if request.url == listing:
+            return 200, {}, b'<a href="table.csv.gz">a</a>'
+        if request.method == "HEAD":
+            return 200, {"content-length": "9"}, b""
+        return 200, {"content-length": "9"}, b"csv-bytes"
+
+    wire = Wire(monkeypatch, answer)
+
+    assert _download_dataset_files("open", {"file_listing_url": listing}, tmp_path)
+
+    assert (tmp_path / "table.csv.gz").read_bytes() == b"csv-bytes"
+    assert all("Authorization" not in request.headers for request in wire.sent)
 
 
 # ------------------------------------------------------------

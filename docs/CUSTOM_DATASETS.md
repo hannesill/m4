@@ -34,7 +34,7 @@ m4 init mimic-iv-ed --src /path/to/your/csv/files
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `name` | Yes | Unique identifier passed as `--dataset <name>` or `dataset="<name>"` |
+| `name` | Yes | Unique identifier passed as `--dataset <name>` or `dataset="<name>"`. A file that uses the name of a built-in dataset (`mimic-iv-demo`, `mimic-iv`, `mimic-iv-note`, `eicu`) is ignored with a warning |
 | `description` | Yes | Human-readable description |
 | `file_listing_url` | No | PhysioNet URL for auto-download (demo datasets only) |
 | `subdirectories_to_scan` | No | Subdirs containing CSV files (e.g., `["hosp", "icu"]`) |
@@ -141,6 +141,11 @@ M4 will:
 3. Set the dataset as active
 
 ## Credentialed Datasets
+
+M4 sends a PhysioNet login only to addresses that start with
+`https://physionet.org/`. A credentialed dataset with any other
+`file_listing_url` cannot be downloaded by M4; download it yourself and use
+`m4 init <dataset> --src`.
 
 For datasets requiring PhysioNet credentials (most full datasets):
 

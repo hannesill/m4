@@ -83,6 +83,9 @@ app = typer.Typer(
     help="M4 CLI: Initialize local clinical datasets like MIMIC-IV Demo.",
     add_completion=False,
     rich_markup_mode="markdown",
+    # A traceback that prints local variables prints whatever is in scope when
+    # M4 crashes, a PhysioNet login included.
+    pretty_exceptions_show_locals=False,
 )
 
 provenance_app = typer.Typer(help="Inspect and export M4 provenance events.")

@@ -2,7 +2,7 @@ import json
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlparse
@@ -40,7 +40,8 @@ COMMON_USER_AGENT = (
 @dataclass(frozen=True)
 class PhysioNetCredentials:
     username: str
-    password: str
+    # Kept out of the repr, which is what logs and tracebacks print.
+    password: str = field(repr=False)
 
     @classmethod
     def from_json_text(cls, text: str) -> "PhysioNetCredentials":
@@ -66,6 +67,31 @@ class DatasetDownloadError(RuntimeError):
         super().__init__(redact_sensitive(message))
         self.code = code
         self.message = str(self)
+
+
+# The only address a PhysioNet login is ever sent to. Compared as a prefix of
+# the URL that is about to be requested, so that no way of spelling a host or a
+# port can pass for it.
+PHYSIONET_URL_PREFIX = "https://physionet.org/"
+
+
+class _PhysioNetAuth(requests.auth.HTTPBasicAuth):
+    """HTTP basic auth that gives the PhysioNet login to physionet.org only.
+
+    requests calls this for every request a session prepares, so a dataset
+    address or a scraped link that points anywhere else is refused before
+    anything is sent. When a response redirects to another host or away from
+    HTTPS, requests itself leaves the login out of the next request.
+    """
+
+    def __call__(self, request):
+        if not str(request.url).startswith(PHYSIONET_URL_PREFIX):
+            raise DatasetDownloadError(
+                "physionet_url_required",
+                f"Refusing to send the PhysioNet login to {request.url}. "
+                f"M4 only sends it to {PHYSIONET_URL_PREFIX}",
+            )
+        return super().__call__(request)
 
 
 def _download_error_for_response(
@@ -284,7 +310,7 @@ def _download_dataset_files(
     session = requests.Session()
     session.headers.update({"User-Agent": COMMON_USER_AGENT})
     if credentials:
-        session.auth = (credentials.username, credentials.password)
+        session.auth = _PhysioNetAuth(credentials.username, credentials.password)
 
     all_files_to_process = []  # List of (url, local_target_path)
 
