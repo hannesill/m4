@@ -8,8 +8,8 @@ to the `m4bench-neurips2026-camera-ready` GitHub release:
 
 | Package | Runs | Size (bytes) | SHA-256 |
 |---|---:|---:|---|
-| `m4bench-evidence-submission.tar.zst` | 1,400 | 7,548,441 | `17215697caf9dd2746e2e1a855af31f355fe1203612c3b9892ee138b08357106` |
-| `m4bench-evidence-claude-replication.tar.zst` | 560 | 6,400,345 | `9f63e8c867dcbafe68da472954dfebe366246aa36d2a3599795279426c33c63c` |
+| `m4bench-evidence-submission.tar.zst` | 1,400 | 7,548,717 | `f8b72940bd98cd9b2a852fa79c416310e2ed8ec7795b181941358d3b03ca708c` |
+| `m4bench-evidence-claude-replication.tar.zst` | 560 | 6,398,244 | `4aeb5eda83090f89e5a3bf5d0e8c4568c18309efd66b496c4655e11abd13471b` |
 
 The submission package holds the submitted campaigns (760 primary Codex,
 190 Claude sentinel, 340 Codex follow-up, 110 exploratory OSS runs); the

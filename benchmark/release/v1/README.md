@@ -103,8 +103,8 @@ before each campaign; see
 
 | Package | Contents | Size (bytes) | SHA-256 |
 |---|---|---:|---|
-| `m4bench-evidence-submission.tar.zst` | 1,400 submitted-campaign runs (760 Codex primary, 190 Claude sentinel, 340 Codex follow-up, 110 exploratory OSS) | 7,548,441 | `17215697caf9dd2746e2e1a855af31f355fe1203612c3b9892ee138b08357106` |
-| `m4bench-evidence-claude-replication.tar.zst` | 560 canonical July 2026 Claude runs (28 tasks x Opus/Sonnet x no-skill/with-skill x 5 trials) | 6,400,345 | `9f63e8c867dcbafe68da472954dfebe366246aa36d2a3599795279426c33c63c` |
+| `m4bench-evidence-submission.tar.zst` | 1,400 submitted-campaign runs (760 Codex primary, 190 Claude sentinel, 340 Codex follow-up, 110 exploratory OSS) | 7,548,717 | `f8b72940bd98cd9b2a852fa79c416310e2ed8ec7795b181941358d3b03ca708c` |
+| `m4bench-evidence-claude-replication.tar.zst` | 560 canonical July 2026 Claude runs (28 tasks x Opus/Sonnet x no-skill/with-skill x 5 trials) | 6,398,244 | `4aeb5eda83090f89e5a3bf5d0e8c4568c18309efd66b496c4655e11abd13471b` |
 
 Both archives, their `.sha256` and `.manifest.json` sidecars, and the Croissant
 file are hosted in the Hugging Face dataset repository
@@ -126,7 +126,9 @@ source file and compares it with the declared manifest before transforming it
 - Agent messages, SQL, and code are kept. In that text, credentials are
   removed, MIMIC and eICU identifiers are pseudonymized, and date-shifted
   timestamps, patient ages, and rows that start with an identifier are
-  redacted. Local paths and user names are removed. Agent messages can still
+  redacted. eICU stay identifiers are plain integers, so in eICU runs every
+  standalone integer of six to nine digits is pseudonymized unless the same
+  line marks it as a count. Local paths and user names are removed. Agent messages can still
   describe in words what the agent saw.
 - Placeholder digests are keyed with a private salt, so short redacted values
   cannot be recovered by guessing.
@@ -144,8 +146,8 @@ source file and compares it with the declared manifest before transforming it
 `scan_public_evidence.py` checks an extracted package independently of the
 sanitizer: it has its own patterns, requires every tool output to be a
 placeholder and every event to parse, and looks for credentials, raw
-identifiers, shifted datetimes, and identifier-led rows at every JSON nesting
-depth. Both packages pass it.
+identifiers, shifted datetimes, stated patient ages, and identifier-led rows
+at every JSON nesting depth. Both packages pass it.
 
 Croissant metadata (core + RAI): `croissant/m4bench_evidence.croissant.json`.
 Its download URLs point at the Hugging Face repository.
