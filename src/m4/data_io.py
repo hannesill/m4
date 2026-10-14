@@ -39,6 +39,16 @@ COMMON_USER_AGENT = (
     "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 )
 
+# PhysioNet reads a login only from the programs it lists, and it recognises
+# them by user agent: `Wget/` or `libwfdb/` at the start (HTTP_AUTH_USER_AGENT
+# in physionet-build's project/utility.py). From any other client, a browser's
+# user agent included, it ignores the login and answers 403, as if the account
+# had no access. So a download that carries a login presents itself as
+# Wget-compatible, and names M4 after that.
+PHYSIONET_LOGIN_USER_AGENT = (
+    "Wget/1.21.4 (compatible; m4-infra; +https://github.com/hannesill/m4)"
+)
+
 
 @dataclass(frozen=True)
 class PhysioNetCredentials:
@@ -320,6 +330,7 @@ def _download_dataset_files(
     session = requests.Session()
     session.headers.update({"User-Agent": COMMON_USER_AGENT})
     if credentials:
+        session.headers["User-Agent"] = PHYSIONET_LOGIN_USER_AGENT
         session.auth = _PhysioNetAuth(credentials.username, credentials.password)
 
     all_files_to_process = []  # List of (url, local_target_path)

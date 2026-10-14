@@ -279,6 +279,45 @@ def test_login_goes_to_physionet_and_a_link_elsewhere_is_refused(tmp_path, monke
     assert {r.headers["Authorization"] for r in wire.sent} == {FAKE_AUTHORIZATION}
 
 
+# The user agents PhysioNet takes a login from, as physionet-build's
+# project/utility.py lists them. It ignores a login from any other client.
+PHYSIONET_HTTP_AUTH_USER_AGENT = re.compile("Wget/|libwfdb/")
+
+
+def _one_file_listing(listing):
+    def answer(request):
+        if request.url == listing:
+            return 200, {}, b'<a href="admissions.csv.gz">a</a>'
+        return 200, {"content-length": "9"}, b"csv-bytes"
+
+    return answer
+
+
+def test_a_login_is_sent_with_a_user_agent_physionet_reads_it_from(
+    tmp_path, monkeypatch
+):
+    listing = "https://physionet.org/files/made-up/1.0/"
+    wire = Wire(monkeypatch, _one_file_listing(listing))
+
+    _download_dataset_files(
+        "made-up", {"file_listing_url": listing}, tmp_path, credentials=FAKE_LOGIN
+    )
+
+    assert len(wire.sent) == 3
+    for request in wire.sent:
+        assert PHYSIONET_HTTP_AUTH_USER_AGENT.match(request.headers["User-Agent"])
+
+
+def test_an_open_download_keeps_the_browser_user_agent(tmp_path, monkeypatch):
+    listing = "https://physionet.org/files/made-up/1.0/"
+    wire = Wire(monkeypatch, _one_file_listing(listing))
+
+    _download_dataset_files("made-up", {"file_listing_url": listing}, tmp_path)
+
+    assert {r.headers["User-Agent"] for r in wire.sent} == {COMMON_USER_AGENT}
+    assert all("Authorization" not in r.headers for r in wire.sent)
+
+
 def test_login_is_dropped_when_physionet_redirects_to_another_host(
     tmp_path, monkeypatch
 ):
