@@ -561,12 +561,12 @@ def test_values_after_escaped_newlines_are_scrubbed():
     # Literal backslash-n: text that is JSON-escaped once more than it was parsed.
     text = (
         "rows:\\n30012345,2150-01-02 03:04:05,F\\n10000032.0\\t"
-        "datetime.date(2150, 1, 2)\\n002-10009,2150-1-2\n"
+        "datetime.date(2150, 1, 2)\\n000-12345,2150-1-2\n"
     )
 
     sanitized = sanitizer.scrub_record_values(text, config=config, report=report)
 
-    for raw in ("30012345", "10000032", "2150", "002-10009"):
+    for raw in ("30012345", "10000032", "2150", "000-12345"):
         assert raw not in sanitized
     assert "MIMIC_ID_" in sanitized
     assert "EICU_UNIQUE_PID_" in sanitized

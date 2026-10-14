@@ -205,6 +205,33 @@ Known limits:
   July audit (raw Sepsis-3, raw suspicion of infection, standard/raw urine-output
   rate) are not retained locally and must be regenerated.
 
+### Commit identifiers
+
+On 14 October 2026 the repository history was rewritten to remove one data
+file that was committed and deleted on 26 March 2026 and should not have been
+in the repository. Commits after that point have new identifiers; their file
+contents are unchanged. This README cites current identifiers. Records written
+before the rewrite keep the original identifiers: the files under `planning/`,
+the scripts that label them, and the evidence packages.
+`planning/commit_id_map.tsv` maps each original identifier to the current one.
+The commits cited below:
+
+| Original | Current | Commit |
+|---|---|---|
+| `9cb1c81e` | `4245cc81` | eight-task sentinel list (23 April) |
+| `159b0a18` | `3405cc45` | task lists at the start of the primary campaign (2 May) |
+| `1fcc3e30` | `5f3ac09c` | SQL-free skill text promoted (5 May) |
+| `0fb7e458` | `fce2bd24` | operational-spec files (6 May) |
+| `8492345e` | `949836d9` | operational-spec condition (6 May) |
+| `f0f21bd6` | `f2f0299d` | `m4bench` branch tip, base of the Claude replication (15 May) |
+| `6ed55907` | `a1c847a4` | release 0.5.3 (30 May) |
+| `7932b0b7` | `2de5ca83` | model pinning on `main`, first commit (28 July) |
+| `9aac2e4f` | `cb8134e7` | model pinning on `main`, second commit (28 July) |
+| `7355bdf1` | `43aacb4d` | release 0.5.5 (15 September) |
+
+`5f1faabb` and `c38e0986` are pre-merge commits that are kept only as patches,
+under their original identifiers.
+
 ### Code and skill state by campaign
 
 Run records hold task, condition, model, trial, timestamps, isolation checks,
@@ -218,11 +245,11 @@ is reconstructed here from run timestamps (UTC) and commit author dates.
 | Claude sentinel | `release-20260502-claude-provider` (160), `review-rerun-20260504-claude` (30) | 2-5 May 2026 | As the Codex primary campaign; the 30 reruns are raw baseline creatinine (both conditions) and standard OASIS with-skill |
 | Exploratory OSS | `oss-rerun-provider-comparison-20260504_170533` (110) | 4 May 2026 | As the Codex primary campaign; non-publishable (local Ollama host exception) |
 | Codex follow-up | `codex-validity-followup-20260506` (340) | 6 May 2026 | See "Follow-up" below |
-| Claude replication, collaborator | `claude-28-20260726` (200) | 26-29 July 2026 | Declared base `f0f21bd6` plus an uncommitted diff, Claude Code 2.1.119 |
-| Claude replication, local | `rebuttal-claude-opus-sonnet-20260726` (220), `rebuttal-claude-opus-sonnet-additional-20260728` (140) | 26-30 July 2026 | One of the commits `f0f21bd6` to `c38e0986` (below); Claude Code 2.1.119 in 67 runs and 2.1.220 in 293 |
+| Claude replication, collaborator | `claude-28-20260726` (200) | 26-29 July 2026 | Declared base `f2f0299d` plus an uncommitted diff, Claude Code 2.1.119 |
+| Claude replication, local | `rebuttal-claude-opus-sonnet-20260726` (220), `rebuttal-claude-opus-sonnet-additional-20260728` (140) | 26-30 July 2026 | One of the commits `f2f0299d` to `c38e0986` (below); Claude Code 2.1.119 in 67 runs and 2.1.220 in 293 |
 
 **Primary campaign (2-4 May).** The run started from the task lists in
-`159b0a18`. Clinician review on 3-4 May then changed agent-visible inputs of
+`3405cc45`. Clinician review on 3-4 May then changed agent-visible inputs of
 nine tasks: the instruction of four (standard and raw baseline creatinine,
 `eicu-gcs`, `mimic-gcs-24h-raw`) and the skill of five (`eicu-oasis`, standard
 and raw OASIS, standard and raw SAPS II). Every affected cell was rerun on
@@ -234,30 +261,30 @@ five skill tasks (170 runs). The other task files changed in that window are
 Forty canonical with-skill runs (standard and raw urine-output rate and
 vasopressor equivalents, both models) used the `skills-nosql/` text and carry
 `with-skill-nosql` in their run IDs. That text marked each removed SQL
-fragment with a placeholder. On 5 May, `1fcc3e30` replaced the placeholders
+fragment with a placeholder. On 5 May, `5f3ac09c` replaced the placeholders
 with written rules, made the result the only skill text, and deleted
 `skills-nosql/`. The tag therefore holds a later skill text for these four
 tasks than the primary Codex runs saw. The Codex follow-up and the Claude
 replication used the text at the tag.
 
 **Follow-up (6 May).** The operational-spec files and the condition were
-committed in `0fb7e458` (03:38 UTC) and `8492345e` (03:46 UTC). Of the 80
+committed in `fce2bd24` (03:38 UTC) and `949836d9` (03:46 UTC). Of the 80
 canonical operational-spec runs, 22 started before the first commit and 27
 before the second, so they ran from the working tree. The eight-task list they
-use has been in `benchmark/matrix.py` since `9cb1c81e` (23 April). The
+use has been in `benchmark/matrix.py` since `4245cc81` (23 April). The
 transformed-schema with-skill runs used the skills at the tag.
 
-**Claude replication (26-30 July).** The collaborator declares base `f0f21bd6`
+**Claude replication (26-30 July).** The collaborator declares base `f2f0299d`
 plus an uncommitted diff that changes retry handling and task selection but
 not task definitions or the evaluator; the diff, launch commands, and batch
 scripts are in `planning/claude28/provenance/collaborator/`, and 17 canonical
 runs predate the retry change. Local runs used one of four commits:
-`f0f21bd6`, `6ed55907`, and the model-pinning commits `5f1faabb` and
+`f2f0299d`, `a1c847a4`, and the model-pinning commits `5f1faabb` and
 `c38e0986`, which are kept as patches in
 `planning/claude28/provenance/local/` and are on `main` as the rebased commits
-`7932b0b7` and `9aac2e4f`. Which of the four a given run used is not recorded.
-Benchmark source hashes are retained there for `f0f21bd6`, `6ed55907`,
-`c38e0986`, and the September release `7355bdf1`. The slice manifest retained
+`2de5ca83` and `cb8134e7`. Which of the four a given run used is not recorded.
+Benchmark source hashes are retained there for `f2f0299d`, `a1c847a4`,
+`c38e0986`, and the September release `43aacb4d`. The slice manifest retained
 for `rebuttal-claude-opus-sonnet-additional-20260728` describes its last batch
 of six tasks (120 runs); the root's seventh canonical task, raw SAPS II, ran
 on 28 July before that manifest was written.
@@ -270,7 +297,7 @@ servers in 345 of the 560 runs (all 200 collaborator runs and 145 local runs),
 and the egress allowlist admitted `mcp-proxy.anthropic.com`. No connector tool
 was called in any run.
 
-**What the tag adds.** Between `f0f21bd6` and the tag, the only files that
+**What the tag adds.** Between `f2f0299d` and the tag, the only files that
 differ under `benchmark/` outside `release/` are `matrix.py`, `run.py`, and the
 two guides. Tasks, skills, reference SQL, and the evaluator are identical.
 
@@ -280,7 +307,7 @@ two guides. Tasks, skills, reference SQL, and the evaluator are identical.
 fields, recorded Claude Code version and model-slot overrides, trace-observed
 models, artifact hashes, elapsed time, token usage), the inventory of 656
 non-canonical attempts, and `provenance/` (collaborator launch commands, batch
-scripts, uncommitted source diff against `f0f21bd6`, local model-pinning
+scripts, uncommitted source diff against `f2f0299d`, local model-pinning
 patches, benchmark source hashes). Selection policy: 11 complete tasks from
 `rebuttal-claude-opus-sonnet-20260726`, 7 disjoint tasks from
 `rebuttal-claude-opus-sonnet-additional-20260728`, 10 collaborator-complete

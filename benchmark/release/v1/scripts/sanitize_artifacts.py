@@ -1067,7 +1067,7 @@ SHIFTED_DATETIME = re.compile(
 MIMIC_IDENTIFIER = re.compile(
     rf"(?:(?<![\w.-])|{AFTER_ESCAPE})[123]\d{{7}}(?:\.0)?(?![\w-]|\.\d)"
 )
-# eICU `uniquepid` values look like `002-10009`.
+# eICU `uniquepid` values look like `000-12345`.
 EICU_UNIQUE_PID = re.compile(
     rf"(?:(?<![\w.-])|{AFTER_ESCAPE})0[0-3]\d-\d{{3,6}}(?![\w-])"
 )
