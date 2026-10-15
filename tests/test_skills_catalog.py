@@ -1,6 +1,8 @@
 import json
 import os
+import stat
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from typer.testing import CliRunner
@@ -10,6 +12,8 @@ from m4.skills.catalog import (
     CATALOG_SCHEMA_VERSION,
     MANIFEST_FILE_NAME,
     _atomic_publish_directory,
+    _is_link,
+    _reject_symlink_components,
     _validated_relative_path,
     build_catalog,
     materialize_catalog,
@@ -150,6 +154,125 @@ def test_materialize_rejects_symlinked_parent(tmp_path: Path):
         materialize_catalog(managed / "bundle")
 
     assert not (redirected / "bundle").exists()
+
+
+# What lstat reports on Windows. A junction keeps S_IFDIR; only its reparse tag
+# says it is a link. A OneDrive placeholder is a reparse point too, but its tag
+# is not a link's, and after Python opens it as the folder itself it can be 0.
+# (The stat module has the tags only on Windows.)
+IO_REPARSE_TAG_SYMLINK = 0xA000000C
+IO_REPARSE_TAG_MOUNT_POINT = 0xA0000003
+IO_REPARSE_TAG_CLOUD_6 = 0x9000601A
+WINDOWS_LSTAT = {
+    "symlink": (stat.S_IFLNK, IO_REPARSE_TAG_SYMLINK),
+    "junction": (stat.S_IFDIR, IO_REPARSE_TAG_MOUNT_POINT),
+    "onedrive-placeholder": (stat.S_IFDIR, IO_REPARSE_TAG_CLOUD_6),
+    "onedrive-placeholder-opened": (stat.S_IFDIR, 0),
+    "folder": (stat.S_IFDIR, 0),
+}
+
+
+@pytest.mark.parametrize(
+    ("kind", "is_link"),
+    [
+        ("symlink", True),
+        ("junction", True),
+        ("onedrive-placeholder", False),
+        ("onedrive-placeholder-opened", False),
+        ("folder", False),
+    ],
+)
+def test_links_are_told_from_other_reparse_points(kind: str, is_link: bool):
+    mode, tag = WINDOWS_LSTAT[kind]
+    metadata = SimpleNamespace(st_mode=mode | 0o755, st_reparse_tag=tag)
+
+    assert _is_link(metadata) is is_link
+
+
+def _pretend_windows_reparse_point(
+    monkeypatch: pytest.MonkeyPatch, path: Path, kind: str
+) -> None:
+    """Make lstat report PATH, a real folder, as Windows reports KIND."""
+    real_lstat = Path.lstat
+    mode, tag = WINDOWS_LSTAT[kind]
+
+    def lstat(self: Path):
+        if self == path:
+            return SimpleNamespace(st_mode=mode | 0o755, st_reparse_tag=tag)
+        return real_lstat(self)
+
+    monkeypatch.setattr(Path, "lstat", lstat)
+
+
+@pytest.mark.parametrize(
+    ("reparse_point", "kind"),
+    [
+        ("", "junction"),  # C:\Users\name moved to another drive
+        ("..", "junction"),
+        ("OneDrive", "onedrive-placeholder"),
+        ("OneDrive", "onedrive-placeholder-opened"),
+    ],
+)
+def test_junctions_in_the_home_path_and_onedrive_placeholders_are_allowed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, reparse_point: str, kind: str
+):
+    home = tmp_path / "profile"
+    target = home / "OneDrive" / "lincei" / "skills"
+    target.parent.mkdir(parents=True)
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
+    _pretend_windows_reparse_point(
+        monkeypatch, Path(os.path.normpath(home / reparse_point)), kind
+    )
+
+    _reject_symlink_components(target)
+
+
+@pytest.mark.parametrize("kind", ["junction", "symlink"])
+def test_links_below_the_home_folder_are_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, kind: str
+):
+    home = tmp_path / "profile"
+    target = home / "lincei" / "skills"
+    target.parent.mkdir(parents=True)
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
+    _pretend_windows_reparse_point(monkeypatch, home / "lincei", kind)
+
+    with pytest.raises(ValueError, match="may not contain symlinks"):
+        _reject_symlink_components(target)
+
+
+def test_materialize_through_a_linked_home_folder(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    real_home = tmp_path / "real-home"
+    real_home.mkdir()
+    home = tmp_path / "home"
+    home.symlink_to(real_home, target_is_directory=True)
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
+
+    first = materialize_catalog(home / "skills")
+
+    assert first["reused"] is False
+    assert first["target"] == str(real_home / "skills")
+    assert (real_home / "skills" / MANIFEST_FILE_NAME).is_file()
+    assert materialize_catalog(home / "skills") == {**first, "reused": True}
+
+    redirected = tmp_path / "redirected"
+    redirected.mkdir()
+    (home / "managed").symlink_to(redirected, target_is_directory=True)
+    with pytest.raises(ValueError, match="may not contain symlinks"):
+        materialize_catalog(home / "managed" / "skills")
+    assert not (redirected / "skills").exists()
+
+
+def test_verify_rejects_a_linked_folder_inside_the_bundle(tmp_path: Path):
+    target = tmp_path / "bundle"
+    materialize_catalog(target)
+    manifest = json.loads((target / MANIFEST_FILE_NAME).read_text(encoding="utf-8"))
+    (target / "linked").symlink_to(tmp_path, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="contains symlink"):
+        verify_materialized_bundle(target, manifest)
 
 
 def test_materialize_does_not_replace_concurrently_claimed_target(

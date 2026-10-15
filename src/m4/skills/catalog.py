@@ -257,21 +257,51 @@ def _absolute_path_without_symlink_resolution(path: Path) -> Path:
     return Path(os.path.abspath(os.fspath(expanded)))
 
 
+# A Windows reparse point whose tag has this bit stands for another path: a
+# symlink, a directory junction, a mounted volume. Other reparse points, such as
+# OneDrive's cloud file placeholders, are the file or folder itself.
+_IO_REPARSE_TAG_NAME_SURROGATE = 0x20000000
+
+
+def _is_link(metadata: os.stat_result) -> bool:
+    """Whether lstat METADATA is a symlink or, on Windows, a junction or other link."""
+    return stat.S_ISLNK(metadata.st_mode) or bool(
+        getattr(metadata, "st_reparse_tag", 0) & _IO_REPARSE_TAG_NAME_SURROGATE
+    )
+
+
+def _home_path() -> frozenset[Path]:
+    """The user's home folder and the folders above it."""
+    try:
+        home = Path.home()
+    except (KeyError, RuntimeError):
+        return frozenset()
+    if not home.is_absolute():
+        return frozenset()
+    home = Path(os.path.abspath(home))
+    return frozenset({home, *home.parents})
+
+
 def _reject_symlink_components(path: Path) -> None:
-    """Reject symlinks in every existing component, including dangling targets."""
+    """Reject links in every existing component, including dangling targets.
+
+    Links in the user's home path are allowed. They come with the account, such
+    as a profile moved to another drive behind a junction or a home on a
+    network share, and only an administrator can change them, so they cannot
+    redirect a bundle the way a link in a folder the user writes to can.
+    """
     absolute = _absolute_path_without_symlink_resolution(path)
+    home_path = _home_path()
     current = Path(absolute.anchor)
     for part in absolute.parts[1:]:
         current /= part
+        if current in home_path:
+            continue
         try:
             metadata = current.lstat()
         except FileNotFoundError:
             continue
-        is_windows_reparse_point = os.name == "nt" and bool(
-            getattr(metadata, "st_file_attributes", 0)
-            & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x00000400)
-        )
-        if stat.S_ISLNK(metadata.st_mode) or is_windows_reparse_point:
+        if _is_link(metadata):
             raise ValueError(f"Managed bundle path may not contain symlinks: {current}")
         if current != absolute and not stat.S_ISDIR(metadata.st_mode):
             raise NotADirectoryError(
@@ -379,6 +409,9 @@ def verify_materialized_bundle(target: Path, manifest: dict[str, Any]) -> None:
     """Verify the manifest and exact materialized filesystem tree."""
     root = _absolute_path_without_symlink_resolution(target)
     _reject_symlink_components(root)
+    # Any link left is in the home path. The resolved root is where the
+    # resolved paths of the bundle's files begin.
+    root = root.resolve(strict=True)
     declared_paths: set[Path] = set()
     declared_directories: set[Path] = {root}
 
@@ -389,7 +422,7 @@ def verify_materialized_bundle(target: Path, manifest: dict[str, Any]) -> None:
             relative_file = _validated_relative_path(file["path"])
             file_path = skill_root.joinpath(*relative_file.parts)
             file_metadata = file_path.lstat()
-            if stat.S_ISLNK(file_metadata.st_mode):
+            if _is_link(file_metadata):
                 raise ValueError(f"Materialized bundle contains symlink: {file_path}")
             if not stat.S_ISREG(file_metadata.st_mode):
                 raise ValueError(
@@ -418,7 +451,7 @@ def verify_materialized_bundle(target: Path, manifest: dict[str, Any]) -> None:
         with os.scandir(directory) as entries:
             for entry in entries:
                 candidate = Path(entry.path)
-                if entry.is_symlink():
+                if _is_link(entry.stat(follow_symlinks=False)):
                     raise ValueError(
                         f"Materialized bundle contains symlink: {candidate}"
                     )
@@ -464,6 +497,8 @@ def materialize_catalog(target: Path) -> dict[str, Any]:
     _reject_symlink_components(target)
     target.parent.mkdir(parents=True, exist_ok=True)
     _reject_symlink_components(target)
+    # Any link left is in the home path: publish in the folder it leads to.
+    target = target.parent.resolve(strict=True) / target.name
 
     if target.exists():
         manifest_path = target / MANIFEST_FILE_NAME

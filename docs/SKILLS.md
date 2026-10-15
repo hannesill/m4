@@ -71,8 +71,11 @@ declared file digest, writes `.m4-skills-manifest.json`, and atomically publishe
 target. It never installs into `.claude`, `.codex`, or another provider directory.
 An existing verified target with the same digest is reused; any other existing
 target is left untouched and reported as an error. Target paths containing
-symlinks are rejected, and publication fails closed if the platform cannot provide
-an atomic no-replace directory rename.
+symlinks or, on Windows, directory junctions are rejected, except in the user's
+home folder and the folders above it, where the account may come with them;
+the result's `target` is then the folder they lead to. Other reparse points, such as OneDrive placeholders, are not links and are
+allowed. Publication fails closed if the platform cannot provide an atomic
+no-replace directory rename.
 
 Compatibility policy:
 
