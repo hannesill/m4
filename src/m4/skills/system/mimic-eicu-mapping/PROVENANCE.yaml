@@ -12,7 +12,7 @@ created:
   role: authoring
   date: 2026-01-11
 
-# No review is on record. The validated tier requires a technical-accuracy review.
+# No review is on record, so the tier is community; a technical-accuracy review would make it validated.
 reviews: []
 
 references:

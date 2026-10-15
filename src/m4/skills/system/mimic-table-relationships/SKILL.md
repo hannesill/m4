@@ -1,7 +1,7 @@
 ---
 name: mimic-table-relationships
 description: Join MIMIC-IV tables on the right key and time window, in the active backend's SQL dialect. Use before writing MIMIC-IV SQL that joins hosp, icu and derived tables, or when row counts look duplicated or short.
-tier: validated
+tier: community
 category: system
 kind: domain
 ---

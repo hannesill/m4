@@ -125,7 +125,8 @@ To correct a result, edit the script and run it again.
 - Draw figures with matplotlib (installed with `m4-infra[research]`) or Plotly, whichever is
   installed; `show()` takes both. Give every figure a `description=`. Show distributions as
   figures (bars for categories, histograms for continuous values); keep dict cards for a few
-  summary numbers.
+  summary numbers. If neither library is installed (M4 without the `research` extra), show
+  the distributions as tables and tell the researcher that figures need it.
 - `mimiciv_derived` tables exist only for full MIMIC-IV after `m4 init-derived` (see
   `derived.materialized` in `m4 list-datasets --json`) or on BigQuery. Elsewhere, including the
   demo, compute concepts from `mimiciv_hosp` and `mimiciv_icu` following the matching clinical

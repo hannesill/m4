@@ -1,7 +1,7 @@
 ---
 name: mimic-eicu-mapping
 description: Map MIMIC-IV identifiers, tables, time handling and concepts to eICU-CRD as M4 exposes it. Use when translating a MIMIC-IV query to eICU, validating a MIMIC-IV model on eICU, or running one analysis on both databases.
-tier: validated
+tier: community
 category: system
 kind: methodology
 ---
@@ -12,11 +12,11 @@ eICU-CRD 2.0 is multi-center (208 US hospitals, 2014-2015); MIMIC-IV is single-c
 
 ## Rules
 
-1. **Check eICU is available.** It is credentialed. In `m4 list-datasets --json`, the `eicu` entry needs `"prepared": true` (DuckDB) or `bigquery_available`. If neither is true, tell the user; never download it yourself.
+1. **Check eICU is available.** It is credentialed. On the default DuckDB backend, the `eicu` entry of `m4 list-datasets --json` needs `"prepared": true`. On BigQuery (`m4 doctor --json` reports the backend and checks the credentials), it needs `bigquery_available`. Otherwise tell the user; never download it yourself.
 2. **Prefix every table with `eicu_crd.`**: `eicu_crd.patient`, not `patient`. M4 exposes eICU only under this schema (`physionet-data.eicu_crd` on BigQuery).
 3. **Time is an integer offset.** Each table has its own offset column, in minutes from this unit stay's admission (`labresultoffset`, `nursingchartoffset`, ...); negative means before. There are no dates; `hospitaldischargeyear` is the only year. MIMIC `intime - 6 h .. intime + 24 h` becomes `offset BETWEEN -360 AND 1440`.
 4. **Age is text**, `'> 89'` for older patients: `CASE WHEN age = '> 89' THEN 91 ELSE TRY_CAST(age AS INTEGER) END` (`SAFE_CAST(age AS INT64)` on BigQuery). 91 matches MIMIC-IV's `anchor_age` for patients over 89.
-5. **Everything joins on `patientunitstayid`.** One `patient` row is one unit stay and covers MIMIC's patients, admissions and icustays.
+5. **Clinical tables join on `patientunitstayid`.** One `patient` row is one unit stay and covers MIMIC's patients, admissions and icustays; it also holds the coarser keys: `patienthealthsystemstayid` (hospital stay), `uniquepid` (patient), and `hospitalid`, which joins `eicu_crd.hospital`.
 
 ## Identifiers
 
