@@ -1,7 +1,7 @@
 sources:
   - url: https://pypi.org/project/vitrine/
     description: Vitrine Python package used by M4 for browser display and research study cards
-    license: Package metadata
+    license: MIT
 
 created:
   by: M4 maintainers
@@ -15,9 +15,12 @@ reviews:
     notes: API signatures checked against installed vitrine 0.1.0.
 
 references:
-  - Vitrine Python package API, installed as M4 dependency vitrine>=0.1.0.
+  - Vitrine Python package API (vitrine 0.1.4).
 
 changelog:
   - version: "1.0"
     date: 2026-05-19
     summary: Add bundled Vitrine API skill for M4 agents.
+  - version: "2.0"
+    date: 2026-10-15
+    summary: Rewrite for Vitrine 0.1.4. Rules every script needs first (one study label, run from the project folder, let the server run), reading the board back (study_context, get_card), redaction and row limit, blocking questions and recovery with wait_for. Checked against Vitrine 0.1.4; tests/test_system_skills_api.py checks the names it uses.

@@ -1,5 +1,5 @@
 sources:
-  - url: https://github.com/rafiattrach/m4
+  - url: https://github.com/hannesill/m4
     description: M4 CLI, Python API, skill installer, dataset configuration, and vitrine dependency patterns
     license: MIT
 
@@ -21,3 +21,6 @@ changelog:
   - version: "1.0"
     date: 2026-05-19
     summary: Add M4 setup and repair workflow skill.
+  - version: "1.1"
+    date: 2026-10-15
+    summary: Rewrite around m4 doctor, m4 list-datasets, m4 agent-env, and vitrine doctor; a symptom table replaces commands that assumed an M4 checkout. Commands checked against M4 0.5.6 and Vitrine 0.1.4.

@@ -1,6 +1,6 @@
 ---
 name: m4-api
-description: Use the M4 Python API to query clinical datasets programmatically. Use when writing code to access clinical databases, executing SQL via Python, or performing multi-step data analysis.
+description: Query M4 clinical datasets (MIMIC-IV, its demo, MIMIC-IV-Note, eICU) from Python with `import m4`: find tables, run SQL into pandas, search clinical notes, handle M4's errors. Use before writing Python or SQL against M4 data.
 tier: community
 category: system
 kind: integration
@@ -8,161 +8,70 @@ kind: integration
 
 # M4 Python API
 
-The M4 Python API provides programmatic access to clinical datasets for code execution environments. It mirrors the MCP tools but returns native Python types (DataFrames, dicts) instead of formatted strings.
+Every call names its dataset; M4 keeps no active dataset.
 
-## When to Use the API vs MCP Tools
+## Every query
 
-**Use the Python API when:**
-- **Complex clinical analysis** - Multi-step analyses that require intermediate results, joins across queries, or statistical computations
-- **Large result sets** - Query results with thousands of rows can be stored in DataFrames without dumping into context
-- **Mathematical operations** - Aggregations, percentile calculations, statistical tests, and counting that benefit from pandas/numpy
-- **Iterative exploration** - Building up analysis through multiple queries where each step informs the next
-
-**Use MCP tools when:**
-- Simple one-off queries where the result fits comfortably in context
-- Interactive exploration where you want to see results immediately
-
-## Required Workflow
-
-**You must follow this sequence:**
-
-1. Choose a dataset name and pass it explicitly, or create `M4Client(dataset=...)`
-2. `get_schema(dataset=...)` / `get_table_info(..., dataset=...)` - Explore available tables
-3. `execute_query()` - Run SQL queries
+1. Check which datasets are ready: `m4 list-datasets --json` (`"prepared": true`) or `m4 status --all`.
+   `list_datasets()` returns every dataset M4 knows, downloaded or not. Adding data
+   (`m4 init`, `m4 download`) needs the user's data access, so ask them first.
+2. Find the tables and columns, then query with schema-qualified names:
 
 ```python
-from m4 import get_schema, get_table_info, execute_query
+from m4 import M4Client
 
-dataset = "mimic-iv"  # or "mimic-iv-demo", "eicu", "mimic-iv-note"
-
-# Step 1: Explore schema
-schema = get_schema(dataset=dataset)
-print(schema['tables'])  # List of table names
-
-# Step 2: Inspect specific tables before querying
-info = get_table_info("mimiciv_hosp.patients", dataset=dataset)
-print(info['schema'])  # DataFrame with column names, types
-print(info['sample'])  # DataFrame with sample rows
-
-# Step 3: Execute queries
-df = execute_query(
-    "SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROUP BY gender",
-    dataset=dataset,
-)
-# Returns pd.DataFrame - use pandas operations freely
+db = M4Client(dataset="mimic-iv-demo")
+db.schema()["tables"]                           # ["mimiciv_hosp.admissions", ...]
+db.table_info("mimiciv_icu.icustays")["schema"] # columns (name, type); ["sample"] holds rows
+df = db.query("""
+    SELECT first_careunit, COUNT(*) AS stays
+    FROM mimiciv_icu.icustays
+    GROUP BY first_careunit
+    ORDER BY stays DESC
+""")                                             # pandas DataFrame
 ```
 
-## API Reference
+`execute_query(sql, dataset=...)`, `get_schema(dataset=...)`, and
+`get_table_info(table, dataset=...)` do the same without a client. From the shell:
+`m4 query --dataset mimic-iv-demo --sql "SELECT ..."`.
 
-### Dataset Management
+A query returns every row it selects: aggregate in SQL and keep row-level results in
+DataFrames, not in the conversation.
 
-| Function | Returns | Description |
-|----------|---------|-------------|
-| `list_datasets()` | `list[str]` | Available dataset names |
-| `M4Client(dataset=...)` | `M4Client` | Preferred explicit client for one dataset |
-| `client.with_dataset(name)` | `M4Client` | New client with the same session context and a different dataset |
-| `client.switch_dataset(name)` | `M4Client` | Mutate a client to another dataset for notebook-style sessions |
+## Datasets
 
-### Tabular Data (requires TABULAR modality)
+| Dataset | Schemas | Access |
+|---|---|---|
+| `mimic-iv-demo` | `mimiciv_hosp`, `mimiciv_icu` | open, 100 patients |
+| `mimic-iv` | `mimiciv_hosp`, `mimiciv_icu`; `mimiciv_derived` after `m4 init-derived` | credentialed |
+| `mimic-iv-note` | `mimiciv_note`, for the notes functions only | credentialed |
+| `eicu` | `eicu_crd` (`eicu_crd.patient`, never bare `patient`) | credentialed |
 
-| Function | Returns | Description |
-|----------|---------|-------------|
-| `get_schema(dataset=...)` | `dict` | `{'backend_info': str, 'tables': list[str]}` |
-| `get_table_info(table, dataset=..., show_sample=True)` | `dict` | `{'schema': DataFrame, 'sample': DataFrame}` |
-| `execute_query(sql, dataset=...)` | `DataFrame` | Query results as pandas DataFrame |
+The demo has no `mimiciv_derived`; compute concepts there from the clinical skills' SQL.
+Table names are the same on both backends. Write DuckDB SQL unless `m4 doctor --json` reports
+the `bigquery` backend.
 
-`backend_info` summarizes the backend and dataset. Local DuckDB paths are
-hidden unless `M4_PATH_DISCLOSURE=1` is set for the process.
-
-### Clinical Notes (requires NOTES modality)
-
-| Function | Returns | Description |
-|----------|---------|-------------|
-| `search_notes(query, dataset=..., note_type, limit, snippet_length)` | `dict` | `{'results': dict[str, DataFrame]}` |
-| `get_note(note_id, dataset=..., max_length)` | `dict` | `{'text': str, 'subject_id': int, ...}` |
-| `list_patient_notes(subject_id, dataset=..., note_type, limit)` | `dict` | `{'notes': dict[str, DataFrame]}` |
-
-## Error Handling
-
-M4 uses a hierarchy of exceptions. Catch specific types to handle errors appropriately:
-
-```
-M4Error (base)
-├── DatasetError      # Dataset doesn't exist or not configured
-├── QueryError        # SQL syntax error, table not found, query failed
-└── ModalityError     # Tool incompatible with dataset (e.g., notes on tabular-only)
-```
-
-**Recovery patterns:**
+## Clinical notes
 
 ```python
-from m4 import execute_query, DatasetError, QueryError, ModalityError
-
-try:
-    df = execute_query("SELECT * FROM mimiciv_hosp.patients", dataset="mimic-iv")
-except DatasetError as e:
-    # Dataset missing, not initialized, or misspelled.
-    # Recovery: check list_datasets() and m4 status --dataset mimic-iv.
-    print(f"Dataset problem: {e}")
-except QueryError as e:
-    # SQL error or table not found
-    # Recovery: check table name with get_schema(), fix SQL syntax
-    print(f"Query failed: {e}")
-except ModalityError as e:
-    # Tried notes function on tabular-only dataset
-    # Recovery: pass dataset="mimic-iv-note" to notes functions
-    print(f"Modality problem: {e}")
+notes = M4Client(dataset="mimic-iv-note")
+hits = notes.search_notes("septic shock", note_type="discharge", limit=5)  # discharge, radiology, all
+notes.list_patient_notes(subject_id, note_type="all", limit=20)
+notes.get_note(note_id, max_length=4000)
 ```
 
-## Displaying Results
+## Errors
 
-Use `show()` from the vitrine module to present query results to the researcher in the browser:
+All derive from `m4.M4Error`. `m4` exports `DatasetError`, `QueryError`, and `ModalityError`;
+the others are in `m4.core.exceptions`.
 
-```python
-from m4 import execute_query
-from vitrine import show
+| Error | Usual cause | Next step |
+|---|---|---|
+| `ConnectionError` | "Database file not found": the dataset is not downloaded; or the database is locked by another process | Ask the user to add the dataset; retry when the other process ends |
+| `DatasetError` | Unknown dataset name, or the removed `set_dataset()`/`get_active_dataset()` | Pass `dataset=` |
+| `TableNotFoundError` | `table_info` on a table that does not exist | `schema()` |
+| `QueryError` | SQL error, or a missing table or schema in the query | The message names the table or position |
+| `SecurityError` | A statement other than `SELECT` | Queries are read-only |
+| `ModalityError` | A notes function on a tabular dataset, or the reverse | Notes are in `mimic-iv-note` |
 
-df = execute_query(
-    "SELECT gender, COUNT(*) as n FROM mimiciv_hosp.patients GROUP BY gender",
-    dataset="mimic-iv",
-)
-df.to_csv("output/demographics.csv", index=False)  # Save for reproducibility
-show(df, title="Demographics", study="my-study")   # Show for review
-```
-
-For blocking review (agent waits for researcher approval), use `show(df, wait=True, prompt="Proceed?")`. For the full display API, use the `vitrine-api` skill.
-
-## Dataset Selection
-
-**Important:** Dataset selection is explicit. Prefer `M4Client(dataset=...)` when several calls target the same dataset, or pass `dataset=...` to each convenience function. For a long-lived session, use `client.with_dataset(...)` to create a new client for another dataset without mutating the current one. Use `client.switch_dataset(...)` only for single-session, notebook-style workflows where mutation is expected.
-
-```python
-from m4 import M4Client, execute_query
-
-client = M4Client(dataset="mimic-iv")
-df1 = client.query("SELECT COUNT(*) FROM mimiciv_hosp.patients")
-
-eicu_client = client.with_dataset("eicu")
-df2 = eicu_client.query("SELECT COUNT(*) FROM patient")
-
-client.switch_dataset("mimic-iv-note")  # mutates client and its execution context
-df3 = execute_query("SELECT COUNT(*) FROM patient", dataset="eicu")
-```
-
-## MCP Tool Equivalence
-
-The Python API mirrors MCP tools but with better return types:
-
-| MCP Tool | Python Function | MCP Returns | Python Returns |
-|----------|-----------------|-------------|----------------|
-| `execute_query` | `execute_query()` | Formatted string | `pd.DataFrame` |
-| `get_database_schema` | `get_schema()` | Formatted string | `dict` with `tables` list |
-| `get_table_info` | `get_table_info()` | Formatted string | `dict` with `schema`/`sample` DataFrames |
-
-Use the Python API when you need to:
-- Chain queries in analysis pipelines
-- Perform pandas operations on results
-- Avoid parsing formatted output
-
-
-NOTE: All queries use canonical `schema.table` names (e.g., `mimiciv_hosp.patients`, `mimiciv_icu.icustays`). These names work on both the local DuckDB backend and the BigQuery backend — no need to adjust table names per backend.
+To show results to the researcher, use the `vitrine-api` skill.

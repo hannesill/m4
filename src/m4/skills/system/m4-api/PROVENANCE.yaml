@@ -1,7 +1,7 @@
 sources:
   - url: https://github.com/hannesill/m4/tree/main/src/m4
-    description: M4 Python API public interface (set_dataset, execute_query, get_schema, etc.)
-    license: Apache 2.0
+    description: M4 Python API public interface (M4Client, execute_query, get_schema, etc.)
+    license: MIT
 
 created:
   by: Claude Opus 4.6 (AI Assistant)
@@ -30,3 +30,6 @@ changelog:
   - version: "1.3"
     date: 2026-02-07
     summary: Add "Displaying Results" section with cross-reference to vitrine-api skill
+  - version: "1.4"
+    date: 2026-10-15
+    summary: Rewrite around explicit datasets; add schemas per dataset, eicu_crd prefix, notes types, and the errors agents hit (missing or locked database, unknown table, read-only). Examples run on the MIMIC-IV demo with M4 0.5.6.

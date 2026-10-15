@@ -1,108 +1,33 @@
 ---
 name: m4-setup
-description: Diagnose and repair common M4 environment, dataset, skill installation, backend, and vitrine setup problems. Use when M4 tools, datasets, skills, or visualization are missing or broken.
+description: Diagnose and repair an M4 installation. Use when `import m4` or `import vitrine` fails or runs under the wrong Python, a dataset is missing, not ready, or locked, the BigQuery backend or its credentials are wrong, M4's skills are missing from an agent, or the Vitrine board stops updating.
 tier: community
 category: system
 kind: maintenance
 ---
 
-# M4 Setup And Repair
+# M4 setup and repair
 
-Use this skill when the M4 environment looks incomplete, a dataset is missing, skills are stale, or vitrine is unavailable.
-
-## When to Use This Skill
-
-- `from m4 import ...` fails or the wrong Python environment is active
-- `list_datasets()` or `m4 status --all` does not show expected datasets
-- M4 skills are missing, stale, or inconsistent across tools
-- DuckDB/BigQuery backend configuration is wrong
-- `vitrine` imports fail or the display server is not reachable
-
-## Fast Diagnostics
-
-Run commands from the M4 repo root unless the user is intentionally working elsewhere.
+Diagnose first; these commands only read:
 
 ```bash
-pwd
-uv run python - <<'PY'
-from m4 import list_datasets
-print("datasets:", list_datasets())
-PY
-uv run m4 status --all
-uv run m4 agent-env --dataset mimic-iv-demo --json
-uv run m4 skills --list
-uv run vitrine status
+m4 doctor --json          # Python, m4 and duckdb imports, backend, BigQuery project and credentials
+m4 list-datasets --json   # per dataset: prepared, setup_state ("ready" when usable), derived tables
+m4 agent-env --json       # data directory, M4 environment variables, path_recommendations.python
+vitrine doctor --json     # Vitrine version and its Python
+vitrine status --json     # this folder's study store and its server
 ```
 
-If plain `python` cannot import `m4`, use `uv run python`; M4 is usually installed in the project virtual environment.
+Run them, and everything else, with the Python environment M4 is installed in:
+`path_recommendations.python` names it (in an M4 checkout, `uv run m4 ...`).
 
-## Dataset Checks
-
-Expected built-in datasets:
-
-| Dataset | Notes |
-|---------|-------|
-| `mimic-iv-demo` | Local demo tabular dataset |
-| `mimic-iv` | MIMIC-IV tabular data and derived tables |
-| `mimic-iv-note` | MIMIC-IV notes |
-| `eicu` | eICU tabular data |
-
-Custom datasets live under the M4 data directory in `datasets/*.json` and should
-appear in `m4 status --all`. By default the data directory is `m4_data`; if
-`M4_DATA_DIR` is set, it must point directly at the data directory.
-
-Common checks:
-
-```bash
-uv run m4 agent-env --json
-M4_CONFIG_DIR="${M4_HOME:-${M4_DATA_DIR:-m4_data}}"
-cat "$M4_CONFIG_DIR/config.json"
-find "${M4_DATA_DIR:-m4_data}/databases" -maxdepth 1 -type f -name '*.duckdb' -print
-find "${M4_DATA_DIR:-m4_data}/datasets" -maxdepth 1 -type f -name '*.json' -print
-```
-
-Pass `dataset="name"` when querying, then inspect schema with `get_schema(dataset=...)` and `get_table_info(..., dataset=...)`.
-
-## Skill Installation Repair
-
-The canonical bundled skills are under `src/m4/skills`. Installed tool directories are generated copies.
-
-```bash
-uv run m4 skills --tools claude,codex
-uv run m4 skills --list
-```
-
-Filtered installs are additive; existing non-matching skills are left in place. If an installed skill is stale, reinstall from the bundled source.
-
-## Backend Repair
-
-Check `${M4_HOME:-${M4_DATA_DIR:-m4_data}}/config.json`:
-
-| Field | Meaning |
-|-------|---------|
-| `backend` | `duckdb` or `bigquery` |
-| `bigquery_project_id` | Billing/project id for BigQuery |
-
-For local work, `backend: "duckdb"` requires the matching file in the data
-directory's `databases/` folder. For BigQuery work, credentialed datasets
-require valid Google credentials and a configured project.
-
-## Vitrine Repair
-
-```bash
-uv run python - <<'PY'
-import vitrine
-print("vitrine import ok")
-print(vitrine.server_status())
-PY
-uv run vitrine restart
-```
-
-Use the `vitrine-api` skill for display API details.
-
-## Recovery Rules
-
-- Prefer `uv run ...` commands to avoid using the wrong environment.
-- Do not guess table names. Call `get_schema(dataset=...)` and `get_table_info(..., dataset=...)`.
-- If a dataset appears in `m4 status --all` but not in `list_datasets()`, check the data directory's `datasets/*.json` files and reload through the M4 API.
-- If skills reference missing functions or outdated tables, compare the installed copy with `src/m4/skills` and reinstall from the canonical source.
+| Symptom | Cause | Fix |
+|---|---|---|
+| `import m4` or `import vitrine` fails | Another Python | Use the environment above |
+| `ConnectionError: Database file not found` | The dataset is not set up (`setup_state` is not `ready`) | The user sets it up: `m4 init mimic-iv-demo` downloads the open demo; credentialed datasets need their PhysioNet login. Ask before starting either |
+| `ConnectionError: ... locked by another process` | Another process holds the DuckDB file | Wait for it, or ask the user which process to close |
+| Schema `mimiciv_derived` does not exist | Derived tables are built per dataset, and only for full MIMIC-IV | `m4 init-derived mimic-iv` takes minutes: ask first. On the demo, compute concepts from the clinical skills' SQL |
+| Data or settings from the wrong place | `M4_DATA_DIR` (the data folder itself) beats `M4_HOME`, which beats the nearest `m4_data` above the working directory | `m4 agent-env --json` shows what M4 resolved |
+| Wrong backend or BigQuery project | `M4_BACKEND`, `M4_PROJECT_ID`, and `M4_DB_PATH` override `config.json` | `m4 backend duckdb`, or `m4 backend bigquery --project-id ID` with `GOOGLE_APPLICATION_CREDENTIALS` set |
+| An agent lacks M4's skills | Not installed for that tool | `m4 skills catalog --json` lists what this M4 version ships; `m4 skills --tools claude,codex` installs them into the current project's `.claude/skills` and `.codex/skills`. When a host app manages the skills, repair through the host |
+| The board shows no new cards | The script published from another folder, so to another store | `vitrine status --json` in the project folder shows its store; run the script from that folder or set `VITRINE_DATA_DIR`. `show()` starts a stopped server; a host app's board needs that same server, so let it run |
