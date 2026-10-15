@@ -1,7 +1,11 @@
+import hashlib
 import importlib.util
+import io
 import json
 import sys
 from pathlib import Path
+
+import pytest
 
 SCRIPTS = Path(__file__).parent.parent / "benchmark" / "release" / "v1" / "scripts"
 
@@ -88,3 +92,66 @@ def test_repair_cli_writes_lineage_and_leaves_valid_files(tmp_path):
     derived = (tmp_path / "out" / "a" / "result.json").read_bytes()
     assert record["derived_sha256"] == repair.sha256_bytes(derived)
     assert not (tmp_path / "out" / "b").exists()
+
+
+def load_public_packager():
+    if str(SCRIPTS) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS))
+    spec = importlib.util.spec_from_file_location(
+        "package_public_evidence", SCRIPTS / "package_public_evidence.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    sys.modules[spec.name] = module  # its dataclasses resolve names through it
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.mark.parametrize("made_from", ["this original", "another original"])
+def test_packager_uses_a_repair_only_for_the_original_it_was_made_from(
+    tmp_path, made_from
+):
+    packager = load_public_packager()
+    original = corrupted_result().encode()
+    derived = json.dumps({"run_id": "run-1", "agent_result": {}}).encode()
+    source = original if made_from == "this original" else original + b"\n"
+    expected = packager.Expected(
+        source_path="runs/run-1/result.json",
+        archive_path="runs/run-1/result.json",
+        sha256=hashlib.sha256(original).hexdigest(),
+        size_bytes=len(original),
+    )
+    repairs = tmp_path / "repairs"
+    (repairs / "runs" / "run-1").mkdir(parents=True)
+    (repairs / "runs" / "run-1" / "result.json").write_bytes(derived)
+    repair = {
+        "original_sha256": hashlib.sha256(source).hexdigest(),
+        "original_size_bytes": len(source),
+        "derived_sha256": hashlib.sha256(derived).hexdigest(),
+        "repair_method": "test",
+    }
+    writer = packager.PackageWriter(None, "package")
+    config = packager.SanitizerConfig(
+        salt=b"test-salt",
+        private_patterns=sys.modules["sanitize_artifacts"].PrivatePatterns(),
+    )
+
+    def package() -> None:
+        packager.process_source(
+            writer,
+            io.BytesIO(original),
+            expected,
+            config=config,
+            report=packager.SanitizationReport(source="src", output="out"),
+            scratch=tmp_path,
+            repaired={expected.source_path: repair},
+            repairs_dir=repairs,
+        )
+
+    if made_from == "this original":
+        package()
+        assert writer.records[0]["transform"] == "repaired-then-sanitized-json"
+    else:
+        with pytest.raises(packager.EvidenceError, match="another original"):
+            package()
+        assert writer.records == []
