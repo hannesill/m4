@@ -1030,3 +1030,45 @@ def test_scanner_checks_private_regexes_as_well_as_literals(tmp_path, file_name)
     scan.file(package / "note.md", package)
 
     assert {check for check, _ in scan.hits} == {"private_literal_0", "private_regex_0"}
+
+
+def load_verifier():
+    path = (
+        Path(__file__).parent.parent
+        / "benchmark"
+        / "release"
+        / "v1"
+        / "scripts"
+        / "verify_public_evidence.py"
+    )
+    spec = importlib.util.spec_from_file_location("verify_public_evidence", path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_verify_relinks_a_kept_workdir_to_the_package_it_checks(tmp_path, monkeypatch):
+    verifier = load_verifier()
+    package = tmp_path / "package"
+    current = package / "runs" / "codex_primary" / "release-20260502-codex-v11"
+    current.mkdir(parents=True)
+    earlier = tmp_path / "earlier-package" / "release-20260502-codex-v11"
+    earlier.mkdir(parents=True)
+    keep = tmp_path / "keep"
+    (keep / "results").mkdir(parents=True)
+    for name in (current.name, "review-rerun-gone"):
+        (keep / "results" / name).symlink_to(earlier, target_is_directory=True)
+    # Stop before the table scripts; only the links are checked here.
+    monkeypatch.setattr(
+        verifier.subprocess,
+        "run",
+        lambda command, **kwargs: subprocess.CompletedProcess(command, 1),
+    )
+
+    assert verifier.verify_historical(package, keep) is False
+
+    links = list((keep / "results").iterdir())
+    assert [link.name for link in links] == [current.name]
+    assert links[0].resolve() == current.resolve()
+    assert earlier.is_dir()

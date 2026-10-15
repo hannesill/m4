@@ -127,15 +127,15 @@ def verify_historical(root: Path, keep: Path | None) -> bool:
     work = Path(keep) if keep else Path(tempfile.mkdtemp(prefix="m4bench-verify-"))
     results = work / "results"
     paper = work / "paper"
-    results.mkdir(parents=True, exist_ok=True)
+    # A kept work directory may hold links into a package verified before.
+    for directory in (results, paper):
+        if directory.exists():
+            shutil.rmtree(directory)
+        directory.mkdir(parents=True)
     for campaign in sorted((root / "runs").iterdir()):
         for results_root in sorted(p for p in campaign.iterdir() if p.is_dir()):
             link = results / results_root.name
-            if not link.exists():
-                link.symlink_to(results_root.resolve(), target_is_directory=True)
-    if paper.exists():
-        shutil.rmtree(paper)
-    paper.mkdir()
+            link.symlink_to(results_root.resolve(), target_is_directory=True)
     for name in ("planning", "tables"):
         shutil.copytree(RELEASE_DIR / name, paper / name)
     env = {
