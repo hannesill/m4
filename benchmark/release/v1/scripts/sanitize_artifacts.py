@@ -724,7 +724,8 @@ def looks_like_table_row(line: str) -> bool:
 
 
 # A row quoted in agent prose after scrubbing: it starts with a pseudonymized
-# identifier or a redacted datetime and continues with further delimited fields.
+# identifier or a redacted datetime and continues with at least one more
+# delimited field. Two columns are enough: `30012345,76` is a patient's age.
 IDENTIFIED_ROW = re.compile(
     r"^\s*[(\[|]?\s*['\"]?"
     r"(?:(?:MIMIC|EICU)_[A-Z_]+_[0-9A-F]{16}|<REDACTED_SHIFTED_DATETIME>)"
@@ -733,9 +734,7 @@ IDENTIFIED_ROW = re.compile(
 
 
 def looks_like_identified_row(line: str) -> bool:
-    if not IDENTIFIED_ROW.match(line):
-        return False
-    return len(re.split(r"[,|\t]|\s{2,}", line.strip())) >= 3
+    return bool(IDENTIFIED_ROW.match(line))
 
 
 def redact_trace_data_blocks(
@@ -1164,17 +1163,64 @@ def redact_tool_outputs(value: Any, report: FileReport, salt: bytes) -> Any:
     return redacted
 
 
+# Structured tool input (Claude `tool_use.input`, Codex `mcp_tool_call.arguments`).
+TOOL_INPUT_KEYS = {"input", "arguments"}
+# Tool input keys whose numbers are durations or limits, never identifiers.
+QUANTITY_KEY = re.compile(r"timeout|limit|max|offset|seconds|_ms$", re.IGNORECASE)
+
+
+def numeric_identifier_prefix(
+    key: str, value: int | float, *, in_tool_input: bool, eicu: bool
+) -> str | None:
+    """The pseudonym prefix for a JSON number that is an identifier, else None."""
+    name = key.lower()
+    prefix = ID_COLUMNS.get(name) or ID_COLUMNS.get(name.removesuffix("s"))
+    if prefix:
+        return prefix
+    # In tool input the agent chooses the keys (`ids`, `stays`), so there a
+    # number with an identifier's shape counts whatever its key. Elsewhere such
+    # numbers are byte counts, token counters and seeds.
+    if not in_tool_input or QUANTITY_KEY.search(name):
+        return None
+    if isinstance(value, float) and not value.is_integer():
+        return None
+    digits = str(int(value))
+    if MIMIC_IDENTIFIER.fullmatch(digits):
+        return "MIMIC_ID"
+    if eicu and EICU_INTEGER.fullmatch(digits):
+        return "EICU_ID"
+    return None
+
+
 def sanitize_event_strings(
-    value: Any, *, config: SanitizerConfig, report: FileReport, key: str = ""
+    value: Any,
+    *,
+    config: SanitizerConfig,
+    report: FileReport,
+    key: str = "",
+    in_tool_input: bool = False,
 ) -> Any:
     if isinstance(value, dict):
         return {
-            name: sanitize_event_strings(item, config=config, report=report, key=name)
+            name: sanitize_event_strings(
+                item,
+                config=config,
+                report=report,
+                key=name,
+                in_tool_input=in_tool_input
+                or (name in TOOL_INPUT_KEYS and isinstance(item, dict | list)),
+            )
             for name, item in value.items()
         }
     if isinstance(value, list):
         return [
-            sanitize_event_strings(item, config=config, report=report, key=key)
+            sanitize_event_strings(
+                item,
+                config=config,
+                report=report,
+                key=key,
+                in_tool_input=in_tool_input,
+            )
             for item in value
         ]
     if key == "signature" and isinstance(value, str):
@@ -1185,14 +1231,15 @@ def sanitize_event_strings(
             config=config,
             report=report,
         )
-    # Identifiers passed as JSON numbers, for example in structured tool input.
-    prefix = ID_COLUMNS.get(key.lower())
-    if prefix and type(value) in (int, float):  # bool is not an identifier
-        report.redacted_terms += 1
-        return pseudonymize(
-            str(value).removesuffix(".0"), prefix=prefix, salt=config.salt
-        )
-    return value
+    if type(value) not in (int, float):  # bool is not an identifier
+        return value
+    prefix = numeric_identifier_prefix(
+        key, value, in_tool_input=in_tool_input, eicu=is_eicu_run(report.path)
+    )
+    if prefix is None:
+        return value
+    report.redacted_terms += 1
+    return pseudonymize(str(value).removesuffix(".0"), prefix=prefix, salt=config.salt)
 
 
 def scrub_record_values(

@@ -18,11 +18,14 @@ Content checks run on every string at every JSON nesting depth, with escaped
 newlines and quotes expanded first so that values inside JSON-in-JSON text are
 visible: credentials, raw MIMIC identifiers, shifted datetimes, rows that start
 with an identifier, stated patient ages, home paths, e-mail addresses, and
-configured private terms. In eICU runs, whose stay identifiers are plain 6-7
-digit integers, any such integer that is not written as a count is flagged.
-JSON numbers are checked only under identifier keys (byte counts and token
-counters are not identifiers). Git patch headers are exempt from the e-mail
-check because they reproduce public commit metadata.
+configured private terms and patterns. In eICU runs, whose stay identifiers
+are plain 6-7 digit integers, any such integer that is not written as a count
+is flagged. JSON numbers are checked under identifier keys and their plurals,
+and in tool input, where the agent chooses the keys, wherever they have an
+identifier's shape and their key does not name a duration or a limit. Other
+numbers of that shape are byte counts, token counters and seeds. Git patch
+headers are exempt from the e-mail check because they reproduce public commit
+metadata.
 """
 
 from __future__ import annotations
@@ -52,6 +55,10 @@ TOOL_OUTPUT_KEYS = {
 }
 TOOL_RESULT_TYPES = {"tool_result", "function_call_output"}
 TOOL_RESULT_CONTENT_KEYS = {"content", "output"}
+TOOL_INPUT_KEYS = {"input", "arguments"}
+QUANTITY_KEY = re.compile(r"timeout|limit|max|offset|seconds|_ms$", re.IGNORECASE)
+MIMIC_ID_DIGITS = re.compile(r"[123]\d{7}")
+EICU_ID_DIGITS = re.compile(r"\d{6,7}")
 FORBIDDEN_NAMES = {"output.csv"}
 FORBIDDEN_SUFFIXES = {".csv", ".db", ".duckdb", ".parquet", ".pkl"}
 ALLOWED_CSV_DIRS = {"metadata"}  # run manifests, not agent outputs
@@ -79,7 +86,7 @@ CONTENT = {
         r"|(?:datetime|date|Timestamp)\(\s*['\"]?2[12]\d{2}(?!\d)"
     ),
     "identified_row": re.compile(
-        rf"^[ \t]*[(\[|]?[ \t]*['\"]?{ID_TOKEN}['\"]?[ \t]*[,|\t][^\n,|\t]*[,|\t]",
+        rf"^[ \t]*[(\[|]?[ \t]*['\"]?{ID_TOKEN}['\"]?[ \t]*[,|\t][ \t]*[^\s,|\t]",
         re.MULTILINE,
     ),
     "home_path": re.compile(
@@ -124,6 +131,10 @@ class Scan:
         self.examples: dict[str, list[str]] = defaultdict(list)
         self.path = Path()
 
+    @property
+    def in_eicu_run(self) -> bool:
+        return any(part.startswith("eicu-") for part in self.path.parts)
+
     def hit(self, check: str, count: int = 1) -> None:
         self.hits[(check, self.path.name)] += count
         if len(self.examples[check]) < 5 and str(self.path) not in self.examples[check]:
@@ -137,7 +148,7 @@ class Scan:
             count = len(pattern.findall(visible))
             if count:
                 self.hit(name, count)
-        if any(part.startswith("eicu-") for part in self.path.parts):
+        if self.in_eicu_run:
             count = sum(
                 1
                 for match in EICU_BARE_INTEGER.finditer(visible)
@@ -149,7 +160,7 @@ class Scan:
             if count:
                 self.hit("eicu_identifier", count)
 
-    def value(self, value: Any, key: str = "") -> None:
+    def value(self, value: Any, key: str = "", in_tool_input: bool = False) -> None:
         if isinstance(value, dict):
             is_tool_result = value.get("type") in TOOL_RESULT_TYPES
             for name, item in value.items():
@@ -163,16 +174,37 @@ class Scan:
                         self.hit("unredacted_tool_output")
                 if any(char.isdigit() for char in name):
                     self.text(name)
-                self.value(item, name)
+                self.value(
+                    item,
+                    name,
+                    in_tool_input
+                    or (name in TOOL_INPUT_KEYS and isinstance(item, dict | list)),
+                )
         elif isinstance(value, list):
             for item in value:
-                self.value(item, key)
+                self.value(item, key, in_tool_input)
         elif isinstance(value, str):
             for nested in self.embedded_events(value):
                 self.value(nested)
         elif type(value) in (int, float):  # bool is not an identifier
-            if key.lower() in ID_KEYS:
+            if self.is_numeric_identifier(key, value, in_tool_input):
                 self.hit("numeric_identifier")
+
+    def is_numeric_identifier(
+        self, key: str, value: int | float, in_tool_input: bool
+    ) -> bool:
+        name = key.lower()
+        if name in ID_KEYS or name.removesuffix("s") in ID_KEYS:
+            return True
+        if not in_tool_input or QUANTITY_KEY.search(name):
+            return False
+        if not float(value).is_integer():
+            return False
+        digits = str(int(value))
+        return bool(
+            MIMIC_ID_DIGITS.fullmatch(digits)
+            or (self.in_eicu_run and EICU_ID_DIGITS.fullmatch(digits))
+        )
 
     def embedded_events(self, text: str) -> Iterator[Any]:
         """Yield JSON events embedded line by line in a string; scan the rest."""
@@ -250,32 +282,53 @@ class Scan:
             self.text(raw)
 
 
-def load_private_literals(path: Path) -> list[str]:
-    literals = []
-    for raw_line in path.read_text().splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-        kind, _, rest = line.partition(":")
-        if kind.lower() in {"regex", "allow"}:
-            continue
-        literals.append(rest.strip() if kind.lower() == "literal" else line)
-    return literals
+def load_private_patterns(path: Path) -> dict[str, re.Pattern[str]]:
+    """Literal and regex entries, from either file format the sanitizer reads."""
+    literals: list[str] = []
+    regexes: list[str] = []
+    if path.suffix == ".json":
+        data = json.loads(path.read_text())
+        literals = [str(item) for item in data.get("literal", [])]
+        regexes = [
+            item["pattern"] if isinstance(item, dict) else str(item)
+            for item in data.get("regex", [])
+        ]
+    else:
+        for raw_line in path.read_text().splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            kind, _, rest = line.partition(":")
+            if kind.lower() == "regex":
+                regexes.append(rest.strip())
+            elif kind.lower() == "literal":
+                literals.append(rest.strip())
+            elif kind.lower() != "allow":  # allowed e-mail lines, not terms
+                literals.append(line)
+    patterns = {
+        f"private_literal_{index}": re.compile(
+            rf"(?<![A-Za-z0-9]){re.escape(literal)}(?![A-Za-z0-9])", re.IGNORECASE
+        )
+        for index, literal in enumerate(literals)
+        if literal
+    }
+    for index, regex in enumerate(regexes):
+        patterns[f"private_regex_{index}"] = re.compile(regex, re.IGNORECASE)
+    return patterns
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("extracted", type=Path)
     parser.add_argument(
-        "--private-patterns", type=Path, help="Private terms that must not appear."
+        "--private-patterns",
+        type=Path,
+        help="The sanitizer's private redaction file; its terms and patterns must not appear.",
     )
     args = parser.parse_args()
     patterns = dict(CONTENT)
     if args.private_patterns:
-        for index, literal in enumerate(load_private_literals(args.private_patterns)):
-            patterns[f"private_literal_{index}"] = re.compile(
-                rf"(?<![A-Za-z0-9]){re.escape(literal)}(?![A-Za-z0-9])", re.IGNORECASE
-            )
+        patterns.update(load_private_patterns(args.private_patterns))
 
     scan = Scan(patterns)
     files = 0
