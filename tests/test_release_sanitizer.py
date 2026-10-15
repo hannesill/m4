@@ -936,3 +936,97 @@ def test_scanner_flags_eicu_ids_and_ages_and_passes_sanitized_output(tmp_path):
     sanitizer.sanitize_tree(source, output, config=config)
 
     assert scan_hits(scanner, output) == set()
+
+
+@pytest.mark.parametrize("row", ["30012345,76", "30012345 | F"])
+def test_two_column_rows_quoted_in_agent_prose_are_redacted(tmp_path, row):
+    sanitizer = load_sanitizer()
+    scanner = load_scanner()
+    config, report = sanitizer_context(sanitizer)
+    event = {
+        "type": "assistant",
+        "message": {"content": [{"type": "text", "text": f"Sample:\n{row}\n"}]},
+    }
+
+    sanitized = sanitizer.sanitize_json_line(
+        json.dumps(event) + "\n", config=config, report=report
+    )
+
+    lines = json.loads(sanitized)["message"]["content"][0]["text"].splitlines()
+    assert lines[0] == "Sample:"
+    assert lines[1].startswith('<REDACTED_DATA_BLOCK type="identified_rows" lines="1"')
+    assert len(lines) == 2
+    # The scanner catches such a row if it survives with its identifier scrubbed.
+    (tmp_path / "note.md").write_text(row.replace("30012345", ID_PSEUDONYM) + "\n")
+    assert scan_hits(scanner, tmp_path) == {"identified_row"}
+
+
+ID_PSEUDONYM = "MIMIC_ID_0123456789ABCDEF"
+
+
+@pytest.mark.parametrize(
+    ("run", "tool_input", "is_identifier"),
+    [
+        ("mimic-sofa-24h_no-skill_codex_t1", {"ids": [30012345]}, True),
+        ("mimic-sofa-24h_no-skill_codex_t1", {"stay_ids": [7]}, True),
+        ("mimic-sofa-24h_no-skill_codex_t1", {"itemids": [220045]}, False),
+        ("eicu-gcs_no-skill_codex_t1", {"query": {"stays": [141168]}}, True),
+        ("eicu-gcs_no-skill_codex_t1", {"timeout": 600000, "limit": 2000}, False),
+    ],
+)
+def test_identifier_numbers_in_tool_input_are_pseudonymized_whatever_their_key(
+    tmp_path, run, tool_input, is_identifier
+):
+    sanitizer = load_sanitizer()
+    scanner = load_scanner()
+    source = tmp_path / "src"
+    output = tmp_path / "out"
+    (source / "runs" / run).mkdir(parents=True)
+    event = {
+        "type": "assistant",
+        "message": {"content": [{"type": "tool_use", "input": tool_input}]},
+        # Outside tool input, numbers of an identifier's shape are counters.
+        "usage": {"input_tokens": 30012345, "cached_input_tokens": 1234567},
+    }
+    (source / "runs" / run / "trace.jsonl").write_text(json.dumps(event) + "\n")
+    config, _ = sanitizer_context(sanitizer)
+
+    assert ("numeric_identifier" in scan_hits(scanner, source)) is is_identifier
+
+    sanitizer.sanitize_tree(source, output, config=config)
+
+    sanitized = json.loads((output / "runs" / run / "trace.jsonl").read_text())
+    assert (sanitized["message"]["content"][0]["input"] == tool_input) is not (
+        is_identifier
+    )
+    assert sanitized["usage"] == event["usage"]
+    assert scan_hits(scanner, output) == set()
+
+
+@pytest.mark.parametrize("file_name", ["redactions", "redactions.json"])
+def test_scanner_checks_private_regexes_as_well_as_literals(tmp_path, file_name):
+    scanner = load_scanner()
+    redactions = tmp_path / file_name
+    if file_name.endswith(".json"):
+        redactions.write_text(
+            json.dumps(
+                {
+                    "literal": ["Project Falcon"],
+                    "regex": [{"pattern": "SECRET[0-9]+"}],
+                    "allow": ["team@example.org"],
+                }
+            )
+        )
+    else:
+        redactions.write_text(
+            "# private\nliteral: Project Falcon\nregex: SECRET[0-9]+\n"
+            "allow: team@example.org\n"
+        )
+    package = tmp_path / "package"
+    package.mkdir()
+    (package / "note.md").write_text("Ran SECRET42 for project falcon.\n")
+
+    scan = scanner.Scan(scanner.load_private_patterns(redactions))
+    scan.file(package / "note.md", package)
+
+    assert {check for check, _ in scan.hits} == {"private_literal_0", "private_regex_0"}
