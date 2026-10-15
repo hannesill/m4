@@ -316,6 +316,33 @@ def test_init_credentialed_guidance_matches_download_command(tmp_path):
     assert "raw_files/mimic-iv" in result.output.replace("\n", "")
 
 
+def test_init_downloads_a_credentialed_dataset_with_a_login_without_json(tmp_path):
+    """The login options work in the interactive command too, not only with --json."""
+    pq_root = tmp_path / "m4_data" / "parquet" / "mimic-iv"
+    pq_root.mkdir(parents=True)
+    received = []
+
+    def fake_download(dataset, out_dir, *, credentials=None, event_reporter=None):
+        received.append(credentials)
+        return False
+
+    with (
+        patch("m4.config._find_project_root_from_cwd", return_value=Path.cwd()),
+        patch("m4.cli.get_dataset_parquet_root", return_value=pq_root),
+        patch("m4.cli.download_dataset", side_effect=fake_download),
+    ):
+        result = runner.invoke(
+            app,
+            ["init", "mimic-iv", "--no-interactive", "--physionet-credentials-stdin"],
+            input=json.dumps({"username": "alice", "password": "FAKE-not-a-password"}),
+        )
+
+    assert [c.username for c in received] == ["alice"]
+    assert "Download failed" in result.output
+    assert "--cut-dirs" not in result.output
+    assert "FAKE-not-a-password" not in result.output
+
+
 def test_credentialed_download_with_credentials_delegates(tmp_path):
     creds = PhysioNetCredentials(username="alice", password="secret")
     with patch(

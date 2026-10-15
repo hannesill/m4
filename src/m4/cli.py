@@ -887,6 +887,18 @@ def dataset_init_cmd(
         )
         raise typer.Exit(code=1)
 
+    # A login given here downloads a credentialed dataset, as it does with
+    # --json; without one, the steps to download it by hand are shown.
+    credentials = None
+    if physionet_credentials_file or physionet_credentials_stdin:
+        try:
+            credentials = _read_physionet_credentials(
+                physionet_credentials_file, physionet_credentials_stdin
+            )
+        except ValueError as exc:
+            print_error_panel("Cannot Read the PhysioNet Login", str(exc))
+            raise typer.Exit(code=1)
+
     # Check if m4_data exists in a parent directory
     from m4.config import _find_project_root_from_cwd
 
@@ -947,7 +959,7 @@ def dataset_init_cmd(
         raw_present
         and not src
         and unfinished_download(csv_root)
-        and not ds.requires_authentication
+        and (not ds.requires_authentication or credentials is not None)
         and ds.file_listing_url
     )
 
@@ -955,7 +967,7 @@ def dataset_init_cmd(
     if resume_download or (not raw_present and not parquet_present):
         requires_auth = ds.requires_authentication
 
-        if requires_auth:
+        if requires_auth and credentials is None:
             base_url = ds.file_listing_url
 
             console.print()
@@ -995,7 +1007,7 @@ def dataset_init_cmd(
             print_key_value("Destination", out_dir)
 
             try:
-                ok = download_dataset(dataset_key, out_dir)
+                ok = download_dataset(dataset_key, out_dir, credentials=credentials)
             except DatasetDownloadError as exc:
                 error(f"Download failed: {exc.message}")
                 raise typer.Exit(code=1)
