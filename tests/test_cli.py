@@ -256,8 +256,8 @@ def test_init_download_takes_physionet_credentials_from_stdin(
 
     assert result.exit_code == 1
     assert (seen_auth[0].username, seen_auth[0].password) == (
-        "alice",
-        "do-not-print",
+        b"alice",
+        b"do-not-print",
     )
     events = _ndjson_lines(result.stdout)
     assert events[-1]["error"]["code"] == "physionet_auth_failed"

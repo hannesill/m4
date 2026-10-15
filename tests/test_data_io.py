@@ -156,8 +156,8 @@ def test_download_dataset_uses_credentials_and_preserves_listing_layout(
     assert ok is True
     assert (tmp_path / "hosp" / "admissions.csv.gz").read_bytes() == b"csv-bytes"
     assert (sessions[0].auth.username, sessions[0].auth.password) == (
-        "alice",
-        "secret",
+        b"alice",
+        b"secret",
     )
 
 
@@ -318,6 +318,23 @@ def test_a_login_is_sent_with_a_user_agent_physionet_reads_it_from(
     assert len(wire.sent) == 3
     for request in wire.sent:
         assert PHYSIONET_HTTP_AUTH_USER_AGENT.match(request.headers["User-Agent"])
+
+
+def test_a_non_ascii_login_is_sent_as_physionet_decodes_it(tmp_path, monkeypatch):
+    """As UTF-8, which physionet-build's check_http_auth decodes the header with."""
+    listing = "https://physionet.org/files/made-up/1.0/"
+    wire = Wire(monkeypatch, _one_file_listing(listing))
+    login = PhysioNetCredentials(username="fake-üser", password="FAKE-Grüße-€")
+
+    _download_dataset_files(
+        "made-up", {"file_listing_url": listing}, tmp_path, credentials=login
+    )
+
+    assert len(wire.sent) == 3
+    for request in wire.sent:
+        scheme, encoded = request.headers["Authorization"].split()
+        assert scheme == "Basic"
+        assert base64.b64decode(encoded).decode() == "fake-üser:FAKE-Grüße-€"
 
 
 def test_an_open_download_keeps_the_browser_user_agent(tmp_path, monkeypatch):

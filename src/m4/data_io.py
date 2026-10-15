@@ -112,6 +112,13 @@ class _PhysioNetAuth(requests.auth.HTTPBasicAuth):
     HTTPS, requests itself leaves the login out of the next request.
     """
 
+    def __init__(self, username: str, password: str):
+        # PhysioNet decodes the header as UTF-8 (check_http_auth in
+        # physionet-build's project/utility.py). requests would encode a str
+        # as Latin-1, which fails on "€" and sends "ü" as a byte PhysioNet
+        # cannot decode, so it gets bytes.
+        super().__init__(username.encode("utf-8"), password.encode("utf-8"))
+
     def __call__(self, request):
         if not str(request.url).startswith(PHYSIONET_URL_PREFIX):
             raise DatasetDownloadError(
