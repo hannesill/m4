@@ -236,7 +236,8 @@ setup failures appear in `operation_failed.error`.
 which is not zero when an interrupted run is continued. When nothing is left to
 convert, no conversion events are emitted.
 
-PhysioNet credentials files are JSON:
+PhysioNet credentials files, and the login sent with
+`--physionet-credentials-stdin`, are JSON in UTF-8 on every platform:
 
 ```json
 {

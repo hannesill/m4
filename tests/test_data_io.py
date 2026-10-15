@@ -161,6 +161,18 @@ def test_download_dataset_uses_credentials_and_preserves_listing_layout(
     )
 
 
+def test_physionet_credentials_file_is_read_as_utf8_with_or_without_bom(tmp_path):
+    """Not in the system's code page, and as Windows editors save "UTF-8 with BOM"."""
+    login = json.dumps({"username": "alice", "password": "Grüße-€"}, ensure_ascii=False)
+    plain = tmp_path / "plain.json"
+    plain.write_bytes(login.encode("utf-8"))
+    with_bom = tmp_path / "with-bom.json"
+    with_bom.write_bytes(("﻿" + login).encode("utf-8"))
+
+    for path in (plain, with_bom):
+        assert PhysioNetCredentials.from_json_file(path).password == "Grüße-€"
+
+
 # ------------------------------------------------------------
 # Where a PhysioNet login may go
 #

@@ -72,8 +72,22 @@ class PhysioNetCredentials:
         return cls(username=username, password=password)
 
     @classmethod
+    def from_json_bytes(cls, data: bytes) -> "PhysioNetCredentials":
+        """Read a login sent as UTF-8 JSON, whatever the system's own encoding.
+
+        Decoded here rather than by a text stream, which on Windows uses the
+        ANSI code page and turns a password with "ü" or "€" into another one.
+        """
+        try:
+            text = data.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            # Its message quotes a byte of the login.
+            raise ValueError("PhysioNet credentials must be UTF-8 text.") from None
+        return cls.from_json_text(text)
+
+    @classmethod
     def from_json_file(cls, path: Path) -> "PhysioNetCredentials":
-        return cls.from_json_text(path.read_text())
+        return cls.from_json_bytes(path.read_bytes())
 
 
 class DatasetDownloadError(RuntimeError):

@@ -457,7 +457,7 @@ def _read_physionet_credentials(
         )
     if from_stdin:
         try:
-            return PhysioNetCredentials.from_json_text(sys.stdin.read())
+            return PhysioNetCredentials.from_json_bytes(sys.stdin.buffer.read())
         except Exception as exc:
             raise ValueError(
                 f"Could not read PhysioNet credentials from standard input: {exc}"

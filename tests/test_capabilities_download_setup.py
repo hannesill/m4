@@ -547,6 +547,64 @@ def test_download_rejects_unreadable_stdin_credentials_without_echoing_them(tmp_
     mock_download.assert_not_called()
 
 
+@pytest.mark.parametrize("ensure_ascii", [False, True], ids=["utf-8", "u-escapes"])
+def test_download_reads_a_non_ascii_password_from_stdin(tmp_path, ensure_ascii):
+    """A password with "ü" or "€" arrives as it was typed.
+
+    On Windows a text stream decodes standard input with the ANSI code page,
+    which cp1252 stands in for here. A wrapper may send the login as UTF-8 or
+    as pure-ASCII JSON with \\u escapes.
+    """
+    password = "Grüße-€-pässwort"
+    login = json.dumps(
+        {"username": "alice", "password": password}, ensure_ascii=ensure_ascii
+    )
+    with patch(
+        "m4.services.download.download_dataset", return_value=True
+    ) as mock_download:
+        result = CliRunner(charset="cp1252").invoke(
+            app,
+            [
+                "download",
+                "mimic-iv",
+                "--target",
+                str(tmp_path),
+                "--json",
+                "--physionet-credentials-stdin",
+            ],
+            input=login.encode("utf-8"),
+        )
+
+    assert result.exit_code == 0, result.output
+    credentials = mock_download.call_args.kwargs["credentials"]
+    assert (credentials.username, credentials.password) == ("alice", password)
+
+
+def test_download_rejects_a_login_that_is_not_utf8_without_quoting_it(tmp_path):
+    with patch("m4.services.download.download_dataset") as mock_download:
+        result = runner.invoke(
+            app,
+            [
+                "download",
+                "mimic-iv",
+                "--target",
+                str(tmp_path),
+                "--json",
+                "--events",
+                "ndjson",
+                "--physionet-credentials-stdin",
+            ],
+            input='{"username": "alice", "password": "p\xe4ss"}'.encode("cp1252"),
+        )
+
+    assert result.exit_code == 1
+    failure = json.loads(result.stdout.splitlines()[-1])
+    assert failure["error"]["code"] == "missing_credentials"
+    assert "UTF-8" in failure["error"]["message"]
+    assert "0xe4" not in result.stdout
+    mock_download.assert_not_called()
+
+
 def test_download_rejects_credentials_from_both_file_and_stdin(tmp_path):
     creds_file = tmp_path / "physionet.json"
     creds_file.write_text(json.dumps({"username": "alice", "password": "secret"}))
