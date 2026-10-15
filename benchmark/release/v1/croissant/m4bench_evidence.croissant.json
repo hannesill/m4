@@ -161,7 +161,7 @@
     },
     {
       "@type": "cr:FileObject",
-      "@id": "m4bench-evidence-submission-runs-csv",
+      "@id": "m4bench-evidence-submission-codex-primary-runs-csv",
       "name": "final_codex_runs.csv",
       "description": "Canonical run index inside the archive.",
       "containedIn": {
@@ -170,6 +170,42 @@
       "contentUrl": "m4bench-evidence-submission/metadata/planning/final_codex_runs.csv",
       "encodingFormat": "text/csv",
       "sha256": "716567cfb08e1b3122e53677444feedbc9edb702de576df14f71e7bb0e0b2707"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "m4bench-evidence-submission-claude-sentinel-runs-csv",
+      "name": "final_claude_runs.csv",
+      "description": "Canonical run index inside the archive.",
+      "containedIn": {
+        "@id": "m4bench-evidence-submission-archive"
+      },
+      "contentUrl": "m4bench-evidence-submission/metadata/planning/final_claude_runs.csv",
+      "encodingFormat": "text/csv",
+      "sha256": "8875260a5dd7f8713647ba14e67aef95f03b8675c3e3e98003dab8d8d2868449"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "m4bench-evidence-submission-codex-followup-runs-csv",
+      "name": "followup_canonical_runs.csv",
+      "description": "Canonical run index inside the archive.",
+      "containedIn": {
+        "@id": "m4bench-evidence-submission-archive"
+      },
+      "contentUrl": "m4bench-evidence-submission/metadata/planning/followup_canonical_runs.csv",
+      "encodingFormat": "text/csv",
+      "sha256": "d23b2f0e92f25da526387716e5c5aad0d79d349b1e199add0a13147b0b274541"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "m4bench-evidence-submission-oss-exploratory-runs-csv",
+      "name": "final_oss_runs.csv",
+      "description": "Canonical run index inside the archive.",
+      "containedIn": {
+        "@id": "m4bench-evidence-submission-archive"
+      },
+      "contentUrl": "m4bench-evidence-submission/metadata/planning/final_oss_runs.csv",
+      "encodingFormat": "text/csv",
+      "sha256": "11da2e413142dfa9aaf4eac36f37358b398c19f273982066e3cd7c58c085bb58"
     }
   ],
   "recordSet": [
@@ -312,21 +348,21 @@
     },
     {
       "@type": "cr:RecordSet",
-      "@id": "m4bench-evidence-submission-runs",
-      "name": "m4bench-evidence-submission-runs",
-      "description": "One record per canonical run with evaluator reward.",
+      "@id": "m4bench-evidence-submission-codex-primary-runs",
+      "name": "m4bench-evidence-submission-codex-primary-runs",
+      "description": "One record per primary Codex run with evaluator reward.",
       "key": {
-        "@id": "m4bench-evidence-submission-runs/run_id"
+        "@id": "m4bench-evidence-submission-codex-primary-runs/run_id"
       },
       "field": [
         {
           "@type": "cr:Field",
-          "@id": "m4bench-evidence-submission-runs/run_id",
+          "@id": "m4bench-evidence-submission-codex-primary-runs/run_id",
           "name": "run_id",
           "dataType": "sc:Text",
           "source": {
             "fileObject": {
-              "@id": "m4bench-evidence-submission-runs-csv"
+              "@id": "m4bench-evidence-submission-codex-primary-runs-csv"
             },
             "extract": {
               "column": "run_id"
@@ -335,12 +371,12 @@
         },
         {
           "@type": "cr:Field",
-          "@id": "m4bench-evidence-submission-runs/task",
+          "@id": "m4bench-evidence-submission-codex-primary-runs/task",
           "name": "task",
           "dataType": "sc:Text",
           "source": {
             "fileObject": {
-              "@id": "m4bench-evidence-submission-runs-csv"
+              "@id": "m4bench-evidence-submission-codex-primary-runs-csv"
             },
             "extract": {
               "column": "task"
@@ -349,12 +385,12 @@
         },
         {
           "@type": "cr:Field",
-          "@id": "m4bench-evidence-submission-runs/condition",
+          "@id": "m4bench-evidence-submission-codex-primary-runs/condition",
           "name": "condition",
           "dataType": "sc:Text",
           "source": {
             "fileObject": {
-              "@id": "m4bench-evidence-submission-runs-csv"
+              "@id": "m4bench-evidence-submission-codex-primary-runs-csv"
             },
             "extract": {
               "column": "condition"
@@ -363,12 +399,12 @@
         },
         {
           "@type": "cr:Field",
-          "@id": "m4bench-evidence-submission-runs/schema",
+          "@id": "m4bench-evidence-submission-codex-primary-runs/schema",
           "name": "schema",
           "dataType": "sc:Text",
           "source": {
             "fileObject": {
-              "@id": "m4bench-evidence-submission-runs-csv"
+              "@id": "m4bench-evidence-submission-codex-primary-runs-csv"
             },
             "extract": {
               "column": "schema"
@@ -377,12 +413,12 @@
         },
         {
           "@type": "cr:Field",
-          "@id": "m4bench-evidence-submission-runs/model",
+          "@id": "m4bench-evidence-submission-codex-primary-runs/model",
           "name": "model",
           "dataType": "sc:Text",
           "source": {
             "fileObject": {
-              "@id": "m4bench-evidence-submission-runs-csv"
+              "@id": "m4bench-evidence-submission-codex-primary-runs-csv"
             },
             "extract": {
               "column": "model"
@@ -391,12 +427,12 @@
         },
         {
           "@type": "cr:Field",
-          "@id": "m4bench-evidence-submission-runs/trial",
+          "@id": "m4bench-evidence-submission-codex-primary-runs/trial",
           "name": "trial",
           "dataType": "sc:Integer",
           "source": {
             "fileObject": {
-              "@id": "m4bench-evidence-submission-runs-csv"
+              "@id": "m4bench-evidence-submission-codex-primary-runs-csv"
             },
             "extract": {
               "column": "trial"
@@ -405,12 +441,339 @@
         },
         {
           "@type": "cr:Field",
-          "@id": "m4bench-evidence-submission-runs/reward",
+          "@id": "m4bench-evidence-submission-codex-primary-runs/reward",
           "name": "reward",
           "dataType": "sc:Float",
           "source": {
             "fileObject": {
-              "@id": "m4bench-evidence-submission-runs-csv"
+              "@id": "m4bench-evidence-submission-codex-primary-runs-csv"
+            },
+            "extract": {
+              "column": "reward"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "m4bench-evidence-submission-claude-sentinel-runs",
+      "name": "m4bench-evidence-submission-claude-sentinel-runs",
+      "description": "One record per Claude sentinel run with evaluator reward.",
+      "key": {
+        "@id": "m4bench-evidence-submission-claude-sentinel-runs/run_id"
+      },
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-claude-sentinel-runs/run_id",
+          "name": "run_id",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-claude-sentinel-runs-csv"
+            },
+            "extract": {
+              "column": "run_id"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-claude-sentinel-runs/task",
+          "name": "task",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-claude-sentinel-runs-csv"
+            },
+            "extract": {
+              "column": "task"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-claude-sentinel-runs/condition",
+          "name": "condition",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-claude-sentinel-runs-csv"
+            },
+            "extract": {
+              "column": "condition"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-claude-sentinel-runs/schema",
+          "name": "schema",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-claude-sentinel-runs-csv"
+            },
+            "extract": {
+              "column": "schema"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-claude-sentinel-runs/model",
+          "name": "model",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-claude-sentinel-runs-csv"
+            },
+            "extract": {
+              "column": "model"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-claude-sentinel-runs/trial",
+          "name": "trial",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-claude-sentinel-runs-csv"
+            },
+            "extract": {
+              "column": "trial"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-claude-sentinel-runs/reward",
+          "name": "reward",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-claude-sentinel-runs-csv"
+            },
+            "extract": {
+              "column": "reward"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "m4bench-evidence-submission-codex-followup-runs",
+      "name": "m4bench-evidence-submission-codex-followup-runs",
+      "description": "One record per Codex follow-up run with evaluator reward.",
+      "key": {
+        "@id": "m4bench-evidence-submission-codex-followup-runs/run_id"
+      },
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-codex-followup-runs/run_id",
+          "name": "run_id",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-codex-followup-runs-csv"
+            },
+            "extract": {
+              "column": "run_id"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-codex-followup-runs/task",
+          "name": "task",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-codex-followup-runs-csv"
+            },
+            "extract": {
+              "column": "task"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-codex-followup-runs/condition",
+          "name": "condition",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-codex-followup-runs-csv"
+            },
+            "extract": {
+              "column": "condition"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-codex-followup-runs/schema",
+          "name": "schema",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-codex-followup-runs-csv"
+            },
+            "extract": {
+              "column": "schema"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-codex-followup-runs/model",
+          "name": "model",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-codex-followup-runs-csv"
+            },
+            "extract": {
+              "column": "model"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-codex-followup-runs/trial",
+          "name": "trial",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-codex-followup-runs-csv"
+            },
+            "extract": {
+              "column": "trial"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-codex-followup-runs/reward",
+          "name": "reward",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-codex-followup-runs-csv"
+            },
+            "extract": {
+              "column": "reward"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "m4bench-evidence-submission-oss-exploratory-runs",
+      "name": "m4bench-evidence-submission-oss-exploratory-runs",
+      "description": "One record per exploratory OSS run with evaluator reward.",
+      "key": {
+        "@id": "m4bench-evidence-submission-oss-exploratory-runs/run_id"
+      },
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-oss-exploratory-runs/run_id",
+          "name": "run_id",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-oss-exploratory-runs-csv"
+            },
+            "extract": {
+              "column": "run_id"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-oss-exploratory-runs/task",
+          "name": "task",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-oss-exploratory-runs-csv"
+            },
+            "extract": {
+              "column": "task"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-oss-exploratory-runs/condition",
+          "name": "condition",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-oss-exploratory-runs-csv"
+            },
+            "extract": {
+              "column": "condition"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-oss-exploratory-runs/schema",
+          "name": "schema",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-oss-exploratory-runs-csv"
+            },
+            "extract": {
+              "column": "schema"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-oss-exploratory-runs/model",
+          "name": "model",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-oss-exploratory-runs-csv"
+            },
+            "extract": {
+              "column": "model"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-oss-exploratory-runs/trial",
+          "name": "trial",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-oss-exploratory-runs-csv"
+            },
+            "extract": {
+              "column": "trial"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "m4bench-evidence-submission-oss-exploratory-runs/reward",
+          "name": "reward",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "m4bench-evidence-submission-oss-exploratory-runs-csv"
             },
             "extract": {
               "column": "reward"

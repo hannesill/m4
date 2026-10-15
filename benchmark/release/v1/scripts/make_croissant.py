@@ -27,8 +27,15 @@ PACKAGES = {
             "Open per-run evidence for the July 2026 full-coverage Claude campaign: "
             "560 canonical runs (28 tasks x Opus/Sonnet x no-skill/with-skill x 5 trials)."
         ),
-        "runs_csv": "metadata/claude28/claude28_canonical_runs.csv",
-        "tracked_csv": "planning/claude28/claude28_canonical_runs.csv",
+        # Record set name, run index inside the archive, tracked copy, description.
+        "run_indexes": [
+            (
+                "runs",
+                "metadata/claude28/claude28_canonical_runs.csv",
+                "planning/claude28/claude28_canonical_runs.csv",
+                "One record per canonical run with evaluator reward.",
+            ),
+        ],
         "fields": {
             "run_id": "sc:Text",
             "task": "sc:Text",
@@ -46,8 +53,20 @@ PACKAGES = {
             "Open per-run evidence for the May 2026 submission campaigns: 760 primary "
             "Codex, 190 Claude sentinel, 340 Codex follow-up, and 110 exploratory OSS runs."
         ),
-        "runs_csv": "metadata/planning/final_codex_runs.csv",
-        "tracked_csv": "planning/final_codex_runs.csv",
+        "run_indexes": [
+            (
+                f"{campaign}-runs",
+                f"metadata/planning/{csv_name}",
+                f"planning/{csv_name}",
+                f"One record per {runs} run with evaluator reward.",
+            )
+            for campaign, csv_name, runs in [
+                ("codex-primary", "final_codex_runs.csv", "primary Codex"),
+                ("claude-sentinel", "final_claude_runs.csv", "Claude sentinel"),
+                ("codex-followup", "followup_canonical_runs.csv", "Codex follow-up"),
+                ("oss-exploratory", "final_oss_runs.csv", "exploratory OSS"),
+            ]
+        ],
         "fields": {
             "run_id": "sc:Text",
             "task": "sc:Text",
@@ -115,7 +134,6 @@ def distribution_and_records(package_dir: Path) -> tuple[list[dict], list[dict]]
         )
         archive = sidecar["archive"]
         archive_id = f"{stem}-archive"
-        csv_id = f"{stem}-runs-csv"
         distribution.append(
             {
                 "@type": "cr:FileObject",
@@ -128,41 +146,44 @@ def distribution_and_records(package_dir: Path) -> tuple[list[dict], list[dict]]
                 "sha256": archive["sha256"],
             }
         )
-        distribution.append(
-            {
-                "@type": "cr:FileObject",
-                "@id": csv_id,
-                "name": Path(spec["runs_csv"]).name,
-                "description": "Canonical run index inside the archive.",
-                "containedIn": {"@id": archive_id},
-                "contentUrl": f"{stem}/{spec['runs_csv']}",
-                "encodingFormat": "text/csv",
-                # Packaged verbatim, so the tracked file's digest applies.
-                "sha256": sha256_file(RELEASE_DIR / spec["tracked_csv"]),
-            }
-        )
-        records.append(
-            {
-                "@type": "cr:RecordSet",
-                "@id": f"{stem}-runs",
-                "name": f"{stem}-runs",
-                "description": "One record per canonical run with evaluator reward.",
-                "key": {"@id": f"{stem}-runs/run_id"},
-                "field": [
-                    {
-                        "@type": "cr:Field",
-                        "@id": f"{stem}-runs/{column}",
-                        "name": column,
-                        "dataType": data_type,
-                        "source": {
-                            "fileObject": {"@id": csv_id},
-                            "extract": {"column": column},
-                        },
-                    }
-                    for column, data_type in spec["fields"].items()
-                ],
-            }
-        )
+        for name, runs_csv, tracked_csv, description in spec["run_indexes"]:
+            record_id = f"{stem}-{name}"
+            csv_id = f"{record_id}-csv"
+            distribution.append(
+                {
+                    "@type": "cr:FileObject",
+                    "@id": csv_id,
+                    "name": Path(runs_csv).name,
+                    "description": "Canonical run index inside the archive.",
+                    "containedIn": {"@id": archive_id},
+                    "contentUrl": f"{stem}/{runs_csv}",
+                    "encodingFormat": "text/csv",
+                    # Packaged verbatim, so the tracked file's digest applies.
+                    "sha256": sha256_file(RELEASE_DIR / tracked_csv),
+                }
+            )
+            records.append(
+                {
+                    "@type": "cr:RecordSet",
+                    "@id": record_id,
+                    "name": record_id,
+                    "description": description,
+                    "key": {"@id": f"{record_id}/run_id"},
+                    "field": [
+                        {
+                            "@type": "cr:Field",
+                            "@id": f"{record_id}/{column}",
+                            "name": column,
+                            "dataType": data_type,
+                            "source": {
+                                "fileObject": {"@id": csv_id},
+                                "extract": {"column": column},
+                            },
+                        }
+                        for column, data_type in spec["fields"].items()
+                    ],
+                }
+            )
     return distribution, records
 
 
