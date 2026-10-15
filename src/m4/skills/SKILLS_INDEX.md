@@ -74,9 +74,9 @@ This directory contains skills for the M4 framework, covering clinical research 
 | Skill | Description |
 |-------|-------------|
 | [m4-api](system/m4-api/SKILL.md) | Python API for M4 clinical data queries |
-| [clinical-research-session](system/clinical-research-session/SKILL.md) | Structured clinical research workflow and protocol drafting |
+| [clinical-research-session](system/clinical-research-session/SKILL.md) | Run a study with the researcher from question to results: interview, protocol, scripts, cards |
 | [m4-setup](system/m4-setup/SKILL.md) | Diagnose and repair M4 environment, dataset, skill, backend, and vitrine setup issues |
-| [vitrine-api](system/vitrine-api/SKILL.md) | Vitrine display API for visualizations, forms, approvals, study tracking, and exports |
+| [vitrine-api](system/vitrine-api/SKILL.md) | Publish cards to the researcher's Vitrine board and read back cards, decisions, and annotations |
 | [create-m4-skill](system/create-m4-skill/SKILL.md) | Guide for creating new M4 skills |
 
 ---
