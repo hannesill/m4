@@ -1,415 +1,133 @@
 ---
 name: clinical-research-session
-description: Start a structured clinical research session. Use when users describe research goals, want to analyze cohorts, investigate hypotheses, or need a rigorous research plan. Interviews the user, then produces a research protocol.
+description: Run a clinical research study with the researcher from question to results - interview, protocol, approved analysis scripts, and results on the Vitrine board. Use when the user wants to study whether an exposure or treatment affects an outcome, compare patient groups, characterise or model a cohort, write a research protocol, or continue an earlier study. Not for a single count or lookup.
 tier: validated
 category: system
 kind: workflow
 ---
 
-# M4 Clinical Research Workflow
+# Clinical Research Session
 
-Structured clinical research from hypothesis through analysis. All work is tracked in a **vitrine study**. Use the `vitrine-api` skill when you need full display API signatures or advanced interaction patterns.
+One study per research question. The researcher answers forms, approves and reads results on
+the Vitrine board; you explain and discuss in the conversation. API details are in the
+`vitrine-api` and `m4-api` skills.
 
-## When This Skill Activates
+## Steps
 
-- User invokes `/research` command
-- User describes research intent: "I want to study...", "Can we analyze...", "What's the mortality rate for..."
-- User mentions cohort analysis, hypothesis testing, or comparative studies
+1. **Orient.** Run `m4 list-datasets --json`. A dataset is usable when `"prepared": true`, or
+   when `data.backend` is `"bigquery"` and `"bigquery_available": true`. If none is usable,
+   ask the researcher to set one up; never run `m4 download`, `m4 init` or `m4 init-derived`
+   yourself. Run `vitrine studies`; to continue a study, reuse its label, read
+   `study_context(label)` and its `PROTOCOL.md` and `RESULTS.md`, mark the new session with
+   `section(..., study=STUDY)`, and resume at the first unfinished step.
+2. **Set up.**
 
-## Terminal and Vitrine
+   ```python
+   from vitrine import register_output_dir, show
 
-The researcher has the terminal and vitrine open side by side. Vitrine is where structured interaction happens — forms, data review, approvals. The terminal is where you discuss, explain reasoning, and refine.
+   STUDY = "vasopressor-timing-sepsis-v1"         # a different approach becomes -v2
+   output_dir = register_output_dir(study=STUDY)  # creates only output/
+   for sub in ("scripts", "data", "plots"):
+       (output_dir / sub).mkdir(exist_ok=True)
+   show("# Early vasopressors in sepsis\n\nQuestion, design, key definitions.",
+        title="Study description", study=STUDY)
+   ```
 
-**When blocking for input (`wait=True`), always narrate the handoff in the terminal** before the `show()` call. Tell the researcher what you've posted and what you need: "I've posted the study parameters form in vitrine — please fill in your outcome and exclusion criteria."
+3. **Interview.** Post one `Form` with only the questions the user's message leaves open,
+   taken from [references/interview-questions.md](references/interview-questions.md), plus any
+   the study needs (time windows, subgroups). Offer only usable datasets; with one, skip the
+   question. For "does early vasopressor use affect mortality in sepsis?", ask for the
+   mortality window, what "early" means, exclusions and the dataset. Then make each answer
+   precise in the conversation: outcome definition and follow-up, time zero, exposure window
+   and comparator, exclusions that could bias this design, confounders versus mediators.
+   Done when every section of the protocol template has a concrete value.
+4. **Protocol.** Read `clinical-research-pitfalls`; choose methods with
+   `clinical-research-analysis-framework`. Write `output_dir / "PROTOCOL.md"` from
+   [references/protocol-template.md](references/protocol-template.md), naming the clinical
+   skill behind each concept (`sepsis-3-cohort`, `sofa-score`, `kdigo-aki-staging`, ...).
 
-## Study Setup
+   ```python
+   r = show((output_dir / "PROTOCOL.md").read_text(), title="Protocol", wait=True,
+            prompt="Approve this protocol?", study=STUDY)
+   ```
 
-Every research session is organized as a **study** — one study per research question, spanning one or more conversations.
+   Revise on `"skip"` or typed feedback (`r.message`) until `r.action == "confirm"`.
+5. **Analyse** step by step with scripts (below), one `section("Cohort", study=STUDY)` per
+   phase. Show the cohort flow with counts at each exclusion (`equiflow` draws it). Where the
+   protocol leaves a choice open, ask with `confirm()` or `ask()`. Done when every analysis in
+   the plan has a result card.
+6. **Finish.** Write `RESULTS.md` (cohort flow, effect estimates with 95% CIs, limitations),
+   show a summary card and a limitations card, run
+   `export(str(output_dir / "report.html"), study=STUDY)`, and suggest validating on a second
+   usable dataset.
+
+## Analysis scripts
+
+Every result the researcher sees comes from a script, so the study can be rerun and audited.
+`output_dir` holds `PROTOCOL.md`, `RESULTS.md`, `scripts/NN_name.py`, `data/` and `plots/`.
+Each script:
+
+- runs alone as `python scripts/NN_name.py` from `output_dir`;
+- names its dataset and reads earlier steps' outputs from `data/` instead of querying again;
+- writes tables to `data/` as Parquet and figures to `plots/` (matplotlib `.png`, Plotly
+  `.html`), and does not call Vitrine.
 
 ```python
-from vitrine import (
-    show, section, register_output_dir, study_context,
-    list_studies, export, Form, Question,
-)
-
-STUDY = "early-vasopressors-sepsis-v1"
-output_dir = register_output_dir(study=STUDY)
-
-# FIRST card: study description as the opening vitrine card
-show("""# Early Vasopressor Use in Sepsis
-...research question, design, key definitions...
-""", title="Study Description", study=STUDY)
-```
-
-**Continuing a study:** Call `list_studies()` and `study_context(study)` to re-orient. Use `section()` to mark a new conversation within an ongoing study — not a new study.
-
-**Branching:** Create a new version (`v2`) when the researcher wants a different approach.
-
-### Output Structure
-
-Cards tell the story. Scripts ARE the science. Create this structure at study start:
-
-```
-output_dir/
-├── PROTOCOL.md
-├── RESULTS.md
-├── scripts/
-│   ├── 01_cohort_definition.py
-│   ├── 02_baseline_characteristics.py
-│   ├── 03_outcome_analysis.py
-│   └── ...
-├── data/
-│   ├── cohort.parquet
-│   ├── baseline_table.parquet
-│   └── ...
-└── plots/
-    ├── age_distribution.json
-    ├── kaplan_meier.json
-    └── ...
-```
-
-### Script-First Workflow
-
-Every analysis step that produces a result shown in vitrine MUST be executed from a stored script. The script IS the analysis — not a retrospective summary of interactive work. This eliminates duplicate effort: writing the script is doing the analysis.
-
-**The pattern — for every analysis step:**
-1. **Write** the script to `scripts/NN_name.py`
-2. **Run** it — outputs (parquets, PNGs) land in `data/` and `plots/`
-3. **Show** results in vitrine by loading the script's outputs
-
-Interactive exploration (checking schemas, small test queries to understand data shape) is fine — not everything needs a script. But the moment you produce a result you'll show to the researcher, it comes from a stored script.
-
-**Script requirements:**
-- **Self-contained**: imports, explicit dataset selection, SQL strings, analysis code, output writes — everything to run `python scripts/01_cohort_definition.py` from the output directory
-- **Relative paths**: use `out = Path(__file__).resolve().parent.parent` to locate `data/` and `plots/`
-- **Saves outputs**: `.parquet` to `data/`, `.json` to `plots/` via `fig.write_json()` (never `.html` or `.png`)
-- **Plotly reload**: `plotly.io.from_json(open("plots/fig.json").read())` to reconstruct a `Figure` for `show()`
-- **Independent**: each script runs on its own; later scripts load earlier outputs from `data/`
-
-**Example — one analysis step, start to finish:**
-```python
-# 1. Write the script
-(output_dir / "scripts" / "01_cohort_definition.py").write_text('''\
-"""01 — Define sepsis cohort from MIMIC-IV."""
+"""01 - Cohort: first ICU stay of each adult patient."""
 from pathlib import Path
+
 from m4 import execute_query
 
+DATASET = "mimic-iv-demo"
 out = Path(__file__).resolve().parent.parent
 
-sql = """
-SELECT s.stay_id, s.subject_id, i.admission_age,
-       a.hospital_expire_flag
-FROM mimiciv_derived.sepsis3 s
-INNER JOIN mimiciv_derived.icustay_detail i ON s.stay_id = i.stay_id
-INNER JOIN mimiciv_hosp.admissions a ON s.hadm_id = a.hadm_id
-WHERE i.first_icu_stay = true AND i.admission_age >= 18
-"""
-cohort = execute_query(sql, dataset="mimic-iv")
+cohort = execute_query("""
+WITH stays AS (
+  SELECT i.subject_id, i.hadm_id, i.stay_id, i.intime, a.hospital_expire_flag,
+         p.anchor_age + EXTRACT(YEAR FROM i.intime) - p.anchor_year AS age,
+         ROW_NUMBER() OVER (PARTITION BY i.subject_id ORDER BY i.intime) AS stay_seq
+  FROM mimiciv_icu.icustays i
+  JOIN mimiciv_hosp.admissions a ON a.hadm_id = i.hadm_id
+  JOIN mimiciv_hosp.patients p ON p.subject_id = i.subject_id
+)
+SELECT subject_id, hadm_id, stay_id, intime, age, hospital_expire_flag
+FROM stays
+WHERE stay_seq = 1 AND age >= 18
+""", dataset=DATASET)
 cohort.to_parquet(out / "data" / "cohort.parquet")
-print(f"Cohort: {len(cohort)} patients")
-''')
-
-# 2. Run it (via Bash tool)
-
-# 3. Show results in vitrine
-cohort = pd.read_parquet(output_dir / "data" / "cohort.parquet")
-show(cohort, title="Sepsis Cohort", study=STUDY)
+print(f"{len(cohort)} patients")
 ```
 
----
+Run a script and show its results in one process, so its figures need no reloading:
 
-## Phase 1: Research Interview
-
-Collect study parameters through vitrine forms. The interview is **adaptive** — compose questions based on what you already know from the user's initial description.
-
-**Guidelines:**
-- **Skip questions** the user already answered in their prompt
-- **Add questions** not in the library if the research question demands it (time windows, subgroup definitions, method preferences)
-- **Split into multiple forms** when it makes sense — quick basics first, targeted follow-up after processing answers
-- Narrate each blocking call in the terminal before posting
-
-### Question Library
-
-Use `from vitrine import Form, Question` and compose from these. **Use `multiple=True` for any question where multiple answers make sense** (e.g., exclusion criteria, confounders). Without it, options render as single-select radio buttons.
-
-**Research question:**
 ```python
-Question("question", question="Research Question",
-         options=[
-             ("Association study", "Is variable X associated with outcome Y?"),
-             ("Prediction model", "Can we predict outcome Y from variables X?"),
-             ("Cohort characterization", "What are the characteristics of population P?"),
-         ], allow_other=True)
+import runpy
+
+from vitrine import register_output_dir, show
+
+output_dir = register_output_dir(study=STUDY)
+g = runpy.run_path(str(output_dir / "scripts" / "01_cohort.py"))
+show(g["cohort"], title="Cohort", source="scripts/01_cohort.py", study=STUDY)
 ```
 
-**Study design:**
-```python
-Question("design", question="Study Design",
-         options=[
-             ("Descriptive", "Characterize a cohort — demographics, severity, outcomes"),
-             ("Comparative", "Compare groups — treatment vs control, exposed vs unexposed"),
-             ("Predictive", "Build or validate a prediction model"),
-             ("Exploratory", "Hypothesis-generating — clustering, pattern discovery"),
-         ])
-```
+To correct a result, edit the script and run it again.
 
-**Primary outcome:**
-```python
-Question("outcome", question="Primary Outcome",
-         options=[
-             ("In-hospital mortality", "hospital_expire_flag in admissions"),
-             ("28-day mortality", "dod relative to admission or ICU entry"),
-             ("90-day mortality", "dod relative to admission or ICU entry"),
-             ("ICU length of stay", "los in icustays — beware survivor bias"),
-             ("Hospital length of stay", "dischtime minus admittime — beware survivor bias"),
-             ("Ventilator-free days", "28 minus days on mechanical ventilation"),
-             ("Vasopressor-free days", "28 minus days on vasopressors"),
-             ("AKI incidence", "KDIGO stage 2+ after exposure window"),
-         ])
-```
+## Rules
 
-**Exposure / intervention:**
-```python
-Question("exposure", question="Exposure / Intervention",
-         options=[
-             ("Treatment timing", "Early vs late initiation of a therapy"),
-             ("Treatment dose / intensity", "High vs low dose, or trajectory over time"),
-             ("Treatment received vs not", "Binary: any use within a defined window"),
-             ("Severity score / biomarker", "Continuous or categorical exposure variable"),
-             ("None (descriptive study)", "No exposure — cohort characterization only"),
-         ])
-```
-
-**Population:**
-```python
-Question("population", question="Base Population",
-         options=[
-             ("Sepsis (Sepsis-3)", "SOFA >= 2 + suspected infection"),
-             ("Septic shock", "Sepsis-3 + vasopressor + lactate > 2 mmol/L"),
-             ("ARDS / respiratory failure", "Berlin criteria or P/F ratio-based"),
-             ("Cardiac arrest", "In- or out-of-hospital cardiac arrest"),
-             ("Heart failure / cardiogenic shock", "Acute decompensated HF"),
-             ("Acute kidney injury", "KDIGO criteria"),
-             ("General ICU", "All ICU admissions, no disease-specific filter"),
-         ])
-```
-
-**Exclusion criteria:**
-```python
-Question("exclusions", question="Exclusion Criteria", multiple=True,
-         options=[
-             ("First ICU stay only", "Exclude readmissions — one observation per patient"),
-             ("Age < 18", "Exclude pediatric patients"),
-             ("ICU stay < 24h", "Minimum observation window — watch for immortal time bias"),
-             ("Early death", "Exclude death within N hours — specify N"),
-             ("DNR / comfort care on admission", "Exclude treatment limitations"),
-             ("Chronic dialysis / ESRD", "Exclude pre-existing end-stage renal disease"),
-             ("Missing key variables", "Exclude if critical data points are absent"),
-         ])
-```
-
-**Confounders:**
-```python
-Question("confounders", question="Key Confounders", multiple=True,
-         options=[
-             ("Age, sex", "Basic demographics"),
-             ("Illness severity (SOFA)", "Organ dysfunction at baseline"),
-             ("Illness severity (APACHE III / SAPS-II)", "Composite severity scores"),
-             ("Charlson / Elixhauser comorbidities", "Pre-existing chronic conditions"),
-             ("Admission type", "Medical vs surgical vs trauma"),
-             ("Baseline labs", "Lactate, creatinine, bilirubin, platelets, etc."),
-             ("Mechanical ventilation status", "On/off MV at baseline"),
-             ("Vasopressor use at baseline", "Already on vasopressors at time zero"),
-         ])
-```
-
-**Dataset:**
-```python
-Question("dataset", question="Primary Dataset",
-         options=[
-             ("mimic-iv", "Full MIMIC-IV"),
-             ("mimic-iv-demo", "100 patients, good for testing"),
-             ("eicu", "Multi-center ICU database"),
-         ], allow_other=False)
-```
-
-### After the Interview
-
-Review answers in the terminal. Pay attention to "Other" entries — help make them precise.
-
-Key refinements to consider:
-- **Research question** — Make specific and answerable: "Are sicker patients dying more?" → "Is day-1 SOFA independently associated with 30-day mortality in sepsis?"
-- **Outcome** — Confirm operationalization (which table/column, survivor bias for LOS, follow-up window for X-free days)
-- **Exposure** — Nail down time window, comparator, and immortal time bias risk
-- **Population & Exclusions** — Check that exclusions don't introduce bias for this specific design
-- **Confounders** — Check for mediators on the causal path (should NOT be adjusted for); consider propensity scores for treatment comparisons
-
----
-
-## Phase 2: Research Protocol
-
-Draft a structured protocol. Save to `output_dir / "PROTOCOL.md"` and show with `wait=True` for approval.
-
-```markdown
-## Research Protocol: [Title]
-
-### Research Question
-[Specific, answerable question]
-
-### Study Design
-[Descriptive/Comparative/Predictive/Exploratory]
-
-### Population
-**Inclusion:** [criteria]
-**Exclusion:** [criteria with rationale]
-
-### Variables
-**Primary Outcome:** [definition and measurement]
-**Exposure:** [definition and timing]
-**Covariates:** [list with definitions]
-
-### Analysis Plan
-1. [Step with rationale]
-2. ...
-
-### Potential Biases & Limitations
-- [Known limitation]
-
-### M4 Skills to Use
-- [Skill]: [Why]
-```
-
----
-
-## Phase 3: Scientific Integrity Guardrails
-
-Apply throughout the analysis.
-
-### Bias Prevention
-
-**Immortal Time Bias**
-- Define exposure at a FIXED time point (admission, 24h, 48h)
-- Never use "ever received during stay" for treatments
-- Use landmark analysis when appropriate
-
-**Selection Bias**
-- Report all exclusions with counts (CONSORT diagram)
-- Analyze whether excluded patients differ
-- Avoid conditioning on post-treatment variables
-
-**Information Leakage**
-- ICD codes are assigned at DISCHARGE — don't use for admission predictions
-- Length of stay is only known at discharge
-- Labs/vitals must be timestamped appropriately
-
-**Confounding by Indication**
-- Treatments are given to sicker patients
-- Always adjust for severity (SOFA, APACHE, SAPS)
-- Consider propensity scores for treatment comparisons
-
-### Statistical Rigor
-
-- Pre-specify primary outcome; apply Bonferroni/FDR for secondary analyses
-- Report cohort sizes at each step; be cautious with small subgroups
-- Report missingness; consider imputation vs complete case; perform sensitivity analyses
-
-### Visualizations
-
-Use plots liberally — a chart often reveals what a table hides.
-
-**Distributions → plots, not key-value cards.** Categorical variables (race, gender, admission type) → horizontal bar chart. Continuous variables (age, LOS, SOFA) → histogram. Never `show(dict)` for a distribution with 5+ categories — use `show(fig)` instead. Reserve key-value cards for small summary stats (n, median, IQR).
-
-**Every plot card MUST have a description.** Always pass a `description=` to `show()` when displaying a Plotly figure — a 1-4 sentences explanation of what the plot shows and why it matters. Example: `show(fig, title="Age Distribution", description="Right-skewed distribution with median age 65; most patients are 50-80.", study=STUDY)`.
-
-Other plots: Kaplan-Meier curves for survival, forest plots for effect sizes, covariate balance after matching, CONSORT flow diagrams. If you're staring at numbers and deciding what they mean, make a plot instead.
-
-### Reproducibility
-
-Follow the **script-first workflow** from Study Setup — every result card traces back to a script in `scripts/`.
-
-- **Write → run → show.** Never show results from throwaway interactive code. If you explored interactively to understand the data, crystallize the step into a script before showing results.
-- **Iterate on scripts, not inline.** If a step needs fixing, edit the script file and re-run — don't create throwaway intermediates alongside it.
-- **Later scripts read earlier outputs.** Step 03 loads `data/cohort.parquet` produced by step 01 — not by re-running the query. This makes dependencies explicit and each step independently verifiable.
-- Use `section()` for phase transitions.
-- Export the complete study at the end.
-
----
-
-## Phase 4: M4 Skills Reference
-
-### Severity Scores
-| Skill | When to Use |
-|-------|-------------|
-| `sofa-score` | Organ dysfunction, Sepsis-3 criteria |
-| `apsiii-score` | Comprehensive severity with mortality prediction |
-| `sapsii-score` | Alternative to APACHE, international benchmarking |
-| `oasis-score` | When labs unavailable (vitals only) |
-| `sirs-criteria` | Historical sepsis definition, comparison studies |
-
-### Cohort Definitions
-| Skill | When to Use |
-|-------|-------------|
-| `sepsis-3-cohort` | Sepsis studies (SOFA >= 2 + suspected infection) |
-| `first-icu-stay` | Avoid correlated observations |
-| `suspicion-of-infection` | Infection timing (antibiotics + cultures) |
-
-### Clinical Concepts
-| Skill | When to Use |
-|-------|-------------|
-| `kdigo-aki-staging` | AKI as outcome or covariate |
-| `vasopressor-equivalents` | Standardize vasopressor doses |
-| `baseline-creatinine` | AKI baseline reference |
-| `gcs-calculation` | Neurological status |
-
-### Data & Methodology
-| Skill | When to Use |
-|-------|-------------|
-| `m4-api` | Multi-step analysis, statistical tests |
-| `clinical-research-pitfalls` | Review for common errors |
-| `mimic-table-relationships` | Understanding joins |
-| `mimic-eicu-mapping` | Cross-dataset queries |
-
----
-
-## Example Flow
-
-**User:** "I want to study if early vasopressor use affects mortality in sepsis"
-
-**What you already know:** comparative design, sepsis population, vasopressor exposure, mortality-related. Skip those questions.
-
-**Form:** Ask only what's missing — outcome definition, "early" window, exclusion criteria, dataset. Narrate in terminal: "I've posted a form in vitrine for the details I couldn't infer — outcome, time window, exclusions, and dataset."
-
-**After response, refine in terminal:**
-- Anchor the time window to suspected infection onset (suspicion-of-infection skill), not ICU admission
-- Recommend excluding death within the exposure window to avoid immortal time bias
-- For treatment comparison, suggest propensity score matching over simple regression
-- Show a follow-up form only if needed (e.g., matching method preference)
-
-**Protocol → approval → execute:**
-- Save protocol to `output_dir / "PROTOCOL.md"`, show with `wait=True`
-- Use `section()` to mark phases: Cohort Definition → Matching → Analysis → Conclusions
-- Each phase = write `scripts/NN_name.py` → run → show from `data/` and `plots/` outputs
-- Block for approval at decision points
-- Export at the end: `export("output/report.html", study=STUDY)`
-
----
-
-## Red Flags
-
-Stop and reconsider if you see:
-- **"Patients who survived to receive..."** → Immortal time bias
-- **"Using ICD codes to identify patients at admission"** → Information leakage
-- **"Complete cases only (N drops from X to Y)"** → Selection bias
-- **"Treatment group had higher mortality"** → Confounding by indication
-- **"47 significant associations"** → Multiple comparisons
-- **"Small sample size but p < 0.05"** → Likely false positive
-
----
-
-## After Completion
-
-1. Save `RESULTS.md` to `output_dir` with findings, effect sizes, and confidence intervals
-2. Show a summary card with key findings
-3. Acknowledge limitations explicitly — show as a card for the record
-4. Suggest validation on independent data (e.g., eICU if used MIMIC)
-5. Export: `export("output/study-report.html", study=STUDY)`
+- Pass `study=STUDY` to every `show`, `section`, `confirm`, `ask` and `progress` call; cards
+  without it land in a separate auto-named study.
+- When you post a form or question, tell the researcher in the conversation what to answer.
+- Forms, `confirm`, `ask` and `show(..., wait=True)` block for up to `timeout` (600 s). If your
+  shell stops commands sooner, pass a shorter `timeout` or raise the shell's limit. A timed-out
+  or cut-off wait loses nothing: read the stored answer with `wait_for(card_id)` or from
+  `study_context(STUDY)["decisions_made"]`. `confirm()` also returns `False` on timeout, so
+  where a wait may time out, use `show(..., wait=True)` and check `r.action`.
+- Draw figures with matplotlib (installed with `m4-infra[research]`) or Plotly, whichever is
+  installed; `show()` takes both. Give every figure a `description=`. Show distributions as
+  figures (bars for categories, histograms for continuous values); keep dict cards for a few
+  summary numbers.
+- `mimiciv_derived` tables exist only for full MIMIC-IV after `m4 init-derived` (see
+  `derived.materialized` in `m4 list-datasets --json`) or on BigQuery. Elsewhere, including the
+  demo, compute concepts from `mimiciv_hosp` and `mimiciv_icu` following the matching clinical
+  skill and its `scripts/`. In `icustay_detail`, one stay per patient needs
+  `first_hosp_stay AND first_icu_stay`.

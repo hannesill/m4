@@ -1,7 +1,7 @@
 sources:
   - url: https://github.com/hannesill/m4/tree/main/src/m4/skills/system/clinical-research-session
     description: M4 structured clinical research workflow skill
-    license: Apache 2.0
+    license: MIT
 
 created:
   by: Claude Opus 4.6 (AI Assistant)
@@ -30,3 +30,14 @@ changelog:
   - version: "3.0"
     date: 2026-02-10
     summary: Move research interview from terminal conversation to vitrine form card. Add Terminal and Vitrine handoff section. Restructure Phase 1 as form + review guidance. Update example flow to show form-first pattern with terminal refinement.
+  - version: "4.0"
+    date: 2026-10-15
+    summary: >-
+      Rewrite for precision and length (2,321 to under 900 words). Steps with completion
+      criteria; dataset choices come from `m4 list-datasets --json` and the agent never
+      downloads or initialises data; analysis scripts run standalone and are shown through
+      runpy, so matplotlib or Plotly figures both work; the example cohort runs on raw
+      hosp/icu tables (no sepsis3 join on hadm_id, one stay per patient); blocking-call
+      timeouts explained; question library and protocol template moved to references/;
+      bias guidance deferred to clinical-research-pitfalls; Claude Code-specific wording and
+      the nonexistent /research command removed. Checked against M4 0.5.6 and Vitrine 0.1.4.

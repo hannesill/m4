@@ -25,3 +25,14 @@ changelog:
   - version: "2.0"
     date: 2026-02-04
     summary: Standardized to 4-field frontmatter (name, description, tier, category). Added support for both clinical and system skill creation. Added dataset-agnostic design guidance. Removed duplicated format spec in favor of SKILL_FORMAT.md reference.
+  - version: "3.0"
+    date: 2026-10-15
+    summary: >-
+      Rewrite for precision and length (1,281 to about 500 words). Six steps with completion
+      criteria; writes into an M4 checkout (index entry and skills tests) or else to the
+      user's skill folder as a local-only skill; the agent writes and runs the example on an
+      available dataset and the contributor checks the output; new skills are tier community
+      with no reviews until a review has happened (no placeholder review dates); the
+      optional kind field is acknowledged; script names follow the repository; format rules
+      are referenced from SKILL_FORMAT.md instead of restated. Checked against M4 0.5.6 and
+      Vitrine 0.1.4.
