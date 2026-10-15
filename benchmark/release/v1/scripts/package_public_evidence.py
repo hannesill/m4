@@ -330,6 +330,15 @@ def process_source(
     repair = repaired.get(expected.source_path)
     if repair is not None:
         assert repairs_dir is not None
+        # The member was just verified against `expected`; the repair must have
+        # been made from those bytes, not from another file at the same path.
+        if (repair["original_sha256"], repair["original_size_bytes"]) != (
+            expected.sha256,
+            expected.size_bytes,
+        ):
+            raise EvidenceError(
+                f"Repair lineage names another original for {expected.source_path}"
+            )
         derived = repairs_dir / expected.source_path
         if sha256_file(derived) != repair["derived_sha256"]:
             raise EvidenceError(f"Derived repair copy changed: {derived}")
