@@ -562,11 +562,23 @@ def _prepared_marker(db_path: Path) -> Path:
     return db_path.with_name(db_path.name + PREPARED_SUFFIX)
 
 
-def _parquet_listing(parquet_root: Path) -> list[str]:
-    return sorted(
-        path.relative_to(parquet_root).as_posix()
-        for path in parquet_root.rglob("*.parquet")
-    )
+def _parquet_listing(parquet_root: Path) -> list[list[str | int]]:
+    """Each table below `parquet_root` as [path, size, modified], sorted.
+
+    Size and modification time, not only the name, so that a table replaced
+    or cut short under the same name is a different listing. A false alarm
+    costs little: initializing again only recreates the views.
+    """
+    listing: list[list[str | int]] = []
+    for path in parquet_root.rglob("*.parquet"):
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        listing.append(
+            [path.relative_to(parquet_root).as_posix(), stat.st_size, stat.st_mtime_ns]
+        )
+    return sorted(listing)
 
 
 def unfinished_download(raw_root: Path) -> str | None:

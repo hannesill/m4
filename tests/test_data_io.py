@@ -479,6 +479,20 @@ def test_prepared_mark_is_for_one_database_over_one_parquet_folder(tmp_path):
     )
 
 
+def test_prepared_mark_does_not_hold_for_a_table_replaced_under_its_name(tmp_path):
+    parquet_root = tmp_path / "parquet"
+    _create_parquet(parquet_root / "hosp", "admissions", "subject_id\n1\n")
+    db_path = tmp_path / "mimic.duckdb"
+    db_path.touch()
+    mark_dataset_prepared(parquet_root, db_path)
+
+    # Another file under the same name, as a copy cut short or one put there by hand.
+    table = parquet_root / "hosp" / "admissions.parquet"
+    table.write_bytes(table.read_bytes()[: table.stat().st_size // 2])
+
+    assert not is_dataset_prepared(parquet_root, db_path)
+
+
 MIMIC_IV_MAPPING = {
     "hosp": "mimiciv_hosp",
     "icu": "mimiciv_icu",
