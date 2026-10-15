@@ -1,6 +1,6 @@
 ---
 name: mimic-eicu-mapping
-description: Map equivalent concepts between MIMIC-IV and eICU databases. Use for multi-database studies, external validation, or understanding structural differences between databases.
+description: Map MIMIC-IV identifiers, tables, time handling and concepts to eICU-CRD as M4 exposes it. Use when translating a MIMIC-IV query to eICU, validating a MIMIC-IV model on eICU, or running one analysis on both databases.
 tier: validated
 category: system
 kind: methodology
@@ -8,193 +8,76 @@ kind: methodology
 
 # MIMIC-IV to eICU Mapping
 
-This skill maps equivalent tables, columns, and concepts between MIMIC-IV and eICU databases to enable cross-database research and external validation.
+eICU-CRD 2.0 is multi-center (208 US hospitals, 2014-2015); MIMIC-IV is single-center. Apply these rules to every eICU query.
 
-## When to Use This Skill
+## Rules
 
-- External validation of MIMIC-IV models on eICU
-- Multi-center studies combining both databases
-- Understanding structural differences
-- Translating queries between databases
+1. **Check eICU is available.** It is credentialed. In `m4 list-datasets --json`, the `eicu` entry needs `"prepared": true` (DuckDB) or `bigquery_available`. If neither is true, tell the user; never download it yourself.
+2. **Prefix every table with `eicu_crd.`**: `eicu_crd.patient`, not `patient`. M4 exposes eICU only under this schema (`physionet-data.eicu_crd` on BigQuery).
+3. **Time is an integer offset.** Each table has its own offset column, in minutes from this unit stay's admission (`labresultoffset`, `nursingchartoffset`, ...); negative means before. There are no dates; `hospitaldischargeyear` is the only year. MIMIC `intime - 6 h .. intime + 24 h` becomes `offset BETWEEN -360 AND 1440`.
+4. **Age is text**, `'> 89'` for older patients: `CASE WHEN age = '> 89' THEN 91 ELSE TRY_CAST(age AS INTEGER) END` (`SAFE_CAST(age AS INT64)` on BigQuery). 91 matches MIMIC-IV's `anchor_age` for patients over 89.
+5. **Everything joins on `patientunitstayid`.** One `patient` row is one unit stay and covers MIMIC's patients, admissions and icustays.
 
-## Database Overview
+## Identifiers
 
-| Characteristic | MIMIC-IV | eICU |
-|---------------|----------|------|
-| **Institution** | Beth Israel Deaconess (single center) | 208 hospitals (multi-center) |
-| **Patients** | ~300,000 admissions | ~200,000 patients |
-| **Time Period** | 2008-2019 | 2014-2015 |
-| **ICU Types** | All ICU types | All ICU types |
-| **Geography** | Boston, MA | United States (nationwide) |
+| MIMIC-IV | eICU |
+|----------|------|
+| `subject_id` | `uniquepid` |
+| `hadm_id` | `patienthealthsystemstayid` |
+| `stay_id` | `patientunitstayid` |
+| ICU stay order within admission | `unitvisitnumber` |
+| (single hospital) | `hospitalid` → `eicu_crd.hospital` |
 
-## Identifier Mapping
+## Tables
 
-| Concept | MIMIC-IV | eICU |
-|---------|----------|------|
-| Patient ID | subject_id | uniquepid |
-| Hospital Admission | hadm_id | patienthealthsystemstayid |
-| ICU Stay | stay_id | patientunitstayid |
-| Hospital ID | N/A (single center) | hospitalid |
-| Unit Visit | icustay_seq | unitvisitnumber |
+| MIMIC-IV | eICU | Offset; notes |
+|----------|------|---------------|
+| patients, admissions, icustays | patient | `hospitaladmitoffset`, `unitdischargeoffset`, `hospitaldischargeoffset`; `hospitaldischargestatus`, `unitdischargestatus` |
+| chartevents (monitor vitals) | vitalperiodic, vitalaperiodic | `observationoffset`; `heartrate`, `respiration`, `sao2`, `systemicmean`; noninvasive BP in vitalaperiodic |
+| chartevents (nurse-charted, GCS) | nursecharting | `nursingchartoffset`; text `nursingchartvalue`, keyed by `nursingchartcelltypevallabel` + `nursingchartcelltypevalname` |
+| labevents | lab | `labresultoffset`; free-text `labname` (list with `SELECT labname, COUNT(*) FROM eicu_crd.lab GROUP BY 1`), numeric `labresult` |
+| outputevents | intakeoutput | `intakeoutputoffset`; urine by `cellpath` |
+| inputevents | infusiondrug | `infusionoffset` |
+| prescriptions, emar | medication | `drugstartoffset`, `drugstopoffset` |
+| microbiologyevents | microlab | `culturetakenoffset` |
+| diagnoses_icd | diagnosis | `diagnosisoffset`; text `diagnosisstring`; `icd9code` coverage varies |
+| (none) | admission diagnosis | `patient.apacheadmissiondx`, `apachepredvar.admitdiagnosis`, admissiondx |
+| procedureevents (ventilation) | respiratorycare, treatment | `respcarestatusoffset`, `treatmentoffset` |
+| (none) | apachepatientresult, apacheapsvar, apachepredvar | APACHE IV/IVa scores and predictions (one row per `apacheversion`); physiology inputs; predictors |
 
-## Core Table Mapping
+## Derived concepts
 
-### Patient Demographics
+M4 builds `mimiciv_derived` for MIMIC-IV only. eicu-code's `pivoted_*` and eICU `icustay_detail` tables are not available in M4: compute concepts from the raw tables above.
 
-| MIMIC-IV | eICU | Notes |
-|----------|------|-------|
-| mimiciv_hosp.patients | patient | Base demographics |
-| mimiciv_hosp.admissions | patient | Admission info combined |
-| mimiciv_icu.icustays | patient | ICU stay info in patient table |
-| mimiciv_derived.icustay_detail | icustay_detail (concept) | Derived convenience table |
+## Example: highest heart rate in the first 24 h of the first ICU stay
 
-### Vital Signs
+MIMIC-IV:
 
-| MIMIC-IV | eICU | Notes |
-|----------|------|-------|
-| mimiciv_derived.vitalsign | vitalperiodic, vitalaperiodic | eICU splits periodic/aperiodic |
-| mimiciv_icu.chartevents | nursecharting | Raw charted values |
-
-### Laboratory Values
-
-| MIMIC-IV | eICU | Notes |
-|----------|------|-------|
-| mimiciv_hosp.labevents | lab | Different labname conventions |
-| mimiciv_derived.chemistry | pivoted_lab (concept) | Derived/pivoted |
-| mimiciv_derived.complete_blood_count | pivoted_lab (concept) | |
-
-### Medications
-
-| MIMIC-IV | eICU | Notes |
-|----------|------|-------|
-| mimiciv_hosp.prescriptions | medication | Hospital medications |
-| mimiciv_icu.inputevents | infusiondrug | IV infusions |
-| mimiciv_derived.antibiotic | - | Concept needs creation for eICU |
-
-### Diagnoses
-
-| MIMIC-IV | eICU | Notes |
-|----------|------|-------|
-| mimiciv_hosp.diagnoses_icd | diagnosis | eICU uses text descriptions |
-| - | admissiondx | eICU has admission diagnosis |
-| - | apacheapsvar | APACHE diagnosis categories |
-
-## Concept Availability
-
-### Available in Both (May Require Recalculation)
-
-| Concept | MIMIC-IV | eICU |
-|---------|----------|------|
-| SOFA | mimiciv_derived.sofa | Requires custom calculation |
-| APACHE IV | Not pre-computed | apachepatientresult |
-| OASIS | mimiciv_derived.oasis | pivoted_oasis (concept) |
-| GCS | mimiciv_derived.gcs | pivoted_score (concept) |
-| Urine Output | mimiciv_derived.urine_output | pivoted_uo (concept) |
-
-### MIMIC-IV Only
-- Waveform data (vital sign waveforms)
-- Radiology reports
-- Detailed microbiology (organism/sensitivity)
-- ED data
-
-### eICU Only
-- APACHE IV scores (pre-computed)
-- Multi-center hospital data
-- Respiratory care plan documentation
-- Nurse care plan
-
-## Key Structural Differences
-
-### 1. Time Representation
-```
-MIMIC-IV: Absolute timestamps (DATETIME)
-eICU: Offset in minutes from unit admission (INTEGER)
-
--- MIMIC-IV
-WHERE charttime BETWEEN ie.intime AND ie.outtime
-
--- eICU (convert offset to time)
-WHERE chartoffset >= 0 AND chartoffset <= unitdischargeoffset
-```
-
-### 2. Hospital Structure
-```
-MIMIC-IV: Single hospital, no hospital identifier
-eICU: hospitalid links to hospital table with region, bed count
-```
-
-### 3. Diagnosis Coding
-```
-MIMIC-IV: ICD-9 and ICD-10 codes
-eICU: Free-text diagnosis strings + APACHE categories
-```
-
-### 4. Lab Value Names
-```
-MIMIC-IV: itemid (numeric codes) with d_labitems lookup
-eICU: labname (text strings), less standardized
-```
-
-## Example: Equivalent Queries
-
-### First ICU Stay Selection
-
-**MIMIC-IV:**
 ```sql
-SELECT *
-FROM mimiciv_derived.icustay_detail
-WHERE first_icu_stay = TRUE;
+SELECT ie.stay_id, MAX(ce.valuenum) AS hr_max
+FROM mimiciv_icu.icustays ie
+JOIN mimiciv_icu.chartevents ce
+  ON ce.stay_id = ie.stay_id
+ AND ce.itemid = 220045  -- heart rate
+ AND ce.charttime BETWEEN ie.intime AND ie.intime + INTERVAL 1 DAY
+WHERE ie.intime = (SELECT MIN(intime) FROM mimiciv_icu.icustays s WHERE s.hadm_id = ie.hadm_id)
+GROUP BY ie.stay_id;
 ```
 
-**eICU:**
+eICU:
+
 ```sql
-SELECT *
-FROM patient
-WHERE unitvisitnumber = 1;
+SELECT vp.patientunitstayid, MAX(vp.heartrate) AS hr_max
+FROM eicu_crd.vitalperiodic vp
+JOIN eicu_crd.patient p ON p.patientunitstayid = vp.patientunitstayid
+WHERE p.unitvisitnumber = 1
+  AND vp.observationoffset BETWEEN 0 AND 1440
+GROUP BY vp.patientunitstayid;
 ```
 
-### Mortality Outcome
-
-**MIMIC-IV:**
-```sql
-SELECT stay_id, hospital_expire_flag
-FROM mimiciv_hosp.admissions a
-INNER JOIN mimiciv_icu.icustays ie ON a.hadm_id = ie.hadm_id;
-```
-
-**eICU:**
-```sql
-SELECT patientunitstayid,
-       CASE WHEN hospitaldischargestatus = 'Expired' THEN 1 ELSE 0 END AS hosp_mort
-FROM patient;
-```
-
-### Age
-
-**MIMIC-IV:**
-```sql
-SELECT stay_id, admission_age
-FROM mimiciv_derived.icustay_detail;
--- Note: Ages > 89 are shifted
-```
-
-**eICU:**
-```sql
-SELECT patientunitstayid,
-       CASE WHEN age = '> 89' THEN 90 ELSE CAST(age AS INT) END AS age
-FROM patient;
--- Note: age is stored as string, "> 89" for elderly
-```
-
-## Validation Considerations
-
-1. **Population Differences**: eICU is multi-center with different case-mix
-2. **Time Period**: Different years may have different practices
-3. **Documentation Patterns**: Single vs multi-center charting variability
-4. **Missing Data**: Different missingness patterns
-5. **Outcome Definitions**: Verify mortality/LOS definitions match
+Hospital mortality: MIMIC `admissions.hospital_expire_flag`; eICU `hospitaldischargestatus = 'Expired'`, with missing status kept NULL rather than counted as survival.
 
 ## References
 
-- Johnson AEW et al. "MIMIC-IV, a freely accessible electronic health record dataset." Scientific Data. 2023.
-- Pollard TJ et al. "The eICU Collaborative Research Database." Scientific Data. 2018.
+- Pollard TJ et al. "The eICU Collaborative Research Database, a freely available multi-center database for critical care research." Scientific Data. 2018;5:180178.
+- Johnson AEW et al. "MIMIC-IV, a freely accessible electronic health record dataset." Scientific Data. 2023;10:1.

@@ -1,0 +1,28 @@
+sources:
+  - url: https://github.com/hannesill/m4/tree/main/src/m4/core/derived/builtins/mimic_iv
+    description: M4's DuckDB derived SQL; source of the first_day_lab time window and the keys of derived tables
+    license: MIT
+  - url: https://github.com/hannesill/m4/tree/main/src/m4/core
+    description: M4 dataset definitions and backends (DuckDB default, BigQuery schema rewriting)
+    license: MIT
+
+created:
+  # Git author of the commit that added the skill (e33ff7ad); no other authorship is recorded.
+  by: hill
+  role: authoring
+  date: 2026-01-11
+
+# No review is on record. The validated tier requires a technical-accuracy review.
+reviews: []
+
+references:
+  - Johnson AEW et al. "MIMIC-IV, a freely accessible electronic health record dataset." Scientific Data. 2023;10:1.
+  - MIMIC-IV documentation, https://mimic.mit.edu/docs/iv/
+
+changelog:
+  - version: "1.0"
+    date: 2026-01-11
+    summary: Initial skill creation.
+  - version: "2.0"
+    date: 2026-10-15
+    summary: Rewritten around three rules (join key, time window, dialect); labs join on subject_id with M4's first_day_lab window, DuckDB examples with a BigQuery dialect table. Examples checked against M4 0.5.6 on the MIMIC-IV demo.

@@ -1,0 +1,28 @@
+sources:
+  - url: https://github.com/hannesill/m4/tree/main/src/m4
+    description: M4 dataset definitions and view creation (eICU exposed as eicu_crd.<table>), CLI dataset status, and the eICU OASIS reference SQL in benchmark/ground_truth/oasis.sql (age and offset conventions)
+    license: MIT
+  - url: https://github.com/eth-mds/ricu/blob/main/inst/extdata/config/data-sources.json
+    description: ricu's eICU 2.0 table and column definitions, used to check table and column names (ricu revision c0efac7)
+    license: GPL-3.0
+
+created:
+  # Git author of the commit that added the skill (e33ff7ad); no other authorship is recorded.
+  by: hill
+  role: authoring
+  date: 2026-01-11
+
+# No review is on record. The validated tier requires a technical-accuracy review.
+reviews: []
+
+references:
+  - Pollard TJ et al. "The eICU Collaborative Research Database, a freely available multi-center database for critical care research." Scientific Data. 2018;5:180178.
+  - Johnson AEW et al. "MIMIC-IV, a freely accessible electronic health record dataset." Scientific Data. 2023;10:1.
+
+changelog:
+  - version: "1.0"
+    date: 2026-01-11
+    summary: Initial skill creation.
+  - version: "2.0"
+    date: 2026-10-15
+    summary: Rewritten to lead with the eICU traps (availability check, eicu_crd. prefix, per-table offsets, text ages); removed concept tables M4 does not build and unsourced dataset figures. MIMIC-IV example checked against M4 0.5.6 on the MIMIC-IV demo; eICU names checked against M4 sources and ricu's eICU config, not against eICU data.

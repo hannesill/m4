@@ -1,6 +1,6 @@
 ---
 name: mimic-table-relationships
-description: Understand MIMIC-IV table relationships, join patterns, and identifier hierarchy. Use for correct data linkage, avoiding duplicates, and proper temporal joins.
+description: Join MIMIC-IV tables on the right key and time window, in the active backend's SQL dialect. Use before writing MIMIC-IV SQL that joins hosp, icu and derived tables, or when row counts look duplicated or short.
 tier: validated
 category: system
 kind: domain
@@ -8,182 +8,67 @@ kind: domain
 
 # MIMIC-IV Table Relationships
 
-Understanding the identifier hierarchy and table relationships is essential for correct query construction. Incorrect joins can cause data duplication or missing records.
+`subject_id` (patient) → `hadm_id` (hospital admission) → `stay_id` (ICU stay). One admission can hold several ICU stays, so each event needs the right key and a time window.
 
-## When to Use This Skill
+## 1. Join on the key the table is recorded under
 
-- Writing complex queries joining multiple tables
-- Understanding why queries return unexpected row counts
-- Debugging duplicate or missing data issues
-- Learning MIMIC-IV data structure
+| Key | Tables |
+|-----|--------|
+| `stay_id` | chartevents, inputevents, ingredientevents, outputevents, procedureevents, datetimeevents. Derived: vitalsign, gcs, urine_output, `first_day_*`, scores (`sofa`: `stay_id` + `hr`) |
+| `hadm_id` | admissions, diagnoses_icd, procedures_icd, prescriptions, pharmacy, emar, services. Derived: charlson |
+| `subject_id` + time | labevents, microbiologyevents, omr. Derived lab panels, one row per specimen: chemistry, complete_blood_count, bg, ... |
 
-## Identifier Hierarchy
+`hadm_id` is NULL for labs and cultures taken outside an admission, including ED draws before an ICU admission: 26% of labevents and 33% of microbiologyevents in the demo, and the derived lab panels inherit the NULLs. Join these on `subject_id` plus a time window; a `hadm_id` join drops them.
 
-```
-subject_id (patient)
-    └── hadm_id (hospital admission)
-            └── stay_id (ICU stay)
-                    └── Events (chartevents, labevents, etc.)
-```
+`diagnoses_icd` and `procedures_icd` have no time and repeat for every ICU stay of the admission.
 
-### subject_id
-- **Unique per patient**
-- Persists across all hospitalizations and ICU stays
-- Links to: `patients` table
+## 2. Bound every event by the stay's time window
 
-### hadm_id
-- **Unique per hospital admission**
-- One patient can have multiple hadm_ids (readmissions)
-- Links to: `admissions`, `diagnoses_icd`, `prescriptions`, most lab/hospital tables
+Without a window, a `hadm_id` or `subject_id` join copies each event to every ICU stay of the admission or patient. M4's `first_day_lab` uses `intime - 6 h` to `intime + 24 h`:
 
-### stay_id
-- **Unique per ICU stay**
-- One hospital admission can have multiple stay_ids (ICU readmission)
-- Links to: `icustays`, `chartevents`, ICU-specific tables
-
-## Core Table Relationships
-
-### Hospital Module (mimiciv_hosp)
 ```sql
-patients             -- 1 row per subject_id
-    |
-    +-- admissions   -- 1 row per hadm_id
-    |       |
-    |       +-- diagnoses_icd
-    |       +-- procedures_icd
-    |       +-- prescriptions
-    |       +-- labevents
-    |       +-- microbiologyevents
-    |
-    +-- transfers    -- Multiple per hadm_id (ward movements)
-```
-
-### ICU Module (mimiciv_icu)
-```sql
-icustays            -- 1 row per stay_id
-    |
-    +-- chartevents  -- Vitals, assessments
-    +-- inputevents  -- Medications, fluids
-    +-- outputevents -- Urine, drains
-    +-- procedureevents
-    +-- datetimeevents
-```
-
-## Common Join Patterns
-
-### Patient -> Hospital -> ICU
-```sql
-SELECT p.subject_id, a.hadm_id, ie.stay_id
-FROM mimiciv_hosp.patients p
-INNER JOIN mimiciv_hosp.admissions a
-    ON p.subject_id = a.subject_id
-INNER JOIN mimiciv_icu.icustays ie
-    ON a.hadm_id = ie.hadm_id;
-```
-
-### Labs to ICU Stay (Time-Bounded)
-```sql
--- Labs drawn during ICU stay only
-SELECT ie.stay_id, le.charttime, le.valuenum
+-- Highest creatinine (itemid 50912) from 6 h before to 24 h after ICU admission
+SELECT ie.stay_id, MAX(le.valuenum) AS creatinine_max
 FROM mimiciv_icu.icustays ie
-INNER JOIN mimiciv_hosp.labevents le
-    ON ie.hadm_id = le.hadm_id
-    AND le.charttime >= ie.intime
-    AND le.charttime <= ie.outtime;
+LEFT JOIN mimiciv_hosp.labevents le
+  ON le.subject_id = ie.subject_id
+ AND le.itemid = 50912
+ AND le.charttime >= ie.intime - INTERVAL 6 HOUR
+ AND le.charttime <= ie.intime + INTERVAL 1 DAY
+GROUP BY ie.stay_id;
 ```
 
-### Labs Within N Hours of ICU Admission
+Put the window in the `LEFT JOIN ... ON` clause to keep stays without a value. Back-to-back stays can have overlapping windows, so one lab can count for both; that is intended for per-stay features.
+
+Check a join for duplication:
+
 ```sql
--- First 24 hours
-SELECT ie.stay_id, le.charttime, le.valuenum
+SELECT COUNT(*) AS joined_rows,
+       COUNT(*) - COUNT(DISTINCT le.labevent_id) AS duplicated_rows
 FROM mimiciv_icu.icustays ie
-INNER JOIN mimiciv_hosp.labevents le
-    ON ie.hadm_id = le.hadm_id
-    AND le.charttime >= ie.intime
-    AND le.charttime <= DATETIME_ADD(ie.intime, INTERVAL 24 HOUR);
+JOIN mimiciv_hosp.labevents le ON le.hadm_id = ie.hadm_id;  -- unbounded: duplicates
 ```
 
-## Critical Join Warnings
+## 3. Write SQL for the active backend
 
-### 1. Hospital Labs Duplicate Across ICU Stays
-If a patient has multiple ICU stays in one hospitalization, joining labs by `hadm_id` only will duplicate lab values:
+M4 defaults to DuckDB (`backend` in `m4 list-datasets --json`), and the derived SQL M4 builds locally is DuckDB. `schema.table` names work on both backends.
 
-```sql
--- WRONG: Duplicates labs for patients with multiple ICU stays
-SELECT ie.stay_id, le.*
-FROM mimiciv_icu.icustays ie
-INNER JOIN mimiciv_hosp.labevents le
-    ON ie.hadm_id = le.hadm_id;  -- No time filter!
+| DuckDB | BigQuery |
+|--------|----------|
+| `t + INTERVAL 6 HOUR` | `DATETIME_ADD(t, INTERVAL 6 HOUR)` |
+| `DATE_TRUNC('hour', t)` | `DATETIME_TRUNC(t, HOUR)` |
+| `DATE_DIFF('second', a, b) / 3600.0` | `DATETIME_DIFF(b, a, SECOND) / 3600` |
+| `TRY_CAST(x AS INTEGER)` | `SAFE_CAST(x AS INT64)` |
 
--- CORRECT: Add time bounds
-SELECT ie.stay_id, le.*
-FROM mimiciv_icu.icustays ie
-INNER JOIN mimiciv_hosp.labevents le
-    ON ie.hadm_id = le.hadm_id
-    AND le.charttime BETWEEN ie.intime AND ie.outtime;
-```
+DuckDB's `DATE_DIFF('hour', a, b)` counts hour boundaries crossed, not elapsed hours.
 
-### 2. Derived Tables Already Filtered
-Many `mimiciv_derived` tables are pre-joined to ICU stays:
-```sql
--- These already have stay_id and time-bounded data
-SELECT * FROM mimiciv_derived.vitalsign;  -- Already per stay_id
-SELECT * FROM mimiciv_derived.chemistry;  -- Has subject_id and hadm_id
-```
+`DATETIME_ADD`, `DATETIME_SUB` or `DATETIME_DIFF` in a script mean BigQuery SQL; several clinical skills' `scripts/` are such mimic-code originals. On DuckDB, query the built `mimiciv_derived` table or translate the script.
 
-### 3. Multiple Measurements Per Time Point
-Aggregate or select appropriately:
-```sql
--- Get worst GCS per hour
-SELECT stay_id,
-       DATETIME_TRUNC(charttime, HOUR) AS hour,
-       MIN(gcs) AS worst_gcs
-FROM mimiciv_derived.gcs
-GROUP BY stay_id, DATETIME_TRUNC(charttime, HOUR);
-```
+## Derived tables
 
-## Cardinality Reference
-
-| Relationship | Cardinality |
-|-------------|-------------|
-| subject_id : hadm_id | 1 : many |
-| hadm_id : stay_id | 1 : many |
-| stay_id : chartevents | 1 : many |
-| hadm_id : labevents | 1 : many |
-| hadm_id : diagnoses_icd | 1 : many |
-| stay_id : derived tables | 1 : many (usually) |
-
-## Example: Verify Join Correctness
-
-```sql
--- Check for unexpected duplicates
-WITH joined AS (
-    SELECT ie.stay_id, COUNT(*) AS n_labs
-    FROM mimiciv_icu.icustays ie
-    INNER JOIN mimiciv_hosp.labevents le
-        ON ie.hadm_id = le.hadm_id
-    GROUP BY ie.stay_id
-)
-SELECT
-    COUNT(*) AS n_stays,
-    AVG(n_labs) AS avg_labs_per_stay,
-    MAX(n_labs) AS max_labs  -- Very high = possible duplication
-FROM joined;
-```
-
-## BigQuery vs DuckDB Syntax
-
-MIMIC concepts are written for BigQuery. Key syntax differences (table names use the same canonical `schema.table` format on both backends):
-
-| BigQuery | DuckDB |
-|----------|--------|
-| `DATETIME_ADD(x, INTERVAL '1' HOUR)` | `x + INTERVAL '1 hour'` |
-| `DATETIME_DIFF(a, b, HOUR)` | `EXTRACT(EPOCH FROM (a - b))/3600` |
-| `DATETIME_TRUNC(x, HOUR)` | `DATE_TRUNC('hour', x)` |
-
-Table names like `mimiciv_hosp.patients` and `mimiciv_icu.icustays` work on both backends.
+`mimiciv_derived` exists only for full MIMIC-IV: on DuckDB after `m4 init-derived mimic-iv`, on BigQuery as `physionet-data.mimiciv_derived`. The demo has none.
 
 ## References
 
-- MIMIC-IV Documentation: https://mimic.mit.edu/docs/iv/
-- Johnson AEW et al. "MIMIC-IV, a freely accessible electronic health record dataset." Scientific Data. 2023.
+- MIMIC-IV documentation: https://mimic.mit.edu/docs/iv/
+- Johnson AEW et al. "MIMIC-IV, a freely accessible electronic health record dataset." Scientific Data. 2023;10:1.
