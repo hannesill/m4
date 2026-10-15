@@ -493,6 +493,36 @@ def test_prepared_mark_does_not_hold_for_a_table_replaced_under_its_name(tmp_pat
     assert not is_dataset_prepared(parquet_root, db_path)
 
 
+def test_initializing_again_drops_the_view_of_a_table_that_is_gone(tmp_path):
+    parquet_root = tmp_path / "parquet"
+    _create_parquet(parquet_root / "hosp", "admissions", "subject_id\n1\n")
+    _create_parquet(parquet_root / "icu", "icustays", "subject_id\n1\n")
+    db_path = tmp_path / "test.duckdb"
+    mapping = {"hosp": "mimiciv_hosp", "icu": "mimiciv_icu"}
+    assert _create_duckdb_with_views(db_path, parquet_root, schema_mapping=mapping)
+    con = duckdb.connect(str(db_path))
+    try:
+        # A view of the user's own, over a file outside the dataset, is not M4's.
+        con.execute("CREATE VIEW main.mine AS SELECT 1 AS one")
+    finally:
+        con.close()
+
+    (parquet_root / "icu" / "icustays.parquet").unlink()
+    assert _create_duckdb_with_views(db_path, parquet_root, schema_mapping=mapping)
+
+    con = duckdb.connect(str(db_path))
+    try:
+        views = {
+            f"{schema}.{name}"
+            for schema, name in con.execute(
+                "SELECT schema_name, view_name FROM duckdb_views() WHERE NOT internal"
+            ).fetchall()
+        }
+    finally:
+        con.close()
+    assert views == {"mimiciv_hosp.admissions", "main.mine"}
+
+
 MIMIC_IV_MAPPING = {
     "hosp": "mimiciv_hosp",
     "icu": "mimiciv_icu",

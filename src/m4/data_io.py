@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import re
 import time
 import uuid
 from collections.abc import Callable
@@ -1035,6 +1036,28 @@ def folders_without_tables(
     ]
 
 
+def _drop_views_over_missing_files(con, parquet_root: Path) -> None:
+    """Drop the views that read a Parquet file of this dataset that is gone.
+
+    Initializing replaces the views of the tables that are there; without
+    this, the view of a table that was deleted would stay in a database
+    marked prepared, and fail when queried. Only a view that reads a file
+    below `parquet_root`, as the ones M4 creates do, is dropped.
+    """
+    root = parquet_root.as_posix().rstrip("/") + "/"
+    views = con.execute(
+        "SELECT schema_name, view_name, sql FROM duckdb_views() WHERE NOT internal"
+    ).fetchall()
+    for schema_name, view_name, sql in views:
+        source = re.search(r"read_parquet\('([^']*)'\)", sql or "")
+        if (
+            source
+            and source.group(1).startswith(root)
+            and not Path(source.group(1)).exists()
+        ):
+            con.execute(f'DROP VIEW IF EXISTS "{schema_name}"."{view_name}"')
+
+
 def _create_duckdb_with_views(
     db_path: Path,
     parquet_root: Path,
@@ -1085,6 +1108,7 @@ def _create_duckdb_with_views(
         # be locked. Whoever initializes the dataset marks it prepared again
         # once they are all there and verified.
         _prepared_marker(db_path).unlink(missing_ok=True)
+        _drop_views_over_missing_files(con, parquet_root)
 
         # Optimize DuckDB settings
         cpu_count = os.cpu_count() or 4
