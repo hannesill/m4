@@ -11,6 +11,7 @@ from m4.cli import app
 from m4.skills.catalog import (
     CATALOG_SCHEMA_VERSION,
     MANIFEST_FILE_NAME,
+    _account_home,
     _atomic_publish_directory,
     _is_link,
     _reject_symlink_components,
@@ -219,7 +220,7 @@ def test_junctions_in_the_home_path_and_onedrive_placeholders_are_allowed(
     home = tmp_path / "profile"
     target = home / "OneDrive" / "lincei" / "skills"
     target.parent.mkdir(parents=True)
-    monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
+    monkeypatch.setattr("m4.skills.catalog._account_home", lambda: home)
     _pretend_windows_reparse_point(
         monkeypatch, Path(os.path.normpath(home / reparse_point)), kind
     )
@@ -234,7 +235,7 @@ def test_links_below_the_home_folder_are_rejected(
     home = tmp_path / "profile"
     target = home / "lincei" / "skills"
     target.parent.mkdir(parents=True)
-    monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
+    monkeypatch.setattr("m4.skills.catalog._account_home", lambda: home)
     _pretend_windows_reparse_point(monkeypatch, home / "lincei", kind)
 
     with pytest.raises(ValueError, match="may not contain symlinks"):
@@ -248,7 +249,7 @@ def test_materialize_through_a_linked_home_folder(
     real_home.mkdir()
     home = tmp_path / "home"
     home.symlink_to(real_home, target_is_directory=True)
-    monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
+    monkeypatch.setattr("m4.skills.catalog._account_home", lambda: home)
 
     first = materialize_catalog(home / "skills")
 
@@ -263,6 +264,32 @@ def test_materialize_through_a_linked_home_folder(
     with pytest.raises(ValueError, match="may not contain symlinks"):
         materialize_catalog(home / "managed" / "skills")
     assert not (redirected / "skills").exists()
+
+
+def test_a_home_set_in_the_environment_allows_no_links(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    redirected = tmp_path / "redirected"
+    redirected.mkdir()
+    link = tmp_path / "link"
+    link.symlink_to(redirected, target_is_directory=True)
+    monkeypatch.setenv("HOME", str(link / "below"))
+    monkeypatch.setenv("USERPROFILE", str(link / "below"))
+
+    with pytest.raises(ValueError, match="may not contain symlinks"):
+        materialize_catalog(link / "skills")
+    assert not (redirected / "skills").exists()
+
+
+def test_the_account_home_is_not_read_from_the_environment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Also run on Windows, where it asks the system for the profile folder."""
+    home = Path.home()
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+
+    assert _account_home() == home
 
 
 def test_verify_rejects_a_linked_folder_inside_the_bundle(tmp_path: Path):

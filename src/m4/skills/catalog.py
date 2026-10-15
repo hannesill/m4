@@ -270,13 +270,64 @@ def _is_link(metadata: os.stat_result) -> bool:
     )
 
 
+def _windows_profile_folder() -> Path | None:
+    """The profile folder Windows registers for the user of this process's token."""
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
+    userenv = ctypes.WinDLL("userenv", use_last_error=True)
+    kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+    advapi32.OpenProcessToken.argtypes = [
+        wintypes.HANDLE,
+        wintypes.DWORD,
+        ctypes.POINTER(wintypes.HANDLE),
+    ]
+    advapi32.OpenProcessToken.restype = wintypes.BOOL
+    userenv.GetUserProfileDirectoryW.argtypes = [
+        wintypes.HANDLE,
+        wintypes.LPWSTR,
+        ctypes.POINTER(wintypes.DWORD),
+    ]
+    userenv.GetUserProfileDirectoryW.restype = wintypes.BOOL
+
+    token = wintypes.HANDLE()
+    token_query = 0x0008
+    if not advapi32.OpenProcessToken(
+        kernel32.GetCurrentProcess(), token_query, ctypes.byref(token)
+    ):
+        return None
+    try:
+        folder = ctypes.create_unicode_buffer(32768)
+        size = wintypes.DWORD(len(folder))
+        if not userenv.GetUserProfileDirectoryW(token, folder, ctypes.byref(size)):
+            return None
+        return Path(folder.value)
+    finally:
+        kernel32.CloseHandle(token)
+
+
+def _account_home() -> Path | None:
+    """The home folder the account database records for the user running M4.
+
+    Not HOME or USERPROFILE, which Path.home() reads: whoever starts M4 can
+    point those anywhere, a link they made included.
+    """
+    if os.name == "nt":
+        return _windows_profile_folder()
+    import pwd
+
+    try:
+        return Path(pwd.getpwuid(os.getuid()).pw_dir)
+    except KeyError:
+        return None
+
+
 def _home_path() -> frozenset[Path]:
     """The user's home folder and the folders above it."""
-    try:
-        home = Path.home()
-    except (KeyError, RuntimeError):
-        return frozenset()
-    if not home.is_absolute():
+    home = _account_home()
+    if home is None or not home.is_absolute():
         return frozenset()
     home = Path(os.path.abspath(home))
     return frozenset({home, *home.parents})

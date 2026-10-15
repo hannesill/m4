@@ -41,6 +41,8 @@ jobs:
         env:
           M4_DATA_DIR: ${{ runner.temp }}/m4-config-test-data
         run: uv run --frozen pytest tests/test_claude_desktop_config.py -v
+      - name: Test the profile folder lookup for skills targets
+        run: uv run --frozen pytest tests/test_skills_catalog.py -k account_home -v
 
   distribution:
     runs-on: ubuntu-latest
