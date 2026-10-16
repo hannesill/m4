@@ -276,7 +276,11 @@ mortality_rate = aki_cohort['hospital_expire_flag'].mean()
 | mimic-iv-demo | TABULAR | 100 | Free | No |
 | mimic-iv | TABULAR | 365k | PhysioNet credentialed | Yes (63 tables) |
 | mimic-iv-note | NOTES | 331k notes | PhysioNet credentialed | No |
-| eicu | TABULAR | 200k+ | PhysioNet credentialed | No |
+| mimic-iv-ed-demo | TABULAR | 100 | Free | No |
+| mimic-iv-ed | TABULAR | 425k ED stays | PhysioNet credentialed | No |
+| eicu-demo | TABULAR | 2.5k ICU stays | Free | No |
+| eicu | TABULAR | 200k+ ICU stays | PhysioNet credentialed | No |
+| mimic-iii | TABULAR | 40k+ | PhysioNet credentialed | No |
 
 Custom datasets can be added via JSON definition. See [Custom Datasets](CUSTOM_DATASETS.md).
 

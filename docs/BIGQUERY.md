@@ -67,8 +67,16 @@ M4 uses these PhysioNet BigQuery datasets:
 |---------|-----------------|-------------|
 | mimic-iv | `physionet-data` | `mimiciv_3_1_hosp`, `mimiciv_3_1_icu` |
 | mimic-iv-note | `physionet-data` | `mimiciv_note` |
+| mimic-iv-ed-demo | `physionet-demo` | `mimiciv_ed` |
 | mimic-iv-ed | `physionet-data` | `mimiciv_ed` |
+| eicu-demo | `physionet-data` | `eicu_crd_demo` |
 | eicu | `physionet-data` | `eicu_crd` |
+| mimic-iii | `physionet-data` | `mimiciii_clinical` |
+
+The demos keep the canonical schema of their full dataset: `eicu_crd.patient`
+on `eicu-demo` reads `physionet-data.eicu_crd_demo.patient`. PhysioNet keeps
+the MIMIC-III notes in a separate `mimiciii_notes` dataset on BigQuery, which
+M4 does not query; in a local database they are `mimiciii_clinical.noteevents`.
 
 ## Derived Tables on BigQuery
 

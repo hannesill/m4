@@ -143,6 +143,14 @@ def _collect_dataset_status(
 
     result = {
         "name": name,
+        # What the dataset is, for someone choosing one to download
+        "title": ds_def.title if ds_def else name,
+        "summary": ds_def.summary if ds_def else None,
+        "version": ds_def.version if ds_def else None,
+        "builtin": DatasetRegistry.is_builtin(name),
+        "modalities": sorted(m.name for m in ds_def.modalities) if ds_def else [],
+        "dataset_page_url": ds_def.dataset_page_url if ds_def else None,
+        "download_size_gb": ds_def.download_size_gb if ds_def else None,
         "selected": name == selected_dataset,
         "raw_present": raw_present,
         "parquet_present": parquet_present,

@@ -160,7 +160,16 @@ def test_capabilities_manifest_agent_command_contract():
 def test_capabilities_manifest_builtin_dataset_identity_contract():
     manifest = build_capabilities_manifest()
     datasets = {dataset["name"]: dataset for dataset in manifest["datasets"]}
-    expected = {"mimic-iv-demo", "mimic-iv", "mimic-iv-note", "eicu"}
+    expected = {
+        "mimic-iv-demo",
+        "mimic-iv",
+        "mimic-iv-note",
+        "mimic-iv-ed-demo",
+        "mimic-iv-ed",
+        "eicu-demo",
+        "eicu",
+        "mimic-iii",
+    }
 
     assert expected.issubset(datasets)
     for name in expected:
@@ -421,6 +430,20 @@ def test_layout_validation_detects_nested_and_missing_dirs(tmp_path):
     assert "nested_physionet_layout" in result["warnings"]
     assert "missing_required_subdirectories" in result["warnings"]
     assert "empty_csv_gz" in result["warnings"]
+
+
+def test_layout_validation_detects_nested_files_of_a_dataset_without_folders(
+    tmp_path,
+):
+    # `wget -r -nH` without --cut-dirs, for a dataset whose tables sit at its root
+    nested = tmp_path / "files" / "eicu-crd-demo" / "2.0.1"
+    nested.mkdir(parents=True)
+    (nested / "patient.csv.gz").write_bytes(b"x")
+
+    result = validate_raw_layout("eicu-demo", tmp_path)
+
+    assert "nested_physionet_layout" in result["warnings"]
+    assert "wrong_root_layout" in result["warnings"]
 
 
 def test_doctor_setup_agent_quickstart_json():

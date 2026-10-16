@@ -63,6 +63,13 @@ non-zero.
   "datasets": [
     {
       "name": "mimic-iv",
+      "title": "MIMIC-IV",
+      "summary": "Hospital and ICU records of patients admitted to ...",
+      "version": "3.1",
+      "builtin": true,
+      "modalities": ["TABULAR"],
+      "dataset_page_url": "https://physionet.org/content/mimiciv/",
+      "download_size_gb": null,
       "selected": true,
       "raw_present": true,
       "parquet_present": true,
@@ -85,6 +92,14 @@ non-zero.
   ]
 }
 ```
+
+Each dataset also says what it is, for someone choosing one to download:
+`title`, `summary`, `version` (the PhysioNet version M4 downloads),
+`dataset_page_url`, `download_size_gb` (about how many GB, of 1024^3 bytes, the
+raw CSV.gz files M4 downloads take), `modalities`, and `builtin` (false for a
+dataset defined by a JSON file in the datasets folder). What M4 does not know
+is null; PhysioNet shows the file sizes of a credentialed dataset only to people
+with access to it. `m4 list-datasets --json` lists the same entries.
 
 `prepared` is true, and `setup_state` is `ready`, only when `m4 init` ran to the
 end for the dataset: every raw file has its table, the views exist, and the

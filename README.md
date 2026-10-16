@@ -205,7 +205,11 @@ Once connected, try asking:
 | **mimic-iv-demo** | Tabular | 100 patients | Free | Yes | No | No |
 | **mimic-iv** | Tabular | 365k patients | [PhysioNet credentialed](https://physionet.org/content/mimiciv/) | Yes | Yes | Yes |
 | **mimic-iv-note** | Notes | 331k notes | [PhysioNet credentialed](https://physionet.org/content/mimic-iv-note/) | Yes | Yes | No |
-| **eicu** | Tabular | 200k+ patients | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes | No |
+| **mimic-iv-ed-demo** | Tabular | 100 patients | Free | Yes | Yes | No |
+| **mimic-iv-ed** | Tabular | 425k ED stays | [PhysioNet credentialed](https://physionet.org/content/mimic-iv-ed/) | Yes | Yes | No |
+| **eicu-demo** | Tabular | 2.5k ICU stays | Free | Yes | Yes | No |
+| **eicu** | Tabular | 200k+ ICU stays | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes | No |
+| **mimic-iii** | Tabular | 40k+ patients | [PhysioNet credentialed](https://physionet.org/content/mimiciii/) | Yes | Yes | No |
 
 These datasets are supported out of the box. However, it is possible to add any other custom dataset by following [these instructions](docs/CUSTOM_DATASETS.md).
 
@@ -322,7 +326,7 @@ M4 exposes these tools to your AI client. Data tools are checked against the exp
 | `list_datasets` | List available datasets and their status |
 | `set_dataset` | Removed migration aid; pass `dataset` to data tools |
 
-**Tabular Data Tools** (mimic-iv, mimic-iv-demo, eicu):
+**Tabular Data Tools** (every dataset except mimic-iv-note):
 | Tool | Description |
 |------|-------------|
 | `get_database_schema` | List all available tables |

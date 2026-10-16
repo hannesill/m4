@@ -1,6 +1,6 @@
 ---
 name: m4-api
-description: Query M4 clinical datasets (MIMIC-IV, its demo, MIMIC-IV-Note, eICU) from Python with `import m4`: find tables, run SQL into pandas, search clinical notes, handle M4's errors. Use before writing Python or SQL against M4 data.
+description: Query M4 clinical datasets (MIMIC-IV, MIMIC-IV-Note, MIMIC-IV-ED, eICU, MIMIC-III, and demos) from Python with `import m4`: find tables, run SQL into pandas, search clinical notes, handle M4's errors. Use before writing Python or SQL against M4 data.
 tier: community
 category: system
 kind: integration
@@ -45,9 +45,13 @@ DataFrames, not in the conversation.
 | `mimic-iv-demo` | `mimiciv_hosp`, `mimiciv_icu` | open, 100 patients |
 | `mimic-iv` | `mimiciv_hosp`, `mimiciv_icu`; `mimiciv_derived` after `m4 init-derived` | credentialed |
 | `mimic-iv-note` | `mimiciv_note`, for the notes functions only | credentialed |
+| `mimic-iv-ed-demo` | `mimiciv_ed` | open, the MIMIC-IV demo's 100 patients |
+| `mimic-iv-ed` | `mimiciv_ed` | credentialed |
+| `eicu-demo` | `eicu_crd`, as in `eicu` | open, over 2,500 unit stays |
 | `eicu` | `eicu_crd` (`eicu_crd.patient`, never bare `patient`) | credentialed |
+| `mimic-iii` | `mimiciii_clinical` | credentialed |
 
-The demo has no `mimiciv_derived`; compute concepts there from the clinical skills' SQL.
+The MIMIC-IV demo has no `mimiciv_derived`; compute concepts there from the clinical skills' SQL.
 Table names are the same on both backends. Write DuckDB SQL unless `m4 doctor --json` reports
 the `bigquery` backend.
 

@@ -15,7 +15,11 @@ Available datasets:
 - mimic-iv-demo - MIMIC-IV Clinical Database Demo [TABULAR]
 - mimic-iv - MIMIC-IV Clinical Database [TABULAR]
 - mimic-iv-note - MIMIC-IV Clinical Notes [NOTES]
+- mimic-iv-ed-demo - MIMIC-IV-ED Demo [TABULAR]
+- mimic-iv-ed - MIMIC-IV Emergency Department Module [TABULAR]
+- eicu-demo - eICU Collaborative Research Database Demo [TABULAR]
 - eicu - eICU Collaborative Research Database [TABULAR]
+- mimic-iii - MIMIC-III Clinical Database [TABULAR]
 ```
 
 ### `set_dataset`
@@ -25,7 +29,7 @@ Removed. The compatibility tool returns migration guidance; pass `dataset` to th
 
 ## Tabular Data Tools
 
-These tools are available for datasets with the `TABULAR` modality (mimic-iv, mimic-iv-demo, eicu).
+These tools are available for datasets with the `TABULAR` modality: every built-in dataset except mimic-iv-note.
 
 **Derived tables:** For MIMIC-IV, after materializing derived tables with `m4 init-derived mimic-iv`, the `execute_query` tool can query pre-computed clinical concept tables in the `mimiciv_derived.*` schema. These tables provide validated severity scores, sepsis cohorts, organ failure staging, and more -- eliminating the need to write complex clinical SQL from scratch. See [Derived Table Categories](#derived-table-categories) below for the full list.
 
@@ -136,16 +140,16 @@ list_patient_notes(10000032, note_type="discharge")
 
 Tools declare required modalities. Only datasets with matching modalities expose the tool:
 
-| Tool | Required Modality | mimic-iv-demo | mimic-iv | mimic-iv-note | eicu |
-|------|-------------------|---------------|----------|---------------|------|
-| `get_database_schema` | TABULAR | Yes | Yes | No | Yes |
-| `get_table_info` | TABULAR | Yes | Yes | No | Yes |
-| `execute_query` | TABULAR | Yes | Yes | No | Yes |
-| `search_notes` | NOTES | No | No | Yes | No |
-| `get_note` | NOTES | No | No | Yes | No |
-| `list_patient_notes` | NOTES | No | No | Yes | No |
-| `list_datasets` | (always) | Yes | Yes | Yes | Yes |
-| `set_dataset` | Removed migration aid | Yes | Yes | Yes | Yes |
+| Tool | Required Modality | TABULAR datasets | NOTES datasets (mimic-iv-note) |
+|------|-------------------|------------------|--------------------------------|
+| `get_database_schema` | TABULAR | Yes | No |
+| `get_table_info` | TABULAR | Yes | No |
+| `execute_query` | TABULAR | Yes | No |
+| `search_notes` | NOTES | No | Yes |
+| `get_note` | NOTES | No | Yes |
+| `list_patient_notes` | NOTES | No | Yes |
+| `list_datasets` | (always) | Yes | Yes |
+| `set_dataset` | Removed migration aid | Yes | Yes |
 
 ---
 

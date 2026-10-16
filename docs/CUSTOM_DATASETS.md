@@ -8,34 +8,40 @@ Create a JSON file in the M4 data directory under `datasets/`. By default this
 is `m4_data/datasets/`; if `M4_DATA_DIR` is set, it must point directly at the
 M4 data directory.
 
-**Example: `m4_data/datasets/mimic-iv-ed.json`**
+**Example: `m4_data/datasets/my-icu-extract.json`**
+
+An extract from your own hospital's data warehouse, as CSV.gz files in a
+`core/` and a `labs/` folder:
+
 ```json
 {
-  "name": "mimic-iv-ed",
-  "description": "MIMIC-IV Emergency Department Module",
-  "file_listing_url": "https://physionet.org/files/mimic-iv-ed/2.2/",
-  "subdirectories_to_scan": ["ed"],
-  "primary_verification_table": "mimiciv_ed.edstays",
-  "requires_authentication": true,
-  "bigquery_project_id": "physionet-data",
-  "bigquery_dataset_ids": ["mimiciv_ed"],
+  "name": "my-icu-extract",
+  "title": "My ICU extract",
+  "description": "Adult ICU extract from our data warehouse",
+  "summary": "Admissions, vital signs and labs of adult ICU stays at one hospital.",
+  "version": "2024-06",
+  "subdirectories_to_scan": ["core", "labs"],
+  "primary_verification_table": "myicu_core.admissions",
   "modalities": ["TABULAR"],
-  "schema_mapping": {"ed": "mimiciv_ed"},
-  "bigquery_schema_mapping": {"mimiciv_ed": "mimiciv_ed"}
+  "schema_mapping": {"core": "myicu_core", "labs": "myicu_labs"}
 }
 ```
 
 Then initialize:
 ```bash
-m4 init mimic-iv-ed --src /path/to/your/csv/files
+m4 init my-icu-extract --src /path/to/your/csv/files
 ```
 
 ## JSON Fields Reference
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `name` | Yes | Unique identifier passed as `--dataset <name>` or `dataset="<name>"`. A file that uses the name of a built-in dataset (`mimic-iv-demo`, `mimic-iv`, `mimic-iv-note`, `eicu`) is ignored with a warning |
+| `name` | Yes | Unique identifier passed as `--dataset <name>` or `dataset="<name>"`. A file that uses the name of a built-in dataset (`mimic-iv-demo`, `mimic-iv`, `mimic-iv-note`, `mimic-iv-ed-demo`, `mimic-iv-ed`, `eicu-demo`, `eicu`, `mimic-iii`) is ignored with a warning |
 | `description` | Yes | Human-readable description |
+| `title` | No | Short display name shown by `m4 list-datasets`. Defaults to `name` |
+| `summary` | No | One or two sentences on what the dataset holds, shown by `m4 list-datasets` |
+| `version` | No | Version of the data, such as the PhysioNet version in `file_listing_url` |
+| `download_size_gb` | No | Approximate size in GB of the raw CSV.gz files, shown by `m4 list-datasets` |
 | `file_listing_url` | No | PhysioNet URL for auto-download (demo datasets only) |
 | `subdirectories_to_scan` | No | Subdirs containing CSV files (e.g., `["hosp", "icu"]`) |
 | `primary_verification_table` | Yes | Table to verify initialization succeeded |

@@ -90,12 +90,14 @@ def validate_raw_layout(dataset_name: str, root: Path) -> dict[str, Any]:
             "recovery": ["Run the generated wget command, then retry m4 download."],
         }
 
-    nested_markers = [
-        root / "physionet.org" / "files",
-        root / "files" / "mimiciv",
-        root / "files" / "mimic-iv-note",
-        root / "files" / "eicu-crd",
+    # What `wget -r` leaves without -nH (physionet.org/files/...), or with -nH
+    # but without --cut-dirs (files/<project>/...).
+    nested_markers = [root / "physionet.org" / "files"]
+    listing_parts = [
+        part for part in urlparse(ds.file_listing_url or "").path.split("/") if part
     ]
+    if len(listing_parts) >= 2:
+        nested_markers.append(root / listing_parts[0] / listing_parts[1])
     if any(path.exists() for path in nested_markers):
         warnings.append("nested_physionet_layout")
         recovery.append(
@@ -119,12 +121,14 @@ def validate_raw_layout(dataset_name: str, root: Path) -> dict[str, Any]:
             "Confirm the target root and rerun the dataset-specific wget command."
         )
 
-    if ds.name == "eicu":
+    if "" in ds.schema_mapping:
+        # A dataset without folders of its own, such as eICU or MIMIC-III
         root_csv_count = len(list(root.glob("*.csv.gz")))
         if root_csv_count == 0 and csv_files:
-            warnings.append("wrong_eicu_root_layout")
+            warnings.append("wrong_root_layout")
             recovery.append(
-                "eICU CSV files should be directly under the eicu raw root, not nested."
+                f"{ds.name} CSV files should be directly under its raw root, "
+                "not nested."
             )
 
     if not csv_files:

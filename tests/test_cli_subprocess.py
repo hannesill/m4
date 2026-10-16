@@ -127,6 +127,70 @@ def test_list_datasets_json_subprocess_is_parseable(tmp_path):
     }
 
 
+CATALOG_KEYS = {
+    "title",
+    "summary",
+    "version",
+    "builtin",
+    "modalities",
+    "dataset_page_url",
+    "download_size_gb",
+}
+
+
+def test_list_datasets_json_describes_each_dataset(tmp_path):
+    datasets_dir = tmp_path / "m4_data" / "datasets"
+    datasets_dir.mkdir(parents=True)
+    (datasets_dir / "described.json").write_text(
+        json.dumps(
+            {
+                "name": "my-icu-extract",
+                "title": "My ICU extract",
+                "summary": "Adult ICU stays at one hospital.",
+                "download_size_gb": 1.5,
+                "modalities": ["TABULAR", "NOTES"],
+            }
+        )
+    )
+    (datasets_dir / "bare.json").write_text(json.dumps({"name": "bare-extract"}))
+
+    result = _run_m4(["list-datasets", "--json", "--no-interactive"], tmp_path)
+
+    assert result.returncode == 0
+    payload = _assert_single_json_stdout(result)
+    listed = {dataset["name"]: dataset for dataset in payload["data"]["datasets"]}
+    assert all(CATALOG_KEYS <= set(dataset) for dataset in listed.values())
+
+    mimic_iv = listed["mimic-iv"]
+    assert mimic_iv["title"] == "MIMIC-IV"
+    assert mimic_iv["version"] == "3.1"
+    assert mimic_iv["builtin"] is True
+    assert mimic_iv["modalities"] == ["TABULAR"]
+    assert mimic_iv["dataset_page_url"] == "https://physionet.org/content/mimiciv/"
+    assert mimic_iv["summary"]
+    assert mimic_iv["download_size_gb"] is None  # PhysioNet shows it only to members
+    assert listed["mimic-iv-note"]["modalities"] == ["NOTES"]
+    assert listed["eicu-demo"]["download_size_gb"] > 0
+
+    assert {
+        "title": "My ICU extract",
+        "summary": "Adult ICU stays at one hospital.",
+        "version": None,
+        "builtin": False,
+        "modalities": ["NOTES", "TABULAR"],
+        "dataset_page_url": None,
+        "download_size_gb": 1.5,
+    }.items() <= listed["my-icu-extract"].items()
+    assert {
+        "title": "bare-extract",
+        "summary": None,
+        "version": None,
+        "builtin": False,
+        "modalities": ["TABULAR"],
+        "download_size_gb": None,
+    }.items() <= listed["bare-extract"].items()
+
+
 def test_schema_json_error_redacts_data_dir(tmp_path):
     result = _run_m4(
         [

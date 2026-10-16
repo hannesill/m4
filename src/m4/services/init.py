@@ -5,6 +5,7 @@ from pathlib import Path
 from shlex import quote
 
 from m4.config import (
+    ensure_custom_datasets_loaded,
     get_active_backend,
     get_dataset_parquet_root,
     get_default_database_path,
@@ -262,6 +263,7 @@ def initialize_dataset_service(
     """Run the non-interactive dataset initialization workflow."""
     reporter = get_event_reporter(event_reporter)
     dataset_key = dataset_name.lower()
+    ensure_custom_datasets_loaded()
     ds = DatasetRegistry.get(dataset_key)
     if not ds:
         supported = ", ".join([d.name for d in DatasetRegistry.list_all()])
