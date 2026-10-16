@@ -2,13 +2,16 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
+      # Retained provenance files are byte-exact copies with recorded hashes.
       - id: trailing-whitespace
+        exclude: '^benchmark/release/v1/planning/claude28/provenance/'
       - id: end-of-file-fixer
+        exclude: '^benchmark/release/v1/planning/claude28/provenance/'
       - id: check-yaml
       - id: check-toml
       - id: check-added-large-files
         args: ['--maxkb=1024']
-        exclude: '\.(mp4|avi|mov|mkv)$|static/vendor/|benchmark/shared/ground_truth/'
+        exclude: '\.(mp4|avi|mov|mkv)$|static/vendor/|benchmark/shared/ground_truth/|benchmark/release/v1/planning/'
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit

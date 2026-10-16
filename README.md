@@ -18,7 +18,7 @@ M4 is infrastructure for AI-assisted clinical research. Initialize MIMIC-IV, eIC
 
 [Usage example – M4 MCP](https://claude.ai/share/93f26832-f298-4d1d-96e3-5608d7f0d7ad) | [Usage example – Code Execution](docs/M4_Code_Execution_Example.pdf)
 
-> M4 builds on the [M3](https://github.com/rafiattrach/m3) project. Please [cite](#citation) their work when using M4!
+> M4 builds on the [M3](https://github.com/rafiattrach/m3) project. Please [cite](#citation) their work as well when using M4!
 
 
 ## Why M4?
@@ -337,6 +337,14 @@ M4 exposes these tools to your AI client. Data tools are checked against the exp
 | `list_patient_notes` | List notes for a patient (metadata only) |
 
 
+## M4Bench
+
+M4Bench is the benchmark built on M4: 28 clinical EHR derivation tasks on MIMIC-IV and eICU that measure how well coding agents reproduce reference clinical concepts, with and without skills.
+
+- Benchmark, harness, and evaluator: [`benchmark/`](benchmark/README.md)
+- Per-run evidence for the paper (sanitized results and traces for 1,960 runs): [hannesill/m4bench-evidence](https://huggingface.co/datasets/hannesill/m4bench-evidence) on Hugging Face
+- Paper release and verification steps: [`benchmark/release/v1/`](benchmark/release/v1/README.md), tag `m4bench-neurips2026-camera-ready`
+
 ## More Documentation
 
 | Guide | Description |
@@ -348,7 +356,7 @@ M4 exposes these tools to your AI client. Data tools are checked against the exp
 | [Tools Reference](docs/TOOLS.md) | MCP tool documentation |
 | [BigQuery Setup](docs/BIGQUERY.md) | Google Cloud for full datasets |
 | [Custom Datasets](docs/CUSTOM_DATASETS.md) | Add your own PhysioNet datasets |
-| [M4Bench Reproducibility](benchmark/REPRODUCIBILITY.md) | Reviewer workflow for MIMIC-IV/eICU initialization and benchmark reruns |
+| [M4Bench Reproducibility](benchmark/REPRODUCIBILITY.md) | MIMIC-IV/eICU initialization and benchmark reruns |
 | [Development](docs/DEVELOPMENT.md) | Contributing, testing, code style |
 | [OAuth2 Authentication](docs/OAUTH2_AUTHENTICATION.md) | Enterprise security setup |
 
@@ -394,7 +402,18 @@ m4 config --quick          # Regenerate generic config
 
 ## Citation
 
-M4 builds on the M3 project. Please cite:
+If you use M4 or M4Bench, please cite the M4Bench paper:
+
+```bibtex
+@inproceedings{ill2026m4bench,
+  title={M4Bench: Evaluating Procedural Specification for Clinical EHR Derivation Agents},
+  author={Ill, Hannes and Al Attrach, Rafi and Fani, Rajna and Han, Ahram and Yamamoto, Ryohei and Moerig, Marlene Louisa and Yoon, Dukyong and Celi, Leo Anthony},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS), Evaluations and Datasets Track},
+  year={2026}
+}
+```
+
+M4 builds on the [M3](https://github.com/rafiattrach/m3) project. Please also cite M3 when using this repository:
 
 ```bibtex
 @article{attrach2025conversational,

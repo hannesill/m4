@@ -1,0 +1,119 @@
+{
+  "description": "Retained launch, patch, and source-hash provenance for the July campaign. Published copies replace local absolute paths only; original hashes identify the private source files.",
+  "files": [
+    {
+      "published_path": "provenance/collaborator/campaign_manifest.json",
+      "original_sha256": "8fc65c8a0962a92c469ce93261d6edf6cd6b56592312fd425e34da1b930072de",
+      "published_sha256": "db4dc73c262851db0d3197890193b54077c29e255cfb21b57097b0f12c231766",
+      "local_paths_redacted": true
+    },
+    {
+      "published_path": "provenance/collaborator/canonical_manifest.json",
+      "original_sha256": "dd349a9d8ed2a2ce27c3c4da454c39ad6a8edef23ebaa727f6c4b8d8e256b3de",
+      "published_sha256": "23b73a418444b0b97d6ee314f4b973536c969de4b4dc24b383f216015ba80fe4",
+      "local_paths_redacted": true
+    },
+    {
+      "published_path": "provenance/collaborator/code_diff.patch",
+      "original_sha256": "0348dc913c6719af0387c6cb7a401276c67b906cc23d431e75cfa39e74bebe5c",
+      "published_sha256": "0348dc913c6719af0387c6cb7a401276c67b906cc23d431e75cfa39e74bebe5c",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/collaborator/code_provenance.json",
+      "original_sha256": "306f259ff0520e5b73c660013689e9e5b582647b5998c6ca8d238bb60bec9566",
+      "published_sha256": "306f259ff0520e5b73c660013689e9e5b582647b5998c6ca8d238bb60bec9566",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/collaborator/finish_five_tasks.sh",
+      "original_sha256": "9fb965e8c160f682e3ef1961cf22757a927475afbb5226c25726e1b00bb3960c",
+      "published_sha256": "9fb965e8c160f682e3ef1961cf22757a927475afbb5226c25726e1b00bb3960c",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/collaborator/finish_four_tasks.sh",
+      "original_sha256": "e793983929fe3ebc4005fab562ff0ecb49d8e5bb93dab86c82b90c0d07de4ccb",
+      "published_sha256": "e793983929fe3ebc4005fab562ff0ecb49d8e5bb93dab86c82b90c0d07de4ccb",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/collaborator/finish_next_four_tasks.sh",
+      "original_sha256": "2110ddc8087752bbca88c946012772dc1a2d2ff42b07412b4fa083fed4558c8a",
+      "published_sha256": "2110ddc8087752bbca88c946012772dc1a2d2ff42b07412b4fa083fed4558c8a",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/collaborator/finish_remaining_gaps.sh",
+      "original_sha256": "cffc47f9585bc7d560132c2b668d34b3574283f7197104124cf98c2895d4b22f",
+      "published_sha256": "cffc47f9585bc7d560132c2b668d34b3574283f7197104124cf98c2895d4b22f",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/collaborator/launch_commands.md",
+      "original_sha256": "5db840e2bde6156c8c663411aad068970f02911b0c4a1370cec44edd2f73d0de",
+      "published_sha256": "5db840e2bde6156c8c663411aad068970f02911b0c4a1370cec44edd2f73d0de",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/collaborator/patch_audit.json",
+      "original_sha256": "ba771a3caf4ba45a51d3b552ca0949182592dcc4417fcc152331fdb98787ac78",
+      "published_sha256": "ba771a3caf4ba45a51d3b552ca0949182592dcc4417fcc152331fdb98787ac78",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/local/31fecb245ec91c80bbd2597a1a5ac356afe688cb.patch",
+      "original_sha256": "62d72eb32d70ba7e09eb720c2521c65cc250dd69e59b1f03bb7fd966f94c01e0",
+      "published_sha256": "62d72eb32d70ba7e09eb720c2521c65cc250dd69e59b1f03bb7fd966f94c01e0",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/local/5f1faabb5a9a36ff72bff86ca29f714cdcdf09ff.patch",
+      "original_sha256": "c61003a2ca767c1a3eb5a4e369170b97bf78960a0add0ff9ac76956feb8ade2d",
+      "published_sha256": "c61003a2ca767c1a3eb5a4e369170b97bf78960a0add0ff9ac76956feb8ade2d",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/local/benchmark_source_hashes.json",
+      "original_sha256": "8c88f8fd2c37c12f949ce0488e45450ec383ff39499383ad6aafcc60eb0a2d51",
+      "published_sha256": "8c88f8fd2c37c12f949ce0488e45450ec383ff39499383ad6aafcc60eb0a2d51",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/local/c38e0986df071aef712c323eb3fdbc1e75ded891.patch",
+      "original_sha256": "5acac8ec83d4ab853dbe02636a41c892d0ef48167cb9467c3918266877ff33a9",
+      "published_sha256": "5acac8ec83d4ab853dbe02636a41c892d0ef48167cb9467c3918266877ff33a9",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/local/historical_commits.json",
+      "original_sha256": "bc4529232e6393b1d7d400b78911acfaa796d94741a8d2be412913cee528e1f5",
+      "published_sha256": "bc4529232e6393b1d7d400b78911acfaa796d94741a8d2be412913cee528e1f5",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/local/rebuttal-claude-opus-sonnet-20260726/campaign_manifest.json",
+      "original_sha256": "c9e3bc9ff73fd9a42520483dd72dc588d89cd1efe4b7f6c25c4d3b12193e9fdc",
+      "published_sha256": "2c27a83b14d104b41e1fed6c3772e2654380a704ad8666330665788ff0790b4c",
+      "local_paths_redacted": true
+    },
+    {
+      "published_path": "provenance/local/rebuttal-claude-opus-sonnet-20260726/campaign_slice_manifest.json",
+      "original_sha256": "6fb409d73c417c3639988e94415073e89a01478f2862c72fd16f2e78ce165bee",
+      "published_sha256": "6fb409d73c417c3639988e94415073e89a01478f2862c72fd16f2e78ce165bee",
+      "local_paths_redacted": false
+    },
+    {
+      "published_path": "provenance/local/rebuttal-claude-opus-sonnet-additional-20260728/campaign_manifest.json",
+      "original_sha256": "0aecf0faab79574e52e59a4b171210bc401ce450e13149fc9227a5f69f4f30d9",
+      "published_sha256": "8771d8f17802341ade874affb31dc9399c1eb09975cc6b473e634700d8e5f03c",
+      "local_paths_redacted": true
+    },
+    {
+      "published_path": "provenance/local/rebuttal-claude-opus-sonnet-additional-20260728/campaign_slice_manifest.json",
+      "original_sha256": "07d01213390758ca7fcd24678a79a23319f1f53c5e2a0b7c89722dcaa71c3ab1",
+      "published_sha256": "07d01213390758ca7fcd24678a79a23319f1f53c5e2a0b7c89722dcaa71c3ab1",
+      "local_paths_redacted": false
+    }
+  ]
+}

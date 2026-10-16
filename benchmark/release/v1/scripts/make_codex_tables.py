@@ -23,10 +23,11 @@ PAPER_DIR = Path(
 ).resolve()
 BENCHMARK_DIR = M4_DIR / "benchmark"
 TASK_DIR = BENCHMARK_DIR / "tasks"
+RESULTS_DIR = Path(
+    os.environ.get("M4BENCH_RESULTS_DIR", BENCHMARK_DIR / "results")
+).resolve()
 RESULT_ROOT = Path(
-    os.environ.get(
-        "M4BENCH_PAPER_ROOT", BENCHMARK_DIR / "results" / "release-20260502-codex-v11"
-    )
+    os.environ.get("M4BENCH_PAPER_ROOT", RESULTS_DIR / "release-20260502-codex-v11")
 ).resolve()
 ANALYSIS_DIR = RESULT_ROOT / "analysis"
 TABLE_DIR = PAPER_DIR / "tables"
@@ -448,7 +449,25 @@ def generate_skill_all_probe(cells: list[dict[str, str]]) -> None:
     )
 
 
+def require_run_root(campaign: str, marker: Path) -> None:
+    """Fail before any output is written if the run root is not available.
+
+    Without it every table here would be overwritten with empty rows, and
+    `task_details.tex` is the frozen reference for verify_public_evidence.py.
+    """
+    if marker.exists():
+        return
+    raise SystemExit(
+        f"{campaign}: no runs found under {RESULT_ROOT}; refusing to overwrite "
+        "tracked outputs with empty tables. Restore the run root or set "
+        "M4BENCH_RESULTS_DIR. From a public checkout, run "
+        "benchmark/release/v1/scripts/verify_public_evidence.py on an extracted "
+        "evidence package instead."
+    )
+
+
 def main() -> None:
+    require_run_root("codex", ANALYSIS_DIR / "runs.csv")
     TABLE_DIR.mkdir(parents=True, exist_ok=True)
     generate_task_inventory()
     generate_task_details()

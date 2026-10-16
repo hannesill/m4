@@ -5,9 +5,11 @@ Outputs PDF figures into figures/. Data sources:
 
 - gpt-oss-20b per-task deltas: taken from planning/final_oss_runs.csv when
   present; otherwise hardcoded from the last exploratory local run snapshot.
-- Codex per-task deltas: taken from tables/codex_skill_gains.tex and
-  tables/codex_skill_declines.tex (top 10 + bottom 8 covered).
-- Claude per-task deltas: taken from tables/claude_task_deltas.tex.
+- Codex per-task deltas: taken from planning/final_codex_runs.csv (all 28
+  tasks); the hardcoded top-10/bottom-8 snapshot is only a fallback.
+- Claude per-task deltas: taken from the full-coverage replication in
+  planning/claude28/claude28_canonical_runs.csv (all 28 tasks); the hardcoded
+  eight-task sentinel snapshot is only a fallback.
 - Schema-probe values: taken from the final exploratory OSS rerun snapshot.
 
 Figures produced:
@@ -17,7 +19,7 @@ Figures produced:
   figures/schema_probe_slopes_v1.pdf      slope graph, native -> obf -> rest
   figures/schema_probe_slopes_v2.pdf      grouped bar chart, by task
 
-The figures are designed for grayscale-friendly double-blind submissions.
+The figures are designed to stay readable in grayscale.
 """
 
 from __future__ import annotations
@@ -33,6 +35,8 @@ Path(os.environ["MPLCONFIGDIR"]).mkdir(parents=True, exist_ok=True)
 import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
+# Embed TrueType (Type 42) fonts; camera-ready PDFs must not contain Type 3 fonts.
+matplotlib.rcParams["pdf.fonttype"] = 42
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
@@ -81,7 +85,7 @@ CLAUDE_DELTAS = {
 
 
 def load_task_deltas_from_runs(
-    path: Path, fallback: dict[str, float]
+    path: Path, fallback: dict[str, float], model_field: str = "model"
 ) -> dict[str, float]:
     """Load task-balanced native skill deltas from generated final run CSVs."""
     if not path.exists():
@@ -89,7 +93,8 @@ def load_task_deltas_from_runs(
     groups: dict[tuple[str, str, str], list[float]] = {}
     with path.open(newline="") as handle:
         for row in csv.DictReader(handle):
-            if row.get("schema") != "native":
+            # The Claude replication CSV is native-only and has no schema column.
+            if row.get("schema", "native") != "native":
                 continue
             condition = row.get("condition")
             if condition not in {"no-skill", "with-skill"}:
@@ -97,7 +102,7 @@ def load_task_deltas_from_runs(
             reward = row.get("reward")
             if reward in {"", None}:
                 continue
-            key = (row["task"], row["model"], condition)
+            key = (row["task"], row[model_field], condition)
             groups.setdefault(key, []).append(float(reward))
     tasks = sorted({task for task, _, _ in groups})
     out: dict[str, float] = {}
@@ -119,7 +124,9 @@ CODEX_DELTAS = load_task_deltas_from_runs(
     PAPER_DIR / "planning/final_codex_runs.csv", CODEX_DELTAS
 )
 CLAUDE_DELTAS = load_task_deltas_from_runs(
-    PAPER_DIR / "planning/final_claude_runs.csv", CLAUDE_DELTAS
+    PAPER_DIR / "planning/claude28/claude28_canonical_runs.csv",
+    CLAUDE_DELTAS,
+    model_field="model_alias",
 )
 
 PI_FALLBACK = {
@@ -194,10 +201,17 @@ def fig_skill_delta_forest_v1() -> None:
     fig, ax = plt.subplots(figsize=(7.6, 0.27 * n + 1.6))
 
     style = {
-        "Codex": dict(marker="s", color="#1f4e79", label="Codex (top/bottom 18 tasks)"),
-        "Claude": dict(marker="^", color="#7a4f9c", label="Claude (8-task sentinel)"),
+        # Legend counts come from the data so they cannot go stale.
+        "Codex": dict(
+            marker="s", color="#1f4e79", label=f"Codex ({len(CODEX_DELTAS)} tasks)"
+        ),
+        "Claude": dict(
+            marker="^", color="#7a4f9c", label=f"Claude ({len(CLAUDE_DELTAS)} tasks)"
+        ),
         "gpt-oss-20b": dict(
-            marker="o", color="#a14a3a", label="gpt-oss-20b (8-task local)"
+            marker="o",
+            color="#a14a3a",
+            label=f"gpt-oss-20b ({len(pi)} tasks, exploratory)",
         ),
     }
 

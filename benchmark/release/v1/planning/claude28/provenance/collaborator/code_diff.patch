@@ -1,0 +1,645 @@
+diff --git a/benchmark/ground_truth/obfuscated/apsiii-24h.sql b/benchmark/ground_truth/obfuscated/apsiii-24h.sql
+index b4eb800..9c4a6f3 100644
+--- a/benchmark/ground_truth/obfuscated/apsiii-24h.sql
++++ b/benchmark/ground_truth/obfuscated/apsiii-24h.sql
+@@ -10,15 +10,15 @@
+ --    prognostic system. Risk prediction of hospital mortality for
+ --    critically ill hospitalized adults." Chest. 1991;100(6):1619-36.
+ 
+--- Adapted from source APS III implementation
++-- Adapted from mimic-c_134 c_062.sql
+ --
+--- DEVIATION from source implementation: fixed "worst from normal" tiebreaker equality
+--- checks for 6 variables (respiratory rate, hematocrit, WBC, sodium, albumin,
+--- glucose). The source implementation compares ABS(x_max - midpoint) to
+--- itself, which
++-- DEVIATION from mimic-c_134: Fixed "worst from normal" tiebreaker equality
++-- checks for 6 variables (c_492, c_273, c_620, c_533, c_039,
++-- c_257). The mimic-c_134 originals compare ABS(x_max - midpoint) to
++-- itself — e.g. ABS(c_493 - 19) = ABS(c_493 - 19) — which
+ -- is trivially TRUE and short-circuits the real tie logic. We correct these
+ -- to compare max vs min: ABS(x_max - midpoint) = ABS(x_min - midpoint).
+--- See individual FIX comments in the scorecomp CTE below.
++-- See individual FIX c_135 in the scorecomp CTE below.
+ 
+ WITH pa AS (
+   SELECT
+@@ -671,7 +671,7 @@ WITH pa AS (
+       THEN smax.c_496
+       WHEN ABS(c_493 - 19) < ABS(c_495 - 19)
+       THEN smin.c_496
+-      -- FIX: source implementation self-compares the max-side expression
++      -- FIX: mimic-c_134 has ABS(c_493 - 19) = ABS(c_493 - 19)
+       -- which is always TRUE (self-comparison). Corrected to compare max vs min.
+       WHEN ABS(c_493 - 19) = ABS(c_495 - 19)
+       AND smax.c_496 >= smin.c_496
+@@ -687,7 +687,7 @@ WITH pa AS (
+       THEN smax.c_276
+       WHEN ABS(c_274 - 45.5) < ABS(c_275 - 45.5)
+       THEN smin.c_276
+-      -- FIX: source implementation self-compares the max-side expression
++      -- FIX: mimic-c_134 has ABS(c_274 - 45.5) = ABS(c_274 - 45.5)
+       -- which is always TRUE (self-comparison). Corrected to compare max vs min.
+       WHEN ABS(c_274 - 45.5) = ABS(c_275 - 45.5)
+       AND smax.c_276 >= smin.c_276
+@@ -703,7 +703,7 @@ WITH pa AS (
+       THEN smax.c_623
+       WHEN ABS(c_621 - 11.5) < ABS(c_622 - 11.5)
+       THEN smin.c_623
+-      -- FIX: source implementation self-compares the max-side expression
++      -- FIX: mimic-c_134 has ABS(c_621 - 11.5) = ABS(c_621 - 11.5)
+       -- which is always TRUE (self-comparison). Corrected to compare max vs min.
+       WHEN ABS(c_621 - 11.5) = ABS(c_622 - 11.5) AND smax.c_623 >= smin.c_623
+       THEN smax.c_623
+@@ -732,7 +732,7 @@ WITH pa AS (
+       THEN smax.c_536
+       WHEN ABS(c_534 - 145.5) < ABS(c_535 - 145.5)
+       THEN smin.c_536
+-      -- FIX: source implementation self-compares the max-side expression
++      -- FIX: mimic-c_134 has ABS(c_534 - 145.5) = ABS(c_534 - 145.5)
+       -- which is always TRUE (self-comparison). Corrected to compare max vs min.
+       WHEN ABS(c_534 - 145.5) = ABS(c_535 - 145.5)
+       AND smax.c_536 >= smin.c_536
+@@ -748,7 +748,7 @@ WITH pa AS (
+       THEN smax.c_042
+       WHEN ABS(c_040 - 3.5) < ABS(c_041 - 3.5)
+       THEN smin.c_042
+-      -- FIX: source implementation self-compares the max-side expression
++      -- FIX: mimic-c_134 has ABS(c_040 - 3.5) = ABS(c_040 - 3.5)
+       -- which is always TRUE (self-comparison). Corrected to compare max vs min.
+       WHEN ABS(c_040 - 3.5) = ABS(c_041 - 3.5)
+       AND smax.c_042 >= smin.c_042
+@@ -765,7 +765,7 @@ WITH pa AS (
+       THEN smax.c_261
+       WHEN ABS(c_258 - 130) < ABS(c_260 - 130)
+       THEN smin.c_261
+-      -- FIX: source implementation self-compares the max-side expression
++      -- FIX: mimic-c_134 has ABS(c_258 - 130) = ABS(c_258 - 130)
+       -- which is always TRUE (self-comparison). Corrected to compare max vs min.
+       WHEN ABS(c_258 - 130) = ABS(c_260 - 130)
+       AND smax.c_261 >= smin.c_261
+@@ -875,8 +875,8 @@ WITH pa AS (
+ SELECT
+     ie.c_556, ie.c_263, ie.c_552
+     , c_062
+-    -- DEVIATION from source implementation: COALESCE component scores to 0.
+-    -- See sofa-24h.sql for rationale.
++    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
++    -- See c_537-24h.sql for rationale.
+     , COALESCE(c_289, 0) AS c_289
+     , COALESCE(c_350, 0) AS c_350
+     , COALESCE(c_562, 0) AS c_562
+diff --git a/benchmark/ground_truth/obfuscated/charlson.sql b/benchmark/ground_truth/obfuscated/charlson.sql
+index dedd57e..95be32a 100644
+--- a/benchmark/ground_truth/obfuscated/charlson.sql
++++ b/benchmark/ground_truth/obfuscated/charlson.sql
+@@ -2,7 +2,7 @@
+ -- Title: Charlson Comorbidity Index
+ -- Calculates the Charlson Comorbidity Index (CCI) for each hospital
+ -- admission using ICD-9 and ICD-10 diagnosis codes. Includes 17
+--- comorbidity conditions with original Charlson weights and age score.
++-- comorbidity conditions with original Charlson weights and c_031 score.
+ -- ------------------------------------------------------------------
+ 
+ -- Reference:
+@@ -13,7 +13,7 @@
+ --    Quan H et al. "Coding algorithms for defining comorbidities in
+ --    ICD-9-CM and ICD-10 administrative data." Med Care. 2005;43(11):1130-9.
+ 
+--- Adapted from mimic-code charlson.sql
++-- Adapted from mimic-c_134 charlson.sql
+ 
+ WITH diag AS (
+   SELECT
+diff --git a/benchmark/ground_truth/obfuscated/creatinine-baseline.sql b/benchmark/ground_truth/obfuscated/creatinine-baseline.sql
+index c9f1e58..cba82fb 100644
+--- a/benchmark/ground_truth/obfuscated/creatinine-baseline.sql
++++ b/benchmark/ground_truth/obfuscated/creatinine-baseline.sql
+@@ -1,6 +1,6 @@
+ -- ------------------------------------------------------------------
+ -- Title: Baseline Creatinine Estimation
+--- Estimates baseline (pre-illness) serum creatinine for each hospital
++-- Estimates baseline (pre-illness) serum c_145 for each hospital
+ -- admission using a hierarchical approach: (1) observed minimum if
+ -- <= 1.1, (2) observed minimum if CKD, (3) MDRD-estimated at eGFR=75.
+ -- ------------------------------------------------------------------
+@@ -10,8 +10,8 @@
+ --    hospitalized patients with impaired kidney function."
+ --    Clin J Am Soc Nephrol. 2012;7(5):712-719.
+ 
+--- Adapted from mimic-code creatinine_baseline.sql
+--- Adults only (age >= 18).
++-- Adapted from mimic-c_134 creatinine_baseline.sql
++-- Adults only (c_031 >= 18).
+ 
+ WITH p AS (
+   SELECT
+diff --git a/benchmark/ground_truth/obfuscated/gcs-24h.sql b/benchmark/ground_truth/obfuscated/gcs-24h.sql
+index ff7e6ce..05d74e2 100644
+--- a/benchmark/ground_truth/obfuscated/gcs-24h.sql
++++ b/benchmark/ground_truth/obfuscated/gcs-24h.sql
+@@ -9,7 +9,7 @@
+ --    Teasdale G, Jennett B. "Assessment of coma and impaired
+ --    consciousness. A practical scale." Lancet. 1974;2(7872):81-84.
+ 
+--- Adapted from source first-day GCS implementation
++-- Adapted from mimic-c_134 first_day_gcs.sql
+ 
+ WITH gcs_final AS (
+     SELECT
+@@ -20,10 +20,10 @@ WITH gcs_final AS (
+         g.c_249,
+         g.c_244,
+         g.c_248,
+-        -- Deterministic tie-breaker: minimum total GCS alone can
+-        -- select multiple rows with different component values. Chart time plus
+-        -- components keeps the chosen tuple stable across
+-        -- execution plans while preserving minimum total GCS as the primary clinical rule.
++        -- Deterministic tie-breaker: minimum total GCS alone can select
++        -- multiple rows with different component values. Chart time plus
++        -- components keeps the chosen tuple stable across execution plans
++        -- while preserving minimum total GCS as the primary clinical rule.
+         ROW_NUMBER() OVER (
+             PARTITION BY g.c_552
+             ORDER BY
+@@ -43,8 +43,8 @@ WITH gcs_final AS (
+ 
+ SELECT
+     ie.c_556, ie.c_263, ie.c_552
+-    -- DEVIATION from mimic-code: source first-day GCS leaves missing values NULL
+-    -- and returns an intubation/unable flag. The benchmark evaluates only total/motor/verbal/
++    -- DEVIATION from mimic-c_134: first_day_gcs leaves missing values NULL
++    -- and returns c_248. The benchmark evaluates only total/motor/verbal/
+     -- eyes and follows the task instruction to treat missing GCS as normal.
+     , COALESCE(gs.c_243, 15) AS c_245
+     , COALESCE(gs.c_246, 6) AS c_246
+diff --git a/benchmark/ground_truth/obfuscated/kdigo-48h.sql b/benchmark/ground_truth/obfuscated/kdigo-48h.sql
+index f6f1cc7..94eb5dc 100644
+--- a/benchmark/ground_truth/obfuscated/kdigo-48h.sql
++++ b/benchmark/ground_truth/obfuscated/kdigo-48h.sql
+@@ -2,7 +2,7 @@
+ -- Title: KDIGO Acute Kidney Injury (AKI) staging
+ -- This query extracts the maximum KDIGO AKI stage for each ICU stay
+ -- within the first 48 hours of admission. KDIGO stages range 0-3
+--- based on creatinine changes, urine output rates, and CRRT.
++-- based on c_145 changes, urine output rates, and CRRT.
+ -- ------------------------------------------------------------------
+ 
+ -- Reference for KDIGO:
+diff --git a/benchmark/ground_truth/obfuscated/meld-24h.sql b/benchmark/ground_truth/obfuscated/meld-24h.sql
+index 04fba2d..a67e5ea 100644
+--- a/benchmark/ground_truth/obfuscated/meld-24h.sql
++++ b/benchmark/ground_truth/obfuscated/meld-24h.sql
+@@ -1,17 +1,17 @@
+ -- ------------------------------------------------------------------
+ -- Title: Model for End-Stage Liver Disease (MELD) score
+ -- This query extracts the MELD-Na score for the first 24 hours of
+--- each ICU stay. MELD uses logarithmic transformations of creatinine,
+--- bilirubin, and INR with a conditional sodium adjustment.
++-- each ICU stay. MELD uses logarithmic transformations of c_145,
++-- bilirubin, and INR with a conditional c_533 adjustment.
+ -- ------------------------------------------------------------------
+ 
+ -- Reference for MELD:
+ --    Kamath PS et al. "A model to predict survival in patients with
+---    end-stage liver disease." Hepatology. 2001;33(2):464-470.
++--    end-stage c_329 disease." Hepatology. 2001;33(2):464-470.
+ --    Kim WR et al. "Hyponatremia and mortality among patients on the
+---    liver-transplant waiting list." NEJM. 2008;359(10):1018-1026.
++--    c_329-transplant waiting list." NEJM. 2008;359(10):1018-1026.
+ 
+--- Adapted from source MELD implementation
++-- Adapted from mimic-c_134 c_360.sql
+ 
+ WITH cohort AS (
+     SELECT
+diff --git a/benchmark/ground_truth/obfuscated/oasis-24h.sql b/benchmark/ground_truth/obfuscated/oasis-24h.sql
+index 149d101..7ae4489 100644
+--- a/benchmark/ground_truth/obfuscated/oasis-24h.sql
++++ b/benchmark/ground_truth/obfuscated/oasis-24h.sql
+@@ -2,7 +2,7 @@
+ -- Title: Oxford Acute Severity of Illness Score (OASIS)
+ -- This query extracts the OASIS score for the first 24 hours of each
+ -- ICU patient's stay. OASIS uses 10 components — vitals, urine output,
+--- GCS, ventilation status, age, pre-ICU LOS, and admission type.
++-- GCS, ventilation c_550, c_031, pre-ICU LOS, and admission type.
+ -- Notably, it requires NO laboratory values.
+ -- ------------------------------------------------------------------
+ 
+@@ -11,7 +11,7 @@
+ --    scale using a subset of APACHE data elements shows comparable
+ --    predictive accuracy." Crit Care Med. 2013;41(7):1711-1718.
+ 
+--- Adapted from source OASIS implementation
++-- Adapted from mimic-c_134 c_396.sql
+ 
+ WITH surgflag AS (
+     SELECT
+@@ -193,8 +193,8 @@ SELECT
+     + COALESCE(c_358, 0)
+     + COALESCE(c_209, 0)
+     AS c_396
+-    -- DEVIATION from source implementation: COALESCE component scores to 0.
+-    -- See sofa-24h.sql for rationale.
++    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
++    -- See c_537-24h.sql for rationale.
+     , COALESCE(c_454, 0) AS c_454
+     , COALESCE(c_032, 0) AS c_032
+     , COALESCE(c_247, 0) AS c_247
+diff --git a/benchmark/ground_truth/obfuscated/sapsii-24h.sql b/benchmark/ground_truth/obfuscated/sapsii-24h.sql
+index b36359f..7d8aa17 100644
+--- a/benchmark/ground_truth/obfuscated/sapsii-24h.sql
++++ b/benchmark/ground_truth/obfuscated/sapsii-24h.sql
+@@ -11,7 +11,7 @@
+ --    Physiology Score (SAPS II) based on a European/North American
+ --    multicenter study." JAMA. 1993;270(24):2957-2963.
+ 
+--- Adapted from source SAPS-II implementation
++-- Adapted from mimic-c_134 c_511.sql
+ 
+ WITH co AS (
+     SELECT
+@@ -457,8 +457,8 @@ SELECT
+     + COALESCE(c_136, 0)
+     + COALESCE(c_028, 0)
+     AS c_511
+-    -- DEVIATION from source implementation: COALESCE component scores to 0.
+-    -- See sofa-24h.sql for rationale.
++    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
++    -- See c_537-24h.sql for rationale.
+     , COALESCE(c_032, 0) AS c_032
+     , COALESCE(c_289, 0) AS c_289
+     , COALESCE(c_559, 0) AS c_559
+diff --git a/benchmark/ground_truth/obfuscated/sepsis3.sql b/benchmark/ground_truth/obfuscated/sepsis3.sql
+index 7209edc..9b4f58d 100644
+--- a/benchmark/ground_truth/obfuscated/sepsis3.sql
++++ b/benchmark/ground_truth/obfuscated/sepsis3.sql
+@@ -9,7 +9,7 @@
+ --    Singer M et al. "The Third International Consensus Definitions
+ --    for Sepsis and Septic Shock (Sepsis-3)." JAMA. 2016;315(8):801-810.
+ 
+--- Adapted from source Sepsis-3 implementation
++-- Adapted from mimic-c_134 c_522.sql
+ -- Returns one row per ICU stay (earliest matching infection event).
+ 
+ WITH c_537 AS (
+diff --git a/benchmark/ground_truth/obfuscated/sirs-24h.sql b/benchmark/ground_truth/obfuscated/sirs-24h.sql
+index f0952a8..231db3e 100644
+--- a/benchmark/ground_truth/obfuscated/sirs-24h.sql
++++ b/benchmark/ground_truth/obfuscated/sirs-24h.sql
+@@ -14,12 +14,12 @@
+ --    doi:10.1097/00003246-199206000-00025. PMID 1597042.
+ 
+ -- Variables used in SIRS:
+---  Body temperature (min and max)
+---  Heart rate (max)
+---  Respiratory rate (max)
++--  Body c_563 (min and max)
++--  Heart c_475 (max)
++--  Respiratory c_475 (max)
+ --  PaCO2 (min)
+ --  White blood cell count (min and max)
+---  the presence of greater than 10% immature neutrophils (band forms)
++--  the presence of greater than 10% immature c_379 (band forms)
+ 
+ -- Note:
+ --  The score is calculated for *all* ICU patients, with the assumption
+@@ -93,12 +93,12 @@ SELECT
+     + COALESCE(c_497, 0)
+     + COALESCE(c_623, 0)
+     AS c_527
+-    -- DEVIATION from source implementation: COALESCE component scores to 0.
++    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
+     -- The original SQL leaves them NULL when underlying data is missing.
+     -- We impute 0 here so the ground truth matches the task instruction
+     -- ("treat missing data as normal, score 0") and agents are not
+     -- penalised for following the instruction. The NULL→0 semantics are
+-    -- already applied to the SIRS total above; this extends it to the
++    -- already applied to the c_527 total above; this extends it to the
+     -- individual components for consistency.
+     , COALESCE(c_562, 0) AS c_562
+     , COALESCE(c_269, 0) AS c_269
+diff --git a/benchmark/ground_truth/obfuscated/sofa-24h.sql b/benchmark/ground_truth/obfuscated/sofa-24h.sql
+index 04bdcb4..6e8a916 100644
+--- a/benchmark/ground_truth/obfuscated/sofa-24h.sql
++++ b/benchmark/ground_truth/obfuscated/sofa-24h.sql
+@@ -10,19 +10,19 @@
+ --    Assessment) score to describe organ dysfunction/failure."
+ --    Intensive Care Medicine. 1996;24(7):707-710.
+ 
+--- Adapted from source first-day SOFA implementation
++-- Adapted from mimic-c_134 first_day_sofa.sql
+ -- Uses data from 6 hours before to 24 hours after ICU admission.
+ 
+ -- Components:
+---   Respiration: PaO2/FiO2 ratio (arterial only) with ventilation status
++--   Respiration: PaO2/FiO2 ratio (arterial only) with ventilation c_550
+ --   Coagulation: Platelet count
+ --   Liver: Bilirubin
+ --   Cardiovascular: MAP + vasopressor doses (mcg/kg/min)
+ --   CNS: Glasgow Coma Scale
+ --   Renal: Creatinine + urine output (mL/day)
+ --
+--- DEVIATION from mimic-code: source first-day SOFA does not filter blood gases by
+--- specimen. The benchmark restricts PaO2/FiO2 to arterial specimens to match
++-- DEVIATION from mimic-c_134: first_day_sofa does not filter blood gases by
++-- c_543. The benchmark restricts PaO2/FiO2 to arterial specimens to match
+ -- the SOFA definition and task instructions.
+ 
+ WITH vaso_stg AS (
+@@ -185,8 +185,8 @@ WITH vaso_stg AS (
+         CASE
+             WHEN c_477 > 15 OR c_478 > 0.1 OR c_479 > 0.1
+             THEN 4
+-            -- Deviates from mimic-code which uses <= 0.1 (true for any
+-            -- non-NULL dose). We use the clinically correct > 0 AND <= 0.1.
++            -- Deviates from mimic-c_134 which uses <= 0.1 (true for any
++            -- non-NULL c_475). We use the clinically correct > 0 AND <= 0.1.
+             -- No effect on derived values: vasopressor tables only contain
+             -- rows with positive rates, so the conditions are equivalent.
+             WHEN c_477 > 5 OR (c_478 > 0 AND c_478 <= 0.1) OR (c_479 > 0 AND c_479 <= 0.1)
+@@ -243,12 +243,12 @@ SELECT
+     + COALESCE(c_130, 0)
+     + COALESCE(c_487, 0)
+     AS c_537
+-    -- DEVIATION from source implementation: COALESCE component scores to 0.
++    -- DEVIATION from mimic-c_134: COALESCE component scores to 0.
+     -- The original SQL leaves them NULL when underlying data is missing.
+     -- We impute 0 here so the ground truth matches the task instruction
+     -- ("treat missing data as normal, score 0") and agents are not
+     -- penalised for following the instruction. The NULL→0 semantics are
+-    -- already applied to the SOFA total above; this extends it to the
++    -- already applied to the c_537 total above; this extends it to the
+     -- individual components for consistency.
+     , COALESCE(c_498, 0) AS c_498
+     , COALESCE(c_132, 0) AS c_132
+diff --git a/benchmark/ground_truth/obfuscated/suspicion-infection.sql b/benchmark/ground_truth/obfuscated/suspicion-infection.sql
+index cb6ac0e..25a72c0 100644
+--- a/benchmark/ground_truth/obfuscated/suspicion-infection.sql
++++ b/benchmark/ground_truth/obfuscated/suspicion-infection.sql
+@@ -1,17 +1,17 @@
+ -- ------------------------------------------------------------------
+ -- Title: Suspicion of Infection
+--- Identifies suspected infection events by pairing systemic antibiotic
++-- Identifies suspected infection events by pairing systemic c_060
+ -- administration with culture collection within asymmetric time windows:
+--- culture within 72h before OR 24h after antibiotic start.
++-- culture within 72h before OR 24h after c_060 start.
+ -- ------------------------------------------------------------------
+ 
+ -- Reference:
+ --    Seymour CW et al. "Assessment of Clinical Criteria for Sepsis."
+ --    JAMA. 2016;315(8):762-774.
+ 
+--- Adapted from mimic-code suspicion_of_infection.sql
++-- Adapted from mimic-c_134 suspicion_of_infection.sql
+ -- Optimized for DuckDB: split OR joins into UNION ALL for IEJoin.
+--- DEVIATION from source implementation: ROW_NUMBER() orderings include stable tie-breakers
++-- DEVIATION from mimic-c_134: ROW_NUMBER() orderings include stable tie-breakers
+ -- so exact timestamp/name ties select deterministically across execution plans.
+ 
+ WITH ab_tbl AS (
+@@ -69,7 +69,7 @@ me_then_ab AS (
+       ORDER BY c_113 NULLS FIRST, c_114 NULLS FIRST, c_369 NULLS FIRST
+     ) AS micro_seq
+   FROM (
+-    -- Cultures with charttime: antibiotic within 72h after culture
++    -- Cultures with c_114: c_060 within 72h after culture
+     SELECT
+       ab_tbl.c_556, ab_tbl.c_263, ab_tbl.c_552, ab_tbl.c_007,
+       me72.c_369,
+@@ -84,7 +84,7 @@ me_then_ab AS (
+       AND ab_tbl.c_061 > me72.c_114
+       AND ab_tbl.c_061 <= me72.c_114 + INTERVAL '72' HOUR
+     UNION ALL
+-    -- Cultures with only chartdate: antibiotic within 3 days after culture
++    -- Cultures with only c_113: c_060 within 3 days after culture
+     SELECT
+       ab_tbl.c_556, ab_tbl.c_263, ab_tbl.c_552, ab_tbl.c_007,
+       me72.c_369,
+@@ -109,7 +109,7 @@ ab_then_me AS (
+       ORDER BY c_113 NULLS FIRST, c_114 NULLS FIRST, c_369 NULLS FIRST
+     ) AS micro_seq
+   FROM (
+-    -- Cultures with charttime: antibiotic within 24h before culture
++    -- Cultures with c_114: c_060 within 24h before culture
+     SELECT
+       ab_tbl.c_556, ab_tbl.c_263, ab_tbl.c_552, ab_tbl.c_007,
+       me24.c_369,
+@@ -124,7 +124,7 @@ ab_then_me AS (
+       AND ab_tbl.c_061 >= me24.c_114 - INTERVAL '24' HOUR
+       AND ab_tbl.c_061 < me24.c_114
+     UNION ALL
+-    -- Cultures with only chartdate: antibiotic within 1 day before culture
++    -- Cultures with only c_113: c_060 within 1 day before culture
+     SELECT
+       ab_tbl.c_556, ab_tbl.c_263, ab_tbl.c_552, ab_tbl.c_007,
+       me24.c_369,
+diff --git a/benchmark/ground_truth/obfuscated/urine-output-rate.sql b/benchmark/ground_truth/obfuscated/urine-output-rate.sql
+index 15721b4..c0e2eb0 100644
+--- a/benchmark/ground_truth/obfuscated/urine-output-rate.sql
++++ b/benchmark/ground_truth/obfuscated/urine-output-rate.sql
+@@ -1,15 +1,15 @@
+ -- ------------------------------------------------------------------
+ -- Title: Urine Output Rate
+--- Calculates rolling urine output rates (mL/kg/hr) over 6, 12, and
+--- 24-hour windows, normalized by patient weight. Used for KDIGO AKI
+--- staging and SOFA renal component.
++-- Calculates rolling urine output rates (mL/kg/c_288) over 6, 12, and
++-- 24-hour windows, normalized by patient c_624. Used for KDIGO AKI
++-- staging and SOFA c_487 component.
+ -- ------------------------------------------------------------------
+ 
+ -- Reference:
+ --    KDIGO Clinical Practice Guideline for Acute Kidney Injury.
+ --    Kidney Int Suppl. 2012;2(1):1-138.
+ 
+--- Adapted from mimic-code urine_output_rate.sql
++-- Adapted from mimic-c_134 urine_output_rate.sql
+ -- Uses self-join for rolling window aggregation.
+ 
+ WITH tm AS (
+diff --git a/benchmark/ground_truth/obfuscated/vasopressor-equivalents.sql b/benchmark/ground_truth/obfuscated/vasopressor-equivalents.sql
+index c14c4b2..df5e82b 100644
+--- a/benchmark/ground_truth/obfuscated/vasopressor-equivalents.sql
++++ b/benchmark/ground_truth/obfuscated/vasopressor-equivalents.sql
+@@ -9,11 +9,11 @@
+ --    Goradia S et al. "Vasopressor dose equivalence: A scoping review
+ --    and suggested formula." J Crit Care. 2020;61:233-240.
+ 
+--- Adapted from source norepinephrine-equivalent dose implementation
+--- DEVIATION from source implementation: the interval table can contain duplicate
+--- rows for the same stay/start/end interval. The benchmark key is
+--- interval-level, so duplicates are collapsed with MAX dose to provide one
+--- deterministic target row per interval.
++-- Adapted from mimic-c_134 c_384.sql
++-- DEVIATION from mimic-c_134: vasoactive_agent can contain duplicate rows for
++-- the same stay/start/end interval. The benchmark key is interval-level, so
++-- duplicates are collapsed with MAX dose to provide one deterministic target
++-- row per interval.
+ 
+ SELECT
+   c_552,
+diff --git a/benchmark/ground_truth/obfuscated/ventilation.sql b/benchmark/ground_truth/obfuscated/ventilation.sql
+index c752ffb..898a93a 100644
+--- a/benchmark/ground_truth/obfuscated/ventilation.sql
++++ b/benchmark/ground_truth/obfuscated/ventilation.sql
+@@ -1,14 +1,14 @@
+ -- ------------------------------------------------------------------
+ -- Title: Ventilation Classification
+--- Classifies ventilation status from charting data and groups
++-- Classifies ventilation c_550 from charting data and groups
+ -- consecutive observations into episodes. Categories: InvasiveVent,
+ -- NonInvasiveVent, HFNC, SupplementalOxygen, Tracheostomy, None.
+ -- ------------------------------------------------------------------
+ 
+ -- Reference:
+---    MIT-LCP mimic-code ventilation concept definition.
++--    MIT-LCP mimic-c_134 ventilation concept definition.
+ 
+--- Adapted from mimic-code ventilation.sql
++-- Adapted from mimic-c_134 ventilation.sql
+ -- Adds ventilation_seq column for deterministic row matching.
+ 
+ WITH tm AS (
+diff --git a/benchmark/matrix.py b/benchmark/matrix.py
+index a35f138..d6d1c91 100644
+--- a/benchmark/matrix.py
++++ b/benchmark/matrix.py
+@@ -117,6 +117,26 @@ SENTINEL_TASKS = [
+     "mimic-sofa-24h-raw",
+ ]
+ 
++PROVIDER_COMPARISON_TASKS = [
++    "mimic-sepsis3-raw",
++    "mimic-urine-output-rate-raw",
++    "mimic-urine-output-rate",
++    "mimic-suspicion-infection-raw",
++    "mimic-sofa-24h-raw",
++    "mimic-apsiii-24h-raw",
++    "mimic-sapsii-24h-raw",
++    "mimic-ventilation-raw",
++    "mimic-kdigo-48h-raw",
++    "eicu-gcs",
++    "eicu-oasis",
++    "mimic-apsiii-24h",
++    "mimic-charlson-raw",
++    "mimic-creatinine-baseline",
++    "mimic-creatinine-baseline-raw",
++    "mimic-gcs-24h-raw",
++    "mimic-kdigo-48h",
++]
++
+ 
+ def _classify_tasks() -> None:
+     """Populate task lists from task.toml metadata."""
+@@ -834,17 +854,6 @@ def _build_provider_comparison_tiers(
+     comparison_seeds = seeds
+     contamination_seeds = seeds
+ 
+-    sentinel_tasks = [
+-        "mimic-urine-output-rate-raw",  # largest pilot skill delta; rolling windows
+-        "mimic-ventilation",  # string matching + temporal episode logic
+-        "mimic-creatinine-baseline-raw",  # decision tree + ICD lookup
+-        "mimic-suspicion-infection",  # asymmetric temporal matching
+-        "mimic-vasopressor-equivalents-raw",  # dose/unit conversion
+-        "mimic-oasis-24h",  # skill-hurts sentinel
+-        "mimic-sepsis3-raw",  # compositional expert task
+-        "mimic-sofa-24h-raw",  # canonical flat/expert severity-score task
+-    ]
+-
+     tiers: list[Tier] = []
+ 
+     t1 = Tier(
+@@ -852,7 +861,7 @@ def _build_provider_comparison_tiers(
+         "Provider comparison sentinel",
+         "Do external providers show the same skill-effect pattern on sentinel tasks?",
+     )
+-    for task in sentinel_tasks:
++    for task in PROVIDER_COMPARISON_TASKS:
+         for condition in ["no-skill", "with-skill"]:
+             for model in model_plan.primary_models:
+                 for seed in range(1, comparison_seeds + 1):
+@@ -962,6 +971,8 @@ def _is_publishable_completed_result(data: dict) -> bool:
+     test_results = data.get("test_results", {})
+     agent_result = data.get("agent_result", {})
+     agent_db = data.get("agent_db", {})
++    if agent_result.get("failure_reason") in {"auth", "rate_limit"}:
++        return False
+     if test_results.get("reward") is None:
+         return False
+     if data.get("publishable") is not True:
+@@ -1515,6 +1526,11 @@ def main():
+     _classify_tasks()
+     seeds = args.seeds
+     tiers = build_tiers(seeds=seeds, agent=args.agent, profile=args.profile)
++    MY_TASKS = {
++        "mimic-creatinine-baseline-raw", "mimic-gcs-24h-raw",
++    }
++    for tier in tiers:
++        tier.runs = [r for r in tier.runs if r["task"] in MY_TASKS]
+     results_root = resolve_results_root(args.results_root)
+     try:
+         resolved_reasoning_effort = _resolve_reasoning_effort(
+diff --git a/benchmark/run.py b/benchmark/run.py
+index d367b2b..ba8a2e2 100644
+--- a/benchmark/run.py
++++ b/benchmark/run.py
+@@ -2447,9 +2447,7 @@ def run_single_task(
+                         break
+ 
+                 failure_reason = _detect_agent_failure_reason(agent_name, agent_result)
+-                if not failure_reason or attempt >= attempts:
+-                    if failure_reason:
+-                        agent_result["failure_reason"] = failure_reason
++                if not failure_reason:
+                     break
+ 
+                 if failure_reason == "auth":
+@@ -2460,6 +2458,10 @@ def run_single_task(
+                     break
+ 
+                 if failure_reason == "rate_limit":
++                    if not wait_on_claude_rate_limit and attempt >= attempts:
++                        agent_result["failure_reason"] = failure_reason
++                        break
++
+                     wait_seconds = retry_delay_seconds
+                     if wait_on_claude_rate_limit:
+                         reset_at = _extract_claude_rate_limit_reset_at(
+@@ -2479,6 +2481,10 @@ def run_single_task(
+                     time.sleep(wait_seconds)
+                     continue
+ 
++                if attempt >= attempts:
++                    agent_result["failure_reason"] = failure_reason
++                    break
++
+         if (
+             agent_result
+             and not agent_result.get("failure_reason")
+diff --git a/tests/test_benchmark_matrix.py b/tests/test_benchmark_matrix.py
+index 6b5870f..e5aa7eb 100644
+--- a/tests/test_benchmark_matrix.py
++++ b/tests/test_benchmark_matrix.py
+@@ -77,7 +77,11 @@ def test_provider_comparison_profile_uses_requested_seeds_for_claude(tmp_path):
+ 
+     tiers = matrix.build_tiers(seeds=5, agent="claude", profile="provider-comparison")
+ 
+-    assert sum(len(tier.runs) for tier in tiers) == 190
++    provider_tasks = {run["task"] for run in tiers[0].runs}
++
++    assert provider_tasks == set(matrix.PROVIDER_COMPARISON_TASKS)
++    assert len(provider_tasks) == 17
++    assert sum(len(tier.runs) for tier in tiers) == 370
+     assert {run["model"] for tier in tiers for run in tier.runs} == {"opus", "sonnet"}
+     assert {run["condition"] for run in tiers[0].runs} == {"no-skill", "with-skill"}
+     assert {run["trial"] for tier in tiers for run in tier.runs} == {1, 2, 3, 4, 5}
+@@ -203,6 +207,7 @@ def test_scan_existing_ignores_non_publishable_or_failed_runs(tmp_path):
+     cases = [
+         {"publishable": False},
+         {"publishable": True, "agent_result": {"failure_reason": "auth"}},
++        {"publishable": True, "agent_result": {"failure_reason": "rate_limit"}},
+         {"publishable": True, "agent_result": {"returncode": -1}},
+         {"publishable": True, "test_results": {"reward": 0.0, "errors": 1}},
+         {"publishable": True, "agent_db": {}},

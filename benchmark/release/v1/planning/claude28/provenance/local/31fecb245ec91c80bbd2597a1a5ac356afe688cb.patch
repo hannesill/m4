@@ -1,0 +1,330 @@
+commit 31fecb245ec91c80bbd2597a1a5ac356afe688cb
+Author:     hill <hannes.ill@tum.de>
+AuthorDate: Tue Sep 15 08:43:06 2026 +0200
+Commit:     Hannes Ill <54182904+hannesill@users.noreply.github.com>
+CommitDate: Tue Sep 15 08:52:19 2026 +0200
+
+    Preserve native Claude routing and qualify benchmark schema contracts
+
+diff --git a/benchmark/ground_truth/gcs.sql b/benchmark/ground_truth/gcs.sql
+index 0ce8654d..51c5f748 100644
+--- a/benchmark/ground_truth/gcs.sql
++++ b/benchmark/ground_truth/gcs.sql
+@@ -52,7 +52,7 @@ WITH nc AS (
+                 THEN CAST(nursingchartvalue AS NUMERIC)
+             ELSE NULL
+         END) AS gcseyes
+-    FROM eicu.nursecharting
++    FROM eicu_crd.nursecharting
+     WHERE nursingchartcelltypecat IN ('Scores', 'Other Vital Signs and Infusions')
+     GROUP BY patientunitstayid, nursingchartoffset
+ )
+@@ -103,7 +103,7 @@ SELECT
+     COALESCE(g.gcsmotor, 6) AS gcs_motor,
+     COALESCE(g.gcsverbal, 5) AS gcs_verbal,
+     COALESCE(g.gcseyes, 4) AS gcs_eyes
+-FROM eicu.patient p
++FROM eicu_crd.patient p
+ LEFT JOIN gcs_first_day g
+     ON p.patientunitstayid = g.patientunitstayid
+     AND g.rn = 1
+diff --git a/benchmark/ground_truth/oasis.sql b/benchmark/ground_truth/oasis.sql
+index 06165ae1..c927daa8 100644
+--- a/benchmark/ground_truth/oasis.sql
++++ b/benchmark/ground_truth/oasis.sql
+@@ -26,7 +26,7 @@ WITH pre_icu_los_data AS (
+             WHEN hospitaladmitoffset < (-311.80 * 60) THEN 1
+             ELSE NULL
+         END AS pre_icu_los_oasis
+-    FROM eicu.patient
++    FROM eicu_crd.patient
+ )
+ 
+ -- ══════════════════════════════════════════════════════════════════
+@@ -43,7 +43,7 @@ WITH pre_icu_los_data AS (
+             WHEN MAX(CASE WHEN age = '> 89' THEN 91 ELSE TRY_CAST(age AS INT) END) > 89 THEN 7
+             ELSE NULL
+         END AS age_oasis
+-    FROM eicu.patient
++    FROM eicu_crd.patient
+     GROUP BY patientunitstayid
+ )
+ 
+@@ -67,7 +67,7 @@ WITH pre_icu_los_data AS (
+                 THEN CAST(nursingchartvalue AS NUMERIC)
+             ELSE NULL
+         END) AS gcs
+-    FROM eicu.nursecharting
++    FROM eicu_crd.nursecharting
+     WHERE nursingchartcelltypecat IN ('Scores', 'Other Vital Signs and Infusions')
+     GROUP BY patientunitstayid, nursingchartoffset
+ )
+@@ -86,7 +86,7 @@ WITH pre_icu_los_data AS (
+     SELECT
+         patientunitstayid,
+         MIN(TRY_CAST(physicalexamvalue AS NUMERIC)) AS gcs
+-    FROM eicu.physicalexam
++    FROM eicu_crd.physicalexam
+     WHERE (
+         physicalexampath LIKE 'notes/Progress Notes/Physical Exam/Physical Exam/Neurologic/GCS/_'
+         OR physicalexampath LIKE 'notes/Progress Notes/Physical Exam/Physical Exam/Neurologic/GCS/__'
+@@ -107,7 +107,7 @@ WITH pre_icu_los_data AS (
+              AND pg.chartoffset > 0 AND pg.chartoffset <= 1440),
+             pe.gcs
+         ) AS gcs_min
+-    FROM eicu.patient p
++    FROM eicu_crd.patient p
+     LEFT JOIN physexam_gcs pe ON p.patientunitstayid = pe.patientunitstayid
+ )
+ 
+@@ -179,7 +179,7 @@ WITH pre_icu_los_data AS (
+                 THEN CAST(nursingchartvalue AS NUMERIC)
+             ELSE NULL
+         END AS nibp_mean
+-    FROM eicu.nursecharting
++    FROM eicu_crd.nursecharting
+     WHERE nursingchartcelltypecat IN ('Vital Signs', 'Scores', 'Other Vital Signs and Infusions')
+ )
+ 
+@@ -428,7 +428,7 @@ WITH pre_icu_los_data AS (
+             WHEN cellpath LIKE 'flowsheet|Flowsheet Cell Labels|I&O|Output (ml)|Urinary Catheter Output%' THEN 1
+             ELSE 0
+         END AS is_uo
+-    FROM eicu.intakeoutput
++    FROM eicu_crd.intakeoutput
+ )
+ 
+ -- Sum urine output in first 24h, with fallback to apacheapsvar.urine
+@@ -448,11 +448,11 @@ WITH pre_icu_los_data AS (
+     SELECT
+         p.patientunitstayid,
+         COALESCE(uo.urineoutput, apache_uo.urine) AS uo_comb
+-    FROM eicu.patient p
++    FROM eicu_crd.patient p
+     LEFT JOIN pivoted_uo_sum uo ON p.patientunitstayid = uo.patientunitstayid
+     LEFT JOIN (
+         SELECT patientunitstayid, urine
+-        FROM eicu.apacheapsvar
++        FROM eicu_crd.apacheapsvar
+         WHERE urine > 0 AND urine IS NOT NULL
+     ) apache_uo ON p.patientunitstayid = apache_uo.patientunitstayid
+ )
+@@ -482,8 +482,8 @@ WITH pre_icu_los_data AS (
+             WHEN pat.unitadmitsource = 'Emergency Department' THEN 0
+             ELSE 1
+         END AS adm_elective1
+-    FROM eicu.patient pat
+-    LEFT JOIN eicu.apachepredvar apache
++    FROM eicu_crd.patient pat
++    LEFT JOIN eicu_crd.apachepredvar apache
+         ON pat.patientunitstayid = apache.patientunitstayid
+ )
+ 
+@@ -511,14 +511,14 @@ WITH pre_icu_los_data AS (
+         COALESCE(predvar.oobintub_flag, 0) AS vent_predvar,
+         -- respiratorycare airway
+         COALESCE(rc.vent_rc, 0) AS vent_rc
+-    FROM eicu.patient p
++    FROM eicu_crd.patient p
+     LEFT JOIN (
+         SELECT patientunitstayid, 1 AS intubated_flag
+-        FROM eicu.apacheapsvar WHERE intubated = 1
++        FROM eicu_crd.apacheapsvar WHERE intubated = 1
+     ) apsvar ON p.patientunitstayid = apsvar.patientunitstayid
+     LEFT JOIN (
+         SELECT patientunitstayid, 1 AS oobintub_flag
+-        FROM eicu.apachepredvar WHERE oobintubday1 = 1
++        FROM eicu_crd.apachepredvar WHERE oobintubday1 = 1
+     ) predvar ON p.patientunitstayid = predvar.patientunitstayid
+     LEFT JOIN (
+         SELECT patientunitstayid,
+@@ -530,7 +530,7 @@ WITH pre_icu_los_data AS (
+                 WHEN COUNT(setapneatv) >= 1 THEN 1
+                 ELSE NULL
+             END AS vent_rc
+-        FROM eicu.respiratorycare
++        FROM eicu_crd.respiratorycare
+         WHERE respcarestatusoffset > 0 AND respcarestatusoffset <= 1440
+         GROUP BY patientunitstayid
+     ) rc ON p.patientunitstayid = rc.patientunitstayid
+@@ -577,7 +577,7 @@ SELECT
+     COALESCE(uo.urineoutput_oasis, 0) AS urineoutput_score,
+     COALESCE(vo.vent_oasis, 0) AS mechvent_score,
+     COALESCE(eo.electivesurgery_oasis, 0) AS electivesurgery_score
+-FROM eicu.patient p
++FROM eicu_crd.patient p
+ LEFT JOIN pre_icu_los_data plos ON p.patientunitstayid = plos.patientunitstayid
+ LEFT JOIN age_oasis ao ON p.patientunitstayid = ao.patientunitstayid
+ LEFT JOIN gcs_oasis go ON p.patientunitstayid = go.patientunitstayid
+diff --git a/benchmark/matrix.py b/benchmark/matrix.py
+index 47bf411c..e127b84a 100644
+--- a/benchmark/matrix.py
++++ b/benchmark/matrix.py
+@@ -57,6 +57,7 @@ from run import (
+     CLAUDE_MODEL_ALIASES,
+     PROVIDER_DEFAULT_REASONING,
+     REASONING_EFFORT_CHOICES,
++    _claude_routing_mode,
+     _resolve_model_for_agent,
+     _resolve_reasoning_effort,
+ )
+@@ -235,6 +236,17 @@ def _docker_container_name(agent: str, task: str, trial: int) -> str:
+     return re.sub(r"[^a-zA-Z0-9_.-]+", "-", raw).strip("-").lower()
+ 
+ 
++def _matches_claude_routing(data: dict) -> bool:
++    """Never reuse a different or unrecorded Claude routing experiment."""
++    model = data.get("model") or ""
++    is_claude = (
++        data.get("agent") == "claude"
++        or model.startswith("claude-")
++        or model in CLAUDE_MODEL_ALIASES
++    )
++    return not is_claude or data.get("claude_model_routing") == _claude_routing_mode()
++
++
+ def _find_latest_result(
+     results_root: Path,
+     task: str,
+@@ -265,6 +277,7 @@ def _find_latest_result(
+             and data.get("condition") == condition
+             and data.get("agent") == agent
+             and data.get("model") == model
++            and _matches_claude_routing(data)
+             and data.get("schema", "native") == schema
+             and data.get("trial") == trial
+             and (
+@@ -953,6 +966,8 @@ def _scan_existing(results_root: Path) -> dict[str, set[int]]:
+         if condition.startswith("_batch-"):
+             condition = condition.replace("_batch-", "")
+ 
++        if not _matches_claude_routing(data):
++            continue
+         if not _is_publishable_completed_result(data):
+             continue
+         try:
+diff --git a/benchmark/run.py b/benchmark/run.py
+index c0acb007..6cc1e60c 100644
+--- a/benchmark/run.py
++++ b/benchmark/run.py
+@@ -20,6 +20,9 @@ Usage:
+     # Run an operational-spec baseline when the task has operational-spec.md
+     python benchmark/run.py --task mimic-oasis-24h --condition operational-spec --agent codex
+ 
++    # Optional single-model comparison (default: native Claude Code routing)
++    M4BENCH_CLAUDE_MODEL_ROUTING=single-model python benchmark/run.py --task mimic-sirs-24h --condition no-skill --agent claude
++
+     # List available tasks
+     python benchmark/run.py --list
+ 
+@@ -344,22 +347,59 @@ def _resolve_model_for_agent(agent_name: str, model: str | None) -> str | None:
+     """Return the canonical model ID used for an agent invocation."""
+     if agent_name != "claude":
+         return model
++    _claude_routing_mode()  # Reject invalid experiment settings before running.
+     if model is None:
+         return DEFAULT_CLAUDE_MODEL
+     return CLAUDE_MODEL_ALIASES.get(model, model)
+ 
+ 
++def _claude_routing_mode() -> str:
++    """Native routing is the benchmark default; pinning is an opt-in ablation."""
++    mode = os.environ.get("M4BENCH_CLAUDE_MODEL_ROUTING", "native")
++    if mode not in {"native", "single-model"}:
++        raise ValueError("M4BENCH_CLAUDE_MODEL_ROUTING must be native or single-model")
++    return mode
++
++
+ def _claude_model_overrides(model: str | None) -> dict[str, str]:
+-    """Pin every Claude Code secondary call to the canonical primary model."""
+-    canonical_model = _resolve_model_for_agent("claude", model)
+-    if canonical_model is None:  # Defensive; Claude always has a pinned default.
++    """Configure secondary models only for an explicit single-model comparison."""
++    if _claude_routing_mode() == "native":
+         return {}
++    canonical_model = _resolve_model_for_agent("claude", model)
+     return {key: canonical_model for key in CLAUDE_MODEL_OVERRIDE_KEYS}
+ 
+ 
+-def _claude_model_metadata(model: str | None) -> dict[str, dict[str, str]]:
+-    """Return auditable metadata for the effective Claude model overrides."""
+-    return {"claude_model_overrides": _claude_model_overrides(model)}
++def _claude_model_metadata(
++    model: str | None, trace_path: str | Path | None = None
++) -> dict:
++    """Separate routing configuration from models reported by assistant events.
++
++    Observations cover the retained trace only, not every internal API call.
++    Missing or unreadable traces remain unknown, never the requested model.
++    """
++    observed = set()
++    if trace_path:
++        try:
++            with Path(trace_path).open() as trace:
++                for line in trace:
++                    try:
++                        event = json.loads(line)
++                    except json.JSONDecodeError:
++                        continue
++                    if not isinstance(event, dict) or event.get("type") != "assistant":
++                        continue
++                    message = event.get("message")
++                    if isinstance(message, dict):
++                        name = message.get("model")
++                        if isinstance(name, str) and name.startswith("claude-"):
++                            observed.add(name)
++        except (OSError, UnicodeError):
++            pass
++    return {
++        "claude_model_routing": _claude_routing_mode(),
++        "claude_model_overrides": _claude_model_overrides(model),
++        "claude_observed_models": sorted(observed) or None,
++    }
+ 
+ 
+ def _resolve_reasoning_effort(agent_name: str, reasoning_effort: str | None) -> str:
+@@ -1357,10 +1397,6 @@ def _agent_process_env(
+             "ANTHROPIC_API_KEY",
+             "M4BENCH_CLAUDE_AUTH_ROOT",
+             "M4BENCH_CLAUDE_AUTH_VOLUME",
+-            "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+-            "ANTHROPIC_DEFAULT_SONNET_MODEL",
+-            "ANTHROPIC_DEFAULT_OPUS_MODEL",
+-            "CLAUDE_CODE_SUBAGENT_MODEL",
+         },
+         "codex": {"CODEX_API_KEY", "OPENAI_API_KEY"},
+         "gemini": {"GOOGLE_API_KEY", "GEMINI_API_KEY"},
+@@ -1975,6 +2011,13 @@ def run_agent(
+     env = None
+     if run_home:
+         env = _agent_process_env(agent_name, workdir, run_home, model=model)
++    elif agent_name == "claude":
++        env = {
++            key: value
++            for key, value in os.environ.items()
++            if key not in CLAUDE_MODEL_OVERRIDE_KEYS
++        }
++        env.update(_claude_model_overrides(model))
+ 
+     # Run agent as benchagent when isolated (user-level filesystem + network isolation).
+     agent_creds = _resolve_agent_creds() if isolated and not agent_container else None
+@@ -2732,7 +2775,7 @@ def run_single_task(
+                         "validated"
+                     ],
+                     "claude_memory_validation": claude_memory_validation,
+-                    **_claude_model_metadata(model),
++                    **_claude_model_metadata(model, agent_result.get("trace_file")),
+                 }
+             )
+         result_file = workdir / "result.json"
+@@ -2912,7 +2955,9 @@ path you attempted in probed_paths using the exact path strings above.
+             },
+         }
+         if agent_name == "claude":
+-            full_result.update(_claude_model_metadata(model))
++            full_result.update(
++                _claude_model_metadata(model, agent_result.get("trace_file"))
++            )
+         (workdir / "result.json").write_text(json.dumps(full_result, indent=2))
+ 
+         print(f"Leak canary: {'PASS' if passed else 'FAIL'}")

@@ -1,13 +1,13 @@
-# M4Bench Reviewer Reproduction Guide
+# M4Bench Reproduction Guide
 
 This guide describes the release-facing path for rebuilding the benchmark
 artifacts and rerunning the audited Codex campaign. It assumes a fresh checkout
 of this repository, Docker, `uv`, and credentialed PhysioNet access to MIMIC-IV
 v3.1 and eICU-CRD v2.0.
 
-The default `benchmark/matrix.py` profile is the audited v1.1 submission
-profile. The explicit `--profile rerun-v1.1` flag is retained as a stable alias
-for provenance and for scripts or logs that cite the v1.1 design.
+The default `benchmark/matrix.py` profile is the paper's primary profile,
+called v1.1 in scripts and logs. The explicit `--profile rerun-v1.1` flag is a
+stable alias for it.
 
 ## 1. Environment
 
@@ -18,7 +18,8 @@ uv sync
 uv run pytest
 ```
 
-Benchmark-specific coverage lives in `tests/test_benchmark_*.py`; the full
+Benchmark-specific coverage lives in `tests/test_benchmark_*.py` and
+`tests/test_release_*.py`; the full
 pytest command above also exercises the surrounding M4 data and CLI plumbing
 used by the benchmark.
 
@@ -133,7 +134,7 @@ Run preflight before any release-grade campaign:
 
 ```bash
 uv run python benchmark/preflight.py \
-  --results-root benchmark/results/reviewer-canary-YYYYMMDD
+  --results-root benchmark/results/canary-YYYYMMDD
 ```
 
 Then run the adversarial filesystem canary through the same Docker-backed path
@@ -144,7 +145,7 @@ bash benchmark/bench.sh \
   --leak-canary \
   --agent codex \
   --model gpt-5.4-mini \
-  --results-root benchmark/results/reviewer-canary-YYYYMMDD
+  --results-root benchmark/results/canary-YYYYMMDD
 ```
 
 The canary must report that the agent cannot read `benchmark/ground_truth`,
@@ -162,14 +163,14 @@ bash benchmark/bench.sh \
   --agent codex \
   --model gpt-5.4-mini \
   --trial 1 \
-  --results-root benchmark/results/reviewer-smoke-YYYYMMDD
+  --results-root benchmark/results/smoke-YYYYMMDD
 ```
 
 Aggregate the smoke result:
 
 ```bash
 uv run python benchmark/report_results.py \
-  --results-root benchmark/results/reviewer-smoke-YYYYMMDD \
+  --results-root benchmark/results/smoke-YYYYMMDD \
   --profile rerun-v1.1 \
   --agent codex \
   --seeds 5
@@ -286,8 +287,8 @@ benchmark/results/codex-rerun-v1.1/analysis/CODEX_FULL_REPORT.md
 ```
 
 The benchmark release tree includes frozen planning metadata and generated
-tables under `benchmark/release/v1/`, so reviewers can inspect the
-submitted analysis without the private manuscript checkout. If you intentionally
+tables under `benchmark/release/v1/`, so the analysis can be inspected
+without the manuscript checkout. If you intentionally
 want to regenerate tables into a separate manuscript workspace, set
 `M4BENCH_PAPER_DIR` and `M4BENCH_M4_DIR` explicitly:
 
@@ -310,6 +311,20 @@ uv run python benchmark/release/v1/scripts/make_followup_manifest.py
 uv run python benchmark/release/v1/scripts/make_followup_tables.py
 ```
 
+Those commands need the retained run roots and credentialed reference outputs.
+Without credentialed data, regenerate and check the camera-ready tables from
+the open evidence packages instead:
+
+```bash
+python3 benchmark/release/v1/scripts/verify_public_evidence.py evidence       # July Claude package
+uv run python benchmark/release/v1/scripts/verify_public_evidence.py evidence-submission  # submitted campaigns
+python3 benchmark/release/v1/scripts/make_claude28_tables.py --check
+```
+
+See `benchmark/release/v1/README.md` ("Camera-Ready Release") for package
+checksums, what each check covers, and the tables that still need private
+evidence.
+
 ## 9. Supplementary Provider Runs
 
 Provider-comparison campaigns are supplementary and should not be reported as
@@ -331,6 +346,15 @@ For Claude Docker-backed runs, use the login helper first:
 bash benchmark/claude_login_container.sh
 ```
 
+The July 2026 full-coverage Claude replication (28 tasks x Opus/Sonnet x
+no-skill/with-skill x 5 trials) was launched in several batches from two
+machines; the retained commands, batch scripts, and source diffs are in
+`benchmark/release/v1/planning/claude28/provenance/`. Those batches mixed
+Claude Code versions (2.1.119 and 2.1.220) and model-routing settings. A new
+campaign intended as a uniform-harness contrast should freeze one CLI version,
+one routing policy, and one source commit for every cell, use a fresh results
+root, and record all three in the campaign manifest.
+
 For local open-source Pi/Ollama runs, follow the Pi/Ollama setup in
 `benchmark/README.md`.
 
@@ -344,6 +368,15 @@ For local open-source Pi/Ollama runs, follow the Pi/Ollama setup in
 - Do not report local `benchmark/run.py` debugging runs as release-grade
   evidence. Release-grade evidence must go through `benchmark/bench.sh` or an
   equivalent isolation path.
-- Because source clinical data are credentialed, reviewers must obtain MIMIC-IV
-  and eICU access through PhysioNet; generated CSV answers and per-run outputs
-  should be released only if they comply with the relevant data use agreements.
+- Source clinical data are credentialed: obtain MIMIC-IV and eICU access
+  through PhysioNet. Reference outputs, agent `output.csv` files, and raw traces
+  hold row-level derived data and must not be shared.
+- Treat raw run directories as secret-bearing. The agent container holds the
+  agent CLI's own login file (for example `~/.codex/auth.json`), and an agent
+  exploring the container can print it into its trace. Use a dedicated
+  account or API key for campaigns, and publish run evidence only through
+  `release/v1/scripts/package_public_evidence.py` followed by
+  `scan_public_evidence.py`.
+- Record the git commit, working-tree state, and container image digest for
+  each campaign. `release/v1/README.md` describes the code state behind the
+  released campaigns.

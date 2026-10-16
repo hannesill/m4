@@ -71,6 +71,13 @@ sys.path.insert(0, str(BENCHMARK_DIR))
 from lib.db import _task_key  # noqa: E402
 from report_results import load_rows  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from make_final_results import require_runs  # noqa: E402
+
+
+class LatexCell(str):
+    """A table cell that is already valid LaTeX and must not be escaped."""
+
 
 def latex_escape(value: object) -> str:
     text = str(value)
@@ -449,22 +456,40 @@ def write_release_tables(campaigns: list[dict]) -> None:
         ],
         "lrrrlrrrrl",
     )
+    write_asset_licenses()
+
+
+def write_asset_licenses() -> None:
+    """Write the asset/license table; needs no run evidence."""
+
+    def with_url(before: str, url: str, after: str) -> LatexCell:
+        return LatexCell(
+            rf"{latex_escape(before)} (\url{{{url}}}){latex_escape(after)}"
+        )
 
     license_rows = [
         [
             "M4Bench code, tasks, evaluator, skills",
             "Benchmark artifact",
-            "MIT license in the public release; anonymous review copy suppresses author-identifying metadata.",
+            "MIT license (repository LICENSE); camera-ready source release tagged m4bench-neurips2026-camera-ready.",
         ],
         [
             "MIMIC-IV v3.1",
             "Source EHR data for 26 tasks",
-            "PhysioNet credentialed access and MIMIC-IV data-use terms; derived databases are not openly redistributed.",
+            with_url(
+                "PhysioNet credentialed access and MIMIC-IV data-use terms",
+                "https://physionet.org/content/mimiciv/3.1/",
+                "; derived databases are not openly redistributed.",
+            ),
         ],
         [
-            "eICU Collaborative Research Database v2",
+            "eICU Collaborative Research Database v2.0",
             "Source EHR data for 2 tasks",
-            "PhysioNet credentialed access and eICU data-use terms; derived databases are not openly redistributed.",
+            with_url(
+                "PhysioNet credentialed access and eICU data-use terms",
+                "https://physionet.org/content/eicu-crd/2.0/",
+                "; derived databases are not openly redistributed.",
+            ),
         ],
         [
             "MIT-LCP MIMIC-Code / eICU concept conventions",
@@ -472,9 +497,9 @@ def write_release_tables(campaigns: list[dict]) -> None:
             "Credited and cited; adapted SQL/procedural conventions retained with provenance.",
         ],
         [
-            "Paper-facing run artifacts",
-            "Audit outputs, traces, and diagnostics",
-            "Released through the anonymous review package subject to source-data data-use restrictions.",
+            "Per-run evidence packages",
+            "Evaluator results, sanitized traces, instructions, egress logs, hash lineage",
+            "Open packages withhold row-level agent outputs and tool outputs; originals stay private under source-data use terms.",
         ],
     ]
     lines = [
@@ -484,7 +509,13 @@ def write_release_tables(campaigns: list[dict]) -> None:
     lines.append(r"Asset & Role & Access, license, or terms \\")
     lines.append(r"\midrule")
     for row in license_rows:
-        lines.append(" & ".join(latex_escape(cell) for cell in row) + r" \\")
+        lines.append(
+            " & ".join(
+                cell if isinstance(cell, LatexCell) else latex_escape(cell)
+                for cell in row
+            )
+            + r" \\"
+        )
     lines.extend([r"\bottomrule", r"\end{tabular}", ""])
     (TABLE_DIR / "asset_licenses.tex").write_text("\n".join(lines))
 
@@ -567,6 +598,11 @@ def write_manifests(campaigns: list[dict]) -> None:
 
 
 def main() -> None:
+    codex_rows = combine_rows(CODEX_RELEASE, CODEX_RERUN)
+    claude_rows = filter_claude_paper_rows(combine_rows(CLAUDE_RELEASE, CLAUDE_RERUN))
+    require_runs("Codex primary", codex_rows, [CODEX_RELEASE, CODEX_RERUN])
+    require_runs("Claude sentinel", claude_rows, [CLAUDE_RELEASE, CLAUDE_RERUN])
+
     TABLE_DIR.mkdir(exist_ok=True)
     PLANNING_DIR.mkdir(exist_ok=True)
 
@@ -574,8 +610,6 @@ def main() -> None:
     write_task_tables(task_rows)
     write_clinical_reference_audit()
 
-    codex_rows = combine_rows(CODEX_RELEASE, CODEX_RERUN)
-    claude_rows = filter_claude_paper_rows(combine_rows(CLAUDE_RELEASE, CLAUDE_RERUN))
     campaigns = [
         campaign_summary("Codex primary", codex_rows, [CODEX_RELEASE, CODEX_RERUN]),
         campaign_summary(
