@@ -189,6 +189,18 @@ def build_capabilities_manifest() -> dict[str, Any]:
             ],
             "mutates": True,
         },
+        {
+            "name": "define-dataset",
+            "flags": [
+                "--src",
+                "--title",
+                "--summary",
+                "--dry-run",
+                "--force",
+                "--json",
+            ],
+            "mutates": True,
+        },
         {"name": "config", "flags": ["--backend", "--project-id"], "mutates": True},
         {
             "name": "agent-env",

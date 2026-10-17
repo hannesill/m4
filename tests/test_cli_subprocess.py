@@ -1,3 +1,4 @@
+import gzip
 import json
 import os
 import subprocess
@@ -189,6 +190,74 @@ def test_list_datasets_json_describes_each_dataset(tmp_path):
         "modalities": ["TABULAR"],
         "download_size_gb": None,
     }.items() <= listed["bare-extract"].items()
+
+
+def test_define_dataset_then_init_then_query(tmp_path):
+    export = tmp_path / "export"
+    (export / "labs").mkdir(parents=True)
+    with gzip.open(export / "Patients.csv.gz", "wt") as handle:
+        handle.write("patient_id,sex\n1,F\n2,M\n")
+    with gzip.open(export / "labs" / "chemistry.csv.gz", "wt") as handle:
+        handle.write("patient_id,value\n1,1.1\n")
+
+    defined = _run_m4(
+        [
+            "define-dataset",
+            "My-Export",
+            "--src",
+            str(export),
+            "--title",
+            "My export",
+            "--json",
+        ],
+        tmp_path,
+    )
+
+    assert defined.returncode == 0
+    data = _assert_single_json_stdout(defined)["data"]
+    assert data["name"] == "my-export"
+    assert data["schemas"] == {"labs": 1, "my_export_data": 1}
+    assert data["definition_path"] == str(
+        tmp_path / "m4_data" / "datasets" / "my-export.json"
+    )
+
+    initialized = _run_m4(
+        ["init", "my-export", "--src", str(export), "--no-interactive", "--json"],
+        tmp_path,
+    )
+
+    assert initialized.returncode == 0
+    assert _assert_single_json_stdout(initialized)["prepared"] is True
+
+    queried = _run_m4(
+        [
+            "query",
+            "--dataset",
+            "my-export",
+            "--sql",
+            "SELECT p.sex, c.value FROM my_export_data.patients p "
+            "JOIN labs.chemistry c USING (patient_id)",
+            "--json",
+            "--no-interactive",
+        ],
+        tmp_path,
+    )
+
+    assert queried.returncode == 0
+    rows = _assert_single_json_stdout(queried)["data"]["result"]["rows"]
+    assert rows == [{"sex": "F", "value": 1.1}]
+
+
+def test_define_dataset_json_error(tmp_path):
+    result = _run_m4(
+        ["define-dataset", "eicu", "--src", str(tmp_path), "--json"], tmp_path
+    )
+
+    assert result.returncode == 1
+    payload = _assert_single_json_stdout(result)
+    assert payload["ok"] is False
+    assert payload["command"] == "define-dataset"
+    assert payload["error"]["code"] == "builtin_dataset"
 
 
 def test_schema_json_error_redacts_data_dir(tmp_path):

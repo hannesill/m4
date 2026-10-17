@@ -1247,9 +1247,13 @@ def test_dataset_with_its_tables_directly_in_its_folder(data_dir, tmp_path):
     _assert_ready(_listed("eicu"))
 
 
-def test_dataset_defined_by_a_file_is_initialized(data_dir, tmp_path):
+@pytest.mark.parametrize("json_output", [True, False])
+def test_dataset_defined_by_a_file_is_initialized(
+    data_dir, tmp_path, monkeypatch, json_output
+):
     # As docs/CUSTOM_DATASETS.md describes it, in a process that has not yet
     # read the datasets folder.
+    monkeypatch.setattr("m4.config._find_project_root_from_cwd", Path.cwd)
     (data_dir / "datasets").mkdir(parents=True)
     (data_dir / "datasets" / "my-icu-extract.json").write_text(
         json.dumps(
@@ -1265,13 +1269,18 @@ def test_dataset_defined_by_a_file_is_initialized(data_dir, tmp_path):
     chosen = _write_raw(tmp_path / "extract", {"core/admissions": "id\n1\n"})
 
     try:
-        result, events = _run(
-            "init", "my-icu-extract", "--src", str(chosen), "--no-interactive"
-        )
+        if json_output:
+            result, _ = _run(
+                "init", "my-icu-extract", "--src", str(chosen), "--no-interactive"
+            )
+        else:
+            result = runner.invoke(
+                app, ["init", "my-icu-extract", "--src", str(chosen)], input="n\n"
+            )
 
         assert result.exit_code == 0
-        assert events[-1]["result"]["prepared"] is True
         assert _views(data_dir, "my-icu-extract") == {"myicu_core.admissions"}
+        _assert_ready(_listed("my-icu-extract"))
     finally:
         DatasetRegistry.reset()
 

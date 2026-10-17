@@ -1,12 +1,43 @@
 # Adding Custom Datasets
 
-M4 supports any PhysioNet dataset. This guide shows how to add your own.
+M4 works with your own data, and with PhysioNet datasets it does not ship.
 
-## Quick Start: JSON Definition
+## Quick Start: A Folder of Your Own Files
 
-Create a JSON file in the M4 data directory under `datasets/`. By default this
-is `m4_data/datasets/`; if `M4_DATA_DIR` is set, it must point directly at the
-M4 data directory.
+Put the tables in one folder as `.csv.gz` files, one file per table
+(`gzip -k *.csv` compresses plain CSV files and keeps them). Then:
+
+```bash
+m4 define-dataset my-export --src /path/to/export --title "My ICU export"
+m4 init my-export --src /path/to/export
+```
+
+`m4 define-dataset` saves the definition as `datasets/my-export.json` in the M4
+data directory; `m4 init` converts the files and makes the tables. With
+`--dry-run` it shows the tables without saving anything, and with `--json` it
+prints them for scripts.
+
+How the folder becomes tables:
+
+- Files directly in the folder go into a schema named after the dataset:
+  `admissions.csv.gz` becomes `my_export_data.admissions`. (A schema cannot
+  share the name of the dataset's database, `my_export`.)
+- Each subfolder that holds files becomes a schema named after it:
+  `Lab Results/chemistry.csv.gz` becomes `lab_results.chemistry`.
+- A table is named after its file, in lower case, so file names must be
+  letters, digits and underscores. Files more than one folder deep, and two
+  files that would make the same table, are refused.
+
+Running `m4 define-dataset` again with the same name replaces the definition
+it wrote, so a corrected folder needs only another run. A definition you wrote
+by hand is replaced only with `--force`.
+
+## Writing a Definition by Hand
+
+For a PhysioNet dataset M4 does not ship, or to choose the schema names
+yourself, create a JSON file in the M4 data directory under `datasets/`. By
+default this is `m4_data/datasets/`; if `M4_DATA_DIR` is set, it must point
+directly at the M4 data directory.
 
 **Example: `m4_data/datasets/my-icu-extract.json`**
 
@@ -42,6 +73,7 @@ m4 init my-icu-extract --src /path/to/your/csv/files
 | `summary` | No | One or two sentences on what the dataset holds, shown by `m4 list-datasets` |
 | `version` | No | Version of the data, such as the PhysioNet version in `file_listing_url` |
 | `download_size_gb` | No | Approximate size in GB of the raw CSV.gz files, shown by `m4 list-datasets` |
+| `defined_from` | No | Set by `m4 define-dataset` to the folder it read. A file with it is replaced by the next `m4 define-dataset` of that name |
 | `file_listing_url` | No | PhysioNet URL for auto-download (demo datasets only) |
 | `subdirectories_to_scan` | No | Subdirs containing CSV files (e.g., `["hosp", "icu"]`) |
 | `primary_verification_table` | Yes | Table to verify initialization succeeded |
@@ -76,7 +108,11 @@ M4 uses canonical `schema.table` names (e.g., `mimiciv_hosp.patients`) that work
 }
 ```
 
-With this mapping, a file at `hosp/patients.csv` becomes queryable as `mimiciv_hosp.patients`.
+With this mapping, a file at `hosp/patients.csv.gz` becomes queryable as `mimiciv_hosp.patients`.
+
+A schema must not have the name DuckDB gives the dataset's database: its file
+name up to the first dot, such as `my_dataset` for `my-dataset`. A query of
+`my_dataset.patients` would then be ambiguous and fail.
 
 For datasets where all files are in the root directory (no subdirectories), use an empty string key:
 
@@ -135,16 +171,13 @@ instead of `./m4_data`.
 
 ## Using Existing CSV Files
 
-If you already have CSV files (either `.csv` or `.csv.gz`), point to them with `--src`:
+If you already have the files of a defined dataset, point to them with `--src`:
 
 ```bash
 m4 init my-dataset --src /path/to/csvs
 ```
 
-M4 will:
-1. Convert CSV/CSV.gz files to Parquet format
-2. Create DuckDB views
-3. Set the dataset as active
+M4 converts only `.csv.gz` files; compress plain `.csv` files first.
 
 ## Credentialed Datasets
 

@@ -14,6 +14,7 @@ import typer
 
 from m4.client import M4Client
 from m4.config import (
+    ensure_custom_datasets_loaded,
     get_active_backend,
     get_active_dataset,  # noqa: F401 - retained for compatibility patch targets
     get_dataset_parquet_root,
@@ -71,6 +72,7 @@ from m4.services.config import (
     install_config_skills_service,
     summarize_generated_config,
 )
+from m4.services.define_dataset import define_dataset_service
 from m4.services.download import build_wget_command, download_dataset_service
 from m4.services.events import NdjsonEventReporter
 from m4.services.init import initialize_dataset_service, source_problem
@@ -720,6 +722,100 @@ def quickstart_cmd(
             warning(item)
 
 
+@app.command("define-dataset")
+def define_dataset_cmd(
+    dataset_name: Annotated[
+        str,
+        typer.Argument(
+            help="Name of the new dataset: letters, digits, '.', '_' and '-'.",
+            metavar="NAME",
+        ),
+    ],
+    src: Annotated[
+        str,
+        typer.Option(
+            "--src",
+            help=(
+                "Folder of .csv.gz files: files directly in it, and in its "
+                "subfolders, each become a table."
+            ),
+        ),
+    ],
+    title: Annotated[
+        str | None,
+        typer.Option("--title", help="Display name. Default: NAME."),
+    ] = None,
+    summary: Annotated[
+        str | None,
+        typer.Option("--summary", help="One or two sentences on what it holds."),
+    ] = None,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Report the definition without saving it."),
+    ] = False,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            help="Replace a hand-written definition of the same name.",
+        ),
+    ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print result as JSON for automation."),
+    ] = False,
+):
+    """Define a dataset from a folder of your own .csv.gz files.
+
+    Saves the definition in the datasets folder; `m4 init NAME --src DIR`
+    then converts the files.
+    """
+    with _silence_m4_logging() if json_output else nullcontext():
+        result = define_dataset_service(
+            dataset_name,
+            src,
+            title=title,
+            summary=summary,
+            dry_run=dry_run,
+            force=force,
+        )
+
+    if json_output:
+        context = resolve_runtime_context(dataset=dataset_name.lower()).public_context()
+        if isinstance(result, CommandError):
+            _emit_agent_error(
+                result.command,
+                result.code,
+                result.message,
+                hint=result.hint,
+                context=context,
+            )
+        _emit_json(
+            _agent_success_payload(
+                result.command, result.data, context=context, warnings=result.warnings
+            )
+        )
+        return
+
+    if isinstance(result, CommandError):
+        print_error_panel("Cannot Define the Dataset", result.message, hint=result.hint)
+        raise typer.Exit(code=1)
+
+    data = result.data
+    verb = "Would define" if data["dry_run"] else "Defined"
+    success(
+        f"{verb} '{data['name']}': {data['table_count']} table(s) in "
+        f"{len(data['schemas'])} schema(s)"
+    )
+    for schema, count in data["schemas"].items():
+        console.print(f"  [muted]{schema}:[/muted] {count} table{'s' * (count != 1)}")
+    if not data["dry_run"]:
+        console.print(f"  [muted]Saved to[/muted] {data['definition_path']}")
+    if result.warnings:
+        warning("Plain .csv files were left out: M4 converts only .csv.gz files.")
+    console.print(f"  [muted]Next:[/muted] [command]{data['init_command']}[/command]")
+
+
 @app.command("init")
 def dataset_init_cmd(
     dataset_name: Annotated[
@@ -877,6 +973,7 @@ def dataset_init_cmd(
     logger.info(f"CLI 'init' called for dataset: '{dataset_name}'")
 
     dataset_key = dataset_name.lower()
+    ensure_custom_datasets_loaded()
     ds = DatasetRegistry.get(dataset_key)
     if not ds:
         supported = ", ".join([d.name for d in DatasetRegistry.list_all()])

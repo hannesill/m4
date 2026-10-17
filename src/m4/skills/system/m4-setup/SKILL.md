@@ -1,6 +1,6 @@
 ---
 name: m4-setup
-description: Diagnose and repair an M4 installation. Use when `import m4` or `import vitrine` fails or runs under the wrong Python, a dataset is missing, not ready, or locked, the BigQuery backend or its credentials are wrong, M4's skills are missing from an agent, or the Vitrine board stops updating.
+description: Diagnose and repair an M4 installation. Use when `import m4` or `import vitrine` fails or runs under the wrong Python, a dataset is missing, not ready, or locked, the user's own CSV files are to become a dataset, the BigQuery backend or its credentials are wrong, M4's skills are missing from an agent, or the Vitrine board stops updating.
 tier: community
 category: system
 kind: maintenance
@@ -25,6 +25,7 @@ Run them, and everything else, with the Python environment M4 is installed in:
 |---|---|---|
 | `import m4` or `import vitrine` fails | Another Python | Use the environment above |
 | `ConnectionError: Database file not found` | The dataset is not set up (`setup_state` is not `ready`) | The user sets it up: `m4 init mimic-iv-demo` downloads the open demo; credentialed datasets need their PhysioNet login. Ask before starting either |
+| The user's own CSV files are not a dataset yet | Only a definition in M4's datasets folder makes them one | `m4 define-dataset NAME --src DIR --dry-run --json` lists the tables it would make. With the user's OK, run it without `--dry-run`, then `m4 init NAME --src DIR`. M4 reads `.csv.gz` files at most one folder deep: ask before compressing or moving the user's files |
 | `ConnectionError: ... locked by another process` | Another process holds the DuckDB file | Wait for it, or ask the user which process to close |
 | Schema `mimiciv_derived` does not exist | Derived tables are built per dataset, and only for full MIMIC-IV | `m4 init-derived mimic-iv` takes minutes: ask first. On the demo, compute concepts from the clinical skills' SQL |
 | Data or settings from the wrong place | `M4_DATA_DIR` (the data folder itself) beats `M4_HOME`, which beats the nearest `m4_data` above the working directory | `m4 agent-env --json` shows what M4 resolved |

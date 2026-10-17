@@ -289,6 +289,22 @@ changing saved backend configuration. `agent-env --mode protected` omits
 `M4_DATA_DIR` so a caller can expose only a service, socket, MCP server, or
 gateway to agents.
 
+`m4 define-dataset NAME --src DIR --json` uses the same envelope. It saves
+`<data dir>/datasets/NAME.json`, inferred from the `.csv.gz` files in `DIR` and
+its subfolders (see [Custom Datasets](CUSTOM_DATASETS.md)); `m4 init NAME --src
+DIR` then converts them. `data` holds `name`, `title`, `summary`,
+`definition_path`, `defined_from`, `schemas` (schema to number of tables),
+`tables`, `table_count`, `primary_verification_table`, `dry_run`, `replaced`
+(a definition of that name was replaced), `init_command`, and the saved
+`definition`. The warning `uncompressed_csv_files_ignored` says that plain
+`.csv` files were left out. Its error codes are `invalid_dataset_name`,
+`builtin_dataset`, `dataset_exists` (a hand-written definition, replaced only
+with `--force`, or one in another file, never replaced), `source_not_found`,
+`source_not_a_directory`, `raw_files_missing` (no CSV files),
+`uncompressed_csv_files` (only plain `.csv` files), `unsupported_layout` (files
+more than one folder deep), `invalid_table_name`, `table_name_collision`, and
+`definition_write_failed`. `--dry-run` checks everything and saves nothing.
+
 ### Runtime Environment
 
 Durable environment controls:

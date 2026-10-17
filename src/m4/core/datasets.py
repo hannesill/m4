@@ -64,6 +64,8 @@ class DatasetDefinition:
             researcher deciding whether to download it
         download_size_gb: Approximate size in GB (1024^3 bytes) of the raw
             .csv.gz files M4 downloads, or None when not known
+        defined_from: The folder `m4 define-dataset` made this definition from
+            (absolute path); None for a built-in or a hand-written definition
     """
 
     name: str
@@ -109,6 +111,7 @@ class DatasetDefinition:
     title: str | None = None
     summary: str | None = None
     download_size_gb: float | None = None
+    defined_from: str | None = None
 
     def __post_init__(self):
         """Initialize computed fields."""

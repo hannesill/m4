@@ -170,6 +170,11 @@ def ensure_custom_datasets_loaded():
     DatasetRegistry.load_custom_datasets(_CUSTOM_DATASETS_DIR)
 
 
+def get_custom_datasets_dir() -> Path:
+    """The folder whose JSON files define custom datasets."""
+    return _CUSTOM_DATASETS_DIR
+
+
 def _ensure_custom_datasets_loaded():
     """Backward-compatible private wrapper for existing internal callers."""
     ensure_custom_datasets_loaded()
