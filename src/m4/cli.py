@@ -14,6 +14,7 @@ import typer
 
 from m4.client import M4Client
 from m4.config import (
+    ensure_custom_datasets_loaded,
     get_active_backend,
     get_active_dataset,  # noqa: F401 - retained for compatibility patch targets
     get_dataset_parquet_root,
@@ -51,8 +52,12 @@ from m4.core.derived.materializer import (
     materialize_all,
 )
 from m4.core.exceptions import M4Error
+from m4.core.raw_files import has_raw_files
 from m4.core.tools import init_tools
 from m4.data_io import (
+    WARNING_CSV_READ_AS_LATIN1,
+    WARNING_DECIMAL_COMMA_COLUMNS,
+    CsvConversionError,
     DatasetDownloadError,
     PhysioNetCredentials,
     convert_csv_to_parquet,
@@ -71,10 +76,12 @@ from m4.services.config import (
     install_config_skills_service,
     summarize_generated_config,
 )
+from m4.services.define_dataset import define_dataset_service
 from m4.services.download import build_wget_command, download_dataset_service
 from m4.services.events import NdjsonEventReporter
 from m4.services.init import initialize_dataset_service, source_problem
 from m4.services.init_derived import init_derived_service
+from m4.services.remove_dataset import remove_dataset_service
 from m4.services.results import CommandError, CommandResult
 from m4.services.setup import doctor_service, quickstart_service, setup_agent_service
 from m4.services.status import collect_status_snapshot
@@ -161,11 +168,12 @@ def _agent_error_payload(
     hint: str | None = None,
     context: dict[str, Any] | None = None,
     warnings: list[str] | None = None,
+    data: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     error_payload: dict[str, Any] = {"code": code, "message": message}
     if hint:
         error_payload["hint"] = hint
-    return {
+    payload = {
         "version": 1,
         "ok": False,
         "command": command,
@@ -173,6 +181,9 @@ def _agent_error_payload(
         "error": error_payload,
         "warnings": warnings or [],
     }
+    if data is not None:
+        payload["data"] = data  # What the command did before it failed
+    return payload
 
 
 def _agent_success_payload(
@@ -202,6 +213,7 @@ def _emit_agent_error(
     hint: str | None = None,
     context: dict[str, Any] | None = None,
     warnings: list[str] | None = None,
+    data: dict[str, Any] | None = None,
 ) -> None:
     message = _redact_known_paths(message)
     hint = _redact_known_paths(hint) if hint else None
@@ -213,6 +225,7 @@ def _emit_agent_error(
             hint=hint,
             context=context,
             warnings=warnings,
+            data=data,
         )
     )
     raise typer.Exit(code=1)
@@ -248,6 +261,42 @@ def _redact_known_paths(message: str) -> str:
     ):
         message = message.replace(raw_path, label)
     return message
+
+
+# Keys of the define-dataset and remove-dataset payloads that hold local paths
+_PATH_KEYS = frozenset(
+    {"path", "resolves_to", "definition_path", "defined_from", "source_kept"}
+)
+
+
+def _hide_raw_paths(value: Any, data_dir: Path) -> Any:
+    """`value` with the local paths under _PATH_KEYS hidden, at any depth.
+
+    Machine output does so unless --paths or M4_PATH_DISCLOSURE asks for them:
+    a path in the data directory reads <M4_DATA_DIR>/..., any other is null.
+    """
+    if isinstance(value, dict):
+        return {
+            key: (
+                _hidden_path(item, data_dir)
+                if key in _PATH_KEYS
+                else _hide_raw_paths(item, data_dir)
+            )
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_hide_raw_paths(item, data_dir) for item in value]
+    return value
+
+
+def _hidden_path(value: Any, data_dir: Path) -> Any:
+    if not isinstance(value, str):
+        return value
+    try:
+        relative = Path(value).relative_to(data_dir)
+    except ValueError:
+        return None
+    return "/".join(("<M4_DATA_DIR>", *relative.parts))
 
 
 def _dataframe_payload(df: pd.DataFrame | None) -> dict[str, Any] | None:
@@ -720,6 +769,200 @@ def quickstart_cmd(
             warning(item)
 
 
+@app.command("define-dataset")
+def define_dataset_cmd(
+    dataset_name: Annotated[
+        str,
+        typer.Argument(
+            help="Name of the new dataset: letters, digits, '.', '_' and '-'.",
+            metavar="NAME",
+        ),
+    ],
+    src: Annotated[
+        str,
+        typer.Option(
+            "--src",
+            help=(
+                "Folder of .csv or .csv.gz files: files directly in it, and in its "
+                "subfolders, each become a table."
+            ),
+        ),
+    ],
+    title: Annotated[
+        str | None,
+        typer.Option("--title", help="Display name. Default: NAME."),
+    ] = None,
+    summary: Annotated[
+        str | None,
+        typer.Option("--summary", help="One or two sentences on what it holds."),
+    ] = None,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Report the definition without saving it."),
+    ] = False,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            help="Replace a hand-written definition of the same name.",
+        ),
+    ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print result as JSON for automation."),
+    ] = False,
+    include_paths: Annotated[
+        bool,
+        typer.Option("--paths", help="Include raw local filesystem paths."),
+    ] = False,
+):
+    """Define a dataset from a folder of your own CSV files.
+
+    Saves the definition in the datasets folder; `m4 init NAME --src DIR`
+    then converts the files.
+    """
+    with _silence_m4_logging() if json_output else nullcontext():
+        result = define_dataset_service(
+            dataset_name,
+            src,
+            title=title,
+            summary=summary,
+            dry_run=dry_run,
+            force=force,
+        )
+
+    if json_output:
+        ctx = resolve_runtime_context(dataset=dataset_name.lower())
+        if isinstance(result, CommandError):
+            _emit_agent_error(
+                result.command,
+                result.code,
+                result.message,
+                hint=result.hint,
+                context=ctx.public_context(),
+            )
+        data = result.data
+        disclose = include_paths or _path_disclosure_enabled()
+        if not disclose:
+            data = {
+                **_hide_raw_paths(data, ctx.data_dir),
+                "init_command": f"m4 init {data['name']} --src <folder>",
+            }
+        _emit_json(
+            _agent_success_payload(
+                result.command,
+                {**data, "raw_paths_hidden": not disclose},
+                context=ctx.public_context(),
+                warnings=result.warnings,
+            )
+        )
+        return
+
+    if isinstance(result, CommandError):
+        print_error_panel("Cannot Define the Dataset", result.message, hint=result.hint)
+        raise typer.Exit(code=1)
+
+    data = result.data
+    verb = "Would define" if data["dry_run"] else "Defined"
+    success(
+        f"{verb} '{data['name']}': {data['table_count']} table(s) in "
+        f"{len(data['schemas'])} schema(s)"
+    )
+    for schema, count in data["schemas"].items():
+        console.print(f"  [muted]{schema}:[/muted] {count} table{'s' * (count != 1)}")
+    if not data["dry_run"]:
+        console.print(f"  [muted]Saved to[/muted] {data['definition_path']}")
+    console.print(f"  [muted]Next:[/muted] [command]{data['init_command']}[/command]")
+
+
+def _size_label(size: float) -> str:
+    for unit in ("bytes", "KB", "MB"):
+        if size < 1024:
+            return f"{size:.0f} {unit}" if unit == "bytes" else f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} GB"
+
+
+@app.command("remove-dataset")
+def remove_dataset_cmd(
+    dataset_name: Annotated[
+        str,
+        typer.Argument(help="Dataset to remove.", metavar="NAME"),
+    ],
+    keep_definition: Annotated[
+        bool,
+        typer.Option(
+            "--keep-definition",
+            help="Keep the definition of a custom dataset; remove only its files.",
+        ),
+    ] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Report what would be removed, remove nothing."),
+    ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print result as JSON for automation."),
+    ] = False,
+    include_paths: Annotated[
+        bool,
+        typer.Option("--paths", help="Include raw local filesystem paths."),
+    ] = False,
+):
+    """Remove the files M4 made of a dataset, and a custom dataset's definition.
+
+    Only inside M4's data directory: the folder a dataset was initialized or
+    defined from stays. A database made with `m4 init --db-path` is recorded
+    nowhere, so it is not removed; delete it yourself.
+    """
+    with _silence_m4_logging() if json_output else nullcontext():
+        result = remove_dataset_service(
+            dataset_name, keep_definition=keep_definition, dry_run=dry_run
+        )
+
+    if json_output:
+        ctx = resolve_runtime_context(dataset=dataset_name.lower())
+        disclose = include_paths or _path_disclosure_enabled()
+
+        def shown(data: dict[str, Any]) -> dict[str, Any]:
+            if not disclose:
+                data = _hide_raw_paths(data, ctx.data_dir)
+            return {**data, "raw_paths_hidden": not disclose}
+
+        if isinstance(result, CommandError):
+            _emit_agent_error(
+                result.command,
+                result.code,
+                result.message,
+                hint=result.hint,
+                context=ctx.public_context(),
+                data=shown(result.data) if result.data is not None else None,
+            )
+        _emit_json(
+            _agent_success_payload(
+                result.command, shown(result.data), context=ctx.public_context()
+            )
+        )
+        return
+
+    if isinstance(result, CommandError):
+        print_error_panel("Cannot Remove the Dataset", result.message, hint=result.hint)
+        raise typer.Exit(code=1)
+
+    data = result.data
+    verb = "Would remove" if data["dry_run"] else "Removed"
+    if not data["removed"]:
+        info(f"Nothing of '{data['name']}' to remove.")
+    for item in data["removed"]:
+        console.print(
+            f"  {verb} {item['path']} [muted]({_size_label(item['bytes'])})[/muted]"
+        )
+    for item in data["skipped"]:
+        warning(f"Kept {item['path']} ({item['reason'].replace('_', ' ')})")
+    if data["removed"]:
+        success(f"{verb} {_size_label(data['freed_bytes'])} of '{data['name']}'")
+
+
 @app.command("init")
 def dataset_init_cmd(
     dataset_name: Annotated[
@@ -737,7 +980,7 @@ def dataset_init_cmd(
         typer.Option(
             "--src",
             help=(
-                "Path to existing raw CSV.gz root (hosp/, icu/). If provided, download is skipped."
+                "Path to existing raw CSV root (.csv.gz or .csv, e.g. hosp/, icu/). If provided, download is skipped."
             ),
         ),
     ] = None,
@@ -877,6 +1120,7 @@ def dataset_init_cmd(
     logger.info(f"CLI 'init' called for dataset: '{dataset_name}'")
 
     dataset_key = dataset_name.lower()
+    ensure_custom_datasets_loaded()
     ds = DatasetRegistry.get(dataset_key)
     if not ds:
         supported = ", ".join([d.name for d in DatasetRegistry.list_all()])
@@ -939,7 +1183,7 @@ def dataset_init_cmd(
 
     # Presence detection (check for any parquet or csv.gz files)
     parquet_present = any(pq_root.rglob("*.parquet"))
-    raw_present = any(csv_root.rglob("*.csv.gz"))
+    raw_present = has_raw_files(csv_root)
 
     console.print()
     print_banner(f"Initializing {dataset_key}", "Checking existing files...")
@@ -1050,10 +1294,25 @@ def dataset_init_cmd(
             print_step(2, 3, "Converting CSV to Parquet")
             print_key_value("Source", csv_root)
             print_key_value("Destination", pq_root)
-        ok = convert_csv_to_parquet(dataset_key, csv_root, pq_root)
+        conversion_warnings: list[dict[str, Any]] = []
+        try:
+            ok = convert_csv_to_parquet(
+                dataset_key, csv_root, pq_root, warnings=conversion_warnings
+            )
+        except CsvConversionError as exc:
+            print_error_panel("Conversion Failed", exc.message, hint=exc.hint)
+            raise typer.Exit(code=1)
         if not ok:
             error("Conversion failed. Please check logs for details.")
             raise typer.Exit(code=1)
+        for note in conversion_warnings:
+            if note["code"] == WARNING_CSV_READ_AS_LATIN1:
+                warning(f"{note['file']} is not UTF-8; it was read as Latin-1.")
+            elif note["code"] == WARNING_DECIMAL_COMMA_COLUMNS:
+                warning(
+                    f"{note['file']}: {', '.join(note['columns'])} hold decimal "
+                    "commas and were kept as text."
+                )
         if to_convert:
             success("Conversion complete")
 

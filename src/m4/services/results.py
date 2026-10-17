@@ -52,6 +52,8 @@ class CommandError:
     hint: str | None = None
     version: int = SCHEMA_VERSION
     ok: bool = False
+    # What the command did before it failed, for a command that says so
+    data: dict[str, Any] | None = None
 
     def to_json_dict(self) -> dict[str, Any]:
         error: dict[str, Any] = {
@@ -61,9 +63,12 @@ class CommandError:
         if self.hint:
             error["hint"] = self.hint
 
-        return {
+        payload = {
             "version": self.version,
             "ok": self.ok,
             "command": self.command,
             "error": error,
         }
+        if self.data is not None:
+            payload["data"] = self.data
+        return payload

@@ -1,4 +1,5 @@
 import glob
+import gzip
 import json
 import os
 import re
@@ -28,6 +29,7 @@ from m4.console import (
     success,
 )
 from m4.core.datasets import DatasetRegistry
+from m4.core.raw_files import RAW_SUFFIXES, has_raw_files, raw_files, raw_stem
 from m4.services.events import EventReporter, get_event_reporter
 from m4.services.redaction import redact_sensitive, register_sensitive_value
 
@@ -656,12 +658,13 @@ def conversion_out_of_reach(parquet_root: Path, csv_root: Path) -> str | None:
         # The folder the conversion read from finishes it with the raw files
         # it holds now: one that could not be converted may have been taken
         # out since.
-        within_reach = any(csv_root.rglob("*.csv.gz"))
+        within_reach = has_raw_files(csv_root)
     else:
         # Any other folder has to bring every table that is still missing.
         # Which those are is only known where the note lists them.
         within_reach = owed is not None and all(
-            (csv_root / table).with_suffix(".csv.gz").is_file() for table in owed
+            any((csv_root / table).with_suffix(s).is_file() for s in RAW_SUFFIXES)
+            for table in owed
         )
     return None if within_reach else source
 
@@ -702,9 +705,141 @@ PARTIAL_SUFFIX = ".part"
 PARQUET_MAGIC = b"PAR1"
 
 
-def _parquet_path_for(csv_gz: Path, src_root: Path, parquet_root: Path) -> Path:
-    rel = csv_gz.relative_to(src_root)
-    return parquet_root / rel.with_suffix("").with_suffix(".parquet")
+class CsvConversionError(Exception):
+    """A raw file M4 cannot convert, with the code and hint a caller reports."""
+
+    def __init__(self, code: str, message: str, hint: str | None = None):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.hint = hint
+
+
+ERROR_CSV_ENCODING_UNSUPPORTED = "csv_encoding_unsupported"
+ERROR_TABLE_NAME_COLLISION = "table_name_collision"
+WARNING_CSV_READ_AS_LATIN1 = "csv_read_as_latin1"
+WARNING_DECIMAL_COMMA_COLUMNS = "decimal_comma_columns_kept_as_text"
+_UTF16_BOMS = (b"\xff\xfe", b"\xfe\xff")
+# A number written with a decimal comma, or a whole number among them
+_DECIMAL_COMMA = r"-?\d+(,\d+)?"
+
+
+def _copy_csv_to_parquet(
+    con: duckdb.DuckDBPyConnection,
+    raw: Path,
+    destination: Path,
+    encoding: str | None = None,
+) -> None:
+    """Stream `raw` into the Parquet file `destination`.
+
+    Without `encoding` this is the statement M4 has always converted
+    PhysioNet's files with; DuckDB detects the delimiter, a UTF-8 BOM, and
+    whether the file is gzipped.
+    """
+    encoding_option = f", encoding='{encoding}'" if encoding else ""
+    con.execute(
+        f"""
+        COPY (
+          SELECT * FROM read_csv_auto(
+            '{raw.as_posix()}',
+            sample_size=-1,
+            auto_detect=true,
+            nullstr=['', 'NULL', 'NA', 'N/A', '___'],
+            ignore_errors=false{encoding_option}
+          )
+        )
+        TO '{destination.as_posix()}' (FORMAT PARQUET, COMPRESSION ZSTD);
+        """
+    )
+
+
+def _first_line(raw: Path) -> bytes:
+    """The first line of `raw`, decompressed, as bytes; b"" if unreadable."""
+    try:
+        with (gzip.open if raw.name.endswith(".gz") else open)(raw, "rb") as handle:
+            return handle.readline(65536)
+    except OSError:
+        return b""
+
+
+def _decimal_comma_columns(
+    con: duckdb.DuckDBPyConnection, raw: Path, parquet: Path
+) -> list[str]:
+    """Text columns of a ;-separated `raw` file that hold numbers like 3,5.
+
+    DuckDB reads them as text, and M4 keeps them so rather than guess what the
+    commas mean. Only a file whose header line holds a ; is looked at, which
+    no PhysioNet file does.
+    """
+    if b";" not in _first_line(raw):
+        return []
+    source = f"read_parquet('{parquet.as_posix()}')"
+    columns = [
+        row[0]
+        for row in con.execute(f"DESCRIBE SELECT * FROM {source}").fetchall()
+        if row[1] == "VARCHAR"
+    ]
+    if not columns:
+        return []
+    checks = []
+    for column in columns:
+        quoted = '"' + column.replace('"', '""') + '"'
+        checks.append(
+            f"coalesce(bool_and(regexp_full_match({quoted}, $1)) "
+            f"AND bool_or(contains({quoted}, ',')), false)"
+        )
+    row = con.execute(
+        f"SELECT {', '.join(checks)} FROM {source}", [_DECIMAL_COMMA]
+    ).fetchone()
+    return [column for column, hit in zip(columns, row) if hit]
+
+
+def _convert_csv(
+    con: duckdb.DuckDBPyConnection, raw: Path, destination: Path
+) -> list[dict[str, Any]]:
+    """Convert `raw` into `destination` and return warnings about how it was read.
+
+    A file that is not UTF-8 is read again as UTF-16 when it starts with that
+    byte order mark, as Excel's Unicode text export does, and as Latin-1
+    otherwise, which every byte decodes as; the latter is a guess, and says so.
+    """
+    warnings: list[dict[str, Any]] = []
+    try:
+        _copy_csv_to_parquet(con, raw, destination)
+    except duckdb.InvalidInputException as exc:
+        if "invalid unicode" not in str(exc).lower():
+            raise
+        destination.unlink(missing_ok=True)
+        encoding = "utf-16" if _first_line(raw)[:2] in _UTF16_BOMS else "latin-1"
+        try:
+            _copy_csv_to_parquet(con, raw, destination, encoding)
+        except duckdb.Error as retry:
+            raise CsvConversionError(
+                ERROR_CSV_ENCODING_UNSUPPORTED,
+                f"{raw} is not UTF-8, and M4 could not read it as {encoding} "
+                f"either: {str(retry).splitlines()[0]}",
+                "Save it as UTF-8 (in Excel: CSV UTF-8), then run m4 init again.",
+            ) from retry
+        if encoding == "latin-1":
+            warnings.append({"code": WARNING_CSV_READ_AS_LATIN1, "file": str(raw)})
+    columns = _decimal_comma_columns(con, raw, destination)
+    if columns:
+        warnings.append(
+            {
+                "code": WARNING_DECIMAL_COMMA_COLUMNS,
+                "file": str(raw),
+                "columns": columns,
+            }
+        )
+    return warnings
+
+
+def _parquet_path_for(raw: Path, src_root: Path, parquet_root: Path) -> Path:
+    rel = raw.relative_to(src_root)
+    if rel.name.endswith(".csv.gz"):
+        # As M4 has always named the tables of .csv.gz files
+        return parquet_root / rel.with_suffix("").with_suffix(".parquet")
+    return parquet_root / rel.with_name(raw_stem(rel.name) + ".parquet")
 
 
 def _is_complete_parquet(path: Path) -> bool:
@@ -724,16 +859,19 @@ def _is_complete_parquet(path: Path) -> bool:
 
 
 def find_unconverted(csv_root: Path, parquet_root: Path) -> list[Path]:
-    """Raw CSV.gz files under `csv_root` that have no finished Parquet file."""
+    """Raw CSV files under `csv_root` that have no finished Parquet file."""
     return [
-        csv_gz
-        for csv_gz in sorted(csv_root.rglob("*.csv.gz"))
-        if not _is_complete_parquet(_parquet_path_for(csv_gz, csv_root, parquet_root))
+        raw
+        for raw in raw_files(csv_root)
+        if not _is_complete_parquet(_parquet_path_for(raw, csv_root, parquet_root))
     ]
 
 
 def _csv_to_parquet_all(
-    src_root: Path, parquet_root: Path, event_reporter: EventReporter | None = None
+    src_root: Path,
+    parquet_root: Path,
+    event_reporter: EventReporter | None = None,
+    warnings: list[dict[str, Any]] | None = None,
 ) -> bool:
     """
     Convert the CSV files in the source directory that have no finished Parquet
@@ -744,12 +882,29 @@ def _csv_to_parquet_all(
         M4_CONVERT_MAX_WORKERS (default: 4)
         M4_DUCKDB_MEM         (default: 3GB)
         M4_DUCKDB_THREADS     (default: 2)
+    Warnings about how files were read are appended to `warnings`. Raises
+    CsvConversionError for a file M4 cannot convert and can say why.
     """
     parquet_paths: list[Path] = []
-    raw_files = list(src_root.rglob("*.csv.gz"))
-    if not raw_files:
+    all_raw = raw_files(src_root)
+    if not all_raw:
         logger.error(f"No CSV files found in {src_root}")
         return False
+    # labs.csv next to labs.csv.gz, or names that differ only in case, would
+    # be written to one Parquet file and one view
+    tables: dict[str, list[Path]] = {}
+    for raw in all_raw:
+        key = str(_parquet_path_for(raw, src_root, parquet_root)).casefold()
+        tables.setdefault(key, []).append(raw)
+    clashes = [paths for paths in tables.values() if len(paths) > 1]
+    if clashes:
+        raise CsvConversionError(
+            ERROR_TABLE_NAME_COLLISION,
+            "These files would become the same table: "
+            + "; ".join(" and ".join(str(path) for path in paths) for paths in clashes)
+            + ".",
+            "Keep one file of each, then run m4 init again.",
+        )
     conversion_note = parquet_root / CONVERSION_NOTE
     # A conversion from another folder may be unfinished, with tables this
     # folder holds no raw file for. Whatever this run converts, those tables
@@ -762,7 +917,7 @@ def _csv_to_parquet_all(
         if conversion_note.exists() and not keeps_note:
             conversion_note.unlink()
         return True
-    skipped_count = len(raw_files) - len(csv_files)
+    skipped_count = len(all_raw) - len(csv_files)
     reporter = get_event_reporter(event_reporter)
 
     # Optional: process small files first so progress moves smoothly
@@ -771,10 +926,12 @@ def _csv_to_parquet_all(
     except Exception:
         pass
 
-    def _convert_one(csv_gz: Path) -> tuple[Path | None, float, str]:
-        """Convert one CSV file and return the output path, time taken, and filename."""
+    def _convert_one(
+        raw: Path,
+    ) -> tuple[Path | None, float, str, list[dict[str, Any]]]:
+        """Convert one CSV file: the output path, time taken, filename, warnings."""
         start = time.time()
-        out = _parquet_path_for(csv_gz, src_root, parquet_root)
+        out = _parquet_path_for(raw, src_root, parquet_root)
         out.parent.mkdir(parents=True, exist_ok=True)
         # The table is written under a name no other run uses: two runs at
         # once would otherwise publish what the other has written so far. What
@@ -794,21 +951,7 @@ def _csv_to_parquet_all(
             threads = int(os.environ.get("M4_DUCKDB_THREADS", "2"))
             con.execute(f"SET memory_limit='{mem_limit}'")
             con.execute(f"PRAGMA threads={threads}")
-
-            # Streamed CSV -> Parquet conversion with robust parsing
-            sql = f"""
-                COPY (
-                  SELECT * FROM read_csv_auto(
-                    '{csv_gz.as_posix()}',
-                    sample_size=-1,
-                    auto_detect=true,
-                    nullstr=['', 'NULL', 'NA', 'N/A', '___'],
-                    ignore_errors=false
-                  )
-                )
-                TO '{partial.as_posix()}' (FORMAT PARQUET, COMPRESSION ZSTD);
-            """
-            con.execute(sql)
+            notes = _convert_csv(con, raw, partial)
         except Exception:
             # A failed conversion keeps no half-written file, which matters most
             # when the reason is a full disk. Closing first releases the file.
@@ -819,7 +962,7 @@ def _csv_to_parquet_all(
             con.close()
         os.replace(partial, out)
         elapsed = time.time() - start
-        return out, elapsed, csv_gz.name
+        return out, elapsed, raw.name, notes
 
     start_time = time.time()
     max_workers = max(1, int(os.environ.get("M4_CONVERT_MAX_WORKERS", "4")))
@@ -839,10 +982,10 @@ def _csv_to_parquet_all(
                 conversion_note,
                 source=str(src_root.resolve()),
                 tables=sorted(
-                    _parquet_path_for(csv_gz, src_root, parquet_root)
+                    _parquet_path_for(raw, src_root, parquet_root)
                     .relative_to(parquet_root)
                     .as_posix()
-                    for csv_gz in csv_files
+                    for raw in csv_files
                 ),
             )
         except OSError as e:
@@ -869,7 +1012,12 @@ def _csv_to_parquet_all(
             for fut in as_completed(futures):
                 csv_file = futures[fut]
                 try:
-                    result_path, _, filename = fut.result()
+                    result_path, _, filename, notes = fut.result()
+                    for note in notes:
+                        logger.warning(f"{filename}: {note['code']}")
+                        reporter.emit("conversion_warning", **note)
+                        if warnings is not None:
+                            warnings.append(note)
                     if result_path is not None:
                         parquet_paths.append(result_path)
                         completed += 1
@@ -889,6 +1037,8 @@ def _csv_to_parquet_all(
                 except Exception as e:
                     logger.error(f"Parquet conversion failed for {csv_file}: {e}")
                     ex.shutdown(cancel_futures=True)
+                    if isinstance(e, CsvConversionError):
+                        raise
                     return False
 
     if not keeps_note:
@@ -910,17 +1060,22 @@ def convert_csv_to_parquet(
     csv_root: Path,
     parquet_root: Path,
     event_reporter: EventReporter | None = None,
+    warnings: list[dict[str, Any]] | None = None,
 ) -> bool:
     """
-    Public wrapper to convert CSV.gz files to Parquet for a dataset.
-    - csv_root: root folder containing hosp/ and icu/ CSV.gz files
+    Public wrapper to convert CSV files (.csv.gz or .csv) to Parquet for a dataset.
+    - csv_root: root folder containing the raw files, e.g. hosp/ and icu/
     - parquet_root: destination root for Parquet files mirroring structure
+    - warnings: receives a dict for each file read with a fallback
+    Raises CsvConversionError for a file M4 cannot convert and can say why.
     """
     if not csv_root.exists():
         logger.error(f"CSV root not found: {csv_root}")
         return False
     parquet_root.mkdir(parents=True, exist_ok=True)
-    return _csv_to_parquet_all(csv_root, parquet_root, event_reporter=event_reporter)
+    return _csv_to_parquet_all(
+        csv_root, parquet_root, event_reporter=event_reporter, warnings=warnings
+    )
 
 
 ########################################################
@@ -990,8 +1145,8 @@ def fitting_raw_roots(csv_root: Path, schema_mapping: dict[str, str]) -> list[Pa
     """
     named: set[Path] = set()
     bare: set[Path] = set()
-    for csv_gz in csv_root.rglob("*.csv.gz"):
-        folders = csv_gz.relative_to(csv_root).parent.parts
+    for raw in raw_files(csv_root):
+        folders = raw.relative_to(csv_root).parent.parts
         for depth in range(len(folders) + 1):
             below = Path(*folders[depth:])
             root = csv_root.joinpath(*folders[:depth])
@@ -1047,8 +1202,11 @@ def folders_without_tables(
         return []  # Flat naming knows no folders
     filled = {
         _schema_for(path.relative_to(root).parent, schema_mapping)
-        for root, pattern in ((csv_root, "*.csv.gz"), (parquet_root, "*.parquet"))
-        for path in root.rglob(pattern)
+        for root, paths in (
+            (csv_root, raw_files(csv_root)),
+            (parquet_root, parquet_root.rglob("*.parquet")),
+        )
+        for path in paths
     }
     return [
         folder

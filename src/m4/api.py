@@ -79,7 +79,8 @@ def list_datasets() -> list[str]:
 
     Example:
         >>> list_datasets()
-        ['mimic-iv-demo', 'mimic-iv', 'mimic-iv-note', 'eicu']
+        ['mimic-iv-demo', 'mimic-iv', 'mimic-iv-note', 'mimic-iv-ed-demo',
+         'mimic-iv-ed', 'eicu-demo', 'eicu', 'mimic-iii']
     """
     _ensure_custom_datasets_loaded()
     return [ds.name for ds in DatasetRegistry.list_all()]

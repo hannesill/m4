@@ -1,3 +1,4 @@
+import gzip
 import json
 import os
 import subprocess
@@ -125,6 +126,178 @@ def test_list_datasets_json_subprocess_is_parseable(tmp_path):
         "mimic-iv-demo",
         "mimic-iv",
     }
+
+
+CATALOG_KEYS = {
+    "title",
+    "summary",
+    "version",
+    "builtin",
+    "modalities",
+    "dataset_page_url",
+    "download_size_gb",
+}
+
+
+def test_list_datasets_json_describes_each_dataset(tmp_path):
+    datasets_dir = tmp_path / "m4_data" / "datasets"
+    datasets_dir.mkdir(parents=True)
+    (datasets_dir / "described.json").write_text(
+        json.dumps(
+            {
+                "name": "my-icu-extract",
+                "title": "My ICU extract",
+                "summary": "Adult ICU stays at one hospital.",
+                "download_size_gb": 1.5,
+                "modalities": ["TABULAR", "NOTES"],
+            }
+        )
+    )
+    (datasets_dir / "bare.json").write_text(json.dumps({"name": "bare-extract"}))
+
+    result = _run_m4(["list-datasets", "--json", "--no-interactive"], tmp_path)
+
+    assert result.returncode == 0
+    payload = _assert_single_json_stdout(result)
+    listed = {dataset["name"]: dataset for dataset in payload["data"]["datasets"]}
+    assert all(CATALOG_KEYS <= set(dataset) for dataset in listed.values())
+
+    mimic_iv = listed["mimic-iv"]
+    assert mimic_iv["title"] == "MIMIC-IV"
+    assert mimic_iv["version"] == "3.1"
+    assert mimic_iv["builtin"] is True
+    assert mimic_iv["modalities"] == ["TABULAR"]
+    assert mimic_iv["dataset_page_url"] == "https://physionet.org/content/mimiciv/"
+    assert mimic_iv["summary"]
+    assert mimic_iv["download_size_gb"] is None  # PhysioNet shows it only to members
+    assert listed["mimic-iv-note"]["modalities"] == ["NOTES"]
+    assert listed["eicu-demo"]["download_size_gb"] > 0
+
+    assert {
+        "title": "My ICU extract",
+        "summary": "Adult ICU stays at one hospital.",
+        "version": None,
+        "builtin": False,
+        "modalities": ["NOTES", "TABULAR"],
+        "dataset_page_url": None,
+        "download_size_gb": 1.5,
+    }.items() <= listed["my-icu-extract"].items()
+    assert {
+        "title": "bare-extract",
+        "summary": None,
+        "version": None,
+        "builtin": False,
+        "modalities": ["TABULAR"],
+        "download_size_gb": None,
+    }.items() <= listed["bare-extract"].items()
+
+
+def test_define_dataset_then_init_then_query(tmp_path):
+    export = tmp_path / "export"
+    (export / "labs").mkdir(parents=True)
+    with gzip.open(export / "Patients.csv.gz", "wt") as handle:
+        handle.write("patient_id,sex\n1,F\n2,M\n")
+    with gzip.open(export / "labs" / "chemistry.csv.gz", "wt") as handle:
+        handle.write("patient_id,value\n1,1.1\n")
+
+    defined = _run_m4(
+        [
+            "define-dataset",
+            "My-Export",
+            "--src",
+            str(export),
+            "--title",
+            "My export",
+            "--json",
+        ],
+        tmp_path,
+    )
+
+    assert defined.returncode == 0
+    data = _assert_single_json_stdout(defined)["data"]
+    assert data["name"] == "my-export"
+    assert data["schemas"] == {"labs": 1, "my_export_data": 1}
+    # Raw local paths are hidden without --paths, as in other machine output
+    assert data["raw_paths_hidden"] is True
+    assert data["definition_path"] == "<M4_DATA_DIR>/datasets/my-export.json"
+    assert data["defined_from"] is None
+    assert data["definition"]["defined_from"] is None
+    assert data["init_command"] == "m4 init my-export --src <folder>"
+    assert str(tmp_path) not in defined.stdout
+
+    initialized = _run_m4(
+        ["init", "my-export", "--src", str(export), "--no-interactive", "--json"],
+        tmp_path,
+    )
+
+    assert initialized.returncode == 0
+    assert _assert_single_json_stdout(initialized)["prepared"] is True
+
+    queried = _run_m4(
+        [
+            "query",
+            "--dataset",
+            "my-export",
+            "--sql",
+            "SELECT p.sex, c.value FROM my_export_data.patients p "
+            "JOIN labs.chemistry c USING (patient_id)",
+            "--json",
+            "--no-interactive",
+        ],
+        tmp_path,
+    )
+
+    assert queried.returncode == 0
+    rows = _assert_single_json_stdout(queried)["data"]["result"]["rows"]
+    assert rows == [{"sex": "F", "value": 1.1}]
+
+
+def test_define_then_init_then_remove_dataset(tmp_path):
+    export = tmp_path / "export"
+    export.mkdir()
+    with gzip.open(export / "admissions.csv.gz", "wt") as handle:
+        handle.write("id\n1\n")
+    for args in (
+        ["define-dataset", "cohort", "--src", str(export), "--json"],
+        ["init", "cohort", "--src", str(export), "--no-interactive", "--json"],
+    ):
+        assert _run_m4(args, tmp_path).returncode == 0
+
+    dry = _run_m4(["remove-dataset", "cohort", "--dry-run", "--json"], tmp_path)
+    removed = _run_m4(["remove-dataset", "cohort", "--json", "--paths"], tmp_path)
+
+    assert dry.returncode == 0
+    planned = _assert_single_json_stdout(dry)["data"]
+    assert planned["source_kept"] is None
+    assert "<M4_DATA_DIR>/parquet/cohort" in {
+        item["path"] for item in planned["removed"]
+    }
+    assert str(tmp_path) not in dry.stdout
+    assert removed.returncode == 0
+    data = _assert_single_json_stdout(removed)["data"]
+    assert data["raw_paths_hidden"] is False
+    assert data["source_kept"] == str(export.resolve())
+    assert str(tmp_path / "m4_data" / "parquet" / "cohort") in {
+        item["path"] for item in data["removed"]
+    }
+    assert data["definition_removed"] is True
+    assert data["freed_bytes"] > 0
+    assert (export / "admissions.csv.gz").exists()
+    listed = _run_m4(["list-datasets", "--json", "--no-interactive"], tmp_path)
+    names = {item["name"] for item in json.loads(listed.stdout)["data"]["datasets"]}
+    assert "cohort" not in names
+
+
+def test_define_dataset_json_error(tmp_path):
+    result = _run_m4(
+        ["define-dataset", "eicu", "--src", str(tmp_path), "--json"], tmp_path
+    )
+
+    assert result.returncode == 1
+    payload = _assert_single_json_stdout(result)
+    assert payload["ok"] is False
+    assert payload["command"] == "define-dataset"
+    assert payload["error"]["code"] == "builtin_dataset"
 
 
 def test_schema_json_error_redacts_data_dir(tmp_path):

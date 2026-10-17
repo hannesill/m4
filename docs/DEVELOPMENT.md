@@ -63,6 +63,13 @@ non-zero.
   "datasets": [
     {
       "name": "mimic-iv",
+      "title": "MIMIC-IV",
+      "summary": "Hospital and ICU records of patients admitted to ...",
+      "version": "3.1",
+      "builtin": true,
+      "modalities": ["TABULAR"],
+      "dataset_page_url": "https://physionet.org/content/mimiciv/",
+      "download_size_gb": null,
       "selected": true,
       "raw_present": true,
       "parquet_present": true,
@@ -85,6 +92,14 @@ non-zero.
   ]
 }
 ```
+
+Each dataset also says what it is, for someone choosing one to download:
+`title`, `summary`, `version` (the PhysioNet version M4 downloads),
+`dataset_page_url`, `download_size_gb` (about how many GB, of 1024^3 bytes, the
+raw CSV.gz files M4 downloads take), `modalities`, and `builtin` (false for a
+dataset defined by a JSON file in the datasets folder). What M4 does not know
+is null; PhysioNet shows the file sizes of a credentialed dataset only to people
+with access to it. `m4 list-datasets --json` lists the same entries.
 
 `prepared` is true, and `setup_state` is `ready`, only when `m4 init` ran to the
 end for the dataset: every raw file has its table, the views exist, and the
@@ -231,6 +246,18 @@ With `--events ndjson`, stdout changes from one JSON object to a newline-delimit
 JSON stream. The final command payload appears in `operation_completed.result`;
 setup failures appear in `operation_failed.error`.
 
+M4 converts raw files ending in `.csv.gz` or `.csv` (it downloads only
+`.csv.gz`). A file that is not UTF-8 is read again as UTF-16 when it starts
+with that byte order mark, and as Latin-1 otherwise; init then fails with
+`csv_encoding_unsupported` if that does not work either, and two files that
+would make one table fail it with `table_name_collision`. Files read with a
+fallback add to the result's `conversion_warnings` (each with `code`, `file`,
+and for decimal commas `columns`, also sent as `conversion_warning` events) and
+their codes to `warnings`: `csv_read_as_latin1`, and
+`decimal_comma_columns_kept_as_text` for text columns of a `;`-separated file
+that hold numbers such as `3,5`. A file whose header line holds no `;` is not
+looked at for those, and PhysioNet's files are converted as before.
+
 `conversion_started.file_count` counts the files this run converts.
 `skipped_count` counts the raw files that already had a finished Parquet file,
 which is not zero when an interrupted run is continued. When nothing is left to
@@ -273,6 +300,53 @@ These commands accept `--dataset` and `--backend` to resolve context without
 changing saved backend configuration. `agent-env --mode protected` omits
 `M4_DATA_DIR` so a caller can expose only a service, socket, MCP server, or
 gateway to agents.
+
+`m4 define-dataset NAME --src DIR --json` uses the same envelope. It saves
+`<data dir>/datasets/NAME.json`, inferred from the CSV files in `DIR` and
+its subfolders (see [Custom Datasets](CUSTOM_DATASETS.md)); `m4 init NAME --src
+DIR` then converts them. `data` holds `name`, `title`, `summary`,
+`definition_path`, `defined_from`, `schemas` (schema to number of tables),
+`tables`, `table_count`, `primary_verification_table`, `dry_run`, `replaced`
+(a definition of that name was replaced), `init_command`, and the saved
+`definition`. Its error codes are `invalid_dataset_name`,
+`builtin_dataset`, `database_name_taken` (the name would share another
+dataset's DuckDB file, as `mimic_iv` would with `mimic-iv`), `dataset_exists`
+(a hand-written definition, replaced only with `--force`, or one in another
+file, never replaced), `dataset_prepared` (the definition it would replace has
+Parquet files or a database; run `m4 remove-dataset NAME` first),
+`source_not_found`, `source_not_a_directory`, `raw_files_missing` (no CSV
+files), `unsupported_layout` (files more than one folder deep),
+`invalid_table_name`, `table_name_collision` (two files, such as `labs.csv`
+and `labs.csv.gz`, would make one table), and `definition_write_failed`.
+`--dry-run` checks everything and saves nothing.
+
+`m4 remove-dataset NAME --json` (with `--keep-definition` and `--dry-run`) uses
+it too. It removes the dataset's DuckDB file with the `.wal` and prepared
+marker beside it, its Parquet folder with any unfinished conversion,
+`raw_files/NAME`, and a custom dataset's definition. A database made with
+`m4 init --db-path` is recorded nowhere, so it is not removed. `data` holds `name`,
+`builtin`, `removed` (`path` and `bytes` of each, as it would be with
+`--dry-run`), `freed_bytes`, `definition_removed`, `source_kept` (the
+`defined_from` folder, which is never touched), `skipped`, and `dry_run`. Each
+`skipped` entry has `path`, `resolves_to` and a `reason`: `outside_data_dir`
+(the path, a link resolved, leads out of the data directory),
+`dataset_source` (it is or holds the folder the dataset was defined from),
+`shared_with_another_dataset` (another dataset has the same DuckDB file),
+`not_a_database_file` (the database path is not a file of its own in the
+databases folder; M4 never removes a folder there), or `configured_path`
+(`config.json` sets it). A dataset with nothing on disk is
+removed with an empty `removed`; an empty folder is removed without being
+listed. Error codes are `invalid_dataset_name`, `dataset_not_found`,
+`dataset_in_use` (another process has the database open, checked before
+anything is removed; on Windows also a file that cannot be removed while
+open), and `remove_failed`. These two errors carry `data` with what was
+removed before them.
+
+Like `list-datasets`, both commands hide raw local paths unless `--paths` is
+given or `M4_PATH_DISCLOSURE=1` is set, and say so in `raw_paths_hidden`. A
+hidden path in the data directory reads `<M4_DATA_DIR>/...`; any other, such
+as the folder a dataset was defined from, is null, and `init_command` reads
+`m4 init NAME --src <folder>`.
 
 ### Runtime Environment
 

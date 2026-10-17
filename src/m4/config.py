@@ -8,6 +8,7 @@ from typing import Any
 
 from m4.core.datasets import DatasetRegistry
 from m4.core.exceptions import DatasetError
+from m4.core.raw_files import has_raw_files
 
 APP_NAME = "m4"
 
@@ -170,6 +171,55 @@ def ensure_custom_datasets_loaded():
     DatasetRegistry.load_custom_datasets(_CUSTOM_DATASETS_DIR)
 
 
+def get_custom_datasets_dir() -> Path:
+    """The folder whose JSON files define custom datasets."""
+    return _CUSTOM_DATASETS_DIR
+
+
+@dataclass(frozen=True)
+class DatasetStorage:
+    """Where M4 keeps the files it makes of a dataset, inside its data directory."""
+
+    data_dir: Path
+    databases_dir: Path
+    raw_root: Path
+    parquet_root: Path
+    db_path: Path | None
+    # Paths that config.json sets for the dataset instead, by kind
+    configured: dict[str, str]
+
+
+def get_dataset_storage(dataset_name: str) -> DatasetStorage:
+    """The default places of `dataset_name`'s files. Creates nothing."""
+    name = dataset_name.lower()
+    ds = DatasetRegistry.get(name)
+    configured: dict[str, str] = {}
+    try:
+        cfg = json.loads(_RUNTIME_CONFIG_PATH.read_text())
+    except (OSError, ValueError):
+        cfg = {}
+    if isinstance(cfg, dict):
+        for kind, key in (
+            ("parquet_root", "parquet_roots"),
+            ("db_path", "duckdb_paths"),
+        ):
+            value = (cfg.get(key) or {}).get(name)
+            if isinstance(value, str) and value:
+                configured[kind] = value
+    return DatasetStorage(
+        data_dir=_PROJECT_DATA_DIR,
+        databases_dir=_DEFAULT_DATABASES_DIR,
+        raw_root=_PROJECT_DATA_DIR / "raw_files" / name,
+        parquet_root=_DEFAULT_PARQUET_DIR / name,
+        db_path=(
+            _DEFAULT_DATABASES_DIR / ds.default_duckdb_filename
+            if ds and ds.default_duckdb_filename
+            else None
+        ),
+        configured=configured,
+    )
+
+
 def _ensure_custom_datasets_loaded():
     """Backward-compatible private wrapper for existing internal callers."""
     ensure_custom_datasets_loaded()
@@ -293,7 +343,7 @@ def _has_parquet_files(path: Path | None) -> bool:
 
 
 def _has_raw_files(path: Path | None) -> bool:
-    return bool(path and path.exists() and any(path.rglob("*.csv.gz")))
+    return bool(path and path.exists() and has_raw_files(path))
 
 
 def detect_available_local_datasets() -> dict[str, dict[str, Any]]:

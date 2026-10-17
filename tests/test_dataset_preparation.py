@@ -1247,6 +1247,72 @@ def test_dataset_with_its_tables_directly_in_its_folder(data_dir, tmp_path):
     _assert_ready(_listed("eicu"))
 
 
+@pytest.mark.parametrize("json_output", [True, False])
+def test_dataset_defined_by_a_file_is_initialized(
+    data_dir, tmp_path, monkeypatch, json_output
+):
+    # As docs/CUSTOM_DATASETS.md describes it, in a process that has not yet
+    # read the datasets folder.
+    monkeypatch.setattr("m4.config._find_project_root_from_cwd", Path.cwd)
+    (data_dir / "datasets").mkdir(parents=True)
+    (data_dir / "datasets" / "my-icu-extract.json").write_text(
+        json.dumps(
+            {
+                "name": "my-icu-extract",
+                "subdirectories_to_scan": ["core"],
+                "primary_verification_table": "myicu_core.admissions",
+                "schema_mapping": {"core": "myicu_core"},
+            }
+        )
+    )
+    DatasetRegistry.reset()
+    chosen = _write_raw(tmp_path / "extract", {"core/admissions": "id\n1\n"})
+
+    try:
+        if json_output:
+            result, _ = _run(
+                "init", "my-icu-extract", "--src", str(chosen), "--no-interactive"
+            )
+        else:
+            result = runner.invoke(
+                app, ["init", "my-icu-extract", "--src", str(chosen)], input="n\n"
+            )
+
+        assert result.exit_code == 0
+        assert _views(data_dir, "my-icu-extract") == {"myicu_core.admissions"}
+        _assert_ready(_listed("my-icu-extract"))
+    finally:
+        DatasetRegistry.reset()
+
+
+def test_upper_case_file_names_become_lower_case_tables(data_dir, tmp_path):
+    # MIMIC-III names its files ADMISSIONS.csv.gz, with upper-case columns.
+    mimic_iii = {
+        "ADMISSIONS": "SUBJECT_ID,HADM_ID\n1,100\n2,200\n",
+        "PATIENTS": "SUBJECT_ID,GENDER\n1,F\n2,M\n",
+    }
+    chosen = _write_raw(tmp_path / "mimiciii" / "1.4", mimic_iii)
+
+    result, events = _run("init", "mimic-iii", "--src", str(chosen), "--no-interactive")
+
+    assert result.exit_code == 0
+    assert events[-1]["result"]["prepared"] is True
+    assert _views(data_dir, "mimic-iii") == {
+        "mimiciii_clinical.admissions",
+        "mimiciii_clinical.patients",
+    }
+    con = duckdb.connect(str(_database(data_dir, "mimic-iii")), read_only=True)
+    try:
+        rows = con.execute(
+            "SELECT subject_id, hadm_id FROM mimiciii_clinical.admissions "
+            "ORDER BY subject_id"
+        ).fetchall()
+    finally:
+        con.close()
+    assert rows == [(1, 100), (2, 200)]
+    _assert_ready(_listed("mimic-iii"))
+
+
 def test_wget_tree_where_several_folders_fit_names_them_all(data_dir, tmp_path):
     # eICU keeps its tables directly in its folder, like every folder that
     # holds another dataset's files. M4 cannot tell which one is meant.

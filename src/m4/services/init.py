@@ -3,8 +3,10 @@ from __future__ import annotations
 from contextlib import contextmanager
 from pathlib import Path
 from shlex import quote
+from typing import Any
 
 from m4.config import (
+    ensure_custom_datasets_loaded,
     get_active_backend,
     get_dataset_parquet_root,
     get_default_database_path,
@@ -14,10 +16,12 @@ from m4.console import console
 from m4.core.datasets import DatasetDefinition, DatasetRegistry
 from m4.core.derived.builtins import has_derived_support
 from m4.core.derived.materializer import get_derived_table_count, materialize_all
+from m4.core.raw_files import has_raw_files
 from m4.data_io import (
     CONVERSION_NOTE,
     DOWNLOAD_NOTE,
     PHYSIONET_URL_PREFIX,
+    CsvConversionError,
     DatasetDownloadError,
     PhysioNetCredentials,
     conversion_out_of_reach,
@@ -197,7 +201,7 @@ def source_problem(
             command="init",
             code="raw_files_missing",
             message=(
-                f"The CSV.gz files in {csv_root} are not in the folders "
+                f"The CSV files in {csv_root} are not in the folders "
                 f"'{ds.name}' keeps its tables in."
             ),
             hint=(
@@ -262,6 +266,7 @@ def initialize_dataset_service(
     """Run the non-interactive dataset initialization workflow."""
     reporter = get_event_reporter(event_reporter)
     dataset_key = dataset_name.lower()
+    ensure_custom_datasets_loaded()
     ds = DatasetRegistry.get(dataset_key)
     if not ds:
         supported = ", ".join([d.name for d in DatasetRegistry.list_all()])
@@ -291,7 +296,7 @@ def initialize_dataset_service(
 
         steps: list[dict[str, str]] = []
         parquet_present = any(pq_root.rglob("*.parquet"))
-        raw_present = any(csv_root.rglob("*.csv.gz"))
+        raw_present = has_raw_files(csv_root)
         # A download into M4's own raw folder that was cut short is finished
         # before anything is made of the files that did arrive, where the
         # dataset is one M4 downloads. The downloader skips every file that is
@@ -414,12 +419,20 @@ def initialize_dataset_service(
         # Conversion is decided per file: Parquet left by an earlier run says
         # nothing about the raw files that run did not get to.
         to_convert = find_unconverted(csv_root, pq_root) if raw_present else []
-        if raw_present and not convert_csv_to_parquet(
-            dataset_key,
-            csv_root,
-            pq_root,
-            event_reporter=reporter if event_reporter is not None else None,
-        ):
+        conversion_warnings: list[dict[str, Any]] = []
+        try:
+            converted = not raw_present or convert_csv_to_parquet(
+                dataset_key,
+                csv_root,
+                pq_root,
+                event_reporter=reporter if event_reporter is not None else None,
+                warnings=conversion_warnings,
+            )
+        except CsvConversionError as exc:
+            return CommandError(
+                command="init", code=exc.code, message=exc.message, hint=exc.hint
+            )
+        if not converted:
             return CommandError(
                 command="init",
                 code="conversion_failed",
@@ -582,17 +595,22 @@ def initialize_dataset_service(
 
         return CommandResult(
             command="init",
-            data=_build_data(
-                dataset_key,
-                final_db_path,
-                pq_root,
-                csv_root,
-                steps,
-                # As status reports it, which is not always true by now: M4
-                # reads a dataset from its default database, not from one made
-                # with --db-path, and a raw file may have come into its own raw
-                # folder that this run did not convert.
-                prepared=is_ready(dataset_key),
-            ),
-            warnings=[],
+            data={
+                **_build_data(
+                    dataset_key,
+                    final_db_path,
+                    pq_root,
+                    csv_root,
+                    steps,
+                    # As status reports it, which is not always true by now: M4
+                    # reads a dataset from its default database, not from one
+                    # made with --db-path, and a raw file may have come into its
+                    # own raw folder that this run did not convert.
+                    prepared=is_ready(dataset_key),
+                ),
+                # How files of this run were read where it was not plain UTF-8
+                # CSV: each has `code`, `file`, and for decimal commas `columns`
+                "conversion_warnings": conversion_warnings,
+            },
+            warnings=sorted({warning["code"] for warning in conversion_warnings}),
         )

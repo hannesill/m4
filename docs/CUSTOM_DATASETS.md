@@ -1,41 +1,102 @@
 # Adding Custom Datasets
 
-M4 supports any PhysioNet dataset. This guide shows how to add your own.
+M4 works with your own data, and with PhysioNet datasets it does not ship.
 
-## Quick Start: JSON Definition
+## Quick Start: A Folder of Your Own Files
 
-Create a JSON file in the M4 data directory under `datasets/`. By default this
-is `m4_data/datasets/`; if `M4_DATA_DIR` is set, it must point directly at the
-M4 data directory.
+Put the tables in one folder as CSV files, one file per table, plain
+(`.csv`) or gzipped (`.csv.gz`). Then:
 
-**Example: `m4_data/datasets/mimic-iv-ed.json`**
+```bash
+m4 define-dataset my-export --src /path/to/export --title "My ICU export"
+m4 init my-export --src /path/to/export
+```
+
+`m4 define-dataset` saves the definition as `datasets/my-export.json` in the M4
+data directory; `m4 init` converts the files and makes the tables. With
+`--dry-run` it shows the tables without saving anything, and with `--json` it
+prints them for scripts.
+
+How the folder becomes tables:
+
+- Files directly in the folder go into a schema named after the dataset:
+  `admissions.csv.gz` becomes `my_export_data.admissions`. (A schema cannot
+  share the name of the dataset's database, `my_export`.)
+- Each subfolder that holds files becomes a schema named after it:
+  `Lab Results/chemistry.csv.gz` becomes `lab_results.chemistry`.
+- A table is named after its file, in lower case, so file names must be
+  letters, digits and underscores. Files more than one folder deep, and two
+  files that would make the same table, are refused.
+
+Running `m4 define-dataset` again with the same name replaces the definition
+it wrote, so a corrected folder needs only another run. Once `m4 init` has
+made tables of it, run `m4 remove-dataset` first: the old tables would
+otherwise stay next to the new ones. A definition you wrote by hand is
+replaced only with `--force`.
+
+A subfolder named like one of DuckDB's own schemas (`main`,
+`information_schema`, `pg_catalog`, `temp`, `system`) or like the dataset's
+database gets `_data` added: `main/` becomes `main_data`.
+
+## Removing a Dataset
+
+```bash
+m4 remove-dataset my-export --dry-run   # what would go
+m4 remove-dataset my-export
+```
+
+This removes what M4 made of the dataset in its data directory: the DuckDB
+database, the Parquet files, and raw files M4 downloaded into
+`raw_files/<name>`. For a custom dataset it also removes the definition, unless
+`--keep-definition`; a built-in dataset just goes back to not being set up.
+The folder you defined or initialized a dataset from is never touched, nor is
+anything outside the data directory: a path that leads out of it, through a
+link or a setting in `config.json`, is kept and reported. A database made
+with `m4 init --db-path` is recorded nowhere, so delete it yourself.
+
+## Writing a Definition by Hand
+
+For a PhysioNet dataset M4 does not ship, or to choose the schema names
+yourself, create a JSON file in the M4 data directory under `datasets/`. By
+default this is `m4_data/datasets/`; if `M4_DATA_DIR` is set, it must point
+directly at the M4 data directory.
+
+**Example: `m4_data/datasets/my-icu-extract.json`**
+
+An extract from your own hospital's data warehouse, as CSV files in a
+`core/` and a `labs/` folder:
+
 ```json
 {
-  "name": "mimic-iv-ed",
-  "description": "MIMIC-IV Emergency Department Module",
-  "file_listing_url": "https://physionet.org/files/mimic-iv-ed/2.2/",
-  "subdirectories_to_scan": ["ed"],
-  "primary_verification_table": "mimiciv_ed.edstays",
-  "requires_authentication": true,
-  "bigquery_project_id": "physionet-data",
-  "bigquery_dataset_ids": ["mimiciv_ed"],
+  "name": "my-icu-extract",
+  "title": "My ICU extract",
+  "description": "Adult ICU extract from our data warehouse",
+  "summary": "Admissions, vital signs and labs of adult ICU stays at one hospital.",
+  "version": "2024-06",
+  "subdirectories_to_scan": ["core", "labs"],
+  "primary_verification_table": "myicu_core.admissions",
   "modalities": ["TABULAR"],
-  "schema_mapping": {"ed": "mimiciv_ed"},
-  "bigquery_schema_mapping": {"mimiciv_ed": "mimiciv_ed"}
+  "schema_mapping": {"core": "myicu_core", "labs": "myicu_labs"}
 }
 ```
 
 Then initialize:
 ```bash
-m4 init mimic-iv-ed --src /path/to/your/csv/files
+m4 init my-icu-extract --src /path/to/your/csv/files
 ```
 
 ## JSON Fields Reference
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `name` | Yes | Unique identifier passed as `--dataset <name>` or `dataset="<name>"`. A file that uses the name of a built-in dataset (`mimic-iv-demo`, `mimic-iv`, `mimic-iv-note`, `eicu`) is ignored with a warning |
+| `name` | Yes | Unique identifier passed as `--dataset <name>` or `dataset="<name>"`. A file that uses the name of a built-in dataset (`mimic-iv-demo`, `mimic-iv`, `mimic-iv-note`, `mimic-iv-ed-demo`, `mimic-iv-ed`, `eicu-demo`, `eicu`, `mimic-iii`) is ignored with a warning |
 | `description` | Yes | Human-readable description |
+| `title` | No | Short display name shown by `m4 list-datasets`. Defaults to `name` |
+| `summary` | No | One or two sentences on what the dataset holds, shown by `m4 list-datasets` |
+| `version` | No | Version of the data, such as the PhysioNet version in `file_listing_url` |
+| `download_size_gb` | No | Approximate size in GB of the raw CSV files, shown by `m4 list-datasets` |
+| `default_duckdb_filename` | No | File name of the dataset's DuckDB database in the databases folder, ending in `.duckdb`, without a folder. Defaults to `name` with `-` as `_`. A file that names a path is ignored with a warning |
+| `defined_from` | No | Set by `m4 define-dataset` to the folder it read. A file with it is replaced by the next `m4 define-dataset` of that name |
 | `file_listing_url` | No | PhysioNet URL for auto-download (demo datasets only) |
 | `subdirectories_to_scan` | No | Subdirs containing CSV files (e.g., `["hosp", "icu"]`) |
 | `primary_verification_table` | Yes | Table to verify initialization succeeded |
@@ -70,7 +131,11 @@ M4 uses canonical `schema.table` names (e.g., `mimiciv_hosp.patients`) that work
 }
 ```
 
-With this mapping, a file at `hosp/patients.csv` becomes queryable as `mimiciv_hosp.patients`.
+With this mapping, a file at `hosp/patients.csv.gz` becomes queryable as `mimiciv_hosp.patients`.
+
+A schema must not have the name DuckDB gives the dataset's database: its file
+name up to the first dot, such as `my_dataset` for `my-dataset`. A query of
+`my_dataset.patients` would then be ambiguous and fail.
 
 For datasets where all files are in the root directory (no subdirectories), use an empty string key:
 
@@ -102,7 +167,7 @@ Custom datasets without `schema_mapping` still work — tables will be created w
 When you run `m4 init <dataset>`:
 
 1. **Download** (if `file_listing_url` exists and files missing)
-2. **Convert** CSV.gz files to Parquet format
+2. **Convert** CSV files (`.csv.gz` or `.csv`) to Parquet format
 3. **Create** DuckDB views over the Parquet files
 4. **Verify** by querying `primary_verification_table`
 
@@ -129,16 +194,29 @@ instead of `./m4_data`.
 
 ## Using Existing CSV Files
 
-If you already have CSV files (either `.csv` or `.csv.gz`), point to them with `--src`:
+If you already have the files of a defined dataset, point to them with `--src`:
 
 ```bash
 m4 init my-dataset --src /path/to/csvs
 ```
 
-M4 will:
-1. Convert CSV/CSV.gz files to Parquet format
-2. Create DuckDB views
-3. Set the dataset as active
+M4 converts `.csv` and `.csv.gz` files.
+
+### Files exported from Excel and other programs
+
+M4 detects the delimiter (`,`, `;`, or tab) and the header row, and reads a
+UTF-8 file with or without a byte order mark (Excel's "CSV UTF-8"). It also
+reads UTF-16 with a byte order mark (Excel's "Unicode Text"). A file in another
+encoding is read as Latin-1, and `m4 init` warns that it did
+(`csv_read_as_latin1`); a file that is not Latin-1 either, such as Windows-1252
+text with curly quotes or €, stops `m4 init` with `csv_encoding_unsupported`:
+save it as CSV UTF-8.
+
+Numbers written with a decimal comma (`3,5`) are kept as text, exactly as
+written, rather than guessed at: `m4 init` warns with
+`decimal_comma_columns_kept_as_text` and names the columns. Convert them when
+you query, `CAST(REPLACE(value, ',', '.') AS DOUBLE)`, or export with decimal
+points.
 
 ## Credentialed Datasets
 
