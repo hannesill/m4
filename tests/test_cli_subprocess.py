@@ -217,9 +217,13 @@ def test_define_dataset_then_init_then_query(tmp_path):
     data = _assert_single_json_stdout(defined)["data"]
     assert data["name"] == "my-export"
     assert data["schemas"] == {"labs": 1, "my_export_data": 1}
-    assert data["definition_path"] == str(
-        tmp_path / "m4_data" / "datasets" / "my-export.json"
-    )
+    # Raw local paths are hidden without --paths, as in other machine output
+    assert data["raw_paths_hidden"] is True
+    assert data["definition_path"] == "<M4_DATA_DIR>/datasets/my-export.json"
+    assert data["defined_from"] is None
+    assert data["definition"]["defined_from"] is None
+    assert data["init_command"] == "m4 init my-export --src <folder>"
+    assert str(tmp_path) not in defined.stdout
 
     initialized = _run_m4(
         ["init", "my-export", "--src", str(export), "--no-interactive", "--json"],
@@ -259,10 +263,23 @@ def test_define_then_init_then_remove_dataset(tmp_path):
     ):
         assert _run_m4(args, tmp_path).returncode == 0
 
-    removed = _run_m4(["remove-dataset", "cohort", "--json"], tmp_path)
+    dry = _run_m4(["remove-dataset", "cohort", "--dry-run", "--json"], tmp_path)
+    removed = _run_m4(["remove-dataset", "cohort", "--json", "--paths"], tmp_path)
 
+    assert dry.returncode == 0
+    planned = _assert_single_json_stdout(dry)["data"]
+    assert planned["source_kept"] is None
+    assert "<M4_DATA_DIR>/parquet/cohort" in {
+        item["path"] for item in planned["removed"]
+    }
+    assert str(tmp_path) not in dry.stdout
     assert removed.returncode == 0
     data = _assert_single_json_stdout(removed)["data"]
+    assert data["raw_paths_hidden"] is False
+    assert data["source_kept"] == str(export.resolve())
+    assert str(tmp_path / "m4_data" / "parquet" / "cohort") in {
+        item["path"] for item in data["removed"]
+    }
     assert data["definition_removed"] is True
     assert data["freed_bytes"] > 0
     assert (export / "admissions.csv.gz").exists()

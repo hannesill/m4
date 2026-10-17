@@ -117,6 +117,19 @@ class DatasetDefinition:
         """Initialize computed fields."""
         if not self.default_duckdb_filename:
             self.default_duckdb_filename = f"{self.name.replace('-', '_')}.duckdb"
+        # M4 keeps the database in its databases folder under this name, and
+        # `m4 remove-dataset` removes it from there: it must not lead elsewhere.
+        filename = self.default_duckdb_filename
+        if (
+            "/" in filename
+            or "\\" in filename
+            or Path(filename).name != filename
+            or not filename.endswith(".duckdb")
+        ):
+            raise ValueError(
+                "default_duckdb_filename must be a file name ending in .duckdb, "
+                f"without a folder: {filename!r}"
+            )
         if not self.title:
             self.title = self.name
 

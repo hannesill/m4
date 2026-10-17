@@ -181,6 +181,7 @@ class DatasetStorage:
     """Where M4 keeps the files it makes of a dataset, inside its data directory."""
 
     data_dir: Path
+    databases_dir: Path
     raw_root: Path
     parquet_root: Path
     db_path: Path | None
@@ -207,6 +208,7 @@ def get_dataset_storage(dataset_name: str) -> DatasetStorage:
                 configured[kind] = value
     return DatasetStorage(
         data_dir=_PROJECT_DATA_DIR,
+        databases_dir=_DEFAULT_DATABASES_DIR,
         raw_root=_PROJECT_DATA_DIR / "raw_files" / name,
         parquet_root=_DEFAULT_PARQUET_DIR / name,
         db_path=(

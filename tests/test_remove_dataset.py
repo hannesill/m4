@@ -6,13 +6,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+import duckdb
 import pytest
 from typer.main import get_command
 from typer.testing import CliRunner
 
 import m4.config as cfg_mod
 from m4.cli import app
-from m4.core.datasets import DatasetRegistry
+from m4.core.datasets import DatasetDefinition, DatasetRegistry
 from m4.services.capabilities import build_capabilities_manifest
 from m4.services.define_dataset import define_dataset_service
 from m4.services.remove_dataset import remove_dataset_service
@@ -183,6 +184,78 @@ def test_links_out_of_the_data_directory_are_not_followed(data_dir, tmp_path):
     assert (data_dir / "parquet" / "mimic-iv-demo").is_symlink()
 
 
+def _views(data_dir: Path, name: str) -> set[str]:
+    con = duckdb.connect(str(data_dir / "databases" / f"{name}.duckdb"), read_only=True)
+    try:
+        rows = con.execute(
+            "SELECT table_schema || '.' || table_name FROM information_schema.tables "
+            "WHERE table_type = 'VIEW'"
+        ).fetchall()
+    finally:
+        con.close()
+    return {row[0] for row in rows}
+
+
+def test_definition_with_tables_is_replaced_only_after_its_files_are_removed(
+    data_dir, custom, tmp_path
+):
+    other = _write(tmp_path / "other", {"patients": "id\n1\n"})
+
+    for dry_run in (True, False):
+        result = define_dataset_service("cohort", str(other), dry_run=dry_run)
+        assert isinstance(result, CommandError)
+        assert result.code == "dataset_prepared"
+        assert "m4 remove-dataset cohort" in result.hint
+    saved = json.loads((data_dir / "datasets" / "cohort.json").read_text())
+    assert saved["defined_from"] == str(custom.resolve())
+
+    _remove("cohort", keep_definition=True)
+    assert isinstance(define_dataset_service("cohort", str(other)), CommandResult)
+    _init("cohort", "--src", str(other))
+
+    # Only the tables of the new folder, none left from the old one
+    assert _views(data_dir, "cohort") == {"cohort_data.patients"}
+
+
+@pytest.mark.parametrize(
+    "filename", ["..", "../parquet/eicu", "sub/x.duckdb", "<absolute>"]
+)
+def test_database_path_that_leads_elsewhere_is_never_removed(
+    data_dir, tmp_path, filename
+):
+    # A definition loaded from a file cannot name such a database any more;
+    # this one is made in code, past that check.
+    eicu = _write(data_dir / "parquet" / "eicu", {"patient": "a\n1\n"})
+    (data_dir / "databases" / "sub").mkdir(parents=True)
+    (data_dir / "databases" / "sub" / "x.duckdb").write_bytes(b"x")
+    elsewhere = tmp_path / "elsewhere.duckdb"
+    elsewhere.write_bytes(b"x")
+    ds = DatasetDefinition(name="odd")
+    ds.default_duckdb_filename = (
+        str(elsewhere) if filename == "<absolute>" else filename
+    )
+    DatasetRegistry.register(ds)
+
+    data = _remove("odd")
+
+    assert data["removed"] == []
+    assert data["skipped"][0]["reason"] in {"not_a_database_file", "outside_data_dir"}
+    assert (eicu / "patient.csv.gz").exists()
+    assert (data_dir / "databases" / "sub" / "x.duckdb").exists()
+    assert elsewhere.exists()
+
+
+def test_database_made_with_db_path_is_not_removed(data_dir, custom, tmp_path):
+    # Recorded nowhere: M4 cannot find it, so it says so in the help and docs
+    elsewhere = tmp_path / "mine.duckdb"
+    _init("cohort", "--src", str(custom), "--db-path", str(elsewhere))
+
+    data = _remove("cohort")
+
+    assert str(elsewhere) not in {item["path"] for item in data["removed"]}
+    assert elsewhere.exists()
+
+
 def test_folder_a_dataset_was_defined_from_is_kept_inside_the_data_dir(data_dir):
     own = _write(data_dir / "raw_files" / "cohort", {"admissions": "id\n1\n"})
     assert isinstance(define_dataset_service("cohort", str(own)), CommandResult)
@@ -271,5 +344,10 @@ def test_capabilities_list_remove_dataset_with_its_real_flags():
     options = {opt for param in command.params for opt in param.opts}
 
     assert listed["mutates"] is True
-    assert set(listed["flags"]) == {"--keep-definition", "--dry-run", "--json"}
+    assert set(listed["flags"]) == {
+        "--keep-definition",
+        "--dry-run",
+        "--json",
+        "--paths",
+    }
     assert set(listed["flags"]) <= options

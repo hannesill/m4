@@ -29,8 +29,14 @@ How the folder becomes tables:
   files that would make the same table, are refused.
 
 Running `m4 define-dataset` again with the same name replaces the definition
-it wrote, so a corrected folder needs only another run. A definition you wrote
-by hand is replaced only with `--force`.
+it wrote, so a corrected folder needs only another run. Once `m4 init` has
+made tables of it, run `m4 remove-dataset` first: the old tables would
+otherwise stay next to the new ones. A definition you wrote by hand is
+replaced only with `--force`.
+
+A subfolder named like one of DuckDB's own schemas (`main`,
+`information_schema`, `pg_catalog`, `temp`, `system`) or like the dataset's
+database gets `_data` added: `main/` becomes `main_data`.
 
 ## Removing a Dataset
 
@@ -45,7 +51,8 @@ database, the Parquet files, and raw files M4 downloaded into
 `--keep-definition`; a built-in dataset just goes back to not being set up.
 The folder you defined or initialized a dataset from is never touched, nor is
 anything outside the data directory: a path that leads out of it, through a
-link or a setting in `config.json`, is kept and reported.
+link or a setting in `config.json`, is kept and reported. A database made
+with `m4 init --db-path` is recorded nowhere, so delete it yourself.
 
 ## Writing a Definition by Hand
 
@@ -88,6 +95,7 @@ m4 init my-icu-extract --src /path/to/your/csv/files
 | `summary` | No | One or two sentences on what the dataset holds, shown by `m4 list-datasets` |
 | `version` | No | Version of the data, such as the PhysioNet version in `file_listing_url` |
 | `download_size_gb` | No | Approximate size in GB of the raw CSV files, shown by `m4 list-datasets` |
+| `default_duckdb_filename` | No | File name of the dataset's DuckDB database in the databases folder, ending in `.duckdb`, without a folder. Defaults to `name` with `-` as `_`. A file that names a path is ignored with a warning |
 | `defined_from` | No | Set by `m4 define-dataset` to the folder it read. A file with it is replaced by the next `m4 define-dataset` of that name |
 | `file_listing_url` | No | PhysioNet URL for auto-download (demo datasets only) |
 | `subdirectories_to_scan` | No | Subdirs containing CSV files (e.g., `["hosp", "icu"]`) |

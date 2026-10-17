@@ -121,15 +121,23 @@ def test_utf16_file_with_its_byte_order_mark_is_read(data_dir, tmp_path):
     assert _query(data_dir, "SELECT name FROM cohort_data.patients")[2] == [("René",)]
 
 
-def test_file_in_no_encoding_m4_reads_fails_clearly(data_dir, tmp_path):
-    # Windows-1252 quotation marks are not Latin-1, and M4 reads no other
-    src = _export(tmp_path / "export", {"notes.csv": b"id;text\n1;\x93caf\xe9\x94\n"})
+@pytest.mark.parametrize(
+    "text",
+    [b"\x93caf\xe9\x94", b"\x80 5"],  # Windows-1252 quotation marks, euro sign
+)
+def test_windows_1252_text_fails_clearly_instead_of_becoming_controls(
+    data_dir, tmp_path, text
+):
+    # Latin-1 has control characters at 0x80-0x9F, where Windows-1252 has
+    # letters. DuckDB's Latin-1 does not decode them, so nothing is stored.
+    src = _export(tmp_path / "export", {"notes.csv": b"id;text\n1;" + text + b"\n"})
 
     payload = _define_and_init(src)
 
     assert payload["error"]["code"] == "csv_encoding_unsupported"
     assert "notes.csv" in payload["error"]["message"]
     assert "UTF-8" in payload["error"]["hint"]
+    assert not list((data_dir / "parquet" / "cohort").rglob("*.parquet"))
 
 
 def test_decimal_commas_are_kept_as_text_with_a_warning(data_dir, tmp_path):

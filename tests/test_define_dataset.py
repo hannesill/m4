@@ -113,6 +113,12 @@ def test_files_in_the_folder_and_in_subfolders(datasets_dir, tmp_path):
         ("Vital-Signs.v2", "vital_signs_v2"),
         ("order", "order_"),  # a reserved word cannot name a schema
         ("cohort", "cohort_data"),  # the database of dataset `cohort`
+        # DuckDB's own schemas and catalogs
+        ("main", "main_data"),
+        ("information_schema", "information_schema_data"),
+        ("pg_catalog", "pg_catalog_data"),
+        ("temp", "temp_data"),
+        ("system", "system_data"),
     ],
 )
 def test_subfolder_names_become_sql_identifiers(datasets_dir, tmp_path, folder, schema):
@@ -121,6 +127,16 @@ def test_subfolder_names_become_sql_identifiers(datasets_dir, tmp_path, folder, 
     data = _define("cohort", src).data
 
     assert data["definition"]["schema_mapping"] == {folder: schema}
+
+
+def test_renamed_schema_still_cannot_take_another_folder_s_table(
+    datasets_dir, tmp_path
+):
+    src = _export(tmp_path / "export", "main/a.csv.gz", "main_data/a.csv.gz")
+
+    error = _refused("cohort", src)
+
+    assert error.code == "table_name_collision"
 
 
 def test_definition_describes_a_local_dataset(datasets_dir, tmp_path):
@@ -338,6 +354,12 @@ def test_capabilities_list_define_dataset_with_its_real_flags():
 
     assert listed["mutates"] is True
     assert set(listed["flags"]) <= options
-    assert {"--src", "--title", "--summary", "--dry-run", "--force", "--json"} <= set(
-        listed["flags"]
-    )
+    assert {
+        "--src",
+        "--title",
+        "--summary",
+        "--dry-run",
+        "--force",
+        "--json",
+        "--paths",
+    } <= set(listed["flags"])

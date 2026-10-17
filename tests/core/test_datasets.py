@@ -362,6 +362,26 @@ class TestDatasetRegistryEdgeCases:
 
         DatasetRegistry.reset()
 
+    @pytest.mark.parametrize(
+        "filename",
+        ["..", "../parquet/eicu", "/tmp/elsewhere.duckdb", "sub/x.duckdb", "x.db"],
+    )
+    def test_custom_json_database_must_be_a_plain_file_name(
+        self, tmp_path, caplog, filename
+    ):
+        """M4 removes the database by this name: it must not lead elsewhere."""
+        (tmp_path / "odd.json").write_text(
+            json.dumps({"name": "odd", "default_duckdb_filename": filename})
+        )
+
+        DatasetRegistry.reset()
+        with caplog.at_level("WARNING", logger="m4.core.datasets"):
+            DatasetRegistry.load_custom_datasets(tmp_path)
+
+        assert DatasetRegistry.get("odd") is None
+        assert "odd.json" in caplog.text
+        DatasetRegistry.reset()
+
     def test_load_custom_datasets_nonexistent_dir(self, tmp_path):
         """load_custom_datasets with nonexistent directory does not crash."""
         DatasetRegistry.reset()

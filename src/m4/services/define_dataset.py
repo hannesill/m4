@@ -18,7 +18,11 @@ from typing import Any
 
 import duckdb
 
-from m4.config import ensure_custom_datasets_loaded, get_custom_datasets_dir
+from m4.config import (
+    ensure_custom_datasets_loaded,
+    get_custom_datasets_dir,
+    get_dataset_storage,
+)
 from m4.core.datasets import DatasetDefinition, DatasetRegistry
 from m4.core.raw_files import raw_files, raw_stem
 from m4.services.results import CommandError, CommandResult
@@ -28,6 +32,7 @@ COMMAND = "define-dataset"
 ERROR_INVALID_DATASET_NAME = "invalid_dataset_name"
 ERROR_BUILTIN_DATASET = "builtin_dataset"
 ERROR_DATASET_EXISTS = "dataset_exists"
+ERROR_DATASET_PREPARED = "dataset_prepared"
 ERROR_DATABASE_NAME_TAKEN = "database_name_taken"
 ERROR_SOURCE_NOT_FOUND = "source_not_found"
 ERROR_SOURCE_NOT_A_DIRECTORY = "source_not_a_directory"
@@ -56,9 +61,12 @@ def _listed(paths: list[str]) -> str:
 def _schema_name(text: str, dataset_name: str) -> str:
     """`text` as a lower-case SQL identifier that DuckDB accepts unquoted.
 
-    It must also differ from the name DuckDB gives the dataset's database,
-    its file name up to the first dot (my_export for my_export.duckdb):
-    `my_export.admissions` would be ambiguous between the two.
+    It must also differ from the names DuckDB keeps for itself: the dataset's
+    database, named after its file up to the first dot (my_export for
+    my_export.duckdb), the system catalogs such as `temp`, and the system
+    schemas such as `main` and `information_schema`. A schema of such a name
+    makes `name.table` ambiguous, cannot be created, or, as `main`, hides its
+    tables from M4's table list.
     """
     name = re.sub(r"[^a-z0-9_]", "_", text.lower()) or "_"
     if name[0].isdigit():
@@ -68,8 +76,16 @@ def _schema_name(text: str, dataset_name: str) -> str:
             con.extract_statements(f"SELECT * FROM {name}.t")
         except duckdb.ParserException:
             name = f"{name}_"  # A reserved word, such as `order`
+        taken = {
+            row[0]
+            for row in con.execute(
+                "SELECT schema_name FROM duckdb_schemas() WHERE internal "
+                "UNION SELECT database_name FROM duckdb_databases() WHERE internal"
+            ).fetchall()
+        }
     database = DatasetDefinition(name=dataset_name).default_duckdb_filename
-    if name == database.split(".")[0]:
+    taken.add(database.split(".")[0])
+    if name in taken:
         name = f"{name}_data"
     return name
 
@@ -129,6 +145,18 @@ def _existing_definition_problem(
                 False,
             )
     return None, replaces
+
+
+def _has_tables(name: str) -> bool:
+    """Whether M4 has made Parquet files or a database of dataset `name`."""
+    storage = get_dataset_storage(name)
+    databases = {DatasetDefinition(name=name).default_duckdb_filename}
+    if storage.db_path is not None:
+        databases.add(storage.db_path.name)
+    if any((storage.databases_dir / file).exists() for file in databases):
+        return True
+    parquet = storage.parquet_root
+    return parquet.is_dir() and any(path.is_file() for path in parquet.rglob("*"))
 
 
 def _deeper_hint(src: Path, files: list[Path]) -> str:
@@ -207,6 +235,15 @@ def define_dataset_service(
     problem, replaces = _existing_definition_problem(name, target, force)
     if problem:
         return problem
+    if replaces and _has_tables(name):
+        # `m4 init` would keep the tables of the old folder next to the new ones
+        return _error(
+            ERROR_DATASET_PREPARED,
+            f"'{name}' already has tables in M4's data directory, made from the "
+            "folder it was defined from before.",
+            f"Run m4 remove-dataset {name} first; it keeps your own folder. "
+            "Then define the dataset again.",
+        )
 
     folder = Path(src).expanduser()
     if not folder.exists():

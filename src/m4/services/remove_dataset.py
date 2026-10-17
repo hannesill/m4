@@ -6,7 +6,8 @@ which `m4 download` fills; `m4 init --src` reads another folder in place and
 copies nothing there). For a custom dataset also its definition. Every path is
 resolved, links included, before it is removed: one that leads out of the data
 directory, into the folder a dataset was defined from, or to a file another
-dataset shares is skipped and reported, never deleted.
+dataset shares is skipped and reported, never deleted. A database made with
+`m4 init --db-path` is recorded nowhere, so it is neither found nor removed.
 """
 
 from __future__ import annotations
@@ -38,6 +39,7 @@ SKIPPED_OUTSIDE_DATA_DIR = "outside_data_dir"
 SKIPPED_DATASET_SOURCE = "dataset_source"
 SKIPPED_SHARED = "shared_with_another_dataset"
 SKIPPED_CONFIGURED = "configured_path"
+SKIPPED_NOT_A_DATABASE_FILE = "not_a_database_file"
 
 IN_USE_HINT = (
     "Close the agents, notebooks and M4 servers that use the dataset, then run "
@@ -154,6 +156,23 @@ def remove_dataset_service(
             return
         skipped.append({"path": str(path), "reason": reason, "resolves_to": str(real)})
 
+    databases = storage.databases_dir.resolve()
+
+    def consider_database_file(path: Path) -> None:
+        # Only ever a file of its own in the databases folder, never a folder
+        # or a link, whatever the definition names
+        if not os.path.lexists(path):
+            return
+        real = path.resolve()
+        if not _inside(real, data_dir):
+            reason = SKIPPED_OUTSIDE_DATA_DIR
+        elif path.is_symlink() or not path.is_file() or real.parent != databases:
+            reason = SKIPPED_NOT_A_DATABASE_FILE
+        else:
+            planned.append(path)
+            return
+        skipped.append({"path": str(path), "reason": reason, "resolves_to": str(real)})
+
     # The database first: it is what another process is most likely to hold.
     db_path = storage.db_path
     sharing = [
@@ -176,11 +195,10 @@ def remove_dataset_service(
         for path in (
             db_path,
             db_path.with_name(db_path.name + ".wal"),
-            db_path.with_name(db_path.name + ".tmp"),  # DuckDB's spill folder
             marker,
             marker.with_name(marker.name + ".tmp"),
         ):
-            consider(path)
+            consider_database_file(path)
     consider(storage.parquet_root)
     consider(storage.raw_root)
     for kind, configured in sorted(storage.configured.items()):

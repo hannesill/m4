@@ -263,6 +263,42 @@ def _redact_known_paths(message: str) -> str:
     return message
 
 
+# Keys of the define-dataset and remove-dataset payloads that hold local paths
+_PATH_KEYS = frozenset(
+    {"path", "resolves_to", "definition_path", "defined_from", "source_kept"}
+)
+
+
+def _hide_raw_paths(value: Any, data_dir: Path) -> Any:
+    """`value` with the local paths under _PATH_KEYS hidden, at any depth.
+
+    Machine output does so unless --paths or M4_PATH_DISCLOSURE asks for them:
+    a path in the data directory reads <M4_DATA_DIR>/..., any other is null.
+    """
+    if isinstance(value, dict):
+        return {
+            key: (
+                _hidden_path(item, data_dir)
+                if key in _PATH_KEYS
+                else _hide_raw_paths(item, data_dir)
+            )
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_hide_raw_paths(item, data_dir) for item in value]
+    return value
+
+
+def _hidden_path(value: Any, data_dir: Path) -> Any:
+    if not isinstance(value, str):
+        return value
+    try:
+        relative = Path(value).relative_to(data_dir)
+    except ValueError:
+        return None
+    return "/".join(("<M4_DATA_DIR>", *relative.parts))
+
+
 def _dataframe_payload(df: pd.DataFrame | None) -> dict[str, Any] | None:
     if df is None:
         return None
@@ -775,6 +811,10 @@ def define_dataset_cmd(
         bool,
         typer.Option("--json", help="Print result as JSON for automation."),
     ] = False,
+    include_paths: Annotated[
+        bool,
+        typer.Option("--paths", help="Include raw local filesystem paths."),
+    ] = False,
 ):
     """Define a dataset from a folder of your own CSV files.
 
@@ -792,18 +832,28 @@ def define_dataset_cmd(
         )
 
     if json_output:
-        context = resolve_runtime_context(dataset=dataset_name.lower()).public_context()
+        ctx = resolve_runtime_context(dataset=dataset_name.lower())
         if isinstance(result, CommandError):
             _emit_agent_error(
                 result.command,
                 result.code,
                 result.message,
                 hint=result.hint,
-                context=context,
+                context=ctx.public_context(),
             )
+        data = result.data
+        disclose = include_paths or _path_disclosure_enabled()
+        if not disclose:
+            data = {
+                **_hide_raw_paths(data, ctx.data_dir),
+                "init_command": f"m4 init {data['name']} --src <folder>",
+            }
         _emit_json(
             _agent_success_payload(
-                result.command, result.data, context=context, warnings=result.warnings
+                result.command,
+                {**data, "raw_paths_hidden": not disclose},
+                context=ctx.public_context(),
+                warnings=result.warnings,
             )
         )
         return
@@ -854,11 +904,16 @@ def remove_dataset_cmd(
         bool,
         typer.Option("--json", help="Print result as JSON for automation."),
     ] = False,
+    include_paths: Annotated[
+        bool,
+        typer.Option("--paths", help="Include raw local filesystem paths."),
+    ] = False,
 ):
     """Remove the files M4 made of a dataset, and a custom dataset's definition.
 
     Only inside M4's data directory: the folder a dataset was initialized or
-    defined from stays.
+    defined from stays. A database made with `m4 init --db-path` is recorded
+    nowhere, so it is not removed; delete it yourself.
     """
     with _silence_m4_logging() if json_output else nullcontext():
         result = remove_dataset_service(
@@ -866,17 +921,28 @@ def remove_dataset_cmd(
         )
 
     if json_output:
-        context = resolve_runtime_context(dataset=dataset_name.lower()).public_context()
+        ctx = resolve_runtime_context(dataset=dataset_name.lower())
+        disclose = include_paths or _path_disclosure_enabled()
+
+        def shown(data: dict[str, Any]) -> dict[str, Any]:
+            if not disclose:
+                data = _hide_raw_paths(data, ctx.data_dir)
+            return {**data, "raw_paths_hidden": not disclose}
+
         if isinstance(result, CommandError):
             _emit_agent_error(
                 result.command,
                 result.code,
                 result.message,
                 hint=result.hint,
-                context=context,
-                data=result.data,
+                context=ctx.public_context(),
+                data=shown(result.data) if result.data is not None else None,
             )
-        _emit_json(_agent_success_payload(result.command, result.data, context=context))
+        _emit_json(
+            _agent_success_payload(
+                result.command, shown(result.data), context=ctx.public_context()
+            )
+        )
         return
 
     if isinstance(result, CommandError):

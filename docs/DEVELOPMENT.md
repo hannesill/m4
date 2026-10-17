@@ -312,31 +312,41 @@ DIR` then converts them. `data` holds `name`, `title`, `summary`,
 `builtin_dataset`, `database_name_taken` (the name would share another
 dataset's DuckDB file, as `mimic_iv` would with `mimic-iv`), `dataset_exists`
 (a hand-written definition, replaced only with `--force`, or one in another
-file, never replaced), `source_not_found`,
-`source_not_a_directory`, `raw_files_missing` (no CSV files),
-`unsupported_layout` (files
-more than one folder deep), `invalid_table_name`, `table_name_collision` (two files, such as
-`labs.csv` and `labs.csv.gz`, would make one table), and
-`definition_write_failed`. `--dry-run` checks everything and saves nothing.
+file, never replaced), `dataset_prepared` (the definition it would replace has
+Parquet files or a database; run `m4 remove-dataset NAME` first),
+`source_not_found`, `source_not_a_directory`, `raw_files_missing` (no CSV
+files), `unsupported_layout` (files more than one folder deep),
+`invalid_table_name`, `table_name_collision` (two files, such as `labs.csv`
+and `labs.csv.gz`, would make one table), and `definition_write_failed`.
+`--dry-run` checks everything and saves nothing.
 
 `m4 remove-dataset NAME --json` (with `--keep-definition` and `--dry-run`) uses
-it too. It removes the dataset's DuckDB file with the `.wal`, spill folder and
-prepared marker beside it, its Parquet folder with any unfinished conversion,
-`raw_files/NAME`, and a custom dataset's definition. `data` holds `name`,
+it too. It removes the dataset's DuckDB file with the `.wal` and prepared
+marker beside it, its Parquet folder with any unfinished conversion,
+`raw_files/NAME`, and a custom dataset's definition. A database made with
+`m4 init --db-path` is recorded nowhere, so it is not removed. `data` holds `name`,
 `builtin`, `removed` (`path` and `bytes` of each, as it would be with
 `--dry-run`), `freed_bytes`, `definition_removed`, `source_kept` (the
 `defined_from` folder, which is never touched), `skipped`, and `dry_run`. Each
 `skipped` entry has `path`, `resolves_to` and a `reason`: `outside_data_dir`
 (the path, a link resolved, leads out of the data directory),
 `dataset_source` (it is or holds the folder the dataset was defined from),
-`shared_with_another_dataset` (another dataset has the same DuckDB file), or
-`configured_path` (`config.json` sets it). A dataset with nothing on disk is
+`shared_with_another_dataset` (another dataset has the same DuckDB file),
+`not_a_database_file` (the database path is not a file of its own in the
+databases folder; M4 never removes a folder there), or `configured_path`
+(`config.json` sets it). A dataset with nothing on disk is
 removed with an empty `removed`; an empty folder is removed without being
 listed. Error codes are `invalid_dataset_name`, `dataset_not_found`,
 `dataset_in_use` (another process has the database open, checked before
 anything is removed; on Windows also a file that cannot be removed while
 open), and `remove_failed`. These two errors carry `data` with what was
 removed before them.
+
+Like `list-datasets`, both commands hide raw local paths unless `--paths` is
+given or `M4_PATH_DISCLOSURE=1` is set, and say so in `raw_paths_hidden`. A
+hidden path in the data directory reads `<M4_DATA_DIR>/...`; any other, such
+as the folder a dataset was defined from, is null, and `init_command` reads
+`m4 init NAME --src <folder>`.
 
 ### Runtime Environment
 
