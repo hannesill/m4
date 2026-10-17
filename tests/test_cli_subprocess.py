@@ -248,6 +248,29 @@ def test_define_dataset_then_init_then_query(tmp_path):
     assert rows == [{"sex": "F", "value": 1.1}]
 
 
+def test_define_then_init_then_remove_dataset(tmp_path):
+    export = tmp_path / "export"
+    export.mkdir()
+    with gzip.open(export / "admissions.csv.gz", "wt") as handle:
+        handle.write("id\n1\n")
+    for args in (
+        ["define-dataset", "cohort", "--src", str(export), "--json"],
+        ["init", "cohort", "--src", str(export), "--no-interactive", "--json"],
+    ):
+        assert _run_m4(args, tmp_path).returncode == 0
+
+    removed = _run_m4(["remove-dataset", "cohort", "--json"], tmp_path)
+
+    assert removed.returncode == 0
+    data = _assert_single_json_stdout(removed)["data"]
+    assert data["definition_removed"] is True
+    assert data["freed_bytes"] > 0
+    assert (export / "admissions.csv.gz").exists()
+    listed = _run_m4(["list-datasets", "--json", "--no-interactive"], tmp_path)
+    names = {item["name"] for item in json.loads(listed.stdout)["data"]["datasets"]}
+    assert "cohort" not in names
+
+
 def test_define_dataset_json_error(tmp_path):
     result = _run_m4(
         ["define-dataset", "eicu", "--src", str(tmp_path), "--json"], tmp_path

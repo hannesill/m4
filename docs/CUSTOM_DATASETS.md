@@ -32,6 +32,21 @@ Running `m4 define-dataset` again with the same name replaces the definition
 it wrote, so a corrected folder needs only another run. A definition you wrote
 by hand is replaced only with `--force`.
 
+## Removing a Dataset
+
+```bash
+m4 remove-dataset my-export --dry-run   # what would go
+m4 remove-dataset my-export
+```
+
+This removes what M4 made of the dataset in its data directory: the DuckDB
+database, the Parquet files, and raw files M4 downloaded into
+`raw_files/<name>`. For a custom dataset it also removes the definition, unless
+`--keep-definition`; a built-in dataset just goes back to not being set up.
+The folder you defined or initialized a dataset from is never touched, nor is
+anything outside the data directory: a path that leads out of it, through a
+link or a setting in `config.json`, is kept and reported.
+
 ## Writing a Definition by Hand
 
 For a PhysioNet dataset M4 does not ship, or to choose the schema names

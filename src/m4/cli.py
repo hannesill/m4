@@ -77,6 +77,7 @@ from m4.services.download import build_wget_command, download_dataset_service
 from m4.services.events import NdjsonEventReporter
 from m4.services.init import initialize_dataset_service, source_problem
 from m4.services.init_derived import init_derived_service
+from m4.services.remove_dataset import remove_dataset_service
 from m4.services.results import CommandError, CommandResult
 from m4.services.setup import doctor_service, quickstart_service, setup_agent_service
 from m4.services.status import collect_status_snapshot
@@ -163,11 +164,12 @@ def _agent_error_payload(
     hint: str | None = None,
     context: dict[str, Any] | None = None,
     warnings: list[str] | None = None,
+    data: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     error_payload: dict[str, Any] = {"code": code, "message": message}
     if hint:
         error_payload["hint"] = hint
-    return {
+    payload = {
         "version": 1,
         "ok": False,
         "command": command,
@@ -175,6 +177,9 @@ def _agent_error_payload(
         "error": error_payload,
         "warnings": warnings or [],
     }
+    if data is not None:
+        payload["data"] = data  # What the command did before it failed
+    return payload
 
 
 def _agent_success_payload(
@@ -204,6 +209,7 @@ def _emit_agent_error(
     hint: str | None = None,
     context: dict[str, Any] | None = None,
     warnings: list[str] | None = None,
+    data: dict[str, Any] | None = None,
 ) -> None:
     message = _redact_known_paths(message)
     hint = _redact_known_paths(hint) if hint else None
@@ -215,6 +221,7 @@ def _emit_agent_error(
             hint=hint,
             context=context,
             warnings=warnings,
+            data=data,
         )
     )
     raise typer.Exit(code=1)
@@ -814,6 +821,78 @@ def define_dataset_cmd(
     if result.warnings:
         warning("Plain .csv files were left out: M4 converts only .csv.gz files.")
     console.print(f"  [muted]Next:[/muted] [command]{data['init_command']}[/command]")
+
+
+def _size_label(size: float) -> str:
+    for unit in ("bytes", "KB", "MB"):
+        if size < 1024:
+            return f"{size:.0f} {unit}" if unit == "bytes" else f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} GB"
+
+
+@app.command("remove-dataset")
+def remove_dataset_cmd(
+    dataset_name: Annotated[
+        str,
+        typer.Argument(help="Dataset to remove.", metavar="NAME"),
+    ],
+    keep_definition: Annotated[
+        bool,
+        typer.Option(
+            "--keep-definition",
+            help="Keep the definition of a custom dataset; remove only its files.",
+        ),
+    ] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Report what would be removed, remove nothing."),
+    ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print result as JSON for automation."),
+    ] = False,
+):
+    """Remove the files M4 made of a dataset, and a custom dataset's definition.
+
+    Only inside M4's data directory: the folder a dataset was initialized or
+    defined from stays.
+    """
+    with _silence_m4_logging() if json_output else nullcontext():
+        result = remove_dataset_service(
+            dataset_name, keep_definition=keep_definition, dry_run=dry_run
+        )
+
+    if json_output:
+        context = resolve_runtime_context(dataset=dataset_name.lower()).public_context()
+        if isinstance(result, CommandError):
+            _emit_agent_error(
+                result.command,
+                result.code,
+                result.message,
+                hint=result.hint,
+                context=context,
+                data=result.data,
+            )
+        _emit_json(_agent_success_payload(result.command, result.data, context=context))
+        return
+
+    if isinstance(result, CommandError):
+        print_error_panel("Cannot Remove the Dataset", result.message, hint=result.hint)
+        raise typer.Exit(code=1)
+
+    data = result.data
+    verb = "Would remove" if data["dry_run"] else "Removed"
+    if not data["removed"]:
+        info(f"Nothing of '{data['name']}' to remove.")
+    for item in data["removed"]:
+        console.print(
+            f"  {verb} {item['path']} [muted]({_size_label(item['bytes'])})[/muted]"
+        )
+    for item in data["skipped"]:
+        warning(f"Kept {item['path']} ({item['reason'].replace('_', ' ')})")
+    if data["removed"]:
+        success(f"{verb} {_size_label(data['freed_bytes'])} of '{data['name']}'")
 
 
 @app.command("init")

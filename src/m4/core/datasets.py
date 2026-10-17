@@ -165,6 +165,12 @@ class DatasetRegistry:
         return list(cls._registry.values())
 
     @classmethod
+    def unregister(cls, name: str) -> None:
+        """Forget a custom dataset in this process. Built-ins stay."""
+        if not cls.is_builtin(name):
+            cls._registry.pop(name.lower(), None)
+
+    @classmethod
     def is_builtin(cls, name: str) -> bool:
         """Whether `name` (case-insensitive) is one of the datasets M4 ships."""
         return name.lower() in cls._builtin_names

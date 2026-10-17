@@ -298,12 +298,33 @@ DIR` then converts them. `data` holds `name`, `title`, `summary`,
 (a definition of that name was replaced), `init_command`, and the saved
 `definition`. The warning `uncompressed_csv_files_ignored` says that plain
 `.csv` files were left out. Its error codes are `invalid_dataset_name`,
-`builtin_dataset`, `dataset_exists` (a hand-written definition, replaced only
-with `--force`, or one in another file, never replaced), `source_not_found`,
+`builtin_dataset`, `database_name_taken` (the name would share another
+dataset's DuckDB file, as `mimic_iv` would with `mimic-iv`), `dataset_exists`
+(a hand-written definition, replaced only with `--force`, or one in another
+file, never replaced), `source_not_found`,
 `source_not_a_directory`, `raw_files_missing` (no CSV files),
 `uncompressed_csv_files` (only plain `.csv` files), `unsupported_layout` (files
 more than one folder deep), `invalid_table_name`, `table_name_collision`, and
 `definition_write_failed`. `--dry-run` checks everything and saves nothing.
+
+`m4 remove-dataset NAME --json` (with `--keep-definition` and `--dry-run`) uses
+it too. It removes the dataset's DuckDB file with the `.wal`, spill folder and
+prepared marker beside it, its Parquet folder with any unfinished conversion,
+`raw_files/NAME`, and a custom dataset's definition. `data` holds `name`,
+`builtin`, `removed` (`path` and `bytes` of each, as it would be with
+`--dry-run`), `freed_bytes`, `definition_removed`, `source_kept` (the
+`defined_from` folder, which is never touched), `skipped`, and `dry_run`. Each
+`skipped` entry has `path`, `resolves_to` and a `reason`: `outside_data_dir`
+(the path, a link resolved, leads out of the data directory),
+`dataset_source` (it is or holds the folder the dataset was defined from),
+`shared_with_another_dataset` (another dataset has the same DuckDB file), or
+`configured_path` (`config.json` sets it). A dataset with nothing on disk is
+removed with an empty `removed`; an empty folder is removed without being
+listed. Error codes are `invalid_dataset_name`, `dataset_not_found`,
+`dataset_in_use` (another process has the database open, checked before
+anything is removed; on Windows also a file that cannot be removed while
+open), and `remove_failed`. These two errors carry `data` with what was
+removed before them.
 
 ### Runtime Environment
 

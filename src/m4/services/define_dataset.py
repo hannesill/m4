@@ -18,7 +18,7 @@ from typing import Any
 
 import duckdb
 
-from m4.config import get_custom_datasets_dir
+from m4.config import ensure_custom_datasets_loaded, get_custom_datasets_dir
 from m4.core.datasets import DatasetDefinition, DatasetRegistry
 from m4.services.results import CommandError, CommandResult
 
@@ -27,6 +27,7 @@ COMMAND = "define-dataset"
 ERROR_INVALID_DATASET_NAME = "invalid_dataset_name"
 ERROR_BUILTIN_DATASET = "builtin_dataset"
 ERROR_DATASET_EXISTS = "dataset_exists"
+ERROR_DATABASE_NAME_TAKEN = "database_name_taken"
 ERROR_SOURCE_NOT_FOUND = "source_not_found"
 ERROR_SOURCE_NOT_A_DIRECTORY = "source_not_a_directory"
 ERROR_RAW_FILES_MISSING = "raw_files_missing"
@@ -191,6 +192,18 @@ def define_dataset_service(
             f"'{name}' is one of M4's built-in datasets.",
             "Choose another name.",
         )
+
+    # mimic_iv would initialize into mimic_iv.duckdb, the database of mimic-iv
+    ensure_custom_datasets_loaded()
+    database = DatasetDefinition(name=name).default_duckdb_filename
+    for other in DatasetRegistry.list_all():
+        if other.name.lower() != name and other.default_duckdb_filename == database:
+            return _error(
+                ERROR_DATABASE_NAME_TAKEN,
+                f"'{name}' would share the database file {database} with "
+                f"'{other.name}'.",
+                "Choose another name.",
+            )
 
     target = get_custom_datasets_dir() / f"{name}.json"
     problem, replaces = _existing_definition_problem(name, target, force)
