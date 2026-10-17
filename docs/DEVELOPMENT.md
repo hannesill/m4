@@ -246,6 +246,18 @@ With `--events ndjson`, stdout changes from one JSON object to a newline-delimit
 JSON stream. The final command payload appears in `operation_completed.result`;
 setup failures appear in `operation_failed.error`.
 
+M4 converts raw files ending in `.csv.gz` or `.csv` (it downloads only
+`.csv.gz`). A file that is not UTF-8 is read again as UTF-16 when it starts
+with that byte order mark, and as Latin-1 otherwise; init then fails with
+`csv_encoding_unsupported` if that does not work either, and two files that
+would make one table fail it with `table_name_collision`. Files read with a
+fallback add to the result's `conversion_warnings` (each with `code`, `file`,
+and for decimal commas `columns`, also sent as `conversion_warning` events) and
+their codes to `warnings`: `csv_read_as_latin1`, and
+`decimal_comma_columns_kept_as_text` for text columns of a `;`-separated file
+that hold numbers such as `3,5`. A file whose header line holds no `;` is not
+looked at for those, and PhysioNet's files are converted as before.
+
 `conversion_started.file_count` counts the files this run converts.
 `skipped_count` counts the raw files that already had a finished Parquet file,
 which is not zero when an interrupted run is continued. When nothing is left to
@@ -290,21 +302,21 @@ changing saved backend configuration. `agent-env --mode protected` omits
 gateway to agents.
 
 `m4 define-dataset NAME --src DIR --json` uses the same envelope. It saves
-`<data dir>/datasets/NAME.json`, inferred from the `.csv.gz` files in `DIR` and
+`<data dir>/datasets/NAME.json`, inferred from the CSV files in `DIR` and
 its subfolders (see [Custom Datasets](CUSTOM_DATASETS.md)); `m4 init NAME --src
 DIR` then converts them. `data` holds `name`, `title`, `summary`,
 `definition_path`, `defined_from`, `schemas` (schema to number of tables),
 `tables`, `table_count`, `primary_verification_table`, `dry_run`, `replaced`
 (a definition of that name was replaced), `init_command`, and the saved
-`definition`. The warning `uncompressed_csv_files_ignored` says that plain
-`.csv` files were left out. Its error codes are `invalid_dataset_name`,
+`definition`. Its error codes are `invalid_dataset_name`,
 `builtin_dataset`, `database_name_taken` (the name would share another
 dataset's DuckDB file, as `mimic_iv` would with `mimic-iv`), `dataset_exists`
 (a hand-written definition, replaced only with `--force`, or one in another
 file, never replaced), `source_not_found`,
 `source_not_a_directory`, `raw_files_missing` (no CSV files),
-`uncompressed_csv_files` (only plain `.csv` files), `unsupported_layout` (files
-more than one folder deep), `invalid_table_name`, `table_name_collision`, and
+`unsupported_layout` (files
+more than one folder deep), `invalid_table_name`, `table_name_collision` (two files, such as
+`labs.csv` and `labs.csv.gz`, would make one table), and
 `definition_write_failed`. `--dry-run` checks everything and saves nothing.
 
 `m4 remove-dataset NAME --json` (with `--keep-definition` and `--dry-run`) uses

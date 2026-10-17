@@ -52,7 +52,7 @@ DataFrames, not in the conversation.
 | `mimic-iii` | `mimiciii_clinical` | credentialed |
 
 The MIMIC-IV demo has no `mimiciv_derived`; compute concepts there from the clinical skills' SQL.
-The user's own `.csv.gz` files become a dataset with `m4 define-dataset` (see the m4-setup skill).
+The user's own CSV files become a dataset with `m4 define-dataset` (see the m4-setup skill).
 Table names are the same on both backends. Write DuckDB SQL unless `m4 doctor --json` reports
 the `bigquery` backend.
 

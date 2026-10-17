@@ -181,13 +181,19 @@ def test_dry_run_writes_nothing(datasets_dir, tmp_path):
     assert DatasetRegistry.get("cohort") is None
 
 
-def test_plain_csv_next_to_csv_gz_is_left_out_with_a_warning(datasets_dir, tmp_path):
-    src = _export(tmp_path / "export", "admissions.csv.gz", "notes.csv")
+def test_plain_and_gzipped_csv_files_both_become_tables(datasets_dir, tmp_path):
+    src = _export(
+        tmp_path / "export", "admissions.csv.gz", "notes.csv", "labs/chem.csv"
+    )
 
     result = _define("cohort", src)
 
-    assert result.data["tables"] == ["cohort_data.admissions"]
-    assert result.warnings == ["uncompressed_csv_files_ignored"]
+    assert result.data["tables"] == [
+        "cohort_data.admissions",
+        "cohort_data.notes",
+        "labs.chem",
+    ]
+    assert result.warnings == []
 
 
 # ------------------------------------------------------------
@@ -218,16 +224,13 @@ def test_folder_must_exist_and_be_a_folder(datasets_dir, tmp_path):
     )
 
 
-def test_folder_of_plain_csv_files_is_refused_with_a_hint_to_compress(
-    datasets_dir, tmp_path
-):
-    src = _export(tmp_path / "export", "admissions.csv", "labs/chemistry.CSV")
+def test_plain_and_gzipped_file_of_one_name_are_the_same_table(datasets_dir, tmp_path):
+    src = _export(tmp_path / "export", "labs.csv", "labs.csv.gz")
 
     error = _refused("cohort", src)
 
-    assert error.code == "uncompressed_csv_files"
-    assert "2 .csv file(s)" in error.message
-    assert "gzip" in error.hint
+    assert error.code == "table_name_collision"
+    assert "labs.csv and labs.csv.gz" in error.message
 
 
 def test_folder_without_csv_files_is_refused(datasets_dir, tmp_path):

@@ -20,6 +20,7 @@ import duckdb
 
 from m4.config import ensure_custom_datasets_loaded, get_custom_datasets_dir
 from m4.core.datasets import DatasetDefinition, DatasetRegistry
+from m4.core.raw_files import raw_files, raw_stem
 from m4.services.results import CommandError, CommandResult
 
 COMMAND = "define-dataset"
@@ -31,18 +32,15 @@ ERROR_DATABASE_NAME_TAKEN = "database_name_taken"
 ERROR_SOURCE_NOT_FOUND = "source_not_found"
 ERROR_SOURCE_NOT_A_DIRECTORY = "source_not_a_directory"
 ERROR_RAW_FILES_MISSING = "raw_files_missing"
-ERROR_UNCOMPRESSED_CSV_FILES = "uncompressed_csv_files"
 ERROR_UNSUPPORTED_LAYOUT = "unsupported_layout"
 ERROR_INVALID_TABLE_NAME = "invalid_table_name"
 ERROR_TABLE_NAME_COLLISION = "table_name_collision"
 ERROR_DEFINITION_WRITE_FAILED = "definition_write_failed"
-WARNING_UNCOMPRESSED_CSV_IGNORED = "uncompressed_csv_files_ignored"
 
 DATASET_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 # `m4 init` names a view `schema.table` without quoting it, so a table name
 # must be a plain SQL identifier. (A reserved word is fine after the dot.)
 TABLE_NAME = re.compile(r"^[a-z_][a-z0-9_]*$")
-CSV_GZ = ".csv.gz"
 NAMED = 3  # how many offending files an error message names
 
 
@@ -76,9 +74,9 @@ def _schema_name(text: str, dataset_name: str) -> str:
     return name
 
 
-def _table_name(csv_gz: Path) -> str:
-    """The table `m4 init` makes of `csv_gz`: its lower-case name less .csv.gz."""
-    return csv_gz.name[: -len(CSV_GZ)].lower()
+def _table_name(raw: Path) -> str:
+    """The table `m4 init` makes of `raw`: its lower-case name less .csv(.gz)."""
+    return raw_stem(raw.name).lower()
 
 
 def _read_json(path: Path) -> Any:
@@ -215,36 +213,23 @@ def define_dataset_service(
         return _error(
             ERROR_SOURCE_NOT_FOUND,
             f"{folder} does not exist.",
-            "Choose the folder that holds the .csv.gz files.",
+            "Choose the folder that holds the CSV files.",
         )
     if not folder.is_dir():
         return _error(
             ERROR_SOURCE_NOT_A_DIRECTORY,
             f"{folder} is not a folder.",
-            "Choose the folder that holds the .csv.gz files.",
+            "Choose the folder that holds the CSV files.",
         )
     folder = folder.resolve()
 
     # The same files `m4 init --src` converts
-    csv_gz = sorted(path for path in folder.rglob(f"*{CSV_GZ}") if path.is_file())
-    plain_csv = [
-        path
-        for path in folder.rglob("*")
-        if path.name.lower().endswith(".csv") and path.is_file()
-    ]
-    if not csv_gz:
-        if plain_csv:
-            return _error(
-                ERROR_UNCOMPRESSED_CSV_FILES,
-                f"{folder} holds {len(plain_csv)} .csv file(s) but no .csv.gz "
-                "files, and M4 converts only .csv.gz files.",
-                "Compress them first, for example with: gzip -k *.csv in each "
-                "folder, then run this again.",
-            )
+    csv_files = raw_files(folder)
+    if not csv_files:
         return _error(
             ERROR_RAW_FILES_MISSING,
-            f"{folder} holds no .csv.gz files.",
-            "Choose the folder that holds the .csv.gz files.",
+            f"{folder} holds no .csv or .csv.gz files.",
+            "Choose the folder that holds the CSV files.",
         )
 
     def relative(path: Path) -> str:
@@ -252,17 +237,19 @@ def define_dataset_service(
 
     # `m4 init` makes views of files in the folder and in its subfolders only;
     # it would convert deeper files without making a table of them.
-    deeper = [path for path in csv_gz if len(path.relative_to(folder).parts) > 2]
+    deeper = [path for path in csv_files if len(path.relative_to(folder).parts) > 2]
     if deeper:
         return _error(
             ERROR_UNSUPPORTED_LAYOUT,
-            f"{len(deeper)} .csv.gz file(s) in {folder} are more than one folder "
+            f"{len(deeper)} CSV file(s) in {folder} are more than one folder "
             f"deep ({_listed([relative(path) for path in deeper])}), and M4 "
             "makes tables only of files in the folder and in its subfolders.",
-            _deeper_hint(folder, csv_gz),
+            _deeper_hint(folder, csv_files),
         )
 
-    badly_named = [path for path in csv_gz if not TABLE_NAME.match(_table_name(path))]
+    badly_named = [
+        path for path in csv_files if not TABLE_NAME.match(_table_name(path))
+    ]
     if badly_named:
         return _error(
             ERROR_INVALID_TABLE_NAME,
@@ -274,13 +261,13 @@ def define_dataset_service(
         )
 
     # Mapping keys are folder names as on disk; "" is the folder itself.
-    folders = sorted({path.relative_to(folder).parent.as_posix() for path in csv_gz})
+    folders = sorted({path.relative_to(folder).parent.as_posix() for path in csv_files})
     schema_mapping = {
         ("" if key == "." else key): _schema_name(name if key == "." else key, name)
         for key in folders
     }
     tables: dict[str, list[Path]] = defaultdict(list)
-    for path in csv_gz:
+    for path in csv_files:
         key = path.relative_to(folder).parent.as_posix()
         schema = schema_mapping["" if key == "." else key]
         tables[f"{schema}.{_table_name(path)}"].append(path)
@@ -344,5 +331,5 @@ def define_dataset_service(
             "init_command": f"m4 init {name} --src {quote(str(folder))}",
             "definition": definition,
         },
-        warnings=[WARNING_UNCOMPRESSED_CSV_IGNORED] if plain_csv else [],
+        warnings=[],
     )

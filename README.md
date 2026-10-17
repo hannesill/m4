@@ -211,7 +211,7 @@ Once connected, try asking:
 | **eicu** | Tabular | 200k+ ICU stays | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes | No |
 | **mimic-iii** | Tabular | 40k+ patients | [PhysioNet credentialed](https://physionet.org/content/mimiciii/) | Yes | Yes | No |
 
-These datasets are supported out of the box. A folder of your own `.csv.gz` files becomes a dataset with `m4 define-dataset NAME --src DIR` and `m4 init NAME --src DIR`; other datasets can be added by following [these instructions](docs/CUSTOM_DATASETS.md).
+These datasets are supported out of the box. A folder of your own CSV files becomes a dataset with `m4 define-dataset NAME --src DIR` and `m4 init NAME --src DIR`; other datasets can be added by following [these instructions](docs/CUSTOM_DATASETS.md).
 
 Choose datasets explicitly at each call site and switch the saved backend anytime:
 ```bash

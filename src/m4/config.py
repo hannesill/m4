@@ -8,6 +8,7 @@ from typing import Any
 
 from m4.core.datasets import DatasetRegistry
 from m4.core.exceptions import DatasetError
+from m4.core.raw_files import has_raw_files
 
 APP_NAME = "m4"
 
@@ -340,7 +341,7 @@ def _has_parquet_files(path: Path | None) -> bool:
 
 
 def _has_raw_files(path: Path | None) -> bool:
-    return bool(path and path.exists() and any(path.rglob("*.csv.gz")))
+    return bool(path and path.exists() and has_raw_files(path))
 
 
 def detect_available_local_datasets() -> dict[str, dict[str, Any]]:

@@ -4,8 +4,8 @@ M4 works with your own data, and with PhysioNet datasets it does not ship.
 
 ## Quick Start: A Folder of Your Own Files
 
-Put the tables in one folder as `.csv.gz` files, one file per table
-(`gzip -k *.csv` compresses plain CSV files and keeps them). Then:
+Put the tables in one folder as CSV files, one file per table, plain
+(`.csv`) or gzipped (`.csv.gz`). Then:
 
 ```bash
 m4 define-dataset my-export --src /path/to/export --title "My ICU export"
@@ -56,7 +56,7 @@ directly at the M4 data directory.
 
 **Example: `m4_data/datasets/my-icu-extract.json`**
 
-An extract from your own hospital's data warehouse, as CSV.gz files in a
+An extract from your own hospital's data warehouse, as CSV files in a
 `core/` and a `labs/` folder:
 
 ```json
@@ -87,7 +87,7 @@ m4 init my-icu-extract --src /path/to/your/csv/files
 | `title` | No | Short display name shown by `m4 list-datasets`. Defaults to `name` |
 | `summary` | No | One or two sentences on what the dataset holds, shown by `m4 list-datasets` |
 | `version` | No | Version of the data, such as the PhysioNet version in `file_listing_url` |
-| `download_size_gb` | No | Approximate size in GB of the raw CSV.gz files, shown by `m4 list-datasets` |
+| `download_size_gb` | No | Approximate size in GB of the raw CSV files, shown by `m4 list-datasets` |
 | `defined_from` | No | Set by `m4 define-dataset` to the folder it read. A file with it is replaced by the next `m4 define-dataset` of that name |
 | `file_listing_url` | No | PhysioNet URL for auto-download (demo datasets only) |
 | `subdirectories_to_scan` | No | Subdirs containing CSV files (e.g., `["hosp", "icu"]`) |
@@ -159,7 +159,7 @@ Custom datasets without `schema_mapping` still work — tables will be created w
 When you run `m4 init <dataset>`:
 
 1. **Download** (if `file_listing_url` exists and files missing)
-2. **Convert** CSV.gz files to Parquet format
+2. **Convert** CSV files (`.csv.gz` or `.csv`) to Parquet format
 3. **Create** DuckDB views over the Parquet files
 4. **Verify** by querying `primary_verification_table`
 
@@ -192,7 +192,23 @@ If you already have the files of a defined dataset, point to them with `--src`:
 m4 init my-dataset --src /path/to/csvs
 ```
 
-M4 converts only `.csv.gz` files; compress plain `.csv` files first.
+M4 converts `.csv` and `.csv.gz` files.
+
+### Files exported from Excel and other programs
+
+M4 detects the delimiter (`,`, `;`, or tab) and the header row, and reads a
+UTF-8 file with or without a byte order mark (Excel's "CSV UTF-8"). It also
+reads UTF-16 with a byte order mark (Excel's "Unicode Text"). A file in another
+encoding is read as Latin-1, and `m4 init` warns that it did
+(`csv_read_as_latin1`); a file that is not Latin-1 either, such as Windows-1252
+text with curly quotes or €, stops `m4 init` with `csv_encoding_unsupported`:
+save it as CSV UTF-8.
+
+Numbers written with a decimal comma (`3,5`) are kept as text, exactly as
+written, rather than guessed at: `m4 init` warns with
+`decimal_comma_columns_kept_as_text` and names the columns. Convert them when
+you query, `CAST(REPLACE(value, ',', '.') AS DOUBLE)`, or export with decimal
+points.
 
 ## Credentialed Datasets
 

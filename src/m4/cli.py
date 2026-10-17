@@ -52,8 +52,12 @@ from m4.core.derived.materializer import (
     materialize_all,
 )
 from m4.core.exceptions import M4Error
+from m4.core.raw_files import has_raw_files
 from m4.core.tools import init_tools
 from m4.data_io import (
+    WARNING_CSV_READ_AS_LATIN1,
+    WARNING_DECIMAL_COMMA_COLUMNS,
+    CsvConversionError,
     DatasetDownloadError,
     PhysioNetCredentials,
     convert_csv_to_parquet,
@@ -743,7 +747,7 @@ def define_dataset_cmd(
         typer.Option(
             "--src",
             help=(
-                "Folder of .csv.gz files: files directly in it, and in its "
+                "Folder of .csv or .csv.gz files: files directly in it, and in its "
                 "subfolders, each become a table."
             ),
         ),
@@ -772,7 +776,7 @@ def define_dataset_cmd(
         typer.Option("--json", help="Print result as JSON for automation."),
     ] = False,
 ):
-    """Define a dataset from a folder of your own .csv.gz files.
+    """Define a dataset from a folder of your own CSV files.
 
     Saves the definition in the datasets folder; `m4 init NAME --src DIR`
     then converts the files.
@@ -818,8 +822,6 @@ def define_dataset_cmd(
         console.print(f"  [muted]{schema}:[/muted] {count} table{'s' * (count != 1)}")
     if not data["dry_run"]:
         console.print(f"  [muted]Saved to[/muted] {data['definition_path']}")
-    if result.warnings:
-        warning("Plain .csv files were left out: M4 converts only .csv.gz files.")
     console.print(f"  [muted]Next:[/muted] [command]{data['init_command']}[/command]")
 
 
@@ -912,7 +914,7 @@ def dataset_init_cmd(
         typer.Option(
             "--src",
             help=(
-                "Path to existing raw CSV.gz root (hosp/, icu/). If provided, download is skipped."
+                "Path to existing raw CSV root (.csv.gz or .csv, e.g. hosp/, icu/). If provided, download is skipped."
             ),
         ),
     ] = None,
@@ -1115,7 +1117,7 @@ def dataset_init_cmd(
 
     # Presence detection (check for any parquet or csv.gz files)
     parquet_present = any(pq_root.rglob("*.parquet"))
-    raw_present = any(csv_root.rglob("*.csv.gz"))
+    raw_present = has_raw_files(csv_root)
 
     console.print()
     print_banner(f"Initializing {dataset_key}", "Checking existing files...")
@@ -1226,10 +1228,25 @@ def dataset_init_cmd(
             print_step(2, 3, "Converting CSV to Parquet")
             print_key_value("Source", csv_root)
             print_key_value("Destination", pq_root)
-        ok = convert_csv_to_parquet(dataset_key, csv_root, pq_root)
+        conversion_warnings: list[dict[str, Any]] = []
+        try:
+            ok = convert_csv_to_parquet(
+                dataset_key, csv_root, pq_root, warnings=conversion_warnings
+            )
+        except CsvConversionError as exc:
+            print_error_panel("Conversion Failed", exc.message, hint=exc.hint)
+            raise typer.Exit(code=1)
         if not ok:
             error("Conversion failed. Please check logs for details.")
             raise typer.Exit(code=1)
+        for note in conversion_warnings:
+            if note["code"] == WARNING_CSV_READ_AS_LATIN1:
+                warning(f"{note['file']} is not UTF-8; it was read as Latin-1.")
+            elif note["code"] == WARNING_DECIMAL_COMMA_COLUMNS:
+                warning(
+                    f"{note['file']}: {', '.join(note['columns'])} hold decimal "
+                    "commas and were kept as text."
+                )
         if to_convert:
             success("Conversion complete")
 
