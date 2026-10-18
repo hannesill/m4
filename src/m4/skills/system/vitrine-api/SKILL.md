@@ -70,15 +70,18 @@ states. `VITRINE_REDACT=0` turns both off; `VITRINE_MAX_ROWS` moves the cap.
 from pathlib import Path
 from vitrine import Picture, Question, show
 
-show(Path("figures/flow.svg"), title="Cohort flow", study=STUDY)  # PNG, JPEG, WebP, GIF, SVG
-show(pil_image_or_array, title="Case 3", study=STUDY)             # PIL image or NumPy array
+# PNG, JPEG, WebP, GIF, SVG
+show(Path("figures/flow.svg"), title="Cohort flow", source="scripts/01_cohort.py", study=STUDY)
+# PIL image or NumPy array
+show(pil_image_or_array, title="Case 3", source="mimic-cxr-jpg; scripts/03_view.py", study=STUDY)
 pictures = [
     Picture(path, caption=f"case {i}", labels={"Effusion (model)": 0.82, "Radiologist": "no effusion"},
             overlay={"Left lung": left_mask, "Right lung": right_mask})   # or a mask, heatmap, RGBA
     for i, (path, left_mask, right_mask) in enumerate(rows, start=1)
 ]
-show(pictures, title="Largest disagreements", study=STUDY)          # a list makes a gallery
-show("## Result\n\n![ROC curve](figures/roc.png)", title="Result", study=STUDY)
+# A list makes a gallery
+show(pictures, title="Largest disagreements", source="mimic-cxr-jpg; scripts/04_review.py", study=STUDY)
+show("## Result\n\n![ROC curve](figures/roc.png)", title="Result", source="scripts/05_roc.py", study=STUDY)
 ```
 
 - A file needs `Path(...)`: a plain string is markdown. Markdown cards copy the local images they
