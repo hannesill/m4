@@ -82,9 +82,9 @@ cohort.to_csv("cohort.csv", index=False)
 # Python, with a login the user gave: m4.fetch_images("mimic-cxr-jpg", cohort, credentials=...)
 ```
 
-Each fetched image is at `<root>/<image_path>`, `root` being the dataset's raw folder from the
-result (or `raw_root` in `m4 list-datasets --json --paths`). Fetching again resumes and skips the images
-that are there; `m4.ImageFetchError.code` says why one failed (`physionet_access_forbidden`: the
+`m4.local_image_paths("mimic-cxr-jpg", cohort)` adds `local_path` and `present` to the rows
+without fetching: use it after the images were fetched, and to see which are missing. Fetching
+again resumes and skips the images that are there, and needs no login when all are; `m4.ImageFetchError.code` says why one failed (`physionet_access_forbidden`: the
 account has not signed the MIMIC-CXR-JPG agreement). Do not open the image files yourself, which
 would send them to the model provider: show them with Vitrine.
 

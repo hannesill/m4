@@ -71,6 +71,7 @@ __all__ = [
     "get_telemetry_path",
     "list_datasets",
     "list_patient_notes",
+    "local_image_paths",
     "search_notes",
     "set_dataset",
 ]
@@ -379,7 +380,7 @@ def fetch_images(
         ...     dataset="mimic-cxr-jpg",
         ... )
         >>> result = fetch_images("mimic-cxr-jpg", cohort, credentials=login)
-        >>> paths = [Path(result["root"]) / p for p in cohort.image_path]
+        >>> cohort = local_image_paths("mimic-cxr-jpg", cohort)
     """
     from m4.data_io import PhysioNetCredentials
     from m4.services.fetch_images import MAX_IMAGES, fetch_images_service
@@ -404,6 +405,42 @@ def fetch_images(
             result.message, code=result.code, hint=result.hint, data=result.data
         )
     return dict(result.data)
+
+
+def local_image_paths(
+    dataset: str,
+    images: pd.DataFrame,
+    *,
+    target: str | Path | None = None,
+) -> pd.DataFrame:
+    """Where the images of a cohort are on disk, without fetching any.
+
+    Args:
+        dataset: An imaging dataset, e.g. "mimic-cxr-jpg"
+        images: Rows naming images by `image_path` or by the dataset's image
+            id (e.g. dicom_id), as for `fetch_images`
+        target: The dataset's raw folder, if not M4's own
+
+    Returns:
+        A copy of `images` with `image_path`, `local_path` (absolute; where
+        `fetch_images` puts the image) and `present` (whether it is there).
+        Both paths are None for a row without a path or id.
+
+    Raises:
+        ImageFetchError: For an unknown dataset, one without images, or rows
+            that name no image of it (`code` says which).
+
+    Example:
+        >>> cohort = local_image_paths("mimic-cxr-jpg", cohort)
+        >>> missing = cohort[~cohort.present]
+    """
+    from m4.services.fetch_images import image_locations
+    from m4.services.results import CommandError
+
+    located = image_locations(dataset, images, target=target)
+    if isinstance(located, CommandError):
+        raise ImageFetchError(located.message, code=located.code, hint=located.hint)
+    return located
 
 
 # =============================================================================

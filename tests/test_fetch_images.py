@@ -1,6 +1,7 @@
 """m4 fetch-images: a cohort's images from PhysioNet, resumably, never the whole dataset."""
 
 import json
+import threading
 from pathlib import Path
 
 import duckdb
@@ -14,6 +15,7 @@ import m4.config as cfg_mod
 from m4.cli import app
 from m4.core.datasets import DatasetRegistry
 from m4.data_io import PHYSIONET_LOGIN_USER_AGENT, PhysioNetCredentials
+from m4.services.events import EventReporter
 from m4.services.fetch_images import fetch_images_service
 from m4.services.results import CommandError, CommandResult
 
@@ -249,10 +251,99 @@ def test_a_list_longer_than_the_limit_is_refused(physionet, tmp_path):
     assert physionet.requests == []
 
 
-def test_a_credentialed_dataset_needs_a_login(physionet, tmp_path):
-    result = fetch(paths(A), target=str(tmp_path), physionet_credentials=None)
+def test_images_that_are_all_there_need_no_login(physionet, tmp_path):
+    for path in (A, B):
+        (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / path).write_bytes(IMAGES[path])
+
+    result = fetch(paths(A, B), target=str(tmp_path), physionet_credentials=None)
+
+    assert result.ok
+    assert (result.data["fetched"], result.data["skipped"]) == (0, 2)
+    assert physionet.requests == []
+
+
+def test_a_login_is_asked_for_before_anything_is_fetched(physionet, tmp_path):
+    (tmp_path / A).parent.mkdir(parents=True)
+    (tmp_path / A).write_bytes(IMAGES[A])
+
+    result = fetch(paths(A, B), target=str(tmp_path), physionet_credentials=None)
 
     assert result.code == "missing_credentials"
+    assert "1 of 2 images" in result.message
+    assert (result.data["image_count"], result.data["skipped"]) == (2, 1)
+    assert physionet.requests == []
+
+
+def test_the_limit_counts_only_the_images_to_fetch(physionet, tmp_path):
+    (tmp_path / A).parent.mkdir(parents=True)
+    (tmp_path / A).write_bytes(IMAGES[A])
+
+    assert fetch(paths(A, B), target=str(tmp_path), max_images=1).ok
+
+
+class Recorder(EventReporter):
+    def __init__(self):
+        super().__init__(command="fetch-images", enabled=True)
+        self.events: list[dict] = []
+        self.seen = {name: threading.Event() for name in ("started", "progress")}
+
+    def emit(self, event, **fields):
+        self.events.append({"event": event, **fields})
+        if event == "download_file_started":
+            self.seen["started"].set()
+        if event == "download_file_progress":
+            self.seen["progress"].set()
+
+
+def test_each_image_reports_its_bytes_as_m4_download_does(
+    physionet, tmp_path, monkeypatch
+):
+    monkeypatch.setattr("m4.services.fetch_images.PROGRESS_SECONDS", 0.01)
+    reporter = Recorder()
+
+    class Slow(Response):
+        """Sends the image in three pieces, each once the last was reported."""
+
+        def iter_content(self, chunk_size=1):
+            yield self.body[:10]
+            reporter.seen["started"].wait(5)
+            yield self.body[10:50]
+            reporter.seen["progress"].wait(5)
+            yield self.body[50:]
+
+    physionet.script[A] = [Slow(200, IMAGES[A], {"content-length": "100"})]
+
+    result = fetch(paths(A), target=str(tmp_path), event_reporter=reporter)
+
+    assert result.ok
+    of_a = [e for e in reporter.events if e.get("path") == str(tmp_path / A)]
+    assert of_a[0]["event"] == "download_file_started"
+    assert of_a[0]["url"] == LISTING + A
+    assert of_a[0]["bytes_total"] == 100
+    assert "download_file_progress" in [e["event"] for e in of_a]
+    assert of_a[-1] == {
+        "event": "download_file_completed",
+        "path": str(tmp_path / A),
+        "bytes_downloaded": 100,
+        "bytes_total": 100,
+    }
+
+
+def test_local_image_paths_says_where_each_row_is_without_fetching(physionet, tmp_path):
+    (tmp_path / A).parent.mkdir(parents=True)
+    (tmp_path / A).write_bytes(IMAGES[A])
+    cohort = pd.DataFrame({"label": [1, 0, 1], "image_path": [A, B, None]})
+
+    located = m4.local_image_paths("mimic-cxr-jpg", cohort, target=tmp_path)
+
+    assert list(located["label"]) == [1, 0, 1]
+    assert list(located["local_path"]) == [str(tmp_path / A), str(tmp_path / B), None]
+    assert list(located["present"]) == [True, False, False]
+    assert physionet.requests == []
+    with pytest.raises(m4.ImageFetchError) as caught:
+        m4.local_image_paths("mimic-cxr-jpg", paths("elsewhere/x.jpg"))
+    assert caught.value.code == "image_list_invalid"
 
 
 def test_a_dataset_without_images_is_refused(physionet):

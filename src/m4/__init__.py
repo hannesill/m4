@@ -43,6 +43,7 @@ from m4.api import (
     get_telemetry_path,
     list_datasets,
     list_patient_notes,
+    local_image_paths,
     search_notes,
     set_dataset,
 )
@@ -66,6 +67,7 @@ __all__ = [
     "get_telemetry_path",
     "list_datasets",
     "list_patient_notes",
+    "local_image_paths",
     "search_notes",
     "set_agent_id",
     "set_dataset",

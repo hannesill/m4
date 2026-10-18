@@ -295,13 +295,18 @@ below the PhysioNet listing. Four images load at a time. A failure other than
 a refused login is retried four times, the pause doubling from 5 s; an
 interrupted image is resumed from its `.part` file, and an image that is there
 is not requested again, so the same command run again finishes what a run
-left. A list of more than 10,000 images is refused unless `--max-images`
-allows it.
+left. Images that are all on disk need no login: without one, the command
+fails with `missing_credentials` only when an image is missing, and before
+anything is fetched, so a caller can try without a login first. A list with
+more than 10,000 images to fetch is refused unless `--max-images` allows it.
+`m4.local_image_paths(dataset, rows)` says where each row's image is and
+whether it is there, without fetching.
 
 With `--json` the result holds `dataset`, `root`, `image_count`, `fetched`,
 `skipped` (there already), `failed` (each with `image_path`, `code` and
 `message`), `bytes_downloaded`, and `status`. Error codes are
-`dataset_not_found`, `not_an_imaging_dataset`, `missing_credentials`,
+`dataset_not_found`, `not_an_imaging_dataset`, `missing_credentials` (with
+`data`; `image_count` less `skipped` is what is missing),
 `image_list_invalid` (no usable column, a path that is not one of the dataset's
 images, or an id the view does not have), `dataset_not_initialized` (ids, but
 no images view to look them up in), `too_many_images`, `physionet_auth_failed`,
@@ -311,13 +316,15 @@ MIMIC-CXR-JPG has a DUA of its own), `physionet_url_required`,
 (some images failed, the others are there). An error after fetching began
 carries `data` with the result's fields.
 
-With `--events ndjson` the stream is `operation_started`, `download_started`
-(`file_count`), for each image `download_file_completed`,
-`download_file_skipped` or `download_file_failed` (`path`, `code`, `message`),
-`download_progress` about once a second (`completed`, `file_count`, and
-`bytes_downloaded` over all images), `download_completed`, then
-`operation_completed`, or `operation_failed` with `error` and `data`. There are
-no per-file byte events, as `m4 download` sends: four images load at once.
+With `--events ndjson` the stream holds `m4 download`'s events:
+`operation_started`, `download_started` (`file_count`), then for each image
+`download_file_started` and `download_file_progress` (`path`,
+`bytes_downloaded`, `bytes_total`; about once a second while it loads) and one
+of `download_file_completed`, `download_file_skipped` (it was there), or
+`download_file_failed` (`path`, `code`, `message`), then `download_completed`
+and `operation_completed`, or `operation_failed` with `error` and `data`. Four
+images load at once, so their events interleave; an image that loads within a
+second may have no `download_file_started`.
 
 Agent-oriented commands use a stable envelope with `version`, `ok`, `command`,
 `context`, `data`, `warnings`, and optional provenance fields:
