@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from m4.data_io import DatasetDownloadError, PhysioNetCredentials
 from m4.services.init import initialize_dataset_service
 from m4.services.results import CommandError, CommandResult
 
@@ -13,6 +14,30 @@ def test_init_service_unsupported_dataset_error():
 
     assert isinstance(result, CommandError)
     assert result.code == "dataset_not_found"
+
+
+def test_init_refused_by_physionet_names_the_page_to_sign_the_agreement_on(
+    tmp_path,
+):
+    refused = DatasetDownloadError(
+        "physionet_access_forbidden", "PhysioNet access is forbidden for x."
+    )
+    pq_root = tmp_path / "parquet" / "mimic-cxr-jpg"
+    pq_root.mkdir(parents=True)
+
+    with (
+        patch("m4.services.init.get_dataset_parquet_root", return_value=pq_root),
+        patch("m4.services.init.download_dataset", side_effect=refused),
+    ):
+        result = initialize_dataset_service(
+            "mimic-cxr-jpg",
+            download=True,
+            physionet_credentials=PhysioNetCredentials(username="a", password="b"),
+        )
+
+    assert isinstance(result, CommandError)
+    assert result.code == "physionet_access_forbidden"
+    assert "https://physionet.org/content/mimic-cxr-jpg/" in result.hint
 
 
 @patch("m4.services.init.get_dataset_parquet_root", return_value=None)

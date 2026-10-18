@@ -33,7 +33,7 @@ from m4.data_io import (
     _download_error_for_response,
     physionet_session,
 )
-from m4.services.download import default_raw_root
+from m4.services.download import access_forbidden_hint, default_raw_root
 from m4.services.events import EventReporter, get_event_reporter
 from m4.services.results import ERROR_DATASET_NOT_FOUND, CommandError, CommandResult
 
@@ -618,13 +618,11 @@ def fetch_images_service(
         backoff_seconds=backoff_seconds,
     )
     if fatal is not None:
-        hint = None
-        if fatal.code == "physionet_access_forbidden":
-            hint = (
-                f"Sign the data use agreement on {ds.dua_url or ds.dataset_page_url}. "
-                "PhysioNet asks for one per dataset, also of an account with access "
-                "to others."
-            )
+        hint = (
+            access_forbidden_hint(ds)
+            if fatal.code == "physionet_access_forbidden"
+            else None
+        )
         return _error(fatal.code, fatal.message, hint, account)
     if account["failed"]:
         return _error(

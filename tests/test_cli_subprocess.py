@@ -135,6 +135,7 @@ CATALOG_KEYS = {
     "builtin",
     "modalities",
     "dataset_page_url",
+    "dua_url",
     "download_size_gb",
 }
 
@@ -168,6 +169,12 @@ def test_list_datasets_json_describes_each_dataset(tmp_path):
     assert mimic_iv["builtin"] is True
     assert mimic_iv["modalities"] == ["TABULAR"]
     assert mimic_iv["dataset_page_url"] == "https://physionet.org/content/mimiciv/"
+    assert mimic_iv["dua_url"] == "https://physionet.org/content/mimiciv/"
+    assert listed["mimic-iv-demo"]["dua_url"] is None  # Open: nothing to sign
+    assert (
+        listed["mimic-cxr-jpg"]["dua_url"]
+        == "https://physionet.org/content/mimic-cxr-jpg/"
+    )
     assert mimic_iv["summary"]
     assert mimic_iv["download_size_gb"] is None  # PhysioNet shows it only to members
     assert listed["mimic-iv-note"]["modalities"] == ["NOTES"]
@@ -180,6 +187,7 @@ def test_list_datasets_json_describes_each_dataset(tmp_path):
         "builtin": False,
         "modalities": ["NOTES", "TABULAR"],
         "dataset_page_url": None,
+        "dua_url": None,
         "download_size_gb": 1.5,
     }.items() <= listed["my-icu-extract"].items()
     assert {

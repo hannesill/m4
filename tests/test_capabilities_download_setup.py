@@ -297,6 +297,22 @@ def test_public_download_service_uses_downloader(tmp_path):
     mock_download.assert_called_once()
 
 
+def test_refused_download_names_the_page_to_sign_the_agreement_on(tmp_path):
+    refused = DatasetDownloadError(
+        "physionet_access_forbidden", "PhysioNet access is forbidden for x."
+    )
+    login = PhysioNetCredentials(username="alice", password="pw")
+
+    with patch("m4.services.download.download_dataset", side_effect=refused):
+        result = download_dataset_service(
+            "mimic-iv", target=str(tmp_path), physionet_credentials=login
+        )
+
+    assert isinstance(result, CommandError)
+    assert result.code == "physionet_access_forbidden"
+    assert "https://physionet.org/content/mimiciv/" in result.hint
+
+
 def test_public_download_cli_json_uses_downloader(tmp_path):
     with patch(
         "m4.services.download.download_dataset", return_value=True

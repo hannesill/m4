@@ -37,7 +37,7 @@ from m4.data_io import (
     unfinished_download,
     verify_table_rowcount,
 )
-from m4.services.download import expected_raw_subdirectories
+from m4.services.download import access_forbidden_hint, expected_raw_subdirectories
 from m4.services.events import EventReporter, get_event_reporter
 from m4.services.results import (
     ERROR_DATASET_NOT_FOUND,
@@ -393,6 +393,11 @@ def initialize_dataset_service(
                     command="init",
                     code=exc.code,
                     message=exc.message,
+                    hint=(
+                        access_forbidden_hint(ds)
+                        if exc.code == "physionet_access_forbidden"
+                        else None
+                    ),
                 )
             if not downloaded:
                 return CommandError(

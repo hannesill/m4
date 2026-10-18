@@ -69,6 +69,7 @@ non-zero.
       "builtin": true,
       "modalities": ["TABULAR"],
       "dataset_page_url": "https://physionet.org/content/mimiciv/",
+      "dua_url": "https://physionet.org/content/mimiciv/",
       "download_size_gb": null,
       "selected": true,
       "raw_present": true,
@@ -95,7 +96,8 @@ non-zero.
 
 Each dataset also says what it is, for someone choosing one to download:
 `title`, `summary`, `version` (the PhysioNet version M4 downloads),
-`dataset_page_url`, `download_size_gb` (about how many GB, of 1024^3 bytes, the
+`dataset_page_url`, `dua_url` (where the data use agreement of a credentialed
+dataset is signed), `download_size_gb` (about how many GB, of 1024^3 bytes, the
 raw CSV.gz files M4 downloads take), `modalities`, and `builtin` (false for a
 dataset defined by a JSON file in the datasets folder). What M4 does not know
 is null; PhysioNet shows the file sizes of a credentialed dataset only to people
@@ -209,6 +211,9 @@ database, not one made with `--db-path`, and a raw file may have come into
 M4's own raw folder that this run did not convert.
 For credentialed datasets, missing raw/parquet/database artifacts are an
 `ok: false` `raw_files_missing` result unless `--download` is requested.
+When PhysioNet refuses the login (`physionet_access_forbidden`), `m4 download`,
+`m4 init --download` and `m4 fetch-images` name the dataset's agreement page in
+`error.hint`; an account needs each dataset's agreement signed.
 
 A download that did not finish is finished before anything is converted.
 `m4 init` fetches the rest of an open dataset itself. For a credentialed

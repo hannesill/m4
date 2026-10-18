@@ -150,6 +150,8 @@ def _collect_dataset_status(
         "builtin": DatasetRegistry.is_builtin(name),
         "modalities": sorted(m.name for m in ds_def.modalities) if ds_def else [],
         "dataset_page_url": ds_def.dataset_page_url if ds_def else None,
+        # Where a credentialed dataset's data use agreement is signed
+        "dua_url": ds_def.dua_url if ds_def else None,
         "download_size_gb": ds_def.download_size_gb if ds_def else None,
         "selected": name == selected_dataset,
         "raw_present": raw_present,

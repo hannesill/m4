@@ -42,6 +42,18 @@ def expected_raw_subdirectories(ds: DatasetDefinition) -> list[str]:
     return list(ds.expected_raw_subdirectories or ds.subdirectories_to_scan)
 
 
+def access_forbidden_hint(ds: DatasetDefinition) -> str | None:
+    """What to do when PhysioNet refuses the login for `ds` (HTTP 403)."""
+    url = ds.dua_url or ds.dataset_page_url
+    if not url:
+        return None
+    return (
+        f"Sign the data use agreement on {url}. PhysioNet asks for one per "
+        "dataset, also of an account with access to others; if it offers none "
+        "there, the account first needs credentialing and the required training."
+    )
+
+
 def build_wget_command(ds: DatasetDefinition, target: Path) -> str:
     """The wget command that downloads `ds` into `target`, or "" if M4 has none.
 
@@ -247,6 +259,11 @@ def download_dataset_service(
             command="download",
             code=exc.code,
             message=exc.message,
+            hint=(
+                access_forbidden_hint(ds)
+                if exc.code == "physionet_access_forbidden"
+                else None
+            ),
         )
 
     if not downloaded:
