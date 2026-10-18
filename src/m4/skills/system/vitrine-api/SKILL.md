@@ -1,6 +1,6 @@
 ---
 name: vitrine-api
-description: Publish results to the researcher's Vitrine board as cards (tables, figures, notes, forms, approvals) and read back what is on it (cards, decisions, form answers, annotations). Use when showing results, asking the researcher to choose or approve, or when they mention a card, a table, the board, or a study.
+description: Publish results to the researcher's Vitrine board as cards (tables, figures, images and galleries, notes, forms, approvals) and read back what is on it (cards, decisions, form answers, annotations). Use when showing results, asking the researcher to choose or approve, or when they mention a card, a table, the board, or a study.
 tier: community
 category: system
 kind: integration
@@ -59,10 +59,37 @@ with progress("Fitting the model", study=STUDY) as step:      # completes, or fa
 ```
 
 `show()` takes a DataFrame (a paged, searchable table), a Plotly or matplotlib figure, a markdown
-string, a dict (a key-value list), or a `Form`. Give every card a `title` and a `source`, and every figure a `description` of what it shows.
+string, a dict (a key-value list), a `Form`, or images (next section). Give every card a `title` and a `source`, and every figure a `description` of what it shows.
 Tables are redacted by default: columns named like identifiers (name, address, city, zip,
 phone, email, ssn, mrn, dob) show `[REDACTED]`, and rows past 10,000 are dropped, which the card
 states. `VITRINE_REDACT=0` turns both off; `VITRINE_MAX_ROWS` moves the cap.
+
+## Images
+
+```python
+from pathlib import Path
+from vitrine import Picture, Question, show
+
+show(Path("figures/flow.svg"), title="Cohort flow", study=STUDY)  # PNG, JPEG, WebP, GIF, SVG
+show(pil_image_or_array, title="Case 3", study=STUDY)             # PIL image or NumPy array
+pictures = [
+    Picture(path, caption=f"case {i}", labels={"Effusion (model)": 0.82, "Radiologist": "no effusion"},
+            overlay={"Left lung": left_mask, "Right lung": right_mask})   # or a mask, heatmap, RGBA
+    for i, (path, left_mask, right_mask) in enumerate(rows, start=1)
+]
+show(pictures, title="Largest disagreements", study=STUDY)          # a list makes a gallery
+show("## Result\n\n![ROC curve](figures/roc.png)", title="Result", study=STUDY)
+```
+
+- A file needs `Path(...)`: a plain string is markdown. Markdown cards copy the local images they
+  embed (`![alt](path)` or `<img src="path" width="300">`, read from the working directory) into
+  the card.
+- The researcher opens a picture in a viewer (zoom, pan, arrow keys, overlays on and off). Labels
+  show beside each picture; a 16-bit or float array is scaled to 8 bits for display.
+- Captions such as `case 3`, never patient identifiers: captions and labels are what an agent
+  reads back. DICOM is not read; convert it to an array first.
+- Never open or view images from credentialed datasets yourself: what you read goes to your model
+  provider. Put them on the board for the researcher instead.
 
 ## Ask the researcher
 
@@ -84,6 +111,12 @@ r.values["outcome"], r.values["exclusions"]
 - `show(obj, wait=True, prompt="Does this cohort look right?", study=STUDY)` puts a question on any
   card and returns a `DisplayResponse`: `action` (`"confirm"`, `"skip"`, `"timeout"`, or a label
   from `actions=[...]`), `message`, `values`, and `data()` for rows the researcher selected.
+- `controls=[Question(...)]` attaches a question to a table, chart, or gallery. A question whose
+  options are a gallery's captions is answered by clicking the pictures. A single choice among
+  seven or more options shows as a dropdown.
+- `wait=False` on a form or `controls=` asks without blocking; read the answer later from
+  `get_card(card_id).response_values` or `study_context(STUDY)["decisions_made"]`. Use it for
+  reviews the researcher may take a while over.
 - Before a question, say in the conversation what to answer on the board.
 - Questions and forms block up to `timeout=600` seconds, longer than many agent shells wait. Run
   the script with a longer shell timeout. If the wait was cut short, the answer is still stored:

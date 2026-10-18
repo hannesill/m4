@@ -24,3 +24,6 @@ changelog:
   - version: "2.0"
     date: 2026-10-15
     summary: Rewrite for Vitrine 0.1.4. Rules every script needs first (one study label, run from the project folder, let the server run), reading the board back (study_context, get_card), redaction and row limit, blocking questions and recovery with wait_for. Checked against Vitrine 0.1.4; tests/test_system_skills_api.py checks the names it uses.
+  - version: "2.1"
+    date: 2026-10-17
+    summary: Images for Vitrine 0.1.5. show() with image files, PIL images, arrays, and Picture galleries (captions, labels, overlays); local images in markdown cards; questions answered on the pictures, dropdowns, and wait=False; never opening credentialed images. Checked against Vitrine 0.1.5 (hannesill/vitrine#19).
