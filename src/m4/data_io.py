@@ -29,6 +29,7 @@ from m4.console import (
     success,
 )
 from m4.core.datasets import DatasetRegistry
+from m4.core.images import IMAGE_PATH_COLUMN, ImageFiles
 from m4.core.raw_files import RAW_SUFFIXES, has_raw_files, raw_files, raw_stem
 from m4.services.events import EventReporter, get_event_reporter
 from m4.services.redaction import redact_sensitive, register_sensitive_value
@@ -129,6 +130,18 @@ class _PhysioNetAuth(requests.auth.HTTPBasicAuth):
                 f"M4 only sends it to {PHYSIONET_URL_PREFIX}",
             )
         return super().__call__(request)
+
+
+def physionet_session(
+    credentials: PhysioNetCredentials | None = None,
+) -> requests.Session:
+    """A session for PhysioNet's files: with `credentials`, one that sends them."""
+    session = requests.Session()
+    session.headers.update({"User-Agent": COMMON_USER_AGENT})
+    if credentials:
+        session.headers["User-Agent"] = PHYSIONET_LOGIN_USER_AGENT
+        session.auth = _PhysioNetAuth(credentials.username, credentials.password)
+    return session
 
 
 def _download_error_for_response(
@@ -303,9 +316,16 @@ def _download_single_file(
 
 
 def _scrape_urls_from_html_page(
-    page_url: str, session: requests.Session, file_suffix: str = ".csv.gz"
+    page_url: str,
+    session: requests.Session,
+    file_suffix: str | tuple[str, ...] = RAW_SUFFIXES,
 ) -> list[str]:
-    """Scrapes a webpage for links ending with a specific suffix."""
+    """Scrapes a webpage for links ending with a specific suffix.
+
+    By default the raw files M4 converts, .csv.gz and plain .csv, such as
+    MIMIC-CXR-JPG's radiologist labels. Links to folders are not followed, so
+    the image folders beside an imaging dataset's tables are left alone.
+    """
     found_urls = []
     logger.debug(f"Scraping for '{file_suffix}' links on page: {page_url}")
     try:
@@ -351,11 +371,7 @@ def _download_dataset_files(
     logger.info(
         f"Preparing to download {dataset_name} files from base URL: {base_listing_url}"
     )
-    session = requests.Session()
-    session.headers.update({"User-Agent": COMMON_USER_AGENT})
-    if credentials:
-        session.headers["User-Agent"] = PHYSIONET_LOGIN_USER_AGENT
-        session.auth = _PhysioNetAuth(credentials.username, credentials.password)
+    session = physionet_session(credentials)
 
     all_files_to_process = []  # List of (url, local_target_path)
 
@@ -382,7 +398,7 @@ def _download_dataset_files(
         )
 
         if not csv_urls_in_subdir:
-            logger.warning(f"No .csv.gz files found in location: {listing_url}")
+            logger.warning(f"No CSV files found in location: {listing_url}")
             continue
 
         for file_url in csv_urls_in_subdir:
@@ -423,7 +439,7 @@ def _download_dataset_files(
     if not all_files_to_process:
         raise DatasetDownloadError(
             "raw_files_missing",
-            f"No '.csv.gz' download links found for dataset '{dataset_name}'.",
+            f"No CSV download links found for dataset '{dataset_name}'.",
         )
 
     # Deduplicate and sort for consistent processing order
@@ -615,7 +631,12 @@ def unfinished_download(raw_root: Path) -> str | None:
     """
     if (raw_root / DOWNLOAD_NOTE).exists():
         return DOWNLOAD_NOTE
-    for partial in sorted(raw_root.rglob(f"*.csv.gz{PARTIAL_SUFFIX}")):
+    partials = (
+        partial
+        for suffix in RAW_SUFFIXES
+        for partial in raw_root.rglob(f"*{suffix}{PARTIAL_SUFFIX}")
+    )
+    for partial in sorted(partials):
         if not partial.with_name(partial.name[: -len(PARTIAL_SUFFIX)]).exists():
             return partial.relative_to(raw_root).as_posix()
     return None
@@ -1112,7 +1133,12 @@ def init_duckdb_from_parquet(
     )
     mapping = ds.schema_mapping if ds.schema_mapping else None
     return _create_duckdb_with_views(
-        db_target_path, parquet_root, mapping, event_reporter=event_reporter
+        db_target_path,
+        parquet_root,
+        mapping,
+        event_reporter=event_reporter,
+        table_names=ds.table_names,
+        images=ds.images,
     )
 
 
@@ -1237,11 +1263,31 @@ def _drop_views_over_missing_files(con, parquet_root: Path) -> None:
             con.execute(f'DROP VIEW IF EXISTS "{schema_name}"."{view_name}"')
 
 
+def sql_table_name(name: str) -> str:
+    """`name` as a table name that DuckDB takes unquoted after a schema.
+
+    Lower case, with an underscore for each character other than a letter, a
+    digit or an underscore, and before a leading digit. Names that are already
+    so, as those of every PhysioNet table M4 ships but MIMIC-CXR-JPG's, stay
+    as they are.
+    """
+    table = re.sub(r"[^a-z0-9_]", "_", name.lower())
+    return f"_{table}" if not table or table[0].isdigit() else table
+
+
+def _quoted(name: str) -> str:
+    """`schema.table` or `table`, quoted for SQL."""
+    return ".".join('"' + part.replace('"', '""') + '"' for part in name.split("."))
+
+
 def _create_duckdb_with_views(
     db_path: Path,
     parquet_root: Path,
     schema_mapping: dict[str, str] | None = None,
     event_reporter: EventReporter | None = None,
+    *,
+    table_names: dict[str, str] | None = None,
+    images: ImageFiles | None = None,
 ) -> bool:
     """
     Create a DuckDB database and define one view per Parquet file.
@@ -1255,6 +1301,11 @@ def _create_duckdb_with_views(
 
     If schema_mapping is None (backward compat for custom datasets),
     uses flat naming: hosp/admissions.parquet → hosp_admissions
+
+    A table is named after its file, as `sql_table_name` makes it, unless
+    `table_names` names it (by the file's path below `parquet_root` without
+    .parquet). With `images`, a view of the image table with each image's
+    path in an `image_path` column is made too.
 
     Returns False when the database is locked or no view could be created.
     """
@@ -1317,9 +1368,11 @@ def _create_duckdb_with_views(
                 f"Creating {len(parquet_files)} views...", total=len(parquet_files)
             )
 
+            views_made: dict[str, Path] = {}
             for pq in parquet_files:
                 # Get relative path from parquet_root
                 rel = pq.relative_to(parquet_root)
+                named = (table_names or {}).get(rel.with_suffix("").as_posix())
 
                 if schema_mapping:
                     # Resolve directory to schema name
@@ -1330,20 +1383,28 @@ def _create_duckdb_with_views(
                             f"skipping {pq}"
                         )
                         continue
-                    table_name = rel.stem.lower()
+                    table_name = named or sql_table_name(rel.stem)
                     view_name = f"{schema_name}.{table_name}"
                 else:
                     # Flat naming for backward compat
                     parts = [*list(rel.parent.parts), rel.stem]
-                    view_name = "_".join(
-                        p.lower().replace("-", "_").replace(".", "_")
-                        for p in parts
-                        if p != "."
+                    view_name = named or sql_table_name(
+                        "_".join(p for p in parts if p != ".")
                     )
+
+                # Names that differ only in characters a table name cannot
+                # hold, such as lab-results and lab_results, would make one
+                # view, which shows only one of the files.
+                if view_name in views_made:
+                    raise ValueError(
+                        f"{views_made[view_name].name} and {pq.name} would both "
+                        f"become the table {view_name}."
+                    )
+                views_made[view_name] = pq
 
                 # Create view pointing to the specific parquet file
                 sql = f"""
-                    CREATE OR REPLACE VIEW {view_name} AS
+                    CREATE OR REPLACE VIEW {_quoted(view_name)} AS
                     SELECT * FROM read_parquet('{pq.as_posix()}');
                 """
 
@@ -1371,6 +1432,18 @@ def _create_duckdb_with_views(
                 "that this dataset maps to a schema, so no view was created."
             )
             return False
+
+        if images is not None:
+            # Over the image table's view rather than its file, so the view
+            # follows the table when it is converted again.
+            schema_name = images.view.split(".")[0]
+            con.execute(f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"')
+            con.execute(
+                f"CREATE OR REPLACE VIEW {_quoted(images.view)} AS "
+                f"SELECT *, {images.path_sql()} AS {IMAGE_PATH_COLUMN} "
+                f"FROM {_quoted(images.table)}"
+            )
+            logger.debug(f"Created view: {images.view}")
 
         con.commit()
         elapsed_time = time.time() - start_time
@@ -1431,7 +1504,13 @@ def ensure_duckdb_for_dataset(
         return False, db_path, parquet_root
     ds = DatasetRegistry.get(dataset_key)
     mapping = ds.schema_mapping if ds and ds.schema_mapping else None
-    ok = _create_duckdb_with_views(db_path, parquet_root, mapping)
+    ok = _create_duckdb_with_views(
+        db_path,
+        parquet_root,
+        mapping,
+        table_names=ds.table_names if ds else None,
+        images=ds.images if ds else None,
+    )
     return ok, db_path, parquet_root
 
 

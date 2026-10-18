@@ -246,8 +246,7 @@ With `--events ndjson`, stdout changes from one JSON object to a newline-delimit
 JSON stream. The final command payload appears in `operation_completed.result`;
 setup failures appear in `operation_failed.error`.
 
-M4 converts raw files ending in `.csv.gz` or `.csv` (it downloads only
-`.csv.gz`). A file that is not UTF-8 is read again as UTF-16 when it starts
+M4 downloads and converts raw files ending in `.csv.gz` or `.csv`. A file that is not UTF-8 is read again as UTF-16 when it starts
 with that byte order mark, and as Latin-1 otherwise; init then fails with
 `csv_encoding_unsupported` if that does not work either, and two files that
 would make one table fail it with `table_name_collision`. Files read with a
@@ -283,6 +282,42 @@ whose address is anywhere else fails with `physionet_url_required` before
 anything is sent, and the login is left out when PhysioNet redirects to another
 host. The password is kept out of the credentials object's repr, and the CLI's
 tracebacks do not print local variables.
+
+`m4 fetch-images DATASET --from-csv FILE` downloads the images of a cohort
+from an imaging dataset (one with the `IMAGING` modality, such as
+`mimic-cxr-jpg`). `m4 download` and `m4 init` fetch only such a dataset's
+tables, and nothing in M4 fetches all of its images. The CSV file names each
+image by `image_path` (or `path`), as the dataset's images view
+(`mimic_cxr.images`) has it, or by its id (`dicom_id`), which M4 looks up in
+that view of the initialized dataset. An image lands at its `image_path` below
+the dataset's raw folder (`--target` names another), which is also its path
+below the PhysioNet listing. Four images load at a time. A failure other than
+a refused login is retried four times, the pause doubling from 5 s; an
+interrupted image is resumed from its `.part` file, and an image that is there
+is not requested again, so the same command run again finishes what a run
+left. A list of more than 10,000 images is refused unless `--max-images`
+allows it.
+
+With `--json` the result holds `dataset`, `root`, `image_count`, `fetched`,
+`skipped` (there already), `failed` (each with `image_path`, `code` and
+`message`), `bytes_downloaded`, and `status`. Error codes are
+`dataset_not_found`, `not_an_imaging_dataset`, `missing_credentials`,
+`image_list_invalid` (no usable column, a path that is not one of the dataset's
+images, or an id the view does not have), `dataset_not_initialized` (ids, but
+no images view to look them up in), `too_many_images`, `physionet_auth_failed`,
+`physionet_access_forbidden` (its `hint` names the agreement page:
+MIMIC-CXR-JPG has a DUA of its own), `physionet_url_required`,
+`download_filesystem_failed`, `download_interrupted`, and `images_incomplete`
+(some images failed, the others are there). An error after fetching began
+carries `data` with the result's fields.
+
+With `--events ndjson` the stream is `operation_started`, `download_started`
+(`file_count`), for each image `download_file_completed`,
+`download_file_skipped` or `download_file_failed` (`path`, `code`, `message`),
+`download_progress` about once a second (`completed`, `file_count`, and
+`bytes_downloaded` over all images), `download_completed`, then
+`operation_completed`, or `operation_failed` with `error` and `data`. There are
+no per-file byte events, as `m4 download` sends: four images load at once.
 
 Agent-oriented commands use a stable envelope with `version`, `ok`, `command`,
 `context`, `data`, `warnings`, and optional provenance fields:

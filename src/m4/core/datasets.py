@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
 from m4.core.exceptions import DatasetError
+from m4.core.images import IDENTIFIER, ImageFiles
 
 if TYPE_CHECKING:
     pass
@@ -39,6 +40,7 @@ class Modality(Enum):
 
     TABULAR = auto()  # Structured tables (labs, demographics, vitals, etc.)
     NOTES = auto()  # Clinical notes and discharge summaries
+    IMAGING = auto()  # Image files beside the tables, fetched per cohort (`images`)
 
 
 @dataclass
@@ -66,6 +68,10 @@ class DatasetDefinition:
             .csv.gz files M4 downloads, or None when not known
         defined_from: The folder `m4 define-dataset` made this definition from
             (absolute path); None for a built-in or a hand-written definition
+        table_names: Table names for raw files whose own name makes a poor
+            one, by the file's path below the raw folder without .csv.gz or
+            .csv (e.g. {"mimic-cxr-2.0.0-metadata": "metadata"})
+        images: Where the image files of an IMAGING dataset are
     """
 
     name: str
@@ -113,6 +119,9 @@ class DatasetDefinition:
     download_size_gb: float | None = None
     defined_from: str | None = None
 
+    table_names: dict[str, str] = field(default_factory=dict)
+    images: ImageFiles | None = None
+
     def __post_init__(self):
         """Initialize computed fields."""
         if not self.default_duckdb_filename:
@@ -132,6 +141,16 @@ class DatasetDefinition:
             )
         if not self.title:
             self.title = self.name
+        bad_names = [n for n in self.table_names.values() if not IDENTIFIER.match(n)]
+        if bad_names:
+            raise ValueError(
+                f"table_names must map to lower-case table names: {bad_names!r}"
+            )
+        if (self.images is None) != (Modality.IMAGING not in self.modalities):
+            raise ValueError(
+                "A dataset has the IMAGING modality exactly when it says where "
+                "its images are (images)."
+            )
 
 
 class DatasetRegistry:
@@ -250,6 +269,8 @@ class DatasetRegistry:
                 # Default empty dicts for schema mapping fields
                 data.setdefault("schema_mapping", {})
                 data.setdefault("bigquery_schema_mapping", {})
+                if data.get("images") is not None:
+                    data["images"] = ImageFiles(**data["images"])
 
                 ds = DatasetDefinition(**data)
                 cls.register(ds)
@@ -268,7 +289,7 @@ class DatasetRegistry:
         # Versions, summaries and sizes follow each dataset's PhysioNet page.
         # download_size_gb sums the .csv.gz files M4 downloads; PhysioNet shows
         # file sizes of a credentialed dataset only to people with access, so
-        # those are None rather than a guess.
+        # those are None rather than a guess, unless measured on a download.
         mimic_iv_demo = DatasetDefinition(
             name="mimic-iv-demo",
             title="MIMIC-IV demo",
@@ -527,6 +548,62 @@ class DatasetRegistry:
             bigquery_schema_mapping={"mimiciii_clinical": "mimiciii_clinical"},
         )
 
+        mimic_cxr_jpg = DatasetDefinition(
+            name="mimic-cxr-jpg",
+            title="MIMIC-CXR-JPG",
+            description="MIMIC-CXR-JPG chest radiographs with structured labels",
+            summary=(
+                "377,110 chest radiographs from Beth Israel Deaconess Medical "
+                "Center in Boston as JPG files, with labels for 14 findings taken "
+                "from the radiology reports, radiologists' labels for the test "
+                "split, and the official train/validate/test split. M4 downloads "
+                "the tables; images are fetched per cohort with m4 fetch-images."
+            ),
+            version="2.1.0",
+            # The tables only, measured on a download (2026-10-17). The images
+            # are about 1.5 MB each, half a terabyte in all.
+            download_size_gb=0.031,
+            dataset_page_url="https://physionet.org/content/mimic-cxr-jpg/",
+            # A DUA of its own: a MIMIC-IV login is refused until it is signed
+            dua_url="https://physionet.org/content/mimic-cxr-jpg/",
+            file_listing_url="https://physionet.org/files/mimic-cxr-jpg/2.1.0/",
+            # The tables lie beside files/, which holds the images
+            subdirectories_to_scan=[],
+            expected_raw_subdirectories=[],
+            recommended_local_target_root="m4_data/raw_files/mimic-cxr-jpg",
+            primary_verification_table="mimic_cxr.metadata",
+            bigquery_project_id=None,
+            bigquery_dataset_ids=[],
+            requires_authentication=True,
+            modalities=frozenset({Modality.TABULAR, Modality.IMAGING}),
+            related_datasets={
+                "mimic-iv": (
+                    "Hospital and ICU data. Link via subject_id, which "
+                    "MIMIC-CXR shares with MIMIC-IV."
+                ),
+                "mimic-iv-note": (
+                    "Radiology reports, among them chest X-ray reports. Link "
+                    "via subject_id."
+                ),
+            },
+            schema_mapping={"": "mimic_cxr"},
+            table_names={
+                "mimic-cxr-2.0.0-metadata": "metadata",
+                "mimic-cxr-2.0.0-chexpert": "chexpert",
+                "mimic-cxr-2.0.0-negbio": "negbio",
+                "mimic-cxr-2.0.0-split": "split",
+                "mimic-cxr-2.1.0-test-set-labeled": "test_labels",
+            },
+            images=ImageFiles(
+                table="mimic_cxr.metadata",
+                view="mimic_cxr.images",
+                id_column="dicom_id",
+                path_template=(
+                    "files/p{subject_id[:2]}/p{subject_id}/s{study_id}/{dicom_id}.jpg"
+                ),
+            ),
+        )
+
         builtins = (
             mimic_iv_demo,
             mimic_iv,
@@ -536,6 +613,7 @@ class DatasetRegistry:
             eicu_demo,
             eicu,
             mimic_iii,
+            mimic_cxr_jpg,
         )
         for dataset in builtins:
             cls.register(dataset)

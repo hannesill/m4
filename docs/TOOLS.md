@@ -20,6 +20,7 @@ Available datasets:
 - eicu-demo - eICU Collaborative Research Database Demo [TABULAR]
 - eicu - eICU Collaborative Research Database [TABULAR]
 - mimic-iii - MIMIC-III Clinical Database [TABULAR]
+- mimic-cxr-jpg - MIMIC-CXR-JPG chest radiographs with structured labels [IMAGING, TABULAR]
 ```
 
 ### `set_dataset`

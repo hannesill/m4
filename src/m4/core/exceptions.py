@@ -9,6 +9,7 @@ Exception Hierarchy:
     ├── SecurityError - Security constraint violations
     ├── DatasetError - Dataset configuration issues
     ├── ModalityError - Tool/dataset modality mismatches
+    ├── ImageFetchError - Images of a cohort that could not be fetched
     └── BackendError - Database backend failures
         ├── ConnectionError - Connection failures
         ├── TableNotFoundError - Missing table
@@ -108,6 +109,29 @@ class ModalityError(M4Error):
         self.required_modalities = required_modalities or set()
         self.available_modalities = available_modalities or set()
         super().__init__(message)
+
+
+class ImageFetchError(M4Error):
+    """Raised when `m4.fetch_images` could not fetch every image.
+
+    Attributes:
+        code: The error code `m4 fetch-images --json` reports
+        hint: What to do about it (optional)
+        data: What the run did before it stopped: root, fetched, skipped and
+            failed, as `m4 fetch-images --json` reports it (optional)
+    """
+
+    def __init__(
+        self,
+        message: str,
+        code: str,
+        hint: str | None = None,
+        data: dict | None = None,
+    ):
+        self.code = code
+        self.hint = hint
+        self.data = data
+        super().__init__(message if not hint else f"{message} {hint}")
 
 
 class BackendError(M4Error):

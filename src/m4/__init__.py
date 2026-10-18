@@ -23,12 +23,15 @@ from vitrine import show
 from m4.api import (
     # Exceptions
     DatasetError,
+    ImageFetchError,
     M4Client,
     M4Error,
     ModalityError,
     QueryError,
     # Tabular data
     execute_query,
+    # Images
+    fetch_images,
     # Dataset management
     get_active_dataset,
     get_capabilities,
@@ -47,12 +50,14 @@ from m4.core.telemetry import set_agent_id
 
 __all__ = [
     "DatasetError",
+    "ImageFetchError",
     "M4Client",
     "M4Error",
     "ModalityError",
     "QueryError",
     "__version__",
     "execute_query",
+    "fetch_images",
     "get_active_dataset",
     "get_capabilities",
     "get_note",

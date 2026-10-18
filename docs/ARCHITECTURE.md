@@ -45,7 +45,7 @@ This transforms M4 from "an MCP server that runs SQL" into "infrastructure that 
 │                              │                              │
 │  ┌──────────────────────────────────────────────────┐       │
 │  │           Modality-Based Tool System             │       │
-│  │  (TABULAR, NOTES, future: WAVEFORMS, IMAGING)    │       │
+│  │  (TABULAR, NOTES, IMAGING, future: WAVEFORMS)    │       │
 │  └──────────────────────────────────────────────────┘       │
 │                              │                              │
 │  ┌──────────────────────────────────────────────────┐       │
@@ -100,7 +100,8 @@ Claude: [Uses sofa-score skill with validated MIT-LCP SQL]
 Datasets contain different data types (modalities):
 - **TABULAR**: Structured tables (labs, demographics, vitals)
 - **NOTES**: Clinical narratives (discharge summaries, radiology reports)
-- Future: **WAVEFORMS**, **IMAGING**
+- **IMAGING**: Image files beside the tables, fetched per cohort (`m4 fetch-images`)
+- Future: **WAVEFORMS**
 
 Tools declare which modalities they require:
 
@@ -281,6 +282,7 @@ mortality_rate = aki_cohort['hospital_expire_flag'].mean()
 | eicu-demo | TABULAR | 2.5k ICU stays | Free | No |
 | eicu | TABULAR | 200k+ ICU stays | PhysioNet credentialed | No |
 | mimic-iii | TABULAR | 40k+ | PhysioNet credentialed | No |
+| mimic-cxr-jpg | TABULAR, IMAGING | 377k images | PhysioNet credentialed | No |
 
 Custom datasets can be added via JSON definition. See [Custom Datasets](CUSTOM_DATASETS.md).
 
@@ -289,7 +291,7 @@ Custom datasets can be added via JSON definition. See [Custom Datasets](CUSTOM_D
 
 ### Additional Modalities
 - **WAVEFORMS**: ECG, arterial blood pressure waveforms
-- **IMAGING**: Chest X-rays, CT scans
+- **IMAGING** beyond JPG files: DICOM, CT scans
 
 ### Enhanced Clinical Semantics
 - Semantic search over clinical notes (beyond keyword matching)

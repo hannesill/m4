@@ -1,6 +1,6 @@
 ---
 name: m4-api
-description: Query M4 clinical datasets (MIMIC-IV, MIMIC-IV-Note, MIMIC-IV-ED, eICU, MIMIC-III, and demos) from Python with `import m4`: find tables, run SQL into pandas, search clinical notes, handle M4's errors. Use before writing Python or SQL against M4 data.
+description: Query M4 clinical datasets (MIMIC-IV, MIMIC-IV-Note, MIMIC-IV-ED, eICU, MIMIC-III, MIMIC-CXR-JPG, and demos) from Python with `import m4`: find tables, run SQL into pandas, search clinical notes, select chest X-ray cohorts and fetch their images, handle M4's errors. Use before writing Python or SQL against M4 data.
 tier: community
 category: system
 kind: integration
@@ -50,11 +50,43 @@ DataFrames, not in the conversation.
 | `eicu-demo` | `eicu_crd`, as in `eicu` | open, over 2,500 unit stays |
 | `eicu` | `eicu_crd` (`eicu_crd.patient`, never bare `patient`) | credentialed |
 | `mimic-iii` | `mimiciii_clinical` | credentialed |
+| `mimic-cxr-jpg` | `mimic_cxr`: `metadata`, `split`, `chexpert`, `negbio`, `test_labels`, `images` | credentialed, with a DUA of its own |
 
 The MIMIC-IV demo has no `mimiciv_derived`; compute concepts there from the clinical skills' SQL.
 The user's own CSV files become a dataset with `m4 define-dataset` (see the m4-setup skill).
 Table names are the same on both backends. Write DuckDB SQL unless `m4 doctor --json` reports
 the `bigquery` backend.
+
+## Chest X-rays (MIMIC-CXR-JPG)
+
+`mimic_cxr.images` is `metadata` (one row per image: `dicom_id`, `subject_id`, `study_id`,
+`ViewPosition`, `StudyDate`, ...) plus `image_path`, the image's path below the dataset's raw
+folder. Join `split` on `dicom_id`, and the labels on `study_id`. Label columns have spaces
+(`"Pleural Effusion"`): quote them. `chexpert` and `negbio` are labels extracted from the
+reports (1.0 present, 0.0 absent, -1.0 uncertain, NULL not mentioned); `test_labels` holds a
+radiologist's labels for test-split studies, and calls Lung Opacity `"Airspace Opacity"`.
+`subject_id` is MIMIC-IV's.
+
+Only the tables are downloaded. Images are fetched per cohort with the user's PhysioNet login,
+at about 1.5 MB per image and 11-17 KB/s per connection (200 images take about 2 hours), so
+ask the user before fetching:
+
+```python
+cohort = execute_query("""
+    SELECT i.dicom_id, i.image_path
+    FROM mimic_cxr.images i JOIN mimic_cxr.split s USING (dicom_id)
+    WHERE s.split = 'test' AND i.ViewPosition = 'PA'
+""", dataset="mimic-cxr-jpg")
+cohort.to_csv("cohort.csv", index=False)
+# The user runs, with their login: m4 fetch-images mimic-cxr-jpg --from-csv cohort.csv
+# Python, with a login the user gave: m4.fetch_images("mimic-cxr-jpg", cohort, credentials=...)
+```
+
+Each fetched image is at `<root>/<image_path>`, `root` being the dataset's raw folder from the
+result (or `raw_root` in `m4 list-datasets --json --paths`). Fetching again resumes and skips the images
+that are there; `m4.ImageFetchError.code` says why one failed (`physionet_access_forbidden`: the
+account has not signed the MIMIC-CXR-JPG agreement). Do not open the image files yourself, which
+would send them to the model provider: show them with Vitrine.
 
 ## Clinical notes
 

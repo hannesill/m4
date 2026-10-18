@@ -68,6 +68,17 @@ def _dataset_payload(ds: DatasetDefinition) -> dict[str, Any]:
             "duckdb_filename": ds.default_duckdb_filename,
         },
         "related_datasets": dict(ds.related_datasets),
+        "table_names": dict(ds.table_names),
+        "images": (
+            {
+                "table": ds.images.table,
+                "view": ds.images.view,
+                "id_column": ds.images.id_column,
+                "path_template": ds.images.path_template,
+            }
+            if ds.images
+            else None
+        ),
     }
 
 
@@ -183,6 +194,19 @@ def build_capabilities_manifest() -> dict[str, Any]:
                 "--force",
                 "--json",
                 "--download",
+                "--physionet-credentials-file",
+                "--physionet-credentials-stdin",
+                "--events",
+            ],
+            "mutates": True,
+        },
+        {
+            "name": "fetch-images",
+            "flags": [
+                "--from-csv",
+                "--target",
+                "--max-images",
+                "--json",
                 "--physionet-credentials-file",
                 "--physionet-credentials-stdin",
                 "--events",

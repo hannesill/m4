@@ -23,8 +23,12 @@ class EventReporter:
     def operation_completed(self, result: dict[str, Any]) -> None:
         self.emit("operation_completed", command=self.command, result=result)
 
-    def operation_failed(self, error: dict[str, Any]) -> None:
-        self.emit("operation_failed", command=self.command, error=error)
+    def operation_failed(
+        self, error: dict[str, Any], data: dict[str, Any] | None = None
+    ) -> None:
+        # `data`: what the command did before it failed, for one that says so
+        extra = {"data": data} if data is not None else {}
+        self.emit("operation_failed", command=self.command, error=error, **extra)
 
 
 @dataclass

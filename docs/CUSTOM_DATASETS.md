@@ -89,7 +89,7 @@ m4 init my-icu-extract --src /path/to/your/csv/files
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `name` | Yes | Unique identifier passed as `--dataset <name>` or `dataset="<name>"`. A file that uses the name of a built-in dataset (`mimic-iv-demo`, `mimic-iv`, `mimic-iv-note`, `mimic-iv-ed-demo`, `mimic-iv-ed`, `eicu-demo`, `eicu`, `mimic-iii`) is ignored with a warning |
+| `name` | Yes | Unique identifier passed as `--dataset <name>` or `dataset="<name>"`. A file that uses the name of a built-in dataset (`mimic-iv-demo`, `mimic-iv`, `mimic-iv-note`, `mimic-iv-ed-demo`, `mimic-iv-ed`, `eicu-demo`, `eicu`, `mimic-iii`, `mimic-cxr-jpg`) is ignored with a warning |
 | `description` | Yes | Human-readable description |
 | `title` | No | Short display name shown by `m4 list-datasets`. Defaults to `name` |
 | `summary` | No | One or two sentences on what the dataset holds, shown by `m4 list-datasets` |
@@ -106,6 +106,8 @@ m4 init my-icu-extract --src /path/to/your/csv/files
 | `modalities` | No | Data types in this dataset (see below). Defaults to `["TABULAR"]` |
 | `schema_mapping` | No | Maps filesystem subdirectories to canonical schema names (see below) |
 | `bigquery_schema_mapping` | No | Maps canonical schema names to BigQuery dataset IDs (see below) |
+| `table_names` | No | Table names for files whose own name makes a poor one, by the file's path below the raw folder without `.csv.gz` or `.csv`, e.g. `{"mimic-cxr-2.0.0-metadata": "metadata"}` |
+| `images` | With `IMAGING` | Where the dataset's image files are (see [Imaging Datasets](#imaging-datasets)) |
 
 ### Available Modalities
 
@@ -113,6 +115,7 @@ m4 init my-icu-extract --src /path/to/your/csv/files
 |----------|-------------|-----------------|
 | `TABULAR` | Structured tables (labs, demographics, vitals, etc.) | `get_database_schema`, `get_table_info`, `execute_query` |
 | `NOTES` | Clinical notes and discharge summaries | `search_notes`, `get_note`, `list_patient_notes` |
+| `IMAGING` | Image files beside the tables, fetched per cohort | `m4 fetch-images`, `m4.fetch_images` |
 
 Tools are filtered based on the dataset's declared modalities. If not specified, defaults to `["TABULAR"]`.
 
@@ -162,6 +165,37 @@ With this, a query for `mimiciv_hosp.patients` is rewritten to `physionet-data.m
 
 Custom datasets without `schema_mapping` still work — tables will be created with flat names in the `main` schema (backward-compatible behavior).
 
+A table is named after its file in lower case, with an underscore for each
+character other than a letter, a digit or an underscore (`lab-results.csv.gz`
+becomes `lab_results`), unless `table_names` names it. Two files that would
+make one table fail `m4 init`.
+
+### Imaging Datasets
+
+An imaging dataset keeps its images beside its tables, too many to download
+whole: M4 downloads and converts the tables, and fetches the images of a
+cohort with `m4 fetch-images`. One table has a row per image; `images` says
+which, and how a row makes the image's path below the raw folder, which is
+also its path below `file_listing_url`. MIMIC-CXR-JPG's:
+
+```json
+{
+  "modalities": ["TABULAR", "IMAGING"],
+  "images": {
+    "table": "mimic_cxr.metadata",
+    "view": "mimic_cxr.images",
+    "id_column": "dicom_id",
+    "path_template": "files/p{subject_id[:2]}/p{subject_id}/s{study_id}/{dicom_id}.jpg"
+  }
+}
+```
+
+`{column}` is a column's value, `{column[:n]}` its first n characters. `m4
+init` makes `view` with every column of `table` and an `image_path` column, so
+a cohort query yields the paths `m4 fetch-images --from-csv` takes. The
+`IMAGING` modality and `images` go together: a file with one and not the
+other is ignored with a warning.
+
 ## Initialization Process
 
 When you run `m4 init <dataset>`:
@@ -179,7 +213,7 @@ M4 organizes data like this by default:
 m4_data/
 ├── datasets/           # Custom JSON definitions
 │   └── my-dataset.json
-├── raw_files/          # Downloaded CSV.gz files
+├── raw_files/          # Downloaded CSV.gz files, and fetched images
 │   └── my-dataset/
 │       └── *.csv.gz
 ├── parquet/            # Converted Parquet files

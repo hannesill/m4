@@ -28,7 +28,9 @@ All queries use canonical schema.table names (e.g., mimiciv_hosp.patients)
 that work on both DuckDB and BigQuery backends.
 """
 
+import json
 import os
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -37,7 +39,13 @@ import pandas as pd
 from m4.client import M4Client
 from m4.config import _ensure_custom_datasets_loaded, get_bigquery_project_id
 from m4.core.datasets import DatasetRegistry
-from m4.core.exceptions import DatasetError, M4Error, ModalityError, QueryError
+from m4.core.exceptions import (
+    DatasetError,
+    ImageFetchError,
+    M4Error,
+    ModalityError,
+    QueryError,
+)
 from m4.core.telemetry import set_interface
 from m4.core.tools import init_tools
 
@@ -48,11 +56,13 @@ set_interface("python_api")
 # Re-export exceptions for convenience
 __all__ = [
     "DatasetError",
+    "ImageFetchError",
     "M4Client",
     "M4Error",
     "ModalityError",
     "QueryError",
     "execute_query",
+    "fetch_images",
     "get_active_dataset",
     "get_capabilities",
     "get_note",
@@ -326,6 +336,74 @@ def list_patient_notes(
         note_type=note_type,
         limit=limit,
     )
+
+
+# =============================================================================
+# Images
+# =============================================================================
+
+
+def fetch_images(
+    dataset: str,
+    images: pd.DataFrame | str | Path,
+    *,
+    credentials: Mapping[str, str] | None = None,
+    target: str | Path | None = None,
+    max_images: int | None = None,
+) -> dict[str, Any]:
+    """Download the image files of a cohort, as `m4 fetch-images` does.
+
+    Args:
+        dataset: An imaging dataset, e.g. "mimic-cxr-jpg"
+        images: A DataFrame or CSV file naming the images by `image_path`
+            (from the dataset's images view, e.g. mimic_cxr.images) or by
+            the dataset's image id (e.g. dicom_id)
+        credentials: The PhysioNet login, {"username": ..., "password": ...},
+            for a credentialed dataset
+        target: The dataset's raw folder, if not M4's own
+        max_images: Refuse a longer list (default 10,000)
+
+    Returns:
+        dict with `root` (each image is at root / image_path), `image_count`,
+        `fetched`, `skipped` (there already), `failed` and `bytes_downloaded`.
+
+    Raises:
+        ImageFetchError: When any image could not be fetched. Calling again
+            resumes: images that are there are not fetched again.
+
+    Example:
+        >>> cohort = execute_query(
+        ...     "SELECT dicom_id, image_path FROM mimic_cxr.images "
+        ...     "JOIN mimic_cxr.split USING (dicom_id, study_id, subject_id) "
+        ...     "WHERE split = 'test' LIMIT 20",
+        ...     dataset="mimic-cxr-jpg",
+        ... )
+        >>> result = fetch_images("mimic-cxr-jpg", cohort, credentials=login)
+        >>> paths = [Path(result["root"]) / p for p in cohort.image_path]
+    """
+    from m4.data_io import PhysioNetCredentials
+    from m4.services.fetch_images import MAX_IMAGES, fetch_images_service
+    from m4.services.results import CommandError
+
+    login = (
+        PhysioNetCredentials.from_json_text(json.dumps(dict(credentials)))
+        if credentials is not None
+        else None
+    )
+    frame = images if isinstance(images, pd.DataFrame) else None
+    result = fetch_images_service(
+        dataset,
+        frame,
+        from_csv=None if frame is not None else images,
+        target=str(target) if target is not None else None,
+        physionet_credentials=login,
+        max_images=max_images or MAX_IMAGES,
+    )
+    if isinstance(result, CommandError):
+        raise ImageFetchError(
+            result.message, code=result.code, hint=result.hint, data=result.data
+        )
+    return dict(result.data)
 
 
 # =============================================================================

@@ -210,6 +210,9 @@ Once connected, try asking:
 | **eicu-demo** | Tabular | 2.5k ICU stays | Free | Yes | Yes | No |
 | **eicu** | Tabular | 200k+ ICU stays | [PhysioNet credentialed](https://physionet.org/content/eicu-crd/) | Yes | Yes | No |
 | **mimic-iii** | Tabular | 40k+ patients | [PhysioNet credentialed](https://physionet.org/content/mimiciii/) | Yes | Yes | No |
+| **mimic-cxr-jpg** | Tabular, Imaging | 377k chest X-rays | [PhysioNet credentialed](https://physionet.org/content/mimic-cxr-jpg/) | Yes | No | No |
+
+MIMIC-CXR-JPG's images are half a terabyte: M4 downloads its tables, and `m4 fetch-images mimic-cxr-jpg --from-csv cohort.csv` fetches the images of a cohort (paths from `mimic_cxr.images.image_path`).
 
 These datasets are supported out of the box. A folder of your own CSV files becomes a dataset with `m4 define-dataset NAME --src DIR` and `m4 init NAME --src DIR`; other datasets can be added by following [these instructions](docs/CUSTOM_DATASETS.md).
 

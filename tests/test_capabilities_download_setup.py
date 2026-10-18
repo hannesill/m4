@@ -240,6 +240,18 @@ def test_credentialed_download_returns_wget_guidance(tmp_path):
     assert result.data["next_steps"][0].endswith("mimiciv/")
 
 
+def test_imaging_download_guidance_never_fetches_the_images(tmp_path):
+    """wget -r on MIMIC-CXR-JPG's listing would fetch half a terabyte of images."""
+    result = download_dataset_service("mimic-cxr-jpg", target=str(tmp_path))
+
+    command = result.data["wget_command"]
+    assert "-l 1 -A '*.csv.gz,*.csv'" in command
+    assert "https://physionet.org/files/mimic-cxr-jpg/2.1.0/" in command
+    assert result.data["access_url"] == "https://physionet.org/content/mimic-cxr-jpg/"
+    tabular = download_dataset_service("eicu", target=str(tmp_path))
+    assert "-A" not in tabular.data["wget_command"]
+
+
 def test_eicu_download_returns_top_level_raw_layout_guidance(tmp_path):
     result = download_dataset_service("eicu", target=str(tmp_path))
 

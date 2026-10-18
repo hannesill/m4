@@ -56,8 +56,12 @@ def build_wget_command(ds: DatasetDefinition, target: Path) -> str:
         part for part in urlparse(ds.file_listing_url).path.split("/") if part
     ]
     cut_dirs = len(path_parts)
+    # An imaging dataset's listing also holds its images, half a terabyte for
+    # MIMIC-CXR-JPG: the command takes the tables beside them only, as M4's
+    # own download does. Images are fetched per cohort (m4 fetch-images).
+    tables_only = "-l 1 -A '*.csv.gz,*.csv' " if ds.images is not None else ""
     return (
-        f"wget -r -N -c -np --cut-dirs={cut_dirs} -nH "
+        f"wget -r -N -c -np {tables_only}--cut-dirs={cut_dirs} -nH "
         "--user YOUR_USERNAME --ask-password "
         f"{quote(ds.file_listing_url)} -P {quote(str(target))}"
     )

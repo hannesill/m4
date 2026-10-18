@@ -79,6 +79,7 @@ from m4.services.config import (
 from m4.services.define_dataset import define_dataset_service
 from m4.services.download import build_wget_command, download_dataset_service
 from m4.services.events import NdjsonEventReporter
+from m4.services.fetch_images import MAX_IMAGES, fetch_images_service
 from m4.services.init import initialize_dataset_service, source_problem
 from m4.services.init_derived import init_derived_service
 from m4.services.remove_dataset import remove_dataset_service
@@ -652,6 +653,137 @@ def download_cmd(
             console.print(f"  {item}")
         for hint in layout.get("recovery", []):
             console.print(f"  Hint: {hint}")
+
+
+@app.command("fetch-images")
+def fetch_images_cmd(
+    dataset_name: Annotated[
+        str,
+        typer.Argument(help="Imaging dataset to fetch images of, e.g. mimic-cxr-jpg."),
+    ],
+    from_csv: Annotated[
+        str,
+        typer.Option(
+            "--from-csv",
+            help=(
+                "CSV file naming the images: an image_path (or path) column, or "
+                "the dataset's image id column, such as dicom_id."
+            ),
+        ),
+    ],
+    target: Annotated[
+        str | None,
+        typer.Option(
+            "--target",
+            help="Raw folder of the dataset, if not M4's own (as for download).",
+        ),
+    ] = None,
+    max_images: Annotated[
+        int,
+        typer.Option(
+            "--max-images",
+            min=1,
+            help=f"Refuse a list of more images than this (default {MAX_IMAGES}).",
+        ),
+    ] = MAX_IMAGES,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Print result as JSON."),
+    ] = False,
+    events: Annotated[
+        str | None,
+        typer.Option(
+            "--events",
+            help="Emit structured progress events. Supported: ndjson.",
+        ),
+    ] = None,
+    physionet_credentials_file: Annotated[
+        str | None,
+        typer.Option(
+            "--physionet-credentials-file",
+            help="JSON file containing PhysioNet username and password fields.",
+        ),
+    ] = None,
+    physionet_credentials_stdin: Annotated[
+        bool,
+        typer.Option(
+            "--physionet-credentials-stdin",
+            help="Read the PhysioNet credentials JSON from standard input.",
+        ),
+    ] = False,
+):
+    """Download the image files of a cohort, never a whole imaging dataset."""
+    if events and events != "ndjson":
+        _json_error(
+            "fetch-images",
+            "invalid_option",
+            f"Unsupported event format '{events}'.",
+            hint="Use: --events ndjson",
+        )
+    if events and not json_output:
+        _json_error(
+            "fetch-images",
+            "invalid_option",
+            "--events requires --json.",
+            hint="Use: m4 fetch-images DATASET --from-csv FILE --json --events ndjson",
+        )
+
+    reporter = (
+        NdjsonEventReporter(command="fetch-images") if events == "ndjson" else None
+    )
+    credentials = None
+    if physionet_credentials_file or physionet_credentials_stdin:
+        try:
+            credentials = _read_physionet_credentials(
+                physionet_credentials_file, physionet_credentials_stdin
+            )
+        except ValueError as exc:
+            result = CommandError(
+                command="fetch-images", code="missing_credentials", message=str(exc)
+            )
+            if reporter:
+                reporter.operation_failed(result.to_json_dict()["error"])
+            elif json_output:
+                _emit_command_json(result)
+            else:
+                print_error_panel("Fetch Failed", result.message)
+            raise typer.Exit(code=1)
+
+    if reporter:
+        reporter.operation_started(dataset=dataset_name, credentials=bool(credentials))
+
+    with _silence_m4_logging() if json_output else nullcontext():
+        result = fetch_images_service(
+            dataset_name,
+            from_csv=from_csv,
+            target=target,
+            physionet_credentials=credentials,
+            max_images=max_images,
+            event_reporter=reporter,
+        )
+
+    if json_output:
+        if reporter:
+            if isinstance(result, CommandError):
+                reporter.operation_failed(
+                    result.to_json_dict()["error"], data=result.data
+                )
+            else:
+                reporter.operation_completed(result.to_json_dict())
+        else:
+            _emit_command_json(result)
+        if isinstance(result, CommandError):
+            raise typer.Exit(code=1)
+        return
+
+    if isinstance(result, CommandError):
+        print_error_panel("Fetch Failed", result.message, hint=result.hint)
+        raise typer.Exit(code=1)
+    data = result.data
+    success(
+        f"Fetched {data['fetched']} images ({data['skipped']} were there already) "
+        f"into {data['root']}"
+    )
 
 
 @app.command("setup-agent")

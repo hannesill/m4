@@ -15,7 +15,7 @@ from rich.console import Console
 from rich.progress import Progress
 
 from m4.core.backends.duckdb import DuckDBBackend
-from m4.core.datasets import DatasetDefinition, Modality
+from m4.core.datasets import DatasetDefinition, DatasetRegistry, Modality
 from m4.data_io import (
     COMMON_USER_AGENT,
     DatasetDownloadError,
@@ -34,6 +34,7 @@ from m4.data_io import (
     is_dataset_prepared,
     mark_dataset_prepared,
     raw_files_left_to_convert,
+    sql_table_name,
     unfinished_conversion,
     verify_table_rowcount,
 )
@@ -1221,3 +1222,123 @@ def test_download_that_finds_every_file_complete_writes_nothing(tmp_path, monkey
     assert _download_dataset_files("open", {"file_listing_url": listing}, tmp_path)
     assert [request.method for request in wire.sent] == ["GET", "HEAD"]
     assert sorted(p.name for p in tmp_path.iterdir()) == ["table.csv.gz"]
+
+
+# ------------------------------------------------------------
+# Table names and imaging datasets
+# ------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("name", "table"),
+    [
+        ("admissions", "admissions"),
+        ("ADMISSIONS", "admissions"),
+        ("mimic-cxr-2.0.0-chexpert", "mimic_cxr_2_0_0_chexpert"),
+        ("lab results", "lab_results"),
+        ("2020_labs", "_2020_labs"),
+    ],
+)
+def test_sql_table_name(name, table):
+    assert sql_table_name(name) == table
+
+
+def test_schema_mapped_files_with_dashes_and_dots_become_tables(tmp_path):
+    """As MIMIC-CXR-JPG's mimic-cxr-2.0.0-chexpert.csv.gz did not, before."""
+    parquet_root = tmp_path / "parquet"
+    _create_parquet(parquet_root, "mimic-cxr-2.0.0-chexpert", "study_id\n1\n2\n")
+
+    db_path = tmp_path / "test.duckdb"
+    assert _create_duckdb_with_views(db_path, parquet_root, {"": "mimic_cxr"})
+
+    con = duckdb.connect(str(db_path))
+    try:
+        count = con.execute(
+            "SELECT COUNT(*) FROM mimic_cxr.mimic_cxr_2_0_0_chexpert"
+        ).fetchone()
+        assert count == (2,)
+    finally:
+        con.close()
+
+
+def test_table_names_rename_tables_and_images_view_holds_each_path(tmp_path):
+    cxr = DatasetRegistry.get("mimic-cxr-jpg")
+    parquet_root = tmp_path / "parquet"
+    _create_parquet(
+        parquet_root,
+        "mimic-cxr-2.0.0-metadata",
+        "dicom_id,subject_id,study_id,ViewPosition\n"
+        "02aa804e-bde0afdd,10000032,50414267,PA\n"
+        "174413ec-4ec4c1f7,10000764,57375967,AP\n",
+    )
+    _create_parquet(
+        parquet_root, "mimic-cxr-2.1.0-test-set-labeled", "study_id,Edema\n1,1.0\n"
+    )
+
+    db_path = tmp_path / "test.duckdb"
+    assert _create_duckdb_with_views(
+        db_path,
+        parquet_root,
+        cxr.schema_mapping,
+        table_names=cxr.table_names,
+        images=cxr.images,
+    )
+
+    con = duckdb.connect(str(db_path))
+    try:
+        views = {
+            row[0]
+            for row in con.execute(
+                "SELECT table_schema || '.' || table_name FROM information_schema.tables"
+            ).fetchall()
+        }
+        assert views == {
+            "mimic_cxr.metadata",
+            "mimic_cxr.test_labels",
+            "mimic_cxr.images",
+        }
+        rows = con.execute(
+            "SELECT dicom_id, ViewPosition, image_path FROM mimic_cxr.images "
+            "ORDER BY dicom_id"
+        ).fetchall()
+        assert rows == [
+            (
+                "02aa804e-bde0afdd",
+                "PA",
+                "files/p10/p10000032/s50414267/02aa804e-bde0afdd.jpg",
+            ),
+            (
+                "174413ec-4ec4c1f7",
+                "AP",
+                "files/p10/p10000764/s57375967/174413ec-4ec4c1f7.jpg",
+            ),
+        ]
+    finally:
+        con.close()
+
+
+def test_files_that_would_make_one_table_are_refused(tmp_path):
+    parquet_root = tmp_path / "parquet"
+    _create_parquet(parquet_root, "lab-results", "x\n1\n")
+    _create_parquet(parquet_root, "lab_results", "x\n2\n")
+
+    with pytest.raises(ValueError, match="would both become the table"):
+        _create_duckdb_with_views(tmp_path / "test.duckdb", parquet_root, {"": "s"})
+
+
+def test_scrape_takes_plain_csv_files_but_not_the_image_folders(monkeypatch):
+    html = (
+        '<a href="files/">files/</a>'
+        '<a href="IMAGE_FILENAMES">IMAGE_FILENAMES</a>'
+        '<a href="mimic-cxr-2.0.0-metadata.csv.gz">metadata</a>'
+        '<a href="mimic-cxr-2.1.0-test-set-labeled.csv">test labels</a>'
+    )
+    session = requests.Session()
+    monkeypatch.setattr(session, "get", lambda url, timeout=None: DummyResponse(html))
+
+    urls = _scrape_urls_from_html_page("https://physionet.org/x/", session)
+
+    assert urls == [
+        "https://physionet.org/x/mimic-cxr-2.0.0-metadata.csv.gz",
+        "https://physionet.org/x/mimic-cxr-2.1.0-test-set-labeled.csv",
+    ]

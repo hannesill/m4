@@ -136,8 +136,31 @@ class TestDatasetRegistry:
             "eicu-demo",
             "eicu",
             "mimic-iii",
+            "mimic-cxr-jpg",
         }
         assert all(DatasetRegistry.is_builtin(name) for name in names)
+
+    def test_mimic_cxr_jpg_downloads_tables_and_says_where_its_images_are(self):
+        DatasetRegistry.reset()
+        ds = DatasetRegistry.get("mimic-cxr-jpg")
+
+        assert ds.modalities == frozenset({Modality.TABULAR, Modality.IMAGING})
+        assert ds.requires_authentication
+        assert ds.dua_url == "https://physionet.org/content/mimic-cxr-jpg/"
+        # The tables only: the images are half a terabyte
+        assert ds.download_size_gb < 0.1
+        assert ds.subdirectories_to_scan == []
+        assert set(ds.table_names.values()) == {
+            "metadata",
+            "chexpert",
+            "negbio",
+            "split",
+            "test_labels",
+        }
+        assert ds.primary_verification_table == "mimic_cxr.metadata"
+        assert ds.images.table == "mimic_cxr.metadata"
+        assert ds.images.view == "mimic_cxr.images"
+        assert ds.images.id_column == "dicom_id"
 
     def test_mimic_demo_schema_mapping(self):
         """Test MIMIC-IV demo has correct schema mappings."""
@@ -373,6 +396,66 @@ class TestDatasetRegistryEdgeCases:
         (tmp_path / "odd.json").write_text(
             json.dumps({"name": "odd", "default_duckdb_filename": filename})
         )
+
+        DatasetRegistry.reset()
+        with caplog.at_level("WARNING", logger="m4.core.datasets"):
+            DatasetRegistry.load_custom_datasets(tmp_path)
+
+        assert DatasetRegistry.get("odd") is None
+        assert "odd.json" in caplog.text
+        DatasetRegistry.reset()
+
+    def test_custom_json_with_images_and_table_names(self, tmp_path):
+        (tmp_path / "scans.json").write_text(
+            json.dumps(
+                {
+                    "name": "my-scans",
+                    "modalities": ["TABULAR", "IMAGING"],
+                    "schema_mapping": {"": "scans"},
+                    "table_names": {"scan-list-v2": "scans"},
+                    "images": {
+                        "table": "scans.scans",
+                        "view": "scans.images",
+                        "id_column": "scan_id",
+                        "path_template": "images/{patient_id}/{scan_id}.png",
+                    },
+                }
+            )
+        )
+
+        DatasetRegistry.reset()
+        DatasetRegistry.load_custom_datasets(tmp_path)
+
+        ds = DatasetRegistry.get("my-scans")
+        assert Modality.IMAGING in ds.modalities
+        assert ds.table_names == {"scan-list-v2": "scans"}
+        assert ds.images.is_image_path("images/7/42.png")
+        DatasetRegistry.reset()
+
+    @pytest.mark.parametrize(
+        "fields",
+        [
+            # Images without the modality, and the modality without images
+            {
+                "images": {
+                    "table": "s.t",
+                    "view": "s.v",
+                    "id_column": "id",
+                    "path_template": "{id}.png",
+                }
+            },
+            {"modalities": ["TABULAR", "IMAGING"]},
+            {"table_names": {"labs": "lab results"}},
+            {
+                "modalities": ["IMAGING"],
+                "images": {"table": "s.t", "view": "s.v", "id_column": "id"},
+            },
+        ],
+    )
+    def test_custom_json_with_images_m4_cannot_use_is_skipped(
+        self, tmp_path, caplog, fields
+    ):
+        (tmp_path / "odd.json").write_text(json.dumps({"name": "odd", **fields}))
 
         DatasetRegistry.reset()
         with caplog.at_level("WARNING", logger="m4.core.datasets"):
