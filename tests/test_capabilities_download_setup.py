@@ -252,6 +252,16 @@ def test_imaging_download_guidance_never_fetches_the_images(tmp_path):
     assert "-A" not in tabular.data["wget_command"]
 
 
+def test_raw_layout_counts_plain_csv_files_as_m4_downloads_them(tmp_path):
+    (tmp_path / "mimic-cxr-2.1.0-test-set-labeled.csv").write_text("study_id\n1\n")
+
+    layout = validate_raw_layout("mimic-cxr-jpg", tmp_path)
+
+    assert layout["ok"] is True
+    assert layout["csv_gz_count"] == 1
+    assert "wrong_root_layout" not in layout["warnings"]
+
+
 def test_eicu_download_returns_top_level_raw_layout_guidance(tmp_path):
     result = download_dataset_service("eicu", target=str(tmp_path))
 

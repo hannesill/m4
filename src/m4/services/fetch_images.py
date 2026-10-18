@@ -36,7 +36,12 @@ from m4.data_io import (
 )
 from m4.services.download import access_forbidden_hint, default_raw_root
 from m4.services.events import EventReporter, get_event_reporter
-from m4.services.results import ERROR_DATASET_NOT_FOUND, CommandError, CommandResult
+from m4.services.results import (
+    ERROR_DATASET_NOT_FOUND,
+    ERROR_INVALID_OPTION,
+    CommandError,
+    CommandResult,
+)
 
 COMMAND = "fetch-images"
 
@@ -334,10 +339,6 @@ def _fetch_all(
                 try:
                     outcome = future.result()
                 except DatasetDownloadError as exc:
-                    if exc.code in FATAL_CODES:
-                        fatal = fatal or exc
-                        stop.set()
-                        continue
                     failed.append(
                         {"image_path": path, "code": exc.code, "message": exc.message}
                     )
@@ -347,6 +348,9 @@ def _fetch_all(
                         code=exc.code,
                         message=exc.message,
                     )
+                    if exc.code in FATAL_CODES:
+                        fatal = fatal or exc
+                        stop.set()
                     continue
                 if outcome == "fetched":
                     fetched += 1
@@ -536,10 +540,10 @@ def _imaging_dataset(dataset_name: str) -> DatasetDefinition | CommandError:
             f"Dataset '{dataset_name}' is not supported or not configured.",
             f"Imaging datasets: {', '.join(imaging) or 'none'}",
         )
-    if ds.images is None or not ds.file_listing_url:
+    if ds.images is None:
         return _error(
             ERROR_NOT_AN_IMAGING_DATASET,
-            f"'{ds.name}' has no image files for M4 to fetch.",
+            f"'{ds.name}' is not an imaging dataset: it has no image files.",
         )
     return ds
 
@@ -582,7 +586,10 @@ def image_locations(
 
 def read_image_list(path: str | Path) -> pd.DataFrame:
     """A CSV file of images, every value read as text (ids keep leading zeros)."""
-    return pd.read_csv(Path(path).expanduser(), dtype=str)
+    # Only an empty cell is missing: "NA" or "NULL" could be an id
+    return pd.read_csv(
+        Path(path).expanduser(), dtype=str, keep_default_na=False, na_values=[""]
+    )
 
 
 def fetch_images_service(
@@ -630,6 +637,13 @@ def fetch_images_service(
             f"{max_images:,} M4 fetches in one run. PhysioNet sends 1-17 KB/s per "
             "connection, so that many would take days.",
             "Fetch a smaller cohort, or allow this many with --max-images.",
+        )
+    if missing and not ds.file_listing_url:
+        return _error(
+            ERROR_INVALID_OPTION,
+            f"{len(missing)} of {len(paths)} images of '{ds.name}' are not on disk, "
+            "and the dataset has no download address (file_listing_url).",
+            data=_account(ds, root, paths, skipped=len(paths) - len(missing)),
         )
     # Images that are all there need no login, so a caller can try without
     # one first and ask for it only when this says so.

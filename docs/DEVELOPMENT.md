@@ -321,8 +321,11 @@ images, or an id the view does not have), `dataset_not_initialized` (ids, but
 no images view to look them up in), `too_many_images`, `physionet_auth_failed`,
 `physionet_access_forbidden` (its `hint` names the agreement page:
 MIMIC-CXR-JPG has a DUA of its own), `physionet_url_required`,
-`download_filesystem_failed`, `download_interrupted`, and `images_incomplete`
-(some images failed, the others are there). An error after fetching began
+`download_filesystem_failed`, `download_interrupted`, `invalid_option` (images
+are missing and the dataset has no `file_listing_url`; `m4.local_image_paths`
+needs none), and `images_incomplete` (some images failed, the others are
+there). Every image that failed, the one that stopped a run included, is in
+`failed` and has a `download_file_failed` event. An error after fetching began
 carries `data` with the result's fields.
 
 With `--events ndjson` the stream holds `m4 download`'s events:

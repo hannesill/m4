@@ -398,7 +398,7 @@ def fetch_images(
         from_csv=None if frame is not None else images,
         target=str(target) if target is not None else None,
         physionet_credentials=login,
-        max_images=max_images or MAX_IMAGES,
+        max_images=MAX_IMAGES if max_images is None else max_images,
     )
     if isinstance(result, CommandError):
         raise ImageFetchError(

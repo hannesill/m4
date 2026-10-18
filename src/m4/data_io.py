@@ -1435,6 +1435,11 @@ def _create_duckdb_with_views(
             return False
 
         if images is not None:
+            if images.view in views_made:
+                raise ValueError(
+                    f"The images view {images.view} would replace the table of "
+                    f"{views_made[images.view].relative_to(parquet_root).as_posix()}."
+                )
             # Over the image table's view rather than its file, so the view
             # follows the table when it is converted again.
             schema_name = images.view.split(".")[0]

@@ -13,10 +13,15 @@ from typer.testing import CliRunner
 import m4
 import m4.config as cfg_mod
 from m4.cli import app
-from m4.core.datasets import DatasetRegistry
+from m4.core.datasets import DatasetDefinition, DatasetRegistry, Modality
+from m4.core.images import ImageFiles
 from m4.data_io import PHYSIONET_LOGIN_USER_AGENT, PhysioNetCredentials
 from m4.services.events import EventReporter
-from m4.services.fetch_images import _fetch_image, fetch_images_service
+from m4.services.fetch_images import (
+    _fetch_image,
+    fetch_images_service,
+    read_image_list,
+)
 from m4.services.results import CommandError, CommandResult
 
 LISTING = "https://physionet.org/files/mimic-cxr-jpg/2.1.0/"
@@ -304,6 +309,10 @@ def test_access_refused_stops_the_run_and_names_the_agreement(physionet, tmp_pat
     assert result.code == "physionet_access_forbidden"
     assert "https://physionet.org/content/mimic-cxr-jpg/" in result.hint
     assert result.data["fetched"] == 0
+    # The image that was refused is accounted for, not only the run
+    assert {"image_path": A, "code": "physionet_access_forbidden"}.items() <= (
+        next(f for f in result.data["failed"] if f["image_path"] == A).items()
+    )
     assert not list(tmp_path.rglob("*.jpg"))
 
 
@@ -417,6 +426,60 @@ def test_local_image_paths_says_where_each_row_is_without_fetching(physionet, tm
     with pytest.raises(m4.ImageFetchError) as caught:
         m4.local_image_paths("mimic-cxr-jpg", paths("elsewhere/x.jpg"))
     assert caught.value.code == "image_list_invalid"
+
+
+def test_a_python_limit_of_zero_fetches_nothing(physionet, tmp_path):
+    with pytest.raises(m4.ImageFetchError) as caught:
+        m4.fetch_images(
+            "mimic-cxr-jpg",
+            paths(A),
+            credentials={"username": "alice", "password": "pw"},
+            target=tmp_path,
+            max_images=0,
+        )
+
+    assert caught.value.code == "too_many_images"
+    assert physionet.requests == []
+
+
+def test_an_image_list_keeps_ids_that_look_like_missing_values(tmp_path):
+    image_list = tmp_path / "cohort.csv"
+    image_list.write_text("dicom_id,label\nNA,1\nNULL,0\n,1\n")
+
+    ids = read_image_list(image_list)["dicom_id"]
+
+    assert list(ids[:2]) == ["NA", "NULL"]
+    assert pd.isna(ids[2])  # An empty cell is still missing
+
+
+def test_images_kept_locally_need_no_download_address(physionet, tmp_path):
+    """A custom imaging dataset may have no PhysioNet listing at all."""
+    DatasetRegistry.register(
+        DatasetDefinition(
+            name="ward-scans",
+            modalities=frozenset({Modality.TABULAR, Modality.IMAGING}),
+            images=ImageFiles(
+                table="scans.scans",
+                view="scans.images",
+                id_column="scan_id",
+                path_template="images/{scan_id}.png",
+            ),
+        )
+    )
+    try:
+        (tmp_path / "images").mkdir()
+        (tmp_path / "images" / "1.png").write_bytes(b"png")
+        rows = pd.DataFrame({"image_path": ["images/1.png", "images/2.png"]})
+
+        located = m4.local_image_paths("ward-scans", rows, target=tmp_path)
+        fetched = fetch_images_service("ward-scans", rows, target=str(tmp_path))
+    finally:
+        DatasetRegistry.unregister("ward-scans")
+
+    assert list(located["present"]) == [True, False]
+    assert fetched.code == "invalid_option"
+    assert "no download address" in fetched.message
+    assert physionet.requests == []
 
 
 def test_a_dataset_without_images_is_refused(physionet):

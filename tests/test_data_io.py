@@ -16,6 +16,7 @@ from rich.progress import Progress
 
 from m4.core.backends.duckdb import DuckDBBackend
 from m4.core.datasets import DatasetDefinition, DatasetRegistry, Modality
+from m4.core.images import ImageFiles
 from m4.data_io import (
     COMMON_USER_AGENT,
     DatasetDownloadError,
@@ -1316,6 +1317,22 @@ def test_table_names_rename_tables_and_images_view_holds_each_path(tmp_path):
         ]
     finally:
         con.close()
+
+
+def test_an_images_view_cannot_replace_a_table(tmp_path):
+    parquet_root = tmp_path / "parquet"
+    _create_parquet(parquet_root, "images", "scan_id\n1\n")
+    images = ImageFiles(
+        table="s.images",
+        view="s.images",
+        id_column="scan_id",
+        path_template="{scan_id}.png",
+    )
+
+    with pytest.raises(ValueError, match=r"would replace the table of images\.parquet"):
+        _create_duckdb_with_views(
+            tmp_path / "test.duckdb", parquet_root, {"": "s"}, images=images
+        )
 
 
 def test_files_that_would_make_one_table_are_refused(tmp_path):

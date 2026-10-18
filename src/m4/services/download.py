@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 from m4.config import ensure_custom_datasets_loaded, resolve_runtime_context
 from m4.console import console
 from m4.core.datasets import DatasetDefinition, DatasetRegistry
+from m4.core.raw_files import RAW_SUFFIXES, raw_files
 from m4.data_io import (
     PHYSIONET_URL_PREFIX,
     DatasetDownloadError,
@@ -120,11 +121,13 @@ def validate_raw_layout(dataset_name: str, root: Path) -> dict[str, Any]:
             "Move the dataset contents up to the raw root or rerun wget with the generated --cut-dirs and -nH flags."
         )
 
-    csv_files = sorted(root.rglob("*.csv.gz"))
+    # .csv.gz and plain .csv, as M4 downloads and converts both. The keys keep
+    # their names (csv_gz_count, empty_csv_gz) for the wrappers that read them.
+    csv_files = raw_files(root)
     empty_files = [str(path) for path in csv_files if path.stat().st_size == 0]
     if empty_files:
         warnings.append("empty_csv_gz")
-        recovery.append("Delete empty *.csv.gz files and rerun the resumable download.")
+        recovery.append("Delete empty CSV files and rerun the resumable download.")
 
     expected_dirs = expected_raw_subdirectories(ds)
     missing_dirs = [name for name in expected_dirs if not (root / name).is_dir()]
@@ -139,7 +142,7 @@ def validate_raw_layout(dataset_name: str, root: Path) -> dict[str, Any]:
 
     if "" in ds.schema_mapping:
         # A dataset without folders of its own, such as eICU or MIMIC-III
-        root_csv_count = len(list(root.glob("*.csv.gz")))
+        root_csv_count = sum(len(list(root.glob(f"*{s}"))) for s in RAW_SUFFIXES)
         if root_csv_count == 0 and csv_files:
             warnings.append("wrong_root_layout")
             recovery.append(
@@ -148,7 +151,7 @@ def validate_raw_layout(dataset_name: str, root: Path) -> dict[str, Any]:
             )
 
     if not csv_files:
-        errors.append("No *.csv.gz files found.")
+        errors.append("No CSV files (.csv.gz or .csv) found.")
         recovery.append("Download the raw CSV files before initializing DuckDB.")
 
     if expected_dirs and csv_files and missing_dirs:
