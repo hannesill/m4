@@ -132,7 +132,7 @@ conversion is unfinished and lists the tables it set out to make. A table
 that is being converted is named `<table>.parquet.<id>.part`.
 `.m4-downloading.json`, in a raw folder, exists while a download by M4 into
 that folder is unfinished. A file that is being downloaded is named
-`<file>.csv.gz.part`; one that is left without its finished file says that a
+`<file>.csv.gz.part` or `<file>.csv.part`; one that is left without its finished file says that a
 download did not finish, whoever made it.
 
 Raw local paths are hidden by default in machine-facing output. Pass
@@ -296,12 +296,15 @@ image by `image_path` (or `path`), as the dataset's images view
 (`mimic_cxr.images`) has it, or by its id (`dicom_id`), which M4 looks up in
 that view of the initialized dataset. An image lands at its `image_path` below
 the dataset's raw folder (`--target` names another), which is also its path
-below the PhysioNet listing. Four images load at a time. A failure other than
-a refused login or a missing file is retried, the pause doubling from 5 s to
-at most a minute, until no byte of the image has arrived for ten minutes (a
-read stalls after 60 s); an interrupted image is resumed from its `.part` file, and an image that is there
-is not requested again, so the same command run again finishes what a run
-left. Images that are all on disk need no login: without one, the command
+below the PhysioNet listing. Four images load at a time. A stall (60 s
+without a byte), a 5xx, 408, 425 or 429 answer, and a broken or refused
+connection are retried until no byte of the image has arrived for ten
+minutes; the pause doubles from 5 s to at most a minute while nothing
+arrives and starts over after progress. A 401 or 403 stops the run, and any
+other answer fails that image. An interrupted image is resumed from its
+`.part` file, and an image that is there is not requested again, so the same
+command run again finishes what a run left. Images that are all on disk need
+no login: without one, the command
 fails with `missing_credentials` only when an image is missing, and before
 anything is fetched, so a caller can try without a login first. A list with
 more than 10,000 images to fetch is refused unless `--max-images` allows it.

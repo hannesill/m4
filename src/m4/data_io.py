@@ -1266,12 +1266,12 @@ def _drop_views_over_missing_files(con, parquet_root: Path) -> None:
 def sql_table_name(name: str) -> str:
     """`name` as a table name that DuckDB takes unquoted after a schema.
 
-    Lower case, with an underscore for each character other than a letter, a
-    digit or an underscore, and before a leading digit. Names that are already
-    so, as those of every PhysioNet table M4 ships but MIMIC-CXR-JPG's, stay
-    as they are.
+    Lower case, with an underscore for each character other than a letter
+    (é and ü included), a digit or an underscore, and before a leading digit.
+    Names that are already so, as those of every PhysioNet table M4 ships but
+    MIMIC-CXR-JPG's, stay as they are.
     """
-    table = re.sub(r"[^a-z0-9_]", "_", name.lower())
+    table = re.sub(r"[^\w]", "_", name.lower())
     return f"_{table}" if not table or table[0].isdigit() else table
 
 
@@ -1396,8 +1396,9 @@ def _create_duckdb_with_views(
                 # hold, such as lab-results and lab_results, would make one
                 # view, which shows only one of the files.
                 if view_name in views_made:
+                    first = views_made[view_name].relative_to(parquet_root)
                     raise ValueError(
-                        f"{views_made[view_name].name} and {pq.name} would both "
+                        f"{first.as_posix()} and {rel.as_posix()} would both "
                         f"become the table {view_name}."
                     )
                 views_made[view_name] = pq

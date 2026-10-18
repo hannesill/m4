@@ -1,7 +1,8 @@
 """The raw files M4 converts into tables: CSV, gzipped (.csv.gz) or plain (.csv).
 
-PhysioNet ships .csv.gz, and M4 downloads only those; a researcher's own
-export is often plain .csv. Every place that looks for raw files asks here, so
+PhysioNet ships .csv.gz, and now and then a plain .csv such as MIMIC-CXR-JPG's
+radiologist labels; M4 downloads both. A researcher's own export is often
+plain .csv. Every place that looks for raw files asks here, so
 that conversion, resuming it, and reporting a dataset's state agree.
 """
 

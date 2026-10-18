@@ -56,7 +56,7 @@ class ImageFiles:
             or "{" in literal
             or "}" in literal
             or "\\" in self.path_template
-            or not _plain_segments(self.path_template)
+            or not _plain_segments(PLACEHOLDER.sub("x", self.path_template))
         ):
             raise ValueError(
                 "images.path_template must be a relative path with {column} "
@@ -101,7 +101,8 @@ class ImageFiles:
         for literal, column, length in self._pieces():
             parts.append(re.escape(literal))
             if column is not None:
-                parts.append(f"[^/]{{1,{length}}}" if length else "[^/]+")
+                value = r"[^/\\:\x00]"
+                parts.append(f"{value}{{1,{length}}}" if length else f"{value}+")
         return re.compile("".join(parts))
 
     def is_image_path(self, path: str) -> bool:
@@ -114,5 +115,10 @@ class ImageFiles:
 
 
 def _plain_segments(path: str) -> bool:
-    """Whether `path` is relative and stays below the folder it is relative to."""
-    return all(segment not in {"", ".", ".."} for segment in path.split("/"))
+    """Whether `path` is relative and stays below the folder it is relative to.
+
+    On Windows too, where \\ also separates folders and C: names a drive.
+    """
+    return not any(c in path for c in "\\:\x00") and all(
+        segment not in {"", ".", ".."} for segment in path.split("/")
+    )

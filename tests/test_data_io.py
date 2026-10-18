@@ -1237,6 +1237,7 @@ def test_download_that_finds_every_file_complete_writes_nothing(tmp_path, monkey
         ("mimic-cxr-2.0.0-chexpert", "mimic_cxr_2_0_0_chexpert"),
         ("lab results", "lab_results"),
         ("2020_labs", "_2020_labs"),
+        ("Données", "données"),  # DuckDB takes letters beyond ASCII unquoted
     ],
 )
 def test_sql_table_name(name, table):

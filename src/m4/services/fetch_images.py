@@ -1,6 +1,6 @@
 """Fetch the images of a cohort from an imaging dataset, never the whole dataset.
 
-PhysioNet serves MIMIC-CXR-JPG's half a terabyte at 5-17 KB/s per connection,
+PhysioNet serves MIMIC-CXR-JPG's half a terabyte at 1-17 KB/s per connection,
 stalls or answers 502 now and then, and was seen refusing every connection for
 minutes. So a run fetches the images a list names, four at a time, retries
 what fails with a growing pause until an image has had no byte for ten
@@ -209,6 +209,7 @@ def _fetch_image(
 
     pause = backoff_seconds
     while not stop.is_set():
+        before = last_byte
         try:
             _fetch_once(session, url, target, part, stop, on_start, arrived)
             return "fetched"
@@ -221,6 +222,9 @@ def _fetch_image(
                     f"Gave up on {url}: no byte of it arrived for "
                     f"{patience_seconds:.0f} s. Last error: {exc}",
                 ) from exc
+            # The pause grows only while PhysioNet sends nothing: an image
+            # whose connections break every few tens of KB may need dozens.
+            pause = backoff_seconds if last_byte != before else pause
             stop.wait(pause)
             pause = min(pause * 2, MAX_BACKOFF_SECONDS)
         except OSError as exc:
@@ -389,6 +393,7 @@ def _fetch_all(
             "download_interrupted", "Fetching the images was interrupted."
         )
     finally:
+        stop.set()  # Whatever ended the loop, the workers end too
         pool.shutdown(wait=True, cancel_futures=True)
         for session in sessions:
             session.close()
@@ -496,6 +501,14 @@ def _row_paths(
             ERROR_IMAGE_LIST_INVALID,
             f"{len(unknown)} {images.id_column} value(s) are not in "
             f"{images.view} ({_listed(unknown)}).",
+        )
+    # A custom dataset's table could hold anything
+    wrong = [path for path in found.values() if not images.is_image_path(path)]
+    if wrong:
+        return [], _error(
+            ERROR_IMAGE_LIST_INVALID,
+            f"{images.view} gives {len(wrong)} path(s) that do not follow "
+            f"{images.path_template} ({_listed(wrong)}).",
         )
     return [found[image_id] if image_id else None for image_id in ids], None
 
@@ -607,7 +620,7 @@ def fetch_images_service(
         return _error(
             ERROR_TOO_MANY_IMAGES,
             f"{len(missing):,} of the images are not on disk, more than the "
-            f"{max_images:,} M4 fetches in one run. PhysioNet sends 11-17 KB/s per "
+            f"{max_images:,} M4 fetches in one run. PhysioNet sends 1-17 KB/s per "
             "connection, so that many would take days.",
             "Fetch a smaller cohort, or allow this many with --max-images.",
         )
@@ -642,7 +655,8 @@ def fetch_images_service(
     if account["failed"]:
         return _error(
             ERROR_IMAGES_INCOMPLETE,
-            f"{len(account['failed'])} of {len(paths)} images could not be fetched.",
+            f"{len(account['failed'])} of {len(paths)} images could not be fetched "
+            f"({_listed([f['image_path'] for f in account['failed']])}).",
             "Run the same command again: M4 keeps the images it has and resumes "
             "the others.",
             account,

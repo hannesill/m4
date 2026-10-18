@@ -68,6 +68,10 @@ def test_paths_of_the_datasets_images_are_accepted(path):
         "files/p100/p10000032/s50414267/x.jpg",  # [:2] takes two characters
         "files/p10/p10000032/s50414267/../x.jpg",
         "files/p10/p10000032/s50414267/",
+        # Folders and drives on Windows
+        "files/p10/p10000032/s50414267/a\\..\\..\\x.jpg",
+        "files/p10/p10000032/s5041:4267/x.jpg",
+        "files/p10/p10000032/s50414267/x\x00.jpg",
     ],
 )
 def test_other_paths_are_refused(path):
@@ -82,6 +86,8 @@ def test_a_template_placeholder_that_is_a_whole_segment_cannot_climb_out():
     assert images.is_image_path("a/b.jpg")
     assert not images.is_image_path("../b.jpg")
     assert not images.is_image_path("./b.jpg")
+    assert not images.is_image_path("C:/b.jpg")
+    assert not images.is_image_path("..\\..\\b.jpg")
 
 
 @pytest.mark.parametrize(

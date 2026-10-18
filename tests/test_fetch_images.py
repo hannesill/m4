@@ -16,7 +16,7 @@ from m4.cli import app
 from m4.core.datasets import DatasetRegistry
 from m4.data_io import PHYSIONET_LOGIN_USER_AGENT, PhysioNetCredentials
 from m4.services.events import EventReporter
-from m4.services.fetch_images import fetch_images_service
+from m4.services.fetch_images import _fetch_image, fetch_images_service
 from m4.services.results import CommandError, CommandResult
 
 LISTING = "https://physionet.org/files/mimic-cxr-jpg/2.1.0/"
@@ -54,6 +54,8 @@ class PhysioNet:
     def __init__(self, images=IMAGES):
         self.images = images
         self.script: dict[str, list] = {}
+        # Image path -> bytes after which each connection breaks
+        self.cut: dict[str, int] = {}
         self.requests: list[dict] = []
 
     def get(self, session, url, headers):
@@ -76,12 +78,16 @@ class PhysioNet:
         body = self.images[path]
         if headers.get("Range"):
             start = int(headers["Range"].removeprefix("bytes=").removesuffix("-"))
-            return Response(
-                206,
-                body[start:],
-                {"content-range": f"bytes {start}-{len(body) - 1}/{len(body)}"},
-            )
-        return Response(200, body, {"content-length": str(len(body))})
+            status, sent = 206, body[start:]
+            sent_headers = {
+                "content-range": f"bytes {start}-{len(body) - 1}/{len(body)}"
+            }
+        else:
+            status, sent = 200, body
+            sent_headers = {"content-length": str(len(body))}
+        if path in self.cut and len(sent) > self.cut[path]:
+            return Broken(sent, self.cut[path], status, sent_headers)
+        return Response(status, sent, sent_headers)
 
 
 @pytest.fixture
@@ -197,8 +203,10 @@ class Broken(Response):
     what it read of the last piece is lost with the connection.
     """
 
-    def __init__(self, body, delivered):
-        super().__init__(200, body, {"content-length": str(len(body))})
+    def __init__(self, body, delivered, status_code=200, headers=None):
+        super().__init__(
+            status_code, body, headers or {"content-length": str(len(body))}
+        )
         self.delivered = delivered
 
     def iter_content(self, chunk_size=1):
@@ -220,6 +228,36 @@ def test_a_broken_connection_keeps_what_it_delivered(physionet, tmp_path):
     assert (tmp_path / A).read_bytes() == image
     # The retry went on from the whole pieces of the 50,000 bytes delivered
     assert [r["range"] for r in physionet.requests] == [None, "bytes=49152-"]
+
+
+def test_the_pause_starts_over_after_an_attempt_that_brought_bytes(physionet, tmp_path):
+    """Not a minute's pause before each of the dozens of resumes a slow day needs."""
+    image = bytes(range(256)) * 400  # 100 KB
+    physionet.images = {**IMAGES, A: image}
+    physionet.script[A] = [Response(503), Response(503)]
+    physionet.cut[A] = 20_000  # then every connection breaks after 20 KB
+    pauses = []
+
+    class Stop(threading.Event):
+        def wait(self, timeout=None):
+            pauses.append(timeout)
+            return False
+
+    outcome = _fetch_image(
+        requests.Session(),
+        LISTING + A,
+        tmp_path / A,
+        stop=Stop(),
+        on_start=lambda there, size: None,
+        on_bytes=lambda count: None,
+        patience_seconds=600,
+        backoff_seconds=5,
+    )
+
+    assert outcome == "fetched"
+    assert (tmp_path / A).read_bytes() == image
+    assert pauses[:2] == [5, 10]  # Nothing arrived: the pause grew
+    assert len(pauses) > 4 and set(pauses[2:]) == {5}
 
 
 def test_an_image_that_keeps_failing_is_reported_and_the_others_arrive(
@@ -414,6 +452,24 @@ def test_ids_are_looked_up_in_the_images_view(physionet, tmp_path, monkeypatch):
     assert "nope" in unknown.message
 
 
+def test_paths_the_images_view_gives_are_checked_too(physionet, tmp_path, monkeypatch):
+    """A custom dataset's table could hold any path."""
+    db_path = tmp_path / "odd.duckdb"
+    con = duckdb.connect(str(db_path))
+    con.execute("CREATE SCHEMA mimic_cxr")
+    con.execute(
+        "CREATE VIEW mimic_cxr.images AS "
+        "SELECT 'x' AS dicom_id, '../../outside.jpg' AS image_path"
+    )
+    con.close()
+    monkeypatch.setenv("M4_DB_PATH", str(db_path))
+
+    result = fetch(pd.DataFrame({"dicom_id": ["x"]}), target=str(tmp_path / "raw"))
+
+    assert result.code == "image_list_invalid"
+    assert physionet.requests == []
+
+
 def test_ids_need_the_dataset_initialized(physionet, tmp_path, monkeypatch):
     monkeypatch.setenv("M4_DB_PATH", str(tmp_path / "absent.duckdb"))
 
@@ -456,6 +512,31 @@ def test_cli_reports_progress_as_ndjson_and_reads_the_login_from_stdin(
     assert names[-2:] == ["download_completed", "operation_completed"]
     final = events[-1]["result"]
     assert (final["ok"], final["fetched"], final["root"]) == (True, 2, str(target))
+
+
+def test_cli_without_json_prints_a_line_per_image(physionet, tmp_path):
+    cohort = tmp_path / "cohort.csv"
+    pd.DataFrame({"image_path": [A, B]}).to_csv(cohort, index=False)
+    physionet.script[B] = [Response(404)]
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "fetch-images",
+            "mimic-cxr-jpg",
+            "--from-csv",
+            str(cohort),
+            "--target",
+            str(tmp_path / "raw"),
+            "--physionet-credentials-stdin",
+        ],
+        input=json.dumps({"username": "alice", "password": "pw"}),
+    )
+
+    assert result.exit_code == 1
+    output = " ".join(result.stdout.split())
+    assert "/2] 02aa804e-bde0afdd.jpg" in output  # the image that arrived
+    assert "/2] 174413ec-4ec4c1f7.jpg: image_not_found" in output
 
 
 def test_cli_failure_event_carries_what_the_run_did(physionet, tmp_path):

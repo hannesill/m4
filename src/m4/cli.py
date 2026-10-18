@@ -78,7 +78,7 @@ from m4.services.config import (
 )
 from m4.services.define_dataset import define_dataset_service
 from m4.services.download import build_wget_command, download_dataset_service
-from m4.services.events import NdjsonEventReporter
+from m4.services.events import EventReporter, NdjsonEventReporter
 from m4.services.fetch_images import MAX_IMAGES, fetch_images_service
 from m4.services.init import initialize_dataset_service, source_problem
 from m4.services.init_derived import init_derived_service
@@ -655,6 +655,29 @@ def download_cmd(
             console.print(f"  Hint: {hint}")
 
 
+class _ImageProgressLines(EventReporter):
+    """A line per image fetched or failed: a run can take hours."""
+
+    def __init__(self) -> None:
+        super().__init__(command="fetch-images", enabled=True)
+        self.done = 0
+        self.total = 0
+
+    def emit(self, event: str, **fields: Any) -> None:
+        if event == "download_started":
+            self.total = fields["file_count"]
+            info(f"{self.total} images; fetching those that are not on disk yet")
+        elif event in {"download_file_completed", "download_file_skipped"}:
+            self.done += 1
+            if event == "download_file_completed":
+                name = Path(fields["path"]).name
+                console.print(f"  [{self.done}/{self.total}] {name}")
+        elif event == "download_file_failed":
+            self.done += 1
+            name = Path(fields["path"]).name
+            warning(f"[{self.done}/{self.total}] {name}: {fields['code']}")
+
+
 @app.command("fetch-images")
 def fetch_images_cmd(
     dataset_name: Annotated[
@@ -683,7 +706,10 @@ def fetch_images_cmd(
         typer.Option(
             "--max-images",
             min=1,
-            help=f"Refuse a list of more images than this (default {MAX_IMAGES}).",
+            help=(
+                "Refuse when more images than this are not on disk yet "
+                f"(default {MAX_IMAGES})."
+            ),
         ),
     ] = MAX_IMAGES,
     json_output: Annotated[
@@ -759,7 +785,7 @@ def fetch_images_cmd(
             target=target,
             physionet_credentials=credentials,
             max_images=max_images,
-            event_reporter=reporter,
+            event_reporter=reporter or (None if json_output else _ImageProgressLines()),
         )
 
     if json_output:

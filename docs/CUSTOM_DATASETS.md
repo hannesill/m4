@@ -166,8 +166,9 @@ With this, a query for `mimiciv_hosp.patients` is rewritten to `physionet-data.m
 Custom datasets without `schema_mapping` still work — tables will be created with flat names in the `main` schema (backward-compatible behavior).
 
 A table is named after its file in lower case, with an underscore for each
-character other than a letter, a digit or an underscore (`lab-results.csv.gz`
-becomes `lab_results`), unless `table_names` names it. Two files that would
+character other than a letter, a digit or an underscore, and one before a
+leading digit (`lab-results.csv.gz` becomes `lab_results`, `2020.csv`
+`_2020`), unless `table_names` names it. Two files that would
 make one table fail `m4 init`.
 
 ### Imaging Datasets

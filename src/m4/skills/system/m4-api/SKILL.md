@@ -68,8 +68,8 @@ radiologist's labels for test-split studies, and calls Lung Opacity `"Airspace O
 `subject_id` is MIMIC-IV's.
 
 Only the tables are downloaded. Images are fetched per cohort with the user's PhysioNet login,
-at about 1.5 MB per image and 11-17 KB/s per connection (200 images take about 2 hours), so
-ask the user before fetching:
+at about 1.5 MB per image and 1-17 KB/s per connection (200 images took 2 hours once, and can
+take much longer), so ask the user before fetching:
 
 ```python
 cohort = execute_query("""
