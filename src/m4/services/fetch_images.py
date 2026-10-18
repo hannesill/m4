@@ -1,9 +1,10 @@
 """Fetch the images of a cohort from an imaging dataset, never the whole dataset.
 
-PhysioNet serves MIMIC-CXR-JPG's half a terabyte at 11-17 KB/s per connection,
-and stalls or answers 502 now and then. So a run fetches the images a list
-names, four at a time, retries what fails with a growing pause, and leaves a
-.part file that the next run resumes. An image that is there is not fetched
+PhysioNet serves MIMIC-CXR-JPG's half a terabyte at 5-17 KB/s per connection,
+stalls or answers 502 now and then, and was seen refusing every connection for
+minutes. So a run fetches the images a list names, four at a time, retries
+what fails with a growing pause until an image has had no byte for ten
+minutes, and leaves a .part file that the next run resumes. An image that is there is not fetched
 again: it only gets its final name once it is complete.
 """
 
@@ -40,11 +41,17 @@ from m4.services.results import ERROR_DATASET_NOT_FOUND, CommandError, CommandRe
 COMMAND = "fetch-images"
 
 CONNECTIONS = 4
-ATTEMPTS = 4
+# An image is given up once no byte of it arrived for this long, so a slow
+# transfer goes on and a server that is away for minutes is waited for.
+PATIENCE_SECONDS = 600
 BACKOFF_SECONDS = 5.0  # before the second attempt; doubled for each one after
+MAX_BACKOFF_SECONDS = 60.0
 TIMEOUT_SECONDS = 60  # without a byte from PhysioNet, the attempt has stalled
 PROGRESS_SECONDS = 1.0
-CHUNK_BYTES = 64 * 1024
+# requests hands a piece over only once all of it has arrived, and what a
+# broken connection had read of the next piece is lost: PhysioNet breaks
+# connections every few tens of KB at its slowest, so pieces stay small.
+CHUNK_BYTES = 8 * 1024
 # A guard against fetching a whole split by mistake (the training split of
 # MIMIC-CXR-JPG has 368,960 images), not a judgement of what a study needs:
 # the test split's 5,159 fit.
@@ -125,7 +132,7 @@ def _fetch_once(
             url, stream=True, timeout=TIMEOUT_SECONDS, headers=headers
         )
     except requests.exceptions.RequestException as exc:
-        raise _Retry(type(exc).__name__) from exc
+        raise _Retry(f"{type(exc).__name__}: {exc}") from exc
     with response:
         status = response.status_code
         if status in {401, 403}:
@@ -167,7 +174,7 @@ def _fetch_once(
                     handle.write(chunk)
                     on_bytes(len(chunk))
         except requests.exceptions.RequestException as exc:
-            raise _Retry(type(exc).__name__) from exc
+            raise _Retry(f"{type(exc).__name__}: {exc}") from exc
     if expected is not None and part.stat().st_size != expected:
         raise _Retry("the connection closed before the image was complete")
     part.replace(target)
@@ -186,28 +193,36 @@ def _fetch_image(
     stop: threading.Event,
     on_start: Callable[[int, int | None], None],
     on_bytes: Callable[[int], None],
-    attempts: int,
+    patience_seconds: float,
     backoff_seconds: float,
 ) -> str:
     """Fetch one image: "fetched", "skipped" when it is there, or "stopped"."""
     if _present(target):
         return "skipped"
     part = target.with_name(target.name + PARTIAL_SUFFIX)
-    for attempt in range(1, attempts + 1):
-        if stop.is_set():
-            return "stopped"
+    last_byte = time.monotonic()
+
+    def arrived(count: int) -> None:
+        nonlocal last_byte
+        last_byte = time.monotonic()
+        on_bytes(count)
+
+    pause = backoff_seconds
+    while not stop.is_set():
         try:
-            _fetch_once(session, url, target, part, stop, on_start, on_bytes)
+            _fetch_once(session, url, target, part, stop, on_start, arrived)
             return "fetched"
         except _Stopped:
             return "stopped"
         except _Retry as exc:
-            if attempt == attempts:
+            if time.monotonic() - last_byte >= patience_seconds:
                 raise DatasetDownloadError(
                     "download_network_failed",
-                    f"Gave up on {url} after {attempts} attempts: {exc}.",
+                    f"Gave up on {url}: no byte of it arrived for "
+                    f"{patience_seconds:.0f} s. Last error: {exc}",
                 ) from exc
-            stop.wait(backoff_seconds * 2 ** (attempt - 1))
+            stop.wait(pause)
+            pause = min(pause * 2, MAX_BACKOFF_SECONDS)
         except OSError as exc:
             raise DatasetDownloadError(
                 "download_filesystem_failed",
@@ -246,7 +261,7 @@ def _fetch_all(
     reporter: EventReporter,
     *,
     connections: int,
-    attempts: int,
+    patience_seconds: float,
     backoff_seconds: float,
 ) -> tuple[dict[str, Any], DatasetDownloadError | None]:
     """Fetch `paths` below `root`: the run's account and the error that stopped it.
@@ -288,7 +303,7 @@ def _fetch_all(
             stop=stop,
             on_start=on_start,
             on_bytes=on_bytes,
-            attempts=attempts,
+            patience_seconds=patience_seconds,
             backoff_seconds=backoff_seconds,
         )
 
@@ -560,7 +575,7 @@ def fetch_images_service(
     max_images: int = MAX_IMAGES,
     event_reporter: EventReporter | None = None,
     connections: int = CONNECTIONS,
-    attempts: int = ATTEMPTS,
+    patience_seconds: float = PATIENCE_SECONDS,
     backoff_seconds: float = BACKOFF_SECONDS,
 ) -> CommandResult | CommandError:
     """Fetch the images that `images` or the CSV file `from_csv` names.
@@ -614,7 +629,7 @@ def fetch_images_service(
         physionet_credentials,
         get_event_reporter(event_reporter),
         connections=connections,
-        attempts=attempts,
+        patience_seconds=patience_seconds,
         backoff_seconds=backoff_seconds,
     )
     if fatal is not None:

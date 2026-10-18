@@ -297,8 +297,9 @@ image by `image_path` (or `path`), as the dataset's images view
 that view of the initialized dataset. An image lands at its `image_path` below
 the dataset's raw folder (`--target` names another), which is also its path
 below the PhysioNet listing. Four images load at a time. A failure other than
-a refused login is retried four times, the pause doubling from 5 s; an
-interrupted image is resumed from its `.part` file, and an image that is there
+a refused login or a missing file is retried, the pause doubling from 5 s to
+at most a minute, until no byte of the image has arrived for ten minutes (a
+read stalls after 60 s); an interrupted image is resumed from its `.part` file, and an image that is there
 is not requested again, so the same command run again finishes what a run
 left. Images that are all on disk need no login: without one, the command
 fails with `missing_credentials` only when an image is missing, and before

@@ -178,6 +178,7 @@ def test_stalls_and_bad_gateways_are_retried_and_resumed(physionet, tmp_path):
     physionet.script[A] = [
         Response(502),
         requests.exceptions.ConnectionError("reset"),
+        requests.exceptions.ConnectionError("refused"),
         # The connection closes after 30 bytes of the image
         Response(200, IMAGES[A][:30], {"content-length": "100"}),
     ]
@@ -186,21 +187,55 @@ def test_stalls_and_bad_gateways_are_retried_and_resumed(physionet, tmp_path):
 
     assert result.ok
     assert (tmp_path / A).read_bytes() == IMAGES[A]
-    assert [r["range"] for r in physionet.requests] == [None, None, None, "bytes=30-"]
+    assert [r["range"] for r in physionet.requests] == [None] * 4 + ["bytes=30-"]
+
+
+class Broken(Response):
+    """Delivers `delivered` bytes, then the connection breaks.
+
+    As urllib3 does, it hands over whole pieces of `chunk_size` only, and
+    what it read of the last piece is lost with the connection.
+    """
+
+    def __init__(self, body, delivered):
+        super().__init__(200, body, {"content-length": str(len(body))})
+        self.delivered = delivered
+
+    def iter_content(self, chunk_size=1):
+        whole = self.delivered // chunk_size * chunk_size
+        for index in range(0, whole, chunk_size):
+            yield self.body[index : index + chunk_size]
+        raise requests.exceptions.ChunkedEncodingError("IncompleteRead")
+
+
+def test_a_broken_connection_keeps_what_it_delivered(physionet, tmp_path):
+    """At PhysioNet's slowest, connections break every few tens of KB."""
+    image = bytes(range(256)) * 400  # 100 KB
+    physionet.images = {**IMAGES, A: image}
+    physionet.script[A] = [Broken(image, 50_000)]
+
+    result = fetch(paths(A), target=str(tmp_path))
+
+    assert result.ok
+    assert (tmp_path / A).read_bytes() == image
+    # The retry went on from the whole pieces of the 50,000 bytes delivered
+    assert [r["range"] for r in physionet.requests] == [None, "bytes=49152-"]
 
 
 def test_an_image_that_keeps_failing_is_reported_and_the_others_arrive(
     physionet, tmp_path
 ):
-    physionet.script[A] = [Response(503)] * 4
+    physionet.script[A] = [Response(503)]
 
-    result = fetch(paths(A, B), target=str(tmp_path), attempts=4)
+    # No patience: given up at the first failure that brought no byte
+    result = fetch(paths(A, B), target=str(tmp_path), patience_seconds=0)
 
     assert isinstance(result, CommandError)
     assert result.code == "images_incomplete"
     assert result.data["fetched"] == 1
     assert [f["image_path"] for f in result.data["failed"]] == [A]
     assert result.data["failed"][0]["code"] == "download_network_failed"
+    assert "Last error: HTTP 503" in result.data["failed"][0]["message"]
     assert (tmp_path / B).exists() and not (tmp_path / A).exists()
 
 
