@@ -567,8 +567,15 @@ def image_locations(
         return problem
     root = _image_root(ds, target)
     located = images.copy()
-    located[IMAGE_PATH_COLUMN] = rows
-    located["local_path"] = [str(root / path) if path else None for path in rows]
+
+    def column(values: list) -> pd.Series:
+        # Object columns keep None: pandas 3 makes NaN of it in a text column
+        return pd.Series(values, index=located.index, dtype=object)
+
+    located[IMAGE_PATH_COLUMN] = column(rows)
+    located["local_path"] = column(
+        [str(root / path) if path else None for path in rows]
+    )
     located["present"] = [bool(path) and _present(root / path) for path in rows]
     return located
 
