@@ -1740,7 +1740,7 @@ requires-dist = [
     { name = "statsmodels", marker = "extra == 'research'", specifier = ">=0.14.6" },
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0" },
     { name = "typer", specifier = ">=0.9.0" },
-    { name = "vitrine", specifier = ">=0.1.4" },
+    { name = "vitrine", specifier = ">=0.1.5" },
 ]
 provides-extras = ["research"]
 
@@ -3847,20 +3847,22 @@ wheels = [
 
 [[package]]
 name = "vitrine"
-version = "0.1.4"
+version = "0.1.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "duckdb" },
     { name = "pandas" },
+    { name = "pillow" },
     { name = "pyarrow" },
     { name = "rich" },
     { name = "starlette" },
     { name = "typer" },
     { name = "uvicorn" },
+    { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fb/6b/d0b13d4b436436598162f3ebc6ef59233216a665decc505ab992b614fd68/vitrine-0.1.4.tar.gz", hash = "sha256:f94ad08b52c56deec89c9e51f5b952a83a51bbf1276dd6f491ccf07c846efdc1", size = 1618522, upload-time = "2026-10-16T12:55:13.803Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1a/d9/cfdbae52241585b53ca4b1a4da12d524d28c20304a032a62af46812008aa/vitrine-0.1.5.tar.gz", hash = "sha256:a78e31efa803d7e7da1bbba94e65991a680bcfcd711e8b0a03e7c2163e73dd32", size = 1646571, upload-time = "2026-10-19T03:32:19.705Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/02/06/73cd6fe09c13143519c4752dae697b29b50efc98063631b25a00c2a28bba/vitrine-0.1.4-py3-none-any.whl", hash = "sha256:e0cb19b25386a197eac6f71108f19e8e3234f523bfe786d3faa1a9ee8ceadad4", size = 1580106, upload-time = "2026-10-16T12:55:11.712Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/4a/375d70805d71d7ca15bdc95ed51f691de4504251d5b42e26081de9107b96/vitrine-0.1.5-py3-none-any.whl", hash = "sha256:654c71d4ceb3e8815c184fe20f90b767df5cccb03450252920862038c810c33d", size = 1607165, upload-time = "2026-10-19T03:32:18.261Z" },
 ]
 
 [[package]]
