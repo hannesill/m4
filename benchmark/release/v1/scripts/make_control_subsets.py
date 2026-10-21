@@ -134,14 +134,14 @@ def main() -> None:
         if committed >= first.replace(tzinfo=timezone.utc):
             raise SystemExit(f"{name}: selection commit does not precede first run")
     lines = [
-        r"\begin{tabular}{llllrcc}",
+        r"\begin{tabular}{lllrcc}",
         r"\toprule",
-        r"Task & Family & Mode & Database & Targeted delta & Decoy/raw SQL & Operational spec \\",
+        r"Task & Mode & Database & Delta & Decoy/raw SQL & Op. spec \\",
         r"\midrule",
     ]
     for task in sorted(deltas, key=lambda t: deltas[t], reverse=True):
         lines.append(
-            f"{task} & {family(task)} & {details[task]['mode']} & {details[task]['database']} & "
+            f"{task} & {details[task]['mode']} & {details[task]['database']} & "
             f"{deltas[task]:.3f} & {'yes' if task in decoy else ''} & {'yes' if task in spec_tasks else ''} \\\\"
         )
     lines += [r"\bottomrule", r"\end{tabular}", ""]

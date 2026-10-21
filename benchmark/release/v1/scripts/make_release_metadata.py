@@ -18,6 +18,8 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
+from latex_tables import LatexCell, latex_escape, write_table, write_transposed_table
+
 M4_DIR = Path(
     os.environ.get("M4BENCH_M4_DIR", Path(__file__).resolve().parents[4])
 ).resolve()
@@ -60,7 +62,7 @@ EXPECTED_ARTIFACTS = [
     "trace.jsonl",
     "egress.jsonl",
 ]
-HARDWARE = "MacBook Pro, Apple M3 Pro, 18 GB memory"
+HARDWARE = "MacBook Pro (M3 Pro, 18 GB)"
 PROVENANCE_ONLY_DIRS = {
     "Codex primary": 40,
     "Claude sentinel": 0,
@@ -73,39 +75,6 @@ from report_results import load_rows  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from make_final_results import require_runs  # noqa: E402
-
-
-class LatexCell(str):
-    """A table cell that is already valid LaTeX and must not be escaped."""
-
-
-def latex_escape(value: object) -> str:
-    text = str(value)
-    replacements = {
-        "\\": r"\textbackslash{}",
-        "&": r"\&",
-        "%": r"\%",
-        "$": r"\$",
-        "#": r"\#",
-        "_": r"\_",
-        "{": r"\{",
-        "}": r"\}",
-        "~": r"\textasciitilde{}",
-        "^": r"\textasciicircum{}",
-    }
-    return "".join(replacements.get(ch, ch) for ch in text)
-
-
-def write_table(
-    path: Path, headers: list[str], rows: list[list[object]], align: str
-) -> None:
-    lines = [rf"\begin{{tabular}}{{{align}}}", r"\toprule"]
-    lines.append(" & ".join(latex_escape(h) for h in headers) + r" \\")
-    lines.append(r"\midrule")
-    for row in rows:
-        lines.append(" & ".join(latex_escape(cell) for cell in row) + r" \\")
-    lines.extend([r"\bottomrule", r"\end{tabular}", ""])
-    path.write_text("\n".join(lines))
 
 
 def run_key(row: dict) -> tuple[str, str, str, str, int]:
@@ -393,10 +362,9 @@ def hours(seconds: float) -> str:
 
 
 def write_release_tables(campaigns: list[dict]) -> None:
-    write_table(
+    write_transposed_table(
         TABLE_DIR / "artifact_package.tex",
         [
-            "Campaign",
             "Canonical runs",
             "Provenance-only dirs",
             "Retained dirs",
@@ -422,13 +390,11 @@ def write_release_tables(campaigns: list[dict]) -> None:
             ]
             for campaign in campaigns
         ],
-        "lrrrrrrrrr",
     )
 
-    write_table(
+    write_transposed_table(
         TABLE_DIR / "compute_resources.tex",
         [
-            "Campaign",
             "Canonical runs",
             "Provenance-only dirs",
             "Retained dirs",
@@ -454,7 +420,6 @@ def write_release_tables(campaigns: list[dict]) -> None:
             ]
             for campaign in campaigns
         ],
-        "lrrrlrrrrl",
     )
     write_asset_licenses()
 

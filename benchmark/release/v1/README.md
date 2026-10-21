@@ -30,6 +30,7 @@ scripts/
   make_evidence_package_table.py  # package size/checksum table from archive sidecars
   make_croissant.py             # Croissant core + RAI metadata for the packages
   archive_io.py                 # streaming reads from retained .tar.zst archives
+  latex_tables.py               # booktabs table writers for make_release_metadata.py
 figures/
   make_figures.py               # manuscript figure regeneration
 planning/                       # frozen run manifests, hash manifests, summaries
@@ -196,10 +197,6 @@ Known limits:
 - `task_details.tex`, `task_inventory.tex`, `artifact_package.tex`, and
   `compute_resources.tex` need credentialed reference outputs or the private
   run roots (`make_release_metadata.py`).
-- Six tables are typeset in a narrower layout in the paper (`artifact_package`,
-  `codex_control_subsets`, `codex_key_precision`, `compute_resources`,
-  `evidence_packages`, `task_review_provenance`: transposed or with constant
-  columns moved to the caption). The values are the ones in `tables/` here.
 - Re-evaluating agent outputs needs the private archives plus regenerated
   reference outputs (`benchmark/setup.py`). Four reference CSVs used by the
   July audit (raw Sepsis-3, raw suspicion of infection, standard/raw urine-output

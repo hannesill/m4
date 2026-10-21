@@ -870,9 +870,9 @@ def write_codex_tables(rows: list[dict], cells: list[dict], deltas: list[dict]) 
         TABLE_DIR / "codex_key_precision.tex",
         [
             "Condition or worst cell",
-            "Cells/runs",
-            "Mean key F1",
-            "Mean key precision",
+            "N",
+            "Key F1",
+            "Key precision",
             "Extra keys",
         ],
         kp_rows,

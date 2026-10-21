@@ -1,8 +1,15 @@
-\begin{tabular}{lrrrlrrrrl}
+\begin{tabular}{lrr}
 \toprule
-Campaign & Canonical runs & Provenance-only dirs & Retained dirs & Hardware & Agent wall-clock h & Uncached input & Cached input & Output tokens & Selected dirs \\
+ & Codex primary & Claude sentinel \\
 \midrule
-Codex primary & 760 & 40 & 800 & MacBook Pro, Apple M3 Pro, 18 GB memory & 56.4 & 586,293,569 & 552,619,008 & 15,732,394 & 48.1 GB \\
-Claude sentinel & 190 & 0 & 190 & MacBook Pro, Apple M3 Pro, 18 GB memory & 17.5 & 16,657 & 307,338,270 & 3,641,390 & 10.8 GB \\
+Canonical runs & 760 & 190 \\
+Provenance-only dirs & 40 & 0 \\
+Retained dirs & 800 & 190 \\
+Hardware & MacBook Pro (M3 Pro, 18 GB) & MacBook Pro (M3 Pro, 18 GB) \\
+Agent wall-clock h & 56.4 & 17.5 \\
+Uncached input & 586,293,569 & 16,657 \\
+Cached input & 552,619,008 & 307,338,270 \\
+Output tokens & 15,732,394 & 3,641,390 \\
+Selected dirs & 48.1 GB & 10.8 GB \\
 \bottomrule
 \end{tabular}
