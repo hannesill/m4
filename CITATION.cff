@@ -3,7 +3,7 @@ message: "If you use M4 or M4Bench, please cite the M4Bench paper. M4 builds on 
 title: "M4: Infrastructure for AI-Assisted Clinical Research"
 type: software
 version: m4bench-neurips2026-camera-ready
-date-released: 2026-10-13
+date-released: 2026-10-21
 license: MIT
 repository-code: "https://github.com/hannesill/m4"
 url: "https://github.com/hannesill/m4/tree/m4bench-neurips2026-camera-ready/benchmark"

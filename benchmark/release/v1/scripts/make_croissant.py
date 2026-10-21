@@ -213,7 +213,7 @@ def main() -> None:
         "license": "https://opensource.org/licenses/MIT",
         "url": DATASET,
         "version": "1.0.0",
-        "datePublished": "2026-10-13",
+        "datePublished": "2026-10-21",
         "creator": [
             {"@type": "sc:Person", "name": name}
             for name in [
