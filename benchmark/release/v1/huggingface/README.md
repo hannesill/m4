@@ -41,6 +41,11 @@ credentialed access.
 | `*.tar.zst.sha256` | | SHA-256 checksum of each archive |
 | `*.tar.zst.manifest.json` | | Size, checksum, and file counts of each archive |
 | `m4bench_evidence.croissant.json` | | Croissant 1.0 metadata (core and RAI) for both archives |
+| `metadata/run-indexes/*.csv` | 1,960 total | Five directly downloadable canonical run indexes, identical to the copies inside the archives |
+
+The Croissant record sets load the CSV files in `metadata/run-indexes/` directly; no
+archive extraction is needed to read the run indexes. The evidence archives
+retain their existing bytes and SHA-256 checksums.
 
 ## What a run holds
 
