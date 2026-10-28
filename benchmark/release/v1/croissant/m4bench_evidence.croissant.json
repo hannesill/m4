@@ -5,7 +5,7 @@
     "citeAs": "cr:citeAs",
     "column": "cr:column",
     "conformsTo": "dct:conformsTo",
-    "containedIn": "cr:containedIn",
+    "containedIn": "sc:containedIn",
     "cr": "http://mlcommons.org/croissant/",
     "rai": "http://mlcommons.org/croissant/RAI/",
     "prov": "http://www.w3.org/ns/prov#",
@@ -58,7 +58,7 @@
   "citeAs": "Ill, H., Al Attrach, R., Fani, R., Han, A., Yamamoto, R., Moerig, M. L., Yoon, D., and Celi, L. A. M4Bench: Evaluating Procedural Specification for Clinical EHR Derivation Agents. NeurIPS 2026 Evaluations and Datasets Track.",
   "license": "https://opensource.org/licenses/MIT",
   "url": "https://huggingface.co/datasets/hannesill/m4bench-evidence",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "datePublished": "2026-10-21",
   "creator": [
     {
@@ -141,13 +141,11 @@
       "@type": "cr:FileObject",
       "@id": "m4bench-evidence-claude-replication-runs-csv",
       "name": "claude28_canonical_runs.csv",
-      "description": "Canonical run index inside the archive.",
-      "containedIn": {
-        "@id": "m4bench-evidence-claude-replication-archive"
-      },
-      "contentUrl": "m4bench-evidence-claude-replication/metadata/claude28/claude28_canonical_runs.csv",
+      "description": "Directly downloadable canonical run index; identical to the copy inside the evidence archive.",
+      "contentUrl": "https://huggingface.co/datasets/hannesill/m4bench-evidence/resolve/main/metadata/run-indexes/claude28_canonical_runs.csv",
       "encodingFormat": "text/csv",
-      "sha256": "fecd36356ab58dac0ab480313e2b4174dc233dde13faef6e4472376eec715510"
+      "sha256": "fecd36356ab58dac0ab480313e2b4174dc233dde13faef6e4472376eec715510",
+      "contentSize": "183809 B"
     },
     {
       "@type": "cr:FileObject",
@@ -163,49 +161,41 @@
       "@type": "cr:FileObject",
       "@id": "m4bench-evidence-submission-codex-primary-runs-csv",
       "name": "final_codex_runs.csv",
-      "description": "Canonical run index inside the archive.",
-      "containedIn": {
-        "@id": "m4bench-evidence-submission-archive"
-      },
-      "contentUrl": "m4bench-evidence-submission/metadata/planning/final_codex_runs.csv",
+      "description": "Directly downloadable canonical run index; identical to the copy inside the evidence archive.",
+      "contentUrl": "https://huggingface.co/datasets/hannesill/m4bench-evidence/resolve/main/metadata/run-indexes/final_codex_runs.csv",
       "encodingFormat": "text/csv",
-      "sha256": "716567cfb08e1b3122e53677444feedbc9edb702de576df14f71e7bb0e0b2707"
+      "sha256": "716567cfb08e1b3122e53677444feedbc9edb702de576df14f71e7bb0e0b2707",
+      "contentSize": "470183 B"
     },
     {
       "@type": "cr:FileObject",
       "@id": "m4bench-evidence-submission-claude-sentinel-runs-csv",
       "name": "final_claude_runs.csv",
-      "description": "Canonical run index inside the archive.",
-      "containedIn": {
-        "@id": "m4bench-evidence-submission-archive"
-      },
-      "contentUrl": "m4bench-evidence-submission/metadata/planning/final_claude_runs.csv",
+      "description": "Directly downloadable canonical run index; identical to the copy inside the evidence archive.",
+      "contentUrl": "https://huggingface.co/datasets/hannesill/m4bench-evidence/resolve/main/metadata/run-indexes/final_claude_runs.csv",
       "encodingFormat": "text/csv",
-      "sha256": "8875260a5dd7f8713647ba14e67aef95f03b8675c3e3e98003dab8d8d2868449"
+      "sha256": "8875260a5dd7f8713647ba14e67aef95f03b8675c3e3e98003dab8d8d2868449",
+      "contentSize": "114112 B"
     },
     {
       "@type": "cr:FileObject",
       "@id": "m4bench-evidence-submission-codex-followup-runs-csv",
       "name": "followup_canonical_runs.csv",
-      "description": "Canonical run index inside the archive.",
-      "containedIn": {
-        "@id": "m4bench-evidence-submission-archive"
-      },
-      "contentUrl": "m4bench-evidence-submission/metadata/planning/followup_canonical_runs.csv",
+      "description": "Directly downloadable canonical run index; identical to the copy inside the evidence archive.",
+      "contentUrl": "https://huggingface.co/datasets/hannesill/m4bench-evidence/resolve/main/metadata/run-indexes/followup_canonical_runs.csv",
       "encodingFormat": "text/csv",
-      "sha256": "d23b2f0e92f25da526387716e5c5aad0d79d349b1e199add0a13147b0b274541"
+      "sha256": "d23b2f0e92f25da526387716e5c5aad0d79d349b1e199add0a13147b0b274541",
+      "contentSize": "102118 B"
     },
     {
       "@type": "cr:FileObject",
       "@id": "m4bench-evidence-submission-oss-exploratory-runs-csv",
       "name": "final_oss_runs.csv",
-      "description": "Canonical run index inside the archive.",
-      "containedIn": {
-        "@id": "m4bench-evidence-submission-archive"
-      },
-      "contentUrl": "m4bench-evidence-submission/metadata/planning/final_oss_runs.csv",
+      "description": "Directly downloadable canonical run index; identical to the copy inside the evidence archive.",
+      "contentUrl": "https://huggingface.co/datasets/hannesill/m4bench-evidence/resolve/main/metadata/run-indexes/final_oss_runs.csv",
       "encodingFormat": "text/csv",
-      "sha256": "11da2e413142dfa9aaf4eac36f37358b398c19f273982066e3cd7c58c085bb58"
+      "sha256": "11da2e413142dfa9aaf4eac36f37358b398c19f273982066e3cd7c58c085bb58",
+      "contentSize": "51945 B"
     }
   ],
   "recordSet": [
@@ -782,5 +772,6 @@
         }
       ]
     }
-  ]
+  ],
+  "dateModified": "2026-10-23"
 }

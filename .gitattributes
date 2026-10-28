@@ -1,0 +1,3 @@
+# Written by benchmark/release/v1/scripts/make_croissant.py; must stay byte-identical
+# to the copy published on Hugging Face.
+benchmark/release/v1/croissant/*.croissant.json linguist-generated

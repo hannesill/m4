@@ -84,7 +84,7 @@ CONTEXT = {
     "citeAs": "cr:citeAs",
     "column": "cr:column",
     "conformsTo": "dct:conformsTo",
-    "containedIn": "cr:containedIn",
+    "containedIn": "sc:containedIn",
     "cr": "http://mlcommons.org/croissant/",
     "rai": "http://mlcommons.org/croissant/RAI/",
     "prov": "http://www.w3.org/ns/prov#",
@@ -154,12 +154,17 @@ def distribution_and_records(package_dir: Path) -> tuple[list[dict], list[dict]]
                     "@type": "cr:FileObject",
                     "@id": csv_id,
                     "name": Path(runs_csv).name,
-                    "description": "Canonical run index inside the archive.",
-                    "containedIn": {"@id": archive_id},
-                    "contentUrl": f"{stem}/{runs_csv}",
+                    "description": (
+                        "Directly downloadable canonical run index; identical to the "
+                        "copy inside the evidence archive."
+                    ),
+                    "contentUrl": (
+                        f"{DATASET}/resolve/main/metadata/run-indexes/{Path(runs_csv).name}"
+                    ),
                     "encodingFormat": "text/csv",
                     # Packaged verbatim, so the tracked file's digest applies.
                     "sha256": sha256_file(RELEASE_DIR / tracked_csv),
+                    "contentSize": f"{(RELEASE_DIR / tracked_csv).stat().st_size} B",
                 }
             )
             records.append(
@@ -212,7 +217,7 @@ def main() -> None:
         "citeAs": CITATION,
         "license": "https://opensource.org/licenses/MIT",
         "url": DATASET,
-        "version": "1.0.0",
+        "version": "1.0.1",
         "datePublished": "2026-10-21",
         "creator": [
             {"@type": "sc:Person", "name": name}
@@ -293,6 +298,7 @@ def main() -> None:
         },
         "distribution": distribution,
         "recordSet": records,
+        "dateModified": "2026-10-23",
     }
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(metadata, indent=2) + "\n")
