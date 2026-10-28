@@ -54,6 +54,8 @@ preferred-citation:
   conference:
     name: "The Fortieth Annual Conference on Neural Information Processing Systems (NeurIPS 2026)"
   year: 2026
+  doi: 10.48550/arXiv.2610.37459
+  url: "https://arxiv.org/abs/2610.37459"
 references:
   - type: article
     title: "Conversational LLMs Simplify Secure Clinical Data Access, Understanding, and Analysis"

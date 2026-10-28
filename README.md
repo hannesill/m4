@@ -348,8 +348,9 @@ M4 exposes these tools to your AI client. Data tools are checked against the exp
 
 M4Bench is the benchmark built on M4: 28 clinical EHR derivation tasks on MIMIC-IV and eICU that measure how well coding agents reproduce reference clinical concepts, with and without skills.
 
+- Paper: [arXiv:2610.37459](https://arxiv.org/abs/2610.37459)
 - Benchmark, harness, and evaluator: [`benchmark/`](benchmark/README.md)
-- Per-run evidence for the paper (sanitized results and traces for 1,960 runs): [hannesill/m4bench-evidence](https://huggingface.co/datasets/hannesill/m4bench-evidence) on Hugging Face
+- Sanitized per-run evidence (1,960 runs): [Hugging Face](https://huggingface.co/datasets/hannesill/m4bench-evidence)
 - Paper release and verification steps: [`benchmark/release/v1/`](benchmark/release/v1/README.md), tag `m4bench-neurips2026-camera-ready`
 
 ## More Documentation
