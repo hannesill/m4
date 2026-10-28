@@ -20,8 +20,8 @@ viewer: false
 
 Open, sanitized per-run evidence for the paper *M4Bench: Evaluating Procedural
 Specification for Clinical EHR Derivation Agents* (NeurIPS 2026, Evaluations
-and Datasets Track): 1,960 agent runs on 28 clinical EHR derivation tasks over
-MIMIC-IV and eICU.
+and Datasets Track; [arXiv:2610.37459](https://arxiv.org/abs/2610.37459)):
+1,960 agent runs on 28 clinical EHR derivation tasks over MIMIC-IV and eICU.
 
 The benchmark itself (tasks, skills, isolation harness, evaluator, and the
 scripts that build and check these packages) is the M4 repository:
