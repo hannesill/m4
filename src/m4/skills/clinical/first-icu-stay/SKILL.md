@@ -174,6 +174,14 @@ GROUP BY 1
 ORDER BY 1;
 ```
 
+## eICU
+
+eICU has no `icustay_detail` table and no dates. Build the table with `scripts/eicu/icustay_detail.sql`: one row per `patientunitstayid`, with the same `hospstay_seq`, `first_hosp_stay`, `icustay_seq` and `first_icu_stay` columns. Three things differ from MIMIC-IV:
+
+1. **ICU stay order within a hospital stay.** Order by `hospitaladmitoffset DESC` (earlier unit stays have a higher, i.e. less negative, offset), then `unitvisitnumber`; `patientunitstayid` carries no order. Do not select first stays with `unitvisitnumber = 1`: some hospital stays have no such row (55 of 2,174 in eicu-demo), and the filter drops them without a trace.
+2. **Hospital stay order within a patient.** Only `hospitaldischargeyear` orders hospital stays, and stays discharged in the same year cannot be ordered. `first_hosp_stay` is therefore TRUE, FALSE, or NULL when the patient has several hospital stays in their earliest year (183 of 1,841 patients in eicu-demo). `WHERE first_hosp_stay AND first_icu_stay` keeps only stays that are provably first-ever; report how many patients the NULLs removed, or keep one of their stays at random as a sensitivity analysis.
+3. **Age.** `age` is text. `'> 89'` becomes `admission_age = 90`, so exclude or cap it as with MIMIC-IV's shifted ages.
+
 ## Related Exclusion Criteria
 
 Common additional exclusions for research cohorts:
@@ -186,3 +194,4 @@ Common additional exclusions for research cohorts:
 ## References
 
 - Johnson AEW et al. "MIMIC-IV, a freely accessible electronic health record dataset." Scientific Data. 2023.
+- Pollard TJ et al. "The eICU Collaborative Research Database, a freely available multi-center database for critical care research." Scientific Data. 2018.
