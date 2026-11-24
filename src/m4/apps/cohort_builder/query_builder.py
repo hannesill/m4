@@ -99,7 +99,7 @@ def _validate_criteria(criteria: QueryCohortInput) -> None:
                 raise ValueError(f"Each ICD code must be a string, got {type(code)}")
             if not code:
                 raise ValueError("ICD codes cannot be empty strings")
-            if not ICD_CODE_PATTERN.match(code):
+            if not ICD_CODE_PATTERN.match(code) or not code.replace(".", ""):
                 raise ValueError(
                     f"Invalid ICD code format: '{code}'. "
                     "Only alphanumeric characters and dots are allowed."
@@ -147,20 +147,20 @@ def _build_where_clauses(criteria: QueryCohortInput) -> list[str]:
         where_clauses.append(f"p.gender = '{criteria.gender}'")
 
     if criteria.icd_codes:
-        # Each code is validated against ICD_CODE_PATTERN, safe to interpolate
+        # Each code is validated against ICD_CODE_PATTERN, safe to interpolate.
+        # MIMIC-IV stores codes without the dot (E119, 4019), so drop it.
+        icd_codes = [code.replace(".", "") for code in criteria.icd_codes]
         if criteria.icd_match_all:
             # AND logic: patient must have ALL specified ICD codes
             # Use separate EXISTS for each code
-            for code in criteria.icd_codes:
+            for code in icd_codes:
                 where_clauses.append(
                     f"EXISTS (SELECT 1 FROM mimiciv_hosp.diagnoses_icd d "
                     f"WHERE d.hadm_id = a.hadm_id AND d.icd_code LIKE '{code}%')"
                 )
         else:
             # OR logic (default): patient must have ANY of the specified ICD codes
-            icd_conditions = [
-                f"d.icd_code LIKE '{code}%'" for code in criteria.icd_codes
-            ]
+            icd_conditions = [f"d.icd_code LIKE '{code}%'" for code in icd_codes]
             where_clauses.append(
                 f"EXISTS (SELECT 1 FROM mimiciv_hosp.diagnoses_icd d "
                 f"WHERE d.hadm_id = a.hadm_id AND ({' OR '.join(icd_conditions)}))"
