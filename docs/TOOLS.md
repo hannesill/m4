@@ -9,18 +9,21 @@ List all available datasets and their status.
 
 **Parameters:** None
 
-**Example response:**
+**Example response** (one block per dataset; the first two shown):
 ```
-Available datasets:
-- mimic-iv-demo - MIMIC-IV Clinical Database Demo [TABULAR]
-- mimic-iv - MIMIC-IV Clinical Database [TABULAR]
-- mimic-iv-note - MIMIC-IV Clinical Notes [NOTES]
-- mimic-iv-ed-demo - MIMIC-IV-ED Demo [TABULAR]
-- mimic-iv-ed - MIMIC-IV Emergency Department Module [TABULAR]
-- eicu-demo - eICU Collaborative Research Database Demo [TABULAR]
-- eicu - eICU Collaborative Research Database [TABULAR]
-- mimic-iii - MIMIC-III Clinical Database [TABULAR]
-- mimic-cxr-jpg - MIMIC-CXR-JPG chest radiographs with structured labels [IMAGING, TABULAR]
+Backend: local (DuckDB)
+
+=== MIMIC-IV-DEMO ===
+  Local Parquet: ✅
+  Local Database: ✅
+  BigQuery Support: ❌
+
+=== MIMIC-IV ===
+  Local Parquet: ❌
+  Local Database: ❌
+  BigQuery Support: ✅
+  Derived Tables: ⚠️ 0/63 materialized
+    Run: m4 init-derived mimic-iv
 ```
 
 ### `set_dataset`
@@ -40,7 +43,7 @@ List all tables in a dataset.
 **Parameters:**
 - `dataset` (string, required): Dataset name
 
-**Returns:** Table names with row counts
+**Returns:** Schema-qualified table names, such as `mimiciv_hosp.patients`
 
 ### `get_table_info`
 Get detailed information about a specific table.
@@ -48,17 +51,18 @@ Get detailed information about a specific table.
 **Parameters:**
 - `table_name` (string, required): Name of the table
 - `dataset` (string, required): Dataset name
-- `sample_rows` (int, optional): Number of sample rows to return (default: 5)
+- `show_sample` (bool, optional): Include 3 sample rows (default: true)
 
-**Returns:** Column names, types, and sample data
+**Returns:** Column names and types, and the sample rows
 
 ### `execute_query`
 Execute a read-only SQL SELECT query.
 
 **Parameters:**
-- `query` (string, required): SQL SELECT statement
+- `sql_query` (string, required): SQL SELECT statement
 - `dataset` (string, required): Dataset name
-- `limit` (int, optional): Maximum rows to return (default: 100)
+
+**Returns:** The result as a table. A result of more than 50 rows shows the first 50 and the total row count.
 
 **Security:**
 - Only SELECT statements allowed
@@ -93,7 +97,7 @@ Full-text search across clinical notes. Returns snippets around matches.
 
 **Example:**
 ```
-search_notes("diabetes", note_type="discharge", limit=10)
+search_notes("diabetes", dataset="mimic-iv-note", note_type="discharge", limit=10)
 ```
 
 **Tip:** Use `get_note(note_id)` to retrieve the full text of a specific note.
@@ -112,8 +116,8 @@ Retrieve the full text of a single clinical note by ID.
 
 **Example:**
 ```
-get_note("10000032_DS-1")
-get_note("10000032_DS-1", max_length=5000)  # Truncate to 5000 chars
+get_note("10000032_DS-1", dataset="mimic-iv-note")
+get_note("10000032_DS-1", dataset="mimic-iv-note", max_length=5000)  # Truncate to 5000 chars
 ```
 
 ### `list_patient_notes`
@@ -129,8 +133,8 @@ List available notes for a patient. Returns metadata only (IDs, types, lengths) 
 
 **Example:**
 ```
-list_patient_notes(10000032)
-list_patient_notes(10000032, note_type="discharge")
+list_patient_notes(10000032, dataset="mimic-iv-note")
+list_patient_notes(10000032, dataset="mimic-iv-note", note_type="discharge")
 ```
 
 **Tip:** Use this to discover what notes exist before retrieving them with `get_note()`.
@@ -178,13 +182,19 @@ get_note("10000032_DS-1", dataset="mimic-iv-note")
 When a tool is unavailable for the current dataset, it returns a helpful error:
 
 ```
-Error: Tool `search_notes` is not available for dataset 'mimic-iv'.
+**Error:** Tool `search_notes` is not available for dataset 'mimic-iv'.
 
-This tool requires the NOTES modality, but 'mimic-iv' only has: TABULAR
+**Missing modalities:** NOTES
 
-Suggestions:
+**Tool requires:**
+   Modalities: NOTES
+
+**Dataset 'mimic-iv' provides:**
+   Modalities: TABULAR
+
+**Suggestions:**
    - Use `list_datasets()` to see all available datasets
-   - Pass `dataset='mimic-iv-note'` to use a notes dataset
+   - Pass `dataset='dataset-name'` explicitly for the tool call
 ```
 
 ---
