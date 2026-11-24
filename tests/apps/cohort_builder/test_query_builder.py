@@ -212,11 +212,11 @@ class TestIcdCodesCriteria:
         assert " OR " in sql
 
     def test_icd_code_with_dot(self):
-        """ICD code with dot should be valid."""
+        """ICD code with dot should be valid, matched without the dot."""
         criteria = QueryCohortInput(icd_codes=["E11.9"])
         sql = build_cohort_count_sql(criteria)
 
-        assert "icd_code LIKE 'E11.9%'" in sql
+        assert "icd_code LIKE 'E119%'" in sql
 
     def test_icd_match_all_single_code(self):
         """Single ICD code with match_all should create single EXISTS."""
