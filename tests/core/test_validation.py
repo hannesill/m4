@@ -1,5 +1,7 @@
 """Tests for SQL validation and parameter sanitization."""
 
+import pytest
+
 from m4.core.datasets import DatasetRegistry
 from m4.core.validation import (
     format_error_with_guidance,
@@ -536,3 +538,39 @@ class TestIsSafeQueryRobustness:
         # is_safe_query expects str; passing None should return False gracefully
         is_safe, _ = is_safe_query(None)
         assert is_safe is False
+
+
+class TestIsSafeQueryUnknownStatements:
+    """Statements that sqlparse reports as UNKNOWN, like PRAGMA."""
+
+    @pytest.mark.parametrize(
+        "sql",
+        [
+            "COPY (SELECT * FROM patients) TO '/tmp/patients.csv'",
+            "copy patients to '/tmp/patients.parquet' (FORMAT parquet)",
+            "/* export */ COPY (SELECT 1) TO '/tmp/out.csv'",
+            "EXPORT DATABASE '/tmp/export'",
+            "ATTACH '/tmp/other.duckdb' AS other",
+            "INSTALL httpfs",
+            "LOAD httpfs",
+            "SET threads = 1",
+        ],
+    )
+    def test_write_and_session_statements_blocked(self, sql):
+        is_safe, msg = is_safe_query(sql)
+        assert is_safe is False
+        assert msg == "Only SELECT and PRAGMA queries allowed"
+
+    @pytest.mark.parametrize(
+        "sql",
+        [
+            "PRAGMA table_info('mimiciv_hosp.patients')",
+            "pragma show_tables",
+            "DESCRIBE mimiciv_hosp.patients",
+            "SHOW TABLES",
+            "SUMMARIZE mimiciv_hosp.patients",
+        ],
+    )
+    def test_schema_exploration_statements_allowed(self, sql):
+        is_safe, _msg = is_safe_query(sql)
+        assert is_safe is True
