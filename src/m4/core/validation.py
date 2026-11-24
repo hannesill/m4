@@ -55,6 +55,15 @@ def is_safe_query(sql_query: str) -> tuple[bool, str]:
         ):  # PRAGMA shows as UNKNOWN in sqlparse
             return False, "Only SELECT and PRAGMA queries allowed"
 
+        # sqlparse also reports COPY ... TO, EXPORT DATABASE, ATTACH, INSTALL,
+        # LOAD and SET as UNKNOWN, so allow only the read-only statements
+        # used for schema exploration.
+        if statement_type == "UNKNOWN":
+            first = statement.token_first(skip_cm=True, skip_ws=True)
+            keyword = first.value.split()[0].upper() if first else ""
+            if keyword not in {"PRAGMA", "DESCRIBE", "SHOW", "SUMMARIZE"}:
+                return False, "Only SELECT and PRAGMA queries allowed"
+
         # Check if it's a PRAGMA statement (these are safe for schema exploration)
         sql_upper = sql_query.strip().upper()
         if sql_upper.startswith("PRAGMA"):
